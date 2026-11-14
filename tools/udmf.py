@@ -22,6 +22,7 @@ class Map:
         self.polys = []
         self.lineprops = {}    # frozenset({a, b}) -> dict
         self.things = []
+        self.cuts = set()      # extra vertices that split the edges they lie on
 
     def sector(self, poly, floor=0, ceil=192, light=200, wall="AJWALL",
                ftex="AJFLOOR", ctex="AJCEIL", color=None):
@@ -34,12 +35,17 @@ class Map:
         """Attach properties (id, special, args, mid, flags...) to the edge a-b."""
         self.lineprops.setdefault(frozenset((tuple(a), tuple(b))), {}).update(props)
 
+    def cut(self, *points):
+        """Split whatever edge each point lies on, so that part of a wall can
+        be given its own texture with line()."""
+        self.cuts.update(tuple(p) for p in points)
+
     def thing(self, x, y, type, angle=0, **props):
         self.things.append(dict(x=x, y=y, type=type, angle=angle, **props))
 
     # ------------------------------------------------------------------
     def _split(self):
-        allv = {v for p in self.polys for v in p}
+        allv = {v for p in self.polys for v in p} | self.cuts
         out = []
         for poly in self.polys:
             new = []

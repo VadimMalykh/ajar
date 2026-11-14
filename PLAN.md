@@ -323,7 +323,46 @@ a vault and the exit. The test box is still there as map `TEST`
   means frames are never scarce, so difficulty has to come from one-way drops
   and from a door being your only way out.
 
-Still no enemies, door swing or carry delay.
+Still no door swing or carry delay.
+
+Company and decoration (2026-11-14): MAP01 has eight Doom monsters and none
+of Ajar's own — two zombies in the hall, a demon in the pit, an imp on the
+ledge, an imp on the gallery, two imps in the vault, a zombie by the exit —
+with a shotgun in the hall, shells, stimpacks and a medikit. Each far side
+is lit in its door's colour (red, blue and green torches, candelabra on the
+gold ledge, tech lamps by the exit); the hall has two candle niches and two
+barrels, the pit has remains. Blocking lights stand in corners and beside
+recesses, never on a line the player walks. `MAP=MAP01 MODE=2
+./tools/smoke.sh` is a tour: it keeps the monsters, stands unseen in each
+room and takes a screenshot. The walkthrough (mode 1) removes the monsters,
+so it still only proves the doors. Not played by hand yet: whether the
+fights are too hard or too easy for a first level is unknown.
+
+Surfaces (2026-11-14): rooms are cut into grids (`ajarmap.room`) so a pale
+carpet runner under a raised row of ceiling lights leads from door to door;
+the cell is brick, the vault is walls of small locked doors, and framed
+pictures of doors hang in the hall and on the gallery (`ajarmap.picture`,
+which uses the new `Map.cut` to split a wall). All textures are generated in
+`tools/gfx.py`.
+
+Shooting through doors (2026-11-14): it works. `MAP=TEST MODE=8` fires the
+real pistol by key press through the RED door and kills a zombie, then
+checks scripted shots backwards, at a slant and through the pit frame;
+`MAP=MAP01 MODE=3` checks cell/hall and pit/ledge both ways. Two limits:
+
+- The engine never lets a shot hit whoever fired it (a rocket jump is
+  splash damage, not the rocket hitting you), so by itself you could not
+  shoot your own back through a door. Script now makes that work (user
+  asked): `AjarHandler.SelfShots` re-traces each bullet when the pistol,
+  chaingun or either shotgun uses ammo and hurts the player if it came
+  through a door and then through them; `AjarShotWatch` follows every
+  projectile and, once it has been through a door, lets it hit its sender
+  (monsters' own shots too). `MAP=TEST MODE=9` checks pistol and plasma.
+  Other mods' bullet weapons are not covered. A projectile needs a fairly
+  straight line: at a steep slant it hits the side of the frame.
+- Autoaim does not find a target through a door whose two ends are at
+  different floor heights (pit/ledge). The shot still flies level and
+  arrives at the matching height, so it hits what is straight ahead.
 
 ## Handoff (2026-11-14)
 
@@ -414,22 +453,23 @@ while it is out, it is shut out and fights on. `MODE=7` tests it.
 
 Shared code: `AjarWorker` (reach test, marker, walking) under `AjarEnemy`.
 
-Order of appearance (user, 2026-11-14): none of Ajar's own monsters in
-level 1 and probably not in level 2; then the thief, then the nailer; the
-repainter (swaps where two doors lead, irreversible, not built) comes
-last. When the lodger first appears is still open.
+Order of appearance (user, 2026-11-14, revised the same day): none of
+Ajar's own monsters in level 1. Then the lodger first, then the thief, then
+the nailer; the repainter (swaps where two doors lead, irreversible, not
+built) comes last. Which level each one first appears in is still open.
 
 Test box: `MAP=TEST ./run.sh` has all three plus an imp, a zombie and a
 shotgun. `MAP=TEST ./run.sh +set ajar_only N` keeps one of Ajar's own:
 1 thief, 2 nailer, 3 lodger. Smoke modes: 1 and 2 walkthrough, 3 things
 through doors, 4 Doom monster follows through a door, 5 thief, 6 nailer,
-7 lodger. `tools/solve.py` models none of the monsters.
+7 lodger, 8 shooting through doors, 9 shooting yourself. `tools/solve.py` models none of the
+monsters.
 
 Next, in order:
 
 1. Second and third Act 1 levels for the M4 slice, now with Doom monsters
-   and weapons; MAP01's exit currently loops back to MAP01. The thief
-   first appears in level 3 at the earliest.
+   and weapons; MAP01's exit currently loops back to MAP01. The lodger is
+   the first of Ajar's own monsters to appear; the level is not decided.
 2. Teach `tools/solve.py` about the thief and nailer before a level uses
    them.
 3. Door swing animation and carry delay (left over from M2).

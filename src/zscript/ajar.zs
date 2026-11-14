@@ -298,8 +298,10 @@ class AjarHandler : EventHandler
 				if (a.GetClassName() != kinds[clamp(only, 0, 3)]) a.Destroy();
 		}
 
-		// The test box's own monsters would walk into the scripted smoke tests.
-		if (level.mapname ~== "TEST" && CVar.GetCVar("ajar_autotest").GetInt())
+		// Monsters would walk into the scripted smoke tests. (MAP01 mode 2 is
+		// a tour of the level as it is played, so it keeps them.)
+		int autotest = CVar.GetCVar("ajar_autotest").GetInt();
+		if (autotest && !(level.mapname ~== "MAP01" && autotest >= 2))
 		{
 			let mi = ThinkerIterator.Create("Actor");
 			Actor a;
@@ -337,6 +339,12 @@ class AjarHandler : EventHandler
 		// ordinary monsters learn about doors (see AjarSense)
 		let t = e.thing;
 		if (t && t.bIsMonster && t.SeeState && !(t is "AjarEnemy")) t.GiveInventoryType("AjarSense");
+		// anything fired may come back through a door at whoever fired it
+		if (t && t.bMissile)
+		{
+			let w = new("AjarShotWatch");
+			w.shot = t;
+		}
 	}
 
 	// --- headless smoke tests (ajar_autotest 1 or 2, see tools/smoke.sh) ----
@@ -345,8 +353,91 @@ class AjarHandler : EventHandler
 		if (CVar.GetCVar("ajar_autotest").GetInt()) Check("levelExited", true);
 	}
 
+	// --- shooting yourself through a door ---------------------------------
+	// The engine never lets a shot hit whoever fired it, so a player who can
+	// see their own back through a door could not shoot it. Bullets: when
+	// the player's gun uses ammo, the same shot is traced again here, and if
+	// it went through a door and then through the player, it hurts them.
+	// Projectiles: see AjarShotWatch.
+	Weapon lastWeapon;
+	int lastAmmo;
+
+	// Would a bullet fired by mo at this angle and pitch come back through a
+	// door and hit mo? Also returns where.
+	bool, Vector3 SelfShot(PlayerPawn mo, double ang, double pitch)
+	{
+		FLineTraceData d;
+		double oz = mo.height * 0.5 - mo.floorclip + mo.AttackZOffset * mo.player.crouchFactor;
+		mo.LineTrace(ang, 8192, pitch, 0, oz, 0, 0, d);
+		if (d.NumPortals == 0) return false, (0, 0, 0);
+		// Walk back from where the shot ended towards the door it came out of.
+		Vector3 back = -d.HitDir;
+		double len2 = back.xy dot back.xy;
+		if (len2 < 0.0001) return false, (0, 0, 0);
+		double s = ((mo.pos.xy - d.HitLocation.xy) dot back.xy) / len2;     // nearest to the player
+		if (s <= 0) return false, (0, 0, 0);
+		// ...but no further back than that door.
+		double exit = 1e9;
+		let fi = ThinkerIterator.Create("AjarFrame");
+		AjarFrame f;
+		while (f = AjarFrame(fi.Next()))
+		{
+			if (!f.door) continue;
+			for (int k = 0; k < 2; k++)
+			{
+				Line l = FindLine(k ? f.door.args[0] : f.args[0]);
+				if (!l) continue;
+				Vector2 ao = l.v1.p - d.HitLocation.xy;
+				double det = back.x * l.delta.y - back.y * l.delta.x;
+				if (abs(det) < 0.0001) continue;
+				double sl = (ao.x * l.delta.y - ao.y * l.delta.x) / det;
+				double u = (ao.x * back.y - ao.y * back.x) / det;
+				if (sl > 0 && u >= 0 && u <= 1 && sl < exit) exit = sl;
+			}
+		}
+		if (s >= exit) return false, (0, 0, 0);
+		Vector3 at = d.HitLocation + back * s;
+		if ((at.xy - mo.pos.xy).Length() > mo.radius) return false, (0, 0, 0);
+		if (at.z < mo.pos.z || at.z > mo.pos.z + mo.height) return false, (0, 0, 0);
+		return true, at;
+	}
+
+	void SelfShots()
+	{
+		let mo = players[consoleplayer].mo;
+		if (!mo || mo.health <= 0) return;
+		let w = mo.player.ReadyWeapon;
+		int ammo = (w && w.Ammo1) ? w.Ammo1.amount : 0;
+		bool fired = w && w == lastWeapon && ammo < lastAmmo;
+		lastWeapon = w;
+		lastAmmo = ammo;
+		if (!fired) return;
+
+		// Doom's bullet weapons: pellets, spread sideways and up/down.
+		int pellets = 0;
+		double sh = 0, sv = 0;
+		if (w is "SuperShotgun") { pellets = 20; sh = 11.2; sv = 7.1; }
+		else if (w is "Shotgun") { pellets = 7; sh = 5.6; }
+		else if (w is "Pistol" || w is "Chaingun") { pellets = 1; sh = mo.player.refire ? 5.6 : 0; }
+		if (!pellets) return;
+
+		double pitch = mo.BulletSlope();
+		int damage = 0;
+		for (int i = 0; i < pellets; i++)
+		{
+			bool hit;
+			Vector3 at;
+			[hit, at] = SelfShot(mo, mo.angle + sh * Random2[AjarSelf]() / 255., pitch + sv * Random2[AjarSelf]() / 255.);
+			if (!hit) continue;
+			damage += 5 * random[AjarSelf](1, 3);
+			Actor.Spawn("Blood", at, ALLOW_REPLACE);
+		}
+		if (damage) mo.DamageMobj(null, mo, damage, 'Hitscan');
+	}
+
 	override void WorldTick()
 	{
+		SelfShots();
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (!mode) return;
 		let mo = players[consoleplayer].mo;
@@ -355,7 +446,52 @@ class AjarHandler : EventHandler
 		if (t % 35 == 0)
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
+		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
+		else if (level.mapname ~== "MAP01" && mode == 3) BorrowedRoomsShoot(mo, t);
 		else if (level.mapname ~== "MAP01") BorrowedRoomsScript(mo, t);
+	}
+
+	// MAP01 mode 3: shooting through the level's own doors.
+	void BorrowedRoomsShoot(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); }
+		if (t == 40) ShootProbe(mo, "cellToHall", 128, -1340, 0, 90, 300, 320, 0);
+		if (t == 50) ShootProbe(mo, "hallToCell", 300, 320, 0, 180, 128, -1400, 0);
+		if (t == 60) ShootProbe(mo, "pitToLedge", 896, 500, -192, 90, 1100, 320, 0);
+		if (t == 70) ShootProbe(mo, "ledgeToPit", 1100, 320, 0, 0, 896, 400, -192);
+		if (t == 80) { shootee.Destroy(); Pose(mo, 128, -1340, 0, 90); }
+		if (t > 80) { mo.angle = 90; mo.pitch = 0; }
+	}
+
+	// MAP01 mode 2: stand in each room in turn, unseen and unhurt, so that
+	// tools/smoke_MAP01_2.cfg can photograph monsters and decoration.
+	void BorrowedRoomsTour(Actor mo, int t)
+	{
+		static const double views[] = {
+			128, -1470, 0, 90, 0,       // cell
+			40, 320, 0, 0, 0,           // hall from the RED far side
+			720, 600, 0, 215, 0,        // hall: niches, frame, torches
+			384, 60, 0, 90, -15,        // hall, looking up at the gallery
+			740, 320, 0, 0, 30,         // down into the pit, ledge beyond
+			1060, 40, 0, 65, 0,         // ledge
+			40, 736, 160, 0, 0,         // gallery
+			2030, 160, 0, 0, 0,         // vault
+			3030, 128, 0, 0, 0          // way out
+		};
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		int i = t / 40;
+		if (i >= views.Size() / 5) return;
+		Pose(mo, views[i * 5], views[i * 5 + 1], views[i * 5 + 2], views[i * 5 + 3]);
+		mo.pitch = views[i * 5 + 4];
+		if (t % 40 == 0)
+		{
+			int n = 0;
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0) n++;
+			Console.Printf("AJARTEST view=%d monsters=%d", i, n);
+		}
 	}
 
 	void Pose(Actor mo, double x, double y, double z, double ang)
@@ -454,6 +590,81 @@ class AjarHandler : EventHandler
 		if (t == 190) Pose(mo, 160, 400, 0, 90);
 		if (t == 195) mo.LineAttack(90, 4096, 0, 10, 'Hitscan', "AjarProbePuff");
 		if (t == 200 && probe) Check("hitscanThrough", probe.health < probe.SpawnHealth());
+	}
+
+	// MODE=8: the player's own pistol, fired by real key presses from
+	// tools/smoke_TEST_8.cfg, at a zombie standing beyond the hung RED door.
+	Actor shootee;
+
+	void ShootScript(Actor mo, int t)
+	{
+		if (t == 1) mo.player.cheats |= CF_NOTARGET | CF_GODMODE;
+		if (t == 40)
+		{
+			Pose(mo, 160, 400, 0, 90);
+			shootee = Actor.Spawn("ZombieMan", (192, 2200, 0));
+			shootee.angle = 0;
+		}
+		if (t > 40 && t < 200) { mo.angle = 90; mo.pitch = 0; }
+		if (t >= 40 && t % 20 == 0 && t <= 200)
+		{
+			FTranslatedLineTarget lt;
+			mo.AimLineAttack(90, 4096, lt);
+			Console.Printf("AJARTEST shoot t=%d zombieHealth=%d aim=%s ammo=%d", t, shootee ? shootee.health : -1,
+				lt.linetarget ? lt.linetarget.GetClassName() : 'none', mo.CountInv("Clip"));
+		}
+		if (t == 200) Check("pistolThroughDoor", !shootee || shootee.health < 20);
+		// the same by script from other places: back through the far side,
+		// at a slant, and through the pit frame (different floor heights)
+		if (t == 210) ShootProbe(mo, "reverse", 192, 2200, 0, 270, 160, 300, 0);
+		if (t == 220) ShootProbe(mo, "slant", 100, 300, 0, VectorAngle(60, 228), 249, 2200, 0);
+		if (t == 230) ShootProbe(mo, "slantNear", 100, 470, 0, VectorAngle(60, 58), 300, 2100, 0);
+		if (t == 240) ShootProbe(mo, "pitToGreen", 752, 400, -128, 90, 2200, 2128, 0);
+		if (t == 250) ShootProbe(mo, "greenToPit", 2200, 2128, 0, 180, 752, 300, -128);
+	}
+
+	void ShootProbe(Actor mo, string what, double x, double y, double z, double ang, double tx, double ty, double tz)
+	{
+		if (shootee) shootee.Destroy();
+		Pose(mo, x, y, z, ang);
+		mo.pitch = 0;
+		shootee = Actor.Spawn("AjarProbe", (tx, ty, tz));
+		FTranslatedLineTarget lt;
+		mo.AimLineAttack(ang, 4096, lt);
+		mo.LineAttack(ang, 4096, 0, 10, 'Hitscan', "AjarProbePuff");
+		Console.Printf("AJARTEST %s=%d autoaim=%d", what, shootee.health < 1000, lt.linetarget == shootee);
+	}
+
+	// MODE=9: shooting yourself. BLUE hangs in the ledge frame; its far side
+	// is in the ledge's north wall, so from in front of the frame you can
+	// see yourself at a slant. Key presses come from tools/smoke_TEST_9.cfg:
+	// pistol at yourself, pistol at a blank wall, plasma at yourself.
+	double selfAng;
+	int selfHealth;
+
+	void SelfShotScript(PlayerPawn mo, int t)
+	{
+		if (t == 35) { Take(mo, 2); FindFrame(105).Activate(mo); Pose(mo, 1070, 256, 0, 0); mo.pitch = 0; }
+		if (t == 40)
+		{
+			selfAng = 1000;
+			for (double a = -45; a <= 45 && selfAng == 1000; a += 0.5)
+				if (SelfShot(mo, a, 0)) selfAng = a + 1.5;       // a little inside the edge
+			Console.Printf("AJARTEST selfAng=%d", selfAng);
+			Check("canAimAtSelf", selfAng != 1000);
+		}
+		if ((t > 40 && t <= 125) || t >= 195) { mo.angle = selfAng; mo.pitch = 0; }
+		if (t == 125) { Check("pistolHitsSelf", mo.health < 100); selfHealth = mo.health; }
+		if (t > 125 && t < 195) { mo.angle = 180; mo.pitch = 0; }
+		if (t == 192) Check("noSelfHitAtAWall", mo.health == selfHealth);
+		if (t == 195)
+		{
+			mo.health = mo.player.health = 500;
+			mo.GiveInventory("PlasmaRifle", 1);
+			mo.GiveInventory("Cell", 40);
+			mo.player.PendingWeapon = Weapon(mo.FindInventory("PlasmaRifle"));
+		}
+		if (t == 290) Check("plasmaHitsSelf", mo.health < 500);
 	}
 
 	// MODE=4: an ordinary Doom monster in the hall notices a player standing
@@ -612,6 +823,8 @@ class AjarHandler : EventHandler
 
 	void TestLevelScript(Actor mo, int t, int mode)
 	{
+		if (mode == 9) { SelfShotScript(PlayerPawn(mo), t); return; }
+		if (mode == 8) { ShootScript(mo, t); return; }
 		if (mode == 7) { LodgerScript(mo, t); return; }
 		if (mode == 6) { NailerScript(mo, t); return; }
 		if (mode == 5) { ThiefScript(mo, t); return; }
@@ -641,6 +854,31 @@ class AjarHandler : EventHandler
 		if (t == 425) { FindFrame(104).Activate(mo); FindFrame(105).Activate(mo); mo.SetOrigin((1000, 256, 0), false); mo.angle = 0; mo.vel.xy = (0, 0); }
 		if (t > 500 && t < 570) mo.vel.xy = (8, 0);
 		if (t == 570) Console.Printf("AJARTEST inExitRoom=%d", mo.pos.x > 1900);
+	}
+}
+
+// Follows one projectile. A projectile never collides with whoever fired it;
+// once it has been through a door (seen as a jump far longer than its own
+// step) that no longer holds, and it hits its sender like anything else.
+class AjarShotWatch : Thinker
+{
+	Actor shot;
+	Vector3 last;
+	bool started, crossed;
+
+	override void Tick()
+	{
+		if (!shot || !shot.bMissile || !shot.target) { Destroy(); return; }
+		let who = shot.target;
+		if (started && !crossed && (shot.pos.xy - last.xy).Length() > shot.vel.xy.Length() * 1.5 + 48) crossed = true;
+		last = shot.pos;
+		started = true;
+		if (!crossed || who.health <= 0) return;
+		if (shot.Distance2D(who) >= shot.radius + who.radius) return;
+		if (shot.pos.z >= who.pos.z + who.height || shot.pos.z + shot.height <= who.pos.z) return;
+		who.DamageMobj(shot, who, shot.GetMissileDamage(7, 1), shot.DamageType);
+		shot.ExplodeMissile(null, who);
+		Destroy();
 	}
 }
 

@@ -46,3 +46,24 @@ def door(m, colour, x, y, *, angle=0, frame=0):
     """A door thing. With `frame` it starts hung there (x, y only pick the sector);
     otherwise it leans at x, y facing `angle`."""
     m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame))
+
+
+def room(m, xs, ys, runner, *, ceil, light, **base):
+    """A flat rectangular room cut into a grid by the lists xs and ys. Cells
+    for which runner(i, j) is true (column i, row j) are a strip of carpet
+    under a raised row of ceiling lights; use it to lead from door to door."""
+    for i in range(len(xs) - 1):
+        for j in range(len(ys) - 1):
+            cell = [(xs[i], ys[j]), (xs[i], ys[j + 1]), (xs[i + 1], ys[j + 1]), (xs[i + 1], ys[j])]
+            if runner(i, j):
+                m.sector(cell, ceil=ceil + 16, light=min(255, light + 30),
+                         **dict(base, ftex="AJRUG", ctex="AJLITE"))
+            else:
+                m.sector(cell, ceil=ceil, light=light, **base)
+
+
+def picture(m, a, b, colour, height):
+    """Hangs a framed picture of a door on the 64-long wall piece a-b.
+    `height` is the wall's height there (336 or 176: see gfx.py)."""
+    m.cut(a, b)
+    m.line(a, b, mid=f"AJP{'A' if height == 336 else 'B'}{colour}", exact=True)

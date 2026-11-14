@@ -107,6 +107,65 @@ def make_all():
     wall.rect(0, 118, 128, 128, (120, 116, 112))
     out["textures/AJWALL.png"] = wall.png()
 
+    # framed pictures of doors, one per colour, on a strip of that wall as
+    # tall as the wall they hang on (A: 336, the hall; B: 176, the gallery)
+    for c, base in DOOR_COLOURS.items():
+        for tag, tall in (("A", 336), ("B", 176)):
+            pic = Img(64, tall)
+            for y in range(tall):
+                for x in range(64):
+                    pic.set(x, y, wall.px[(y % 128) * 128 + x])
+            top = tall - 124                                     # picture: 48 to 124 above the floor
+            pic.rect(11, top + 3, 57, top + 79, (60, 56, 52))    # shadow
+            pic.rect(8, top, 54, top + 76, (176, 140, 60))       # gilt frame
+            pic.frame(8, top, 54, top + 76, (110, 84, 30), 1)
+            pic.rect(13, top + 5, 49, top + 71, (28, 30, 44))    # a dark room
+            pic.rect(13, top + 56, 49, top + 71, (58, 56, 66))   # its floor
+            pic.rect(22, top + 18, 40, top + 58, base)           # a door standing in it
+            pic.frame(22, top + 18, 40, top + 58, shade(base, 0.5), 1)
+            pic.rect(25, top + 22, 37, top + 36, shade(base, 0.8))
+            pic.rect(25, top + 40, 37, top + 54, shade(base, 0.8))
+            pic.disc(37, top + 39, 1, (250, 240, 200))
+            pic.frame(13, top + 5, 49, top + 71, (20, 18, 24), 1)
+            out[f"textures/AJP{tag}{c}.png"] = pic.png()
+
+    # the cell: brick
+    brick = Img(64, 64, (150, 140, 132))
+    brick.noise(9, 31)
+    for row in range(4):
+        brick.rect(0, row * 16, 64, row * 16 + 2, (92, 86, 82))
+        for x in ((0, 32) if row % 2 else (16, 48)):
+            brick.rect(x, row * 16, x + 2, row * 16 + 16, (92, 86, 82))
+    out["textures/AJBRICK.png"] = brick.png()
+
+    # the vault: rows of small locked doors
+    safe = Img(64, 64, (176, 178, 184))
+    safe.noise(4, 32)
+    for bx in (0, 32):
+        for by in (0, 32):
+            safe.frame(bx, by, bx + 32, by + 32, (104, 106, 114), 2)
+            safe.frame(bx + 5, by + 5, bx + 27, by + 27, (206, 208, 214), 1)
+            safe.disc(bx + 22, by + 16, 2, (60, 60, 66))
+            safe.rect(bx + 21, by + 17, bx + 24, by + 21, (60, 60, 66))
+    out["textures/AJSAFE.png"] = safe.png()
+
+    # carpet for the runners between doors: pale, so the room's tint colours it
+    rug = Img(64, 64, (214, 204, 190))
+    rug.noise(6, 33)
+    for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64), (32, 32)):
+        rug.diamond(cx, cy, 14, (160, 146, 128))
+        rug.diamond(cx, cy, 9, (228, 220, 208))
+        rug.diamond(cx, cy, 4, (150, 60, 50))
+    out["flats/AJRUG.png"] = rug.png()
+
+    # the row of ceiling lights over a runner
+    lite = Img(64, 64, (96, 98, 104))
+    lite.noise(4, 34)
+    lite.rect(8, 8, 56, 56, (255, 252, 236))
+    lite.frame(8, 8, 56, 56, (60, 62, 68), 2)
+    lite.rect(31, 8, 33, 56, (190, 188, 176))
+    out["flats/AJLITE.png"] = lite.png()
+
     floor = Img(64, 64, (120, 118, 122))
     floor.noise(8, 12)
     floor.frame(0, 0, 64, 64, (92, 90, 94), 1)
