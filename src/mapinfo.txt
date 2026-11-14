@@ -1,0 +1,39 @@
+gameinfo
+{
+	StatusBarClass = "AjarStatusBar"
+	AddEventHandlers = "AjarHandler"
+}
+
+DoomEdNums
+{
+	20001 = AjarFrame
+	20002 = AjarDoor
+	20003 = AjarThief
+	20004 = AjarNailer
+	20005 = AjarLodger
+}
+
+clearepisodes
+episode MAP01
+{
+	name = "Ajar"
+	noskillmenu
+}
+
+// Act 1, level 1 (tools/map_hinges1.py)
+map MAP01 "Borrowed Rooms"
+{
+	next = "MAP01"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Mechanics test box (tools/map_test.py): "map TEST" in the console
+map TEST "Ajar: test frames"
+{
+	next = "TEST"
+	nointermission
+	music = ""
+}

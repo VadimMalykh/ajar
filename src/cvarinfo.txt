@@ -1,0 +1,2 @@
+server noarchive int ajar_autotest = 0;
+server noarchive int ajar_only = 0;

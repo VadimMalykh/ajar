@@ -1,0 +1,17 @@
+# Build output (ajar.pk3, smoke-test screenshots and logs) — regenerate with ./build.sh
+/build/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# IWADs and packaged game data are never committed
+*.wad
+*.pk3
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
