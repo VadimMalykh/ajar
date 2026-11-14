@@ -4,7 +4,8 @@
 //  * AjarFrame thing: args[0] = id of the frame's portal line. Its tid is the
 //    same number; the frame's mouth line calls Thing_Activate on it.
 //  * AjarDoor thing:  args[0] = id of the door's far-side portal line,
-//    args[1] = colour (1..5), args[2] = id of the frame it starts in (0 = leaning).
+//    args[1] = colour (1..5), args[2] = id of the frame it starts in (0 = leaning),
+//    args[3] = 1 if it is nailed to that frame for the whole level.
 
 class AjarFrame : Actor
 {
@@ -32,7 +33,7 @@ class AjarDoor : Actor
 {
 	AjarFrame frame;   // where it hangs, or null
 	bool carried;
-	Actor nailer;      // who nailed it to its frame, or null
+	Actor nailer;      // who nailed it to its frame, or null (itself: nailed by the map, for good)
 
 	Default
 	{
@@ -211,6 +212,15 @@ class AjarHandler : EventHandler
 		Console.MidPrint(smallfont, msg);
 	}
 
+	// the first time a lodger knocks in a level
+	bool lodgerHeard;
+	void LodgerKnocks()
+	{
+		if (lodgerHeard) return;
+		lodgerHeard = true;
+		Say("Something knocks from inside an empty frame.\nA door hung there would shut it in.");
+	}
+
 	// A nailer fixes a hung door to its frame; when it dies its nails fall out.
 	void Nail(AjarDoor d, Actor by)
 	{
@@ -238,7 +248,8 @@ class AjarHandler : EventHandler
 	{
 		if (f.door && f.door.nailer)
 		{
-			Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
+			if (f.door.nailer == f.door) Say("The " .. f.door.Label() .. " door is nailed to its frame. It is staying there.");
+			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
 			return;
 		}
 		if (f.door && !carried)
@@ -298,10 +309,10 @@ class AjarHandler : EventHandler
 				if (a.GetClassName() != kinds[clamp(only, 0, 3)]) a.Destroy();
 		}
 
-		// Monsters would walk into the scripted smoke tests. (MAP01 mode 2 is
-		// a tour of the level as it is played, so it keeps them.)
+		// Monsters would walk into the scripted smoke tests. (In a real level
+		// mode 2 is a tour of it as it is played, so it keeps them.)
 		int autotest = CVar.GetCVar("ajar_autotest").GetInt();
-		if (autotest && !(level.mapname ~== "MAP01" && autotest >= 2))
+		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2))
 		{
 			let mi = ThinkerIterator.Create("Actor");
 			Actor a;
@@ -322,6 +333,7 @@ class AjarHandler : EventHandler
 			Link(d.args[0], 0, d.BackTex());
 			f = null;
 			if (d.args[2]) f = FindFrame(d.args[2]);
+			if (f && d.args[3]) d.nailer = d;
 			if (f) Hang(d, f);
 			else d.Show();
 		}
@@ -446,9 +458,79 @@ class AjarHandler : EventHandler
 		if (t % 35 == 0)
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
+		else if (level.mapname ~== "MAP02" && mode == 2) NoVacancyTour(mo, t);
+		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 3) BorrowedRoomsShoot(mo, t);
 		else if (level.mapname ~== "MAP01") BorrowedRoomsScript(mo, t);
+	}
+
+	// MAP02: the shortest solution as printed by tools/build.py.
+	void NoVacancyScript(Actor mo, int t)
+	{
+		string have = carried ? carried.Label() : "-";
+		// lobby: take RED, hang it, walk through to the corridor upstairs
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 80, 224, 0, 180); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("upstairs", mo.pos.z == 144 && mo.pos.x > 512);
+		// hang YELLOW in the corridor frame, through to the attic
+		if (t == 85) { Take(mo, 4); FindFrame(102).Activate(mo); Pose(mo, 864, 230, 144, 270); }
+		Forward(mo, t, 90, 25);
+		if (t == 125) Check("inAttic", mo.pos.z == 304 && mo.pos.x > 1536);
+		// take BLUE and drop off the edge into the corridor
+		if (t == 130) { Take(mo, 2); Pose(mo, 1600, 224, 304, 180); }
+		Forward(mo, t, 135, 15);
+		if (t == 200) Check("droppedWithBlue", mo.pos.z == 144 && mo.pos.x < 1536 && have == "BLUE");
+		// swap YELLOW for BLUE, through to the terrace
+		if (t == 205) { Pose(mo, 864, 230, 144, 270); FindFrame(102).Activate(mo); }
+		Forward(mo, t, 240, 25);
+		if (t == 275) Check("onTerraceWithYellow", mo.pos.z == 128 && mo.pos.x > 3000 && have == "YELLOW");
+		// leave YELLOW in the terrace frame, drop into the garden
+		if (t == 280) { FindFrame(104).Activate(mo); Pose(mo, 3200, 224, 128, 0); }
+		Forward(mo, t, 285, 15);
+		if (t == 350) Check("inGardenEmptyHanded", mo.pos.z == 0 && mo.pos.x > 3256 && have == "-");
+		// in by GREEN's far side, out on the balcony over the lobby
+		if (t == 355) Pose(mo, 3830, 224, 0, 0);
+		Forward(mo, t, 360, 20);
+		if (t == 395) Check("onBalcony", mo.pos.z == 112 && mo.pos.y > 448 && mo.pos.x < 512);
+		// GREEN is nailed there; VIOLET goes in the other frame
+		if (t == 400) { FindFrame(105).Activate(mo); Check("greenStaysNailed", !carried); }
+		if (t == 405) { Take(mo, 5); FindFrame(106).Activate(mo); Pose(mo, 384, 500, 112, 90); }
+		Forward(mo, t, 435, 20);
+		if (t == 465) Check("inStreet", mo.pos.x > 4900);
+		// face the exit switch; the real USE press comes from tools/smoke_MAP02_1.cfg
+		if (t == 470) Pose(mo, 5418, 96, 0, 0);
+	}
+
+	// MAP02 mode 2: a tour, as BorrowedRoomsTour.
+	void NoVacancyTour(Actor mo, int t)
+	{
+		static const double views[] = {
+			256, 40, 0, 90, -12,        // lobby: the balcony, VIOLET and nailed GREEN
+			470, 420, 0, 215, 0,        // lobby: frame, RED, pictures
+			60, 400, 0, 0, -20,         // lobby: up at the corridor's open end
+			540, 224, 144, 0, 0,        // corridor
+			1470, 190, 144, 20, -35,    // under the attic, looking up
+			1880, 224, 304, 180, 0,     // attic
+			3040, 60, 128, 60, 0,       // terrace and its frame
+			3060, 224, 128, 0, 12,      // terrace, down into the garden
+			3300, 224, 0, 0, 0,         // garden: the GREEN far side
+			300, 520, 112, 180, 0,      // balcony: GREEN, the lobby below
+			5040, 96, 0, 0, 0           // street
+		};
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		int i = t / 40;
+		if (i >= views.Size() / 5) return;
+		Pose(mo, views[i * 5], views[i * 5 + 1], views[i * 5 + 2], views[i * 5 + 3]);
+		mo.pitch = views[i * 5 + 4];
+		if (t % 40 == 0)
+		{
+			int n = 0;
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0) n++;
+			Console.Printf("AJARTEST view=%d monsters=%d", i, n);
+		}
 	}
 
 	// MAP01 mode 3: shooting through the level's own doors.

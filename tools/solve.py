@@ -5,7 +5,8 @@ A puzzle is a dict:
   walk          [(from, to)] one-way walking links (drops); add both ways if needed
   frames        {frame line id: region}
   names         optional {colour: name} for the printed solution
-  doors         {colour: dict(home=region, frame=id) or dict(home=region, lean=region)}
+  doors         {colour: dict(home=region, frame=id) or dict(home=region, lean=region)};
+                fixed=True on a hung door means it is nailed there for good
 
 Regions are places you can walk around freely. Walking and stepping through a
 hung door are free; pick up / hang / unhinge / swap cost one action each.
@@ -41,6 +42,8 @@ def _moves(p, state):
         if region != here:
             continue
         c = hung.get(f)
+        if c is not None and p["doors"][c].get("fixed"):
+            continue
         if c is None and carried is not None:
             yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", f)})
         elif c is not None and carried is None:

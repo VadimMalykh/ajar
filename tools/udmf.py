@@ -112,6 +112,7 @@ class Map:
             p = dict(props_for(a, b))
             p.pop("exact", None)
             mid = p.pop("mid", None)
+            midboth = p.pop("midboth", False)
             s = self.sectors[si]
             ld = dict(v1=vi(a), v2=vi(b))
             other = edges.get((b, a))
@@ -125,7 +126,10 @@ class Map:
                 if mid:
                     front["texturemiddle"] = mid
                 ld["sidefront"] = side(si, **front)
-                ld["sideback"] = side(other, texturetop=s["wall"], texturebottom=s["wall"])
+                back = dict(texturetop=s["wall"], texturebottom=s["wall"])
+                if mid and midboth:
+                    back["texturemiddle"] = mid
+                ld["sideback"] = side(other, **back)
                 ld["twosided"] = True
             args = p.pop("args", ())
             for i, v in enumerate(args):

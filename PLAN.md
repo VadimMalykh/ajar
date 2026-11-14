@@ -364,6 +364,39 @@ checks scripted shots backwards, at a slant and through the pit frame;
   different floor heights (pit/ledge). The shot still flies level and
   arrives at the matching height, so it hits what is straight ahead.
 
+## Second level (2026-11-15)
+
+`MAP02` "No Vacancy" (`tools/map_hinges2.py`): a hotel. Built, solver-proven
+(9 door actions, 403 states, none stuck) and walked headlessly
+(`MAP=MAP02 ./tools/smoke.sh`, 9 checks; `MODE=2` is the tour). **Not played
+by hand yet**: fights, the lodger's timing and whether the route reads are
+unknown. `MAP=MAP02 ./run.sh` plays it; MAP01's exit now leads here.
+
+- Places: lobby (start; RED leaning, one frame) with a railed balcony
+  nothing climbs to (VIOLET leaning, GREEN nailed in one frame, one empty
+  frame); upstairs corridor (RED's far side, one frame, YELLOW at the far
+  end) whose open end drops back into the lobby; attic (YELLOW's far side,
+  BLUE, no frame) that drops into the corridor; terrace (BLUE's far side,
+  one frame) over a garden (GREEN's far side); the street (VIOLET's far
+  side) with the exit.
+- New for the player: going in by a door's far side (garden to balcony);
+  a door that cannot be moved; having to arrive somewhere empty-handed, so
+  the swapped-out door has to be left in a frame on the way.
+- New tools: a door thing with `args[3]` set (`ajarmap.door(nailed=True)`,
+  `fixed=True` in `PUZZLE`) is nailed for the whole level; a lodger with
+  `args[0]` sleeps until the player is that close to where it is placed;
+  `midboth=True` puts a middle texture on both sides of a line (the
+  railing). The first knock in a level shows a one-time hint.
+- Company: two lodgers (one wakes halfway along the corridor, one on the
+  terrace), three former humans upstairs, two imps in the attic, two demons
+  and an imp in the garden, two former humans in the street. Shotgun in the
+  lobby, chaingun in the attic.
+- Why GREEN is nailed: without it the player could carry GREEN off the
+  balcony and lose the only way back up (the solver found those stuck
+  states). A puzzle search over variants of this layout found nothing
+  longer than about 10 actions with five doors; more length needs a sixth
+  door colour or more doors that start hung and have to be displaced.
+
 ## Handoff (2026-11-14)
 
 State (end of 2026-11-14): MAP01 builds, passes the solver and the headless
@@ -467,9 +500,8 @@ monsters.
 
 Next, in order:
 
-1. Second and third Act 1 levels for the M4 slice, now with Doom monsters
-   and weapons; MAP01's exit currently loops back to MAP01. The lodger is
-   the first of Ajar's own monsters to appear; the level is not decided.
+1. Play MAP02 by hand, then the third Act 1 level for the M4 slice.
+   MAP02's exit loops back to MAP02. The lodger first appears in MAP02.
 2. Teach `tools/solve.py` about the thief and nailer before a level uses
    them.
 3. Door swing animation and carry delay (left over from M2).

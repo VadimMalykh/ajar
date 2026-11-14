@@ -23,7 +23,18 @@ episode MAP01
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
-	next = "MAP01"
+	next = "MAP02"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 1, level 2 (tools/map_hinges2.py)
+map MAP02 "No Vacancy"
+{
+	next = "MAP02"
+	sky1 = "SKY1", 0
 	nointermission
 	nojump
 	nocrouch

@@ -588,6 +588,7 @@ class AjarLodger : AjarWorker
 	int steps;
 	int hurtAt;                // health at which it turns back
 	bool inside;
+	bool awake;                // args[0]: sleeps until the player is this close to where it was placed
 
 	Default
 	{
@@ -665,6 +666,11 @@ class AjarLodger : AjarWorker
 		wait -= 5;
 		let p = players[consoleplayer].mo;
 		if (wait > 0 || !Handler() || !p || p.health <= 0) return;
+		if (args[0] && !awake)
+		{
+			if ((p.pos.xy - SpawnPoint.xy).Length() > args[0]) return;
+			awake = true;
+		}
 		if (!spot) spot = Spawn("AjarLure", pos);
 
 		Array<AjarFrame> holes;
@@ -689,6 +695,7 @@ class AjarLodger : AjarWorker
 	void A_LodgerKnock()
 	{
 		A_StartSound("misc/chat2", CHAN_BODY, 0, 1.0, ATTN_NORM);
+		if (Handler()) Handler().LodgerKnocks();
 		A_AttachLight('knock', DynamicLight.PulseLight, 0xD8FFD0, 24, 72, 0, (0, 0, 48), 0.4);
 	}
 

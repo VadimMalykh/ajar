@@ -1,5 +1,5 @@
 #!/bin/bash
-# Plays Ajar (MAP=TEST ./run.sh for the mechanics test box). Uses doom2.wad
+# Plays Ajar (MAP=MAP02 ./run.sh for level 2, MAP=TEST for the mechanics test box). Uses doom2.wad
 # only as a temporary host IWAD (palette, fonts, menus) until the standalone
 # build (M0) exists.
 cd "$(dirname "$0")"

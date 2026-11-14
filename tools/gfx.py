@@ -166,6 +166,17 @@ def make_all():
     lite.rect(31, 8, 33, 56, (190, 188, 176))
     out["flats/AJLITE.png"] = lite.png()
 
+    # a balcony railing (see-through) and the garden's grass
+    rail = Img(64, 32, (0, 0, 0, 0))
+    rail.rect(0, 0, 64, 4, (176, 140, 60))
+    rail.rect(0, 28, 64, 32, (110, 84, 30))
+    for x in range(4, 64, 16):
+        rail.rect(x, 4, x + 4, 28, (150, 118, 48))
+    out["textures/AJRAIL.png"] = rail.png()
+    grass = Img(64, 64, (150, 170, 120))
+    grass.noise(14, 35)
+    out["flats/AJGRASS.png"] = grass.png()
+
     floor = Img(64, 64, (120, 118, 122))
     floor.noise(8, 12)
     floor.frame(0, 0, 64, 64, (92, 90, 94), 1)

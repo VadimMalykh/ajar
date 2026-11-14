@@ -42,10 +42,11 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
                 FRAME_T, id=line_id, height=0, args=(line_id,))
 
 
-def door(m, colour, x, y, *, angle=0, frame=0):
+def door(m, colour, x, y, *, angle=0, frame=0, nailed=False):
     """A door thing. With `frame` it starts hung there (x, y only pick the sector);
-    otherwise it leans at x, y facing `angle`."""
-    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame))
+    otherwise it leans at x, y facing `angle`. A `nailed` door stays in its
+    frame for the whole level (fixed=True in the PUZZLE graph)."""
+    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame, int(nailed)))
 
 
 def room(m, xs, ys, runner, *, ceil, light, **base):
