@@ -222,6 +222,82 @@ class AjarThief : AjarWorker
 		Stop;
 	}
 
+	// --- the look board (design/thief-board.html, tools/thief_shots.sh) ------
+	// "+set ajar_thief_look N" (N > 0) on MAP04 poses the thief in front of
+	// the yard's north frame instead of letting it work, five poses of 60
+	// tics from tic 240: standing, coming at you with a door, from the side,
+	// at a frame, dead. Looks: 1 the sprite as first drawn; the rest are
+	// Doom's own sprites, small and recoloured (src/trnslate.txt): 2 arch-vile
+	// in soot, 3 Wolfenstein guard in black, 4 imp in ash, 5 arachnotron in
+	// brass, 6 arch-vile as a shadow with the lodger's eyes. From 2 on, the
+	// door on its back is a real door sprite in its colour (AjarThiefPack).
+	Actor pack, eyes;
+
+	void Portrait(int look)
+	{
+		static const string sprites[] = { "AJTH", "AJTH", "VILE", "SSWV", "TROO", "BSPI", "VILE" };
+		static const string paint[] = { "", "", "AjarSoot", "AjarNight", "AjarAsh", "AjarBrass", "" };
+		static const double sizes[] = { 1, 1, 0.6, 0.85, 0.68, 0.42, 0.6 };
+		static const double packZ[] = { 0, 0, 6, 6, 4, 16, 6 };
+		static const int frames[] = {
+			0, 4, 4, 2, 3,          // AJTH: A, E, E, C, D
+			0, 2, 2, 8, 25,         // VILE: walking, arms up, dead
+			0, 2, 2, 5, 12,         // SSWV
+			0, 2, 2, 5, 12,         // TROO
+			0, 2, 2, 6, 15          // BSPI
+		};
+		static const int sets[] = { 0, 0, 1, 2, 3, 4, 1 };
+		let mo = players[consoleplayer].mo;
+		if (!mo) return;
+		int t = level.maptime;
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		mo.SetOrigin((180, 900, 0), false);
+		mo.angle = 90;
+		mo.pitch = 0;
+		mo.vel = (0, 0, 0);
+		if (t == 5)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster && a != self) a.Destroy();
+			SetStateLabel("Spawn");
+			if (look > 1)
+			{
+				scale = (sizes[look], sizes[look]);
+				if (paint[look] != "") A_SetTranslation(paint[look]);
+				pack = Spawn("AjarThiefPack", pos);
+				pack.sprite = GetSpriteIndex("AJD2");
+			}
+			if (look == 6)
+			{
+				A_SetRenderStyle(0.7, STYLE_TranslucentStencil);
+				SetShade(0x0A090E);
+				eyes = Spawn("AjarLodgerEyes", pos);
+				eyes.scale = (0.7, 0.7);
+			}
+		}
+		if (t < 5) return;
+		int i = clamp(t / 60 - 4, 0, 4);
+		tics = -1;
+		vel = (0, 0, 0);
+		SetOrigin((i == 3 ? 128 : 215, i == 3 ? 1104 : 1040, 0), false);
+		angle = i == 2 ? 0 : i == 3 ? 90 : 270;
+		sprite = GetSpriteIndex(sprites[look]);
+		frame = frames[sets[look] * 5 + i];
+		bool carrying = i == 1 || i == 2 || i == 4;
+		if (pack)
+		{
+			pack.bInvisible = !carrying;
+			Vector2 at = i == 4 ? pos.xy + (-46, 6) : i == 2 ? pos.xy + (-12, 4) : pos.xy - AngleToVector(angle, 7);
+			pack.SetOrigin((at, i == 4 ? 0 : packZ[look]), false);
+		}
+		if (eyes)
+		{
+			eyes.bInvisible = i >= 2;
+			eyes.SetOrigin((pos.xy + AngleToVector(angle, 6), 41), false);
+		}
+	}
+
 	void GoWalk()
 	{
 		steps = 0;
@@ -440,6 +516,8 @@ class AjarThief : AjarWorker
 	override void Tick()
 	{
 		Super.Tick();
+		int look = CVar.GetCVar("ajar_thief_look").GetInt();
+		if (look > 0) { Portrait(clamp(look, 1, 6)); return; }
 		if (!args[1] || health <= 0) return;
 		if (stayAt != (0, 0, 0) && (pos.xy - stayAt.xy).Length() > 96)
 		{
@@ -854,6 +932,24 @@ class AjarLodger : AjarWorker
 		if (alpha > 0.05) return;
 		GoInside(random[AjarLodger](60, 130));
 		SetStateLabel("Spawn");
+	}
+}
+
+// The door on a thief's back on the look board: a door's sprite, three
+// quarters of its size, that turns to face you as the thief's own sprite does.
+class AjarThiefPack : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOBLOCKMAP
+		Scale 0.72;
+	}
+	States
+	{
+	Spawn:
+		AJD1 A -1;
+		Stop;
 	}
 }
 

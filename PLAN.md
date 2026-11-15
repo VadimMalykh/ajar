@@ -1255,6 +1255,22 @@ Options that change shape, light or play are listed at the foot of the
 board, none built: real eaves against the sky, marking the frames, evening
 light, things in the yard.
 
+## Look: the thief (started 2026-11-16)
+
+Board: https://claude.ai/artifact/5NfE9vX2kBz5K83jy8Bm2i (source
+`design/thief-board.html`, images in `build/board_thief/<look>/pose_N.jpg`).
+**Nothing chosen yet; the thief in the game is unchanged.** Six looks, posed
+by `AjarThief.Portrait` when `ajar_thief_look` is 1..6 (MAP04, by the yard's
+north frame; `tools/thief_shots.sh` photographs them with `MODE=0`): 1 the
+prototype sprite; the rest are Doom's sprites made small and recoloured
+(`src/trnslate.txt`): 2 Soot (arch-vile, 0.6), 3 Burglar (Wolfenstein
+guard in black), 4 Gremlin (imp in ash), 5 Brass crab (arachnotron, 0.42,
+the door as its shell), 6 Shadow (arch-vile as a shadow with the lodger's
+eyes). From 2 on the door on its back is a real door sprite in its colour
+(`AjarThiefPack`, three quarters size), proposed whatever the look.
+Also put to the user: a sound while it works at the hinges, its voice, what
+it does when hurt. `MAP=TEST MODE=5` still passes.
+
 ## Handoff (2026-11-16)
 
 State: MAP01-MAP05 build and pass the solver. MAP01, MAP02 and MAP03 are
