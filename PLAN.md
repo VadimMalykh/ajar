@@ -957,10 +957,14 @@ them.
 
 **The user chose look 1, Grand, for the whole hotel (2026-11-15)**; it is
 the default now. `AJAR_HOTEL=0` is the hotel as first built, 2 and 3 the
-losers, which can go once MAP02 is settled. The board still shows the
-choice as open. Not in the look: ceilings and lighting, the terrace and
-garden, Doom's props, and the other points listed at the foot of the
-board. Not played by hand in the new look yet.
+losers. The board still shows the choice as open.
+
+**MAP02's look is settled (user, 2026-11-15, after seeing it built): "looking
+good as it's built now. Keep it this way."** Do not go on dressing the hotel
+unasked: the terrace and garden, the ceilings and the other points at the
+foot of the board stay as they are unless the user brings them up. Open
+for tidying only: looks 2 and 3 and `AJAR_HOTEL=0` can be deleted from
+`gfx_hotel.py` and `map_hinges2.py`, and the board could be marked decided.
 
 ## Handoff (2026-11-15, evening)
 
@@ -968,16 +972,21 @@ State: everything above is committed and pushed (`main`). All of MAP01-04
 build, pass the solver and their walkthroughs; `MAP=TEST MODE=10`,
 `MAP=MAP01 MODE=4` and `5`, `MAP=TEST MODE=4` and `7`, `MAP=MAP04 MODE=3`
 passed after the monster fix. Nothing from this session was played by
-hand: the vault ambush, the way out in MAP02-04, the monsters' new door
-behaviour (they now follow you through a door you left by, which makes
-retreating less safe) and the Grand hotel all want a playtest.
+hand by me. The user has seen the Grand hotel and accepted it. Not yet
+reported on by the user: the vault ambush, the way out in MAP02-04, and
+the monsters' new door behaviour (they now follow you through a door you
+left by, which makes retreating less safe). Ask how those played.
+
+Where to pick up: MAP01 and MAP02 are both settled in look. Next is the
+user's call; the candidates are the list below, MAP03's look (same method:
+candidates behind a switch, `MAP=MAP03 tools/trial.sh`, a board), and
+MAP05 with the Stray door (see the earlier "Next, in order" list).
 
 Next for the look, in order:
 1. The user reported not being able to shoot themself in MAP01; it could
    not be reproduced. Ask which door, which frame, where they stood and
    which weapon.
-2. MAP02 in the Grand look: the terrace and garden, the points at the
-   foot of its board, then mark the board as decided.
+2. MAP03's and MAP04's look, if the user wants them next.
 3. Ceilings and lighting of the hall block: everything is evenly bright,
    lamps light nothing, and thin dark beams show where ceilings step by 16
    at the light strips.
