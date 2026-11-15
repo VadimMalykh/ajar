@@ -503,6 +503,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 3) BorrowedRoomsShoot(mo, t);
+		else if (level.mapname ~== "MAP01" && mode == 4) BorrowedRoomsSelf(PlayerPawn(mo), t);
 		else if (level.mapname ~== "MAP01") BorrowedRoomsScript(mo, t);
 	}
 
@@ -912,6 +913,84 @@ class AjarHandler : EventHandler
 		if (t == 70) ShootProbe(mo, "ledgeToPit", 1100, 320, 0, 0, 896, 400, -192);
 		if (t == 80) { shootee.Destroy(); Pose(mo, 128, -1340, 0, 90); }
 		if (t > 80) { mo.angle = 90; mo.pitch = 0; }
+	}
+
+	// MAP01 mode 4: do the level's monsters come through a door, and can you
+	// shoot yourself? First RED hangs in the cell and the player waits there
+	// for the hall's zombies. Then RED goes into the hall frame, so the frame
+	// shows the hall from RED's far side, and every spot in the hall is tried
+	// at every angle.
+	double waitX, waitY;
+	void BorrowedRoomsSelf(PlayerPawn mo, int t)
+	{
+		if (t < 605) mo.player.cheats |= CF_GODMODE;
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 128, -1420, 0, 90); }
+		if (t == 36)
+		{
+			// from how much of the cell does some monster notice you through the door?
+			int spots = 0, seenSpots = 0;
+			for (double x = 24; x < 256; x += 16) for (double y = -1476; y < -1250; y += 16)
+			{
+				Pose(mo, x, y, 0, 90);
+				spots++;
+				bool seen = false;
+				let it = ThinkerIterator.Create("Actor");
+				Actor a;
+				while (!seen && (a = Actor(it.Next())))
+					if (a.bIsMonster && a.health > 0) seen = AjarSight.DoorImage(a, mo);
+				if (seen) { seenSpots++; if (y < -1380) { waitX = x; waitY = y; } }
+			}
+			Console.Printf("AJARTEST cellSpots=%d noticedFrom=%d waitAt=(%d,%d)", spots, seenSpots, waitX, waitY);
+			Pose(mo, waitX, waitY, 0, 90);
+		}
+		if (t > 35 && t < 600) { mo.angle = 90; mo.pitch = 0; }
+		if (t >= 35 && t <= 600 && t % 70 == 0)
+		{
+			int awake = 0, inCell = 0;
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next()))
+			{
+				if (!a.bIsMonster || a.health <= 0) continue;
+				if (a.target) awake++;
+				if (a.pos.y < -1200) inCell++;
+				if (a.target) Console.Printf("AJARTEST   %s at (%d,%d)", a.GetClassName(), a.pos.x, a.pos.y);
+			}
+			Console.Printf("AJARTEST t=%d awake=%d inCell=%d", t, awake, inCell);
+			if (t == 560) Check("monsterComesIntoCell", inCell > 0);
+		}
+		if (t == 605)
+		{
+			// the rest is about your own bullets: no monsters, no god mode
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster) a.Destroy();
+			mo.player.cheats &= ~CF_GODMODE;
+			mo.health = mo.player.health = 100;
+			Take(mo, 1); Pose(mo, 384, 60, 0, 270); FindFrame(102).Activate(mo);
+		}
+		if (t == 610)
+		{
+			int spots = 0, hits = 0;
+			for (double x = 32; x < 768; x += 32) for (double y = 32; y < 640; y += 32)
+			{
+				Pose(mo, x, y, 0, 0);
+				bool any = false;
+				for (double a = 0; a < 360; a += 0.5)
+				{
+					if (!SelfShot(mo, a, 0)) continue;
+					if (!hits) { waitX = x; waitY = y; selfAng = a + 1; }
+					hits++;
+					any = true;
+				}
+				if (any) spots++;
+			}
+			Console.Printf("AJARTEST selfSpots=%d selfAngles=%d first=(%d,%d,%.1f)", spots, hits, waitX, waitY, selfAng);
+			Check("canAimAtSelfInHall", hits > 0);
+		}
+		// the pistol is fired by tools/smoke_MAP01_4.cfg
+		if (t >= 610 && t < 720) { Pose(mo, waitX, waitY, 0, selfAng); mo.pitch = 0; }
+		if (t == 715) Check("pistolHitsSelfInHall", mo.health < 100);
 	}
 
 	// MAP01 mode 2: stand in each room in turn, unseen and unhurt, so that

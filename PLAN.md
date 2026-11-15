@@ -830,3 +830,56 @@ Next, in order:
 4. Teach `tools/solve.py` about the nailer before a level uses it.
 5. Door swing animation and carry delay (left over from M2).
 6. The flip door; the repainter, last.
+
+## Look: MAP01 (started 2026-11-15)
+
+Decoration is done room by room: candidates are generated in
+`tools/gfx.py`, built behind a switch, photographed in the engine from fixed
+cameras and chosen by the user on the look board
+(https://claude.ai/artifact/LqAibHAuoDo3ANyVetwAXf, source
+`design/map01-board.html`, images from `build/board/`).
+
+Tools: `tools/trial.sh AJAR_HALL 1 2 3` builds MAP01 once per value and
+shoots the 20-view tour (`MAP=MAP01 MODE=2`) into `build/trial/`;
+`tools/cfgtest.sh` checks a GZDoom config headless.
+
+Decided for MAP01 (user):
+- The cell stays as it is.
+- The hall, the ledge and the gallery are one room and are dressed alike:
+  terracotta over a navy dado (`AJHW2`; `AJHS2` is the 176-high cut for the
+  gallery), slate flags with a plain navy runner (`AJHG4`, `AJHR3`), the
+  warm tint. No blue or gold room tint any more: the trim column over a far
+  side, the torches and the doors carry the colour.
+- The pit is a stone cellar (`AJPW1`, end walls `AJPE1`), dark floor.
+- The shotgun lies on the ledge, after the pit. The hall is pistol only.
+- The game is designed for the hardware renderer. `run.sh` starts GZDoom
+  with its own `ajar.ini` and the GLES backend (the OpenGL backend draws
+  black in hardware mode on this machine).
+
+The losing candidates are still in `gfx.py` behind `AJAR_HALL`, `AJAR_PIT`
+and `AJAR_FLOOR` (two digits mix a floor with another's runner). They can
+go once MAP01 is settled.
+
+Rules that fell out of it: walls are cut at multiples of 32, so wall
+patterns repeat every 32 across; a full-height wall is one texture from
+skirting to cornice (336 in the hall); `m.line(..., upper=, lower=,
+dontpegtop=, dontpegbottom=)` carries a wall on above and below an opening;
+`sector(raw=...)` passes UDMF properties such as `lightfloor`.
+
+Monsters through doors (2026-11-15): `AjarSense` used to drop its lure as
+soon as the monster lost its straight view through the opening, and the
+monster then walked at the wall nearest the player. Now it keeps making for
+that door for 30 seconds: to a spot square in front of the opening, then
+through. `MAP=MAP01 MODE=4` checks a hall zombie following into the cell,
+and the pistol hitting yourself in the hall.
+
+Next for the look, in order:
+1. The user reported not being able to shoot themself in MAP01; it could
+   not be reproduced. Ask which door, which frame, where they stood and
+   which weapon.
+2. MAP01's vault and way out (still as first built, with room tints).
+3. Ceilings and lighting of the hall block: everything is evenly bright,
+   lamps light nothing, and thin dark beams show where ceilings step by 16
+   at the light strips.
+4. Doom's props (torches, candelabra, barrels) against the new surfaces.
+5. Update the board's lower "before" section, then MAP02-MAP04.

@@ -41,9 +41,11 @@ struct AjarSight play
 	}
 
 	// Where `target` appears to `who` through a hung door, if some door shows
-	// it. The engine's own sight check does not look through these doors, so
-	// the way is checked on each side of the door separately.
-	static bool, Vector2 DoorImage(Actor who, Actor target)
+	// it, and the line of that door on who's side. The engine's own sight
+	// check does not look through these doors, so the way is checked on each
+	// side of the door separately. This is sight only: the line may pass the
+	// very edge of the opening, where `who` could not walk.
+	static bool, Vector2, Line DoorImage(Actor who, Actor target)
 	{
 		Vector2 img;
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
@@ -61,12 +63,12 @@ struct AjarSight play
 				Line dst = i ? a : b;
 				double ang, back;
 				img = ImageThrough(src, dst, target.pos.xy);
-				if (ClearTo(who, src, img, who.radius, ang)
+				if (ClearTo(who, src, img, 2, ang)
 					&& ClearTo(target, dst, ImageThrough(dst, src, who.pos.xy), 0, back))
-					return true, img;
+					return true, img, src;
 			}
 		}
-		return false, img;
+		return false, img, null;
 	}
 }
 
@@ -818,6 +820,11 @@ class AjarLure : Actor
 class AjarSense : Inventory
 {
 	Actor lure;
+	Line via;           // the door it is making for
+	int viaUntil;       // ...and until when, if it does not see you through it again
+	Vector2 viaImg;     // where you appeared through it
+	bool viaStraight;   // it can walk straight at that, through the opening
+	Vector3 lastPos;
 
 	override void DoEffect()
 	{
@@ -830,16 +837,56 @@ class AjarSense : Inventory
 		// Leave it alone while it is busy with anything else (another monster).
 		if (!luring && owner.target && owner.target != p) return;
 
-		bool seen;
-		Vector2 img;
-		if (!owner.CheckSight(p)) [seen, img] = AjarSight.DoorImage(owner, p);
-		if (!seen)
+		// A jump since the last look means it has gone through a door.
+		bool jumped = via && (owner.pos.xy - lastPos.xy).Length() > 96;
+		lastPos = owner.pos;
+
+		if (jumped || owner.CheckSight(p)) via = null;
+		else
+		{
+			bool seen;
+			Vector2 img;
+			Line src;
+			[seen, img, src] = AjarSight.DoorImage(owner, p);
+			// Having seen you through a door it keeps making for that door for
+			// a while: the view through an opening is lost after a step or two.
+			if (seen)
+			{
+				double ang;
+				via = src;
+				viaUntil = level.time + 1050;
+				viaImg = img;
+				viaStraight = AjarSight.ClearTo(owner, src, img, owner.radius, ang);
+			}
+			else
+			{
+				viaStraight = false;
+				if (level.time > viaUntil) via = null;
+			}
+		}
+		if (!via)
 		{
 			if (luring) owner.target = p;
 			return;
 		}
+
+		// With a straight walk through the opening the lure stands where you
+		// appear. Otherwise (a slant, or the view is lost) it first stands
+		// square in front of the door, and goes beyond it once the monster is
+		// lined up: Doom's chase does not hit a 64-wide opening at a slant.
+		Vector2 to = viaImg;
+		if (!viaStraight)
+		{
+			Vector2 mid = (via.v1.p + via.v2.p) / 2;
+			Vector2 n = (via.delta.y, -via.delta.x).Unit();
+			Vector2 off = owner.pos.xy - mid;
+			if (off dot n < 0) n = -n;
+			double room = clamp(31 - owner.radius, 3, 11);
+			bool lined = abs(off dot via.delta.Unit()) < room && off dot n < 80;
+			to = lined ? mid - n * 40 : mid + n * 44;
+		}
 		if (!lure) lure = Spawn("AjarLure", owner.pos);
-		lure.SetOrigin((img, owner.pos.z), false);
+		lure.SetOrigin((to, owner.pos.z), false);
 		bool idle = !owner.target;
 		owner.target = lure;
 		if (idle && owner.SeeState)
