@@ -8,10 +8,11 @@ import gfx
 import map_hinges1
 import map_hinges2
 import map_hinges3
+import map_hinges4
 import map_test
 import solve
 
-MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "TEST": map_test}
+MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "TEST": map_test}
 
 for name, mod in MAPS.items():
     if not hasattr(mod, "PUZZLE"):

@@ -120,6 +120,12 @@ class AjarWorker : AjarEnemy
 			if (abs(pz - z) > 24) return false;
 			z = pz;
 		}
+		// nor through a squeeze, which no monster passes
+		let si = level.CreateLineIdIterator(AjarHandler.SQUEEZE_ID);
+		int li;
+		double along;
+		while ((li = si.Next()) >= 0)
+			if (AjarSight.Crosses(level.lines[li], pos.xy, at, 0, along)) return false;
 		spot.SetOrigin((at, z), false);
 		return CheckSight(spot);
 	}
@@ -146,6 +152,10 @@ class AjarWorker : AjarEnemy
 // walks through a hung door and carries on from the other side. It picks
 // among the jobs open to it at random and keeps going until it is killed.
 // Whatever it was carrying falls where it dies.
+//
+// Thing arguments: args[0] is the colour of a door it starts with on its
+// back (put that door thing where the thief stands); args[1] = 1 keeps it
+// from walking through doors, so it stays in the part of the level it is in.
 //
 // It only goes for things it can see and walk to. Taking a hung door down
 // (or swapping it out) it does only while it can see you: that is the one
@@ -278,7 +288,7 @@ class AjarThief : AjarWorker
 
 		int work = frames.Size() + leaning.Size();
 		bool through;
-		if (testMode == 1) through = false;
+		if (testMode == 1 || args[1]) through = false;       // args[1]: it stays where it is
 		else if (testMode == 2) through = ways.Size() > 0;
 		else through = ways.Size() > 0 && level.time - lastThrough > (work ? 250 : 100)
 			&& (!work || random[AjarThief](0, 99) < 35);
@@ -420,6 +430,22 @@ class AjarThief : AjarWorker
 		{
 			if (loot) SetStateLabel("RestLoot"); else SetStateLabel("Rest");
 		}
+	}
+
+	// One that stays where it is (args[1]) must not stray through a hung door
+	// while running about either: a step that long was a door, so it is undone.
+	Vector3 stayAt;
+	override void Tick()
+	{
+		Super.Tick();
+		if (!args[1] || health <= 0) return;
+		if (stayAt != (0, 0, 0) && (pos.xy - stayAt.xy).Length() > 96)
+		{
+			SetOrigin(stayAt, false);
+			vel.xy = (0, 0);
+			angle += 180;
+		}
+		stayAt = pos;
 	}
 
 	void A_ThiefDrop()

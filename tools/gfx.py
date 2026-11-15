@@ -465,6 +465,12 @@ def make_all():
         ex.rect(34 + i, 71 + i, 35 + i, 90 - i, (20, 40, 20))
     out["textures/AJEXIT.png"] = ex.png()
 
+    # a target to shoot at (MAP04's hole in the south wall)
+    tg = Img(64, 48, (40, 44, 40))
+    for r, c in ((22, (236, 232, 222)), (16, (200, 60, 50)), (10, (236, 232, 222)), (4, (200, 60, 50))):
+        tg.disc(32, 24, r, c)
+    out["textures/AJTARG.png"] = tg.png()
+
     # thief: a small hooded figure. A/B walking, C picking a hinge, D dead,
     # E/F walking with a door on its back.
     cloak, dark, face, slab = (92, 70, 48), (48, 36, 26), (236, 226, 200), (200, 180, 140)
