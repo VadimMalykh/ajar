@@ -757,6 +757,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);
 		else if (level.mapname ~== "MAP05" && mode == 3) LostPropertyStrays(mo, t);
 		else if (level.mapname ~== "MAP05") LostPropertyScript(mo, t);
+		else if (level.mapname ~== "MAP06") AfterHoursScript(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
@@ -1172,6 +1173,131 @@ class AjarHandler : EventHandler
 		Forward(mo, t, 1130, 30);
 	}
 
+	// MAP06: a solution of the same length as the one tools/build.py prints.
+	// No Stray door is used.
+	void AfterHoursScript(Actor mo, int t)
+	{
+		string have = carried ? carried.Label() : "-";
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); FindLine(303).Activate(mo, 0, SPAC_Use); FindLine(306).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(304) && !RoomOpen(305) && !RoomOpen(306) && !RoomOpen(307));
+		// the cloakroom's RED into the lobby's frame: the upper gallery, key 1, and off it into the great hall
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 448, 80, 0, 270); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("onUpperGallery", mo.pos.z == 160 && mo.pos.x > -256 && mo.pos.x < -64);
+		if (t == 85) Pose(mo, -160, 2100, 160, 90);
+		Forward(mo, t, 90, 15);
+		if (t == 110) Check("haveKey1", Has(mo, 1));
+		if (t == 115) Pose(mo, -160, 1250, 160, 270);
+		Forward(mo, t, 120, 20);
+		if (t == 160) Check("droppedIntoGreatHall", mo.pos.z == 0 && mo.pos.y < 1152);
+		// the cafe's GREEN into the great hall's frame: the cellar, key 2, and up its stairs
+		if (t == 165) { Take(mo, 3); FindFrame(102).Activate(mo); Pose(mo, 576, 1070, 0, 90); }
+		Forward(mo, t, 170, 25);
+		if (t == 210) Check("inCellar", mo.pos.z == -128 && mo.pos.y < -64);
+		if (t == 215) Pose(mo, 1700, -400, -128, 0);
+		Forward(mo, t, 220, 15);
+		if (t == 240) Check("haveKey2", Has(mo, 2));
+		if (t == 245) Pose(mo, 1264, -120, -128, 90);
+		Forward(mo, t, 250, 15);
+		if (t == 295) Check("cellarDoorUnbolted", RoomOpen(305));
+		if (t == 300) Pose(mo, 1264, 100, -128, 90);
+		Forward(mo, t, 305, 55);
+		if (t == 370) Check("upInCafe", mo.pos.z == 0 && mo.pos.y > 480 && mo.pos.x > 912);
+		// key 1 opens the west wing: YELLOW into its frame, the roof, key 3, and off it into the court
+		if (t == 375) { Pose(mo, -180, 992, 0, 180); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (t == 415) Check("westWingOpens", RoomOpen(301) && !RoomOpen(303));
+		if (t == 420) { Take(mo, 4); FindFrame(103).Activate(mo); Pose(mo, -1120, 1248, 0, 180); }
+		Forward(mo, t, 425, 25);
+		if (t == 465) Check("onRoof", mo.pos.z == 224 && mo.pos.x > 704 && mo.pos.x < 896);
+		if (t == 470) Pose(mo, 800, 2100, 224, 90);
+		Forward(mo, t, 475, 15);
+		if (t == 495) Check("haveKey3", Has(mo, 3));
+		if (t == 500) Pose(mo, 800, 1632, 224, 180);
+		Forward(mo, t, 505, 20);
+		if (t == 545) Check("inCourt", mo.pos.z == -72 && mo.pos.x < 704);
+		// up the steps and past the gatepost onto the terrace, with empty hands; and off it again
+		if (t == 550) Pose(mo, 680, 1700, -72, 90);
+		Forward(mo, t, 555, 40);
+		if (t == 605) Check("upTheStepsToTheTerrace", mo.pos.z == 0 && mo.pos.y > 1984);
+		if (t == 610) Pose(mo, 320, 2030, 0, 270);
+		Forward(mo, t, 615, 15);
+		if (t == 650) Check("backInCourt", mo.pos.z == -72 && mo.pos.y < 1984);
+		// key 2 opens the east wing, keys 2 and 3 the archive
+		if (t == 655) { Pose(mo, 1136, 900, 0, 90); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 695) Check("eastWingOpens", RoomOpen(302));
+		if (t == 700) { Pose(mo, 1200, 1800, 0, 90); FindLine(306).Activate(mo, 0, SPAC_Use); }
+		if (t == 740) Check("archiveOpens", RoomOpen(306));
+		// VIOLET into the cellar's frame: the mezzanine, key 4, and off it
+		if (t == 745) { Take(mo, 5); FindFrame(104).Activate(mo); Pose(mo, 1300, -136, -128, 180); }
+		Forward(mo, t, 750, 25);
+		if (t == 790) Check("onMezzanine", mo.pos.z == 192 && mo.pos.x < -256);
+		if (t == 795) Pose(mo, -384, 600, 192, 270);
+		Forward(mo, t, 800, 15);
+		if (t == 820) Check("haveKey4", Has(mo, 4));
+		if (t == 825) Pose(mo, -360, 752, 192, 0);
+		Forward(mo, t, 830, 20);
+		if (t == 870) Check("inGreatHall", mo.pos.z <= 16 && mo.pos.x > -256);    // perhaps on a bench
+		// keys 3 and 4 open the office: its lever, and the hole into the strongroom
+		if (t == 875) { Pose(mo, -624, 1560, 0, 90); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 915) Check("officeOpens", RoomOpen(303));
+		if (t == 920) { Pose(mo, -680, 1840, 0, 180); FindLine(308).Activate(mo, 0, SPAC_Use); }
+		if (t == 960) Check("leverOpensGrotto", RoomOpen(307));
+		if (t == 965) Pose(mo, -536, 1840, 0, 90);
+		Forward(mo, t, 970, 20);
+		if (t == 1000) Check("inStrongroom", mo.pos.y > 1920 && mo.pos.y < 2176 && mo.pos.x < -352);
+		// BLUE into the strongroom's frame: the night room, whose bolt you draw
+		if (t == 1005) { Take(mo, 2); FindFrame(105).Activate(mo); Pose(mo, -536, 2100, 0, 90); }
+		Forward(mo, t, 1010, 25);
+		if (t == 1050) Check("inNightRoom", mo.pos.x > 160 && mo.pos.x < 480 && mo.pos.y > 2256 && mo.pos.y < 2512 && have == "-");
+		if (t == 1055) Pose(mo, 320, 2380, 0, 270);
+		Forward(mo, t, 1060, 6);
+		if (t == 1105) Check("nightDoorUnbolted", RoomOpen(304) && !wayOutBuilt);
+		// back through it, and out by the hole
+		if (t == 1110) Pose(mo, 260, 2384, 0, 180);
+		Forward(mo, t, 1115, 25);
+		if (t == 1150) Check("backInStrongroom", mo.pos.y > 1920 && mo.pos.y < 2176 && mo.pos.x < -352);
+		if (t == 1155) Pose(mo, -536, 1990, 0, 270);
+		Forward(mo, t, 1160, 20);
+		if (t == 1190) Check("outByTheHole", mo.pos.y < 1904 && mo.pos.x < -352);
+		// YELLOW down again: it goes neither through the hole nor past the gatepost
+		if (t == 1195) { Take(mo, 4); Pose(mo, -536, 1840, 0, 90); }
+		Forward(mo, t, 1200, 20);
+		if (t == 1230) Check("holeRefusesADoor", mo.pos.y < 1904 && have == "YELLOW");
+		if (t == 1235) Pose(mo, 680, 1700, -72, 90);
+		Forward(mo, t, 1240, 40);
+		if (t == 1290) Check("gatepostRefusesADoor", mo.pos.y < 1984 && have == "YELLOW");
+		// so: through RED, off the upper gallery onto the terrace, into the night room by its door
+		if (t == 1295) Pose(mo, 448, 80, 0, 270);
+		Forward(mo, t, 1300, 25);
+		if (t == 1335) Check("onUpperGalleryWithYellow", mo.pos.z == 160 && have == "YELLOW");
+		if (t == 1340) Pose(mo, -160, 2112, 160, 0);
+		Forward(mo, t, 1345, 20);
+		if (t == 1385) Check("onTerraceWithYellow", mo.pos.z == 0 && mo.pos.y > 1984 && mo.pos.y < 2240 && have == "YELLOW");
+		if (t == 1390) Pose(mo, 320, 2180, 0, 90);
+		Forward(mo, t, 1395, 20);
+		if (t == 1425) Check("inNightRoomWithYellow", mo.pos.y > 2256 && mo.pos.x > 160 && mo.pos.x < 480 && have == "YELLOW");
+		// through BLUE's far side into the strongroom, and YELLOW for BLUE in its frame
+		if (t == 1430) Pose(mo, 260, 2384, 0, 180);
+		Forward(mo, t, 1435, 25);
+		if (t == 1470) Check("inStrongroomWithYellow", mo.pos.y > 1920 && mo.pos.y < 2176 && mo.pos.x < -352 && have == "YELLOW");
+		if (t == 1475) FindFrame(105).Activate(mo);
+		if (t == 1478) Check("swappedForBlue", have == "BLUE");
+		// out through YELLOW onto the roof, off it onto the terrace, and BLUE into the night room's frame
+		if (t == 1480) Pose(mo, -536, 2100, 0, 90);
+		Forward(mo, t, 1485, 25);
+		if (t == 1520) Check("onRoofWithBlue", mo.pos.z == 224 && have == "BLUE");
+		if (t == 1525) Pose(mo, 800, 2112, 224, 180);
+		Forward(mo, t, 1530, 20);
+		if (t == 1570) Check("onTerraceWithBlue", mo.pos.z == 0 && mo.pos.y > 1984 && mo.pos.y < 2240 && have == "BLUE");
+		if (t == 1575) Pose(mo, 320, 2180, 0, 90);
+		Forward(mo, t, 1580, 20);
+		if (t == 1610) Check("inNightRoomWithBlue", mo.pos.y > 2256 && mo.pos.x > 160 && mo.pos.x < 480 && have == "BLUE");
+		if (t == 1615) { FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
+		// the way out is walked into
+		if (t == 1620) Pose(mo, 280, 2384, 0, 0);
+		Forward(mo, t, 1650, 30);
+	}
+
 	// MAP05 mode 3: the level's four Stray doors, one after another, each
 	// hung in the vestibule frame and walked through. (In a test the pool
 	// is taken in order: the lamp room, the shed, the kiosk, and then RED's
@@ -1340,6 +1466,86 @@ class AjarHandler : EventHandler
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}
 
+	// MAP06's tour, in three parts (see PartyWallViews).
+	void AfterHoursViews1()
+	{
+		static const double v[] = {
+			320, 64, 0, 90, 0,          // from the start
+			448, 100, 0, 270, 0,        // the lobby's frame
+			540, 280, 0, 45, 0,         // a Stray door in the lobby
+			320, 420, 0, 90, -8,        // the great hall
+			320, 700, 0, 180, -15,      // the mezzanine
+			320, 800, 0, 135, -15,      // the upper gallery over the hall
+			576, 1000, 0, 90, 0,        // the great hall's frame, the head of the steps
+			-100, 992, 0, 180, 0,       // the west wing's door: one lock
+			760, 672, 0, 0, 0,          // the cafe's door
+			100, 192, 0, 180, 0,        // the cloakroom's door
+			-150, 250, 0, 270, 0,       // the cloakroom: RED
+			700, 100, 0, 45, 0,         // the gift shop
+			900, 256, 0, 0, 0,          // the hole to the stockroom
+			1048, 120, 0, 90, 0,        // the stockroom: PINK
+			4040, 192, 0, 0, 0,         // the store
+			960, 720, 0, 0, 0,          // the cafe: GREEN
+			1136, 860, 0, 90, 0,        // the east wing's door: one lock
+			1264, 520, 0, 270, 25,      // the steps down to the cellar
+			1264, 100, -128, 90, 0,     // the cellar's door, bolted on this side
+			1536, -100, -128, 270, 0,   // the cellar: GREEN's far side
+			1500, -136, -128, 180, 0    // the cellar's frame
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void AfterHoursViews2()
+	{
+		static const double v[] = {
+			1700, -256, -128, 0, 0,     // the boiler room's door
+			1900, -256, -128, 0, 0,     // the boiler room
+			320, 1120, 0, 90, 15,       // the steps down to the court
+			320, 1400, -72, 90, -10,    // the court, the terrace beyond
+			500, 1500, -72, 180, -25,   // the upper gallery from the court
+			100, 1500, -72, 0, -30,     // the roof from the court
+			96, 1450, -72, 270, 0,      // the grotto's door
+			560, 1450, -72, 270, 0,     // the shed behind its bars
+			672, 1700, -72, 90, -10,    // the steps to the terrace, the gatepost
+			320, 2040, 0, 90, 0,        // the terrace: the night room's door, bolted
+			600, 2100, 0, 180, 0,       // along the terrace
+			-100, 1632, 160, 180, 0,    // on the upper gallery: RED's far side
+			-160, 1300, 160, 90, 0,     // along it
+			-160, 1300, 160, 270, 20,   // from it, the great hall
+			-120, 1856, 160, 0, 25,     // from it, the court
+			-120, 2112, 160, 0, 25,     // from it, the terrace
+			800, 1500, 224, 90, 0,      // along the roof
+			760, 1760, 224, 0, 0,       // the roof: YELLOW's far side
+			760, 1632, 224, 180, 25,    // from it, the court
+			800, 2180, 224, 90, 0       // the nook
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void AfterHoursViews3()
+	{
+		static const double v[] = {
+			-300, 640, 192, 180, 0,     // the mezzanine: VIOLET's far side
+			-300, 640, 192, 0, 20,      // from it, the great hall
+			-500, 900, 0, 45, 0,        // the west wing: the first room
+			-540, 1300, 0, 90, 0,       // the second, and the office's door: two locks
+			-800, 1400, 0, 180, 0,      // the third: the frame
+			-1000, 1000, 0, 180, 0,     // the fourth: YELLOW
+			-536, 1650, 0, 90, 0,       // the office: the desk, the hole behind it
+			-600, 1840, 0, 150, 0,      // the office's lever
+			-536, 1960, 0, 90, 0,       // the strongroom: the frame
+			-600, 2050, 0, 0, 0,        // the strongroom: BLUE
+			1100, 1100, 0, 45, 0,       // the east wing: the first room
+			1200, 1500, 0, 90, 0,       // the second, and the archive's door: two locks
+			1500, 1600, 0, 0, 0,        // the third: VIOLET
+			1660, 1340, 0, 270, 0,      // the fourth
+			1200, 1900, 0, 90, 0,       // the archive: Stray doors
+			280, 2384, 0, 0, 0,         // the night room: the frame
+			400, 2384, 0, 180, 0        // the night room: BLUE's far side
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
 	// Mode 2 in MAP02 and MAP03: a tour, as BorrowedRoomsTour. Each view is
 	// x, y, z, angle, pitch.
 	Array<double> tourViews;
@@ -1405,6 +1611,7 @@ class AjarHandler : EventHandler
 			};
 			if (level.mapname ~== "MAP04") PartyWallViews();
 			else if (level.mapname ~== "MAP05") { LostPropertyViews1(); LostPropertyViews2(); }
+			else if (level.mapname ~== "MAP06") { AfterHoursViews1(); AfterHoursViews2(); AfterHoursViews3(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}
