@@ -1,6 +1,7 @@
 """Shared pieces for Ajar maps: door colours, frame/far-side recesses, door things.
 
-Line ids: 1xx = frames, 200 + colour = that door's far side.
+Line ids: 1xx = frames, 200 + colour = that door's far side; a fixed
+doorway number n uses 150 + n and 250 + n.
 """
 FRAME_T, DOOR_T = 20001, 20002
 RED, BLUE, GREEN, YELLOW, VIOLET = 1, 2, 3, 4, 5
@@ -14,16 +15,19 @@ def far_id(colour):
     return 200 + colour
 
 
-def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None):
+def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None):
     """A 64-wide door recess whose mouth is m1-m2 and which goes `out` of the room.
 
     Frames (far_colour None) get an AjarFrame thing and a usable mouth line.
     Far sides show the closed door of their colour until that door is hung.
     `target` is any valid portal line id; the script empties every portal at load.
+    `arch` ("frame" or "far") makes it one end of a fixed doorway instead: see doorway().
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
     b2 = (m2[0] + out[0] * DEPTH, m2[1] + out[1] * DEPTH)
-    if far_colour:
+    if arch:
+        wall, flat, mid = "AJARCH", "AJARCHF", "AJFRAME"
+    elif far_colour:
         wall, flat, mid = f"AJTR{far_colour}", f"AJTF{far_colour}", f"AJDR{far_colour}"
     else:
         wall, flat, mid = "AJTRIM", "AJTRIMF", "AJFRAME"
@@ -36,17 +40,29 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
              floor=floor, ceil=floor + DOOR_H, light=96, wall=wall, ftex=flat, ctex=flat)
     # Line_SetPortal: target id, this line, type 1 (teleporter), align to floor
     m.line(b1, b2, id=line_id, special=156, args=(target, 0, 1, 1), mid=mid)
-    if not far_colour:
+    if arch == "frame" or not (arch or far_colour):
         m.line(m1, m2, special=130, args=(line_id,), playeruse=True, repeatspecial=True)
         m.thing((b1[0] + b2[0]) / 2 - out[0] * 8, (b1[1] + b2[1]) / 2 - out[1] * 8,
                 FRAME_T, id=line_id, height=0, args=(line_id,))
 
 
-def door(m, colour, x, y, *, angle=0, frame=0, nailed=False):
+def door(m, colour, x, y, *, angle=0, frame=0):
     """A door thing. With `frame` it starts hung there (x, y only pick the sector);
-    otherwise it leans at x, y facing `angle`. A `nailed` door stays in its
-    frame for the whole level (fixed=True in the PUZZLE graph)."""
-    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame, int(nailed)))
+    otherwise it leans at x, y facing `angle`."""
+    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame))
+
+
+def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=None, b_color=None):
+    """Fixed doorway number n: a plain stone opening that joins two places for
+    the whole level. Nobody can take it, and it has no colour: it is part of
+    the building. In a PUZZLE graph it is two walk links, one each way.
+
+    Underneath it is a door without a leaf, fixed in its frame (door thing
+    args[3]), so monsters, shots and lodgers treat it like any hung door."""
+    recess(m, a1, a2, a_out, a_floor, 150 + n, 250 + n, color=a_color, arch="frame")
+    recess(m, b1, b2, b_out, b_floor, 250 + n, 150 + n, color=b_color, arch="far")
+    m.thing((a1[0] + a2[0]) / 2 - a_out[0] * 24, (a1[1] + a2[1]) / 2 - a_out[1] * 24, DOOR_T,
+            args=(250 + n, 0, 150 + n, 1))
 
 
 def room(m, xs, ys, runner, *, ceil, light, **base):

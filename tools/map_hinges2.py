@@ -1,14 +1,15 @@
 """Act 1, level 2: "No Vacancy" (MAP02).
 
 A hotel. The way out is the VIOLET door, leaning on a balcony over the lobby
-that nothing climbs to. The only door hanging up there is GREEN, nailed to
-its frame, so the balcony is reached from GREEN's far side: a garden under a
-terrace. New here: going in by a door's far side, a door that cannot be
-moved, a drop back to where you started, and the first of Ajar's own
-monsters, the lodger, which lives in empty frames.
+that nothing climbs to. A plain stone doorway joins the balcony to a garden,
+so the balcony is reached from the garden, and the garden from the terrace
+above it. New here: fixed doorways (part of the building, not yours to
+take), a drop back to where you started, having to arrive somewhere with
+your hands free, and the first of Ajar's own monsters, the lodger, which
+lives in empty frames.
 
-Upstairs corridor (RED's far side) -> attic (YELLOW's) -> terrace (BLUE's)
--> garden (GREEN's) -> balcony -> the street (VIOLET's).
+Upstairs corridor (RED's far side) -> attic (YELLOW's) -> kitchen (BLUE's)
+-> terrace (GREEN's) -> garden -> balcony -> the street (VIOLET's).
 """
 import ajarmap
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, far_id
@@ -32,7 +33,6 @@ ajarmap.room(m, [0, 224, 288, 512], [0, 192, 256, 448],                  # start
 recess((0, 192), (0, 256), (-1, 0), 0, 101, 201)                          # lobby frame, empty
 m.sector(rect(0, 448, 512, 576), floor=BALC, ceil=TALL, light=205)        # the balcony
 m.line((0, 448), (512, 448), mid="AJRAIL", midboth=True, blocking=True, dontpegbottom=True)
-recess((96, 576), (160, 576), (0, 1), BALC, 105, 201)                     # GREEN, nailed
 recess((352, 576), (416, 576), (0, 1), BALC, 106, 201)                    # balcony frame, empty
 
 # --- upstairs (RED's far side): the stairs are gone, so it is a drop back ---
@@ -40,18 +40,24 @@ ajarmap.room(m, [512, 1408], [160, 192, 256, 288], lambda i, j: j == 1,
              floor=UP, ceil=UP + 112, light=180, color=WARM)
 m.sector(rect(1408, 160, 1536, 288), floor=UP, ceil=LOFT + 144, light=170, color=WARM)   # under the attic
 recess((576, 288), (640, 288), (0, 1), UP, far_id(RED), 101, far_colour=RED, color=WARM)
-recess((832, 160), (896, 160), (0, -1), UP, 102, 201, color=WARM)        # corridor frame, empty
+recess((832, 160), (896, 160), (0, -1), UP, 102, 201, color=WARM)        # corridor frames, empty
+recess((1088, 160), (1152, 160), (0, -1), UP, 103, 201, color=WARM)
 
 # --- the attic (YELLOW's far side): no frame, and a drop into the corridor --
 m.sector(rect(1536, 64, 1920, 384), floor=LOFT, ceil=LOFT + 128, light=170, color=GOLD, wall="AJBRICK")
 recess((1920, 192), (1920, 256), (1, 0), LOFT, far_id(YELLOW), 101, far_colour=YELLOW, color=GOLD)
 
-# --- the terrace (BLUE's far side) over the garden (GREEN's far side) -------
-m.sector(rect(3000, 0, 3256, 448), floor=DECK, ceil=400, light=220, color=SKY, **OPEN)
-m.sector(rect(3256, 0, 3896, 448), ceil=400, light=220, color=0xD4F4D0, ftex="AJGRASS", **OPEN)
-recess((3000, 192), (3000, 256), (-1, 0), DECK, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
-recess((3096, 448), (3160, 448), (0, 1), DECK, 104, 201, color=SKY)      # terrace frame, empty
-recess((3896, 192), (3896, 256), (1, 0), 0, far_id(GREEN), 101, far_colour=GREEN, color=LEAF)
+# --- the kitchen (BLUE's far side): a dead end -------------------------------
+m.sector(rect(4200, 0, 4520, 320), ceil=160, light=200, color=SKY, wall="AJSAFE")
+recess((4200, 128), (4200, 192), (-1, 0), 0, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
+
+# --- the terrace (GREEN's far side) over the garden --------------------------
+m.sector(rect(3000, 0, 3256, 448), floor=DECK, ceil=400, light=220, color=0xD4F4D0, **OPEN)
+m.sector(rect(3256, 0, 3896, 448), ceil=400, light=220, ftex="AJGRASS", **OPEN)
+recess((3000, 192), (3000, 256), (-1, 0), DECK, far_id(GREEN), 101, far_colour=GREEN, color=0xD4F4D0)
+recess((3096, 448), (3160, 448), (0, 1), DECK, 104, 201)                  # terrace frame, empty
+# the fixed doorway: garden <-> balcony
+ajarmap.doorway(m, 1, (96, 576), (160, 576), (0, 1), BALC, (3896, 192), (3896, 256), (1, 0), 0)
 
 # --- the street (VIOLET's far side) ----------------------------------------
 m.sector(rect(5000, 0, 5448, 192), ceil=160, light=210, color=PLUM, ftex="AJPIT", **OPEN)
@@ -68,7 +74,7 @@ m.thing(256, 64, 1, angle=90)                                             # play
 ajarmap.door(m, RED, 14, 96, angle=0)                                     # leaning in the lobby
 ajarmap.door(m, YELLOW, 1472, 274, angle=270)                             # leaning at the corridor's end
 ajarmap.door(m, BLUE, 1906, 112, angle=180)                               # leaning in the attic
-ajarmap.door(m, GREEN, 128, 560, frame=105, nailed=True)                  # nailed on the balcony
+ajarmap.door(m, GREEN, 4506, 256, angle=180)                              # leaning in the kitchen
 ajarmap.door(m, VIOLET, 256, 562, angle=270)                              # leaning on the balcony
 
 ZOMBIE, SERGEANT, IMP, DEMON, LODGER = 3004, 9, 3001, 3002, 20005
@@ -109,19 +115,25 @@ things(AMMOBOX, (1620, 356))
 things(CANDELABRA, (1896, 88), (1896, 360))
 things(BONUS, (1700, 224), (1740, 224), (1780, 224))
 # the terrace: quiet until the second lodger finds the empty frame up here
-things(TORCH_B, (3024, 160), (3024, 288))
+things(TORCH_G, (3024, 160), (3024, 288))
 things(SHELLS, (3220, 40))
 things(STIM, (3220, 408))
 things(LODGER, (3128, 224), args=(220,))
-# the garden: two demons and an imp, trees, green torches by the GREEN far side
+# the garden: two demons and an imp, trees, lamps by the doorway
 things(DEMON, (3620, 96), (3620, 352), angle=180)
 things(IMP, (3800, 80), angle=180)
 things(TREE, (3320, 48), (3840, 400))
 things(STUMP, (3480, 400), (3700, 40))
-things(TORCH_G, (3872, 160), (3872, 288))
+things(TECHLAMP, (3872, 160), (3872, 288))
 things(MEDIKIT, (3840, 60))
 things(SHELLS, (3300, 400))
 things(POOL, (3500, 220))
+# the kitchen: staff, blue torches by the BLUE far side
+things(IMP, (4440, 60), (4440, 200), angle=180)
+things(SERGEANT, (4360, 280), angle=180)
+things(TORCH_B, (4224, 96), (4224, 224))
+things(STIM, (4480, 30), (4500, 30))
+things(SHELLS, (4240, 290))
 # the street: two more between you and the way out
 things(SERGEANT, (5330, 48), angle=180)
 things(ZOMBIE, (5380, 150), angle=180)
@@ -130,13 +142,14 @@ things(TECHLAMP, (5424, 24), (5424, 168))
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 PUZZLE = dict(
     start="lobby", goal="street", names=ajarmap.NAMES,
-    walk=[("corridor", "lobby"), ("attic", "corridor"), ("terrace", "garden")],
-    frames={101: "lobby", 102: "corridor", 104: "terrace", 105: "balcony", 106: "balcony"},
+    walk=[("corridor", "lobby"), ("attic", "corridor"), ("terrace", "garden"),
+          ("garden", "balcony"), ("balcony", "garden")],                  # the last two: the doorway
+    frames={101: "lobby", 102: "corridor", 103: "corridor", 104: "terrace", 106: "balcony"},
     doors={
         RED: dict(home="corridor", lean="lobby"),
         YELLOW: dict(home="attic", lean="corridor"),
-        BLUE: dict(home="terrace", lean="attic"),
-        GREEN: dict(home="garden", frame=105, fixed=True),
+        BLUE: dict(home="kitchen", lean="attic"),
+        GREEN: dict(home="terrace", lean="kitchen"),
         VIOLET: dict(home="street", lean="balcony"),
     },
 )

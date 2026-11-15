@@ -5,7 +5,8 @@
 //    same number; the frame's mouth line calls Thing_Activate on it.
 //  * AjarDoor thing:  args[0] = id of the door's far-side portal line,
 //    args[1] = colour (1..5), args[2] = id of the frame it starts in (0 = leaning),
-//    args[3] = 1 if it is nailed to that frame for the whole level.
+//    args[3] = 1 for a fixed doorway: no leaf, no colour, and it stays in that
+//    frame for the whole level (ajarmap.doorway).
 
 class AjarFrame : Actor
 {
@@ -33,7 +34,7 @@ class AjarDoor : Actor
 {
 	AjarFrame frame;   // where it hangs, or null
 	bool carried;
-	Actor nailer;      // who nailed it to its frame, or null (itself: nailed by the map, for good)
+	Actor nailer;      // who nailed it to its frame, or null (itself: a fixed doorway)
 
 	Default
 	{
@@ -78,6 +79,7 @@ class AjarDoor : Actor
 	{
 		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5' };
 		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5' };
+		if (nailer == self) { Hide(); return; }      // a fixed doorway has no leaf
 		int c = Colour();
 		sprite = GetSpriteIndex(nailer ? nailedSpr[c] : spr[c]);
 		bInvisible = false;
@@ -248,7 +250,7 @@ class AjarHandler : EventHandler
 	{
 		if (f.door && f.door.nailer)
 		{
-			if (f.door.nailer == f.door) Say("The " .. f.door.Label() .. " door is nailed to its frame. It is staying there.");
+			if (f.door.nailer == f.door) Say("This doorway is part of the building.\nIt is not yours to take.");
 			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
 			return;
 		}
@@ -458,8 +460,9 @@ class AjarHandler : EventHandler
 		if (t % 35 == 0)
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
-		else if (level.mapname ~== "MAP02" && mode == 2) NoVacancyTour(mo, t);
+		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
+		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 3) BorrowedRoomsShoot(mo, t);
 		else if (level.mapname ~== "MAP01") BorrowedRoomsScript(mo, t);
@@ -473,7 +476,7 @@ class AjarHandler : EventHandler
 		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 80, 224, 0, 180); }
 		Forward(mo, t, 40, 25);
 		if (t == 80) Check("upstairs", mo.pos.z == 144 && mo.pos.x > 512);
-		// hang YELLOW in the corridor frame, through to the attic
+		// hang YELLOW in the first corridor frame, through to the attic
 		if (t == 85) { Take(mo, 4); FindFrame(102).Activate(mo); Pose(mo, 864, 230, 144, 270); }
 		Forward(mo, t, 90, 25);
 		if (t == 125) Check("inAttic", mo.pos.z == 304 && mo.pos.x > 1536);
@@ -481,48 +484,124 @@ class AjarHandler : EventHandler
 		if (t == 130) { Take(mo, 2); Pose(mo, 1600, 224, 304, 180); }
 		Forward(mo, t, 135, 15);
 		if (t == 200) Check("droppedWithBlue", mo.pos.z == 144 && mo.pos.x < 1536 && have == "BLUE");
-		// swap YELLOW for BLUE, through to the terrace
-		if (t == 205) { Pose(mo, 864, 230, 144, 270); FindFrame(102).Activate(mo); }
-		Forward(mo, t, 240, 25);
-		if (t == 275) Check("onTerraceWithYellow", mo.pos.z == 128 && mo.pos.x > 3000 && have == "YELLOW");
+		// hang BLUE in the second corridor frame, fetch GREEN from the kitchen
+		if (t == 205) { FindFrame(103).Activate(mo); Pose(mo, 1120, 230, 144, 270); }
+		Forward(mo, t, 210, 25);
+		if (t == 245) Check("inKitchen", mo.pos.x > 4200 && mo.pos.x < 4520);
+		if (t == 250) { Take(mo, 3); Pose(mo, 4300, 160, 0, 180); }
+		Forward(mo, t, 255, 25);
+		if (t == 290) Check("backWithGreen", mo.pos.z == 144 && mo.pos.x < 1536 && have == "GREEN");
+		// swap YELLOW for GREEN, through to the terrace
+		if (t == 295) { Pose(mo, 864, 230, 144, 270); FindFrame(102).Activate(mo); }
+		Forward(mo, t, 300, 25);
+		if (t == 335) Check("onTerraceWithYellow", mo.pos.z == 128 && mo.pos.x > 3000 && have == "YELLOW");
 		// leave YELLOW in the terrace frame, drop into the garden
-		if (t == 280) { FindFrame(104).Activate(mo); Pose(mo, 3200, 224, 128, 0); }
-		Forward(mo, t, 285, 15);
-		if (t == 350) Check("inGardenEmptyHanded", mo.pos.z == 0 && mo.pos.x > 3256 && have == "-");
-		// in by GREEN's far side, out on the balcony over the lobby
-		if (t == 355) Pose(mo, 3830, 224, 0, 0);
-		Forward(mo, t, 360, 20);
-		if (t == 395) Check("onBalcony", mo.pos.z == 112 && mo.pos.y > 448 && mo.pos.x < 512);
-		// GREEN is nailed there; VIOLET goes in the other frame
-		if (t == 400) { FindFrame(105).Activate(mo); Check("greenStaysNailed", !carried); }
-		if (t == 405) { Take(mo, 5); FindFrame(106).Activate(mo); Pose(mo, 384, 500, 112, 90); }
-		Forward(mo, t, 435, 20);
-		if (t == 465) Check("inStreet", mo.pos.x > 4900);
+		if (t == 340) { FindFrame(104).Activate(mo); Pose(mo, 3200, 224, 128, 0); }
+		Forward(mo, t, 345, 15);
+		if (t == 410) Check("inGardenEmptyHanded", mo.pos.z == 0 && mo.pos.x > 3256 && have == "-");
+		// through the fixed doorway to the balcony over the lobby
+		if (t == 415) Pose(mo, 3830, 224, 0, 0);
+		Forward(mo, t, 420, 20);
+		if (t == 455) Check("onBalcony", mo.pos.z == 112 && mo.pos.y > 448 && mo.pos.x < 512);
+		// the doorway is not a door to take; VIOLET goes in the frame
+		if (t == 460) { FindFrame(151).Activate(mo); Check("doorwayStays", !carried && FindFrame(151).door); }
+		if (t == 465) { Take(mo, 5); FindFrame(106).Activate(mo); Pose(mo, 384, 500, 112, 90); }
+		Forward(mo, t, 495, 20);
+		if (t == 525) Check("inStreet", mo.pos.x > 4900);
 		// face the exit switch; the real USE press comes from tools/smoke_MAP02_1.cfg
-		if (t == 470) Pose(mo, 5418, 96, 0, 0);
+		if (t == 530) Pose(mo, 5418, 96, 0, 0);
 	}
 
-	// MAP02 mode 2: a tour, as BorrowedRoomsTour.
-	void NoVacancyTour(Actor mo, int t)
+	// MAP03: a solution of the same length as the one tools/build.py prints.
+	void StageDoorScript(Actor mo, int t)
 	{
-		static const double views[] = {
-			256, 40, 0, 90, -12,        // lobby: the balcony, VIOLET and nailed GREEN
-			470, 420, 0, 215, 0,        // lobby: frame, RED, pictures
-			60, 400, 0, 0, -20,         // lobby: up at the corridor's open end
-			540, 224, 144, 0, 0,        // corridor
-			1470, 190, 144, 20, -35,    // under the attic, looking up
-			1880, 224, 304, 180, 0,     // attic
-			3040, 60, 128, 60, 0,       // terrace and its frame
-			3060, 224, 128, 0, 12,      // terrace, down into the garden
-			3300, 224, 0, 0, 0,         // garden: the GREEN far side
-			300, 520, 112, 180, 0,      // balcony: GREEN, the lobby below
-			5040, 96, 0, 0, 0           // street
-		};
+		string have = carried ? carried.Label() : "-";
+		// foyer: take VIOLET through the doorway into the stalls
+		if (t == 35) { Take(mo, 5); Pose(mo, 2300, 160, 0, 0); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("inStallsWithViolet", mo.pos.x > 0 && mo.pos.x < 640 && mo.pos.z == 0 && have == "VIOLET");
+		// hang it, fetch BLUE from the dressing room
+		if (t == 85) { FindFrame(102).Activate(mo); Pose(mo, 160, 70, 0, 270); }
+		Forward(mo, t, 90, 25);
+		if (t == 125) Check("inDressingRoom", mo.pos.x > 3000 && mo.pos.x < 3320);
+		if (t == 130) { Take(mo, 2); Pose(mo, 3100, 160, 0, 180); }
+		Forward(mo, t, 135, 25);
+		if (t == 170) Check("backWithBlue", mo.pos.x > 0 && mo.pos.x < 640 && have == "BLUE");
+		// BLUE in the other frame: out onto the box, take GREEN, drop
+		if (t == 175) { FindFrame(103).Activate(mo); Pose(mo, 416, 70, 0, 270); }
+		Forward(mo, t, 180, 16);
+		if (t == 215) Check("onBox", mo.pos.z == 144 && mo.pos.y > 640);
+		if (t == 220) { Take(mo, 3); Pose(mo, 320, 700, 144, 270); }
+		Forward(mo, t, 225, 15);
+		if (t == 290) Check("droppedWithGreen", mo.pos.z == 0 && mo.pos.y < 640 && have == "GREEN");
+		// swap VIOLET for GREEN: onto the flies, drop to the stage
+		if (t == 295) { Pose(mo, 160, 70, 0, 270); FindFrame(102).Activate(mo); }
+		Forward(mo, t, 300, 16);
+		if (t == 335) Check("onFliesWithViolet", mo.pos.z == 256 && mo.pos.y < 0 && have == "VIOLET");
+		if (t == 340) Pose(mo, 740, -60, 256, 90);
+		Forward(mo, t, 345, 15);
+		if (t == 400) Check("onStage", mo.pos.z == 64 && mo.pos.x > 640);
+		// leave VIOLET in the stage frame, step into the trap
+		if (t == 405) { FindFrame(105).Activate(mo); Pose(mo, 928, 180, 64, 90); }
+		Forward(mo, t, 410, 12);
+		if (t == 470) Check("inTrapEmptyHanded", mo.pos.z == -128 && have == "-");
+		// YELLOW up to the gods, take RED, back down the same way
+		if (t == 475) Pose(mo, 960, 320, -128, 0);
+		Forward(mo, t, 480, 15);
+		if (t == 520) Check("inTheGods", mo.pos.z == 208 && mo.pos.x < 0);
+		if (t == 525) { Take(mo, 1); Pose(mo, -60, 320, 208, 180); }
+		Forward(mo, t, 530, 25);
+		if (t == 570) Check("inTrapWithRed", mo.pos.z == -128 && have == "RED");
+		// swap YELLOW for RED and leave
+		if (t == 575) { FindFrame(104).Activate(mo); Pose(mo, 960, 320, -128, 0); }
+		Forward(mo, t, 580, 25);
+		if (t == 620) Check("inAlley", mo.pos.x > 4900);
+		// face the exit switch; the real USE press comes from tools/smoke_MAP03_1.cfg
+		if (t == 625) Pose(mo, 5418, 96, 0, 0);
+	}
+
+	// Mode 2 in MAP02 and MAP03: a tour, as BorrowedRoomsTour. Each view is
+	// x, y, z, angle, pitch.
+	Array<double> tourViews;
+	void Tour(Actor mo, int t)
+	{
+		if (!tourViews.Size())
+		{
+			static const double hotel[] = {
+				256, 40, 0, 90, -12,        // lobby: the balcony, VIOLET and the doorway
+				470, 420, 0, 215, 0,        // lobby: frame, RED, pictures
+				60, 400, 0, 0, -20,         // lobby: up at the corridor's open end
+				540, 224, 144, 0, 0,        // corridor
+				1470, 190, 144, 20, -35,    // under the attic, looking up
+				1880, 224, 304, 180, 0,     // attic
+				4240, 160, 0, 0, 0,         // kitchen
+				3040, 60, 128, 60, 0,       // terrace and its frame
+				3060, 224, 128, 0, 12,      // terrace, down into the garden
+				3300, 224, 0, 0, 0,         // garden: the doorway
+				300, 520, 112, 180, 0,      // balcony: the doorway, the lobby below
+				5040, 96, 0, 0, 0           // street
+			};
+			static const double theatre[] = {
+				2040, 160, 0, 0, 0,         // foyer: the doorway
+				96, 600, 0, 300, -5,        // stalls from the doorway: frames, stage
+				40, 320, 0, 0, -8,          // down the aisle to the stage
+				600, 40, 0, 150, -25,       // back of the house: the gods, the box
+				320, 800, 144, 270, 10,     // from the box
+				-190, 320, 208, 0, 12,      // from the gods
+				832, -150, 256, 90, 30,     // from the flies, down onto the stage
+				700, 600, 64, 300, 10,      // on the stage: the trap
+				860, 320, -128, 0, 0,       // in the trap: YELLOW
+				3040, 160, 0, 0, 0,         // dressing room
+				5040, 96, 0, 0, 0           // alley
+			};
+			if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
+			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
+		}
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 		int i = t / 40;
-		if (i >= views.Size() / 5) return;
-		Pose(mo, views[i * 5], views[i * 5 + 1], views[i * 5 + 2], views[i * 5 + 3]);
-		mo.pitch = views[i * 5 + 4];
+		if (i >= tourViews.Size() / 5) return;
+		Pose(mo, tourViews[i * 5], tourViews[i * 5 + 1], tourViews[i * 5 + 2], tourViews[i * 5 + 3]);
+		mo.pitch = tourViews[i * 5 + 4];
 		if (t % 40 == 0)
 		{
 			int n = 0;

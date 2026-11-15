@@ -177,6 +177,30 @@ def make_all():
     grass.noise(14, 35)
     out["flats/AJGRASS.png"] = grass.png()
 
+    # fixed doorways: heavy pale stone, nothing like a coloured door's trim
+    arch = Img(64, 64, (214, 208, 196))
+    arch.noise(8, 36)
+    for y in range(0, 64, 32):
+        arch.rect(0, y, 64, y + 2, (120, 114, 104))
+        arch.rect(0, y + 2, 64, y + 4, (238, 234, 226))
+        for x in ((0, 32) if y else (16, 48)):
+            arch.rect(x, y, x + 2, y + 32, (120, 114, 104))
+    out["textures/AJARCH.png"] = arch.png()
+    out["flats/AJARCHF.png"] = arch.png()
+
+    # stage curtain
+    curt = Img(64, 64, (150, 28, 34))
+    for x in range(64):
+        f = 0.62 + 0.38 * abs(((x % 16) - 8) / 8)
+        curt.rect(x, 0, x + 1, 64, shade((150, 28, 34), f))
+    curt.noise(4, 37)
+    out["textures/AJCURT.png"] = curt.png()
+    boards = Img(64, 64, (150, 112, 72))
+    boards.noise(7, 38)
+    for y in range(0, 64, 16):
+        boards.rect(0, y, 64, y + 1, (96, 70, 44))
+    out["flats/AJBOARD.png"] = boards.png()
+
     floor = Img(64, 64, (120, 118, 122))
     floor.noise(8, 12)
     floor.frame(0, 0, 64, 64, (92, 90, 94), 1)

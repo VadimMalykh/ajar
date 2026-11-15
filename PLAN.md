@@ -364,38 +364,60 @@ checks scripted shots backwards, at a slant and through the pit frame;
   different floor heights (pit/ledge). The shot still flies level and
   arrives at the matching height, so it hits what is straight ahead.
 
-## Second level (2026-11-15)
+## Second and third levels (2026-11-15)
 
-`MAP02` "No Vacancy" (`tools/map_hinges2.py`): a hotel. Built, solver-proven
-(9 door actions, 403 states, none stuck) and walked headlessly
-(`MAP=MAP02 ./tools/smoke.sh`, 9 checks; `MODE=2` is the tour). **Not played
-by hand yet**: fights, the lodger's timing and whether the route reads are
-unknown. `MAP=MAP02 ./run.sh` plays it; MAP01's exit now leads here.
+Both are built, solver-proven and walked headlessly. MAP02's first version
+was played and liked by the user; **the reworked MAP02 and MAP03 are not
+played by hand yet.** `MAP=MAP02 ./run.sh`, `MAP=MAP03 ./run.sh`; each
+level's exit leads to the next, MAP03's loops back to itself.
+`MAP=MAP0x ./tools/smoke.sh` is the walkthrough, `MODE=2` the tour.
 
-- Places: lobby (start; RED leaning, one frame) with a railed balcony
-  nothing climbs to (VIOLET leaning, GREEN nailed in one frame, one empty
-  frame); upstairs corridor (RED's far side, one frame, YELLOW at the far
-  end) whose open end drops back into the lobby; attic (YELLOW's far side,
-  BLUE, no frame) that drops into the corridor; terrace (BLUE's far side,
-  one frame) over a garden (GREEN's far side); the street (VIOLET's far
-  side) with the exit.
-- New for the player: going in by a door's far side (garden to balcony);
-  a door that cannot be moved; having to arrive somewhere empty-handed, so
-  the swapped-out door has to be left in a frame on the way.
-- New tools: a door thing with `args[3]` set (`ajarmap.door(nailed=True)`,
-  `fixed=True` in `PUZZLE`) is nailed for the whole level; a lodger with
-  `args[0]` sleeps until the player is that close to where it is placed;
-  `midboth=True` puts a middle texture on both sides of a line (the
-  railing). The first knock in a level shows a one-time hint.
+**Fixed doorways** (user, 2026-11-15: "usual doors" instead of nailing a
+coloured one). `ajarmap.doorway(m, n, ...)` joins two places for the whole
+level with a plain pale stone opening: no colour, no leaf, no glow, and
+USE says it is part of the building. Underneath it is a leafless door
+fixed in its frame (door thing `args[3]`), so monsters, shots and lodgers
+treat it as a hung door. In a `PUZZLE` graph it is one walk link each way.
+Every coloured door stays one the player can take.
+
+`MAP02` "No Vacancy" (`tools/map_hinges2.py`), a hotel: 11 door actions,
+2006 states, none stuck.
+
+- Lobby (start; RED, one frame) under a railed balcony nothing climbs to
+  (VIOLET, one empty frame, the doorway). Upstairs corridor (RED's far
+  side, two frames, YELLOW at the far end) drops back into the lobby.
+  Attic (YELLOW's, BLUE) drops into the corridor. Kitchen (BLUE's, GREEN),
+  a dead end. Terrace (GREEN's, one frame) drops into the garden; the
+  doorway joins garden and balcony. The street (VIOLET's) has the exit.
+- The first version had GREEN nailed on the balcony as the garden link.
+  It was replaced by the doorway, which freed GREEN to be a fifth door.
 - Company: two lodgers (one wakes halfway along the corridor, one on the
-  terrace), three former humans upstairs, two imps in the attic, two demons
-  and an imp in the garden, two former humans in the street. Shotgun in the
-  lobby, chaingun in the attic.
-- Why GREEN is nailed: without it the player could carry GREEN off the
-  balcony and lose the only way back up (the solver found those stuck
-  states). A puzzle search over variants of this layout found nothing
-  longer than about 10 actions with five doors; more length needs a sixth
-  door colour or more doors that start hung and have to be displaced.
+  terrace; a lodger thing's `args[0]` is its wake-up distance), former
+  humans upstairs, imps in the attic, imps and a sergeant in the kitchen,
+  demons and an imp in the garden, two former humans in the street.
+
+`MAP03` "Stage Door" (`tools/map_hinges3.py`), a theatre: 9 door actions,
+460 states, none stuck.
+
+- Foyer (start; VIOLET) joined by a doorway to the stalls (two frames).
+  Dressing room (VIOLET's far side, BLUE), a dead end. Box (BLUE's, GREEN),
+  gods (YELLOW's, RED: the way out, visible from the stalls) and flies
+  (GREEN's) are ledges: you step out onto them and can only drop. The
+  stage (one frame) is too high to climb from the stalls; the trap at the
+  back of it is a pit whose way out is YELLOW, hanging there. The alley
+  (RED's) has the exit.
+- New for the player: doors that are one-way trips, and needing free hands
+  at the bottom of a drop (the swapped-out door is left on the stage).
+- Company: one lodger (wakes in the stalls), imps and former humans in the
+  stalls, a hell knight on the stage, a spectre in the trap, a chaingunner
+  in the gods, lost souls on the flies, sergeants in the dressing room, a
+  revenant in the alley. Super shotgun on the box. None of Ajar's own
+  monsters are new here (user: none yet).
+- Ledges must be at least 192 deep, or a running player goes straight off.
+
+Puzzle length: searches over variants of both layouts found nothing much
+longer with five doors and no stuck states. More length needs a sixth
+door colour or more doors that start hung and have to be displaced.
 
 ## Handoff (2026-11-14)
 
@@ -500,8 +522,8 @@ monsters.
 
 Next, in order:
 
-1. Play MAP02 by hand, then the third Act 1 level for the M4 slice.
-   MAP02's exit loops back to MAP02. The lodger first appears in MAP02.
+1. Play the reworked MAP02 and MAP03 by hand. With three playable levels
+   the user wants to focus on design next (2026-11-15).
 2. Teach `tools/solve.py` about the thief and nailer before a level uses
    them.
 3. Door swing animation and carry delay (left over from M2).
