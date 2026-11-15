@@ -840,7 +840,7 @@ cameras and chosen by the user on the look board
 `design/map01-board.html`, images from `build/board/`).
 
 Tools: `tools/trial.sh AJAR_HALL 1 2 3` builds MAP01 once per value and
-shoots the 20-view tour (`MAP=MAP01 MODE=2`) into `build/trial/`;
+shoots the 22-view tour (`MAP=MAP01 MODE=2`) into `build/trial/`;
 `tools/cfgtest.sh` checks a GZDoom config headless.
 
 Decided for MAP01 (user):
@@ -873,11 +873,50 @@ that door for 30 seconds: to a spot square in front of the opening, then
 through. `MAP=MAP01 MODE=4` checks a hall zombie following into the cell,
 and the pistol hitting yourself in the hall.
 
+The vault has the hall's navy runner (user, 2026-11-15).
+
+The way out is on trial behind `AJAR_EXIT` (`AJAR_EXIT=2 ./build.sh`, or
+`tools/trial.sh AJAR_EXIT 1 2`; the tour has 22 views now, the last two of
+the exit door). The idea for exit rooms in every level: far sides have a
+colour, the way out has none.
+- 1 (built by default until the user chooses): a dim white room whose
+  white door stands ajar, light behind it and a wedge of light across the
+  runner. Push the door (USE) to leave.
+- 2: the white room with a fixed doorway between its two end walls, so
+  that through either end you see the room again and your own back in it.
+  Walking into either end is the way out. VIOLET's far side moves to the
+  south wall.
+- 0: as first built (plum room, arrow switch).
+The user chose the doorway of 2 (2026-11-15), but not the bare white room
+("looks unfinished"): it needs decoration and colour. Three dressed rooms
+around that doorway, with a brass surround and candelabra at both ends:
+- 3: ivory panels over a charcoal dado, black-and-white marble floor,
+  black runner.
+- 4 (**chosen by the user**, the default): a night room, ink walls and
+  ceiling with gold stars, dark floor with brass inlay, gold runner.
+- 5: the hall turned inside out, ivory over a terracotta dado, encaustic
+  tile floor, navy runner.
+Not built: the exit glyph (an architect's door symbol), a door onto the
+next level, a free-standing door.
+
+Wide monsters and doors (2026-11-15): the demon in MAP01's pit could not
+use the YELLOW door. A thing crosses a portal line when its centre does,
+and its whole box must then fit in front of the back wall of the stub
+behind the line. With a 32 stub a demon (radius 30, step 10) had 2 units
+to land in. `ajarmap.STUB` is now 48 (64 runs into a room in MAP03), enough
+for anything that fits a 64 opening. `MAP=MAP01 MODE=5` checks it.
+The user saw the demon come through and then hang about on the ledge side;
+left as it is for now.
+`MAP=MAP01 MODE=4` (`monsterComesIntoCell`) passes on some runs and not on
+others: the zombie sometimes needs longer than the test allows to line up
+with the opening.
+
 Next for the look, in order:
 1. The user reported not being able to shoot themself in MAP01; it could
    not be reproduced. Ask which door, which frame, where they stood and
    which weapon.
-2. MAP01's vault and way out (still as first built, with room tints).
+2. The same way out (night room, doorway onto itself) in MAP02-MAP04, and
+   an exit glyph if one is still wanted.
 3. Ceilings and lighting of the hall block: everything is evenly bright,
    lamps light nothing, and thin dark beams show where ceilings step by 16
    at the light strips.

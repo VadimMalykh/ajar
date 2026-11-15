@@ -504,6 +504,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 3) BorrowedRoomsShoot(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 4) BorrowedRoomsSelf(PlayerPawn(mo), t);
+		else if (level.mapname ~== "MAP01" && mode == 5) BorrowedRoomsPit(PlayerPawn(mo), t);
 		else if (level.mapname ~== "MAP01") BorrowedRoomsScript(mo, t);
 	}
 
@@ -1017,7 +1018,9 @@ class AjarHandler : EventHandler
 			2030, 160, 0, 0, 0,         // vault
 			2290, 290, 0, 215, 0,       // vault: back to GREEN's far side
 			3030, 128, 0, 0, 0,         // way out
-			3290, 30, 0, 160, 0         // way out: back to VIOLET's far side
+			3290, 30, 0, 160, 0,        // way out: back to VIOLET's far side
+			3200, 128, 0, 0, 0,         // way out: the door, close
+			3210, 40, 0, 40, 0          // way out: the door from one side
 		};
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 		int i = t / 40;
@@ -1099,6 +1102,7 @@ class AjarHandler : EventHandler
 		if (t == 690) Check("inExitRoom", mo.pos.x > 2900);
 		// face the exit switch; the real USE press comes from tools/smoke_MAP01_1.cfg
 		if (t == 695) Pose(mo, 3290, 128, 0, 0);
+		Forward(mo, t, 725, 10);                    // a way out that is walked into (AJAR_EXIT=2)
 	}
 
 	// MODE=3: things other than the player through a hung door (M3 proof).
@@ -1205,6 +1209,39 @@ class AjarHandler : EventHandler
 			mo.player.PendingWeapon = Weapon(mo.FindInventory("PlasmaRifle"));
 		}
 		if (t == 290) Check("plasmaHitsSelf", mo.health < 500);
+	}
+
+	// MAP01 mode 5: the demon in the pit. YELLOW hangs in the pit from the
+	// start and leads to the ledge. The player stands on the ledge, in plain
+	// view of the pit but out of its reach: the demon has to come by the door.
+	Actor pinky;
+	void BorrowedRoomsPit(PlayerPawn mo, int t)
+	{
+		if (t < 600) mo.player.cheats |= CF_GODMODE;
+		if (t == 35)
+		{
+			Pose(mo, 1100, 320, 0, 180);
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			Array<Actor> others;
+			while (a = Actor(it.Next()))
+			{
+				if (a is "Demon") pinky = a;
+				else if (a.bIsMonster) others.Push(a);
+			}
+			for (int k = 0; k < others.Size(); k++) others[k].Destroy();     // nobody else in the way
+		}
+		if (t > 35 && t < 600) { mo.angle = 180; mo.vel = (0, 0, 0); }
+		if (t > 35 && t % 35 == 0 && pinky)
+		{
+			bool seen; Vector2 img; Line src;
+			[seen, img, src] = AjarSight.DoorImage(pinky, mo);
+			String tg = "none";
+			if (pinky.target) tg = pinky.target.GetClassName();
+			Console.Printf("AJARTEST pinky pos=(%d,%d,%d) sight=%d door=%d target=%s", pinky.pos.x, pinky.pos.y, pinky.pos.z,
+				pinky.CheckSight(mo), seen, tg);
+		}
+		if (t == 560) Check("demonComesByTheDoor", pinky && pinky.pos.z == 0 && pinky.pos.x > 1024);
 	}
 
 	// MODE=4: an ordinary Doom monster in the hall notices a player standing

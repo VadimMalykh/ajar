@@ -10,25 +10,30 @@ RED, BLUE, GREEN, YELLOW, VIOLET, PINK = 1, 2, 3, 4, 5, 6
 NAMES = {RED: "RED", BLUE: "BLUE", GREEN: "GREEN", YELLOW: "YELLOW", VIOLET: "VIOLET", PINK: "PINK"}
 DEPTH = 16          # recess depth
 DOOR_H = 96
-STUB = 32           # space behind each portal line (engine requirement)
+# Space behind each portal line (engine requirement). A thing crosses when its
+# centre does, and its whole box must then still fit in front of the stub's
+# back wall: the stub has to be deeper than the thing's radius plus one step
+# of its walk. 32 let zombies through but not a demon (radius 30, step 10).
+STUB = 48
 
 
 def far_id(colour):
     return 200 + colour
 
 
-def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None):
+def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None, trim=None):
     """A 64-wide door recess whose mouth is m1-m2 and which goes `out` of the room.
 
     Frames (far_colour None) get an AjarFrame thing and a usable mouth line.
     Far sides show the closed door of their colour until that door is hung.
     `target` is any valid portal line id; the script empties every portal at load.
     `arch` ("frame" or "far") makes it one end of a fixed doorway instead: see doorway().
+    `trim` is (texture, flat) for a doorway's surround instead of pale stone.
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
     b2 = (m2[0] + out[0] * DEPTH, m2[1] + out[1] * DEPTH)
     if arch:
-        wall, flat, mid = "AJARCH", "AJARCHF", "AJFRAME"
+        wall, flat, mid = (trim or ("AJARCH", "AJARCHF")) + ("AJFRAME",)
     elif far_colour:
         wall, flat, mid = f"AJTR{far_colour}", f"AJTF{far_colour}", f"AJDR{far_colour}"
     else:
@@ -54,15 +59,15 @@ def door(m, colour, x, y, *, angle=0, frame=0):
     m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame))
 
 
-def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=None, b_color=None):
+def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=None, b_color=None, trim=None):
     """Fixed doorway number n: a plain stone opening that joins two places for
     the whole level. Nobody can take it, and it has no colour: it is part of
     the building. In a PUZZLE graph it is two walk links, one each way.
 
     Underneath it is a door without a leaf, fixed in its frame (door thing
     args[3]), so monsters, shots and lodgers treat it like any hung door."""
-    recess(m, a1, a2, a_out, a_floor, 150 + n, 250 + n, color=a_color, arch="frame")
-    recess(m, b1, b2, b_out, b_floor, 250 + n, 150 + n, color=b_color, arch="far")
+    recess(m, a1, a2, a_out, a_floor, 150 + n, 250 + n, color=a_color, arch="frame", trim=trim)
+    recess(m, b1, b2, b_out, b_floor, 250 + n, 150 + n, color=b_color, arch="far", trim=trim)
     m.thing((a1[0] + a2[0]) / 2 - a_out[0] * 24, (a1[1] + a2[1]) / 2 - a_out[1] * 24, DOOR_T,
             args=(250 + n, 0, 150 + n, 1))
 

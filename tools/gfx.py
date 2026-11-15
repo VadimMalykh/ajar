@@ -904,6 +904,101 @@ def make_all():
         ex.rect(34 + i, 71 + i, 35 + i, 90 - i, (20, 40, 20))
     out["textures/AJEXIT.png"] = ex.png()
 
+    # The way out (see AJAR_EXIT in map_hinges1.py). Every far side has a
+    # colour; the exit room has none: white plaster, pale flags, white trim.
+    xw = Img(64, 64, (236, 234, 228))
+    xw.noise(3, 51)
+    out["textures/AJXW.png"] = xw.png()
+    xg = Img(64, 64, (222, 220, 214))
+    xg.noise(4, 52)
+    for i in (0, 32):
+        xg.rect(i, 0, i + 1, 64, (188, 186, 180))
+        xg.rect(0, i, 64, i + 1, (188, 186, 180))
+    out["flats/AJXG.png"] = xg.png()
+    xt = Img(64, 64, (250, 249, 244))
+    xt.noise(2, 53)
+    for y in range(0, 64, 16):
+        xt.rect(0, y, 64, y + 1, (206, 204, 198))
+    out["textures/AJXT.png"] = xt.png()
+    out["flats/AJXTF.png"] = xt.png()
+    # its door has no colour and no glyph, and stands ajar: this is the leaf
+    xd = door(1)
+    paint = (240, 238, 230)
+    for p in xd.px:
+        g = (p[0] * 3 + p[1] * 6 + p[2]) / (DOOR_COLOURS[1][0] * 3 + DOOR_COLOURS[1][1] * 6 + DOOR_COLOURS[1][2])
+        p[:3] = shade(paint, min(1.0, 0.45 + 0.55 * g))
+    xd.rect(9, 8, 55, 44, shade(paint, 0.93))
+    xd.frame(9, 8, 55, 44, shade(paint, 0.72), 2)
+    xd.disc(53, 49, 3, (235, 215, 140))
+    out["textures/AJXDOR.png"] = xd.png()
+    # the light behind it, and the wedge of it that falls across the runner
+    out["textures/AJGLOW.png"] = Img(64, 64, (255, 253, 240)).png()
+    out["flats/AJGLOW.png"] = Img(64, 64, (255, 253, 240)).png()
+    xl = Img(64, 64, (250, 248, 236))
+    xl.noise(5, 54)
+    out["flats/AJXL.png"] = xl.png()
+
+    # Dressed candidates for the way out (AJAR_EXIT=3..5). None uses a door's
+    # colour. Walls are 160 high, as the room; AJXA is the brass of its doorway.
+    INK, IVORY, BRASSY, COAL = (20, 22, 36), (232, 224, 204), (204, 170, 92), (44, 44, 50)
+    TERRA, NAVY = (178, 88, 58), (38, 46, 80)
+
+    def moulded(upper, dado, rail, skirt, seed):
+        w = Img(64, 160, upper)
+        w.rect(0, 108, 64, 160, dado)
+        w.noise(4, seed)
+        w.rect(0, 0, 64, 6, shade(upper, 0.82))                  # cornice
+        w.rect(0, 6, 64, 8, rail)
+        w.frame(6, 16, 58, 98, shade(upper, 0.84), 2)            # a panel per 64
+        w.frame(8, 18, 56, 96, shade(upper, 1.06), 1)
+        w.rect(0, 104, 64, 108, rail)
+        w.rect(0, 108, 64, 109, shade(rail, 0.6))
+        w.frame(6, 116, 58, 146, shade(dado, 0.7), 2)
+        w.rect(0, 152, 64, 160, skirt)
+        w.rect(0, 152, 64, 153, shade(skirt, 1.5))
+        return w
+
+    out["textures/AJXW1.png"] = moulded(IVORY, COAL, BRASSY, (16, 16, 18), 61).png()
+    out["textures/AJXW3.png"] = moulded(IVORY, TERRA, NAVY, shade(NAVY, 0.7), 63).png()
+    night = Img(64, 160, INK)
+    night.noise(3, 62)
+    rnd = random.Random(62)
+    for _ in range(14):                                          # gold stars, two sizes
+        x, y, big = rnd.randrange(4, 60), rnd.randrange(6, 146), rnd.random() < 0.3
+        night.set(x, y, (255, 226, 140))
+        if big:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                night.set(x + dx, y + dy, BRASSY)
+    night.rect(0, 150, 64, 152, BRASSY)
+    night.rect(0, 152, 64, 160, (8, 8, 14))
+    out["textures/AJXW2.png"] = night.png()
+    nc = Img(64, 64, INK)
+    nc.noise(3, 64)
+    for _ in range(7):
+        nc.set(rnd.randrange(64), rnd.randrange(64), (255, 226, 140))
+    out["flats/AJXC2.png"] = nc.png()
+    ng = Img(64, 64, (26, 26, 34))                               # dark polished floor, brass inlay
+    ng.noise(4, 65)
+    ng.rect(0, 0, 64, 1, BRASSY)
+    ng.rect(0, 0, 1, 64, BRASSY)
+    for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64)):
+        ng.diamond(cx, cy, 4, BRASSY)
+    out["flats/AJXG2.png"] = ng.png()
+    for name, base, dot, seed in (("AJXR1", (30, 30, 34), BRASSY, 66), ("AJXR2", (176, 140, 66), INK, 67)):
+        r = Img(64, 64, base)
+        r.noise(5, seed)
+        for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64), (32, 32)):
+            r.diamond(cx, cy, 5, dot)
+            r.diamond(cx, cy, 3, base)
+        out[f"flats/{name}.png"] = r.png()
+    xa = Img(64, 64, BRASSY)
+    xa.noise(5, 68)
+    for y in range(0, 64, 32):
+        xa.rect(0, y, 64, y + 2, shade(BRASSY, 0.55))
+        xa.rect(0, y + 2, 64, y + 4, shade(BRASSY, 1.25))
+    out["textures/AJXA.png"] = xa.png()
+    out["flats/AJXAF.png"] = xa.png()
+
     # a target to shoot at (MAP04's hole in the south wall)
     tg = Img(64, 48, (40, 44, 40))
     for r, c in ((22, (236, 232, 222)), (16, (200, 60, 50)), (10, (236, 232, 222)), (4, (200, 60, 50))):
