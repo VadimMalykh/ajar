@@ -1259,17 +1259,23 @@ light, things in the yard.
 
 Board: https://claude.ai/artifact/5NfE9vX2kBz5K83jy8Bm2i (source
 `design/thief-board.html`, images in `build/board_thief/<look>/pose_N.jpg`).
-**Nothing chosen yet; the thief in the game is unchanged.** Six looks, posed
-by `AjarThief.Portrait` when `ajar_thief_look` is 1..6 (MAP04, by the yard's
-north frame; `tools/thief_shots.sh` photographs them with `MODE=0`): 1 the
-prototype sprite; the rest are Doom's sprites made small and recoloured
-(`src/trnslate.txt`): 2 Soot (arch-vile, 0.6), 3 Burglar (Wolfenstein
-guard in black), 4 Gremlin (imp in ash), 5 Brass crab (arachnotron, 0.42,
-the door as its shell), 6 Shadow (arch-vile as a shadow with the lodger's
-eyes). From 2 on the door on its back is a real door sprite in its colour
-(`AjarThiefPack`, three quarters size), proposed whatever the look.
-Also put to the user: a sound while it works at the hinges, its voice, what
-it does when hurt. `MAP=TEST MODE=5` still passes.
+Six looks were shown: the prototype sprite and five of Doom's sprites made
+small and recoloured (arch-vile in soot, Wolfenstein guard in black, imp in
+ash, arachnotron in brass, arch-vile as a shadow).
+
+**Chosen (user, 2026-11-16): the Shadow.** Built: `AjarThief` draws Doom's
+`VILE` sprites at 0.6 with the translucent stencil style (near-black, alpha
+0.7), walks on the arch-vile's six frames, raises its arms for the 35 tics
+at the hinges and dies with the arch-vile's death. `Dress()` carries its
+eyes (`AjarLodgerEyes` at 0.7, shown only while it faces the camera) and
+the door on its back: `AjarThiefPack`, the carried door's own sprite in its
+colour at 0.72, so that which door it has can be read across the yard.
+`MAP=TEST MODE=5`, `MAP=MAP04 MODE=1` and `MODE=3` pass. Not played by hand.
+The portrait mode and the board's tooling are gone again (commit 8e2be80
+has them); the board's images are in `build/board_thief/`. The `AJTH`
+sprites in `gfx.py` are no longer used and can be deleted.
+Put to the user and not answered: a sound while it works at the hinges, its
+voice (still the revenant's, as the lodger's), what it does when hurt.
 
 ## Handoff (2026-11-16)
 
