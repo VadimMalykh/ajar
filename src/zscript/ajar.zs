@@ -1174,8 +1174,8 @@ class AjarHandler : EventHandler
 
 	// MAP05 mode 3: the level's four Stray doors, one after another, each
 	// hung in the vestibule frame and walked through. (In a test the pool
-	// is taken in order: the night room, the gallery, the lamp room, the
-	// parcels office.) Each must be gone again afterwards.
+	// is taken in order: the lamp room, the shed, the kiosk, and then RED's
+	// far side on the bridge.) Each must be gone again afterwards.
 	void LostPropertyStrays(Actor mo, int t)
 	{
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;

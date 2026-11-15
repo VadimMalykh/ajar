@@ -802,11 +802,50 @@ Limits of 2.5D met here: nothing can be under anything, so the train is
 solid (no carriages to walk through), nothing runs under the bridge, and a
 frame cannot be cut into a platform edge or the foot of the bridge.
 
+The night room's far side wears its own colour's surround, not the room's
+brass (Vadim, after playing: arriving there by Stray door, the brass read
+as yellow and did not say which door belongs in the frame). The frame end
+stays brass. No stray place in the night room: VIOLET's far side is in the
+pool until VIOLET is hung.
+
 **Played by Vadim, 2026-11-15: "looks great".** What he liked most, and
 wants more of in later levels: the twist at the end. You see that VIOLET
 has to be carried round to the other end of the night room, and then that
 this cannot be done without going through RED to get up to the bridge: one
 door's errand needs another door's far side. Build later puzzles on that.
+
+### Handoff for the levels (2026-11-15, night)
+
+State: MAP05 and everything in this section is committed on `main` and
+pushed; the `map05` branch and worktree are gone. MAP01-05 build and pass
+the solver (MAP05: 10 door actions, 450927 states, nothing stuck or
+losable; the build takes about two minutes, most of it this). Passing:
+`MAP=MAP05 MODE=1` (walkthrough to the exit), `MODE=3` (Stray doors),
+`MODE=2` (tour, give it `TIMEOUT=400`), `MAP=TEST MODE=11` and `12`.
+Vadim has played MAP05 through and likes it. He has not yet played the
+three changes made after that: the 2 to 5 second timer, the mixed pool,
+and the violet surround in the night room. Ask how they played.
+
+Still open:
+- A nailed Stray door stays open: Claude's proposal, built, never agreed
+  or refused. Ask.
+- Offered and not taken up: rigging the first Stray draw of a level to
+  open onto the night room, so that every player gets the glimpse. Vadim
+  preferred fixing the surround; raise it again only if the glimpse
+  turns out too rare (about 57% over the level's four Stray doors).
+- No test for a Stray door shutting when a coloured door is hung onto the
+  far side it is open on, for the random timer (tests always get 5 s), for
+  a nailed Stray door, or for the kiosk's bell.
+- MAP05 wears stock textures; its look is for the design session.
+- Careful: the design session works in this same checkout. Stage your own
+  files or hunks only (`tools/ajarmap.py`, `gfx.py`, `ajar.zs` and this
+  file are shared), and its smoke runs write to `build/smoke` too: give
+  `tools/smoke.sh` a directory of your own.
+
+Next: MAP06. Ideas on the table, all Vadim's: the player builds the exit
+on every level from now on; the two ideas below (set-up-and-swap; the
+timed exit); the Flip door is the next door in the table; lodger is the
+monster MAP05 did not use.
 
 **Idea for later levels** (Vadim, 2026-11-15): the same twist one step
 deeper. To bring the right door where it is needed you must first hang

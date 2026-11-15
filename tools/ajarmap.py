@@ -116,7 +116,8 @@ def way_home(m, x, y, colour):
     """A way out the player has to build (MAP05 on). The same night room as
     way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
     its two ends are not joined yet: the far side of the door `colour` is in
-    the west end and an empty brass frame (line id HOME) in the east end,
+    the west end (in its own colour's surround) and an empty brass frame
+    (line id HOME) in the east end,
     facing each other down the room. Hang that door in that frame and the
     room opens onto itself: the door becomes the doorway of way_out(), for
     good, and walking into either end ends the level (AjarHandler.ComeHome).
@@ -129,7 +130,9 @@ def way_home(m, x, y, colour):
     room(m, [x, x + 320], [y, y + 96, y + 160, y + 256], lambda i, j: j == 1,
          ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
     brass = ("AJXA", "AJXAF")
-    recess(m, (x, y + 96), (x, y + 160), (-1, 0), 0, far_id(colour), HOME, far_colour=colour, trim=brass)
+    # the far side keeps the surround of its colour, so that whoever gets here
+    # by another way (a Stray door) can tell which door belongs in the frame
+    recess(m, (x, y + 96), (x, y + 160), (-1, 0), 0, far_id(colour), HOME, far_colour=colour)
     recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0, HOME, far_id(colour), trim=brass,
            home=far_id(colour))
     for xx in (x, x + 320):
