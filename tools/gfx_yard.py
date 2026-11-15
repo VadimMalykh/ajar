@@ -5,8 +5,7 @@ side (W, N, E, S), and each house has its own colour within a look. For look n:
   AJ4Y<n><h>  house h's front, 512 from the yard floor to the sky, no windows;
               AJ4Z<n><h>, AJ4U<n><h> the same with a window on both upper
               storeys (lit below, lit above), for 64-wide pieces of wall
-  AJ4B<n>, AJ4T<n>  house W and E again, with the edge of the balcony (at 160)
-              and of the loft (at 192) drawn on, for the wall below them
+  AJ4B<n>  front of the balcony, 160     AJ4T<n>  front of the loft, 192
   AJ4R<n>  front of the roof, 320; AJ4Q<n> with a window
   AJ4G<n>  the walls that stand round the roof, 192
   AJ4L<n>  lining of the light well, 448 below the roof; AJ4V<n> its outer
@@ -454,24 +453,22 @@ def make(out, rd):
             out[f"textures/AJ4Z{n}{h}.png"] = facade(n, h, 1).png()
             out[f"textures/AJ4U{n}{h}.png"] = facade(n, h, 2).png()
         # the fronts of the balcony, the roof and the loft: the house below them
-        # (balcony and loft: the whole front with their edge at its height,
-        # because the railing's line is lower-unpegged; see map_hinges4.py)
-        deck = facade(n, "W")
+        deck = crop(fronts["W"], 352, 512)
         edge = {"brick": (60, 62, 70), "render": (132, 90, 56), "timber": OAK}[style]
-        deck.rect(0, 352, 64, 362, edge)
-        deck.rect(0, 352, 64, 353, shade(edge, 1.5))
+        deck.rect(0, 0, 64, 10, edge)
+        deck.rect(0, 0, 64, 1, shade(edge, 1.5))
         for x in range(4, 64, 16):                                   # joist ends
-            deck.rect(x, 362, x + 6, 370, shade(edge, 0.8))
-            deck.rect(x, 370, x + 6, 372, shade(edge, 0.4))
+            deck.rect(x, 10, x + 6, 18, shade(edge, 0.8))
+            deck.rect(x, 18, x + 6, 20, shade(edge, 0.4))
         out[f"textures/AJ4B{n}.png"] = deck.png()
         for name, w in (("R", 0), ("Q", 1)):
             face = crop(fronts["N"] if not w else facade(n, "N", 1), 192, 512)
             top_edge(face, style, 16)
             out[f"textures/AJ4{name}{n}.png"] = face.png()
-        loft = facade(n, "E")
-        loft.rect(0, 320, 64, 328, edge)
-        loft.rect(0, 320, 64, 321, shade(edge, 1.5))
-        loft.rect(0, 328, 64, 330, shade(edge, 0.4))
+        loft = crop(fronts["E"], 320, 512)
+        loft.rect(0, 0, 64, 8, edge)
+        loft.rect(0, 0, 64, 1, shade(edge, 1.5))
+        loft.rect(0, 8, 64, 10, shade(edge, 0.4))
         out[f"textures/AJ4T{n}.png"] = loft.png()
         gable = crop(facade(n, "N", top="coping"), 0, 192)
         out[f"textures/AJ4G{n}.png"] = gable.png()

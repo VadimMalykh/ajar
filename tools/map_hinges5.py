@@ -64,6 +64,7 @@ NX, NY = 1280, 1296                                   # the night room's south-w
 
 def rail(*runs):
     for a, b in runs:
+        m.cut(a, b)             # a railing ends where it says, not at the next corner of a room
         m.line(a, b, **RAIL)
 
 

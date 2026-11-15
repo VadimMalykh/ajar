@@ -108,8 +108,20 @@ class Map:
                     raise ValueError(f"overlapping sectors at edge {a}-{b}")
                 edges[(a, b)] = si
 
+        # A line given for part of a wall must end at corners of the map: a
+        # piece of wall that runs past its end would get none of its
+        # properties (a railing with a hole in it). cut() makes the corners.
+        for key, val in self.lineprops.items():
+            p1, p2 = tuple(key)
+            dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+            for a, b in edges:
+                ts = [((v[0] - p1[0]) * dx + (v[1] - p1[1]) * dy) / (dx * dx + dy * dy) for v in (a, b)
+                      if dx * (v[1] - p1[1]) - dy * (v[0] - p1[0]) == 0]
+                if len(ts) == 2 and max(ts) > 0 and min(ts) < 1 and (min(ts) < 0 or max(ts) > 1):
+                    raise ValueError(f"line {p1}-{p2} ({', '.join(sorted(val))}) ends inside the wall piece {a}-{b}: cut() it")
+
         lines, sides = [], []
-        def side(si, a=None, b=None, hung=(), **tex):
+        def side(si, a=None, b=None, hung=(), drop=0, **tex):
             # a wall texture in self.align starts at its place in the world,
             # so a wall cut into pieces (furniture, openings) shows no seams.
             # Such textures must be 64 wide and symmetric left to right.
@@ -122,6 +134,8 @@ class Map:
             for part in hung:                  # see sector(lift=)
                 if self.sectors[si]["lift"]:
                     d["offsety_" + part] = float(-self.sectors[si]["lift"])
+            if drop:                           # see floorpeg
+                d["offsety_bottom"] = d.get("offsety_bottom", 0.0) + drop
             sides.append(d)
             return len(sides) - 1
 
@@ -135,6 +149,10 @@ class Map:
             midboth = p.pop("midboth", False)
             lower = p.pop("lower", None)           # texture of the step, both sides
             upper = p.pop("upper", None)           # texture above the opening, both sides
+            # floorpeg: on a line that is lower-unpegged for the sake of what
+            # stands on it (a railing), the wall below still starts at the
+            # raised floor, as it would on a line without that flag
+            floorpeg = p.pop("floorpeg", False) and p.get("dontpegbottom") and not lower
             s = self.sectors[si]
             ld = dict(v1=vi(a), v2=vi(b))
             other = edges.get((b, a))
@@ -149,11 +167,13 @@ class Map:
                 if mid:
                     front["texturemiddle"] = mid
                 hung = [part for part, flag in (("top", "dontpegtop"), ("bottom", "dontpegbottom")) if p.get(flag)]
-                ld["sidefront"] = side(si, a, b, hung, **front)
+                def drop(view, far):
+                    return float(far["floor"] - view["ceil"]) if floorpeg and far["floor"] > view["floor"] else 0
+                ld["sidefront"] = side(si, a, b, hung, drop(s, o), **front)
                 back = dict(texturetop=upper or s["wall"], texturebottom=lower or s["side"])
                 if mid and midboth:
                     back["texturemiddle"] = mid
-                ld["sideback"] = side(other, b, a, hung, **back)
+                ld["sideback"] = side(other, b, a, hung, drop(o, s), **back)
                 ld["twosided"] = True
             args = p.pop("args", ())
             for i, v in enumerate(args):

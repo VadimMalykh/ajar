@@ -61,6 +61,7 @@ WOOD = dict(ftex="AJWOOD", side="AJWOOD")
 LOOK = (os.environ.get("AJAR_THEATRE") or "1").replace("0", "")
 if LOOK:
     WARM = GOLD = SKY = LEAF = PLUM = ROSE = None
+    RAIL = dict(RAIL, floorpeg=True)          # the tier fronts under the railings start at the tier's floor
     LOWC, TOPC, DARKC = f"AJ3E{LOOK}", f"AJ3C{LOOK}", "AJ3XC"
     RUN = dict(rug=f"AJ3R{LOOK}", lite=f"AJ3L{LOOK}", lift=0)
     FOYER = dict(wall=f"AJ3F{LOOK}", ftex=f"AJ3O{LOOK}", ctex=LOWC)
@@ -92,6 +93,7 @@ GATE_PIT, GATE_BOOTH, GATE_STAIRS = 401, 402, 403           # the three bolted w
 
 def rail(*runs):
     for a, b in runs:
+        m.cut(a, b)             # a railing ends where it says, not at the next corner of a room
         m.line(a, b, **RAIL)
 
 
