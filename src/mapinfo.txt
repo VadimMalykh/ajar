@@ -48,7 +48,18 @@ map MAP02 "No Vacancy"
 // Act 1, level 3 (tools/map_hinges3.py)
 map MAP03 "Stage Door"
 {
-	next = "MAP03"
+	next = "MAP04"
+	sky1 = "SKY1", 0
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 1, level 4 (tools/map_hinges4.py)
+map MAP04 "Party Wall"
+{
+	next = "MAP04"
 	sky1 = "SKY1", 0
 	nointermission
 	nojump

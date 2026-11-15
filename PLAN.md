@@ -49,7 +49,8 @@ exceptions.
 | Heavy | Slow to carry, cannot be unhinged by enemies | Act 3 |
 | Small | Hatch-sized: objects and small enemies only | Act 3 |
 | Tilted | Far side is a floor or ceiling: you fall out of it | Act 4 |
-| Stray | One shot: opens onto a random place, then vanishes on a timer (see "Stray door") | Level 4 or 5 |
+| Stray | One shot: opens onto a random place, then vanishes on a timer (see "Stray door") | Level 5 |
+| Flip | Two-coloured, two far sides: each hanging opens onto the other one (see "Flip door") | After level 5 |
 | Stale | Far side is the same place at an earlier time (see "Time doors") | Act 5 (stretch) |
 
 ## Combat
@@ -337,7 +338,7 @@ Answers from the user (2026-11-15):
   level can have several.
 - **The time left is always shown** to the player.
 - **The telefrag kills the player too.**
-- **Introduced around level 4 or 5.**
+- **Introduced in level 5** (decided 2026-11-15; level 4 has the thief).
 
 - **Name: the Stray door** (a door that has forgotten where it belongs).
 
@@ -632,6 +633,94 @@ six or seven per level, and not all new at once. Not added yet.
 Next for this: the user plays the new MAP02; then MAP03 gets the same
 treatment (much bigger, keys, secrets).
 
+## MAP04 "Party Wall" (2026-11-15)
+
+Built, solver-proven and walked headlessly. **Not played by hand yet.**
+`tools/map_hinges4.py`: houses round an open yard. Six doors, four keys,
+six frames, 10 door actions, 38158 states, none stuck, nothing losable.
+87 monsters, 4 secrets. `MAP=MAP04 ./run.sh`; MAP03's exit now leads here.
+
+User's brief: much bigger, open space as well as closed, multi-level,
+puzzles out of carrying only one door (which door, or none), the thief,
+secrets. All agreed 2026-11-15, with the Stray door moved to MAP05.
+
+- **Places.** The yard (start in the gate passage; three frames; wash
+  house) is the one place to walk about in. Above it: balcony (BLUE's far
+  side; key 1, GREEN), roof (GREEN's; key 2), loft (YELLOW's) with a suite
+  behind keys 1 and 2 (VIOLET). In the middle of the roof a light well with
+  the boiler: a frame and key 4. North of it the cellar (YELLOW), whose
+  door to the yard is bolted on the cellar side, and the kennel (VIOLET's
+  far side; key 3). East: the landlord's office (keys 3 and 4, two barons)
+  and behind it the strongroom: RED and a frame; RED opens onto the street.
+- **Squeezes** (new rule; `ajarmap.squeeze`, line id 500): a hole a door
+  does not fit through. The player passes with empty hands only
+  (`AjarHandler.Squeeze` sets `ML_BLOCK_PLAYERS` while a door is carried
+  and says so when they push at it); monsters never (`blockmonsters`).
+  Four: well to cellar (the coal hole), kennel to cellar (a hatch with a
+  drop: one way), wash house to pantry, office to strongroom.
+- **The catch.** RED is behind a squeeze, so every other door must hang
+  somewhere: four doors, three frames in the yard, and the fourth frame is
+  down the well, where a door can only be brought by jumping in from the
+  roof with it. Which door goes down is the player's choice.
+- **Sending something somewhere worse.** VIOLET's far side, the kennel,
+  has no way out for a monster. Let the barons follow you in, leave by the
+  hatch, take the door down; the door with barons behind it is the one to
+  put down the well. Optional: they can be fought, and shot through the
+  kennel's bars from the cellar. `MAP=MAP04 MODE=3 ./tools/smoke.sh`
+  proves it with one baron.
+- **The thief** starts with BLUE on its back, the only door there is
+  (thing `args[0]` = colour; the door thing stands where the thief does),
+  and stays in the yard (`args[1]` = 1: it never walks through a door, and
+  a step through one by accident is undone in `AjarThief.Tick`). It also no
+  longer tries to reach anything through a squeeze.
+- **Secrets.** PINK hangs in the pantry behind a squeeze, cannot be carried
+  out, and opens onto a store (both count). A target in a hole high in the
+  south wall can only be seen from the edge of the roof (two bonuses mark
+  the spot); shooting it opens a closet in the yard. A nook off the roof.
+  Not done, though proposed: a hidden frame (it would undo the catch) and
+  a secret for disposing of the barons.
+- `MAP=MAP04 ./tools/smoke.sh`: 24 checks, including a squeeze refusing a
+  door. `MODE=2`: tour, 31 views.
+
+`tools/solve.py` now knows:
+
+- Squeezes: a walk link `(from, to, keys, "squeeze")` needs empty hands.
+- The thief: `thief=dict(zone=region, sees=[regions])` and a door with
+  `thief=True`. It may at any time pick up a door leaning in its zone,
+  hang its door in an empty frame there, and, while the player is in the
+  zone or a region in `sees`, take a hung door down or swap it. The player
+  can kill it in its zone. Every arrangement the two can produce is
+  explored, and from each the player must be able to win, and reach
+  everything, by their own moves alone. One thief, one zone, and it must
+  be one that stays there.
+
+Found on the way:
+
+- A door that must be picked up with empty hands and then carried about
+  makes places losable once there are more doors than frames. Putting it
+  behind a squeeze with a frame of its own avoids that.
+- A door on a tall outdoor wall is drawn again higher up; give it a low
+  porch on the yard side (`porch()` in the map).
+- One ZScript function does not hold three large constant tables: the
+  third came out empty (hence `PartyWallViews`).
+- Doom monsters stray through hung doors just by running about.
+
+Not known until it is played: whether the yard is too hard at the start
+(a thief, 30 monsters, snipers on three sides), whether the well reads as
+"a door has to come down here", and whether the squeeze message is enough
+or the holes need a sign.
+
+## Flip door (designed 2026-11-15, not built)
+
+User agreed. A special door, not a property of every door: two-coloured,
+with two far sides. Hung, it opens onto one of them and stays so for as
+long as it hangs, so the view through it is always true. Each time it is
+taken down and hung again it opens onto the other. The leaf shows both
+colours and which comes next. Getting "the same side again" costs a
+re-hang, i.e. a frame and empty hands. Turned down: a dial set in the
+hand (no cost) and a far side that depends on the frame (a second thing
+to remember). Not for MAP05, which has the Stray door.
+
 ## Handoff (2026-11-14)
 
 State (end of 2026-11-14): MAP01 builds, passes the solver and the headless
@@ -730,13 +819,14 @@ Test box: `MAP=TEST ./run.sh` has all three plus an imp, a zombie and a
 shotgun. `MAP=TEST ./run.sh +set ajar_only N` keeps one of Ajar's own:
 1 thief, 2 nailer, 3 lodger. Smoke modes: 1 and 2 walkthrough, 3 things
 through doors, 4 Doom monster follows through a door, 5 thief, 6 nailer,
-7 lodger, 8 shooting through doors, 9 shooting yourself. `tools/solve.py` models none of the
-monsters.
+7 lodger, 8 shooting through doors, 9 shooting yourself. `tools/solve.py` models the
+thief (see "MAP04") and no other monster.
 
 Next, in order:
 
-1. Play the rebuilt MAP03 by hand (see "MAP03 rebuilt").
-2. Teach `tools/solve.py` about the thief and nailer before a level uses
-   them.
-3. Door swing animation and carry delay (left over from M2).
-4. The repainter, last.
+1. Play MAP04 by hand (see "MAP04").
+2. Decoration of MAP01-MAP04 (user: a separate task).
+3. MAP05 with the Stray door.
+4. Teach `tools/solve.py` about the nailer before a level uses it.
+5. Door swing animation and carry delay (left over from M2).
+6. The flip door; the repainter, last.

@@ -188,6 +188,24 @@ def unbolt(m, a, b, tag, special=11):
     m.line(a, b, special=special, args=(tag, 32), playercross=True)
 
 
+SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze)
+
+
+def squeeze(m, a, b, out, floor, *, thick=16, unbolt=None):
+    """A hole through a wall, too small for a door: a-b is its mouth (48
+    wide), `out` points to the other side. The player passes with empty
+    hands only, and monsters not at all. In a PUZZLE graph: a walk link
+    (from, to, "", "squeeze") each way, or one way if the far side is a drop.
+    `unbolt` is the tag of a bolted door that coming out of it draws."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    m.sector([a, b, d, c], floor=floor, ceil=floor + 64, light=110, wall="AJTRIM",
+             ftex="AJTRIMF", ctex="AJTRIMF")
+    m.line(a, b, id=SQUEEZE, blockmonsters=True)
+    if unbolt:
+        m.line(c, d, special=11, args=(unbolt, 32), playercross=True)
+
+
 def stairs(m, a, b, out, floor, rise, *, steps=8, depth=32, ceil=None, **k):
     """A flight of steps from the edge a-b at `floor`, going `out` and up by
     `rise` in all (negative: down)."""

@@ -110,6 +110,7 @@ class AjarDoor : Actor
 class AjarHandler : EventHandler
 {
 	const FRAME_TEX = "AJFRAME";
+	const SQUEEZE_ID = 500;       // line id of every squeeze (ajarmap.squeeze)
 	AjarDoor carried;
 	int testTic;
 
@@ -343,6 +344,37 @@ class AjarHandler : EventHandler
 			if (f) Hang(d, f);
 			else d.Show();
 		}
+
+		// a thief may start with a door on its back (its args[0]: the colour)
+		let ti = ThinkerIterator.Create("AjarThief");
+		AjarThief th;
+		while (th = AjarThief(ti.Next()))
+		{
+			d = th.args[0] && th.health > 0 ? DoorOf(th.args[0]) : null;
+			if (!d || d.frame) continue;
+			d.carried = true;
+			d.Hide();
+			th.loot = d;
+		}
+	}
+
+	// A squeeze is a hole too small for a door: its line stops the player
+	// while they carry one. (Monsters it always stops, by its own flag.)
+	int squeezeSaid;
+	void Squeeze(Actor mo)
+	{
+		let it = level.CreateLineIdIterator(SQUEEZE_ID);
+		int i;
+		while ((i = it.Next()) >= 0)
+		{
+			Line l = level.lines[i];
+			if (!carried) { l.flags &= ~Line.ML_BLOCK_PLAYERS; continue; }
+			l.flags |= Line.ML_BLOCK_PLAYERS;
+			if (mo.BlockingLine != l || level.time - squeezeSaid < 105) continue;
+			if ((mo.pos.xy - (l.v1.p + l.v2.p) / 2).Length() > 56) continue;
+			squeezeSaid = level.time;
+			Say("The " .. carried.Label() .. " door will not go through here.\nYou would have to leave it behind.");
+		}
 	}
 
 	override void PlayerSpawned(PlayerEvent e)
@@ -456,14 +488,16 @@ class AjarHandler : EventHandler
 	override void WorldTick()
 	{
 		SelfShots();
-		int mode = CVar.GetCVar("ajar_autotest").GetInt();
-		if (!mode) return;
 		let mo = players[consoleplayer].mo;
-		if (!mo) return;
+		if (mo) Squeeze(mo);
+		int mode = CVar.GetCVar("ajar_autotest").GetInt();
+		if (!mode || !mo) return;
 		int t = testTic++;
 		if (t % 35 == 0)
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
+		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
+		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
@@ -625,6 +659,166 @@ class AjarHandler : EventHandler
 		if (t == 740) Pose(mo, 5418, 96, 0, 0);
 	}
 
+	// MAP04: a solution of the same length as the one tools/build.py prints
+	// (the thief is gone, so BLUE leans where it stood). Keys are walked over,
+	// drops are walked off, squeezes are walked through.
+	void PartyWallScript(Actor mo, int t)
+	{
+		string have = carried ? carried.Label() : "-";
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303));
+		// BLUE into the passage frame: the balcony, key 1 and GREEN
+		if (t == 35) { Take(mo, 2); FindFrame(101).Activate(mo); Pose(mo, 720, -160, 0, 180); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("onBalcony", mo.pos.z == 160 && mo.pos.x < 0);
+		if (t == 85) Pose(mo, -200, 300, 160, 90);
+		Forward(mo, t, 90, 12);
+		if (t == 110) Check("haveKey1", Has(mo, 1));
+		// through the gap in the rail with GREEN
+		if (t == 112) { Take(mo, 3); Pose(mo, -80, 384, 160, 0); }
+		Forward(mo, t, 115, 15);
+		if (t == 170) Check("inYardWithGreen", mo.pos.z == 0 && mo.pos.x > 0 && have == "GREEN");
+		// GREEN into the north frame: the roof, key 2
+		if (t == 175) { FindFrame(102).Activate(mo); Pose(mo, 128, 1072, 0, 90); }
+		Forward(mo, t, 180, 25);
+		if (t == 220) Check("onRoof", mo.pos.z == 320 && mo.pos.y > 1152);
+		if (t == 225) Pose(mo, 1200, 1480, 320, 0);
+		Forward(mo, t, 230, 12);
+		if (t == 250) Check("haveKey2", Has(mo, 2));
+		// into the light well, with empty hands: key 4
+		if (t == 255) Pose(mo, 600, 1500, 320, 0);
+		Forward(mo, t, 260, 15);
+		if (t == 310) Check("inWell", mo.pos.z == -128 && mo.pos.x > 640 && mo.pos.x < 896);
+		if (t == 315) Pose(mo, 660, 1400, -128, 0);
+		Forward(mo, t, 320, 12);
+		if (t == 340) Check("haveKey4", Has(mo, 4));
+		// out by the coal hole; that draws the cellar door's bolt
+		if (t == 345) Pose(mo, 824, 1500, -128, 90);
+		Forward(mo, t, 350, 25);
+		if (t == 388) Check("inCellarAndBoltDrawn", mo.pos.y > 1616 && RoomOpen(303));
+		// YELLOW does not go back through the hole
+		if (t == 390) { Take(mo, 4); Pose(mo, 824, 1680, -128, 270); }
+		Forward(mo, t, 395, 25);
+		if (t == 430) Check("squeezeRefusesADoor", mo.pos.y > 1536 && have == "YELLOW");
+		// up the cellar stairs and out of the door that was bolted
+		if (t == 432) Pose(mo, 1472, 1500, -112, 270);
+		Forward(mo, t, 433, 45);
+		if (t == 482) Check("upTheCellarStairs", mo.pos.z == 0 && mo.pos.y < 1184);
+		t -= 50;                                    // the rest is timed as before that walk
+		// YELLOW into the frame by the office: the loft
+		if (t == 435) { FindFrame(104).Activate(mo); Pose(mo, 1456, 480, 0, 0); }
+		Forward(mo, t, 440, 25);
+		if (t == 480) Check("inLoft", mo.pos.z == 192 && mo.pos.x > 1536 && mo.pos.y > 544);
+		// keys 1 and 2 open the suite: VIOLET, and off the loft with it
+		if (t == 485) FindLine(302).Activate(mo, 0, SPAC_Use);
+		if (t == 525) Check("suiteOpens", RoomOpen(302) && !RoomOpen(301));
+		if (t == 530) { Take(mo, 5); Pose(mo, 1600, 832, 192, 180); }
+		Forward(mo, t, 535, 15);
+		if (t == 585) Check("inYardWithViolet", mo.pos.z == 0 && mo.pos.x < 1536 && have == "VIOLET");
+		// every frame in the yard is taken: over the roof and down the well with it
+		if (t == 590) Pose(mo, 128, 1072, 0, 90);
+		Forward(mo, t, 595, 25);
+		if (t == 635) Check("onRoofWithViolet", mo.pos.z == 320 && have == "VIOLET");
+		if (t == 640) Pose(mo, 600, 1500, 320, 0);
+		Forward(mo, t, 645, 15);
+		if (t == 695) Check("inWellWithViolet", mo.pos.z == -128 && have == "VIOLET");
+		// VIOLET into the well's frame: the kennel, key 3
+		if (t == 700) { FindFrame(103).Activate(mo); Pose(mo, 688, 1456, -128, 90); }
+		Forward(mo, t, 705, 25);
+		if (t == 745) Check("inKennel", mo.pos.x < 240 && mo.pos.y > 1616 && mo.pos.z == -64 && have == "-");
+		if (t == 750) Pose(mo, -80, 1720, -64, 270);
+		Forward(mo, t, 755, 10);
+		if (t == 775) Check("haveKey3", Has(mo, 3));
+		// out by the hatch, a drop into the cellar
+		if (t == 780) Pose(mo, 180, 1672, -64, 0);
+		Forward(mo, t, 785, 15);
+		if (t == 815) Check("outByTheHatch", mo.pos.z == -128 && mo.pos.x > 256);
+		// keys 3 and 4 open the office; through the hole into the strongroom
+		if (t == 820) FindLine(301).Activate(mo, 0, SPAC_Use);
+		if (t == 860) Check("officeOpens", RoomOpen(301));
+		if (t == 865) Pose(mo, 1900, 240, 0, 0);
+		Forward(mo, t, 870, 25);
+		if (t == 905) Check("inStrongroom", mo.pos.x > 1984 && mo.pos.x < 2240);
+		// RED into the frame in here, and out
+		if (t == 910) { Take(mo, 1); FindFrame(105).Activate(mo); Pose(mo, 2160, 240, 0, 0); }
+		Forward(mo, t, 915, 25);
+		if (t == 955) Check("inStreet", mo.pos.x > 4900);
+		// face the exit switch; the real USE press comes from tools/smoke_MAP04_1.cfg
+		if (t == 960) Pose(mo, 5418, 96, 0, 0);
+	}
+
+	// MAP04 mode 3: sending something somewhere worse. VIOLET hangs in the
+	// frame by the office; the player stands in the kennel, in view through
+	// it. A baron in the yard follows them in, the player leaves by the
+	// hatch and takes the door down: the baron stays in the kennel.
+	Actor baron;
+	void DisposalScript(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE;
+		if (t == 1)
+		{
+			let mi = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(mi.Next())) if (a.bIsMonster) a.Destroy();
+		}
+		if (t == 35) { Take(mo, 5); FindFrame(104).Activate(mo); Pose(mo, -40, 1776, -64, 180); }
+		if (t == 40) { baron = Actor.Spawn("BaronOfHell", (1300, 480, 0)); baron.angle = 90; }
+		if (!baron) return;
+		if (t > 40 && t % 35 == 0)
+			Console.Printf("AJARTEST baron pos=(%d,%d,%d) player=(%d,%d)", baron.pos.x, baron.pos.y, baron.pos.z, mo.pos.x, mo.pos.y);
+		bool caged = baron.pos.x < 240 && baron.pos.y > 1616 && baron.pos.z == -64;
+		if (t == 300) Check("baronFollowsIntoKennel", caged);
+		// out by the hatch (the baron cannot follow), and take the door down
+		if (t == 305) Pose(mo, 180, 1672, -64, 0);
+		Forward(mo, t, 310, 15);
+		if (t == 340) Check("playerOutByHatch", mo.pos.z == -128 && mo.pos.x > 256);
+		if (t == 345) { Pose(mo, 1456, 480, 0, 0); FindFrame(104).Activate(mo); }
+		if (t == 350) Check("doorTakenDown", carried && carried.Label() == "VIOLET");
+		// stand at the bars: it sees the player, and still cannot get out
+		if (t == 355) Pose(mo, 300, 1840, -128, 180);
+		if (t == 560) Check("baronStaysCaged", caged && baron.health > 0);
+	}
+
+	// MAP04's tour (in a function of its own: one function does not hold
+	// three such tables).
+	void PartyWallViews()
+	{
+		static const double houses[] = {
+			768, -200, 0, 90, 0,        // from the start: the yard, the thief
+			768, 80, 0, 180, 0,         // the gate passage, its frame
+			768, 300, 0, 90, -20,       // the yard: the roof beyond
+			900, 560, 0, 180, -12,      // the balcony
+			700, 560, 0, 0, -12,        // the loft, the frame, the office door
+			1300, 240, 0, 0, 0,         // the office door: two locks
+			1300, 1000, 0, 60, 0,       // the cellar door, bolted
+			500, 900, 0, 150, 0,        // the north frame
+			700, 700, 0, 315, -25,      // the hole high in the south wall
+			200, 112, 0, 180, 0,        // the wash house door
+			-100, 112, 0, 225, 0,       // the wash house: the hole to the pantry
+			-280, -40, 0, 250, 0,       // the pantry: PINK
+			-60, 600, 160, 180, 0,      // on the balcony: BLUE's far side
+			-128, 500, 160, 90, 0,      // the balcony: GREEN
+			400, 1300, 320, 0, 0,       // on the roof
+			620, 1440, 320, 0, 50,      // down the light well
+			1132, 1170, 320, 270, 0,    // from the roof's edge: the target
+			680, 1380, -128, 60, 0,     // in the well: the frame, the coal hole
+			300, 1780, -128, 0, 0,      // the cellar
+			1200, 1780, -128, 60, 0,    // the cellar: YELLOW
+			320, 1840, -128, 180, -10,  // the bars of the kennel
+			150, 1780, -64, 180, 0,     // in the kennel
+			1472, 1560, -128, 270, -20, // the cellar stairs
+			1560, 820, 192, 0, 0,       // the loft
+			1800, 832, 192, 0, 0,       // the suite's door: two locks
+			1960, 832, 192, 0, 0,       // the suite: VIOLET
+			1620, 240, 0, 0, 0,         // the office: the landlords
+			2010, 240, 0, 0, 0,         // the strongroom: RED, its frame
+			1344, -40, 0, 270, 0,       // the closet
+			4040, 192, 0, 0, 0,         // the store
+			5040, 96, 0, 0, 0           // the street
+		};
+		for (int k = 0; k < houses.Size(); k++) tourViews.Push(houses[k]);
+	}
+
 	// Mode 2 in MAP02 and MAP03: a tour, as BorrowedRoomsTour. Each view is
 	// x, y, z, angle, pitch.
 	Array<double> tourViews;
@@ -688,7 +882,8 @@ class AjarHandler : EventHandler
 				4040, 192, 0, 0, 0,         // property store
 				5040, 96, 0, 0, 0           // alley
 			};
-			if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
+			if (level.mapname ~== "MAP04") PartyWallViews();
+			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
