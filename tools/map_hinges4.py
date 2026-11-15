@@ -79,11 +79,11 @@ if LOOK:
     PANTRY = dict(wall="AJ4XP", ftex=f"AJ4I{LOOK}", ctex=LOWC)
     OFFICE = dict(wall=f"AJ4O{LOOK}", ftex=f"AJ4K{LOOK}", ctex=LOWC)
     STRONG = dict(wall="AJSAFE", ftex=f"AJ4K{LOOK}", ctex=LOWC)
-    DECK = dict(OPEN, wall=FRONT["W"], side=f"AJ4B{LOOK}", ftex="AJBOARD")
+    DECK = dict(OPEN, wall=FRONT["W"], ftex="AJBOARD")
     SLATES = dict(OPEN, wall=f"AJ4G{LOOK}", side=f"AJ4L{LOOK}", ftex=f"AJ4M{LOOK}")
     NOOK = dict(wall=f"AJ4A{LOOK}", ftex=f"AJ4M{LOOK}", ctex=LOWC)
     WELL = dict(OPEN, wall=f"AJ4V{LOOK}", ftex="AJ4XF")
-    LOFTL = dict(wall=f"AJ4J{LOOK}", side=f"AJ4T{LOOK}", ftex="AJBOARD", ctex=f"AJ4C{LOOK}")
+    LOFTL = dict(wall=f"AJ4J{LOOK}", ftex="AJBOARD", ctex=f"AJ4C{LOOK}")
     SUITE = dict(wall=f"AJ4W{LOOK}", ftex=f"AJ4K{LOOK}", ctex=LOWC)
     DOWN = dict(wall="AJ4XC", ftex="AJ4XF", ctex="AJ4XD")
     STEPS = dict(wall="AJ4XR", ftex="AJ4XF", ctex="AJ4XD")
@@ -138,6 +138,7 @@ def along(house, fixed, starts, axis="x", **k):
 
 def rail(*runs):
     for a, b in runs:
+        m.cut(a, b)             # or a piece of wall that runs past its end gets no rail at all
         m.line(a, b, **RAIL)
 
 
@@ -205,6 +206,10 @@ m.sector(rect(1280, -144, 1408, -16), ceil=96, light=150, wall="AJSAFE", special
 ajarmap.fitted(m, (-256, 256, 0, 896), [((-256, 704, -224, 832), dict(SEAT, floor=BALCONY + 16))],
                floor=BALCONY, light=200, color=SKY, **DECK)
 rail(((0, 256), (0, 320)), ((0, 448), (0, 896)))
+# A railing makes its line lower-unpegged, so the balcony's front is a whole
+# house front with the balcony's edge drawn at its height, on every piece.
+for a, b in (((0, 256), (0, 320)), ((0, 320), (0, 448)), ((0, 448), (0, 896))):
+    front(a, b, "W", lower=f"AJ4B{LOOK}", dontpegbottom=True)
 along("W", -256, (320, 448, 640, 768), "y")
 along("W", 256, (-128,))
 along("W", 896, (-128,))
@@ -241,7 +246,7 @@ ajarmap.fitted(m, (1536, 544, 1920, 1104), [((1856, 576, 1920, 704), dict(floor=
                floor=LOFT, ceil=LOFT + 144, light=175, color=GOLD, **LOFTL)
 rail(((1536, 544), (1536, 768)), ((1536, 896), (1536, 1104)))
 for a, b in (((1536, 544), (1536, 768)), ((1536, 768), (1536, 896)), ((1536, 896), (1536, 1104))):
-    front(a, b, "E")
+    front(a, b, "E", lower=f"AJ4T{LOOK}", dontpegbottom=True)        # as the balcony's
 recess((1696, 1104), (1760, 1104), (0, 1), LOFT, far_id(YELLOW), 101, far_colour=YELLOW, color=GOLD)
 ajarmap.fitted(m, (1936, 672, 2256, 992), [((2192, 704, 2256, 832), dict(floor=LOFT + 24, ftex="AJQUILT", side="AJWOOD")),
                                            ((2224, 704, 2256, 832), dict(floor=LOFT + 30, ftex="AJPILLOW", side="AJWOOD"))],

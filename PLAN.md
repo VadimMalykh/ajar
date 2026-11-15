@@ -1311,6 +1311,16 @@ How the yard is built in a look:
   multiple of 64. Under the roof they are a `lower`.
 - The roof is two sectors in a look: a strip along the yard whose `side` is
   the house front, and the rest, whose `side` is the light well's lining.
+- A railing makes its whole line lower-unpegged, so the wall under the
+  balcony and under the loft is a full house front with their edge drawn
+  at its height (`AJ4B`, `AJ4T`), set as `lower` on every piece (user's
+  screenshots, 2026-11-16: the fronts stepped up and down under the rails).
+- `rail()` in MAP04 now cuts the wall at a railing's ends. Before, a piece
+  of wall that ran past the end of a railing got no railing and no line
+  properties at all, so the gaps were wider than drawn (balcony 256..512
+  instead of 320..448, loft 704..896 instead of 768..896). MAP03, MAP05 and
+  MAP06 have the same `rail()` without the cut; not changed, since their
+  walkthroughs and the user's play were with the gaps as they are.
 - The dark column over the yard's two frames is replaced by the front.
   Far sides keep their coloured column.
 
