@@ -1,7 +1,8 @@
 """Shared pieces for Ajar maps: door colours, frame/far-side recesses, door things.
 
 Line ids: 1xx = frames, 200 + colour = that door's far side; a fixed
-doorway number n uses 150 + n and 250 + n.
+doorway number n uses 150 + n and 250 + n
+(number 9 is every level's way out: way_out()).
 """
 FRAME_T, DOOR_T = 20001, 20002
 KEY_T = {"1": 20011, "2": 20012, "3": 20013, "4": 20014}      # room keys, by number
@@ -72,7 +73,35 @@ def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=Non
             args=(250 + n, 0, 150 + n, 1))
 
 
-def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0):
+WAY_OUT = 9         # the doorway number of every level's way out
+
+
+def way_out(m, x, y, colour):
+    """The way out, the same in every level: far sides have a colour, the
+    way out has none. A night room (ink walls and ceiling with gold stars,
+    dark floor with brass inlay, gold runner), 320 by 256 with its south-west
+    corner at x, y on floor 0. The far side of the door `colour` is in the
+    middle of its south wall. A brass doorway joins its west and east ends,
+    which face each other down the room, so through either you see the room
+    again and your own back in it; walking into either ends the level.
+    Candelabra stand at both ends and repeat in the doorway. Put company
+    in it with things; in a PUZZLE graph it is the goal.
+
+    It uses doorway number WAY_OUT (line ids 159 and 259)."""
+    room(m, [x, x + 128, x + 192, x + 320], [y, y + 96, y + 160, y + 256],
+         lambda i, j: j == 1 or (i == 1 and j == 0),
+         ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+    recess(m, (x + 128, y), (x + 192, y), (0, -1), 0, far_id(colour), 150 + WAY_OUT, far_colour=colour)
+    doorway(m, WAY_OUT, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0,
+            (x, y + 96), (x, y + 160), (-1, 0), 0, trim=("AJXA", "AJXAF"))
+    for xx in (x, x + 320):
+        m.line((xx, y + 96), (xx, y + 160), special=243, args=(), playeruse=False, repeatspecial=False,
+               playercross=True)
+    for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
+        m.thing(x + cx, y + cy, 35)                               # candelabra
+
+
+def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look=""):
     """An ordinary door, as in any Doom level: opened with USE, shuts by
     itself, and monsters can open it too. It fills the wall between two
     rooms that are `thick` apart; a-b is its 64-wide mouth on one side and
@@ -83,10 +112,11 @@ def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0):
     With `keys` ("1", "23"...) it is locked and needs every one of those
     room keys (see key()); its lock plates show their numbers, and monsters
     cannot open it. In a PUZZLE graph that is a walk link with keys.
-    `line_id` names the mouth line a-b, for tests."""
+    `line_id` names the mouth line a-b, for tests. `look` picks one of
+    MAP02's candidate doors (gfx_hotel.py)."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=f"AJHK{keys}" if keys else "AJHDOR",
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=(f"AJ2K{look}{keys}" if keys else f"AJ2D{look}") if look else f"AJHK{keys}" if keys else "AJHDOR",
              ftex="AJTRIMF", ctex="AJTRIMF")
     for p, q in ((a, b), (c, d)):
         if keys:
@@ -120,23 +150,24 @@ def room(m, xs, ys, runner, *, ceil, light, rug="AJRUG", **base):
                 m.sector(cell, ceil=ceil, light=light, **base)
 
 
-def picture(m, a, b, colour, height):
+def picture(m, a, b, colour, height, tex=None):
     """Hangs a framed picture of a door on the 64-long wall piece a-b.
-    `height` is the wall's height there (336 or 176: see gfx.py)."""
+    `height` is the wall's height there (336 or 176: see gfx.py); `tex` is
+    the picture on another wall than the plain one."""
     m.cut(a, b)
-    m.line(a, b, mid=f"AJP{'A' if height == 336 else 'B'}{colour}", exact=True)
+    m.line(a, b, mid=tex or f"AJP{'A' if height == 336 else 'B'}{colour}", exact=True)
 
 
 RUNNER = dict(runner=True)      # for fitted(): carpet under a raised row of lights
 
 
-def fitted(m, box, features, **base):
+def fitted(m, box, features, rug="AJRUG", **base):
     """A flat rectangular room (x1, y1, x2, y2) with furniture. `features` is
     a list of ((x1, y1, x2, y2), changes): each rectangle inside the room gets
     those sector properties instead of the room's (later ones win), or, for
     RUNNER, the carpet and lights of room(). The room is cut into a grid
     along every rectangle's edges, so a wall piece that needs its own texture
-    must not have such an edge crossing it."""
+    must not have such an edge crossing it. `rug` is the carpet's flat."""
     xs = sorted({box[0], box[2]} | {v for r, _ in features for v in (r[0], r[2])})
     ys = sorted({box[1], box[3]} | {v for r, _ in features for v in (r[1], r[3])})
     for x1, x2 in zip(xs, xs[1:]):
@@ -146,7 +177,7 @@ def fitted(m, box, features, **base):
                 if a <= x1 and x2 <= c and b <= y1 and y2 <= d:
                     if change.get("runner"):
                         props.update(ceil=base["ceil"] + 16, light=min(255, base["light"] + 30),
-                                     ftex="AJRUG", ctex="AJLITE")
+                                     ftex=rug, ctex="AJLITE")
                     else:
                         props.update(change)
             m.sector([(x1, y1), (x1, y2), (x2, y2), (x2, y1)], **props)

@@ -25,6 +25,8 @@ BLUE, which leads to the cellar and key 2. Keys 2 and 3 together open
 suite 203 upstairs: GREEN, which leads to the terrace. From there: garden,
 stone doorway, balcony, VIOLET, and a drop to the lobby.
 """
+import os
+
 import ajarmap
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, far_id
 from udmf import Map, rect
@@ -38,14 +40,36 @@ def recess(*a, **k):
 
 TALL, LOW = 336, 128                              # lobby ceiling; halls and rooms
 UP, LOFT, BALC, DECK = 144, 304, 112, 128         # upstairs, attic, balcony, terrace floors
-WARM, GOLD, SKY, LEAF, PLUM = 0xFFD8CC, 0xFFE890, 0xA8C0FF, 0x80FF90, 0xD0A0FF
+WARM, GOLD, SKY = 0xFFD8CC, 0xFFE890, 0xA8C0FF
 OPEN = dict(ctex="F_SKY1", wall="AJBRICK")        # Doom's own sky
 HALL = (160, 288)                                 # both halls run east-west between these
 
 
-TUB = dict(ftex="AJWATER", side="AJTILE")
-SINK = dict(ftex="AJSINK", side="AJTILE")
-SOFA = dict(ftex="AJSOFA", side="AJSOFA")
+# The hotel's look (gfx_hotel.py): 1, a grand old hotel, is the user's choice.
+# AJAR_HOTEL=2 and 3 are the candidates that lost (a seaside hotel out of
+# season, a deco hotel at night); AJAR_HOTEL=0 is the hotel as first built.
+# With a look, rooms are not tinted: far sides, torches and doors carry colour.
+LOOK = (os.environ.get("AJAR_HOTEL") or "1").replace("0", "")
+if LOOK:
+    WARM = GOLD = SKY = None
+    LOBBY = dict(wall=f"AJ2L{LOOK}", ftex=f"AJ2F{LOOK}")
+    BALCONY = dict(wall=f"AJ2M{LOOK}", side=f"AJ2L{LOOK}", ftex=f"AJ2F{LOOK}")
+    HALLS = dict(wall=f"AJ2H{LOOK}", ftex=f"AJ2F{LOOK}")
+    UPHALL = dict(wall=f"AJ2U{LOOK}", ftex=f"AJ2F{LOOK}")
+    ROOM = dict(wall=f"AJ2W{LOOK}", ftex=f"AJ2C{LOOK}")
+    BATH = dict(wall=f"AJ2T{LOOK}", ftex=f"AJ2B{LOOK}")
+    KITCHEN = dict(wall="AJ2KW", ftex="AJ2KF")
+    ATTIC = dict(wall="AJ2AW", ftex="AJBOARD")
+    CELLAR = dict(wall="AJPW1", ftex="AJPG1")
+    RUG, QUILT, EDGE, SEAT = f"AJ2R{LOOK}", f"AJ2Q{LOOK}", f"AJ2E{LOOK}", f"AJ2S{LOOK}"
+else:
+    LOBBY, BALCONY, HALLS, UPHALL, ROOM = {}, {}, {}, {}, {}
+    BATH = dict(wall="AJTILE", ftex="AJTILEF")
+    KITCHEN, ATTIC, CELLAR = dict(wall="AJSAFE"), dict(wall="AJBRICK"), dict(wall="AJBRICK")
+    RUG, QUILT, EDGE, SEAT = "AJRUG", "AJQUILT", "AJTILE", "AJSOFA"
+TUB = dict(ftex="AJWATER", side=EDGE)
+SINK = dict(ftex="AJSINK", side=EDGE)
+SOFA = dict(ftex=SEAT, side=SEAT)
 
 
 def guest(x, north, floor=0, keys="", line_id=0, bath="w", bathdoor=True, windows=True,
@@ -59,6 +83,7 @@ def guest(x, north, floor=0, keys="", line_id=0, bath="w", bathdoor=True, window
     west wall (0 to 256), v from the hall wall back (0 to 256, a suite 464).
     Furniture stands against the side wall away from the bathroom."""
     sgn = 1 if north else -1
+    k = dict(k, **ROOM)
     y0 = HALL[1] + 16 if north else HALL[0] - 16
     ceil, color = floor + 112, k.get("color")
 
@@ -72,14 +97,14 @@ def guest(x, north, floor=0, keys="", line_id=0, bath="w", bathdoor=True, window
     f = 192 if bath == "w" else 0
 
     def bed(v):
-        return [(box(f, v, f + 64, v + 112), dict(floor=floor + 20, ftex="AJQUILT", side="AJWOOD")),
+        return [(box(f, v, f + 64, v + 112), dict(floor=floor + 20, ftex=QUILT, side="AJWOOD")),
                 (box(f, v + 112, f + 64, v + 136), dict(floor=floor + 24, ftex="AJPILLOW", side="AJWOOD"))]
 
     sofa = [(box(f + 48 if f else 0, 96, f + 64 if f else 16, 208), dict(SOFA, floor=floor + 40)),
             (box(f + 16 if f else 16, 96, f + 48 if f else 48, 208), dict(SOFA, floor=floor + 16))]
     ajarmap.fitted(m, box(0, 0, 256, 256), sofa if suite else bed(96), floor=floor, ceil=ceil, **k)
     edge = HALL[1] if north else HALL[0]
-    ajarmap.roomdoor(m, (x + 96, edge), (x + 160, edge), (0, sgn), floor, keys=keys, line_id=line_id)
+    ajarmap.roomdoor(m, (x + 96, edge), (x + 160, edge), (0, sgn), floor, keys=keys, line_id=line_id, look=LOOK)
     back = 256
     if suite:
         ajarmap.opening(m, at(96, 256), at(160, 256), (0, sgn), floor, color=color)
@@ -87,17 +112,20 @@ def guest(x, north, floor=0, keys="", line_id=0, bath="w", bathdoor=True, window
         back = 464
     if windows:
         for u in ((32, 128) if f else (64, 160)):
-            ajarmap.window(m, at(u, back), at(u + 64, back), (0, sgn), floor, color=color)
+            ajarmap.window(m, at(u, back), at(u + 64, back), (0, sgn), floor, color=color,
+                           wall=k.get("wall", "AJWALL"))
     if bath:
         ua, ub = (-144, -16) if bath == "w" else (272, 400)
         su = ua if bath == "w" else ub - 32
         ajarmap.fitted(m, box(ua, 96, ub, 256),
                        [(box(ua, 208, ub, 256), dict(TUB, floor=floor + 16)),
                         (box(su, 96, su + 32, 128), dict(SINK, floor=floor + 32))],
-                       floor=floor, ceil=ceil, light=200, wall="AJTILE", ftex="AJTILEF")
+                       floor=floor, ceil=ceil, light=200, **BATH)
         wu = 0 if bath == "w" else 256
-        (ajarmap.roomdoor if bathdoor else ajarmap.opening)(
-            m, at(wu, 144), at(wu, 208), (-1 if bath == "w" else 1, 0), floor)
+        if bathdoor:
+            ajarmap.roomdoor(m, at(wu, 144), at(wu, 208), (-1 if bath == "w" else 1, 0), floor, look=LOOK)
+        else:
+            ajarmap.opening(m, at(wu, 144), at(wu, 208), (-1 if bath == "w" else 1, 0), floor)
     return at
 
 
@@ -107,27 +135,30 @@ ajarmap.fitted(m, (0, 0, 512, 448), [
     ((224, 0, 288, 448), ajarmap.RUNNER), ((0, 192, 512, 256), ajarmap.RUNNER),
     ((48, 408, 208, 448), dict(floor=40, ftex="AJWOOD", side="AJWOOD")),          # the desk
     ((0, 16, 16, 144), dict(SOFA, floor=40)), ((16, 16, 48, 144), dict(SOFA, floor=16)),
-], ceil=TALL, light=190)
-m.sector(rect(0, 448, 512, 576), floor=BALC, ceil=TALL, light=205)        # the balcony
+], ceil=TALL, light=190, rug=RUG, **LOBBY)
+m.sector(rect(0, 448, 512, 576), floor=BALC, ceil=TALL, light=205, **BALCONY)   # the balcony
 RAIL = dict(mid="AJRAIL", midboth=True, blocking=True, dontpegbottom=True)
 for a, b in (((0, 448), (224, 448)), ((288, 448), (512, 448))):
     m.line(a, b, **RAIL)
-m.line((48, 448), (208, 448), lower="AJKEYS", exact=True, **RAIL)         # the key rack behind the desk
+m.line((48, 448), (208, 448), lower=f"AJ2Y{LOOK}" if LOOK else "AJKEYS", exact=True, **RAIL)         # the key rack behind the desk
 m.cut((512, 16), (512, 144))
-m.line((512, 16), (512, 144), mid="AJFRONT", exact=True)
+m.line((512, 16), (512, 144), mid=f"AJ2X{LOOK}" if LOOK else "AJFRONT", exact=True)
+if LOOK:                                  # the lobby's wall carries on over the mouths of the two halls
+    m.line((0, 160), (0, 288), upper=LOBBY["wall"], dontpegtop=True)
+    m.line((512, 160), (512, 288), upper=LOBBY["wall"], lower=LOBBY["wall"], dontpegtop=True, dontpegbottom=True)
 
 # --- the ground-floor hall, west of the lobby: six rooms, dining, kitchen ---
-ajarmap.room(m, [-1408, 0], [HALL[0], 192, 256, HALL[1]], lambda i, j: j == 1, ceil=LOW, light=165)
+ajarmap.room(m, [-1408, 0], [HALL[0], 192, 256, HALL[1]], lambda i, j: j == 1, ceil=LOW, light=165, rug=RUG, **HALLS)
 TABLE = dict(floor=28, ftex="AJCLOTH", side="AJCLOTH")
 ajarmap.fitted(m, (-1920, -64, -1408, 512), [((-1728, 40, -1600, 104), TABLE),
                                              ((-1728, 344, -1600, 408), TABLE)],
-               ceil=LOW, light=185)                                        # dining room
+               ceil=LOW, light=185, **HALLS)                               # dining room
 for y in (128, 256):
-    ajarmap.window(m, (-1920, y), (-1920, y + 64), (-1, 0), 0)
+    ajarmap.window(m, (-1920, y), (-1920, y + 64), (-1, 0), 0, wall=HALLS.get("wall", "AJWALL"))
 ajarmap.fitted(m, (-1920, 528, -1408, 848),
                [((-1920, 560, -1880, 816), dict(floor=36, ftex="AJSTEEL", side="AJSTEEL"))],
-               ceil=LOW, light=200, wall="AJSAFE")                         # kitchen
-ajarmap.roomdoor(m, (-1696, 512), (-1632, 512), (0, 1), 0)
+               ceil=LOW, light=200, **KITCHEN)                             # kitchen
+ajarmap.roomdoor(m, (-1696, 512), (-1632, 512), (0, 1), 0, look=LOOK)
 R101 = guest(-352, True, light=150)
 R102 = guest(-352, False, bathdoor=False, light=175)
 R103 = guest(-800, True, light=140)
@@ -137,8 +168,9 @@ R106 = guest(-1248, False, keys="1", line_id=301, windows=False, light=130)   # 
 
 # --- upstairs: the stairs are gone, so the hall ends in a drop to the lobby --
 ajarmap.room(m, [512, 1664], [HALL[0], 192, 256, HALL[1]], lambda i, j: j == 1,
-             floor=UP, ceil=UP + 112, light=175, color=WARM)
-m.sector(rect(1664, 160, 1792, 288), floor=UP, ceil=LOFT + 144, light=170, color=WARM)   # under the attic
+             floor=UP, ceil=UP + 112, light=175, color=WARM, rug=RUG, **UPHALL)
+m.sector(rect(1664, 160, 1792, 288), floor=UP, ceil=LOFT + 144, light=170, color=WARM,
+         **dict(UPHALL, **ATTIC))                                           # under the attic
 R201 = guest(704, True, UP, bath="e", light=165, color=WARM)        # key 4 in the bathroom
 R202 = guest(704, False, UP, bathdoor=False, light=140, color=WARM)
 R203 = guest(1216, True, UP, keys="23", line_id=302, bath="e", suite=True,
@@ -146,7 +178,7 @@ R203 = guest(1216, True, UP, keys="23", line_id=302, bath="e", suite=True,
 R204 = guest(1216, False, UP, windows=False, light=175, color=WARM)   # YELLOW
 
 # --- the attic: a drop into the upstairs hall --------------------------------
-m.sector(rect(1792, 64, 2176, 384), floor=LOFT, ceil=LOFT + 128, light=170, color=GOLD, wall="AJBRICK")
+m.sector(rect(1792, 64, 2176, 384), floor=LOFT, ceil=LOFT + 128, light=170, color=GOLD, **ATTIC)
 
 # --- the terrace over the garden; a stone doorway joins garden and balcony --
 m.sector(rect(3000, 0, 3256, 448), floor=DECK, ceil=400, light=220, color=0xD4F4D0, **OPEN)
@@ -154,12 +186,10 @@ m.sector(rect(3256, 0, 3896, 448), ceil=400, light=220, ftex="AJGRASS", **OPEN)
 ajarmap.doorway(m, 1, (96, 576), (160, 576), (0, 1), BALC, (3896, 192), (3896, 256), (1, 0), 0)
 
 # --- the cellar: a dead end ---------------------------------------------------
-m.sector(rect(4200, 0, 4520, 320), ceil=160, light=150, color=SKY, wall="AJBRICK")
+m.sector(rect(4200, 0, 4520, 320), ceil=160, light=150, color=SKY, **CELLAR)
 
-# --- the street: the way out -------------------------------------------------
-m.sector(rect(5000, 0, 5448, 192), ceil=160, light=210, color=PLUM, ftex="AJPIT", **OPEN)
-m.cut((5448, 64), (5448, 128))
-m.line((5448, 64), (5448, 128), special=243, playeruse=True, mid="AJEXIT", exact=True)
+# --- the way out (VIOLET's far side): the same room in every level -----------
+ajarmap.way_out(m, 5000, 0, VIOLET)
 
 # --- frames: four in the whole hotel -----------------------------------------
 recess((224, 0), (288, 0), (0, -1), 0, 101, 201)                          # lobby
@@ -172,11 +202,10 @@ recess((576, 288), (640, 288), (0, 1), UP, far_id(RED), 101, far_colour=RED, col
 recess((2176, 192), (2176, 256), (1, 0), LOFT, far_id(YELLOW), 101, far_colour=YELLOW, color=GOLD)
 recess((4200, 128), (4200, 192), (-1, 0), 0, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
 recess((3000, 192), (3000, 256), (-1, 0), DECK, far_id(GREEN), 101, far_colour=GREEN, color=0xD4F4D0)
-recess((5000, 64), (5000, 128), (-1, 0), 0, far_id(VIOLET), 101, far_colour=VIOLET, color=PLUM)
 
 # --- pictures in the lobby of the two doors that start it all ---------------
-ajarmap.picture(m, (96, 0), (160, 0), RED, TALL)
-ajarmap.picture(m, (352, 0), (416, 0), VIOLET, TALL)
+ajarmap.picture(m, (96, 0), (160, 0), RED, TALL, tex=f"AJ2P{LOOK}{RED}" if LOOK else None)
+ajarmap.picture(m, (352, 0), (416, 0), VIOLET, TALL, tex=f"AJ2P{LOOK}{VIOLET}" if LOOK else None)
 
 # --- doors and keys ----------------------------------------------------------
 m.thing(256, 96, 1, angle=90)                                             # player start, facing the balcony
@@ -289,14 +318,13 @@ things(STUMP, (3480, 400), (3700, 40))
 things(TECHLAMP, (3872, 160), (3872, 288))
 things(MEDIKIT, (3840, 60))
 things(POOL, (3500, 220))
-# the street: two more between you and the way out
-things(SERGEANT, (5330, 48), angle=180)
-things(ZOMBIE, (5380, 150), angle=180)
-things(TECHLAMP, (5424, 24), (5424, 168))
+# the way out: two more between you and it
+things(SERGEANT, (5240, 48), angle=180)
+things(ZOMBIE, (5240, 208), angle=180)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 PUZZLE = dict(
-    start="ground", goal="street", names=ajarmap.NAMES,
+    start="ground", goal="exit", names=ajarmap.NAMES,
     walk=[("upstairs", "ground"), ("attic", "upstairs"), ("terrace", "garden"),
           ("garden", "balcony"), ("balcony", "garden"),                   # the stone doorway
           ("balcony", "ground"),                                          # the gap in the rail
@@ -310,6 +338,6 @@ PUZZLE = dict(
         YELLOW: dict(home="attic", lean="upstairs"),
         BLUE: dict(home="cellar", lean="room 106"),
         GREEN: dict(home="terrace", lean="room 203"),
-        VIOLET: dict(home="street", lean="balcony"),
+        VIOLET: dict(home="exit", lean="balcony"),
     },
 )

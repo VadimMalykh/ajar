@@ -1,0 +1,310 @@
+<title>No Vacancy Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet. Three looks summarised on top with the plan, then one band per
+   part of the hotel: notes and a pick on the left, the same camera in every look on the right. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.sws i { display: block; height: 72px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: bottom left; background-size: 64px auto; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 472; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+ol.open { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP02 "No Vacancy" · captured 15 Nov 2026 · GZDoom 4.12.2, software GL</div>
+    <h1>No Vacancy: three looks for the hotel</h1>
+    <p>The hotel is still dressed in the grey panels of the first build. Below are three whole-hotel looks, each built into the level and photographed from the same 25 cameras as the hotel is now. Every part of the building has its own band: switch camera, compare, and pick.</p>
+    <p class="muted">Picks can be mixed, for example the lobby from one look and the guest rooms from another. Your picks are collected at the bottom as one line to paste into the chat. You can also comment on this page. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The three looks</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>Plan of the hotel, with camera numbers</h3>
+    <div class="plan" id="plan"></div>
+    <p class="muted" style="font-size:13px">One grid square is 128 map units. Upstairs has no stairs: it is reached through RED and left by dropping into the lobby. The cellar, the terrace and garden, and the way out are separate places reached only by door, so they are not on the plan.</p>
+  </section>
+
+  <section class="stack" id="parts" style="gap:34px"></section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and I will build the hotel that way.</p>
+    <output id="picksline" for="parts"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+
+  <section class="stack">
+    <h3>Not in these looks yet, to talk about</h3>
+    <ol class="open">
+      <li><strong>Ceilings and lighting.</strong> Every look still has the grey ceiling panels and even light of the first build. Lamps light nothing. This is the same open point as in MAP01 and is better solved once for both levels.</li>
+      <li><strong>Room tints are gone in the looks.</strong> Upstairs was tinted warm, the attic gold and the cellar blue, after the door that leads there. As in MAP01, the looks leave that to the coloured column over each far side, the torches and the doors.</li>
+      <li><strong>Ground floor and upstairs are the same.</strong> They could differ, for example a plainer upstairs, so that you know which floor you are on.</li>
+      <li><strong>The door above the leaf.</strong> A room door shows a little of the hall's wall above it, also from inside the room. A deeper wooden surround hides most of it.</li>
+      <li><strong>Doom's props.</strong> Torches, candelabra and tech lamps are unchanged. The tech lamps on the balcony and in the garden fit none of the looks.</li>
+      <li><strong>The terrace and garden</strong> are not dressed at all yet. See their band above for what could be done.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+const LOOKS = [
+  ["0", "As it is now", "Grey panels, grey tile, a pale runner. Rooms tinted after the door that leads to them."],
+  ["1", "Grand", "An old grand hotel. Bottle-green panelling under cream damask paper, brass rails, black and white marble, a crimson runner. Rooms in striped paper over dark wood, crimson carpet, green quilts."],
+  ["2", "Seaside", "A seaside hotel out of season. Washed aqua boards over white beadboard, bleached plank floors, a coral runner. Rooms in deckchair stripes, sand carpet, coral quilts."],
+  ["3", "Deco", "A deco hotel at night. Teal lacquer with gold pinstripes over black panelling, walnut block floors with brass studs, a teal runner. Rooms in ochre scallop paper, teal carpet, black quilts."],
+];
+const SW = ["AJ2L", "AJ2W", "AJ2F", "AJ2R", "AJ2C", "AJ2T", "AJ2B"];
+const NOTES = { "1": "The safest fit for the name on the sign. Crimson is near RED's colour, though a carpet is not a door.",
+  "2": "The lightest and least like MAP01. The pale walls show monsters and door colours best.",
+  "3": "The darkest and the most of a mood. Gold is near YELLOW, and the dark walls hide the dark frames a little." };
+
+// part id, name, cameras [view, label], which looks apply, notes
+const PARTS = [
+  { id: "lobby", name: "Lobby and balcony", looks: "0123",
+    cams: [[0, "From the start"], [1, "Reception desk"], [2, "Front doors"], [3, "Sofa and hall"], [23, "From the balcony"]],
+    text: "The start, and the tallest room: 336 high, with the balcony and VIOLET in view from the first second.",
+    asks: ["Is the frieze under the cornice too heavy for a first view?", "The desk, key rack and front doors are the same wood in every look."] },
+  { id: "halls", name: "The two halls", looks: "0123",
+    cams: [[4, "Ground floor"], [9, "Room 106, one lock"], [15, "Upstairs"], [18, "Suite 203, two locks"]],
+    text: "Long and low, with a runner under a row of lights. Most of the level's walking is here, past locked doors you come back to.",
+    asks: ["The chequer in Grand is strong over this length. A quieter floor with the same runner is an easy mix.", "Should upstairs differ from the ground floor?"] },
+  { id: "rooms", name: "Guest rooms", looks: "0123",
+    cams: [[5, "Room 101"], [7, "Room 102"], [8, "Room 104, RED"], [10, "Suite 105, sitting room"], [11, "Suite 105, bedroom"], [16, "Room 201"], [19, "Suite 203, GREEN"]],
+    text: "Ten rooms behind ordinary doors: a bed, two windows, a bathroom. Suites are two rooms deep.",
+    asks: ["All ten rooms are papered alike. Two or three papers by floor or by wing would make them easier to tell apart.", "Beds and sofas are blocks of colour; they could get headboards and arms."] },
+  { id: "baths", name: "Bathrooms", looks: "0123",
+    cams: [[6, "Room 101"], [12, "Suite 105, key 3 in the bath"], [17, "Room 201, key 4"]],
+    text: "Small tiled rooms where two of the four keys lie.",
+    asks: ["Deco's black tile makes a brass key easy to see and the room hard to read. Its floor with white walls is a possible mix."] },
+  { id: "dining", name: "Dining room", looks: "0123",
+    cams: [[13, "From the hall"]],
+    text: "Dressed as the halls in every look: the same wall and floor, two laid tables, two windows.",
+    asks: ["It could have a look of its own, or a bigger carpet instead of bare floor."] },
+  { id: "kitchen", name: "Kitchen", looks: "01", same: true,
+    cams: [[14, "The frame"]],
+    text: "The back of the house is the same whatever the front looks like: white tile over a dark band and a red quarry floor, in place of the vault's locker walls.",
+    asks: ["One candidate only. Say if it should follow the front of the house instead."] },
+  { id: "attic", name: "Attic", looks: "01", same: true,
+    cams: [[20, "Key 1"]],
+    text: "YELLOW's far side. Bare boards on studs and a board floor, in place of gold-tinted brick.",
+    asks: ["One candidate only. Rafters and a sloping ceiling would say attic better, and are more work."] },
+  { id: "cellar", name: "Cellar", looks: "01", same: true,
+    cams: [[21, "The frame, key 2"]],
+    text: "BLUE's far side, a dead end. MAP01's stone cellar, dark, in place of blue-tinted brick.",
+    asks: ["One candidate only. It is dark enough to hide the spectres completely; that may be too unfair."] },
+  { id: "garden", name: "Terrace and garden", looks: "0",
+    cams: [[22, "From the terrace"]],
+    text: "GREEN's far side, and the only place outdoors. Not dressed in any look yet: brick walls, flat grass, Doom's trees.",
+    asks: ["Ideas: a paved terrace with a balustrade, hedges for walls, a gravel path to the stone doorway, a dry fountain.", "Tell me a direction and I will build candidates for it."] },
+  { id: "exit", name: "The way out", looks: "0",
+    cams: [[24, "From VIOLET's far side"]],
+    text: "Decided: the night room from MAP01, with the doorway onto itself, is now the way out of every level.",
+    asks: [] },
+];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l][1];
+
+document.getElementById("looks").innerHTML = LOOKS.slice(1).map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sws" role="img" aria-label="${name}: lobby wall, room wall, floor, runner, carpet, bathroom wall and floor">${SW.map(t =>
+     `<i style="background-image:url(tex/${t}${n}.png)"></i>`).join("")}</div>
+   <div class="swcap">Lobby wall, room wall, floor, runner, carpet, bathroom wall and floor</div>
+   <p>${d}</p><p class="muted">${NOTES[n]}</p></div>`).join("");
+
+let picks = {}, cams = {};
+try { picks = JSON.parse(localStorage.getItem("map02-picks") || "{}"); } catch (e) {}
+PARTS.forEach(p => cams[p.id] = p.cams[0][0]);
+
+function optName(p, l) { return p.same && l === "1" ? "New" : lookName(l); }
+
+function drawPart(p) {
+  const cam = cams[p.id], label = p.cams.find(c => c[0] === cam)[1];
+  const el = document.getElementById("main-" + p.id);
+  const camBar = p.cams.length > 1 ? `<div class="cams" role="group" aria-label="Camera, ${p.name}">${p.cams.map(([v, n]) =>
+    `<button type="button" id="cam-${p.id}-${v}" data-part="${p.id}" data-cam="${v}" aria-pressed="${v === cam}">${n}</button>`).join("")}</div>` : "";
+  el.innerHTML = camBar + `<div class="opts">${[...p.looks].map(l =>
+    `<div class="opt${picks[p.id] === l && p.looks.length > 1 ? " chosen" : ""}">
+       <button type="button" class="shot" aria-label="Enlarge: ${optName(p, l)}, ${label}"><img src="${l}/view_${pad(cam)}.jpg" alt="${p.name}, ${optName(p, l)}: ${label}" loading="lazy"></button>
+       <h4>${l === "0" ? "" : `<span>${p.same ? "" : l}</span>`}${optName(p, l)}</h4>
+     </div>`).join("")}</div>`;
+}
+
+function drawPicks(p) {
+  const el = document.getElementById("picks-" + p.id);
+  if (!el) return;
+  el.innerHTML = [...p.looks].map(l =>
+    `<button type="button" id="pick-${p.id}-${l}" data-part="${p.id}" data-look="${l}" aria-pressed="${picks[p.id] === l}">${l === "0" ? "Keep as now" : optName(p, l)}</button>`).join("");
+}
+
+function drawSummary() {
+  const parts = PARTS.filter(p => p.looks.length > 1);
+  const line = parts.map(p => `${p.name}: ${picks[p.id] === undefined ? "?" : picks[p.id] === "0" ? "as now" : optName(p, picks[p.id])}`).join("; ");
+  document.getElementById("picksline").textContent = "MAP02 look. " + line + ".";
+}
+
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<article class="part" id="${p.id}">
+     <div class="side">
+       <h2>${p.name}</h2>
+       <p>${p.text}</p>
+       ${p.asks.length ? `<ul>${p.asks.map(a => `<li>${a}</li>`).join("")}</ul>` : ""}
+       ${p.looks.length > 1 ? `<h3>Your pick</h3><div class="picks" id="picks-${p.id}" role="group" aria-label="Pick for ${p.name}"></div>` : ""}
+     </div>
+     <div class="main" id="main-${p.id}"></div>
+   </article>`).join("");
+PARTS.forEach(p => { drawPart(p); drawPicks(p); });
+drawSummary();
+
+document.getElementById("parts").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.classList.contains("shot")) { b.parentElement.classList.toggle("big"); return; }
+  const p = PARTS.find(q => q.id === b.dataset.part);
+  if (!p) return;
+  if (b.dataset.cam !== undefined) {
+    cams[p.id] = +b.dataset.cam;
+    drawPart(p);
+    document.getElementById(`cam-${p.id}-${b.dataset.cam}`).focus();
+  } else if (b.dataset.look !== undefined) {
+    if (picks[p.id] === b.dataset.look) delete picks[p.id]; else picks[p.id] = b.dataset.look;
+    try { localStorage.setItem("map02-picks", JSON.stringify(picks)); } catch (e) {}
+    drawPart(p); drawPicks(p); drawSummary();
+    document.getElementById(`pick-${p.id}-${b.dataset.look}`).focus();
+  }
+});
+
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+
+// Plan: x -1920..2176, y -336..864 at quarter scale, y flipped.
+(function () {
+  const S = 0.25, X0 = -1920, Y1 = 864, X = x => 16 + (x - X0) * S, Y = y => 16 + (Y1 - y) * S;
+  const C = { hall: "#f1d9d0", room: "#e9e2c8", bath: "#cfe3ea", lobby: "#d9d3ee", back: "#c9ccd2", up: "#f3e3b6" };
+  const rect = (x1, y1, x2, y2, fill, label, sub) => {
+    const cx = (X(x1) + X(x2)) / 2, cy = (Y(y1) + Y(y2)) / 2;
+    return `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${fill}" stroke="#1a1f27" stroke-width="1"/>` +
+      (label ? `<text x="${cx}" y="${cy + (sub ? -1 : 4)}" text-anchor="middle" font-size="11" font-weight="600" fill="#1a1f27">${label}</text>` : "") +
+      (sub ? `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="9" fill="#3b4350">${sub}</text>` : "");
+  };
+  let g = "";
+  for (let x = X0; x <= 2176; x += 128) g += `<line x1="${X(x)}" y1="${Y(Y1)}" x2="${X(x)}" y2="${Y(-336)}" stroke="var(--line)" stroke-width=".5"/>`;
+  for (let y = -336; y <= Y1; y += 128) g += `<line x1="${X(X0)}" y1="${Y(y)}" x2="${X(2176)}" y2="${Y(y)}" stroke="var(--line)" stroke-width=".5"/>`;
+  const guest = (x, north, name, bath, suite, fill) => {
+    const d = suite ? 464 : 256, y1 = north ? 304 : 144 - d, y2 = north ? 304 + d : 144;
+    let s = rect(x, y1, x + 256, y2, fill, name, suite ? "suite" : "");
+    const bx = bath === "w" ? x - 144 : x + 272, by = north ? 400 : -112;
+    s += rect(bx, by, bx + 128, by + 160, C.bath, "", "");
+    return s;
+  };
+  g += rect(-1920, -64, -1408, 512, C.hall, "Dining room", "");
+  g += rect(-1920, 528, -1408, 848, C.back, "Kitchen", "frame");
+  g += rect(-1408, 160, 0, 288, C.hall, "Ground-floor hall", "");
+  g += guest(-352, true, "101", "w", false, C.room) + guest(-352, false, "102", "w", false, C.room);
+  g += guest(-800, true, "103", "w", false, C.room) + guest(-800, false, "104", "w", false, C.room);
+  g += guest(-1248, true, "105", "w", true, C.room) + guest(-1248, false, "106", "w", false, C.room);
+  g += rect(0, 0, 512, 448, C.lobby, "Lobby", "start, frame");
+  g += rect(0, 448, 512, 576, C.lobby, "Balcony", "floor +112");
+  g += rect(512, 160, 1792, 288, C.up, "Upstairs hall", "floor +144");
+  g += guest(704, true, "201", "e", false, C.up) + guest(704, false, "202", "w", false, C.up);
+  g += guest(1216, true, "203", "e", true, C.up) + guest(1216, false, "204", "w", false, C.up);
+  g += rect(1792, 64, 2176, 384, C.back, "Attic", "floor +304");
+  const V = [[256, 96, 90], [330, 280, 140], [200, 300, 325], [380, 100, 180], [-100, 224, 180], [-224, 328, 90], [-432, 420, 90],
+    [-224, 120, 270], [-672, 110, 270], [-1120, 250, 270], [-1120, 330, 90], [-1120, 600, 90], [-1328, 440, 90], [-1500, 224, 180],
+    [-1664, 600, 90], [540, 224, 0], [832, 330, 90], [1040, 420, 90], [1344, 190, 90], [1300, 600, 45], [1820, 224, 0], null, null, [300, 520, 270], null];
+  V.forEach((v, i) => {
+    if (!v) return;
+    const a = v[2] * Math.PI / 180, x = X(v[0]), y = Y(v[1]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 15 * Math.cos(a)}" y2="${y - 15 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="7.5" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 3.2}" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 1056 332" role="img" aria-label="Plan of the hotel's ground floor and upstairs with camera positions">${g}</svg>`;
+})();
+</script>

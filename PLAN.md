@@ -875,7 +875,7 @@ and the pistol hitting yourself in the hall.
 
 The vault has the hall's navy runner (user, 2026-11-15).
 
-The way out is on trial behind `AJAR_EXIT` (`AJAR_EXIT=2 ./build.sh`, or
+(Superseded, see "The way out in every level" below.) The way out was on trial behind `AJAR_EXIT` (`AJAR_EXIT=2 ./build.sh`, or
 `tools/trial.sh AJAR_EXIT 1 2`; the tour has 22 views now, the last two of
 the exit door). The idea for exit rooms in every level: far sides have a
 colour, the way out has none.
@@ -911,12 +911,73 @@ left as it is for now.
 others: the zombie sometimes needs longer than the test allows to line up
 with the opening.
 
+The way out in every level (2026-11-15): `ajarmap.way_out(m, x, y, colour)`
+builds the night room with the doorway onto itself; MAP01-MAP04 use it and
+every new level should. It takes doorway number 9. The streets and the
+alley are gone, the graph's goal is called "exit" everywhere, and the
+walkthroughs walk into the doorway instead of pressing a switch. The
+`AJAR_EXIT` switch and the losing candidates are deleted.
+
+The vault's two imps stand flat against the wall you come in by, one each
+side of GREEN's far side (user: "once you enter they're behind you"; the
+existing imps, not extra monsters).
+
+Monsters and doors, second fix (2026-11-15). The user saw monsters by a
+door attacking "something on the side of the door", and not always coming
+through. Cause: the lure is the monster's target, and Doom's monsters
+attack what they chase, so they bit or shot the lure standing in front of
+the opening, and a monster in biting range of it never walked on. Now,
+in `AjarSense`:
+- While it is after a lure a monster cannot attack (melee range and
+  reaction time are switched off, and given back afterwards).
+- In front of the opening it is slid sideways onto the middle line, 2
+  units a tic, because the chase walks in whole steps and a demon needs
+  to be within 2 units.
+- When the player goes through a door, every monster that was after them
+  and can see that door follows through it, seen through the door or not
+  (`AjarHandler.Followers`).
+- A monster too wide or tall for an opening no longer tries.
+`MAP=TEST MODE=10` checks it: an imp, a demon and a zombie, none in front
+of the door, all follow, and none attacks its lure (before: 2 of 3, and
+115 tics of attacking the lure). Still true: a monster does not shoot at
+you through a door.
+
+## Look: MAP02 (started 2026-11-15)
+
+Board: https://claude.ai/artifact/VfdHfuaa96vbRtnCW4PUxU (source
+`design/map02-board.html`, images in `build/board2/`: `<look>/view_NN.jpg`
+cut from the tour shots with ImageMagick, `tex/` swatches).
+
+`AJAR_HOTEL=1..3` dresses the whole hotel in one candidate look
+(`tools/gfx_hotel.py`): 1 Grand (bottle green, cream damask, crimson), 2
+Seaside (aqua, white beadboard, coral), 3 Deco (teal, black, gold). Kitchen
+(white tile, quarry floor), attic (boards) and cellar (MAP01's stone) are
+the same in all three. `MAP=MAP02 tools/trial.sh AJAR_HOTEL 0 1 2 3` shoots
+them.
+
+**The user chose look 1, Grand, for the whole hotel (2026-11-15)**; it is
+the default now. `AJAR_HOTEL=0` is the hotel as first built, 2 and 3 the
+losers, which can go once MAP02 is settled. The board still shows the
+choice as open. Not in the look: ceilings and lighting, the terrace and
+garden, Doom's props, and the other points listed at the foot of the
+board. Not played by hand in the new look yet.
+
+## Handoff (2026-11-15, evening)
+
+State: everything above is committed and pushed (`main`). All of MAP01-04
+build, pass the solver and their walkthroughs; `MAP=TEST MODE=10`,
+`MAP=MAP01 MODE=4` and `5`, `MAP=TEST MODE=4` and `7`, `MAP=MAP04 MODE=3`
+passed after the monster fix. Nothing from this session was played by
+hand: the vault ambush, the way out in MAP02-04, the monsters' new door
+behaviour (they now follow you through a door you left by, which makes
+retreating less safe) and the Grand hotel all want a playtest.
+
 Next for the look, in order:
 1. The user reported not being able to shoot themself in MAP01; it could
    not be reproduced. Ask which door, which frame, where they stood and
    which weapon.
-2. The same way out (night room, doorway onto itself) in MAP02-MAP04, and
-   an exit glyph if one is still wanted.
+2. MAP02 in the Grand look: the terrace and garden, the points at the
+   foot of its board, then mark the board as decided.
 3. Ceilings and lighting of the hall block: everything is evenly bright,
    lamps light nothing, and thin dark beams show where ceilings step by 16
    at the light strips.

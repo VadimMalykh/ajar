@@ -170,12 +170,8 @@ m.line((240, 1776), (240, 1904), mid="AJWIN", midboth=True, blocking=True)
 m.sector(rect(4000, 0, 4448, 384), ceil=160, light=150, color=ROSE, wall="AJSAFE", special=1024)
 recess((4000, 160), (4000, 224), (-1, 0), 0, far_id(PINK), 101, far_colour=PINK, color=ROSE)
 
-# --- the street (RED's far side) -------------------------------------------------
-m.sector(rect(5000, 0, 5448, 192), ceil=160, light=200, color=WARM, ftex="AJPIT", ctex="F_SKY1",
-         wall="AJBRICK")
-recess((5000, 64), (5000, 128), (-1, 0), 0, far_id(RED), 101, far_colour=RED, color=WARM)
-m.cut((5448, 64), (5448, 128))
-m.line((5448, 64), (5448, 128), special=243, playeruse=True, mid="AJEXIT", exact=True)
+# --- the way out (RED's far side): the same room in every level -------------
+ajarmap.way_out(m, 5000, 0, RED)
 
 # --- doors and keys ----------------------------------------------------------
 THIEF = 20003
@@ -306,17 +302,15 @@ things(IMP, (2000, 940), (2000, 720), angle=180)
 things(SERGEANT, (2100, 900), angle=180)
 things(SHELLBOX, (2230, 960))
 things(LAMP, (1960, 696))
-# the street
-things(REVENANT, (5360, 96), angle=180)
-things(SERGEANT, (5250, 40), (5250, 150), angle=180)
-things(TECHLAMP, (5424, 24), (5424, 168))
-things(TORCH_R, (5024, 24), (5024, 168))
+# the way out
+things(REVENANT, (5264, 128), angle=180)
+things(SERGEANT, (5230, 48), (5230, 208), angle=180)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "yard" is the yard, gate passage and wash house: where the thief works.
 # "boiler" is the light well. a is the cellar door's bolt.
 PUZZLE = dict(
-    start="yard", goal="street", names=ajarmap.NAMES, complete=True,
+    start="yard", goal="exit", names=ajarmap.NAMES, complete=True,
     walk=[("balcony", "yard"), ("roof", "yard"), ("roof", "boiler"), ("loft", "yard"),
           ("boiler", "cellar", "", "squeeze"), ("cellar", "boiler", "", "squeeze"),   # the coal hole
           ("kennel", "cellar", "", "squeeze"),                                        # the hatch, a drop
@@ -334,7 +328,7 @@ PUZZLE = dict(
         YELLOW: dict(home="loft", lean="cellar"),
         VIOLET: dict(home="kennel", lean="suite"),
         PINK: dict(home="store", frame=106),
-        RED: dict(home="street", lean="strong"),
+        RED: dict(home="exit", lean="strong"),
     },
     thief=dict(zone="yard", sees=("balcony", "roof", "loft")),
 )

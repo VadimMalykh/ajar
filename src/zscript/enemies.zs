@@ -825,14 +825,41 @@ class AjarSense : Inventory
 	Vector2 viaImg;     // where you appeared through it
 	bool viaStraight;   // it can walk straight at that, through the opening
 	Vector3 lastPos;
+	bool muted;         // it is after its lure, and must not attack it
+	double ownRange;    // its melee range, kept while muted
+
+	// An opening is 64 wide and as high as a door.
+	bool Fits() { return owner.radius <= 31 && owner.height <= 96; }
+
+	// The player has just left through the door at `l`. A monster that was
+	// after them and can see that door goes the same way.
+	void Follow(Line l, Actor p)
+	{
+		if (!owner || owner.health <= 0 || !Fits()) return;
+		if (owner.target != p && !(lure && owner.target == lure)) return;
+		if (!lure) lure = Spawn("AjarLure", owner.pos);
+		Vector2 n = (l.delta.y, -l.delta.x).Unit();
+		Vector2 at = (l.v1.p + l.v2.p) / 2 + n * 24;
+		lure.SetOrigin((at, l.frontsector.floorplane.ZAtPoint(at)), false);
+		if (!owner.CheckSight(lure)) return;
+		via = l;
+		viaUntil = level.time + 1050;
+		viaStraight = false;
+	}
 
 	override void DoEffect()
 	{
 		Super.DoEffect();
-		if (!owner || owner.health <= 0 || (level.time + owner.SpawnTime) % 4) return;
+		if (!owner || owner.health <= 0) return;
 		let p = players[consoleplayer].mo;
-		if (!p || p.health <= 0) return;
+		if (p && p.health > 0 && (level.time + owner.SpawnTime) % 4 == 0) Look(p);
+		if (lure && owner.target == lure && via) Steer();
+		else Unmute();
+	}
 
+	// Four times a second: is there a door to make for?
+	void Look(Actor p)
+	{
 		bool luring = lure && owner.target == lure;
 		// Leave it alone while it is busy with anything else (another monster).
 		if (!luring && owner.target && owner.target != p) return;
@@ -841,7 +868,7 @@ class AjarSense : Inventory
 		bool jumped = via && (owner.pos.xy - lastPos.xy).Length() > 96;
 		lastPos = owner.pos;
 
-		if (jumped || owner.CheckSight(p)) via = null;
+		if (jumped || !Fits() || owner.CheckSight(p)) via = null;
 		else
 		{
 			bool seen;
@@ -869,32 +896,68 @@ class AjarSense : Inventory
 			if (luring) owner.target = p;
 			return;
 		}
-
-		// With a straight walk through the opening the lure stands where you
-		// appear. Otherwise (a slant, or the view is lost) it first stands
-		// square in front of the door, and goes beyond it once the monster is
-		// lined up: Doom's chase does not hit a 64-wide opening at a slant.
-		Vector2 to = viaImg;
-		if (!viaStraight)
-		{
-			Vector2 mid = (via.v1.p + via.v2.p) / 2;
-			Vector2 n = (via.delta.y, -via.delta.x).Unit();
-			Vector2 off = owner.pos.xy - mid;
-			if (off dot n < 0) n = -n;
-			double room = clamp(31 - owner.radius, 3, 11);
-			bool lined = abs(off dot via.delta.Unit()) < room && off dot n < 80;
-			to = lined ? mid - n * 40 : mid + n * 44;
-		}
 		if (!lure) lure = Spawn("AjarLure", owner.pos);
-		lure.SetOrigin((to, owner.pos.z), false);
 		bool idle = !owner.target;
 		owner.target = lure;
+		Steer();
 		if (idle && owner.SeeState)
 		{
 			// wake it as if it had seen the player (it needs its target first)
 			owner.A_StartSound(owner.SeeSound, CHAN_VOICE);
 			owner.SetState(owner.SeeState);
 		}
+	}
+
+	// Every tic while it is making for a door: where its lure stands, and
+	// the last steps into the opening.
+	void Steer()
+	{
+		// The lure is only something to walk at. Doom's monsters attack what
+		// they chase: bite it when they reach it, shoot it when they see it.
+		// That showed as a monster busy with a spot beside the door.
+		if (!muted)
+		{
+			muted = true;
+			ownRange = owner.meleerange;
+		}
+		owner.meleerange = -10000;      // never in reach
+		owner.reactiontime = 4;         // never ready to shoot
+		owner.bJustHit = false;         // nor shooting back at once
+		if (owner.SeeState && ((owner.MeleeState && owner.InStateSequence(owner.CurState, owner.MeleeState))
+			|| (owner.MissileState && owner.InStateSequence(owner.CurState, owner.MissileState))))
+			owner.SetState(owner.SeeState);
+
+		// With a straight walk through the opening the lure stands where you
+		// appear. Otherwise (a slant, or the view is lost) it first stands
+		// square in front of the door, and goes beyond it once the monster is
+		// about in line. Doom's chase walks in eight directions and in whole
+		// steps, so it never lines up exactly: in front of the opening the
+		// monster is slid sideways onto the middle line, which a demon, 60
+		// wide in a 64 opening, needs to within 2 units.
+		Vector2 to = viaImg;
+		if (!viaStraight)
+		{
+			Vector2 mid = (via.v1.p + via.v2.p) / 2;
+			Vector2 along = via.delta.Unit();
+			Vector2 n = (along.y, -along.x);
+			Vector2 off = owner.pos.xy - mid;
+			if (off dot n < 0) n = -n;
+			double side = off dot along;
+			double ahead = off dot n;
+			bool lined = abs(side) < 16 && ahead < 128;
+			to = lined ? mid - n * 40 : mid + n * (owner.radius + 28);
+			if (ahead < 128 && abs(side) < 24 && abs(side) > 0.25)
+				owner.TryMove(owner.pos.xy - along * clamp(side, -2, 2), 1);
+		}
+		lure.SetOrigin((to, owner.pos.z), false);
+	}
+
+	void Unmute()
+	{
+		if (!muted) return;
+		muted = false;
+		owner.meleerange = ownRange;
+		owner.reactiontime = 0;
 	}
 
 	override void OnDestroy()

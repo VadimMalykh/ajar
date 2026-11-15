@@ -485,11 +485,48 @@ class AjarHandler : EventHandler
 		if (damage) mo.DamageMobj(null, mo, damage, 'Hitscan');
 	}
 
+	// When the player goes through a door, the monsters that were after them
+	// and can see that door go after them through it (AjarSense.Follow). A
+	// step far longer than a walk is a door: the one that was nearest.
+	Vector3 playerWas;
+	bool playerWasSet;
+	void Followers(Actor mo)
+	{
+		Vector3 was = playerWas;
+		bool moved = playerWasSet && (mo.pos.xy - was.xy).Length() > 96;
+		playerWas = mo.pos;
+		playerWasSet = true;
+		if (!moved) return;
+		Line through;
+		double best = 48;
+		let fi = ThinkerIterator.Create("AjarFrame");
+		AjarFrame f;
+		while (f = AjarFrame(fi.Next()))
+		{
+			if (!f.door) continue;
+			for (int k = 0; k < 2; k++)
+			{
+				Line l = FindLine(k ? f.door.args[0] : f.args[0]);
+				if (!l) continue;
+				// distance from where the player was to the opening
+				Vector2 w = was.xy - l.v1.p;
+				double u = clamp((w dot l.delta) / (l.delta dot l.delta), 0, 1);
+				double d = (w - l.delta * u).Length();
+				if (d < best) { best = d; through = l; }
+			}
+		}
+		if (!through) return;
+		let si = ThinkerIterator.Create("AjarSense");
+		AjarSense s;
+		while (s = AjarSense(si.Next())) s.Follow(through, mo);
+	}
+
 	override void WorldTick()
 	{
 		SelfShots();
 		let mo = players[consoleplayer].mo;
 		if (mo) Squeeze(mo);
+		if (mo && mo.health > 0) Followers(mo);
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (!mode || !mo) return;
 		int t = testTic++;
@@ -590,9 +627,10 @@ class AjarHandler : EventHandler
 		// swap RED for VIOLET in the lobby frame and leave
 		if (t == 885) { FindFrame(101).Activate(mo); Pose(mo, 256, 80, 0, 270); }
 		Forward(mo, t, 890, 25);
-		if (t == 925) Check("inStreet", mo.pos.x > 4900);
-		// face the exit switch; the real USE press comes from tools/smoke_MAP02_1.cfg
-		if (t == 930) Pose(mo, 5418, 96, 0, 0);
+		if (t == 925) Check("inExitRoom", mo.pos.x > 4900);
+		// the way out is walked into
+		if (t == 930) Pose(mo, 5290, 128, 0, 0);
+		Forward(mo, t, 960, 10);
 	}
 
 	// MAP03: a solution of the same length as the one tools/build.py prints.
@@ -656,9 +694,10 @@ class AjarHandler : EventHandler
 		if (t == 685) Check("underWithRed", mo.pos.z == -64 && have == "RED");
 		if (t == 690) { FindFrame(102).Activate(mo); Pose(mo, 1232, 800, -64, 90); }
 		Forward(mo, t, 695, 25);
-		if (t == 735) Check("inAlley", mo.pos.x > 4900);
-		// face the exit switch; the real USE press comes from tools/smoke_MAP03_1.cfg
-		if (t == 740) Pose(mo, 5418, 96, 0, 0);
+		if (t == 735) Check("inExitRoom", mo.pos.x > 4900);
+		// the way out is walked into
+		if (t == 740) Pose(mo, 5290, 128, 0, 0);
+		Forward(mo, t, 775, 10);
 	}
 
 	// MAP04: a solution of the same length as the one tools/build.py prints
@@ -744,9 +783,10 @@ class AjarHandler : EventHandler
 		// RED into the frame in here, and out
 		if (t == 910) { Take(mo, 1); FindFrame(105).Activate(mo); Pose(mo, 2160, 240, 0, 0); }
 		Forward(mo, t, 915, 25);
-		if (t == 955) Check("inStreet", mo.pos.x > 4900);
-		// face the exit switch; the real USE press comes from tools/smoke_MAP04_1.cfg
-		if (t == 960) Pose(mo, 5418, 96, 0, 0);
+		if (t == 955) Check("inExitRoom", mo.pos.x > 4900);
+		// the way out is walked into
+		if (t == 960) Pose(mo, 5290, 128, 0, 0);
+		Forward(mo, t, 975, 10);
 	}
 
 	// MAP04 mode 3: sending something somewhere worse. VIOLET hangs in the
@@ -816,7 +856,7 @@ class AjarHandler : EventHandler
 			2010, 240, 0, 0, 0,         // the strongroom: RED, its frame
 			1344, -40, 0, 270, 0,       // the closet
 			4040, 192, 0, 0, 0,         // the store
-			5040, 96, 0, 0, 0           // the street
+			5030, 128, 0, 0, 0          // the way out
 		};
 		for (int k = 0; k < houses.Size(); k++) tourViews.Push(houses[k]);
 	}
@@ -853,7 +893,7 @@ class AjarHandler : EventHandler
 				4240, 160, 0, 0, 0,         // cellar: the frame, key 2
 				3060, 224, 128, 0, 12,      // terrace, down into the garden
 				300, 520, 112, 270, 20,     // balcony: the gap in the rail
-				5040, 96, 0, 0, 0           // street
+				5030, 128, 0, 0, 0          // the way out
 			};
 			static const double theatre[] = {
 				-200, 1352, 0, 0, 0,        // foyer from the start
@@ -882,7 +922,7 @@ class AjarHandler : EventHandler
 				1920, 1130, 64, 90, 0,      // the star's room: RED
 				2140, 1024, 64, 0, 0,       // green room
 				4040, 192, 0, 0, 0,         // property store
-				5040, 96, 0, 0, 0           // alley
+				5030, 128, 0, 0, 0          // the way out
 			};
 			if (level.mapname ~== "MAP04") PartyWallViews();
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
@@ -1100,9 +1140,9 @@ class AjarHandler : EventHandler
 		if (t == 625) { FindFrame(102).Activate(mo); Pose(mo, 384, 100, 0, 270); }
 		Forward(mo, t, 660, 25);
 		if (t == 690) Check("inExitRoom", mo.pos.x > 2900);
-		// face the exit switch; the real USE press comes from tools/smoke_MAP01_1.cfg
+		// the way out is walked into
 		if (t == 695) Pose(mo, 3290, 128, 0, 0);
-		Forward(mo, t, 725, 10);                    // a way out that is walked into (AJAR_EXIT=2)
+		Forward(mo, t, 725, 10);
 	}
 
 	// MODE=3: things other than the player through a hung door (M3 proof).
@@ -1398,8 +1438,50 @@ class AjarHandler : EventHandler
 		if (t == plugTic + 800) Check("freedFrameLetsItOut", cameOutAgain);
 	}
 
+	// MODE=10: three of Doom's monsters, awake in the hall and none of them
+	// in front of the RED door, when the player leaves through it and steps
+	// out of view. All three have to follow, and none may attack its lure.
+	Actor crowd[3];
+	int lureAttacks;
+
+	void CrowdScript(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE;
+		if (t == 40)
+		{
+			Pose(mo, 96, 256, 0, 0);
+			crowd[0] = Actor.Spawn("DoomImp", (400, 300, 0));
+			crowd[1] = Actor.Spawn("Demon", (300, 120, 0));
+			crowd[2] = Actor.Spawn("ZombieMan", (520, 400, 0));
+			for (int i = 0; i < 3; i++) crowd[i].angle = 180;
+		}
+		if (t < 40) return;
+		if (t == 75) Pose(mo, 160, 470, 0, 90);
+		Forward(mo, t, 76, 12);
+		if (t == 100) mo.angle = 135;
+		Forward(mo, t, 100, 25);
+		int through = 0;
+		for (int i = 0; i < 3; i++)
+		{
+			Actor a = crowd[i];
+			if (!a) continue;
+			if (a.pos.y > 1900) through++;
+			if (a.target is "AjarLure" && (a.InStateSequence(a.CurState, a.MeleeState) || a.InStateSequence(a.CurState, a.MissileState)))
+				lureAttacks++;
+			if (t % 35 == 0)
+				Console.Printf("AJARTEST   %s at (%d,%d) target=%s", a.GetClassName(), a.pos.x, a.pos.y, a.target ? a.target.GetClassName() : 'none');
+		}
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d through=%d lureAttacks=%d", t, through, lureAttacks);
+		if (t == 700)
+		{
+			Check("crowdFollowsThroughDoor", through == 3);
+			Check("nobodyAttacksItsLure", lureAttacks == 0);
+		}
+	}
+
 	void TestLevelScript(Actor mo, int t, int mode)
 	{
+		if (mode == 10) { CrowdScript(mo, t); return; }
 		if (mode == 9) { SelfShotScript(PlayerPawn(mo), t); return; }
 		if (mode == 8) { ShootScript(mo, t); return; }
 		if (mode == 7) { LodgerScript(mo, t); return; }

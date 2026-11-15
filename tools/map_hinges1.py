@@ -11,7 +11,7 @@ Each far side is lit in its door's colour.
 import os
 
 import ajarmap
-from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, DOOR_H, far_id
+from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, far_id
 from udmf import Map, rect
 
 m = Map()
@@ -35,7 +35,7 @@ PIT_LOOK = {                                                              # floo
     "3": (120, [(896, 320, 40, 150, 150, 170)]),
     "4": (104, []),
 }.get(PIT)
-WARM, GOLD, SKY, LEAF, PLUM = 0xFFD8CC, 0xFFE890, 0xA8C0FF, 0x80FF90, 0xD0A0FF
+WARM, LEAF = 0xFFD8CC, 0x80FF90
 # The hall, the ledge and the gallery are one room and are dressed alike:
 # the same walls, floor, runner and warm tint. Their doors still say which
 # far side is which.
@@ -85,58 +85,8 @@ ajarmap.room(m, [2000, 2320], [0, 128, 192, 320], lambda i, j: j == 1,
              ceil=160, light=210, color=LEAF, wall="AJSAFE", rug=HALL_LOOK.get("rug", "AJRUG"))   # the hall's runner
 recess((2000, 128), (2000, 192), (-1, 0), 0, far_id(GREEN), 101, far_colour=GREEN, color=LEAF)
 
-# --- the way out (VIOLET's far side) ---------------------------------------
-# AJAR_EXIT: 1 is a white room (every far side has a colour, the way out has
-# none) whose door stands ajar with light behind it; 2 is the white room with
-# a doorway onto itself, so that you see your own back in it (the user's
-# choice of door); 3 to 5 are that doorway in a dressed room: ivory panels
-# over a black-and-white floor, a night room with gold stars (the user's
-# choice), and the hall turned inside out (ivory over terracotta); 0 is the
-# way out as it first was.
-EXIT = os.environ.get("AJAR_EXIT") or "4"
-EXIT_LOOK = {
-    "3": dict(wall="AJXW1", ftex="AJHG1", rug="AJXR1", light=200),
-    "4": dict(wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2", light=150),
-    "5": dict(wall="AJXW3", ftex="AJHG3", rug="AJHR3", light=200, color=WARM),
-}.get(EXIT)
-WHITE = dict(wall="AJXW", ftex="AJXG", rug=HALL_LOOK.get("rug", "AJRUG"))
-if EXIT == "0":
-    ajarmap.room(m, [3000, 3320], [0, 96, 160, 256], lambda i, j: j == 1,
-                 ceil=160, light=210, color=PLUM)
-    recess((3000, 96), (3000, 160), (-1, 0), 0, far_id(VIOLET), 101, far_colour=VIOLET, color=PLUM)
-    m.line((3320, 96), (3320, 160), special=243, playeruse=True, mid="AJEXIT", exact=True)
-elif EXIT == "1":
-    # The room is kept dim, so that the only real white in it is the light
-    # behind the door.
-    lit = dict(ceil=176, light=200, wall="AJXW", ctex="AJLITE")
-    for box in ((3000, 0, 3320, 96), (3000, 160, 3320, 256)):
-        m.sector(rect(*box), ceil=160, light=176, wall="AJXW", ftex="AJXG")
-    # the runner, and across it the light that comes through the crack
-    m.sector(rect(3000, 96, 3136, 160), ftex=WHITE["rug"], **lit)
-    m.sector([(3136, 96), (3136, 100), (3320, 96)], ftex=WHITE["rug"], **lit)
-    m.sector([(3136, 150), (3136, 160), (3320, 160), (3320, 106)], ftex=WHITE["rug"], **lit)
-    m.sector([(3136, 100), (3136, 150), (3320, 106), (3320, 96)], ftex="AJXL", **dict(lit, light=255))
-    recess((3000, 96), (3000, 160), (-1, 0), 0, far_id(VIOLET), 101, far_colour=VIOLET)
-    # The door: hinged on the north jamb and pushed a third of the way open.
-    # Behind its leaf is nothing; past its edge is the light, and the leaf is
-    # seen from its dark side. Push it to leave.
-    m.sector([(3320, 96), (3320, 160), (3328, 160), (3360, 105), (3360, 96)], ceil=DOOR_H, light=144,
-             wall="AJXT", ftex="AJXTF", ctex="AJXTF")
-    m.sector(rect(3360, 96, 3368, 105), ceil=DOOR_H, light=255, wall="AJGLOW", ftex="AJGLOW", ctex="AJGLOW")
-    m.line((3328, 160), (3360, 105), special=243, playeruse=True, mid="AJXDOR")
-    m.line((3360, 105), (3360, 96), special=243, playeruse=True)
-    m.line((3320, 96), (3320, 160), special=243, playeruse=True)
-else:
-    # VIOLET's far side is in the south wall, so that the two ends of the
-    # doorway face each other down the room: through either you see the room
-    # again, and yourself in it. Stepping into either is the way out.
-    ajarmap.room(m, [3000, 3128, 3192, 3320], [0, 96, 160, 256], lambda i, j: j == 1 or (i == 1 and j == 0),
-                 ceil=160, **(EXIT_LOOK or dict(WHITE, light=235)))
-    recess((3128, 0), (3192, 0), (0, -1), 0, far_id(VIOLET), 101, far_colour=VIOLET)
-    ajarmap.doorway(m, 1, (3320, 96), (3320, 160), (1, 0), 0, (3000, 96), (3000, 160), (-1, 0), 0,
-                    trim=("AJXA", "AJXAF") if EXIT_LOOK else None)
-    for x in (3000, 3320):
-        m.line((x, 96), (x, 160), special=243, args=(), playeruse=False, repeatspecial=False, playercross=True)
+# --- the way out (VIOLET's far side): the same room in every level ---------
+ajarmap.way_out(m, 3000, 0, VIOLET)
 
 # --- light niches in the hall's south wall, either side of the frame --------
 for x in (128, 576):
@@ -203,17 +153,16 @@ things(IMP, (610, 740), angle=270)
 things(TORCH_B, (304, 808), (464, 808))
 things(BONUS, (100, 736), (140, 736), (180, 736), (220, 736))
 things(STIM, (40, 808))
-# the vault: two imps keeping the VIOLET door, green torches in the corners
-things(IMP, (2210, 60), (2210, 260), angle=180)
+# the vault: two imps flat against the wall you come in by, one each side of
+# GREEN's far side. Nothing of them shows through the door; once you are in,
+# they are behind you
+m.thing(2024, 64, IMP, angle=90)
+m.thing(2024, 256, IMP, angle=270)
 things(TORCH_G, (2024, 24), (2024, 296), (2296, 24), (2296, 296))
 things(MEDIKIT, (2270, 90))
 things(SHELLS, (2270, 230))
-# the way out: one last zombie, lamps by the switch
+# the way out: one last zombie
 things(ZOMBIE, (3210, 208), angle=180)
-if EXIT_LOOK:                                                             # a pair at each end: they repeat in the doorway
-    things(CANDELABRA, (3032, 48), (3032, 208), (3288, 48), (3288, 208))
-else:
-    things(TECHLAMP, (3296, 56), (3296, 200))
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 PUZZLE = dict(

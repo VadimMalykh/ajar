@@ -202,48 +202,56 @@ def furniture(out, wall):
                 im.set(x, y, wall.px[(y % 128) * 128 + x % 128])
         return im
 
-    # the hotel's front doors, on a strip of lobby wall (336): boarded up
-    # from outside, under a lit sign
+    # the hotel's front doors, on a strip of lobby wall (128 by 336): boarded
+    # up from outside, under a lit sign
+    def front(fd):
+        fd.rect(2, 180, 126, 204, (26, 22, 22))
+        fd.frame(2, 180, 126, 204, BRASS, 1)
+        text(fd, "NO VACANCY", 5, 187, (255, 74, 50))
+        dark = (72, 50, 32)
+        fd.rect(10, 212, 118, 336, dark)
+        for x1 in (16, 66):
+            fd.rect(x1, 218, x1 + 46, 336, (104, 74, 46))
+            fd.rect(x1 + 6, 226, x1 + 40, 300, (44, 56, 76))             # glass, dark outside
+            fd.rect(x1 + 9, 229, x1 + 14, 297, (86, 104, 128))
+            fd.frame(x1 + 6, 226, x1 + 40, 300, dark, 2)
+            fd.rect(x1 + 6, 308, x1 + 40, 330, (90, 62, 38))
+        fd.rect(60, 262, 68, 274, BRASS)                                 # handles
+        for y0 in (238, 282):                                            # two planks across
+            for i in range(108):
+                y = y0 + i // 9
+                fd.rect(10 + i, y, 11 + i, y + 9, (160, 120, 78))
+                fd.set(10 + i, y, (92, 66, 40))
+                fd.set(10 + i, y + 8, (92, 66, 40))
+            for x in (14, 113):
+                fd.disc(x, y0 + (x - 10) // 9 + 4, 1, (226, 226, 230))
+
     fd = strip(128, 336)
-    fd.rect(2, 180, 126, 204, (26, 22, 22))
-    fd.frame(2, 180, 126, 204, BRASS, 1)
-    text(fd, "NO VACANCY", 5, 187, (255, 74, 50))
-    dark = (72, 50, 32)
-    fd.rect(10, 212, 118, 336, dark)
-    for x1 in (16, 66):
-        fd.rect(x1, 218, x1 + 46, 336, (104, 74, 46))
-        fd.rect(x1 + 6, 226, x1 + 40, 300, (44, 56, 76))             # glass, dark outside
-        fd.rect(x1 + 9, 229, x1 + 14, 297, (86, 104, 128))
-        fd.frame(x1 + 6, 226, x1 + 40, 300, dark, 2)
-        fd.rect(x1 + 6, 308, x1 + 40, 330, (90, 62, 38))
-    fd.rect(60, 262, 68, 274, BRASS)                                 # handles
-    for y0 in (238, 282):                                            # two planks across
-        for i in range(108):
-            y = y0 + i // 9
-            fd.rect(10 + i, y, 11 + i, y + 9, (160, 120, 78))
-            fd.set(10 + i, y, (92, 66, 40))
-            fd.set(10 + i, y + 8, (92, 66, 40))
-        for x in (14, 113):
-            fd.disc(x, y0 + (x - 10) // 9 + 4, 1, (226, 226, 230))
+    front(fd)
     out["textures/AJFRONT.png"] = fd.png()
 
-    # the key rack behind the reception desk: the 72 rows of a 336 wall
-    # between the counter top (40) and the balcony floor (112)
+    # the key rack behind the reception desk, on a strip of lobby wall (160
+    # by 336): the 72 rows between the counter top (40) and the balcony
+    # floor (112)
+    def keyrack(kr):
+        kr.rect(0, 224, 160, 296, (86, 60, 38))
+        kr.frame(0, 224, 160, 296, (56, 38, 22), 2)
+        text(kr, "RECEPTION", 27, 229, BRASS)
+        rnd = random.Random(7)
+        for i in range(9):
+            for j in range(3):
+                x, y = 9 + i * 16, 244 + j * 16
+                kr.rect(x, y, x + 14, y + 14, (40, 28, 18))
+                if rnd.random() < 0.3:                                   # a key left on its hook
+                    kr.rect(x + 6, y + 2, x + 8, y + 8, BRASS)
+                    kr.rect(x + 4, y + 8, x + 10, y + 12, (236, 228, 204))
+                else:
+                    kr.set(x + 7, y + 3, BRASS)
+
     kr = strip(160, 336)
-    kr.rect(0, 224, 160, 296, (86, 60, 38))
-    kr.frame(0, 224, 160, 296, (56, 38, 22), 2)
-    text(kr, "RECEPTION", 27, 229, BRASS)
-    rnd = random.Random(7)
-    for i in range(9):
-        for j in range(3):
-            x, y = 9 + i * 16, 244 + j * 16
-            kr.rect(x, y, x + 14, y + 14, (40, 28, 18))
-            if rnd.random() < 0.3:                                   # a key left on its hook
-                kr.rect(x + 6, y + 2, x + 8, y + 8, BRASS)
-                kr.rect(x + 4, y + 8, x + 10, y + 12, (236, 228, 204))
-            else:
-                kr.set(x + 7, y + 3, BRASS)
+    keyrack(kr)
     out["textures/AJKEYS.png"] = kr.png()
+    return front, keyrack
 
 
 def hang_picture(pic, tall, base):
@@ -708,7 +716,7 @@ def make_all():
     out["textures/AJWALL.png"] = wall.png()
     pit_walls(out, hall_walls(out)[2][0])
     hall_floors(out)
-    furniture(out, wall)
+    front, keyrack = furniture(out, wall)
 
     # an ordinary hotel-room door (ajarmap.roomdoor): plain wood, no colour, so
     # it cannot be mistaken for one of yours.
@@ -731,6 +739,8 @@ def make_all():
     rd.disc(53, T + 81, 3, (206, 180, 96))                       # knob
     rd.noise(5, 77)
     out["textures/AJHDOR.png"] = rd.png()
+    import gfx_hotel                                             # MAP02's candidate looks
+    gfx_hotel.make(out, rd, front, keyrack)
 
     # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate
     # per key it needs, each with that key's number, where a hand would be
@@ -904,62 +914,11 @@ def make_all():
         ex.rect(34 + i, 71 + i, 35 + i, 90 - i, (20, 40, 20))
     out["textures/AJEXIT.png"] = ex.png()
 
-    # The way out (see AJAR_EXIT in map_hinges1.py). Every far side has a
-    # colour; the exit room has none: white plaster, pale flags, white trim.
-    xw = Img(64, 64, (236, 234, 228))
-    xw.noise(3, 51)
-    out["textures/AJXW.png"] = xw.png()
-    xg = Img(64, 64, (222, 220, 214))
-    xg.noise(4, 52)
-    for i in (0, 32):
-        xg.rect(i, 0, i + 1, 64, (188, 186, 180))
-        xg.rect(0, i, 64, i + 1, (188, 186, 180))
-    out["flats/AJXG.png"] = xg.png()
-    xt = Img(64, 64, (250, 249, 244))
-    xt.noise(2, 53)
-    for y in range(0, 64, 16):
-        xt.rect(0, y, 64, y + 1, (206, 204, 198))
-    out["textures/AJXT.png"] = xt.png()
-    out["flats/AJXTF.png"] = xt.png()
-    # its door has no colour and no glyph, and stands ajar: this is the leaf
-    xd = door(1)
-    paint = (240, 238, 230)
-    for p in xd.px:
-        g = (p[0] * 3 + p[1] * 6 + p[2]) / (DOOR_COLOURS[1][0] * 3 + DOOR_COLOURS[1][1] * 6 + DOOR_COLOURS[1][2])
-        p[:3] = shade(paint, min(1.0, 0.45 + 0.55 * g))
-    xd.rect(9, 8, 55, 44, shade(paint, 0.93))
-    xd.frame(9, 8, 55, 44, shade(paint, 0.72), 2)
-    xd.disc(53, 49, 3, (235, 215, 140))
-    out["textures/AJXDOR.png"] = xd.png()
-    # the light behind it, and the wedge of it that falls across the runner
-    out["textures/AJGLOW.png"] = Img(64, 64, (255, 253, 240)).png()
-    out["flats/AJGLOW.png"] = Img(64, 64, (255, 253, 240)).png()
-    xl = Img(64, 64, (250, 248, 236))
-    xl.noise(5, 54)
-    out["flats/AJXL.png"] = xl.png()
-
-    # Dressed candidates for the way out (AJAR_EXIT=3..5). None uses a door's
-    # colour. Walls are 160 high, as the room; AJXA is the brass of its doorway.
-    INK, IVORY, BRASSY, COAL = (20, 22, 36), (232, 224, 204), (204, 170, 92), (44, 44, 50)
-    TERRA, NAVY = (178, 88, 58), (38, 46, 80)
-
-    def moulded(upper, dado, rail, skirt, seed):
-        w = Img(64, 160, upper)
-        w.rect(0, 108, 64, 160, dado)
-        w.noise(4, seed)
-        w.rect(0, 0, 64, 6, shade(upper, 0.82))                  # cornice
-        w.rect(0, 6, 64, 8, rail)
-        w.frame(6, 16, 58, 98, shade(upper, 0.84), 2)            # a panel per 64
-        w.frame(8, 18, 56, 96, shade(upper, 1.06), 1)
-        w.rect(0, 104, 64, 108, rail)
-        w.rect(0, 108, 64, 109, shade(rail, 0.6))
-        w.frame(6, 116, 58, 146, shade(dado, 0.7), 2)
-        w.rect(0, 152, 64, 160, skirt)
-        w.rect(0, 152, 64, 153, shade(skirt, 1.5))
-        return w
-
-    out["textures/AJXW1.png"] = moulded(IVORY, COAL, BRASSY, (16, 16, 18), 61).png()
-    out["textures/AJXW3.png"] = moulded(IVORY, TERRA, NAVY, shade(NAVY, 0.7), 63).png()
+    # The way out, the same room in every level (ajarmap.way_out): far sides
+    # have a colour, the way out has none. A night room: ink walls and ceiling
+    # with gold stars, a dark floor with brass inlay, a gold runner. Walls are
+    # 160 high, as the room; AJXA is the brass of its doorway.
+    INK, BRASSY = (20, 22, 36), (204, 170, 92)
     night = Img(64, 160, INK)
     night.noise(3, 62)
     rnd = random.Random(62)
@@ -984,13 +943,13 @@ def make_all():
     for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64)):
         ng.diamond(cx, cy, 4, BRASSY)
     out["flats/AJXG2.png"] = ng.png()
-    for name, base, dot, seed in (("AJXR1", (30, 30, 34), BRASSY, 66), ("AJXR2", (176, 140, 66), INK, 67)):
-        r = Img(64, 64, base)
-        r.noise(5, seed)
-        for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64), (32, 32)):
-            r.diamond(cx, cy, 5, dot)
-            r.diamond(cx, cy, 3, base)
-        out[f"flats/{name}.png"] = r.png()
+    base = (176, 140, 66)
+    r = Img(64, 64, base)
+    r.noise(5, 67)
+    for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64), (32, 32)):
+        r.diamond(cx, cy, 5, INK)
+        r.diamond(cx, cy, 3, base)
+    out["flats/AJXR2.png"] = r.png()
     xa = Img(64, 64, BRASSY)
     xa.noise(5, 68)
     for y in range(0, 64, 32):

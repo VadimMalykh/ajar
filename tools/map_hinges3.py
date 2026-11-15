@@ -29,7 +29,7 @@ What is new, and why it is not a chain:
   up with empty hands, so every other door you took has to hang somewhere.
 
 Keys 2 and 3 open the star's dressing room, backstage: RED, which opens
-onto the alley. The stage is too high to climb, so it goes out by the drop
+onto the way out. The stage is too high to climb, so it goes out by the drop
 into the pit, or into the room under the stage, which has a frame.
 """
 import ajarmap
@@ -184,11 +184,8 @@ m.sector(rect(512, -224, 640, -96), floor=FLIES, ceil=FLIES + 96, light=110, wal
 m.sector(rect(4000, 0, 4448, 384), ceil=160, light=150, color=ROSE, wall="AJSAFE", special=1024)
 recess((4000, 160), (4000, 224), (-1, 0), 0, far_id(PINK), 101, far_colour=PINK, color=ROSE)
 
-# --- the alley behind the theatre (RED's far side) ---------------------------
-m.sector(rect(5000, 0, 5448, 192), ceil=160, light=200, color=WARM, ftex="AJPIT", **OPEN)
-recess((5000, 64), (5000, 128), (-1, 0), 0, far_id(RED), 101, far_colour=RED, color=WARM)
-m.cut((5448, 64), (5448, 128))
-m.line((5448, 64), (5448, 128), special=243, playeruse=True, mid="AJEXIT", exact=True)
+# --- the way out (RED's far side): the same room in every level -------------
+ajarmap.way_out(m, 5000, 0, RED)
 
 # --- doors and keys ----------------------------------------------------------
 m.thing(-200, 1352, 1, angle=0)                                           # player start, in the foyer
@@ -306,17 +303,15 @@ things(SHELLBOX, (4400, 40))
 things(REVENANT, (4250, 100), (4250, 290), angle=180)
 things(IMP, (4130, 60), (4130, 330), angle=180)
 things(CANDELABRA, (4424, 24), (4424, 360))
-# the alley: the last things between you and the street
-things(REVENANT, (5360, 96), angle=180)
-things(SERGEANT, (5250, 40), (5250, 150), angle=180)
-things(TECHLAMP, (5424, 24), (5424, 168))
-things(TORCH_R, (5024, 24), (5024, 168))
+# the way out: the last things between you and it
+things(REVENANT, (5264, 128), angle=180)
+things(SERGEANT, (5230, 48), (5230, 208), angle=180)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "front" is foyer, cloakroom, bar, stalls and pit; "stage" includes backstage;
 # "flies" includes the bridge. a, b, c are the three bolts.
 PUZZLE = dict(
-    start="front", goal="alley", names=ajarmap.NAMES, complete=True,
+    start="front", goal="exit", names=ajarmap.NAMES, complete=True,
     walk=[("circle", "front"), ("gods", "front"), ("flies", "stage"), ("flies", "gods"),
           ("stage", "front"), ("stage", "under"),
           ("under", "front", "a"), ("front", "under", "a"),               # the grate
@@ -333,6 +328,6 @@ PUZZLE = dict(
         GREEN: dict(home="flies", lean="under"),
         YELLOW: dict(home="gods", frame=105),
         PINK: dict(home="store", frame=106),
-        RED: dict(home="alley", lean="star"),
+        RED: dict(home="exit", lean="star"),
     },
 )
