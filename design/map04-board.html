@@ -1,0 +1,503 @@
+<title>Party Wall Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, the same as the boards of MAP01 to MAP03. Three looks summarised on top
+   with the plan, then one band per part of the block: notes and a pick on the left, the same
+   camera in every look on the right. Points to argue about close the page. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.talk li strong { font-family: var(--display); }
+.sws i { display: block; height: 72px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: bottom left; background-size: 64px auto; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 472; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+ol.open { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP04 "Party Wall" · captured 16 Nov 2026 · GZDoom 4.12.2, software GL, monsters off</div>
+    <h1>Party Wall: three looks for the yard</h1>
+    <p>The block is still grey brick from top to bottom. Below are three looks for the whole of it, each built into the level and photographed from the same 31 cameras as the level is now. Every part has its own band: switch camera, compare, and pick.</p>
+    <p class="muted">Picks can be mixed, for example the yard from one look and the rooms from another. Your picks are collected near the bottom as one line to paste into the chat. You can also comment on this page. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The three looks</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>Plan of the block, with camera numbers</h3>
+    <div class="plan" id="plan"></div>
+    <p class="muted" style="font-size:13px">One grid square is 128 map units; north is up, and you start in the gate passage at the bottom. Places above the yard are drawn darker, places below it grey, each with its floor height. The store and the way out are reached only by door, so they are not on the plan.</p>
+  </section>
+
+  <section class="stack" id="parts" style="gap:34px"></section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and I will build the block that way.</p>
+    <output id="picksline" for="parts"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+
+  <section class="stack">
+    <h3>Beyond paint: options to talk about</h3>
+    <p class="muted" style="font-size:13.5px">None of these is in the pictures. Each changes the level's shape, lighting or how it plays, so I would rather agree them first.</p>
+    <ol class="open talk">
+      <li><strong>Roofs against the sky.</strong> Every wall round the yard runs straight up to the sky's edge, so the houses have a painted top but no roof. Real eaves, with sky above a lower wall, need the yard's walls rebuilt in two steps. It would do most to stop the yard reading as a box.</li>
+      <li><strong>Marking the frames.</strong> With the dark column gone, the two frames in the yard are a dark doorway at ground level and nothing else. A stone surround or a lamp over each would mark them from across the yard, which matters with a thief about.</li>
+      <li><strong>Room tints are gone in the looks.</strong> Balcony, roof, loft and kennel were tinted after their doors. As in MAP01 to MAP03 the looks leave that to the coloured column over each far side, the torches and the doors. Patio brings a little of it back through the house paint; that could be done in the other two, or dropped.</li>
+      <li><strong>Evening.</strong> The yard is evenly bright under Doom's dusk sky. Darker, with the lit windows and the lamps doing the work, would suit the windows and the lodger. It makes the snipers on three sides harder to see.</li>
+      <li><strong>Things in the yard.</strong> A pump, washing lines, dustbins, a cart, chimneys on the roof. Each is a small block or a new sprite, and each changes where the thief and the monsters can walk.</li>
+      <li><strong>One house, or four.</strong> Each look gives the four sides four colours. All four the same is one line to change, and so is swapping which house has which colour.</li>
+      <li><strong>Mixing.</strong> Outside and inside are textured apart, so the fronts of one look with the rooms of another cost nothing.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+const LOOKS = [
+ [
+  "0",
+  "As it is now",
+  "Grey brick on every wall, dark ground, office ceilings. Places tinted after the door that leads to them."
+ ],
+ [
+  "1",
+  "Tenement",
+  "A brick tenement block. Soot-brown, yellow stock and dark brick houses with stone bands at every floor, sash windows under stone lintels, a slate edge and gutter at the top, iron railings. The yard is paved in setts with a flagstone path. The light well is lined in white glazed brick. Inside: green and white tile in the wash house, green stripes over mahogany in the office, faded rose paper in the suite, lath and boards in the loft."
+ ],
+ [
+  "2",
+  "Patio",
+  "A whitewashed court in the south. Lime-washed houses in white, cream, ochre and rose, each with a painted dado and louvred shutters, pantiles along the top, turned wooden railings. Sandstone slabs with a terracotta path, a tiled roof terrace. Inside: white rooms under dark beams, blue and white in the wash house, terracotta floors."
+ ],
+ [
+  "3",
+  "Inn yard",
+  "An old coaching inn. Black timber frames with cream and buff panels over a ground storey of rubble stone, leaded lattice windows, thatch along the top, cross-braced oak rails. Trodden earth with a cobbled path, a boarded roof. Inside: oak panelling in the office, green hangings in the suite, slats and thatch in the loft, stone flags in the wash house."
+ ]
+];
+const SW = ["F#W", "F#N", "F#E", "F#S", "F#", "P#", "M#"];
+const SWCAP = "West, north, east and south house; yard floor, path, roof";
+const NOTES = {
+ "1": "Fits the level's own words best: landlord, coal hole, boiler, wash house. It is the darkest of the three, so imps and demons stand out least against it. The brick is brown, well away from RED.",
+ "2": "The brightest: monsters, doors and the thief show best. Each house's paint echoes the door that leads onto it (blue under the balcony, green under the roof, ochre under the loft). The risk is the blue dado right where the thief carries BLUE about. It is also cheerful, for a yard with 87 monsters in it.",
+ "3": "The strongest pattern. From across the yard the timbering is busy, and things in front of it are harder to pick out. The stone ground storey is close to the grey that is there now. A boiler and a landlord's office sit a little oddly under thatch."
+};
+
+// part id, name, cameras [view, label], which looks apply, notes
+const PARTS = [
+ {
+  "id": "yard",
+  "name": "The yard",
+  "looks": "0123",
+  "cams": [
+   [
+    2,
+    "Into the yard, the roof beyond"
+   ],
+   [
+    3,
+    "The balcony side"
+   ],
+   [
+    4,
+    "The loft side"
+   ],
+   [
+    16,
+    "Down from the roof"
+   ],
+   [
+    0,
+    "From the start"
+   ],
+   [
+    1,
+    "Out of the gate passage"
+   ],
+   [
+    8,
+    "Up at the south wall"
+   ],
+   [
+    5,
+    "Office door, two locks"
+   ],
+   [
+    7,
+    "North frame"
+   ],
+   [
+    6,
+    "Cellar door, bolted"
+   ],
+   [
+    9,
+    "Wash house door"
+   ]
+  ],
+  "text": "Most of the level, and where the thief works. Walls are 512 high on every side: three storeys of 160 and an edge at the top. Each side is a house of its own colour, with windows painted on the two upper storeys, some lit.",
+  "asks": [
+   "Windows are paint: nothing is behind them. Say if you want more, fewer, or none lit.",
+   "The dark column over the two frames in the yard is gone in the looks: the house front carries on over them. Far sides keep their coloured column.",
+   "The bed of grass, the crates and Doom's lamps are unchanged."
+  ]
+ },
+ {
+  "id": "up",
+  "name": "Balcony, roof and light well",
+  "looks": "0123",
+  "cams": [
+   [
+    12,
+    "Balcony: BLUE's far side"
+   ],
+   [
+    13,
+    "Balcony: GREEN"
+   ],
+   [
+    14,
+    "On the roof"
+   ],
+   [
+    15,
+    "Down the light well"
+   ],
+   [
+    17,
+    "In the well: frame and coal hole"
+   ]
+  ],
+  "text": "The balcony is the west house's first floor, the roof the top of the north house. Round the roof stand the blank walls of the houses next door. The well drops 448 from the roof to the boiler.",
+  "asks": [
+   "The balcony keeps its boards in every look.",
+   "The walls round the roof have no windows, so the roof reads as the top of something.",
+   "The well is pale in every look, as real ones are, so that the frame at the bottom shows from above."
+  ]
+ },
+ {
+  "id": "wash",
+  "name": "Wash house and pantry",
+  "looks": "0123",
+  "cams": [
+   [
+    10,
+    "Wash house"
+   ],
+   [
+    11,
+    "Pantry: PINK"
+   ]
+  ],
+  "text": "Off the south-west corner. The pantry is a secret behind a squeeze; its walls are shelves of jars in every look, and only its floor changes.",
+  "asks": [
+   "Sinks stay white. The hole between the two rooms keeps its dark surround so that it reads as a hole."
+  ]
+ },
+ {
+  "id": "office",
+  "name": "Office and strongroom",
+  "looks": "0123",
+  "cams": [
+   [
+    26,
+    "Office: the landlords"
+   ],
+   [
+    27,
+    "Strongroom: RED"
+   ]
+  ],
+  "text": "Behind two locks, with two barons in it. The strongroom keeps its walls of small locked doors in every look; only floor and ceiling follow the office.",
+  "asks": [
+   "The office is the one room that should feel rich. Tenement's green is the darkest; RED shows well against all three."
+  ]
+ },
+ {
+  "id": "loft",
+  "name": "Loft and suite",
+  "looks": "0123",
+  "cams": [
+   [
+    23,
+    "Loft"
+   ],
+   [
+    24,
+    "Suite door, two locks"
+   ],
+   [
+    25,
+    "Suite: VIOLET"
+   ]
+  ],
+  "text": "The loft is open to the yard along its whole front, so its back wall is seen from below. The suite is the one bedroom.",
+  "asks": [
+   "Beds keep their white covers and red quilt."
+  ]
+ },
+ {
+  "id": "below",
+  "name": "Cellar, kennel and stairs",
+  "looks": "01",
+  "same": true,
+  "cams": [
+   [
+    18,
+    "Cellar"
+   ],
+   [
+    19,
+    "Cellar: YELLOW"
+   ],
+   [
+    20,
+    "Kennel bars"
+   ],
+   [
+    21,
+    "Kennel: VIOLET's far side"
+   ],
+   [
+    22,
+    "Cellar stairs"
+   ]
+  ],
+  "text": "Below ground is the same whatever stands on it: dark brick under joists, an earth floor; the kennel in old whitewash with rings for chains, straw on the floor and iron bars.",
+  "asks": [
+   "One candidate only. The cellar is meant to be dark; say if it is too dark to read.",
+   "The kennel's rings repeat along every wall. Fewer is possible."
+  ]
+ },
+ {
+  "id": "store",
+  "name": "Closet and store",
+  "looks": "0",
+  "cams": [
+   [
+    29,
+    "Store: PINK's far side"
+   ],
+   [
+    28,
+    "Closet behind the target"
+   ]
+  ],
+  "text": "Two secrets, not dressed in any look: both still have the vault's walls of small locked doors.",
+  "asks": [
+   "MAP03's property store is in the same state. One direction could do for both."
+  ]
+ },
+ {
+  "id": "exit",
+  "name": "The way out",
+  "looks": "0",
+  "cams": [
+   [
+    30,
+    "From RED's far side"
+   ]
+  ],
+  "text": "Decided: the night room with the doorway onto itself, as in every level.",
+  "asks": []
+ }
+];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l][1];
+
+document.getElementById("looks").innerHTML = LOOKS.slice(1).map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sws" role="img" aria-label="${name}: ${SWCAP}">${SW.map(t =>
+     `<i style="background-image:url(tex/${t.replace("#", n)}.png)"></i>`).join("")}</div>
+   <div class="swcap">${SWCAP}</div>
+   <p>${d}</p><p class="muted">${NOTES[n]}</p></div>`).join("");
+
+let picks = {}, cams = {};
+try { picks = JSON.parse(localStorage.getItem("map04-picks") || "{}"); } catch (e) {}
+PARTS.forEach(p => cams[p.id] = p.cams[0][0]);
+
+function optName(p, l) { return p.same && l === "1" ? "New" : lookName(l); }
+function drawPart(p) {
+  const cam = cams[p.id], label = p.cams.find(c => c[0] === cam)[1];
+  const el = document.getElementById("main-" + p.id);
+  const camBar = p.cams.length > 1 ? `<div class="cams" role="group" aria-label="Camera, ${p.name}">${p.cams.map(([v, n]) =>
+    `<button type="button" id="cam-${p.id}-${v}" data-part="${p.id}" data-cam="${v}" aria-pressed="${v === cam}">${v + 1}. ${n}</button>`).join("")}</div>` : "";
+  el.innerHTML = camBar + `<div class="opts">${[...p.looks].map(l =>
+    `<div class="opt${picks[p.id] === l && p.looks.length > 1 ? " chosen" : ""}">
+       <button type="button" class="shot" aria-label="Enlarge: ${optName(p, l)}, ${label}"><img src="${l}/view_${pad(cam)}.jpg" alt="${p.name}, ${optName(p, l)}: ${label}" loading="lazy"></button>
+       <h4>${l === "0" ? "" : `<span>${p.same ? "" : l}</span>`}${optName(p, l)}</h4>
+     </div>`).join("")}</div>`;
+}
+
+function drawPicks(p) {
+  const el = document.getElementById("picks-" + p.id);
+  if (!el) return;
+  el.innerHTML = [...p.looks].map(l =>
+    `<button type="button" id="pick-${p.id}-${l}" data-part="${p.id}" data-look="${l}" aria-pressed="${picks[p.id] === l}">${l === "0" ? "Keep as now" : optName(p, l)}</button>`).join("");
+}
+
+function drawSummary() {
+  const parts = PARTS.filter(p => p.looks.length > 1);
+  const line = parts.map(p => `${p.name}: ${picks[p.id] === undefined ? "?" : picks[p.id] === "0" ? "as now" : optName(p, picks[p.id])}`).join("; ");
+  document.getElementById("picksline").textContent = "MAP04 look. " + line + ".";
+}
+
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<article class="part" id="${p.id}">
+     <div class="side">
+       <h2>${p.name}</h2>
+       <p>${p.text}</p>
+       ${p.asks.length ? `<ul>${p.asks.map(a => `<li>${a}</li>`).join("")}</ul>` : ""}
+       ${p.looks.length > 1 ? `<h3>Your pick</h3><div class="picks" id="picks-${p.id}" role="group" aria-label="Pick for ${p.name}"></div>` : ""}
+     </div>
+     <div class="main" id="main-${p.id}"></div>
+   </article>`).join("");
+PARTS.forEach(p => { drawPart(p); drawPicks(p); });
+drawSummary();
+
+document.getElementById("parts").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.classList.contains("shot")) { b.parentElement.classList.toggle("big"); return; }
+  const p = PARTS.find(q => q.id === b.dataset.part);
+  if (!p) return;
+  if (b.dataset.cam !== undefined) {
+    cams[p.id] = +b.dataset.cam;
+    drawPart(p);
+    document.getElementById(`cam-${p.id}-${b.dataset.cam}`).focus();
+  } else if (b.dataset.look !== undefined) {
+    if (picks[p.id] === b.dataset.look) delete picks[p.id]; else picks[p.id] = b.dataset.look;
+    try { localStorage.setItem("map04-picks", JSON.stringify(picks)); } catch (e) {}
+    drawPart(p); drawPicks(p); drawSummary();
+    document.getElementById(`pick-${p.id}-${b.dataset.look}`).focus();
+  }
+});
+
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+
+// Plan: x -448..2304, y -352..1984 at quarter scale, y flipped.
+(function () {
+  const S = 0.25, X0 = -448, X1 = 2304, Y0 = -352, Y1 = 1984, X = x => 16 + (x - X0) * S, Y = y => 16 + (Y1 - y) * S;
+  const C = { yard: "#e9dfc8", room: "#d9d3ee", up: "#d9b3a6", down: "#b9bec7", secret: "#f0c9dc" };
+  const rect = (x1, y1, x2, y2, fill, label, sub) => {
+    const cx = (X(x1) + X(x2)) / 2, cy = (Y(y1) + Y(y2)) / 2;
+    return `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${fill}" stroke="#1a1f27" stroke-width="1"/>` +
+      (label ? `<text x="${cx}" y="${cy + (sub ? -1 : 4)}" text-anchor="middle" font-size="11" font-weight="600" fill="#1a1f27">${label}</text>` : "") +
+      (sub ? `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="9" fill="#3b4350">${sub}</text>` : "");
+  };
+  let g = "";
+  for (let x = X0; x <= X1; x += 128) g += `<line x1="${X(x)}" y1="${Y(Y1)}" x2="${X(x)}" y2="${Y(Y0)}" stroke="var(--line)" stroke-width=".5"/>`;
+  for (let y = Y0; y <= Y1; y += 128) g += `<line x1="${X(X0)}" y1="${Y(y)}" x2="${X(X1)}" y2="${Y(y)}" stroke="var(--line)" stroke-width=".5"/>`;
+  g += rect(0, 0, 1536, 1152, C.yard, "Yard", "three frames");
+  g += rect(640, -320, 896, 0, C.yard, "Gate", "start, frame");
+  g += rect(-416, 0, -48, 224, C.room, "Wash house", "");
+  g += rect(-416, -288, -160, -16, C.secret, "Pantry", "");
+  g += rect(1280, -144, 1408, -16, C.secret, "Closet", "");
+  g += rect(1584, 64, 1968, 416, C.room, "Office", "keys 3 + 4");
+  g += rect(1984, 128, 2240, 352, C.room, "Strong", "frame");
+  g += rect(-256, 256, 0, 896, C.up, "Balcony", "floor +160");
+  g += rect(256, 1152, 1280, 1536, C.up, "", "");
+  g += `<text x="${X(448)}" y="${Y(1300)}" text-anchor="middle" font-size="11" font-weight="600" fill="#1a1f27">Roof</text><text x="${X(448)}" y="${Y(1300) + 12}" text-anchor="middle" font-size="9" fill="#3b4350">floor +320</text>`;
+  g += rect(640, 1344, 896, 1536, C.down, "Well", "floor -128");
+  g += rect(1536, 544, 1920, 1104, C.up, "Loft", "floor +192");
+  g += rect(1936, 672, 2256, 992, C.up, "Suite", "keys 1 + 2");
+  g += rect(256, 1616, 1280, 1936, C.down, "Cellar", "floor -128");
+  g += rect(1296, 1520, 1520, 1936, C.down, "", "");
+  g += rect(1440, 1184, 1504, 1520, C.down, "", "");
+  g += rect(-144, 1616, 240, 1936, C.down, "Kennel", "floor -64");
+  const V = [[768, -200, 90], [768, 80, 180], [768, 300, 90], [900, 560, 180], [700, 560, 0], [1300, 240, 0], [1300, 1000, 60], [500, 900, 150], [700, 700, 315], [200, 112, 180], [-100, 112, 225], [-280, -40, 250], [-60, 600, 180], [-128, 500, 90], [400, 1300, 0], [620, 1440, 0], [1132, 1170, 270], [680, 1380, 60], [300, 1780, 0], [1200, 1780, 60], [320, 1840, 180], [150, 1780, 180], [1472, 1560, 270], [1560, 820, 0], [1800, 832, 0], [1960, 832, 0], [1620, 240, 0], [2010, 240, 0], [1344, -40, 270]];
+  V.forEach((v, i) => {
+    const a = v[2] * Math.PI / 180, x = X(v[0]), y = Y(v[1]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 15 * Math.cos(a)}" y2="${y - 15 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="7.5" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 3.2}" text-anchor="middle" font-size="8.5" font-weight="600" fill="#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 ${32 + (X1 - X0) * S} ${32 + (Y1 - Y0) * S}" role="img" aria-label="Plan of the block with camera positions">${g}</svg>`;
+})();
+</script>

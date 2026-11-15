@@ -1215,6 +1215,46 @@ hung from the raised ceiling of a runner's light strip. Runner cells are
 now sectors with `lift`, and `udmf.py` draws their hung walls that much
 lower. It applies to every level.
 
+## Look: MAP04 (started 2026-11-16)
+
+Board: https://claude.ai/artifact/8RxUXmRfDd8t9npDvAw7K5 (source
+`design/map04-board.html`, images in `build/board4/`: `<look>/view_NN.jpg`
+cut from the tour shots, `tex/` swatches cut from the pk3's textures).
+**The user chose look 1, Tenement, for every part (2026-11-16)**; it is the
+default now. `AJAR_YARD=0` is the block as first built, 2 and 3 the losers.
+The board still shows the choice as open. Not played by hand in this look yet.
+
+`AJAR_YARD=1..3` dresses the whole block in one candidate look
+(`tools/gfx_yard.py`): 1 Tenement (brick, stone bands, sash windows, slate
+and iron), 2 Patio (lime wash, painted dados, shutters, pantiles), 3 Inn
+yard (timber frames over rubble stone, lattice windows, thatch). Below
+ground (cellar, stairs, kennel) and the pantry's shelves are the same in all
+three. The strongroom keeps its safes; the closet and the store (PINK's far
+side) are not dressed. `EXTRA=-nomonsters MAP=MAP04 tools/trial.sh AJAR_YARD
+0 1 2 3` shoots them.
+
+How the yard is built in a look:
+- Each side of the yard is a house (W, N, E, S) with its own colour. A
+  16-wide strip of yard along each wall carries that house's front as its
+  `wall` (`EDGES` in `map_hinges4.py`).
+- A front is one texture, 64 by 512, hung from the sky's edge: three
+  storeys of 160 (the balcony stands on the first, the roof on the second)
+  under 32 rows of eaves. One-sided walls, and the wall over or under any
+  opening (`front()`: upper unpegged, lower unpegged), all show the same
+  rows at the same height. The fronts of balcony, roof and loft are cuts of
+  the same texture with an edge on top.
+- Windows are 64-long pieces of wall with their own texture (`windows()`,
+  `along()`), placed by hand clear of every opening; they must start at a
+  multiple of 64. Under the roof they are a `lower`.
+- The roof is two sectors in a look: a strip along the yard whose `side` is
+  the house front, and the rest, whose `side` is the light well's lining.
+- The dark column over the yard's two frames is replaced by the front.
+  Far sides keep their coloured column.
+
+Options that change shape, light or play are listed at the foot of the
+board, none built: real eaves against the sky, marking the frames, evening
+light, things in the yard.
+
 ## Handoff (2026-11-16)
 
 State: MAP01-MAP05 build and pass the solver. MAP01, MAP02 and MAP03 are

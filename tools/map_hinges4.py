@@ -36,6 +36,8 @@ out; it opens onto a store. A target in a hole high in the south wall can
 only be seen, and shot, from the edge of the roof; it opens a closet in
 the yard. A nook off the roof.
 """
+import os
+
 import ajarmap
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, PINK, far_id
 from udmf import Map, rect
@@ -55,115 +57,218 @@ SEAT = dict(ftex="AJSOFA", side="AJSOFA")
 WOOD = dict(ftex="AJWOOD", side="AJWOOD")
 GATE_CELLAR, CLOSET = 401, 420
 
+# The block's look (gfx_yard.py): 1, a brick tenement, is the user's choice
+# for the whole of it. AJAR_YARD=2 and 3 are the candidates that lost (a
+# whitewashed court, an inn yard); AJAR_YARD=0 is the level as first built.
+# With a look, each side of the yard is a house of its own (W, N, E, S),
+# rooms are not tinted, and everything below ground is the same in all three.
+LOOK = (os.environ.get("AJAR_YARD") or "1").replace("0", "")
+if LOOK:
+    WARM = GOLD = SKY = LEAF = PLUM = ROSE = None
+    FRONT = {h: f"AJ4Y{LOOK}{h}" for h in "WNES"}
+    LOWC = f"AJ4E{LOOK}"
+    RAIL = dict(RAIL, mid=f"AJ4N{LOOK}")
+    PATH, BARS = f"AJ4P{LOOK}", "AJ4XB"
+    YARD = dict(OPEN, ftex=f"AJ4F{LOOK}")
+    # a strip of yard along each house, so that its walls are that house's
+    EDGES = [((0, 0, 16, 1152), dict(wall=FRONT["W"])), ((1520, 0, 1536, 1152), dict(wall=FRONT["E"])),
+             ((16, 0, 1520, 16), dict(wall=FRONT["S"])), ((16, 1136, 1520, 1152), dict(wall=FRONT["N"]))]
+    PASSAGE = dict(wall=f"AJ4A{LOOK}", ftex=f"AJ4F{LOOK}", ctex=LOWC)
+    PORCH = dict(wall=f"AJ4A{LOOK}", ftex=PATH, ctex=LOWC)
+    WASH = dict(wall=f"AJ4H{LOOK}", ftex=f"AJ4I{LOOK}", ctex=LOWC)
+    PANTRY = dict(wall="AJ4XP", ftex=f"AJ4I{LOOK}", ctex=LOWC)
+    OFFICE = dict(wall=f"AJ4O{LOOK}", ftex=f"AJ4K{LOOK}", ctex=LOWC)
+    STRONG = dict(wall="AJSAFE", ftex=f"AJ4K{LOOK}", ctex=LOWC)
+    DECK = dict(OPEN, wall=FRONT["W"], side=f"AJ4B{LOOK}", ftex="AJBOARD")
+    SLATES = dict(OPEN, wall=f"AJ4G{LOOK}", side=f"AJ4L{LOOK}", ftex=f"AJ4M{LOOK}")
+    NOOK = dict(wall=f"AJ4A{LOOK}", ftex=f"AJ4M{LOOK}", ctex=LOWC)
+    WELL = dict(OPEN, wall=f"AJ4V{LOOK}", ftex="AJ4XF")
+    LOFTL = dict(wall=f"AJ4J{LOOK}", side=f"AJ4T{LOOK}", ftex="AJBOARD", ctex=f"AJ4C{LOOK}")
+    SUITE = dict(wall=f"AJ4W{LOOK}", ftex=f"AJ4K{LOOK}", ctex=LOWC)
+    DOWN = dict(wall="AJ4XC", ftex="AJ4XF", ctex="AJ4XD")
+    STEPS = dict(wall="AJ4XR", ftex="AJ4XF", ctex="AJ4XD")
+    DOGS = dict(wall="AJ4XK", ftex="AJ4XS", ctex="AJ4XD")
+    HOLE = dict(wall="AJ4XR")
+    WDOOR, ODOOR, SDOOR = f"AJ4D{LOOK}W", f"AJ4D{LOOK}O", f"AJ4D{LOOK}S"
+    m.align = ({f"AJ4{k}{LOOK}{h}" for k in "YZU" for h in "WNES"} |
+               {f"AJ4{k}{LOOK}" for k in "BRQTGLVAHOJW"} | {"AJ4XC", "AJ4XR", "AJ4XK", "AJ4XP"})
+else:
+    FRONT = dict.fromkeys("WNES")
+    PATH, BARS, EDGES = "AJARCHF", "AJWIN", []
+    BRICK = dict(wall="AJBRICK")
+    YARD = dict(OPEN, ftex="AJPIT")
+    PASSAGE = DOWN = dict(BRICK, ftex="AJPIT")
+    PORCH = dict(BRICK, ftex="AJARCHF")
+    WASH = dict(ftex="AJTILEF")
+    PANTRY = OFFICE = SUITE = {}
+    STRONG = dict(wall="AJSAFE")
+    DECK = dict(OPEN, ftex="AJBOARD")
+    SLATES = dict(OPEN, ftex="AJTRIMF")
+    NOOK = dict(BRICK, ftex="AJTRIMF")
+    WELL = dict(OPEN, ftex="AJPIT")
+    LOFTL = dict(BRICK, ftex="AJBOARD")
+    STEPS = HOLE = BRICK
+    DOGS = dict(BRICK, ftex="AJPIT")
+    WDOOR = ODOOR = SDOOR = ""
+
+
+def front(a, b, house, **k):
+    """The wall over or under an opening a-b in a house's front carries on as
+    that front, in line with the wall beside it."""
+    if LOOK:
+        m.line(a, b, upper=FRONT[house], dontpegtop=True, **k)
+
+
+def windows(house, *pieces, lower=None):
+    """Windows on both upper storeys of 64-long pieces of a house's front,
+    each given by its two ends; lit below and above by turns. `lower`: the
+    pieces are the front of something raised, and that is the texture."""
+    for i, (a, b) in enumerate(pieces if LOOK else ()):
+        m.cut(a, b)
+        if lower:
+            m.line(a, b, lower=lower)
+        else:
+            m.line(a, b, mid=f"AJ4{'ZU'[i % 2]}{LOOK}{house}")
+
+
+def along(house, fixed, starts, axis="x", **k):
+    windows(house, *(((s, fixed), (s + 64, fixed)) if axis == "x" else ((fixed, s), (fixed, s + 64))
+                     for s in starts), **k)
+
 
 def rail(*runs):
     for a, b in runs:
         m.line(a, b, **RAIL)
 
 
-def porch(box):
+def porch(box, a, b, house):
     """A doorway's worth of low ceiling on the yard side of a door, so that
-    the door is not drawn again higher up the yard's tall wall."""
-    m.sector(rect(*box), ceil=128, light=170, wall="AJBRICK", ftex="AJARCHF")
+    the door is not drawn again higher up the yard's tall wall. a-b is its
+    mouth in the front of `house`."""
+    m.sector(rect(*box), ceil=128, light=170, **PORCH)
+    front(a, b, house)
 
 
 # === the yard ================================================================
 ajarmap.fitted(m, (0, 0, 1536, 1152), [
-    ((736, 0, 800, 512), dict(ftex="AJARCHF")),                              # the path from the gate
+    ((736, 0, 800, 512), dict(ftex=PATH)),                                   # the path from the gate
     ((704, 512, 832, 640), dict(floor=24, ftex="AJGRASS", side="AJARCH")),   # a bed of grass
     ((256, 256, 352, 352), dict(WOOD, floor=48)),                            # crates
     ((1184, 800, 1280, 896), dict(WOOD, floor=48)),
-], floor=0, light=200, ftex="AJPIT", **OPEN)
+] + EDGES, floor=0, light=200, **YARD)
 # the gate passage: start here. The street gate behind you is shut
-ajarmap.fitted(m, (640, -320, 896, 0), [((736, -320, 800, 0), dict(ftex="AJARCHF"))],
-               ceil=128, light=170, wall="AJBRICK", ftex="AJPIT")
+ajarmap.fitted(m, (640, -320, 896, 0), [((736, -320, 800, 0), dict(ftex=PATH))],
+               ceil=128, light=170, **PASSAGE)
+front((640, 0), (896, 0), "S")
 recess((640, -192), (640, -128), (-1, 0), 0, 101, 201)                      # frame in the passage
 recess((96, 1152), (160, 1152), (0, 1), 0, 102, 201)                        # frame in the north wall
 recess((1536, 448), (1536, 512), (1, 0), 0, 104, 201)                       # frame by the office
+front((96, 1152), (160, 1152), "N")
+front((1536, 448), (1536, 512), "E")
+# windows in the fronts, clear of every opening
+along("S", 0, (64, 192, 320, 448, 960, 1216, 1408))
+along("W", 0, (192, 960), "y")
+along("N", 1152, (192, 1344))
+along("E", 1536, (64, 320), "y")
 
 # --- the wash house, south-west, and the pantry behind a hole in its wall -----
-porch((-32, 64, 0, 160))
+porch((-32, 64, 0, 160), (0, 64), (0, 160), "W")
 ajarmap.fitted(m, (-416, 0, -48, 224), [((-416, 160, -352, 224), dict(floor=32, ftex="AJSINK", side="AJTILE")),
                                         ((-416, 96, -352, 160), dict(floor=32, ftex="AJSINK", side="AJTILE"))],
-               ceil=128, light=160, ftex="AJTILEF")
-ajarmap.roomdoor(m, (-32, 80), (-32, 144), (-1, 0), 0)
-m.sector(rect(-416, -288, -160, -16), ceil=112, light=140, color=ROSE, special=1024)   # pantry (secret)
+               ceil=128, light=160, **WASH)
+ajarmap.roomdoor(m, (-32, 80), (-32, 144), (-1, 0), 0, skin=WDOOR)
+m.sector(rect(-416, -288, -160, -16), ceil=112, light=140, color=ROSE, special=1024, **PANTRY)   # pantry (secret)
 ajarmap.squeeze(m, (-304, 0), (-256, 0), (0, -1), 0)
 recess((-416, -184), (-416, -120), (-1, 0), 0, 106, 201, color=ROSE)        # its frame: PINK hangs here
 
 # --- the landlord's office, east: two locks. RED is in the strongroom ---------
-porch((1536, 192, 1568, 288))
+porch((1536, 192, 1568, 288), (1536, 192), (1536, 288), "E")
 ajarmap.fitted(m, (1584, 64, 1968, 416), [((1840, 96, 1904, 192), dict(WOOD, floor=32))],
-               ceil=128, light=170, color=WARM)
-ajarmap.roomdoor(m, (1568, 208), (1568, 272), (1, 0), 0, keys="34", line_id=301)
-m.sector(rect(1984, 128, 2240, 352), ceil=112, light=190, color=WARM, wall="AJSAFE")
+               ceil=128, light=170, color=WARM, **OFFICE)
+ajarmap.roomdoor(m, (1568, 208), (1568, 272), (1, 0), 0, keys="34", line_id=301, skin=ODOOR)
+m.sector(rect(1984, 128, 2240, 352), ceil=112, light=190, color=WARM, **STRONG)
 ajarmap.squeeze(m, (1968, 216), (1968, 264), (1, 0), 0)
 recess((2240, 208), (2240, 272), (1, 0), 0, 105, 201, color=WARM)           # strongroom frame
 
 # --- secrets in the south wall: a target in a hole that only the roof looks
 # into, and the closet it opens --------------------------------------------------
-m.sector(rect(1100, -256, 1164, 0), floor=ROOF, ceil=ROOF + 48, light=255, wall="AJBRICK",
-         ftex="AJTRIMF", ctex="AJTRIMF")
+m.sector(rect(1100, -256, 1164, 0), floor=ROOF, ceil=ROOF + 48, light=255,
+         ftex="AJTRIMF", ctex="AJTRIMF", **HOLE)
+front((1100, 0), (1164, 0), "S", lower=FRONT["S"], dontpegbottom=True)
 m.line((1100, -256), (1164, -256), special=11, args=(CLOSET, 16), impact=True, mid="AJTARG")
-m.sector(rect(1312, -16, 1376, 0), floor=0, ceil=0, light=160, wall="AJBRICK", id=CLOSET)
+m.sector(rect(1312, -16, 1376, 0), floor=0, ceil=0, light=160, id=CLOSET, **HOLE)
+front((1312, 0), (1376, 0), "S")
 m.sector(rect(1280, -144, 1408, -16), ceil=96, light=150, wall="AJSAFE", special=1024)
 
 # === above the yard ============================================================
 # --- the balcony (BLUE's far side), along the west wall -------------------------
 ajarmap.fitted(m, (-256, 256, 0, 896), [((-256, 704, -224, 832), dict(SEAT, floor=BALCONY + 16))],
-               floor=BALCONY, light=200, color=SKY, ftex="AJBOARD", **OPEN)
+               floor=BALCONY, light=200, color=SKY, **DECK)
 rail(((0, 256), (0, 320)), ((0, 448), (0, 896)))
+along("W", -256, (320, 448, 640, 768), "y")
+along("W", 256, (-128,))
+along("W", 896, (-128,))
 recess((-256, 544), (-256, 608), (-1, 0), BALCONY, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
 
 # --- the roof (GREEN's far side), along the north wall, round the light well ----
-SLATE = dict(floor=ROOF, light=210, color=LEAF, ftex="AJTRIMF", **OPEN)
-m.sector(rect(256, 1152, 1280, 1344), **SLATE)
+SLATE = dict(floor=ROOF, light=210, color=LEAF, **SLATES)
+if LOOK:                                  # the strip along the yard has the house's front; the rest, the well's lining
+    m.sector(rect(256, 1152, 1280, 1216), **dict(SLATE, side=f"AJ4R{LOOK}"))
+    m.sector(rect(256, 1216, 1280, 1344), **SLATE)
+    along("N", 1152, range(320, 1280, 128), lower=f"AJ4Q{LOOK}")
+else:
+    m.sector(rect(256, 1152, 1280, 1344), **SLATE)
 m.sector(rect(256, 1344, 640, 1536), **SLATE)
 m.sector(rect(896, 1344, 1280, 1536), **SLATE)
 recess((256, 1408), (256, 1472), (-1, 0), ROOF, far_id(GREEN), 101, far_colour=GREEN, color=LEAF)
-m.sector(rect(160, 1232, 256, 1328), floor=ROOF, ceil=ROOF + 96, light=110, wall="AJBRICK",
-         ftex="AJTRIMF", special=1024)                                       # a nook (secret)
+m.sector(rect(160, 1232, 256, 1328), floor=ROOF, ceil=ROOF + 96, light=110, special=1024, **NOOK)   # a nook (secret)
+if LOOK:
+    m.line((256, 1232), (256, 1328), upper=SLATES["wall"], dontpegtop=True)
 
 # --- the light well in the middle of the roof: the boiler, a frame, and the
 # coal hole to the cellar ----------------------------------------------------------
 ajarmap.fitted(m, (640, 1344, 896, 1536), [((832, 1360, 880, 1456), dict(floor=CELLAR + 80, ftex="AJSTEEL", side="AJSTEEL"))],
-               floor=CELLAR, light=150, ftex="AJPIT", **OPEN)
+               floor=CELLAR, light=150, **WELL)
 recess((656, 1536), (720, 1536), (0, 1), CELLAR, 103, 201)                  # the well's frame
 ajarmap.squeeze(m, (800, 1536), (848, 1536), (0, 1), CELLAR, thick=80, unbolt=GATE_CELLAR)
+if LOOK:
+    for a, b in (((656, 1536), (720, 1536)), ((800, 1536), (848, 1536))):
+        m.line(a, b, upper=WELL["wall"], dontpegtop=True)
 
 # --- the loft (YELLOW's far side), along the east wall; the suite off it --------
 ajarmap.fitted(m, (1536, 544, 1920, 1104), [((1856, 576, 1920, 704), dict(floor=LOFT + 32, ftex="AJCLOTH", side="AJCLOTH")),
                                             ((1568, 1008, 1632, 1104), dict(floor=LOFT + 32, ftex="AJCLOTH", side="AJCLOTH"))],
-               floor=LOFT, ceil=LOFT + 144, light=175, color=GOLD, wall="AJBRICK", ftex="AJBOARD")
+               floor=LOFT, ceil=LOFT + 144, light=175, color=GOLD, **LOFTL)
 rail(((1536, 544), (1536, 768)), ((1536, 896), (1536, 1104)))
+for a, b in (((1536, 544), (1536, 768)), ((1536, 768), (1536, 896)), ((1536, 896), (1536, 1104))):
+    front(a, b, "E")
 recess((1696, 1104), (1760, 1104), (0, 1), LOFT, far_id(YELLOW), 101, far_colour=YELLOW, color=GOLD)
 ajarmap.fitted(m, (1936, 672, 2256, 992), [((2192, 704, 2256, 832), dict(floor=LOFT + 24, ftex="AJQUILT", side="AJWOOD")),
                                            ((2224, 704, 2256, 832), dict(floor=LOFT + 30, ftex="AJPILLOW", side="AJWOOD"))],
-               floor=LOFT, ceil=LOFT + 112, light=180, color=GOLD)
-ajarmap.roomdoor(m, (1920, 800), (1920, 864), (1, 0), LOFT, keys="12", line_id=302)
+               floor=LOFT, ceil=LOFT + 112, light=180, color=GOLD, **SUITE)
+ajarmap.roomdoor(m, (1920, 800), (1920, 864), (1, 0), LOFT, keys="12", line_id=302, skin=SDOOR)
 
 # === below ======================================================================
 # --- the cellar, north of the well; stairs up to a door in the yard that is
 # bolted on this side ----------------------------------------------------------------
 ajarmap.fitted(m, (256, 1616, 1280, 1936), [((512, 1808, 608, 1936), dict(WOOD, floor=CELLAR + 48)),
                                             ((960, 1616, 1056, 1712), dict(WOOD, floor=CELLAR + 48))],
-               floor=CELLAR, ceil=0, light=120, wall="AJBRICK", ftex="AJPIT")
-m.sector(rect(1296, 1520, 1520, 1936), floor=CELLAR, ceil=0, light=130, wall="AJBRICK", ftex="AJPIT")
+               floor=CELLAR, ceil=0, light=120, **DOWN)
+m.sector(rect(1296, 1520, 1520, 1936), floor=CELLAR, ceil=0, light=130, **DOWN)
 ajarmap.opening(m, (1280, 1744), (1280, 1808), (1, 0), CELLAR)
-porch((1424, 1152, 1520, 1184))
-m.sector(rect(1440, 1200, 1504, 1264), ceil=128, light=150, wall="AJBRICK")
+porch((1424, 1152, 1520, 1184), (1424, 1152), (1520, 1152), "N")
+m.sector(rect(1440, 1200, 1504, 1264), ceil=128, light=150, **STEPS)
 ajarmap.bolted(m, (1440, 1184), (1504, 1184), (0, 1), 0, GATE_CELLAR, line_id=303)
-ajarmap.stairs(m, (1440, 1264), (1504, 1264), (0, 1), 0, CELLAR, ceil=128, light=140, wall="AJBRICK")
+ajarmap.stairs(m, (1440, 1264), (1504, 1264), (0, 1), 0, CELLAR, ceil=128, light=140, **STEPS)
 
 # --- the kennel (VIOLET's far side): a step above the cellar. Bars to look
 # through, and a hatch to drop out of -------------------------------------------------
-m.sector(rect(-144, 1616, 240, 1936), floor=KENNEL, ceil=KENNEL + 128, light=150, wall="AJBRICK",
-         ftex="AJPIT", color=PLUM)
+m.sector(rect(-144, 1616, 240, 1936), floor=KENNEL, ceil=KENNEL + 128, light=150, color=PLUM, **DOGS)
 recess((-144, 1744), (-144, 1808), (-1, 0), KENNEL, far_id(VIOLET), 101, far_colour=VIOLET, color=PLUM)
 ajarmap.squeeze(m, (240, 1648), (240, 1696), (1, 0), KENNEL, unbolt=GATE_CELLAR)
-m.sector(rect(240, 1776, 256, 1904), floor=KENNEL, ceil=KENNEL + 56, light=150, wall="AJBRICK",
-         ftex="AJTRIMF", ctex="AJTRIMF")
-m.line((240, 1776), (240, 1904), mid="AJWIN", midboth=True, blocking=True)
+m.sector(rect(240, 1776, 256, 1904), floor=KENNEL, ceil=KENNEL + 56, light=150,
+         ftex="AJTRIMF", ctex="AJTRIMF", **HOLE)
+m.line((240, 1776), (240, 1904), mid=BARS, midboth=True, blocking=True)
 
 # === far sides that are places of their own ====================================
 # --- the store (PINK's far side): no other way in (secret) ----------------------
