@@ -35,8 +35,17 @@ PIT_LOOK = {                                                              # floo
     "3": (120, [(896, 320, 40, 150, 150, 170)]),
     "4": (104, []),
 }.get(PIT)
-HALL_WALL = dict(wall=f"AJHW{HALL}", side=PIT_SIDE)
 WARM, GOLD, SKY, LEAF, PLUM = 0xFFD8CC, 0xFFE890, 0xA8C0FF, 0x80FF90, 0xD0A0FF
+# The hall, the ledge and the gallery are one room and are dressed alike:
+# the same walls, floor, runner and warm tint. Their doors still say which
+# far side is which.
+HALL_LOOK = dict(wall=f"AJHW{HALL}", side=PIT_SIDE, color=WARM)
+# The floor is slate flags with a plain navy runner (gfx.hall_floors, floor 4
+# and runner 3; AJAR_FLOOR=1..5 shows the other candidates, two digits mix a
+# floor with another's runner, 0 is the floor as it first was).
+FLOOR = (os.environ.get("AJAR_FLOOR") or "43").replace("0", "")
+if FLOOR:
+    HALL_LOOK.update(ftex=f"AJHG{FLOOR[0]}", rug=f"AJHR{FLOOR[-1]}")
 
 # --- the cell: one door, one frame ----------------------------------------
 m.sector(rect(0, -1500, 256, -1244), ceil=128, light=170, wall="AJBRICK")
@@ -46,29 +55,30 @@ recess((96, -1244), (160, -1244), (0, 1), 0, 101, 201)                    # fram
 # Rooms are cut into grids so that a carpet runner under a row of ceiling
 # lights can lead from each door to where it matters.
 ajarmap.room(m, [0, 352, 416, 768], [0, 288, 352, 640],                  # RED to the pit, frame to RED
-             lambda i, j: j == 1 or (i == 1 and j == 0), ceil=TALL - 16, light=190, color=WARM, **HALL_WALL)
+             lambda i, j: j == 1 or (i == 1 and j == 0), ceil=TALL - 16, light=190, **HALL_LOOK)
 if PIT:
-    m.sector(rect(768, 0, 1024, 640), floor=-192, ceil=TALL, light=176, ftex=f"AJPG{PIT}", wall=f"AJPE{PIT}",
-             raw=dict(lightfloor=PIT_LOOK[0], lightfloorabsolute=True))
+    # lit and tinted as the hall, so its end walls match the hall's above floor level
+    m.sector(rect(768, 0, 1024, 640), floor=-192, ceil=TALL, light=190, ftex=f"AJPG{PIT}", wall=f"AJPE{PIT}",
+             color=WARM, raw=dict(lightfloor=PIT_LOOK[0], lightfloorabsolute=True))
     for x, y, r, g, b, size in PIT_LOOK[1]:
         m.thing(x, y, 9800, height=20, args=(r, g, b, size))             # point light
 else:
     m.sector(rect(768, 0, 1024, 640), floor=-192, ceil=TALL, light=176, ftex="AJPIT", wall="AJTRIM")
 ajarmap.room(m, [1024, 1280], [0, 288, 352, 640], lambda i, j: j == 1,
-             ceil=TALL - 16, light=200, color=GOLD, side=PIT_SIDE)
+             ceil=TALL - 16, light=200, **HALL_LOOK)
 recess((0, 288), (0, 352), (-1, 0), 0, far_id(RED), 101, far_colour=RED, color=WARM)
 recess((352, 0), (416, 0), (0, -1), 0, 102, 201)                          # hall frame, empty
 recess((864, 640), (928, 640), (0, 1), -192, 103, 201)                    # pit frame, starts with YELLOW
 if PIT:                                                                   # the end wall carries on above the frame
     m.line((864, 640), (928, 640), upper=f"AJPE{PIT}", dontpegtop=True)
-recess((1280, 288), (1280, 352), (1, 0), 0, far_id(YELLOW), 101, far_colour=YELLOW, color=GOLD)
+recess((1280, 288), (1280, 352), (1, 0), 0, far_id(YELLOW), 101, far_colour=YELLOW, color=WARM)
 
 # --- the gallery above the hall (BLUE's far side): you can only drop off it --
 ajarmap.room(m, [0, 352, 416, 768], [640, 704, 768, 832],                # BLUE to the edge, and to the frame
-             lambda i, j: i == 1 or (i == 0 and j == 1), floor=160, ceil=TALL - 16, light=200, color=SKY,
-             side=f"AJHF{HALL}")
-recess((352, 832), (416, 832), (0, 1), 160, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
-recess((0, 704), (0, 768), (-1, 0), 160, 104, 201, color=SKY)             # gallery frame, empty
+             lambda i, j: i == 1 or (i == 0 and j == 1), floor=160, ceil=TALL - 16, light=200,
+             **dict(HALL_LOOK, wall=f"AJHS{HALL}", side=f"AJHF{HALL}"))
+recess((352, 832), (416, 832), (0, 1), 160, far_id(BLUE), 101, far_colour=BLUE, color=WARM)
+recess((0, 704), (0, 768), (-1, 0), 160, 104, 201, color=WARM)            # gallery frame, empty
 
 # --- the vault (GREEN's far side): no frame, only the VIOLET door ----------
 ajarmap.room(m, [2000, 2320], [0, 128, 192, 320], lambda i, j: j == 1,
@@ -93,8 +103,9 @@ for x in (128, 576):
 for a, b, c in (((256, 0), (320, 0), GREEN), ((448, 0), (512, 0), VIOLET)):  # hall, either side of the frame
     ajarmap.picture(m, a, b, c, TALL - 16)
     m.line(a, b, mid=f"AJHP{HALL}{c}", exact=True)
-ajarmap.picture(m, (192, 832), (256, 832), YELLOW, TALL - 16 - 160)      # gallery
-ajarmap.picture(m, (512, 832), (576, 832), GREEN, TALL - 16 - 160)
+for a, b, c in (((192, 832), (256, 832), YELLOW), ((512, 832), (576, 832), GREEN)):   # gallery
+    ajarmap.picture(m, a, b, c, TALL - 16 - 160)
+    m.line(a, b, mid=f"AJHT{HALL}{c}", exact=True)
 
 # --- things ----------------------------------------------------------------
 m.thing(128, -1420, 1, angle=90)                                          # player start

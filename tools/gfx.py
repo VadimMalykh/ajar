@@ -267,7 +267,8 @@ def hall_walls(out):
     """Candidate wall treatments for MAP01's hall (see AJAR_HALL in
     map_hinges1.py): AJHW<n> is a full-height wall, 336 from skirting to
     cornice; AJHF<n> its lowest 160 as the front of the gallery; AJHP<n><c>
-    the wall with a picture of door c on it. Everything repeats every 32
+    the wall with a picture of door c on it; AJHS<n> and AJHT<n><c> the same
+    two for the gallery, where the wall is 176 high. Everything repeats every 32
     across, because walls are cut at multiples of 32."""
     H = 336
     CREAM, GOLD = (226, 214, 190), (200, 164, 84)
@@ -415,7 +416,123 @@ def hall_walls(out):
             pic.px = [list(p) for p in im.px]
             hang_picture(pic, H, base)
             out[f"textures/AJHP{n}{c}.png"] = pic.png()
+        # the same wall for the gallery, 176 high: the top 76 rows over the bottom 100
+        short = Img(64, 176)
+        short.px = [list(p) for p in im.px[:76 * 64]] + [list(p) for p in im.px[(H - 100) * 64:]]
+        out[f"textures/AJHS{n}.png"] = short.png()
+        for c, base in DOOR_COLOURS.items():
+            pic = Img(64, 176)
+            pic.px = [list(p) for p in short.px]
+            hang_picture(pic, 176, base)
+            out[f"textures/AJHT{n}{c}.png"] = pic.png()
     return walls
+
+
+def hall_floors(out):
+    """Candidate floors for MAP01's hall (see AJAR_FLOOR in map_hinges1.py):
+    flats AJHG<n> for the floor and AJHR<n> for the carpet runner on it.
+    Runners have no direction, because they turn corners."""
+    CREAM, NAVY, TERRA, GOLD = (226, 216, 196), (38, 46, 80), (178, 88, 58), (200, 164, 84)
+
+    def runner(base, line, dot, seed):
+        r = Img(64, 64, base)
+        r.noise(5, seed)
+        for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64), (32, 32)):
+            r.diamond(cx, cy, 15, line)
+            r.diamond(cx, cy, 13, base)
+            r.diamond(cx, cy, 4, dot)
+        return r
+
+    floors = {}
+
+    # 1. marble chequer, cream and charcoal
+    im = Img(64, 64)
+    rnd = random.Random(401)
+    for by in (0, 32):
+        for bx in (0, 32):
+            c = CREAM if (bx + by) % 64 == 0 else (54, 54, 62)
+            im.rect(bx, by, bx + 32, by + 32, c)
+            for _ in range(3):                                       # veins
+                x, y = bx + rnd.randrange(32), by + rnd.randrange(32)
+                for _ in range(rnd.randrange(8, 22)):
+                    if bx <= x < bx + 32 and by <= y < by + 32:
+                        im.set(x, y, shade(c, 0.86 if c == CREAM else 1.5))
+                    x += rnd.choice((0, 1, 1))
+                    y += rnd.choice((-1, 0, 1, 1))
+            im.frame(bx, by, bx + 32, by + 32, shade(c, 0.8), 1)
+    im.noise(4, 401)
+    floors[1] = (im, runner(NAVY, GOLD, GOLD, 411))
+
+    # 2. oak parquet, basket weave
+    oak = (154, 106, 62)
+    im = Img(64, 64, oak)
+    rnd = random.Random(402)
+    for by in (0, 32):
+        for bx in (0, 32):
+            across = (bx + by) % 64 == 0
+            for k in range(4):
+                c = shade(oak, rnd.choice((0.84, 0.92, 1.0, 1.08)))
+                if across:
+                    im.rect(bx, by + k * 8, bx + 32, by + k * 8 + 8, c)
+                    im.rect(bx, by + k * 8, bx + 32, by + k * 8 + 1, shade(oak, 0.6))
+                else:
+                    im.rect(bx + k * 8, by, bx + k * 8 + 8, by + 32, c)
+                    im.rect(bx + k * 8, by, bx + k * 8 + 1, by + 32, shade(oak, 0.6))
+            im.frame(bx, by, bx + 32, by + 32, shade(oak, 0.55), 1)
+    im.noise(6, 402)
+    floors[2] = (im, runner(NAVY, GOLD, TERRA, 412))
+
+    # 3. encaustic tile: terracotta and navy on cream
+    im = Img(64, 64, CREAM)
+    for cy in (16, 48):
+        for cx in (16, 48):
+            im.diamond(cx, cy, 13, (60, 50, 50))
+            im.diamond(cx, cy, 12, TERRA)
+            im.diamond(cx, cy, 5, CREAM)
+            im.diamond(cx, cy, 3, NAVY)
+    for cy in (0, 32, 64):
+        for cx in (0, 32, 64):
+            im.diamond(cx, cy, 7, NAVY)
+            im.diamond(cx, cy, 3, GOLD)
+    for i in (0, 32):
+        im.rect(i, 0, i + 1, 64, (150, 140, 124))
+        im.rect(0, i, 64, i + 1, (150, 140, 124))
+    im.noise(5, 403)
+    plain = Img(64, 64, NAVY)
+    plain.noise(6, 413)
+    floors[3] = (im, plain)
+
+    # 4. slate flags with pale joints
+    slate = (72, 78, 90)
+    im = Img(64, 64, slate)
+    rnd = random.Random(404)
+    for x1, y1, x2, y2 in ((0, 0, 64, 20), (0, 20, 28, 44), (28, 20, 64, 44), (0, 44, 40, 64), (40, 44, 64, 64)):
+        c = shade(slate, rnd.choice((0.82, 0.92, 1.0, 1.1)))
+        im.rect(x1, y1, x2, y2, c)
+        im.frame(x1, y1, x2, y2, (128, 124, 116), 1)
+        im.rect(x1 + 1, y1 + 1, x2 - 1, y1 + 2, shade(c, 1.25))
+    im.noise(7, 404)
+    floors[4] = (im, runner((214, 204, 190), (160, 146, 128), TERRA, 414))
+
+    # 5. cream stone with a navy inlay and gold studs
+    stone = (216, 202, 174)
+    im = Img(64, 64, stone)
+    rnd = random.Random(405)
+    for y in range(64):                                              # bedding
+        f = rnd.choice((0.96, 0.98, 1.0, 1.0, 1.02))
+        for x in range(64):
+            im.set(x, y, shade(stone, f))
+    im.noise(5, 405)
+    im.rect(0, 0, 64, 2, NAVY)
+    im.rect(0, 0, 2, 64, NAVY)
+    for cx, cy in ((0, 0), (64, 0), (0, 64), (64, 64)):
+        im.diamond(cx, cy, 7, NAVY)
+        im.diamond(cx, cy, 3, GOLD)
+    floors[5] = (im, runner(TERRA, GOLD, NAVY, 415))
+
+    for n, (im, rug) in floors.items():
+        out[f"flats/AJHG{n}.png"] = im.png()
+        out[f"flats/AJHR{n}.png"] = rug.png()
 
 
 def pit_walls(out, hall):
@@ -590,6 +707,7 @@ def make_all():
     wall.rect(0, 118, 128, 128, (120, 116, 112))
     out["textures/AJWALL.png"] = wall.png()
     pit_walls(out, hall_walls(out)[2][0])
+    hall_floors(out)
     furniture(out, wall)
 
     # an ordinary hotel-room door (ajarmap.roomdoor): plain wood, no colour, so

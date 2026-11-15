@@ -100,16 +100,17 @@ def key(m, number, x, y):
     m.thing(x, y, KEY_T[str(number)])
 
 
-def room(m, xs, ys, runner, *, ceil, light, **base):
+def room(m, xs, ys, runner, *, ceil, light, rug="AJRUG", **base):
     """A flat rectangular room cut into a grid by the lists xs and ys. Cells
     for which runner(i, j) is true (column i, row j) are a strip of carpet
-    under a raised row of ceiling lights; use it to lead from door to door."""
+    under a raised row of ceiling lights; use it to lead from door to door.
+    `rug` is the carpet's flat."""
     for i in range(len(xs) - 1):
         for j in range(len(ys) - 1):
             cell = [(xs[i], ys[j]), (xs[i], ys[j + 1]), (xs[i + 1], ys[j + 1]), (xs[i + 1], ys[j])]
             if runner(i, j):
                 m.sector(cell, ceil=ceil + 16, light=min(255, light + 30),
-                         **dict(base, ftex="AJRUG", ctex="AJLITE"))
+                         **dict(base, ftex=rug, ctex="AJLITE"))
             else:
                 m.sector(cell, ceil=ceil, light=light, **base)
 

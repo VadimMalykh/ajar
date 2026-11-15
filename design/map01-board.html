@@ -100,10 +100,10 @@ figcaption b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular
 
   <section class="stack" id="hall-walls" style="gap:20px">
     <div class="stack" style="gap:8px">
-      <div class="stamp"><b>To choose</b> &nbsp;The pit · 15 Nov 2026</div>
-      <h2>Four treatments for the pit</h2>
-      <p>Each changes the 192 units of wall below the hall floor, the pit floor and the light down there. The end walls now carry the hall's wall above floor level, and the tall dark column over the pit's frame is gone in all four. Shown from the same four cameras, with the pit as it is now for reference.</p>
-      <p class="muted">My pick is 2, the furnace. It is the only one that says "do not fall in" from the hall, it throws real light up the walls, and a furnace is one of the places the plan already wants doors to open onto. Option 1 is the safe choice if the pit should stay quiet. <strong>Decided:</strong> the hall wears terracotta and navy, which is why it appears in these shots, and the cell stays as it is.</p>
+      <div class="stamp"><b>Now</b> &nbsp;Hall, pit, ledge and gallery · 15 Nov 2026</div>
+      <h2>The hall block, before and now</h2>
+      <p>The hall, the ledge and the gallery are one room and are now dressed alike: terracotta walls over a navy dado, slate flags, a plain navy runner and the same warm tint. The pit is the stone cellar. Pick a camera to compare the first build with today's.</p>
+      <p class="muted">The blue and gold room tints on the gallery and ledge are gone; the coloured column over each far side, the torches and the doors themselves now carry the colour. Still as first built: the cell (kept on purpose), the vault, the way out, the ceilings and the lighting.</p>
     </div>
     <div class="cams" id="cams" role="group" aria-label="Camera"></div>
     <div class="opts" id="opts"></div>
@@ -220,21 +220,27 @@ document.getElementById("rooms").addEventListener("click", e => {
 
 // Hall wall options: same camera across all options, switched together.
 const OPTS = [
-  [0, "As it is now", "Pale panel sides, dark speckled floor, a dark column above the frame.", "AJTRIM"],
-  [1, "Cellar", "Coursed grey stone, damp at the foot, on packed earth. The floor is the darkest thing in the level, so the yellow door is the only light down there.", "AJPW1"],
-  [2, "Furnace", "Sooty brick under an iron rim, an iron grate over embers, and three orange lamps that light the lower walls from below.", "AJPW2"],
-  [3, "Cistern", "Dark glazed tile with a slime line where the water used to stand, and still water on the floor. Cool and green, close to the GREEN door's colour.", "AJPW3"],
-  [4, "The dig", "A broken slab edge, old brick footings, then layers of raw earth with stones and roots, on rubble.", "AJPW4"],
+  [0, "Before", "The first build: grey panels, grey tile, a room tint per far side.", "AJWALL"],
+  [1, "Now", "Terracotta and navy walls, slate floor, navy runner, cellar pit.", "AJHW2"],
 ];
-const CAMS = [["08", "In the pit"], ["07", "Down from the hall"], ["09", "Looking up and out"], ["11", "From the ledge"]];
-let cam = "08";
+const OLD_FLOOR_OPTS = [
+  [0, "As it is now", "Grey tile with a pale patterned runner.", "AJFLOOR"],
+  [1, "Marble chequer", "Cream and charcoal squares with faint veining, navy runner with a gold lattice. The boldest, and the most formal.", "AJHG1"],
+  [2, "Oak parquet", "Basket-weave oak blocks, navy runner with gold and terracotta. Warm and quiet, but close in tone to the terracotta wall.", "AJHG2"],
+  [3, "Encaustic tile", "Terracotta and navy diamonds on cream, plain navy runner. Picks up both wall colours; the busiest pattern.", "AJHG3"],
+  [4, "Slate flags", "Dark blue-grey flagstones with pale joints, cream runner. The darkest; the runner stands out most on it.", "AJHG4"],
+  [43, "Slate flags, plain navy runner", "Your mix: the floor from 4 with the runner from 3. Navy on dark slate is low in contrast, so the runner leads the eye less than a pale one does.", "AJHG4"],
+  [5, "Cream stone, navy inlay", "Pale stone slabs with a thin navy line and gold studs at the corners, terracotta runner with gold. The lightest.", "AJHG5"],
+];
+const CAMS = [["02", "Down the runner"], ["03", "From the pit corner"], ["06", "Up at the gallery"], ["07", "Into the pit"], ["09", "Up from the pit"], ["10", "Along the ledge"], ["11", "From the ledge"], ["12", "Along the gallery"], ["15", "Down from the gallery"]];
+let cam = "02";
 function drawOpts() {
   document.getElementById("cams").innerHTML = CAMS.map(([v, n]) =>
     `<button type="button" id="cam-${v}" data-v="${v}" aria-pressed="${v === cam}">${n}</button>`).join("");
   document.getElementById("opts").innerHTML = OPTS.map(([n, name, d, tex]) =>
     `<div class="opt"><div class="pair"><div class="strip" style="background-image:url(tex/${tex}.png)"></div>` +
-    `<img src="pit/${n}_${cam}.png" alt="${name}, ${CAMS.find(c => c[0] === cam)[1].toLowerCase()}"></div>` +
-    `<h4>${n ? `<span>${n}</span>` : ""}${name}</h4><p>${d}</p></div>`).join("");
+    `<img src="${n ? "now" : "shots"}/view_${cam}.png" alt="${name}, ${CAMS.find(c => c[0] === cam)[1].toLowerCase()}"></div>` +
+    `<h4>${name}</h4><p>${d}</p></div>`).join("");
 }
 drawOpts();
 document.getElementById("cams").addEventListener("click", e => {
