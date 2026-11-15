@@ -66,7 +66,7 @@ def shade(c, f):
 
 
 DOOR_COLOURS = {1: (200, 60, 50), 2: (60, 110, 220), 3: (60, 170, 80),
-                4: (215, 170, 40), 5: (150, 80, 200)}
+                4: (215, 170, 40), 5: (150, 80, 200), 6: (240, 120, 180)}
 
 
 def door(colour):
@@ -88,14 +88,24 @@ def door(colour):
         im.rect(23, 17, 41, 35, white)
     elif colour == 4:
         im.diamond(32, 26, 11, white)
-    else:
+    elif colour == 5:
         im.rect(29, 15, 35, 37, white)
         im.rect(21, 23, 43, 29, white)
+    else:
+        im.disc(32, 26, 10, white)
+        im.disc(32, 26, 5, shade(base, 0.8))
     return im
 
 
 DIGITS = {"1": ("010", "110", "010", "010", "111"), "2": ("111", "001", "111", "100", "111"),
           "3": ("111", "001", "111", "001", "111"), "4": ("101", "101", "111", "001", "001")}
+DIGITS.update({
+    "N": ("10001", "11001", "10101", "10011", "10001"), "O": ("01110", "10001", "10001", "10001", "01110"),
+    "V": ("10001", "10001", "10001", "01010", "00100"), "A": ("01110", "10001", "11111", "10001", "10001"),
+    "C": ("01111", "10000", "10000", "10000", "01111"), "Y": ("10001", "01010", "00100", "00100", "00100"),
+    "R": ("11110", "10001", "11110", "10010", "10001"), "E": ("11111", "10000", "11110", "10000", "11111"),
+    "P": ("11110", "10001", "11110", "10000", "10000"), "T": ("11111", "00100", "00100", "00100", "00100"),
+    "I": ("11111", "00100", "00100", "00100", "11111"), " ": ("00000",) * 5})
 BRASS = (206, 180, 96)
 LOCKS = ("1", "2", "3", "4", "12", "23", "34")     # which keys a locked room door can ask for
 
@@ -106,6 +116,134 @@ def digit(im, ch, x, y, c, s=2):
         for i, on in enumerate(row):
             if on == "1":
                 im.rect(x + i * s, y + j * s, x + i * s + s, y + j * s + s, c)
+
+
+def text(im, s, x, y, c, scale=2):
+    """Writes capitals (those in DIGITS) with a 5x5 face, top left at x, y."""
+    for n, ch in enumerate(s):
+        digit(im, ch, x + n * 6 * scale, y, c, scale)
+
+
+def furniture(out, wall):
+    """Hotel furniture: beds, baths, windows, the lobby's desk and front doors."""
+    def both(name, im):                       # usable on walls and on floors
+        out[f"textures/{name}.png"] = out[f"flats/{name}.png"] = im.png()
+
+    quilt = Img(64, 64, (124, 44, 52))
+    quilt.noise(5, 51)
+    for cx in range(0, 65, 16):
+        for cy in range(0, 65, 16):
+            quilt.diamond(cx, cy, 5, (150, 66, 70))
+            quilt.diamond(cx, cy, 2, (214, 190, 150))
+    both("AJQUILT", quilt)
+    pillow = Img(64, 64, (238, 234, 224))
+    pillow.noise(4, 52)
+    both("AJPILLOW", pillow)
+    wood = Img(64, 64, (122, 86, 54))
+    for x in range(4, 64, 9):
+        wood.rect(x, 0, x + 1, 64, (104, 72, 44))
+    wood.noise(5, 53)
+    wood.rect(0, 0, 64, 2, (84, 58, 34))
+    both("AJWOOD", wood)
+    tile = Img(64, 64, (232, 236, 238))
+    tile.noise(3, 54)
+    for i in range(0, 64, 16):
+        tile.rect(i, 0, i + 1, 64, (168, 176, 182))
+        tile.rect(0, i, 64, i + 1, (168, 176, 182))
+    both("AJTILE", tile)
+    chk = Img(64, 64, (226, 230, 232))
+    for i in range(4):
+        for j in range(4):
+            if (i + j) % 2:
+                chk.rect(i * 16, j * 16, i * 16 + 16, j * 16 + 16, (120, 150, 170))
+    chk.noise(4, 55)
+    both("AJTILEF", chk)
+    water = Img(64, 64, (70, 130, 190))
+    water.noise(8, 56)
+    for y in range(4, 64, 16):
+        for x in range(64):
+            water.set(x, y + (x // 8) % 2, (150, 196, 230))
+    both("AJWATER", water)
+    sink = Img(64, 64, (240, 240, 238))
+    sink.noise(3, 57)
+    sink.frame(0, 0, 64, 64, (170, 176, 182), 3)
+    sink.disc(32, 32, 22, (206, 214, 220))
+    sink.disc(32, 32, 4, (60, 64, 70))
+    both("AJSINK", sink)
+    sofa = Img(64, 64, (146, 54, 50))
+    sofa.noise(6, 58)
+    for cx in range(8, 64, 16):
+        for cy in range(8, 64, 16):
+            sofa.disc(cx, cy, 1, (88, 28, 28))
+    both("AJSOFA", sofa)
+    cloth = Img(64, 64, (236, 232, 222))
+    cloth.noise(4, 59)
+    cloth.frame(0, 0, 64, 64, (206, 190, 150), 2)
+    both("AJCLOTH", cloth)
+    steel = Img(64, 64, (176, 182, 190))
+    steel.noise(4, 60)
+    for y in range(0, 64, 32):
+        steel.rect(0, y, 64, y + 1, (120, 126, 134))
+    both("AJSTEEL", steel)
+
+    # window: glazing bars only, the panes are see-through (ajarmap.window)
+    win = Img(64, 56, (0, 0, 0, 0))
+    pale = (232, 228, 214)
+    win.frame(0, 0, 64, 56, pale, 4)
+    win.rect(30, 0, 34, 56, pale)
+    win.rect(0, 26, 64, 30, pale)
+    win.frame(0, 0, 64, 56, (150, 146, 136), 1)
+    out["textures/AJWIN.png"] = win.png()
+
+    def strip(w, tall):
+        im = Img(w, tall)
+        for y in range(tall):
+            for x in range(w):
+                im.set(x, y, wall.px[(y % 128) * 128 + x % 128])
+        return im
+
+    # the hotel's front doors, on a strip of lobby wall (336): boarded up
+    # from outside, under a lit sign
+    fd = strip(128, 336)
+    fd.rect(2, 180, 126, 204, (26, 22, 22))
+    fd.frame(2, 180, 126, 204, BRASS, 1)
+    text(fd, "NO VACANCY", 5, 187, (255, 74, 50))
+    dark = (72, 50, 32)
+    fd.rect(10, 212, 118, 336, dark)
+    for x1 in (16, 66):
+        fd.rect(x1, 218, x1 + 46, 336, (104, 74, 46))
+        fd.rect(x1 + 6, 226, x1 + 40, 300, (44, 56, 76))             # glass, dark outside
+        fd.rect(x1 + 9, 229, x1 + 14, 297, (86, 104, 128))
+        fd.frame(x1 + 6, 226, x1 + 40, 300, dark, 2)
+        fd.rect(x1 + 6, 308, x1 + 40, 330, (90, 62, 38))
+    fd.rect(60, 262, 68, 274, BRASS)                                 # handles
+    for y0 in (238, 282):                                            # two planks across
+        for i in range(108):
+            y = y0 + i // 9
+            fd.rect(10 + i, y, 11 + i, y + 9, (160, 120, 78))
+            fd.set(10 + i, y, (92, 66, 40))
+            fd.set(10 + i, y + 8, (92, 66, 40))
+        for x in (14, 113):
+            fd.disc(x, y0 + (x - 10) // 9 + 4, 1, (226, 226, 230))
+    out["textures/AJFRONT.png"] = fd.png()
+
+    # the key rack behind the reception desk: the 72 rows of a 336 wall
+    # between the counter top (40) and the balcony floor (112)
+    kr = strip(160, 336)
+    kr.rect(0, 224, 160, 296, (86, 60, 38))
+    kr.frame(0, 224, 160, 296, (56, 38, 22), 2)
+    text(kr, "RECEPTION", 27, 229, BRASS)
+    rnd = random.Random(7)
+    for i in range(9):
+        for j in range(3):
+            x, y = 9 + i * 16, 244 + j * 16
+            kr.rect(x, y, x + 14, y + 14, (40, 28, 18))
+            if rnd.random() < 0.3:                                   # a key left on its hook
+                kr.rect(x + 6, y + 2, x + 8, y + 8, BRASS)
+                kr.rect(x + 4, y + 8, x + 10, y + 12, (236, 228, 204))
+            else:
+                kr.set(x + 7, y + 3, BRASS)
+    out["textures/AJKEYS.png"] = kr.png()
 
 
 def make_all():
@@ -120,40 +258,63 @@ def make_all():
     wall.rect(0, 0, 128, 2, (150, 146, 140))
     wall.rect(0, 118, 128, 128, (120, 116, 112))
     out["textures/AJWALL.png"] = wall.png()
+    furniture(out, wall)
 
     # an ordinary hotel-room door (ajarmap.roomdoor): plain wood, no colour, so
-    # it cannot be mistaken for one of yours. The leaf is the bottom 96 rows;
-    # the 32 above it are wall, for rooms taller than the door.
+    # it cannot be mistaken for one of yours.
+    # The leaf is the bottom 96 rows; above it is wall, as far up as any room goes.
     wood = (122, 86, 54)
-    rd = Img(64, 128)
-    for y in range(128):
+    T = 128                                                      # rows of wall above the old 128
+    rd = Img(64, 128 + T)
+    for y in range(128 + T):
         for x in range(64):
             rd.set(x, y, wall.px[(y % 128) * 128 + x])
-    rd.rect(0, 28, 64, 32, (96, 92, 88))                         # lintel
-    rd.rect(0, 32, 64, 128, wood)
+    rd.rect(0, T + 28, 64, T + 32, (96, 92, 88))                 # lintel
+    rd.rect(0, T + 32, 64, T + 128, wood)
     for x in range(4, 64, 9):
-        rd.rect(x, 32, x + 1, 128, shade(wood, 0.86))            # grain
-    rd.frame(0, 32, 64, 128, shade(wood, 0.5), 3)
+        rd.rect(x, T + 32, x + 1, T + 128, shade(wood, 0.86))    # grain
+    rd.frame(0, T + 32, 64, T + 128, shade(wood, 0.5), 3)
     for y1, y2 in ((42, 76), (84, 120)):
-        rd.frame(10, y1, 54, y2, shade(wood, 0.62), 2)
-    rd.rect(26, 50, 38, 58, (206, 180, 96))                      # brass number plate
-    rd.frame(26, 50, 38, 58, (120, 96, 40), 1)
-    rd.disc(53, 81, 3, (206, 180, 96))                           # knob
+        rd.frame(10, T + y1, 54, T + y2, shade(wood, 0.62), 2)
+    rd.rect(26, T + 50, 38, T + 58, (206, 180, 96))              # brass number plate
+    rd.frame(26, T + 50, 38, T + 58, (120, 96, 40), 1)
+    rd.disc(53, T + 81, 3, (206, 180, 96))                       # knob
     rd.noise(5, 77)
     out["textures/AJHDOR.png"] = rd.png()
 
     # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate
     # per key it needs, each with that key's number, where a hand would be
     for keys in LOCKS:
-        lk = Img(64, 128)
+        lk = Img(64, 128 + T)
         lk.px = [list(p) for p in rd.px]
         for n, ch in enumerate(keys):
             x = 32 - 9 * len(keys) + 18 * n + 1
-            lk.rect(x, 62, x + 16, 82, BRASS)
-            lk.frame(x, 62, x + 16, 82, (110, 88, 36), 1)
-            digit(lk, ch, x + 5, 65, (60, 40, 16))
-            lk.rect(x + 7, 77, x + 9, 80, (30, 22, 10))          # keyhole
+            lk.rect(x, T + 62, x + 16, T + 82, BRASS)
+            lk.frame(x, T + 62, x + 16, T + 82, (110, 88, 36), 1)
+            digit(lk, ch, x + 5, T + 65, (60, 40, 16))
+            lk.rect(x + 7, T + 77, x + 9, T + 80, (30, 22, 10))  # keyhole
         out[f"textures/AJHK{keys}.png"] = lk.png()
+
+    # a door bolted on its other side (ajarmap.bolted): grey steel, no handle,
+    # no plate. It opens by itself once you have come to the side it is bolted on.
+    bd = Img(64, 128 + T)
+    bd.px = [list(p) for p in rd.px]
+    steel = (132, 138, 148)
+    bd.rect(0, T + 32, 64, T + 128, steel)
+    bd.frame(0, T + 32, 64, T + 128, shade(steel, 0.5), 3)
+    for y in (T + 44, T + 78, T + 112):
+        bd.rect(3, y, 61, y + 3, shade(steel, 0.7))
+        for x in (8, 32, 56):
+            bd.disc(x, y + 1, 2, (200, 204, 210))
+    bd.noise(5, 78)
+    out["textures/AJBOLT.png"] = bd.png()
+    # the same as a block of floor that sinks (the stage front)
+    bl = Img(64, 128, steel)
+    bl.frame(0, 0, 64, 128, shade(steel, 0.5), 3)
+    for y in range(10, 120, 12):
+        bl.rect(6, y, 58, y + 5, shade(steel, 0.45))
+    bl.noise(5, 79)
+    out["textures/AJGRATE.png"] = bl.png()
 
     # room keys, numbered: a brass key on a tag. Sprite, and a HUD icon
     for ch in "1234":

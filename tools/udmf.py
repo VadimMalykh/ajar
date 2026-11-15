@@ -25,10 +25,13 @@ class Map:
         self.cuts = set()      # extra vertices that split the edges they lie on
 
     def sector(self, poly, floor=0, ceil=192, light=200, wall="AJWALL",
-               ftex="AJFLOOR", ctex="AJCEIL", color=None):
+               ftex="AJFLOOR", ctex="AJCEIL", color=None, side=None, id=0, special=0):
+        """`wall` is what the sector's own walls show; `side` (default: the
+        same) is what a step up to it shows, e.g. the side of a bed."""
         self.polys.append(_clockwise([tuple(p) for p in poly]))
         self.sectors.append(dict(floor=floor, ceil=ceil, light=light, wall=wall,
-                                 ftex=ftex, ctex=ctex, color=color))
+                                 ftex=ftex, ctex=ctex, color=color, side=side or wall,
+                                 id=id, special=special))
         return len(self.sectors) - 1
 
     def line(self, a, b, **props):
@@ -113,6 +116,7 @@ class Map:
             p.pop("exact", None)
             mid = p.pop("mid", None)
             midboth = p.pop("midboth", False)
+            lower = p.pop("lower", None)           # texture of the step, both sides
             s = self.sectors[si]
             ld = dict(v1=vi(a), v2=vi(b))
             other = edges.get((b, a))
@@ -122,11 +126,11 @@ class Map:
             else:
                 done.add((b, a))
                 o = self.sectors[other]
-                front = dict(texturetop=o["wall"], texturebottom=o["wall"])
+                front = dict(texturetop=o["wall"], texturebottom=lower or o["side"])
                 if mid:
                     front["texturemiddle"] = mid
                 ld["sidefront"] = side(si, **front)
-                back = dict(texturetop=s["wall"], texturebottom=s["wall"])
+                back = dict(texturetop=s["wall"], texturebottom=lower or s["side"])
                 if mid and midboth:
                     back["texturemiddle"] = mid
                 ld["sideback"] = side(other, **back)
@@ -158,6 +162,9 @@ class Map:
         for s in self.sectors:
             d = dict(heightfloor=s["floor"], heightceiling=s["ceil"], texturefloor=s["ftex"],
                      textureceiling=s["ctex"], lightlevel=s["light"])
+            for extra in ("id", "special"):
+                if s[extra]:
+                    d[extra] = s[extra]
             if s["color"] is not None:
                 # Tint the room's surfaces only. "lightcolor" would tint sprites
                 # too, and a door must keep its own colour wherever it stands.

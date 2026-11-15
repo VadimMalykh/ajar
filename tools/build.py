@@ -24,6 +24,10 @@ for name, mod in MAPS.items():
         print("   ", s)
     if stuck:
         sys.exit(f"{name}: the player can get stuck, e.g. {stuck[0]}")
+    gone = solve.lost(mod.PUZZLE)
+    print(f"    can be lost for good: {', '.join(w for w, _ in gone) or 'nothing'}")
+    if gone and mod.PUZZLE.get("complete"):
+        sys.exit(f"{name}: {gone[0][0]} can be lost, e.g. from {gone[0][1]}")
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)

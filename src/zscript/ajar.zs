@@ -4,7 +4,7 @@
 //  * AjarFrame thing: args[0] = id of the frame's portal line. Its tid is the
 //    same number; the frame's mouth line calls Thing_Activate on it.
 //  * AjarDoor thing:  args[0] = id of the door's far-side portal line,
-//    args[1] = colour (1..5), args[2] = id of the frame it starts in (0 = leaning),
+//    args[1] = colour (1..6), args[2] = id of the frame it starts in (0 = leaning),
 //    args[3] = 1 for a fixed doorway: no leaf, no colour, and it stays in that
 //    frame for the whole level (ajarmap.doorway).
 
@@ -59,26 +59,30 @@ class AjarDoor : Actor
 	Colour5:
 		AJD5 A -1;
 		Stop;
+	Colour6:
+		AJD6 A -1;
+		Stop;
 	Nailed:            // only so that these sprites are loaded
 		AJN1 A -1;
 		AJN2 A -1;
 		AJN3 A -1;
 		AJN4 A -1;
 		AJN5 A -1;
+		AJN6 A -1;
 		Stop;
 	}
 
-	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF };
-	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET" };
+	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0 };
+	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK" };
 
-	int Colour() { return clamp(args[1], 1, 5); }
+	int Colour() { return clamp(args[1], 1, 6); }
 	string BackTex() { return String.Format("AJDR%d", Colour()); }
 	string Label() { return names[Colour()]; }
 
 	void Show()
 	{
-		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5' };
-		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5' };
+		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6' };
+		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5', 'AJN6' };
 		if (nailer == self) { Hide(); return; }      // a fixed doorway has no leaf
 		int c = Colour();
 		sprite = GetSpriteIndex(nailer ? nailedSpr[c] : spr[c]);
@@ -476,9 +480,9 @@ class AjarHandler : EventHandler
 	void NoVacancyScript(Actor mo, int t)
 	{
 		string have = carried ? carried.Label() : "-";
-		// both locked rooms refuse to open without their keys
-		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); }
-		if (t == 34) Check("lockedWithoutKeys", !RoomOpen(301) && !RoomOpen(302));
+		// the three locked rooms refuse to open without their keys
+		if (t == 20) for (int id = 301; id <= 303; id++) FindLine(id).Activate(mo, 0, SPAC_Use);
+		if (t == 34) Check("lockedWithoutKeys", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303));
 		// room 104's RED into the lobby frame, and through it upstairs
 		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 256, 80, 0, 270); }
 		Forward(mo, t, 40, 25);
@@ -487,23 +491,28 @@ class AjarHandler : EventHandler
 		if (t == 85) { Take(mo, 4); FindFrame(102).Activate(mo); Pose(mo, 1024, 230, 144, 270); }
 		Forward(mo, t, 90, 25);
 		if (t == 125) Check("inAttic", mo.pos.z == 304 && mo.pos.x > 1792);
-		// key 3, then off the edge into the upstairs hall
+		// key 1, then off the edge into the upstairs hall
 		if (t == 130) Pose(mo, 2100, 180, 304, 270);
 		Forward(mo, t, 135, 12);
-		if (t == 155) Check("haveKey3", Has(mo, 3));
+		if (t == 155) Check("haveKey1", Has(mo, 1));
 		if (t == 160) Pose(mo, 1830, 224, 304, 180);
 		Forward(mo, t, 165, 15);
 		if (t == 215) Check("droppedUpstairs", mo.pos.z == 144 && mo.pos.x < 1792);
-		// key 1 in room 201, then down the missing stairs into the lobby
-		if (t == 220) Pose(mo, 832, 420, 144, 90);
+		// key 4 in the bathroom of 201, then down the missing stairs into the lobby
+		if (t == 220) Pose(mo, 1040, 420, 144, 90);
 		Forward(mo, t, 225, 12);
-		if (t == 245) Check("haveKey1", Has(mo, 1));
+		if (t == 245) Check("haveKey4", Has(mo, 4));
 		if (t == 250) Pose(mo, 560, 224, 144, 180);
 		Forward(mo, t, 255, 15);
 		if (t == 300) Check("inLobby", mo.pos.z == 0 && mo.pos.x < 512);
-		// key 1 opens room 106, but 203 still wants key 2: take BLUE
-		if (t == 305) { Pose(mo, -1120, 200, 0, 270); FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); }
-		if (t == 345) Check("room106Opens", RoomOpen(301) && !RoomOpen(302));
+		// keys 1 and 4 open rooms 106 and 105, but 203 still wants keys 2 and 3
+		if (t == 305) { Pose(mo, -1120, 200, 0, 270); for (int id = 301; id <= 303; id++) FindLine(id).Activate(mo, 0, SPAC_Use); }
+		if (t == 345) Check("rooms105And106Open", RoomOpen(301) && RoomOpen(303) && !RoomOpen(302));
+		// key 3 lies in the bath of suite 105
+		if (t == 350) Pose(mo, -1328, 450, 0, 90);
+		Forward(mo, t, 355, 12);
+		if (t == 380) Check("haveKey3", Has(mo, 3));
+		t -= 40;                                    // the rest is timed as before that detour
 		// BLUE into the kitchen frame, through to the cellar, key 2, and back
 		if (t == 350) { Take(mo, 2); FindFrame(105).Activate(mo); Pose(mo, -1664, 770, 0, 90); }
 		Forward(mo, t, 360, 25);
@@ -551,51 +560,69 @@ class AjarHandler : EventHandler
 	}
 
 	// MAP03: a solution of the same length as the one tools/build.py prints.
+	// Bolts are drawn by walking over their lines, as a player would.
+	bool Sunk(int lineId) { Line l = FindLine(lineId); return l && l.frontsector.CenterFloor() < 0 && l.backsector.CenterFloor() < 0; }
+
 	void StageDoorScript(Actor mo, int t)
 	{
 		string have = carried ? carried.Label() : "-";
-		// foyer: take VIOLET through the doorway into the stalls
-		if (t == 35) { Take(mo, 5); Pose(mo, 2300, 160, 0, 0); }
+		// office and star's room are locked; stairs, grate and booth are bolted
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(305) && !Sunk(304));
+		// the bar's BLUE into the foyer frame: the dress circle
+		if (t == 35) { Take(mo, 2); FindFrame(101).Activate(mo); Pose(mo, -224, 1104, 0, 270); }
 		Forward(mo, t, 40, 25);
-		if (t == 80) Check("inStallsWithViolet", mo.pos.x > 0 && mo.pos.x < 640 && mo.pos.z == 0 && have == "VIOLET");
-		// hang it, fetch BLUE from the dressing room
-		if (t == 85) { FindFrame(102).Activate(mo); Pose(mo, 160, 70, 0, 270); }
-		Forward(mo, t, 90, 25);
-		if (t == 125) Check("inDressingRoom", mo.pos.x > 3000 && mo.pos.x < 3320);
-		if (t == 130) { Take(mo, 2); Pose(mo, 3100, 160, 0, 180); }
-		Forward(mo, t, 135, 25);
-		if (t == 170) Check("backWithBlue", mo.pos.x > 0 && mo.pos.x < 640 && have == "BLUE");
-		// BLUE in the other frame: out onto the box, take GREEN, drop
-		if (t == 175) { FindFrame(103).Activate(mo); Pose(mo, 416, 70, 0, 270); }
-		Forward(mo, t, 180, 16);
-		if (t == 215) Check("onBox", mo.pos.z == 144 && mo.pos.y > 640);
-		if (t == 220) { Take(mo, 3); Pose(mo, 320, 700, 144, 270); }
-		Forward(mo, t, 225, 15);
-		if (t == 290) Check("droppedWithGreen", mo.pos.z == 0 && mo.pos.y < 640 && have == "GREEN");
-		// swap VIOLET for GREEN: onto the flies, drop to the stage
-		if (t == 295) { Pose(mo, 160, 70, 0, 270); FindFrame(102).Activate(mo); }
-		Forward(mo, t, 300, 16);
-		if (t == 335) Check("onFliesWithViolet", mo.pos.z == 256 && mo.pos.y < 0 && have == "VIOLET");
-		if (t == 340) Pose(mo, 740, -60, 256, 90);
-		Forward(mo, t, 345, 15);
-		if (t == 400) Check("onStage", mo.pos.z == 64 && mo.pos.x > 640);
-		// leave VIOLET in the stage frame, step into the trap
-		if (t == 405) { FindFrame(105).Activate(mo); Pose(mo, 928, 180, 64, 90); }
-		Forward(mo, t, 410, 12);
-		if (t == 470) Check("inTrapEmptyHanded", mo.pos.z == -128 && have == "-");
-		// YELLOW up to the gods, take RED, back down the same way
-		if (t == 475) Pose(mo, 960, 320, -128, 0);
-		Forward(mo, t, 480, 15);
-		if (t == 520) Check("inTheGods", mo.pos.z == 208 && mo.pos.x < 0);
-		if (t == 525) { Take(mo, 1); Pose(mo, -60, 320, 208, 180); }
-		Forward(mo, t, 530, 25);
-		if (t == 570) Check("inTrapWithRed", mo.pos.z == -128 && have == "RED");
-		// swap YELLOW for RED and leave
-		if (t == 575) { FindFrame(104).Activate(mo); Pose(mo, 960, 320, -128, 0); }
-		Forward(mo, t, 580, 25);
-		if (t == 620) Check("inAlley", mo.pos.x > 4900);
+		if (t == 80) Check("onCircle", mo.pos.z == 128 && mo.pos.y < 1088 && mo.pos.x > 320);
+		if (t == 85) Pose(mo, 990, 980, 128, 90);
+		Forward(mo, t, 90, 12);
+		if (t == 110) Check("haveKey2AndStairsOpen", Has(mo, 2) && RoomOpen(303));
+		// over the rail into the stalls
+		if (t == 115) Pose(mo, 664, 930, 128, 270);
+		Forward(mo, t, 120, 15);
+		if (t == 170) Check("inStalls", mo.pos.z == 0 && mo.pos.y < 896);
+		// the cloakroom's VIOLET into the stalls frame: under the stage
+		if (t == 175) { Take(mo, 5); FindFrame(104).Activate(mo); Pose(mo, 256, 820, 0, 90); }
+		Forward(mo, t, 180, 25);
+		if (t == 220) Check("underTheStage", mo.pos.z == -64 && mo.pos.x > 1168 && mo.pos.x < 1424);
+		// GREEN into the frame down here: the flies. The grate has sunk
+		if (t == 225) { Take(mo, 3); FindFrame(102).Activate(mo); Pose(mo, 1232, 800, -64, 90); }
+		Forward(mo, t, 230, 25);
+		if (t == 270) Check("onFliesAndGrateSunk", mo.pos.z == 288 && mo.pos.y < 0 && Sunk(304));
+		// along the bridge, down into the gods, and through YELLOW's far side
+		if (t == 275) Pose(mo, -200, 60, 288, 90);
+		Forward(mo, t, 280, 15);
+		if (t == 320) Check("inTheGods", mo.pos.z == 224 && mo.pos.x < 0 && mo.pos.y > 128);
+		if (t == 325) Pose(mo, -224, 700, 224, 90);
+		Forward(mo, t, 330, 25);
+		if (t == 370) Check("inBooth", mo.pos.x < -464 && mo.pos.x > -720 && mo.pos.z == 224);
+		if (t == 375) Pose(mo, -560, 460, 224, 90);
+		Forward(mo, t, 380, 12);
+		if (t == 400) Check("haveKey3AndBoothOpen", Has(mo, 3) && RoomOpen(305));
+		// over the gods' rail, through the sunk grate and up to the flies again
+		if (t == 405) Pose(mo, -100, 448, 224, 0);
+		Forward(mo, t, 410, 15);
+		if (t == 455) Check("inStallsAgain", mo.pos.z == 0 && mo.pos.x > 0);
+		if (t == 460) Pose(mo, 1100, 768, -48, 0);
+		Forward(mo, t, 465, 15);
+		if (t == 485) Check("throughTheGrate", mo.pos.z == -64 && mo.pos.x > 1168);
+		if (t == 490) Pose(mo, 1232, 800, -64, 90);
+		Forward(mo, t, 495, 25);
+		if (t == 530) Check("onFliesAgain", mo.pos.z == 288 && mo.pos.y < 0);
+		// this time down onto the stage: keys 2 and 3 open the star's room
+		if (t == 535) Pose(mo, 1472, -60, 288, 90);
+		Forward(mo, t, 540, 15);
+		if (t == 585) Check("onStage", mo.pos.z == 64 && mo.pos.y > 0);
+		if (t == 590) FindLine(302).Activate(mo, 0, SPAC_Use);
+		if (t == 630) Check("starsRoomOpens", RoomOpen(302) && !RoomOpen(301));
+		// RED with empty hands, into the room under the stage, and out
+		if (t == 635) { Take(mo, 1); Pose(mo, 1300, 600, 64, 90); }
+		Forward(mo, t, 640, 15);
+		if (t == 685) Check("underWithRed", mo.pos.z == -64 && have == "RED");
+		if (t == 690) { FindFrame(102).Activate(mo); Pose(mo, 1232, 800, -64, 90); }
+		Forward(mo, t, 695, 25);
+		if (t == 735) Check("inAlley", mo.pos.x > 4900);
 		// face the exit switch; the real USE press comes from tools/smoke_MAP03_1.cfg
-		if (t == 625) Pose(mo, 5418, 96, 0, 0);
+		if (t == 740) Pose(mo, 5418, 96, 0, 0);
 	}
 
 	// Mode 2 in MAP02 and MAP03: a tour, as BorrowedRoomsTour. Each view is
@@ -607,32 +634,58 @@ class AjarHandler : EventHandler
 		{
 			static const double hotel[] = {
 				256, 96, 0, 90, -12,        // lobby: the balcony, VIOLET, the gap in the rail
-				400, 224, 0, 180, 0,        // lobby: the mouth of the ground-floor hall
+				330, 280, 0, 140, 0,        // lobby: the reception desk
+				200, 300, 0, 325, 0,        // lobby: the front doors
+				380, 100, 0, 180, 0,        // lobby: the sofa, the mouth of the hall
 				-100, 224, 0, 180, 0,       // the hall
+				-224, 328, 0, 90, 0,        // room 101: bed, windows
+				-432, 420, 0, 90, 15,       // its bathroom
+				-224, 120, 0, 270, 0,       // room 102
 				-672, 110, 0, 270, 0,       // room 104: RED
 				-1120, 250, 0, 270, 0,      // room 106's door: one lock
+				-1120, 330, 0, 90, 0,       // suite 105: sitting room
+				-1120, 600, 0, 90, 0,       // suite 105: bedroom
+				-1328, 440, 0, 90, 15,      // suite 105: the bath, key 3
 				-1500, 224, 0, 180, 0,      // dining room
 				-1664, 600, 0, 90, 0,       // kitchen: the frame
 				540, 224, 144, 0, 0,        // upstairs hall
-				832, 330, 144, 90, 0,       // room 201: key 1
+				832, 330, 144, 90, 0,       // room 201
+				1040, 420, 144, 90, 15,     // its bathroom: key 4
 				1344, 190, 144, 90, 0,      // room 203's door: two locks
-				1820, 224, 304, 0, 0,       // attic: key 3
+				1300, 600, 144, 45, 0,      // suite 203: GREEN in the bedroom
+				1820, 224, 304, 0, 0,       // attic: key 1
 				4240, 160, 0, 0, 0,         // cellar: the frame, key 2
 				3060, 224, 128, 0, 12,      // terrace, down into the garden
 				300, 520, 112, 270, 20,     // balcony: the gap in the rail
 				5040, 96, 0, 0, 0           // street
 			};
 			static const double theatre[] = {
-				2040, 160, 0, 0, 0,         // foyer: the doorway
-				96, 600, 0, 300, -5,        // stalls from the doorway: frames, stage
-				40, 320, 0, 0, -8,          // down the aisle to the stage
-				600, 40, 0, 150, -25,       // back of the house: the gods, the box
-				320, 800, 144, 270, 10,     // from the box
-				-190, 320, 208, 0, 12,      // from the gods
-				832, -150, 256, 90, 30,     // from the flies, down onto the stage
-				700, 600, 64, 300, 10,      // on the stage: the trap
-				860, 320, -128, 0, 0,       // in the trap: YELLOW
-				3040, 160, 0, 0, 0,         // dressing room
+				-200, 1352, 0, 0, 0,        // foyer from the start
+				0, 1500, 0, 200, 0,         // foyer: box office, cloakroom door, frame
+				-256, 1560, 0, 90, 0,       // office door: one lock
+				-256, 1730, 0, 90, 0,       // office: PINK hanging, the store beyond
+				-700, 1228, 0, 180, 0,      // cloakroom: VIOLET
+				300, 1520, 0, 0, 0,         // bar: BLUE, the bolted stairs door
+				128, 940, 0, 300, -5,       // stalls from the way in
+				40, 448, 0, 0, -8,          // down the aisle to the stage
+				900, 448, 0, 180, -20,      // back of the house: the gods
+				900, 300, 0, 60, -20,       // the dress circle
+				1100, 600, -48, 20, 0,      // the pit: the grate
+				680, 1000, 128, 0, 5,       // on the circle
+				384, 1100, 128, 90, 30,     // down its stairs
+				-420, 448, 224, 0, 12,      // from the gods
+				-300, 600, 224, 105, 0,     // gods: YELLOW's far side, open
+				-200, 448, 224, 180, 0,     // gods: the booth's door and window
+				-500, 448, 224, 180, 0,     // in the booth
+				1700, -96, 288, 180, 10,    // flies and the bridge
+				1472, -40, 288, 90, 35,     // from the flies, down onto the stage
+				1700, 300, 64, 150, 15,     // on the stage: the room under it
+				1296, 860, -64, 270, 0,     // under the stage: GREEN
+				1200, 1024, 64, 0, 0,       // backstage corridor
+				1920, 1024, 64, 90, 0,      // the star's door: two locks
+				1920, 1130, 64, 90, 0,      // the star's room: RED
+				2140, 1024, 64, 0, 0,       // green room
+				4040, 192, 0, 0, 0,         // property store
 				5040, 96, 0, 0, 0           // alley
 			};
 			if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
@@ -649,7 +702,7 @@ class AjarHandler : EventHandler
 			let it = ThinkerIterator.Create("Actor");
 			Actor a;
 			while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0) n++;
-			Console.Printf("AJARTEST view=%d monsters=%d", i, n);
+			Console.Printf("AJARTEST view=%d monsters=%d secrets=%d", i, n, level.total_secrets);
 		}
 	}
 
@@ -692,7 +745,7 @@ class AjarHandler : EventHandler
 			let it = ThinkerIterator.Create("Actor");
 			Actor a;
 			while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0) n++;
-			Console.Printf("AJARTEST view=%d monsters=%d", i, n);
+			Console.Printf("AJARTEST view=%d monsters=%d secrets=%d", i, n, level.total_secrets);
 		}
 	}
 

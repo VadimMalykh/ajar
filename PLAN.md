@@ -542,6 +542,87 @@ Two rules that came out of it:
 - `MAP=MAP02 ./tools/smoke.sh`: 28 checks, including both locks refusing
   without keys. `MODE=2` is the tour (15 views).
 
+**Second pass (2026-11-15)**, after the user played it: much better, but
+each key lay close to its lock, the colours are still used one after
+another, the rooms did not look like rooms, and "where is the lobby?".
+
+- Keys: four now, and none is used on the floor where it is found. Key 4
+  (bathroom of 201, upstairs) opens suite 105 at the far end of the ground
+  floor, where key 3 lies in the bath. Key 1 (attic) opens 106 next to it
+  (BLUE). Key 2 (cellar) and key 3 open suite 203 upstairs (GREEN). All
+  three locks can be seen long before their keys. 10 door actions, 3434
+  states, none stuck; the description of the rebuilt level above is
+  otherwise still right.
+- Rooms: `guest()` in `map_hinges2.py` gives every room a bed, a tiled
+  bathroom (bath, basin; behind a door or an open way) and windows; 105
+  and 203 are suites (sitting room, then bedroom). Dining room has tables
+  and windows, the kitchen a counter. New helpers in `ajarmap`: `fitted`
+  (a room with furniture: rectangles with their own floor), `window`
+  (glazing bars over a `Line_Horizon` sky), `opening`. `udmf` sectors have
+  `side` (texture of a step up to them), lines `lower`. A wall piece with
+  its own picture must not be crossed by a furniture edge of `fitted`.
+- Lobby: reception desk with a key rack under the balcony, a sofa, and
+  the hotel's front doors, boarded up, under a NO VACANCY sign.
+- The colour order is unchanged and still a chain. Ideas put to the user,
+  nothing chosen yet: a hub of two or three doors open at once; a door
+  that starts hung and is first met from its far side; a place that needs
+  two doors hung at the same time; a door with two jobs; a spare door
+  that is a trap or a secret.
+- `MAP=MAP02 ./tools/smoke.sh`: 23 checks. `MODE=2`: 25 views. Not played
+  by hand yet.
+
+## MAP03 rebuilt (2026-11-15)
+
+User: MAP02 stays as it is; all the non-linear ideas go into a new MAP03,
+much bigger, with other rooms, keys and more enemies. The MAP03 described
+under "Second and third levels" is gone. **Not played by hand yet.**
+
+`MAP03` "Stage Door" (`tools/map_hinges3.py`): six doors, three keys, five
+frames, 8 door actions, 60620 states, none stuck, nothing losable. 56
+monsters, 2 secrets.
+
+- Front of house, all walkable: foyer (start, frame), cloakroom (VIOLET),
+  bar (BLUE), stalls with rows of seats (frame), orchestra pit. Above:
+  dress circle (BLUE's far side, key 2), gods (YELLOW's far side) with the
+  lighting booth behind them, flies (GREEN's far side) and a lighting
+  bridge from them along the south wall to a landing over the gods. The
+  stage is too high to climb; backstage are two dressing rooms (key 1),
+  the star's room (keys 2 and 3: RED) and a green room. The room under
+  the stage (VIOLET's far side, GREEN, a frame) is open from above.
+- Hub: BLUE and VIOLET from the start, circle and under-stage in either
+  order.
+- Bolted doors (`ajarmap.bolted`, `unbolt`): shut from one side, they open
+  for good when the player first arrives on the other: the circle's
+  stairs down to the bar, the grate between pit and under-stage (a block
+  of the stage front that sinks), the booth's door to the gods.
+- GREEN has two jobs: the flies are the only way onto the stage (a drop)
+  and the only way to the gods (the bridge), each one-way.
+- YELLOW is first met from its far side: it hangs in the booth, and its
+  far side in the gods stands open onto the booth and key 3.
+- PINK, the sixth colour (ring glyph), is a spare: it hangs in the
+  manager's office (key 1) and opens onto the property store (rocket
+  launcher, armour, revenants), a secret. The other secret is a nook off
+  the bridge.
+- RED needs empty hands, so every door taken has to hang somewhere.
+- `MAP=MAP03 ./tools/smoke.sh`: 18 checks. `MODE=2`: 27 views.
+
+What the searches showed, to keep:
+
+- A frame in a place reached only through one door makes an island as
+  soon as that door is hung there and the place left by a drop. Either no
+  frame there (stage, circle, flies, gods), or a bolted door that opens
+  on first arrival (booth, under-stage).
+- A door once picked up can never be put down, so with RED needing empty
+  hands there must be a frame for every other door that can be taken. A
+  spare door therefore starts hung, in a frame of its own.
+- `tools/solve.py`: `auto` (things that happen by themselves on arriving
+  somewhere, i.e. bolts) and `lost()` (places and keys that can become
+  unreachable for good). A `PUZZLE` with `complete=True` fails the build
+  if anything can be lost; MAP02 and MAP03 lose nothing, MAP01 can lose
+  the cell and the ledge (it has no `complete`).
+- Ordinary doors now fit rooms up to 256 high (the texture carries wall
+  above the leaf).
+
 Door colours: five now, and the limit is the player's memory, not the
 solver (MAP02's 2590 states take well under a second; even eight doors
 would be fine). Adding one is a colour and a glyph in `tools/gfx.py`, a
@@ -654,8 +735,7 @@ monsters.
 
 Next, in order:
 
-1. Play the rebuilt MAP02 by hand, then rebuild MAP03 the same way (see
-   "Less linear levels").
+1. Play the rebuilt MAP03 by hand (see "MAP03 rebuilt").
 2. Teach `tools/solve.py` about the thief and nailer before a level uses
    them.
 3. Door swing animation and carry delay (left over from M2).

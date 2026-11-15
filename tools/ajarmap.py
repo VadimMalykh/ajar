@@ -6,8 +6,8 @@ doorway number n uses 150 + n and 250 + n.
 FRAME_T, DOOR_T = 20001, 20002
 KEY_T = {"1": 20011, "2": 20012, "3": 20013, "4": 20014}      # room keys, by number
 LOCK = {"1": 41, "2": 42, "3": 43, "4": 44, "12": 45, "23": 46, "34": 47}   # src/lockdefs.txt
-RED, BLUE, GREEN, YELLOW, VIOLET = 1, 2, 3, 4, 5
-NAMES = {RED: "RED", BLUE: "BLUE", GREEN: "GREEN", YELLOW: "YELLOW", VIOLET: "VIOLET"}
+RED, BLUE, GREEN, YELLOW, VIOLET, PINK = 1, 2, 3, 4, 5, 6
+NAMES = {RED: "RED", BLUE: "BLUE", GREEN: "GREEN", YELLOW: "YELLOW", VIOLET: "VIOLET", PINK: "PINK"}
 DEPTH = 16          # recess depth
 DOOR_H = 96
 STUB = 32           # space behind each portal line (engine requirement)
@@ -73,7 +73,7 @@ def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0):
     rooms that are `thick` apart; a-b is its 64-wide mouth on one side and
     `out` points to the other. It is plain wood and nobody can carry it.
     Declare both rooms first, so that the door is at the back of its lines.
-    The rooms should be no more than 128 high where it stands (see gfx.py).
+    The rooms should be no more than 256 high where it stands (see gfx.py).
 
     With `keys` ("1", "23"...) it is locked and needs every one of those
     room keys (see key()); its lock plates show their numbers, and monsters
@@ -119,3 +119,82 @@ def picture(m, a, b, colour, height):
     `height` is the wall's height there (336 or 176: see gfx.py)."""
     m.cut(a, b)
     m.line(a, b, mid=f"AJP{'A' if height == 336 else 'B'}{colour}", exact=True)
+
+
+RUNNER = dict(runner=True)      # for fitted(): carpet under a raised row of lights
+
+
+def fitted(m, box, features, **base):
+    """A flat rectangular room (x1, y1, x2, y2) with furniture. `features` is
+    a list of ((x1, y1, x2, y2), changes): each rectangle inside the room gets
+    those sector properties instead of the room's (later ones win), or, for
+    RUNNER, the carpet and lights of room(). The room is cut into a grid
+    along every rectangle's edges, so a wall piece that needs its own texture
+    must not have such an edge crossing it."""
+    xs = sorted({box[0], box[2]} | {v for r, _ in features for v in (r[0], r[2])})
+    ys = sorted({box[1], box[3]} | {v for r, _ in features for v in (r[1], r[3])})
+    for x1, x2 in zip(xs, xs[1:]):
+        for y1, y2 in zip(ys, ys[1:]):
+            props = dict(base)
+            for (a, b, c, d), change in features:
+                if a <= x1 and x2 <= c and b <= y1 and y2 <= d:
+                    if change.get("runner"):
+                        props.update(ceil=base["ceil"] + 16, light=min(255, base["light"] + 30),
+                                     ftex="AJRUG", ctex="AJLITE")
+                    else:
+                        props.update(change)
+            m.sector([(x1, y1), (x1, y2), (x2, y2), (x2, y1)], **props)
+
+
+def window(m, a, b, out, floor, *, sill=40, top=96, wall="AJWALL", color=None):
+    """A window in the wall piece a-b (64 long), looking `out` at the sky:
+    glazing bars nobody can pass, a sill, and beyond it a horizon line."""
+    def off(p, d):
+        return (p[0] + out[0] * d, p[1] + out[1] * d)
+    m.sector([a, b, off(b, 8), off(a, 8)], floor=floor + sill, ceil=floor + top, light=255,
+             wall=wall, ftex="AJTRIMF", ctex="AJTRIMF", color=color)
+    m.sector([off(a, 8), off(b, 8), off(b, 12), off(a, 12)], floor=floor + sill, ceil=floor + top,
+             light=255, wall=wall, ftex="F_SKY1", ctex="F_SKY1")
+    m.line(off(a, 12), off(b, 12), special=9)                     # Line_Horizon
+    m.line(a, b, mid="AJWIN", midboth=True, blocking=True)
+
+
+def opening(m, a, b, out, floor, *, thick=16, color=None):
+    """A plain open way through a wall `thick` deep, a-b its 64-wide mouth."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    m.sector([a, b, d, c], floor=floor, ceil=floor + DOOR_H, light=170, wall="AJTRIM",
+             ftex="AJTRIMF", ctex="AJTRIMF", color=color)
+
+
+def bolted(m, a, b, out, floor, tag, *, thick=16, line_id=0):
+    """A steel door bolted on its far side: a-b is its mouth on the side it
+    cannot be opened from, `out` points to the side with the bolt. It opens
+    for good when something crosses a line given to unbolt(tag), or with
+    USE from the bolt side. In a PUZZLE graph: a walk link each way that
+    needs a key (a letter) lying on the bolt side and listed in `auto`.
+    Every way of arriving on the bolt side has to cross an unbolt() line."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall="AJBOLT",
+             ftex="AJTRIMF", ctex="AJTRIMF", id=tag)
+    m.line(c, d, special=11, args=(tag, 32), playeruse=True, id=line_id)
+    for p, q in ((a, c), (b, d)):
+        m.line(p, q, mid="AJTRIM", dontpegbottom=True)
+
+
+def unbolt(m, a, b, tag, special=11):
+    """Crossing the two-sided line a-b draws the bolt of door `tag`."""
+    m.line(a, b, special=special, args=(tag, 32), playercross=True)
+
+
+def stairs(m, a, b, out, floor, rise, *, steps=8, depth=32, ceil=None, **k):
+    """A flight of steps from the edge a-b at `floor`, going `out` and up by
+    `rise` in all (negative: down)."""
+    for i in range(steps):
+        p1 = (a[0] + out[0] * depth * i, a[1] + out[1] * depth * i)
+        p2 = (b[0] + out[0] * depth * i, b[1] + out[1] * depth * i)
+        p3 = (b[0] + out[0] * depth * (i + 1), b[1] + out[1] * depth * (i + 1))
+        p4 = (a[0] + out[0] * depth * (i + 1), a[1] + out[1] * depth * (i + 1))
+        m.sector([p1, p2, p3, p4], floor=floor + rise * (i + 1) // steps,
+                 ceil=ceil if ceil is not None else floor + 128, **k)

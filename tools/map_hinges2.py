@@ -2,11 +2,12 @@
 
 A hotel, and the first level that is not one thing after another.
 
-The ground floor is a place to walk about in: the lobby, a hall of guest
-rooms behind ordinary doors, a dining room and a kitchen. Upstairs is a
-second hall of rooms, but the stairs are gone, so everything above the
-ground floor is reached by door and left by dropping. Nothing is handed
-over: the doors lean in rooms and have to be looked for.
+The ground floor is a place to walk about in: the lobby (reception desk,
+boarded front doors), a hall of guest rooms behind ordinary doors, a dining
+room and a kitchen. Upstairs is a second hall of rooms, but the stairs are
+gone, so everything above the ground floor is reached by door and left by
+dropping. Nothing is handed over: doors lean in rooms and keys lie in
+bathrooms, and have to be looked for.
 
 New here: ordinary room doors, some of them locked; numbered room keys;
 the first of Ajar's own monsters, the lodger; and running out of frames.
@@ -15,12 +16,14 @@ take it you must get there with empty hands, and there is no frame beyond
 the terrace, so GREEN has to go into an empty frame, and there are four
 frames for four doors. One of them is in the cellar.
 
-RED (ground floor, room 104) leads upstairs. Upstairs are key 1 (room 201)
-and YELLOW (room 204), which leads to the attic and key 3. Key 1 opens
-room 106 downstairs: BLUE, which leads to the cellar and key 2. Keys 2 and
-3 together open room 203 upstairs: GREEN, which leads to the terrace. From
-there: garden, stone doorway, balcony, VIOLET, and a drop to the lobby.
-The attic and the cellar can be done in either order.
+No key lies on the floor where it is used; each sends you back to a lock
+you walked past earlier. RED (ground floor, room 104) leads upstairs.
+Upstairs are key 4 (the bathroom of 201) and YELLOW (room 204), which leads
+to the attic and key 1. Both open rooms at the far end of the ground
+floor: 105 (key 4), a suite with key 3 in its bath, and 106 (key 1), with
+BLUE, which leads to the cellar and key 2. Keys 2 and 3 together open
+suite 203 upstairs: GREEN, which leads to the terrace. From there: garden,
+stone doorway, balcony, VIOLET, and a drop to the lobby.
 """
 import ajarmap
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, far_id
@@ -40,45 +43,107 @@ OPEN = dict(ctex="F_SKY1", wall="AJBRICK")        # Doom's own sky
 HALL = (160, 288)                                 # both halls run east-west between these
 
 
-def guest(x, north, floor=0, keys="", line_id=0, **k):
-    """A 256-square guest room off a hall, behind an ordinary door (locked,
-    with `keys`). Returns its (x1, y1, x2, y2)."""
-    y1 = HALL[1] + 16 if north else HALL[0] - 272
-    box = (x, y1, x + 256, y1 + 256)
-    m.sector(rect(*box), floor=floor, ceil=floor + 112, **k)
+TUB = dict(ftex="AJWATER", side="AJTILE")
+SINK = dict(ftex="AJSINK", side="AJTILE")
+SOFA = dict(ftex="AJSOFA", side="AJSOFA")
+
+
+def guest(x, north, floor=0, keys="", line_id=0, bath="w", bathdoor=True, windows=True,
+          suite=False, **k):
+    """A guest room off a hall, behind an ordinary door (locked, with `keys`):
+    256 square, with a bed, a bathroom on its west or east side (`bath`;
+    behind a door or an open way) and two windows in the back wall. A
+    `suite` is two rooms deep: a sitting room, then the bedroom.
+
+    Returns at(u, v), which turns room coordinates into map ones: u from the
+    west wall (0 to 256), v from the hall wall back (0 to 256, a suite 464).
+    Furniture stands against the side wall away from the bathroom."""
+    sgn = 1 if north else -1
+    y0 = HALL[1] + 16 if north else HALL[0] - 16
+    ceil, color = floor + 112, k.get("color")
+
+    def at(u, v):
+        return (x + u, y0 + sgn * v)
+
+    def box(u1, v1, u2, v2):
+        (xa, ya), (xb, yb) = at(u1, v1), at(u2, v2)
+        return (min(xa, xb), min(ya, yb), max(xa, xb), max(ya, yb))
+
+    f = 192 if bath == "w" else 0
+
+    def bed(v):
+        return [(box(f, v, f + 64, v + 112), dict(floor=floor + 20, ftex="AJQUILT", side="AJWOOD")),
+                (box(f, v + 112, f + 64, v + 136), dict(floor=floor + 24, ftex="AJPILLOW", side="AJWOOD"))]
+
+    sofa = [(box(f + 48 if f else 0, 96, f + 64 if f else 16, 208), dict(SOFA, floor=floor + 40)),
+            (box(f + 16 if f else 16, 96, f + 48 if f else 48, 208), dict(SOFA, floor=floor + 16))]
+    ajarmap.fitted(m, box(0, 0, 256, 256), sofa if suite else bed(96), floor=floor, ceil=ceil, **k)
     edge = HALL[1] if north else HALL[0]
-    ajarmap.roomdoor(m, (x + 96, edge), (x + 160, edge), (0, 1 if north else -1), floor,
-                     keys=keys, line_id=line_id)
-    return box
+    ajarmap.roomdoor(m, (x + 96, edge), (x + 160, edge), (0, sgn), floor, keys=keys, line_id=line_id)
+    back = 256
+    if suite:
+        ajarmap.opening(m, at(96, 256), at(160, 256), (0, sgn), floor, color=color)
+        ajarmap.fitted(m, box(0, 272, 256, 464), bed(312), floor=floor, ceil=ceil, **k)
+        back = 464
+    if windows:
+        for u in ((32, 128) if f else (64, 160)):
+            ajarmap.window(m, at(u, back), at(u + 64, back), (0, sgn), floor, color=color)
+    if bath:
+        ua, ub = (-144, -16) if bath == "w" else (272, 400)
+        su = ua if bath == "w" else ub - 32
+        ajarmap.fitted(m, box(ua, 96, ub, 256),
+                       [(box(ua, 208, ub, 256), dict(TUB, floor=floor + 16)),
+                        (box(su, 96, su + 32, 128), dict(SINK, floor=floor + 32))],
+                       floor=floor, ceil=ceil, light=200, wall="AJTILE", ftex="AJTILEF")
+        wu = 0 if bath == "w" else 256
+        (ajarmap.roomdoor if bathdoor else ajarmap.opening)(
+            m, at(wu, 144), at(wu, 208), (-1 if bath == "w" else 1, 0), floor)
+    return at
 
 
-# --- the lobby: start here. The balcony over it has a gap in its rail -------
-ajarmap.room(m, [0, 224, 288, 512], [0, 192, 256, 448],
-             lambda i, j: i == 1 or j == 1, ceil=TALL, light=190)
+# --- the lobby: start here. Reception desk under the balcony, which has a gap
+# in its rail; a sofa; the front doors, boarded up from outside ---------------
+ajarmap.fitted(m, (0, 0, 512, 448), [
+    ((224, 0, 288, 448), ajarmap.RUNNER), ((0, 192, 512, 256), ajarmap.RUNNER),
+    ((48, 408, 208, 448), dict(floor=40, ftex="AJWOOD", side="AJWOOD")),          # the desk
+    ((0, 16, 16, 144), dict(SOFA, floor=40)), ((16, 16, 48, 144), dict(SOFA, floor=16)),
+], ceil=TALL, light=190)
 m.sector(rect(0, 448, 512, 576), floor=BALC, ceil=TALL, light=205)        # the balcony
+RAIL = dict(mid="AJRAIL", midboth=True, blocking=True, dontpegbottom=True)
 for a, b in (((0, 448), (224, 448)), ((288, 448), (512, 448))):
-    m.line(a, b, mid="AJRAIL", midboth=True, blocking=True, dontpegbottom=True)
+    m.line(a, b, **RAIL)
+m.line((48, 448), (208, 448), lower="AJKEYS", exact=True, **RAIL)         # the key rack behind the desk
+m.cut((512, 16), (512, 144))
+m.line((512, 16), (512, 144), mid="AJFRONT", exact=True)
 
 # --- the ground-floor hall, west of the lobby: six rooms, dining, kitchen ---
 ajarmap.room(m, [-1408, 0], [HALL[0], 192, 256, HALL[1]], lambda i, j: j == 1, ceil=LOW, light=165)
-m.sector(rect(-1920, -64, -1408, 512), ceil=LOW, light=185)               # dining room
-m.sector(rect(-1920, 528, -1408, 848), ceil=LOW, light=200, wall="AJSAFE")  # kitchen
+TABLE = dict(floor=28, ftex="AJCLOTH", side="AJCLOTH")
+ajarmap.fitted(m, (-1920, -64, -1408, 512), [((-1728, 40, -1600, 104), TABLE),
+                                             ((-1728, 344, -1600, 408), TABLE)],
+               ceil=LOW, light=185)                                        # dining room
+for y in (128, 256):
+    ajarmap.window(m, (-1920, y), (-1920, y + 64), (-1, 0), 0)
+ajarmap.fitted(m, (-1920, 528, -1408, 848),
+               [((-1920, 560, -1880, 816), dict(floor=36, ftex="AJSTEEL", side="AJSTEEL"))],
+               ceil=LOW, light=200, wall="AJSAFE")                         # kitchen
 ajarmap.roomdoor(m, (-1696, 512), (-1632, 512), (0, 1), 0)
 R101 = guest(-352, True, light=150)
-R102 = guest(-352, False, light=175)
+R102 = guest(-352, False, bathdoor=False, light=175)
 R103 = guest(-800, True, light=140)
-R104 = guest(-800, False, light=175)
-R105 = guest(-1248, True, light=175)
-R106 = guest(-1248, False, keys="1", line_id=301, light=130)        # locked: BLUE
+R104 = guest(-800, False, windows=False, light=175)                 # RED
+R105 = guest(-1248, True, keys="4", line_id=303, suite=True, light=160)    # locked: key 3 in the bath
+R106 = guest(-1248, False, keys="1", line_id=301, windows=False, light=130)   # locked: BLUE
 
 # --- upstairs: the stairs are gone, so the hall ends in a drop to the lobby --
 ajarmap.room(m, [512, 1664], [HALL[0], 192, 256, HALL[1]], lambda i, j: j == 1,
              floor=UP, ceil=UP + 112, light=175, color=WARM)
 m.sector(rect(1664, 160, 1792, 288), floor=UP, ceil=LOFT + 144, light=170, color=WARM)   # under the attic
-R201 = guest(704, True, UP, light=165, color=WARM)
-R202 = guest(704, False, UP, light=140, color=WARM)
-R203 = guest(1216, True, UP, keys="23", line_id=302, light=150, color=WARM)   # two locks: GREEN
-R204 = guest(1216, False, UP, light=175, color=WARM)
+R201 = guest(704, True, UP, bath="e", light=165, color=WARM)        # key 4 in the bathroom
+R202 = guest(704, False, UP, bathdoor=False, light=140, color=WARM)
+R203 = guest(1216, True, UP, keys="23", line_id=302, bath="e", suite=True,
+             light=150, color=WARM)                                 # two locks: GREEN
+R204 = guest(1216, False, UP, windows=False, light=175, color=WARM)   # YELLOW
 
 # --- the attic: a drop into the upstairs hall --------------------------------
 m.sector(rect(1792, 64, 2176, 384), floor=LOFT, ceil=LOFT + 128, light=170, color=GOLD, wall="AJBRICK")
@@ -115,14 +180,15 @@ ajarmap.picture(m, (352, 0), (416, 0), VIOLET, TALL)
 
 # --- doors and keys ----------------------------------------------------------
 m.thing(256, 96, 1, angle=90)                                             # player start, facing the balcony
-ajarmap.door(m, RED, -672, -98, angle=90)                                 # room 104
-ajarmap.door(m, BLUE, -1120, -98, angle=90)                               # room 106, locked (key 1)
-ajarmap.door(m, YELLOW, 1344, -98, angle=90)                              # room 204
-ajarmap.door(m, GREEN, 1344, 546, angle=270)                              # room 203, locked (keys 2 and 3)
+ajarmap.door(m, RED, *R104(128, 242), angle=90)
+ajarmap.door(m, BLUE, *R106(128, 242), angle=90)                          # locked in (key 1)
+ajarmap.door(m, YELLOW, *R204(128, 242), angle=90)
+ajarmap.door(m, GREEN, *R203(242, 368), angle=180)                        # locked in (keys 2 and 3), in the bedroom
 ajarmap.door(m, VIOLET, 256, 562, angle=270)                              # the balcony
-ajarmap.key(m, 1, 832, 500)                                               # room 201
+ajarmap.key(m, 1, 2100, 110)                                              # attic
 ajarmap.key(m, 2, 4440, 60)                                               # cellar
-ajarmap.key(m, 3, 2100, 110)                                              # attic
+ajarmap.key(m, 3, *R105(-80, 232))                                        # in the bath of suite 105
+ajarmap.key(m, 4, *R201(336, 176))                                        # bathroom of 201
 
 ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, LODGER = 3004, 9, 3001, 3002, 58, 20005
 SHOTGUN, CHAINGUN, SHELLS, CLIP, AMMOBOX, STIM, MEDIKIT, BONUS, HELMET, ARMOR = (
@@ -137,9 +203,10 @@ def things(kind, *spots, angle=0, **k):
         m.thing(x, y, kind, angle=angle, **k)
 
 
-# the lobby: nobody home
-things(ARMOR, (72, 392))
-things(CANDELABRA, (24, 24), (488, 24))
+# the lobby: nobody home, a candle on the desk
+things(ARMOR, (112, 376))
+things(CANDELABRA, (196, 24), (316, 24))
+things(CANDLE, (68, 428))
 things(LAMP, (488, 424))
 things(TECHLAMP, (24, 552), (488, 552))                                   # the balcony
 # the ground-floor hall: two of the staff at the far end
@@ -147,25 +214,28 @@ things(ZOMBIE, (-1000, 200), (-1150, 250))
 things(CANDLE, (-16, 176), (-16, 272))
 things(DEAD_ZOMBIE, (-600, 270))
 # 101: two guests who never checked out
-things(ZOMBIE, (-280, 480), (-170, 480), angle=270)
-things(CLIP, (-330, 540), (-120, 540))
-# 102: somebody's luggage
-things(SHOTGUN, (-224, -40))
-things(SHELLS, (-190, -70), (-260, -70))
-# 103: dark, and not empty
-things(IMP, (-730, 500), (-610, 500), angle=270)
-things(STIM, (-780, 540))
+things(ZOMBIE, R101(72, 176), R101(150, 200), angle=270)
+things(CLIP, R101(22, 236), R101(-80, 150))
+# 102: somebody's luggage, on the bed
+things(SHOTGUN, R102(224, 150))
+things(SHELLS, R102(100, 200), R102(150, 200))
+things(STIM, R102(-80, 150))
+# 103: dark, and not empty; nor is its bathroom
+things(IMP, R103(72, 196), R103(150, 196), R103(-60, 170), angle=270)
+things(STIM, R103(22, 236))
 # 104: RED, and a sergeant in front of it
-things(SERGEANT, (-672, -20), angle=90)
-things(TORCH_R, (-720, -90), (-624, -90))
-# 105: quiet
-things(MEDIKIT, (-1120, 520))
-things(BONUS, (-1180, 440), (-1120, 440), (-1060, 440))
-things(LAMP, (-1230, 540), (-1010, 540))
+things(SERGEANT, R104(128, 164), angle=90)
+things(TORCH_R, R104(80, 234), R104(176, 234))
+# 105, locked: a suite. Key 3 is in the bath; somebody is in the bedroom
+things(SERGEANT, R105(100, 380), angle=270)
+things(IMP, R105(100, 150), angle=270)
+things(MEDIKIT, R105(128, 440))
+things(BONUS, R105(60, 300), R105(100, 300), R105(140, 300))
+things(LAMP, R105(20, 236), R105(20, 444))
 # 106, locked: BLUE, and what was shut in with it
-things(DEMON, (-1120, 0), angle=90)
-things(TORCH_B, (-1168, -90), (-1072, -90))
-things(SHELLS, (-1220, -90))
+things(DEMON, R106(128, 144), angle=90)
+things(TORCH_B, R106(80, 234), R106(176, 234))
+things(SHELLS, R106(28, 234))
 # the dining room
 things(IMP, (-1820, 20), (-1820, 430), angle=0)
 things(ZOMBIE, (-1700, 224), angle=0)
@@ -174,7 +244,7 @@ things(STIM, (-1880, 224))
 # the kitchen: a frame, a sergeant, and a lodger that wakes when you come in
 things(SERGEANT, (-1500, 760), angle=180)
 things(LODGER, (-1664, 640), args=(200,))
-things(SHELLS, (-1880, 820))
+things(SHELLS, (-1840, 820))
 things(STIM, (-1440, 560), (-1470, 560))
 # upstairs hall: three of the old guests, red torches by the RED far side
 things(ZOMBIE, (1150, 200), (1300, 248), angle=180)
@@ -182,23 +252,23 @@ things(SERGEANT, (1500, 224), angle=180)
 things(TORCH_R, (548, 272), (668, 272))
 things(CLIP, (900, 176))
 things(STIM, (1700, 176))
-# 201: key 1 on the floor, an imp in the corner
-things(IMP, (920, 520), angle=225)
-things(LAMP, (724, 540))
+# 201: an imp in the corner; key 4 is in the bathroom
+things(IMP, R201(216, 216), angle=225)
+things(LAMP, R201(236, 236))
 # 202: the chaingun, and two who were arguing over it
-things(CHAINGUN, (832, -40))
-things(AMMOBOX, (870, -70))
-things(ZOMBIE, (760, -60), (900, 20), angle=90)
-# 203, two locks: GREEN, well guarded
-things(IMP, (1260, 500), (1430, 500), angle=270)
-things(SERGEANT, (1344, 440), angle=270)
-things(TORCH_G, (1296, 540), (1392, 540))
-things(MEDIKIT, (1240, 330))
+things(CHAINGUN, R202(128, 184))
+things(AMMOBOX, R202(166, 214))
+things(ZOMBIE, R202(56, 204), R202(150, 110), angle=90)
+# 203, two locks: a suite, well guarded, GREEN in the bedroom
+things(IMP, R203(100, 200), R203(200, 200), angle=270)
+things(SERGEANT, R203(128, 340), angle=270)
+things(TORCH_G, R203(240, 312), R203(240, 424))
+things(MEDIKIT, R203(24, 26))
 # 204: YELLOW
-things(SERGEANT, (1344, -20), angle=90)
-things(CANDELABRA, (1240, -90), (1450, -90))
-things(HELMET, (1260, 100), (1300, 100))
-# the attic: key 3, two imps over the drop
+things(SERGEANT, R204(128, 164), angle=90)
+things(CANDELABRA, R204(24, 234), R204(176, 240))
+things(HELMET, R204(44, 44), R204(84, 44))
+# the attic: key 1, two imps over the drop
 things(IMP, (1900, 112), (1900, 336), angle=0)
 things(CANDELABRA, (2152, 88), (2152, 360))
 things(BONUS, (1960, 224), (2000, 224), (2040, 224))
@@ -230,9 +300,10 @@ PUZZLE = dict(
     walk=[("upstairs", "ground"), ("attic", "upstairs"), ("terrace", "garden"),
           ("garden", "balcony"), ("balcony", "garden"),                   # the stone doorway
           ("balcony", "ground"),                                          # the gap in the rail
+          ("ground", "room 105", "4"), ("room 105", "ground", "4"),
           ("ground", "room 106", "1"), ("room 106", "ground", "1"),
           ("upstairs", "room 203", "23"), ("room 203", "upstairs", "23")],
-    keys={"1": "upstairs", "2": "cellar", "3": "attic"},
+    keys={"1": "attic", "2": "cellar", "3": "room 105", "4": "upstairs"},
     frames={101: "ground", 105: "ground", 102: "upstairs", 104: "cellar"},
     doors={
         RED: dict(home="upstairs", lean="ground"),

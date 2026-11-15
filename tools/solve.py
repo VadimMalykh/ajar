@@ -6,6 +6,9 @@ A puzzle is a dict:
                 (a fixed doorway is one link each way). (from, to, keys) is a
                 locked door: it needs every key in `keys` ("23" is keys 2 and 3)
   keys          optional {key name: region where it lies}
+  auto          optional: the keys that are not keys but something that happens
+                by itself on first coming to that region (a bolted door that
+                opens as you arrive: see ajarmap.bolted). Use letters for them
   frames        {frame line id: region}
   names         optional {colour: name} for the printed solution
   doors         {colour: dict(home=region, frame=id) or dict(home=region, lean=region)}
@@ -32,6 +35,8 @@ def _moves(p, state):
     for k, region in p.get("keys", {}).items():
         if region == here and k not in keys:
             yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))))
+            if k in p.get("auto", ()):
+                return                               # it happens by itself, before anything else
     for a, b, *need in p["walk"]:
         need = tuple(need[0]) if need else ()            # "23": keys 2 and 3
         if a == here and all(k in keys for k in need):
@@ -86,6 +91,7 @@ def solve(p):
                 alive.add(s)
                 todo.append(s)
     stuck = [s for s in dist if s not in alive]
+    solve.back, solve.dist = back, dist            # for lost()
     best = min(wins, key=dist.get)
     steps, s = [], best
     while s in prev:
@@ -93,3 +99,30 @@ def solve(p):
         steps.append(what)
     steps.reverse()
     return dist[best], steps, len(dist), stuck
+
+
+def lost(p):
+    """After solve(p): the places and keys that can be lost for good, as
+    [(what, a state it cannot be reached from)]. A level where this is empty
+    stays fully reachable whatever the player does, for those who want
+    every kill, item and secret."""
+    back, dist = solve.back, solve.dist
+    live = [s for s in dist if s[0] != p["goal"]]
+    regions = {p["start"]} | {r for link in p["walk"] for r in link[:2]} | set(p["frames"].values())
+    for d in p["doors"].values():
+        regions |= {d["home"]} | ({d["lean"]} if "lean" in d else set())
+    tests = [(r, lambda s, r=r: s[0] == r) for r in sorted(regions - {p["goal"]})]
+    tests += [(f"key {k}", lambda s, k=k: k in s[3]) for k in sorted(p.get("keys", {}))]
+    out = []
+    for what, there in tests:
+        ok = {s for s in dist if there(s)}
+        todo = list(ok)
+        while todo:
+            for s in back.get(todo.pop(), ()):
+                if s not in ok:
+                    ok.add(s)
+                    todo.append(s)
+        bad = [s for s in live if s not in ok]
+        if bad:
+            out.append((what, bad[0]))
+    return out
