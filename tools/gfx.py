@@ -246,6 +246,337 @@ def furniture(out, wall):
     out["textures/AJKEYS.png"] = kr.png()
 
 
+def hang_picture(pic, tall, base):
+    """A framed picture of a door of colour `base`, 48 to 124 above the floor
+    of a 64-wide wall strip `tall` high."""
+    top = tall - 124
+    pic.rect(11, top + 3, 57, top + 79, (60, 56, 52))    # shadow
+    pic.rect(8, top, 54, top + 76, (176, 140, 60))       # gilt frame
+    pic.frame(8, top, 54, top + 76, (110, 84, 30), 1)
+    pic.rect(13, top + 5, 49, top + 71, (28, 30, 44))    # a dark room
+    pic.rect(13, top + 56, 49, top + 71, (58, 56, 66))   # its floor
+    pic.rect(22, top + 18, 40, top + 58, base)           # a door standing in it
+    pic.frame(22, top + 18, 40, top + 58, shade(base, 0.5), 1)
+    pic.rect(25, top + 22, 37, top + 36, shade(base, 0.8))
+    pic.rect(25, top + 40, 37, top + 54, shade(base, 0.8))
+    pic.disc(37, top + 39, 1, (250, 240, 200))
+    pic.frame(13, top + 5, 49, top + 71, (20, 18, 24), 1)
+
+
+def hall_walls(out):
+    """Candidate wall treatments for MAP01's hall (see AJAR_HALL in
+    map_hinges1.py): AJHW<n> is a full-height wall, 336 from skirting to
+    cornice; AJHF<n> its lowest 160 as the front of the gallery; AJHP<n><c>
+    the wall with a picture of door c on it. Everything repeats every 32
+    across, because walls are cut at multiples of 32."""
+    H = 336
+    CREAM, GOLD = (226, 214, 190), (200, 164, 84)
+
+    def band(im, h1, h2, c):
+        im.rect(0, H - h2, 64, H - h1, c)
+
+    def rail(im, h1, h2, c):
+        band(im, h1, h2, c)
+        band(im, h2 - 1, h2, shade(c, 1.35))
+        band(im, h1, h1 + 1, shade(c, 0.6))
+
+    def panels(im, h1, h2, c, inset=4):
+        """Sunk panels, one per 32 across, between heights h1 and h2."""
+        for x in (0, 32):
+            x1, x2, y1, y2 = x + inset, x + 32 - inset, H - h2 + inset, H - h1 - inset
+            im.rect(x1, y1, x2, y2, shade(c, 0.92))
+            im.rect(x1, y1, x2, y1 + 1, shade(c, 0.6))
+            im.rect(x1, y1, x1 + 1, y2, shade(c, 0.6))
+            im.rect(x1, y2 - 1, x2, y2, shade(c, 1.25))
+            im.rect(x2 - 1, y1, x2, y2, shade(c, 1.25))
+
+    def grain(im, h1, h2, c, seed):
+        rnd = random.Random(seed)
+        for x in range(32):
+            if rnd.random() < 0.35:
+                f = rnd.choice((0.9, 0.94, 1.06))
+                for xx in (x, x + 32):
+                    for y in range(H - h2, H - h1):
+                        im.set(xx, y, shade(im.px[y * 64 + xx][:3], f))
+
+    walls = {}
+
+    # 1. oxblood stripe over cream panelling
+    ox, wood = (132, 46, 42), (72, 46, 32)
+    im = Img(64, H, ox)
+    for x in range(0, 64, 32):
+        im.rect(x + 16, 0, x + 32, H, shade(ox, 0.8))
+        im.rect(x, 0, x + 1, H, shade(GOLD, 0.8))
+        im.rect(x + 16, 0, x + 17, H, shade(GOLD, 0.8))
+    im.noise(5, 201)
+    band(im, 10, 48, CREAM)
+    panels(im, 10, 48, CREAM)
+    rail(im, 48, 55, wood)
+    rail(im, 0, 10, wood)
+    band(im, 308, H, CREAM)
+    for x in range(0, 64, 8):
+        im.rect(x, H - 316, x + 5, H - 310, shade(CREAM, 0.72))      # dentils
+    rail(im, 304, 308, wood)
+    walls[1] = (im, wood)
+
+    # 2. terracotta field, navy dado, cream frieze with a key pattern
+    terra, navy = (178, 88, 58), (38, 46, 80)
+    im = Img(64, H, terra)
+    im.noise(7, 202)
+    band(im, 76, 78, shade(terra, 0.62))
+    band(im, 262, 264, shade(terra, 0.62))
+    band(im, 10, 66, navy)
+    for x in (0, 32):
+        im.frame(x + 4, H - 60, x + 28, H - 16, GOLD, 1)
+    rail(im, 66, 72, CREAM)
+    rail(im, 0, 10, (26, 26, 34))
+    band(im, 270, H, CREAM)
+    for x in range(0, 64, 16):                                       # key pattern
+        im.rect(x, H - 300, x + 12, H - 297, terra)
+        im.rect(x, H - 300, x + 3, H - 284, terra)
+        im.rect(x, H - 287, x + 16, H - 284, terra)
+        im.rect(x + 6, H - 293, x + 9, H - 284, terra)
+    rail(im, 270, 274, GOLD)
+    band(im, 308, 310, navy)
+    walls[2] = (im, navy)
+
+    # 3. mustard plaster over bottle-green glazed tile
+    must, tile, black = (206, 162, 74), (38, 100, 80), (26, 30, 30)
+    im = Img(64, H, must)
+    rnd = random.Random(203)
+    for _ in range(26):                                              # uneven plaster
+        cx, cy, r, f = rnd.randrange(32), rnd.randrange(30, 250), rnd.randrange(5, 14), rnd.choice((0.95, 0.97, 1.04))
+        for dx in (-32, 0, 32, 64):
+            for y in range(cy - r, cy + r):
+                for x in range(cx + dx - r, cx + dx + r):
+                    if 0 <= x < 64 and 0 <= y < H and (x - cx - dx) ** 2 + (y - cy) ** 2 < r * r:
+                        im.set(x, y, shade(im.px[y * 64 + x][:3], f))
+    im.noise(6, 203)
+    for h in range(0, 80, 16):
+        for i, x in enumerate(range(0, 64, 16)):
+            c = shade(tile, 1.0 if (i + h // 16) % 2 else 0.88)
+            im.rect(x, H - h - 16, x + 16, H - h, c)
+            im.rect(x + 1, H - h - 15, x + 15, H - h - 14, shade(c, 1.45))    # glaze
+            im.rect(x + 1, H - h - 15, x + 2, H - h - 1, shade(c, 1.25))
+            im.frame(x, H - h - 16, x + 16, H - h, shade(tile, 0.45), 1)
+    rail(im, 80, 88, black)
+    band(im, 296, H, CREAM)
+    rail(im, 292, 297, tile)
+    walls[3] = (im, black)
+
+    # 4. teal damask over walnut
+    teal, walnut = (36, 94, 102), (108, 68, 42)
+    im = Img(64, H, teal)
+    lite = shade(teal, 1.5)
+    for row, h in enumerate(range(72, 300, 24)):
+        for x in ((0, 32, 64) if row % 2 else (16, 48)):
+            cy = H - h
+            im.diamond(x, cy, 8, lite)
+            im.diamond(x, cy, 5, teal)
+            im.diamond(x, cy, 2, lite)
+            im.diamond(x, cy - 11, 2, lite)
+            im.diamond(x, cy + 11, 2, lite)
+    im.noise(5, 204)
+    band(im, 0, 56, walnut)
+    grain(im, 0, 56, walnut, 204)
+    panels(im, 10, 50, walnut)
+    rail(im, 50, 58, shade(walnut, 0.8))
+    rail(im, 0, 10, shade(walnut, 0.65))
+    band(im, 300, H, (214, 204, 180))
+    rail(im, 296, 302, shade(walnut, 0.8))
+    walls[4] = (im, shade(walnut, 0.8))
+
+    # 5. walnut panelling to the picture rail, green frieze
+    wal, green = (124, 80, 48), (44, 78, 62)
+    im = Img(64, H, wal)
+    im.noise(5, 205)
+    grain(im, 0, 292, wal, 205)
+    panels(im, 10, 106, wal, 5)
+    panels(im, 120, 288, wal, 5)
+    rail(im, 110, 116, GOLD)
+    rail(im, 0, 10, shade(wal, 0.6))
+    band(im, 296, H, green)
+    for x in range(0, 64, 16):
+        im.diamond(x + 8, H - 316, 4, shade(green, 1.5))
+    rail(im, 290, 297, shade(wal, 0.7))
+    rail(im, 330, H, shade(wal, 0.7))
+    walls[5] = (im, shade(wal, 0.7))
+
+    for n, (im, cap) in walls.items():
+        out[f"textures/AJHW{n}.png"] = im.png()
+        front = Img(64, 160)
+        front.px = [list(p) for p in im.px[(H - 160) * 64:]]
+        front.rect(0, 0, 64, 8, cap)
+        front.rect(0, 0, 64, 1, shade(cap, 1.4))
+        front.rect(0, 7, 64, 8, shade(cap, 0.6))
+        out[f"textures/AJHF{n}.png"] = front.png()
+        for c, base in DOOR_COLOURS.items():
+            pic = Img(64, H)
+            pic.px = [list(p) for p in im.px]
+            hang_picture(pic, H, base)
+            out[f"textures/AJHP{n}{c}.png"] = pic.png()
+    return walls
+
+
+def pit_walls(out, hall):
+    """Candidate treatments for MAP01's pit (see AJAR_PIT in map_hinges1.py):
+    AJPW<n> is the 192 of wall below the hall floor, darker towards the
+    bottom; AJPE<n> the pit's end walls, 544 from pit floor to ceiling, with
+    the hall's wall (`hall`, 336) above it; AJPG<n> the floor. Walls repeat
+    every 32 across."""
+    D = 192
+
+    def falloff(im, lo=0.42):
+        for y in range(D):
+            f = 1 - (1 - lo) * y / D
+            for x in range(64):
+                im.set(x, y, shade(im.px[y * 64 + x][:3], f))
+
+    def lip(im, c, t=8):
+        im.rect(0, 0, 64, t, c)
+        im.rect(0, 0, 64, 1, shade(c, 1.3))
+        im.rect(0, t - 2, 64, t, shade(c, 0.55))
+
+    pits = {}
+
+    # 1. cellar: coursed stone, damp at the foot, packed earth
+    stone, mortar = (118, 110, 100), (50, 46, 44)
+    im = Img(64, D, stone)
+    rnd = random.Random(301)
+    for row, y in enumerate(range(0, D, 24)):
+        for x in ((0, 32) if row % 2 else (16, 48)):
+            c = shade(stone, rnd.choice((0.86, 0.94, 1.0, 1.08)))
+            for xx in range(x, x + 32):
+                im.rect(xx % 64, y, xx % 64 + 1, y + 24, c)
+        im.rect(0, y, 64, y + 2, mortar)
+        for x in ((0, 32) if row % 2 else (16, 48)):
+            im.rect(x, y, x + 2, y + 24, mortar)
+    im.noise(9, 301)
+    for y in range(D - 44, D):                                       # damp
+        for x in range(64):
+            r, g, b = im.px[y * 64 + x][:3]
+            k = (y - (D - 44)) / 44 * 0.5
+            im.set(x, y, (int(r * (1 - k)), int(g * (1 - k * 0.6)), int(b * (1 - k * 0.8))))
+    falloff(im)
+    lip(im, (156, 150, 142))
+    fl = Img(64, 64, (74, 62, 50))
+    fl.noise(13, 302)
+    for _ in range(9):
+        fl.disc(rnd.randrange(4, 60), rnd.randrange(4, 60), rnd.choice((1, 2)), (104, 98, 90))
+    pits[1] = (im, fl)
+
+    # 2. furnace: sooty brick glowing from below, an iron grate over embers
+    soot, joint = (70, 54, 50), (28, 22, 22)
+    im = Img(64, D, soot)
+    for row, y in enumerate(range(0, D, 8)):
+        im.rect(0, y, 64, y + 1, joint)
+        for x in range(0 if row % 2 else 8, 64, 16):
+            im.rect(x, y, x + 1, y + 8, joint)
+    im.noise(7, 303)
+    falloff(im, 0.6)
+    for y in range(D - 72, D):                                       # heat
+        k = ((y - (D - 72)) / 72) ** 1.6
+        for x in range(64):
+            r, g, b = im.px[y * 64 + x][:3]
+            im.set(x, y, (min(255, int(r + 200 * k)), min(255, int(g + 78 * k)), min(255, int(b + 10 * k))))
+    lip(im, (58, 60, 66), 10)
+    for x in range(8, 64, 16):
+        im.disc(x, 4, 1, (130, 134, 142))                            # rivets
+    fl = Img(64, 64, (226, 96, 28))
+    rnd = random.Random(304)
+    for _ in range(60):
+        fl.disc(rnd.randrange(64), rnd.randrange(64), rnd.choice((1, 2, 3)),
+                rnd.choice(((255, 190, 70), (180, 50, 20), (120, 30, 16), (255, 140, 40))))
+    fl.noise(10, 304)
+    for i in range(0, 64, 16):
+        fl.rect(i, 0, i + 6, 64, (34, 34, 38))
+        fl.rect(i, 0, i + 1, 64, (70, 70, 78))
+    for i in range(0, 64, 32):
+        fl.rect(0, i, 64, i + 5, (34, 34, 38))
+        fl.rect(0, i, 64, i + 1, (70, 70, 78))
+    pits[2] = (im, fl)
+
+    # 3. cistern: dark glazed tile with a tide line, still water
+    tile = (40, 92, 96)
+    im = Img(64, D, tile)
+    for h, y in enumerate(range(0, D, 16)):
+        for i, x in enumerate(range(0, 64, 16)):
+            c = shade(tile, 1.0 if (i + h) % 2 else 0.9)
+            im.rect(x, y, x + 16, y + 16, c)
+            im.rect(x + 1, y + 1, x + 15, y + 2, shade(c, 1.5))
+            im.frame(x, y, x + 16, y + 16, shade(tile, 0.4), 1)
+    im.noise(4, 305)
+    falloff(im, 0.55)
+    tide = D - 58
+    for y in range(tide, D):                                         # below the old water line
+        for x in range(64):
+            r, g, b = im.px[y * 64 + x][:3]
+            im.set(x, y, (int(r * 0.6 + 8), int(g * 0.72 + 14), int(b * 0.5)))
+    rnd = random.Random(306)
+    for x in range(32):                                              # scum at the line, drips below it
+        t = rnd.randrange(2, 6)
+        d = rnd.randrange(0, 22) if rnd.random() < 0.3 else 0
+        for xx in (x, x + 32):
+            im.rect(xx, tide - t, xx + 1, tide + 2 + d, (96, 118, 60))
+    lip(im, (176, 180, 176))
+    fl = Img(64, 64, (22, 58, 66))
+    fl.noise(5, 307)
+    for _ in range(14):
+        x, y, w = rnd.randrange(64), rnd.randrange(64), rnd.randrange(6, 18)
+        for xx in range(x, x + w):
+            fl.set(xx % 64, y, (70, 124, 128))
+    pits[3] = (im, fl)
+
+    # 4. the dig: a broken slab, old brick footings, then raw earth
+    im = Img(64, D, (104, 76, 52))
+    rnd = random.Random(308)
+    for y1, y2, c in ((52, 92, (112, 82, 54)), (92, 118, (86, 66, 50)), (118, 160, (120, 92, 60)), (160, D, (70, 54, 44))):
+        for x in range(32):
+            w = rnd.randrange(-3, 4)
+            for xx in (x, x + 32):
+                im.rect(xx, y1 + w, xx + 1, y2 + 4, c)
+    im.noise(12, 308)
+    for _ in range(16):                                              # stones
+        x, y, r = rnd.randrange(32), rnd.randrange(60, D - 4), rnd.choice((1, 2, 2, 3))
+        for xx in (x, x + 32):
+            im.disc(xx, y, r, (138, 132, 122))
+            im.disc(xx, y + 1, max(1, r - 1), (104, 98, 92))
+    for x in (7, 22):                                                # roots
+        y, xx = 52, x
+        stop = 52 + rnd.randrange(50, 110)
+        while y < stop:
+            for o in (0, 32):
+                im.set(xx + o, y, (48, 34, 24))
+            y += 1
+            xx = max(0, min(31, xx + rnd.choice((-1, 0, 0, 1))))
+    brick, bj = (132, 70, 52), (74, 60, 52)
+    for row, y in enumerate(range(12, 52, 8)):                       # footings
+        im.rect(0, y, 64, y + 8, shade(brick, 0.9 + 0.1 * (row % 2)))
+        im.rect(0, y, 64, y + 1, bj)
+        for x in range(0 if row % 2 else 8, 64, 16):
+            im.rect(x, y, x + 1, y + 8, bj)
+    for x in range(32):                                              # ragged lower edge
+        if rnd.random() < 0.4:
+            for xx in (x, x + 32):
+                im.rect(xx, 48, xx + 1, 52, (112, 82, 54))
+    falloff(im, 0.5)
+    lip(im, (140, 138, 136), 12)
+    fl = Img(64, 64, (82, 64, 48))
+    fl.noise(14, 309)
+    for _ in range(12):
+        x, y, r = rnd.randrange(6, 58), rnd.randrange(6, 58), rnd.choice((2, 3, 4))
+        fl.disc(x, y, r, (126, 122, 116))
+        fl.disc(x + 1, y + 1, r - 1, (96, 92, 88))
+    pits[4] = (im, fl)
+
+    for n, (im, fl) in pits.items():
+        out[f"textures/AJPW{n}.png"] = im.png()
+        out[f"flats/AJPG{n}.png"] = fl.png()
+        end = Img(64, 16 + 336 + D)
+        end.px = [list(hall.px[x]) for _ in range(16) for x in range(64)] + [list(p) for p in hall.px] + [list(p) for p in im.px]
+        out[f"textures/AJPE{n}.png"] = end.png()
+
+
 def make_all():
     """Returns {path inside pk3: png bytes}."""
     out = {}
@@ -258,6 +589,7 @@ def make_all():
     wall.rect(0, 0, 128, 2, (150, 146, 140))
     wall.rect(0, 118, 128, 128, (120, 116, 112))
     out["textures/AJWALL.png"] = wall.png()
+    pit_walls(out, hall_walls(out)[2][0])
     furniture(out, wall)
 
     # an ordinary hotel-room door (ajarmap.roomdoor): plain wood, no colour, so
@@ -338,18 +670,7 @@ def make_all():
             for y in range(tall):
                 for x in range(64):
                     pic.set(x, y, wall.px[(y % 128) * 128 + x])
-            top = tall - 124                                     # picture: 48 to 124 above the floor
-            pic.rect(11, top + 3, 57, top + 79, (60, 56, 52))    # shadow
-            pic.rect(8, top, 54, top + 76, (176, 140, 60))       # gilt frame
-            pic.frame(8, top, 54, top + 76, (110, 84, 30), 1)
-            pic.rect(13, top + 5, 49, top + 71, (28, 30, 44))    # a dark room
-            pic.rect(13, top + 56, 49, top + 71, (58, 56, 66))   # its floor
-            pic.rect(22, top + 18, 40, top + 58, base)           # a door standing in it
-            pic.frame(22, top + 18, 40, top + 58, shade(base, 0.5), 1)
-            pic.rect(25, top + 22, 37, top + 36, shade(base, 0.8))
-            pic.rect(25, top + 40, 37, top + 54, shade(base, 0.8))
-            pic.disc(37, top + 39, 1, (250, 240, 200))
-            pic.frame(13, top + 5, 49, top + 71, (20, 18, 24), 1)
+            hang_picture(pic, tall, base)
             out[f"textures/AJP{tag}{c}.png"] = pic.png()
 
     # the cell: brick

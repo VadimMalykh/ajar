@@ -1,0 +1,270 @@
+<title>Borrowed Rooms Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a contact sheet. Level summary and plan on top, then one band per room:
+   a spec column (light, tint, heights, materials) beside that room's screenshots. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.top > * { min-width: 0; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 420px; height: auto; }
+.plan text { font-family: var(--body); fill: var(--fg); }
+ol.finds { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 68ch; }
+
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px; }
+.sw { display: flex; flex-direction: column; gap: 5px; font-size: 12px; min-width: 0; }
+.sw i { display: block; height: 96px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: 0 0; }
+.sw span { color: var(--muted); }
+
+.room { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.room > * { min-width: 0; }
+.spec { display: flex; flex-direction: column; gap: 12px; }
+.spec dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; font-size: 13px; }
+.spec dt { color: var(--muted); }
+.spec dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tint { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--line); vertical-align: -1px; margin-right: 5px; }
+.bar { display: inline-block; width: 70px; height: 7px; background: var(--chip); vertical-align: 1px; margin-right: 6px; }
+.bar b { display: block; height: 100%; background: var(--fg); }
+.note { font-size: 13.5px; }
+
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+figure button { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+figure button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+figure img { width: 100%; height: auto; aspect-ratio: 819 / 512; display: block; background: var(--chip); }
+figure.big { grid-column: 1 / -1; }
+figure.big button { cursor: zoom-out; }
+figcaption { font-size: 12.5px; color: var(--muted); }
+figcaption b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; margin-right: 6px; }
+
+.cams { display: flex; flex-wrap: wrap; gap: 8px; }
+.cams button { font: 500 13px var(--body); color: var(--fg); background: var(--chip); border: 1px solid var(--line);
+  padding: 6px 12px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.cams button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 22px 18px; }
+.opt { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.opt .pair { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.opt .strip { border: 1px solid var(--line); image-rendering: pixelated; background-size: 100% auto; background-position: bottom; background-repeat: repeat-y; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 512; display: block; border: 1px solid var(--line); background: var(--chip); }
+.opt h4 { margin: 0; font: 600 15px var(--display); }
+.opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.opt p { font-size: 13px; color: var(--muted); }
+
+@media (max-width: 820px) {
+  .top, .room { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>Before</b> &nbsp;MAP01 at commit 65ebaba · captured 15 Nov 2026 · GZDoom 4.12.2, software GL, 819×512</div>
+    <h1>Borrowed Rooms: the level as it looks today</h1>
+    <p class="muted">Twenty fixed camera views of MAP01, with the light level, tint, heights and materials of each room. This is the baseline. Later passes will add an "after" shot from the same camera beside each of these.</p>
+  </header>
+
+  <section class="stack" id="hall-walls" style="gap:20px">
+    <div class="stack" style="gap:8px">
+      <div class="stamp"><b>To choose</b> &nbsp;The pit · 15 Nov 2026</div>
+      <h2>Four treatments for the pit</h2>
+      <p>Each changes the 192 units of wall below the hall floor, the pit floor and the light down there. The end walls now carry the hall's wall above floor level, and the tall dark column over the pit's frame is gone in all four. Shown from the same four cameras, with the pit as it is now for reference.</p>
+      <p class="muted">My pick is 2, the furnace. It is the only one that says "do not fall in" from the hall, it throws real light up the walls, and a furnace is one of the places the plan already wants doors to open onto. Option 1 is the safe choice if the pit should stay quiet. <strong>Decided:</strong> the hall wears terracotta and navy, which is why it appears in these shots, and the cell stays as it is.</p>
+    </div>
+    <div class="cams" id="cams" role="group" aria-label="Camera"></div>
+    <div class="opts" id="opts"></div>
+  </section>
+
+  <section class="top">
+    <div class="stack">
+      <h3>Plan of the hall block, with camera numbers</h3>
+      <div class="plan" id="plan"></div>
+      <p class="muted" style="font-size:13px">One grid square is 64 map units. The cell, the vault and the way out are separate places reached only by door, so they are not on this plan.</p>
+    </div>
+    <div class="stack">
+      <h3>What I see in these shots</h3>
+      <ol class="finds">
+        <li><strong>Everything is evenly bright.</strong> Light levels run from 170 to 210 out of 255. Nothing is dark, so nothing is lit, and light does not lead the eye to a door.</li>
+        <li><strong>Room tint colours everything.</strong> In the vault and the way out the tint washes over monsters, pickups and the door itself, so the door's own colour stands out less than it should.</li>
+        <li><strong>One wall panel does all the work.</strong> <code>AJWALL</code> repeats on walls up to 336 units tall with no skirting, cornice or break. Its dark band reads as a stripe painted round the room.</li>
+        <li><strong>Lamps do not light anything.</strong> Ceiling panels and torches are bright pictures of light. They cast nothing on the walls or floor near them.</li>
+        <li><strong>The dark trim reads as a hole.</strong> The near-black <code>AJTRIM</code> columns and pit walls look like missing geometry next to the pale walls.</li>
+        <li><strong>The pit does not look dangerous.</strong> A dark speckled floor between clean pale walls, lit almost as brightly as the hall.</li>
+        <li><strong>Doom's props are a second style.</strong> Torches, candelabra, barrels and tech lamps are detailed pixel art beside flat generated surfaces.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="stack">
+    <h3>Materials in use (shown at 2×, tiled)</h3>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section class="stack" id="rooms" style="gap:34px"></section>
+</div>
+
+<script>
+const ROOMS = [
+  { id: "cell", name: "The cell", size: "256 × 256", height: 128, light: 170, tint: null,
+    mats: "AJBRICK walls, AJFLOOR, AJCEIL", props: "2 candles, RED door leaning, empty frame",
+    note: "The start. Brick is the most convincing surface in the level. The red glow on the right wall comes from the door, not from a lamp." },
+  { id: "hall", name: "The hall", size: "768 × 640", height: 336, light: 190, tint: "#FFD8CC",
+    mats: "AJWALL, AJTRIM columns, AJRUG runner under AJLITE", props: "2 zombies, 2 barrels, red torches, 2 candle niches, 2 pictures, shotgun",
+    note: "RED's far side and the centre of the level. Tall, pale and flat. The carpet runner is the only thing that gives direction." },
+  { id: "pit", name: "The pit", size: "256 × 640", height: 544, light: 176, tint: null,
+    mats: "AJPIT floor, AJTRIM walls", props: "Demon, remains, YELLOW door hanging in its frame",
+    note: "192 units below the hall. The yellow door is the only way out, and its glow is the one strong lighting moment in the level." },
+  { id: "ledge", name: "The ledge", size: "256 × 640", height: 336, light: 200, tint: "#FFE890",
+    mats: "AJWALL, AJRUG runner under AJLITE", props: "Imp, candelabra, 2 floor lamps, BLUE door leaning",
+    note: "YELLOW's far side, across the pit from the hall. The gold tint reads as olive on the grey wall panels." },
+  { id: "gallery", name: "The gallery", size: "768 × 192", height: 176, light: 200, tint: "#A8C0FF",
+    mats: "AJWALL, AJRUG runner under AJLITE", props: "Imp, blue torches, 2 pictures, GREEN door leaning, empty frame",
+    note: "BLUE's far side, 160 units above the hall with no rail. The open edge and the view down are its best feature." },
+  { id: "vault", name: "The vault", size: "320 × 320", height: 160, light: 210, tint: "#80FF90",
+    mats: "AJSAFE walls, AJRUG runner under AJLITE", props: "2 imps, 4 green torches, VIOLET door leaning, medikit",
+    note: "GREEN's far side. The locker walls give it the clearest identity of any room, but the tint turns everything in it green." },
+  { id: "exit", name: "The way out", size: "320 × 256", height: 160, light: 210, tint: "#D0A0FF",
+    mats: "AJWALL, AJEXIT switch, AJRUG runner under AJLITE", props: "Zombie, 2 tech lamps",
+    note: "VIOLET's far side. A plain purple box with the exit sign at the end." },
+];
+const VIEWS = [
+  ["cell", 128, -1470, 90, "The frame and the RED door from the start"],
+  ["cell", 230, -1270, 225, "Back from the frame corner"],
+  ["hall", 40, 320, 0, "From RED's far side, down the runner to the pit"],
+  ["hall", 720, 600, 215, "Niches, frame and torches from the pit corner"],
+  ["hall", 384, 600, 270, "The south wall square on"],
+  ["hall", 288, 170, 270, "A picture and a niche, close"],
+  ["hall", 384, 60, 90, "Looking up at the gallery"],
+  ["pit", 740, 320, 0, "Down into the pit from the hall edge, ledge beyond"],
+  ["pit", 840, 40, 80, "In the pit: YELLOW hanging at the far end"],
+  ["pit", 896, 560, 270, "In the pit, looking up and out"],
+  ["ledge", 1060, 40, 65, "Along the ledge"],
+  ["ledge", 1100, 320, 180, "Back across the pit to the hall and gallery"],
+  ["gallery", 40, 736, 0, "Along the gallery"],
+  ["gallery", 740, 736, 180, "From the far end"],
+  ["gallery", 384, 680, 90, "BLUE's far side and the pictures"],
+  ["gallery", 384, 700, 270, "Down into the hall"],
+  ["vault", 2030, 160, 0, "From GREEN's far side"],
+  ["vault", 2290, 290, 215, "Back to GREEN's far side"],
+  ["exit", 3030, 128, 0, "From VIOLET's far side to the exit switch"],
+  ["exit", 3290, 30, 160, "Back to VIOLET's far side"],
+];
+const MATS = [
+  ["AJWALL", "wall panel, 128"], ["AJBRICK", "cell wall"], ["AJSAFE", "vault wall"], ["AJTRIM", "columns, pit wall"],
+  ["AJFLOOR", "floor"], ["AJCEIL", "ceiling"], ["AJRUG", "carpet runner"], ["AJLITE", "ceiling light"],
+  ["AJPIT", "pit floor"], ["AJFRAME", "empty frame, 64×96"],
+];
+const pad = n => String(n).padStart(2, "0");
+
+document.getElementById("swatches").innerHTML = MATS.map(([n, d]) =>
+  `<div class="sw"><i style="background-image:url(tex/${n}.png);background-size:${n === "AJWALL" ? 256 : 128}px auto"></i><code>${n}</code><span>${d}</span></div>`).join("");
+
+document.getElementById("rooms").innerHTML = ROOMS.map(r => {
+  const shots = VIEWS.map((v, i) => [v, i]).filter(([v]) => v[0] === r.id).map(([v, i]) =>
+    `<figure><button type="button" aria-label="Enlarge view ${i + 1}"><img src="shots/view_${pad(i)}.png" alt="${r.name}: ${v[4]}" loading="lazy"></button><figcaption><b>${pad(i + 1)}</b>${v[4]}</figcaption></figure>`).join("");
+  return `<article class="room" id="${r.id}">
+    <div class="spec">
+      <h2>${r.name}</h2>
+      <dl>
+        <dt>Size</dt><dd>${r.size} units</dd>
+        <dt>Height</dt><dd>${r.height} units</dd>
+        <dt>Light</dt><dd><span class="bar"><b style="width:${r.light / 2.55}%"></b></span>${r.light} / 255</dd>
+        <dt>Tint</dt><dd>${r.tint ? `<span class="tint" style="background:${r.tint}"></span><span class="mono">${r.tint}</span>` : "none"}</dd>
+        <dt>Surfaces</dt><dd>${r.mats}</dd>
+        <dt>In it</dt><dd>${r.props}</dd>
+      </dl>
+      <p class="note">${r.note}</p>
+    </div>
+    <div class="shots">${shots}</div>
+  </article>`;
+}).join("");
+
+document.getElementById("rooms").addEventListener("click", e => {
+  const b = e.target.closest("figure button");
+  if (b) b.parentElement.classList.toggle("big");
+});
+
+// Hall wall options: same camera across all options, switched together.
+const OPTS = [
+  [0, "As it is now", "Pale panel sides, dark speckled floor, a dark column above the frame.", "AJTRIM"],
+  [1, "Cellar", "Coursed grey stone, damp at the foot, on packed earth. The floor is the darkest thing in the level, so the yellow door is the only light down there.", "AJPW1"],
+  [2, "Furnace", "Sooty brick under an iron rim, an iron grate over embers, and three orange lamps that light the lower walls from below.", "AJPW2"],
+  [3, "Cistern", "Dark glazed tile with a slime line where the water used to stand, and still water on the floor. Cool and green, close to the GREEN door's colour.", "AJPW3"],
+  [4, "The dig", "A broken slab edge, old brick footings, then layers of raw earth with stones and roots, on rubble.", "AJPW4"],
+];
+const CAMS = [["08", "In the pit"], ["07", "Down from the hall"], ["09", "Looking up and out"], ["11", "From the ledge"]];
+let cam = "08";
+function drawOpts() {
+  document.getElementById("cams").innerHTML = CAMS.map(([v, n]) =>
+    `<button type="button" id="cam-${v}" data-v="${v}" aria-pressed="${v === cam}">${n}</button>`).join("");
+  document.getElementById("opts").innerHTML = OPTS.map(([n, name, d, tex]) =>
+    `<div class="opt"><div class="pair"><div class="strip" style="background-image:url(tex/${tex}.png)"></div>` +
+    `<img src="pit/${n}_${cam}.png" alt="${name}, ${CAMS.find(c => c[0] === cam)[1].toLowerCase()}"></div>` +
+    `<h4>${n ? `<span>${n}</span>` : ""}${name}</h4><p>${d}</p></div>`).join("");
+}
+drawOpts();
+document.getElementById("cams").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (b) { cam = b.dataset.v; drawOpts(); document.getElementById("cam-" + cam).focus(); }
+});
+
+// Plan: x 0..1280, y -32..832 at half scale, y flipped.
+(function () {
+  const S = 0.5, X = x => 20 + x * S, Y = y => 20 + (832 - y) * S;
+  const rect = (x1, y1, x2, y2, fill, label, sub) => {
+    const cx = (X(x1) + X(x2)) / 2, cy = (Y(y1) + Y(y2)) / 2;
+    return `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${fill}" stroke="var(--fg)" stroke-width="1.2"/>` +
+      `<text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="13" font-weight="600" style="fill:#1a1f27">${label}</text>` +
+      `<text x="${cx}" y="${cy + 13}" text-anchor="middle" font-size="10.5" style="fill:#3b4350">${sub}</text>`;
+  };
+  let g = "";
+  for (let x = 0; x <= 1280; x += 64) g += `<line x1="${X(x)}" y1="${Y(832)}" x2="${X(x)}" y2="${Y(-32)}" stroke="var(--line)" stroke-width=".5"/>`;
+  for (let y = -32; y <= 832; y += 64) g += `<line x1="${X(0)}" y1="${Y(y)}" x2="${X(1280)}" y2="${Y(y)}" stroke="var(--line)" stroke-width=".5"/>`;
+  g += rect(0, 640, 768, 832, "#c9d6f5", "Gallery", "floor +160");
+  g += rect(0, 0, 768, 640, "#f1d9d0", "Hall", "floor 0");
+  g += rect(768, 0, 1024, 640, "#9aa0aa", "Pit", "floor −192");
+  g += rect(1024, 0, 1280, 640, "#efe2a4", "Ledge", "floor 0");
+  VIEWS.forEach((v, i) => {
+    if (v[1] > 1300 || v[2] < -100) return;
+    const a = v[3] * Math.PI / 180, x = X(v[1]), y = Y(v[2]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 20 * Math.cos(a)}" y2="${y - 20 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="9" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 3.5}" text-anchor="middle" font-size="10" font-weight="600" style="fill:#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 680 472" role="img" aria-label="Plan of the hall, pit, ledge and gallery with camera positions">${g}</svg>`;
+})();
+</script>

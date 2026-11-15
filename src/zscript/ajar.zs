@@ -724,15 +724,26 @@ class AjarHandler : EventHandler
 	void BorrowedRoomsTour(Actor mo, int t)
 	{
 		static const double views[] = {
-			128, -1470, 0, 90, 0,       // cell
+			128, -1470, 0, 90, 0,       // cell: the frame
+			230, -1270, 0, 225, 0,      // cell: back from the frame corner
 			40, 320, 0, 0, 0,           // hall from the RED far side
 			720, 600, 0, 215, 0,        // hall: niches, frame, torches
+			384, 600, 0, 270, 0,        // hall: the south wall square on
+			288, 170, 0, 270, 0,        // hall: a picture and a niche, close
 			384, 60, 0, 90, -15,        // hall, looking up at the gallery
 			740, 320, 0, 0, 30,         // down into the pit, ledge beyond
+			1000, 150, -192, 100, -6,   // in the pit: YELLOW hanging
+			896, 560, -192, 270, -25,   // in the pit, looking up and out
 			1060, 40, 0, 65, 0,         // ledge
+			1100, 320, 0, 180, 5,       // ledge: back across the pit to hall and gallery
 			40, 736, 160, 0, 0,         // gallery
+			740, 736, 160, 180, 0,      // gallery from the far end
+			384, 680, 160, 90, 0,       // gallery: BLUE's far side, pictures
+			384, 700, 160, 270, 25,     // gallery: down into the hall
 			2030, 160, 0, 0, 0,         // vault
-			3030, 128, 0, 0, 0          // way out
+			2290, 290, 0, 215, 0,       // vault: back to GREEN's far side
+			3030, 128, 0, 0, 0,         // way out
+			3290, 30, 0, 160, 0         // way out: back to VIOLET's far side
 		};
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 		int i = t / 40;

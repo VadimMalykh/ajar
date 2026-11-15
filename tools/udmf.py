@@ -25,13 +25,14 @@ class Map:
         self.cuts = set()      # extra vertices that split the edges they lie on
 
     def sector(self, poly, floor=0, ceil=192, light=200, wall="AJWALL",
-               ftex="AJFLOOR", ctex="AJCEIL", color=None, side=None, id=0, special=0):
+               ftex="AJFLOOR", ctex="AJCEIL", color=None, side=None, id=0, special=0, raw=None):
         """`wall` is what the sector's own walls show; `side` (default: the
-        same) is what a step up to it shows, e.g. the side of a bed."""
+        same) is what a step up to it shows, e.g. the side of a bed. `raw` is
+        a dict of further UDMF sector properties (lightfloor and the like)."""
         self.polys.append(_clockwise([tuple(p) for p in poly]))
         self.sectors.append(dict(floor=floor, ceil=ceil, light=light, wall=wall,
                                  ftex=ftex, ctex=ctex, color=color, side=side or wall,
-                                 id=id, special=special))
+                                 id=id, special=special, raw=raw or {}))
         return len(self.sectors) - 1
 
     def line(self, a, b, **props):
@@ -117,6 +118,7 @@ class Map:
             mid = p.pop("mid", None)
             midboth = p.pop("midboth", False)
             lower = p.pop("lower", None)           # texture of the step, both sides
+            upper = p.pop("upper", None)           # texture above the opening, both sides
             s = self.sectors[si]
             ld = dict(v1=vi(a), v2=vi(b))
             other = edges.get((b, a))
@@ -126,11 +128,11 @@ class Map:
             else:
                 done.add((b, a))
                 o = self.sectors[other]
-                front = dict(texturetop=o["wall"], texturebottom=lower or o["side"])
+                front = dict(texturetop=upper or o["wall"], texturebottom=lower or o["side"])
                 if mid:
                     front["texturemiddle"] = mid
                 ld["sidefront"] = side(si, **front)
-                back = dict(texturetop=s["wall"], texturebottom=lower or s["side"])
+                back = dict(texturetop=upper or s["wall"], texturebottom=lower or s["side"])
                 if mid and midboth:
                     back["texturemiddle"] = mid
                 ld["sideback"] = side(other, **back)
@@ -170,6 +172,7 @@ class Map:
                 # too, and a door must keep its own colour wherever it stands.
                 for part in ("floor", "ceiling", "walltop", "wallbottom"):
                     d["color_" + part] = s["color"]
+            d.update(s["raw"])
             out.append(block("sector", d))
         for t in self.things:
             d = dict(t)

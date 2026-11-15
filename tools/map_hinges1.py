@@ -8,6 +8,8 @@ Company is Doom's own (none of Ajar's monsters yet): zombies in the hall, a
 demon down in the pit, imps on the ledge, on the gallery and in the vault.
 Each far side is lit in its door's colour.
 """
+import os
+
 import ajarmap
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, far_id
 from udmf import Map, rect
@@ -20,6 +22,20 @@ def recess(*a, **k):
 
 
 TALL = 352
+# The hall's walls: terracotta over a navy dado (gfx.hall_walls, number 2;
+# AJAR_HALL=1..5 shows the other candidates).
+HALL = os.environ.get("AJAR_HALL") or "2"
+# The pit is a stone cellar (gfx.pit_walls, number 1; AJAR_PIT=2..4 shows the
+# other candidates, 0 the pit as it first was).
+PIT = (os.environ.get("AJAR_PIT") or "1").replace("0", "")
+PIT_SIDE = f"AJPW{PIT}" if PIT else "AJWALL"                              # the wall below the hall floor
+PIT_LOOK = {                                                              # floor light, lamps (x, y, r, g, b, size)
+    "1": (96, []),
+    "2": (255, [(896, y, 255, 96, 24, 150) for y in (90, 250, 410)]),
+    "3": (120, [(896, 320, 40, 150, 150, 170)]),
+    "4": (104, []),
+}.get(PIT)
+HALL_WALL = dict(wall=f"AJHW{HALL}", side=PIT_SIDE)
 WARM, GOLD, SKY, LEAF, PLUM = 0xFFD8CC, 0xFFE890, 0xA8C0FF, 0x80FF90, 0xD0A0FF
 
 # --- the cell: one door, one frame ----------------------------------------
@@ -30,18 +46,27 @@ recess((96, -1244), (160, -1244), (0, 1), 0, 101, 201)                    # fram
 # Rooms are cut into grids so that a carpet runner under a row of ceiling
 # lights can lead from each door to where it matters.
 ajarmap.room(m, [0, 352, 416, 768], [0, 288, 352, 640],                  # RED to the pit, frame to RED
-             lambda i, j: j == 1 or (i == 1 and j == 0), ceil=TALL - 16, light=190, color=WARM)
-m.sector(rect(768, 0, 1024, 640), floor=-192, ceil=TALL, light=176, ftex="AJPIT", wall="AJTRIM")
+             lambda i, j: j == 1 or (i == 1 and j == 0), ceil=TALL - 16, light=190, color=WARM, **HALL_WALL)
+if PIT:
+    m.sector(rect(768, 0, 1024, 640), floor=-192, ceil=TALL, light=176, ftex=f"AJPG{PIT}", wall=f"AJPE{PIT}",
+             raw=dict(lightfloor=PIT_LOOK[0], lightfloorabsolute=True))
+    for x, y, r, g, b, size in PIT_LOOK[1]:
+        m.thing(x, y, 9800, height=20, args=(r, g, b, size))             # point light
+else:
+    m.sector(rect(768, 0, 1024, 640), floor=-192, ceil=TALL, light=176, ftex="AJPIT", wall="AJTRIM")
 ajarmap.room(m, [1024, 1280], [0, 288, 352, 640], lambda i, j: j == 1,
-             ceil=TALL - 16, light=200, color=GOLD)
+             ceil=TALL - 16, light=200, color=GOLD, side=PIT_SIDE)
 recess((0, 288), (0, 352), (-1, 0), 0, far_id(RED), 101, far_colour=RED, color=WARM)
 recess((352, 0), (416, 0), (0, -1), 0, 102, 201)                          # hall frame, empty
 recess((864, 640), (928, 640), (0, 1), -192, 103, 201)                    # pit frame, starts with YELLOW
+if PIT:                                                                   # the end wall carries on above the frame
+    m.line((864, 640), (928, 640), upper=f"AJPE{PIT}", dontpegtop=True)
 recess((1280, 288), (1280, 352), (1, 0), 0, far_id(YELLOW), 101, far_colour=YELLOW, color=GOLD)
 
 # --- the gallery above the hall (BLUE's far side): you can only drop off it --
 ajarmap.room(m, [0, 352, 416, 768], [640, 704, 768, 832],                # BLUE to the edge, and to the frame
-             lambda i, j: i == 1 or (i == 0 and j == 1), floor=160, ceil=TALL - 16, light=200, color=SKY)
+             lambda i, j: i == 1 or (i == 0 and j == 1), floor=160, ceil=TALL - 16, light=200, color=SKY,
+             side=f"AJHF{HALL}")
 recess((352, 832), (416, 832), (0, 1), 160, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
 recess((0, 704), (0, 768), (-1, 0), 160, 104, 201, color=SKY)             # gallery frame, empty
 
@@ -61,10 +86,13 @@ for x in (128, 576):
     m.sector(rect(x, -32, x + 64, 0), floor=32, ceil=112, light=255, wall="AJTRIM",
              ftex="AJTRIMF", ctex="AJTRIMF")
     m.thing(x + 32, -16, 35)                                              # candelabra
+    # the hall's wall carries on above and below the niche
+    m.line((x, 0), (x + 64, 0), upper=f"AJHW{HALL}", lower=f"AJHW{HALL}", dontpegtop=True, dontpegbottom=True)
 
 # --- pictures of the doors, in the order you will need them ----------------
-ajarmap.picture(m, (256, 0), (320, 0), GREEN, TALL - 16)                  # hall, left of the frame
-ajarmap.picture(m, (448, 0), (512, 0), VIOLET, TALL - 16)                 # hall, right of the frame
+for a, b, c in (((256, 0), (320, 0), GREEN), ((448, 0), (512, 0), VIOLET)):  # hall, either side of the frame
+    ajarmap.picture(m, a, b, c, TALL - 16)
+    m.line(a, b, mid=f"AJHP{HALL}{c}", exact=True)
 ajarmap.picture(m, (192, 832), (256, 832), YELLOW, TALL - 16 - 160)      # gallery
 ajarmap.picture(m, (512, 832), (576, 832), GREEN, TALL - 16 - 160)
 
@@ -92,13 +120,13 @@ def things(kind, *spots, angle=0):
 
 # the cell: nothing but two candles
 things(CANDLE, (20, -1480), (236, -1480))
-# the hall: two zombies with their backs to a pair of barrels, a shotgun on
-# the way to the pit, red torches by the RED far side
+# the hall: two zombies with their backs to a pair of barrels, a shotgun in
+# the far corner by the pit, red torches by the RED far side
 things(ZOMBIE, (540, 470), (600, 170), angle=180)
 things(BARREL, (690, 60), (724, 100))
 things(TORCH_R, (24, 232), (24, 408))
-things(SHOTGUN, (300, 500))
-things(SHELLS, (330, 520))
+things(SHOTGUN, (700, 580))                                           # far corner, past both zombies
+things(SHELLS, (724, 604))
 things(STIM, (40, 40))
 # the pit: a demon, and what it left of the last visitors
 things(DEMON, (896, 180), angle=90)
