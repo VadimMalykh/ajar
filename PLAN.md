@@ -1318,6 +1318,28 @@ Options that change shape, light or play are listed at the foot of the
 board, none built: real eaves against the sky, marking the frames, evening
 light, things in the yard.
 
+## Look: the thief (started 2026-11-16)
+
+Board: https://claude.ai/artifact/5NfE9vX2kBz5K83jy8Bm2i (source
+`design/thief-board.html`, images in `build/board_thief/<look>/pose_N.jpg`).
+Six looks were shown: the prototype sprite and five of Doom's sprites made
+small and recoloured (arch-vile in soot, Wolfenstein guard in black, imp in
+ash, arachnotron in brass, arch-vile as a shadow).
+
+**Chosen (user, 2026-11-16): the Shadow.** Built: `AjarThief` draws Doom's
+`VILE` sprites at 0.6 with the translucent stencil style (near-black, alpha
+0.7), walks on the arch-vile's six frames, raises its arms for the 35 tics
+at the hinges and dies with the arch-vile's death. `Dress()` carries its
+eyes (`AjarLodgerEyes` at 0.7, shown only while it faces the camera) and
+the door on its back: `AjarThiefPack`, the carried door's own sprite in its
+colour at 0.72, so that which door it has can be read across the yard.
+`MAP=TEST MODE=5`, `MAP=MAP04 MODE=1` and `MODE=3` pass. Not played by hand.
+The portrait mode and the board's tooling are gone again (commit 8e2be80
+has them); the board's images are in `build/board_thief/`. The `AJTH`
+sprites in `gfx.py` are no longer used and can be deleted.
+Put to the user and not answered: a sound while it works at the hinges, its
+voice (still the revenant's, as the lodger's), what it does when hurt.
+
 ## Handoff (2026-11-16)
 
 State: MAP01-MAP05 build and pass the solver. MAP01, MAP02 and MAP03 are

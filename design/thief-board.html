@@ -1,0 +1,158 @@
+<title>Thief Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, the same as MAP01's and MAP02's boards. Three looks summarised on top
+   with the plan, then one band per part of the theatre: notes and a pick on the left, the same
+   camera in every look on the right. Points to argue about close the page. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.talk li strong { font-family: var(--display); }
+.sws i { display: block; height: 72px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: bottom left; background-size: 64px auto; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 472; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+ol.open { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+}
+.cand { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--line); padding-top: 22px; }
+.cand > * { min-width: 0; }
+.cand.chosen h2 { color: var(--pick); }
+.poses { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.poses figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.poses img { width: 100%; height: auto; aspect-ratio: 1; display: block; background: var(--chip); border: 1px solid var(--line); }
+.poses figcaption { font-size: 11.5px; color: var(--muted); }
+.cand h2 span { color: var(--accent); margin-right: 6px; }
+@media (max-width: 820px) { .cand { grid-template-columns: minmax(0, 1fr); } .poses { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;The thief, first met in MAP04 · captured 16 Nov 2026 · GZDoom 4.12.2, software GL</div>
+    <h1>The thief: five looks and the one it has</h1>
+    <p>The thief still wears its prototype sprite. Since the lodger ended up as a shadow of one of Doom's monsters, the five new candidates are all Doom's own sprites, made small and recoloured, with the door it has taken on its back. Each is posed in MAP04's yard, in the Tenement look, beside the north frame for scale.</p>
+    <p class="muted">Pick one, or name parts to mix. Your pick is collected at the bottom as a line to paste into the chat. You can also comment on this page.</p>
+  </header>
+  <section class="stack" id="cands" style="gap:30px"></section>
+  <section class="sum">
+    <h2>Your pick</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and I will build the thief that way.</p>
+    <output id="picksline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+  <section class="stack">
+    <h3>Beyond the sprite: things to talk about</h3>
+    <ol class="open talk">
+      <li><strong>The door on its back.</strong> In looks 2 to 6 it is a real door sprite in its own colour, three quarters of full size, so you can see across the yard which door it has. Now it is a plain slab. This can be taken with any look, including the present one.</li>
+      <li><strong>Size.</strong> All five are smaller than Doom's monsters, so it is told apart by height first. Say if it should be smaller still, or man-sized.</li>
+      <li><strong>A tell.</strong> It takes 35 tics at the hinges and makes no sound of its own while it works. A rattle or a creak then would let you hear a door going behind your back.</li>
+      <li><strong>Voice.</strong> It borrows the revenant's sight and death sounds, as the lodger does. A different pair from Doom's set costs nothing.</li>
+      <li><strong>When hurt.</strong> It has 40 health and never reacts to being shot. It could flinch, drop the door at half health, or run for the nearest hung door.</li>
+      <li><strong>Shown here, not built.</strong> These are posed photographs. The thief in the game is unchanged until you choose; walking, working and dying then get the chosen sprites' own frames.</li>
+    </ol>
+  </section>
+</div>
+<script>
+const LOOKS = [["1", "As it is now", "The hooded figure drawn for the prototype. The door on its back is a plain slab, whatever colour it has taken.", "Kept here for comparison. It has no side or back view, so it looks the same from every direction."], ["2", "Soot", "Doom's arch-vile at six tenths of its size, drained to soot grey. Thin, hunched, long in the arm; it runs in a scuttle, which suits how fast the thief is.", "Its raised arms are the best hinge-picking pose of the six. No arch-vile appears before this level, so nothing else looks like it. Later levels that use real arch-viles would have a big cousin."], ["3", "Burglar", "Doom II's Wolfenstein guard, a little smaller, his blue uniform turned black. The only human of the six: a thief in the plain sense.", "He carries a gun he will never fire, which promises the wrong thing. His trousers stay blue; that can be fixed. Among former humans in the yard he is the hardest to tell apart."], ["4", "Gremlin", "Doom's imp at two thirds of its size, in ash green.", "Small and nasty, but there are eight real imps in this yard. Without a door on its back it reads as an imp that is further away."], ["5", "Brass crab", "Doom's arachnotron at four tenths of its size, in brass. It carries the door upright on its back like a shell.", "The boldest, and the least like anything else in the game. Brass ties it to hinges and to the lodger's eyes. It has no hands, so it has no pose for working at a frame: it just stands under the hinges."], ["6", "Shadow", "The arch-vile again, as a shadow with two brass plates for eyes: the lodger's treatment on another body.", "Makes Ajar's own monsters one family. Against a dark wall or an empty frame it nearly disappears, which is right for the lodger and may be unfair for something you have to chase and shoot. The eyes are hidden from the side and behind."]];
+const POSES = ["Standing", "Coming at you with BLUE", "From the side", "At a frame", "Dead, the door dropped"];
+let pick = null;
+try { pick = localStorage.getItem("thief-pick"); } catch (e) {}
+function draw() {
+  document.getElementById("cands").innerHTML = LOOKS.map(([n, name, d, note]) =>
+    `<article class="cand${pick === n ? " chosen" : ""}">
+       <div class="side"><h2><span>${n}</span>${name}</h2><p>${d}</p><p class="muted">${note}</p>
+         <div class="picks"><button type="button" id="pick-${n}" data-look="${n}" aria-pressed="${pick === n}">${n === "1" ? "Keep as now" : "Pick " + name}</button></div></div>
+       <div class="poses">${POSES.map((p, i) => `<figure><img src="${n}/pose_${i}.jpg" alt="${name}: ${p}" loading="lazy"><figcaption>${p}</figcaption></figure>`).join("")}</div>
+     </article>`).join("");
+  const l = LOOKS.find(x => x[0] === pick);
+  document.getElementById("picksline").textContent = "Thief look. " + (l ? (l[0] === "1" ? "Keep as now" : l[0] + " " + l[1]) : "?") + ".";
+}
+draw();
+document.getElementById("cands").addEventListener("click", e => {
+  const b = e.target.closest("button[data-look]");
+  if (!b) return;
+  pick = pick === b.dataset.look ? null : b.dataset.look;
+  try { pick ? localStorage.setItem("thief-pick", pick) : localStorage.removeItem("thief-pick"); } catch (e) {}
+  draw();
+  document.getElementById("pick-" + b.dataset.look).focus();
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+</script>

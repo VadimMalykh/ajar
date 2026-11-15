@@ -189,37 +189,73 @@ class AjarThief : AjarWorker
 		Speed 16;
 		Mass 80;
 		PainChance 0;
+		Scale 0.6;
+		StencilColor "0A090E";
 		SeeSound "skeleton/sight";
 		DeathSound "skeleton/death";
 		-DONTTHRUST
 	}
+	// Its look (user, 2026-11-16): the shadow of an arch-vile at six tenths of
+	// its size, with the lodger's brass eyes. Doom's VILE sprites are drawn
+	// with the translucent stencil style; the eyes and the door on its back
+	// are carried along by Dress().
 	States
 	{
 	Spawn:
-		AJTH A 8 A_ThiefLook();
+		VILE A 8 A_ThiefLook();
 		Loop;
 	Walk:
-		AJTH AABB 2 A_ThiefWalk();
-		Loop;
 	WalkLoot:
-		AJTH EEFF 2 A_ThiefWalk();
+		VILE AABBCCDDEEFF 2 A_ThiefWalk();
 		Loop;
-	Work:
-		AJTH C 35 A_ThiefFace();
-		AJTH C 0 A_ThiefAct();
+	Work:                      // 35 tics at the hinges, arms up
+		VILE G 5 A_ThiefFace();
+		VILE H 5;
+		VILE I 25;
+		VILE I 0 A_ThiefAct();
 		Goto Spawn;
 	Rest:
-		AJTH AABB 2 A_ThiefRest();
-		Loop;
 	RestLoot:
-		AJTH EEFF 2 A_ThiefRest();
+		VILE AABBCCDDEEFF 2 A_ThiefRest();
 		Loop;
 	Death:
-		AJTH D 6 A_Scream();
-		AJTH D 0 A_ThiefDrop();
-		AJTH D 0 A_NoBlocking();
-		AJTH D -1;
+		VILE Q 6 A_Scream();
+		VILE R 5 A_ThiefDrop();
+		VILE S 5 A_NoBlocking();
+		VILE TUVWXY 5;
+		VILE Z -1;
 		Stop;
+	}
+
+	const SHADE = 0.7;         // how solid the shadow is
+	const EYE_Z = 41;          // the eyes' height above its feet
+	Actor pack, eyes;          // the door on its back, as a sprite; its eyes
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		A_SetRenderStyle(SHADE, STYLE_TranslucentStencil);       // has no name as a property
+	}
+
+	// The door it carries is hidden (AjarHandler.ThiefPicksUp); what shows on
+	// its back is that door's sprite at three quarters of its size, so that
+	// its colour can be read across a yard. The eyes show only while it
+	// faces you, as the lodger's do.
+	void Dress()
+	{
+		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7' };
+		if (!pack) pack = Spawn("AjarThiefPack", pos);
+		if (!eyes) { eyes = Spawn("AjarLodgerEyes", pos); eyes.scale = (0.7, 0.7); }
+		let cam = players[consoleplayer].camera;
+		bool alive = health > 0;
+		pack.bInvisible = !alive || !loot;
+		if (alive && loot)
+		{
+			pack.sprite = GetSpriteIndex(spr[loot.Colour()]);
+			pack.SetOrigin((pos.xy - AngleToVector(angle, 7), pos.z + 6), true);
+		}
+		eyes.bInvisible = !alive || !cam || abs(DeltaAngle(angle, AngleTo(cam))) > 50;
+		if (!eyes.bInvisible) eyes.SetOrigin((pos.xy + AngleToVector(angle, 6), pos.z + EYE_Z), true);
 	}
 
 	void GoWalk()
@@ -248,7 +284,6 @@ class AjarThief : AjarWorker
 
 	void A_ThiefLook()
 	{
-		if (loot) frame = 4;
 		let h = Handler();
 		if (!h) return;
 		if (lastFrame && level.time - lastTime > FORGET) lastFrame = null;
@@ -440,6 +475,7 @@ class AjarThief : AjarWorker
 	override void Tick()
 	{
 		Super.Tick();
+		Dress();
 		if (!args[1] || health <= 0) return;
 		if (stayAt != (0, 0, 0) && (pos.xy - stayAt.xy).Length() > 96)
 		{
@@ -460,6 +496,8 @@ class AjarThief : AjarWorker
 	override void OnDestroy()
 	{
 		A_ThiefDrop();
+		if (pack) pack.Destroy();
+		if (eyes) eyes.Destroy();
 		Super.OnDestroy();
 	}
 }
@@ -854,6 +892,24 @@ class AjarLodger : AjarWorker
 		if (alpha > 0.05) return;
 		GoInside(random[AjarLodger](60, 130));
 		SetStateLabel("Spawn");
+	}
+}
+
+// The door on a thief's back: a door's sprite, three quarters of its size,
+// that turns to face you as the thief's own sprite does.
+class AjarThiefPack : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOBLOCKMAP
+		Scale 0.72;
+	}
+	States
+	{
+	Spawn:
+		AJD1 A -1;
+		Stop;
 	}
 }
 
