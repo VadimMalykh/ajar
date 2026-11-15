@@ -2,12 +2,15 @@
 
 Line ids: 1xx = frames, 200 + colour = that door's far side; a fixed
 doorway number n uses 150 + n and 250 + n
-(number 9 is every level's way out: way_out()).
+(number 9 is every level's way out: way_out()). 270-289 are the places a
+Stray door may open onto (stray_place). 190 is the frame of a way out the
+player builds (way_home), 590 both of its mouths.
 """
 FRAME_T, DOOR_T = 20001, 20002
 KEY_T = {"1": 20011, "2": 20012, "3": 20013, "4": 20014}      # room keys, by number
 LOCK = {"1": 41, "2": 42, "3": 43, "4": 44, "12": 45, "23": 46, "34": 47}   # src/lockdefs.txt
 RED, BLUE, GREEN, YELLOW, VIOLET, PINK = 1, 2, 3, 4, 5, 6
+STRAY = 7           # the Stray door: no far side of its own (see stray_place)
 NAMES = {RED: "RED", BLUE: "BLUE", GREEN: "GREEN", YELLOW: "YELLOW", VIOLET: "VIOLET", PINK: "PINK"}
 DEPTH = 16          # recess depth
 DOOR_H = 96
@@ -22,14 +25,17 @@ def far_id(colour):
     return 200 + colour
 
 
-def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None, trim=None):
+def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None, trim=None,
+           home=0):
     """A 64-wide door recess whose mouth is m1-m2 and which goes `out` of the room.
 
     Frames (far_colour None) get an AjarFrame thing and a usable mouth line.
     Far sides show the closed door of their colour until that door is hung.
     `target` is any valid portal line id; the script empties every portal at load.
     `arch` ("frame" or "far") makes it one end of a fixed doorway instead: see doorway().
-    `trim` is (texture, flat) for a doorway's surround instead of pale stone.
+    `trim` is (texture, flat) for the surround instead of the usual one.
+    `home` (frames only) is the far-side line id of the door that makes this
+    frame a way out: see way_home().
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
     b2 = (m2[0] + out[0] * DEPTH, m2[1] + out[1] * DEPTH)
@@ -39,6 +45,8 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
         wall, flat, mid = f"AJTR{far_colour}", f"AJTF{far_colour}", f"AJDR{far_colour}"
     else:
         wall, flat, mid = "AJTRIM", "AJTRIMF", "AJFRAME"
+    if trim:
+        wall, flat = trim
     m.sector([m1, m2, b2, b1], floor=floor, ceil=floor + DOOR_H, light=176,
              wall=wall, ftex=flat, ctex=flat, color=color)
     # GZDoom only lets things walk through a portal line that has real space
@@ -51,7 +59,7 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     if arch == "frame" or not (arch or far_colour):
         m.line(m1, m2, special=130, args=(line_id,), playeruse=True, repeatspecial=True)
         m.thing((b1[0] + b2[0]) / 2 - out[0] * 8, (b1[1] + b2[1]) / 2 - out[1] * 8,
-                FRAME_T, id=line_id, height=0, args=(line_id,))
+                FRAME_T, id=line_id, height=0, args=(line_id, home))
 
 
 def door(m, colour, x, y, *, angle=0, frame=0):
@@ -99,6 +107,54 @@ def way_out(m, x, y, colour):
                playercross=True)
     for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
         m.thing(x + cx, y + cy, 35)                               # candelabra
+
+
+HOME, HOME_MOUTH = 190, 590
+
+
+def way_home(m, x, y, colour):
+    """A way out the player has to build (MAP05 on). The same night room as
+    way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
+    its two ends are not joined yet: the far side of the door `colour` is in
+    the west end and an empty brass frame (line id HOME) in the east end,
+    facing each other down the room. Hang that door in that frame and the
+    room opens onto itself: the door becomes the doorway of way_out(), for
+    good, and walking into either end ends the level (AjarHandler.ComeHome).
+
+    Going through the door from wherever it hangs brings you here without
+    it, so the room needs another way in, by which the door can be carried:
+    the caller's job (its north and south walls are free). In a PUZZLE graph:
+    the door's home and the frame HOME are in the same region, and
+    `home_frame=HOME` makes hanging it there the goal."""
+    room(m, [x, x + 320], [y, y + 96, y + 160, y + 256], lambda i, j: j == 1,
+         ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+    brass = ("AJXA", "AJXAF")
+    recess(m, (x, y + 96), (x, y + 160), (-1, 0), 0, far_id(colour), HOME, far_colour=colour, trim=brass)
+    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0, HOME, far_id(colour), trim=brass,
+           home=far_id(colour))
+    for xx in (x, x + 320):
+        m.line((xx, y + 96), (xx, y + 160), id=HOME_MOUTH)
+    for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
+        m.thing(x + cx, y + cy, 35)                               # candelabra
+
+
+STRAY_ID = 270      # line ids 270..289: the places Stray doors may open onto
+
+
+def stray_place(m, k, m1, m2, out, floor, *, color=None, target=101):
+    """Place number k (0..19) of the level's pool for Stray doors: a recess
+    like a far side, with mouth m1-m2, showing a shut Stray door until one
+    opens onto it. Which place a Stray door opens onto is drawn from the
+    pool when it is hung; it stays open for a few seconds and is then gone.
+    Rules (PLAN.md, "Stray door"): every place needs a way out on foot, and
+    a secret one also an ordinary way in. In a PUZZLE graph: `pool`.
+    `target` is any frame's line id in the level (see recess)."""
+    recess(m, m1, m2, out, floor, STRAY_ID + k, target, far_colour=STRAY, color=color)
+
+
+def stray(m, x, y, *, angle=0):
+    """A Stray door leaning at x, y. A level can have several."""
+    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(STRAY), STRAY, 0))
 
 
 def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look=""):

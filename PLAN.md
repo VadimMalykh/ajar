@@ -49,7 +49,7 @@ exceptions.
 | Heavy | Slow to carry, cannot be unhinged by enemies | Act 3 |
 | Small | Hatch-sized: objects and small enemies only | Act 3 |
 | Tilted | Far side is a floor or ceiling: you fall out of it | Act 4 |
-| Stray | One shot: opens onto a random place, then vanishes on a timer (see "Stray door") | Level 5 |
+| Stray | One shot: opens onto a random place, then vanishes on a timer (see "Stray door") | Level 5 (built) |
 | Flip | Two-coloured, two far sides: each hanging opens onto the other one (see "Flip door") | After level 5 |
 | Stale | Far side is the same place at an earlier time (see "Time doors") | Act 5 (stretch) |
 
@@ -709,6 +709,94 @@ Not known until it is played: whether the yard is too hard at the start
 (a thief, 30 monsters, snipers on three sides), whether the well reads as
 "a door has to come down here", and whether the squeeze message is enough
 or the holes need a sign.
+
+## MAP05 "Lost Property" (2026-11-15)
+
+Built, solver-proven and walked headlessly. **Not played by hand yet.**
+`tools/map_hinges5.py`: a railway terminus. Five doors in the puzzle (PINK
+is a sixth, in a secret), four keys, five frames, four Stray doors, 10 door
+actions, 322864 states, none stuck, nothing losable. 133 monsters, 5
+secrets. `MAP=MAP05 ./run.sh`; MAP04's exit leads here. The user played
+MAP04 and confirmed it ("looks great, we can go next").
+
+User's brief: bigger again, more puzzles and secrets, the player builds the
+way out, perhaps the next monster. The Stray door was already due here.
+
+**The way out is built by the player** (user's idea; `ajarmap.way_home`).
+The night room of the earlier levels, but its two ends are not joined: the
+far side of an ordinary coloured door is in one end and an empty brass
+frame in the other. Hang that door in that frame and the room opens onto
+itself: the door loses its leaf and becomes the doorway of `way_out()`, for
+good, and walking into either end ends the level. No new rule: it is rule 1.
+- The user chose an ordinary colour over a special "night door" (Claude's
+  first suggestion): the player may reach the room by chance, and then has
+  to work out that the door must be carried there another way.
+- The puzzle it makes: that door, hung anywhere, takes you to the night
+  room, and then it is behind you. So the room needs a second way in by
+  which a door can be carried. How hard that way is, is the knob per level.
+- Meant for every level from here on; MAP01-04 keep the ready-made room.
+- Engine: the frame thing's `args[1]` is the far-side line id of the door
+  that belongs there; both mouths have line id 590 and become `Exit_Normal`
+  when it is hung (`AjarHandler.ComeHome`). Solver: `home_frame`.
+  `MAP=TEST MODE=12` checks it.
+
+**Stray doors** are built as designed (see "Stray door"): colour 7,
+`ajarmap.stray` and `ajarmap.stray_place` (line ids 270-289), drawn without
+repeats, 5 seconds, the time left always on the HUD, telefrag at closing.
+A thief ignores them. `MAP=TEST MODE=11`, `MAP=MAP05 MODE=3`.
+- **Not agreed yet, built as Claude proposed it:** a Stray door that a
+  nailer has nailed stays open until the nails fall out (the HUD says
+  NAILED). To turn it off: the `if (d.nailer) continue;` in `StrayTick`.
+- Timer is fixed at 5 seconds, not random per hanging.
+
+**The level.**
+- Concourse (start), platform 1 and the tracks are one place to walk in.
+  Off platform 1: waiting room (RED), lost property office (keys 1 and 2:
+  key 3, two Stray doors), lockers behind a squeeze (PINK, secret), lamp
+  room (secret). A train stands at platform 2: a solid block whose roof is
+  a way along from the bridge. The bridge (RED's far side) crosses the
+  east end with gaps in its rail over platform 1, the train, platform 2
+  and the yard; the signal box off it has key 1, GREEN and a lever. The
+  gallery (GREEN's far side; key 2) looks into the concourse. Off platform
+  2: parcels office (BLUE's far side; key 4) and the night room, both
+  bolted inside. North: goods yard, engine shed, loft (YELLOW's far side,
+  a Stray door), station master's office (keys 3 and 4: VIOLET).
+- **A turnstile is a squeeze.** Platform 2 is two steps from the concourse
+  with empty hands; BLUE leans just beyond it. With a door the only way
+  there is RED, the bridge and down. That is how VIOLET gets home.
+- **The nailer** is in the engine shed, where YELLOW hangs: it is nailed
+  before you get there. The yard gate is bolted on the yard side (first
+  way in: off the bridge); once open, the nailer can come out to work.
+- **Stray pool:** night room (an early look at the goal, and it draws the
+  bolt), gallery, lamp room, parcels office, engine shed (the nasty one),
+  kiosk (secret; otherwise opened by shooting its bell through the bars).
+- `MAP=MAP05 ./tools/smoke.sh`: 28 checks. `MODE=2`: tour, 50 views.
+  `MODE=3`: the four Stray doors.
+
+`tools/solve.py` now knows:
+- `home_frame`: hanging the right door there wins.
+- `nailer=dict(zone=[regions, (region, key)])`. Which doors are nailed is
+  not kept (every subset of doors multiplied the states past two million):
+  while the nailer lives, taking down or swapping a door in its zone is
+  luck, never something a win may depend on. The player kills it in its
+  zone.
+- `pool=[regions]`: Stray doors are not counted. With empty hands in a
+  place with a frame the player may find themselves in any pool place,
+  with empty hands, a door that leant nearby, or the door that hung in
+  that frame. No win may depend on it; the printed solution uses none.
+- MAP05 takes the solver about a minute; the whole build about two.
+
+Limits of 2.5D met here: nothing can be under anything, so the train is
+solid (no carriages to walk through), nothing runs under the bridge, and a
+frame cannot be cut into a platform edge or the foot of the bridge.
+
+Not known until it is played: whether the night room reads as "bring the
+door here"; whether five seconds is enough to read a place; whether the
+shed's Stray place is too nasty; whether 133 monsters is too many.
+
+**Idea for a later level** (user, 2026-11-15, not for MAP05): the exit
+room's door is opened by a switch and shuts again on a timer, so the player
+first has to lay a fast route of doors from the switch to it.
 
 ## Flip door (designed 2026-11-15, not built)
 
