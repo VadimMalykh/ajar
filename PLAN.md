@@ -742,12 +742,15 @@ good, and walking into either end ends the level. No new rule: it is rule 1.
 
 **Stray doors** are built as designed (see "Stray door"): colour 7,
 `ajarmap.stray` and `ajarmap.stray_place` (line ids 270-289), drawn without
-repeats, 5 seconds, the time left always on the HUD, telefrag at closing.
+repeats, 2 to 5 seconds, the time left always on the HUD, telefrag at closing.
 A thief ignores them. `MAP=TEST MODE=11`, `MAP=MAP05 MODE=3`.
 - **Not agreed yet, built as Claude proposed it:** a Stray door that a
   nailer has nailed stays open until the nails fall out (the HUD says
   NAILED). To turn it off: the `if (d.nailer) continue;` in `StrayTick`.
-- Timer is fixed at 5 seconds, not random per hanging.
+- Timer: random per hanging, 2 to 5 whole seconds, the short ones
+  likelier (2 s 35%, 3 s 35%, 4 s 20%, 5 s 10%; `StrayTics`). Vadim,
+  2026-11-15, after playing: a fixed 5 seconds was too long. The headless
+  tests always get 5.
 
 **The level.**
 - Concourse (start), platform 1 and the tracks are one place to walk in.
@@ -791,7 +794,7 @@ solid (no carriages to walk through), nothing runs under the bridge, and a
 frame cannot be cut into a platform edge or the foot of the bridge.
 
 Not known until it is played: whether the night room reads as "bring the
-door here"; whether five seconds is enough to read a place; whether the
+door here"; whether 2 to 5 seconds is enough to read a place; whether the
 shed's Stray place is too nasty; whether 133 monsters is too many.
 
 **Idea for a later level** (user, 2026-11-15, not for MAP05): the exit

@@ -9,7 +9,7 @@
 //    frame for the whole level (ajarmap.doorway).
 //    Colour 7 is a Stray door (ajarmap.stray): it has no far side of its own.
 //    Hung, it opens onto one of the level's stray places (lines 270..289),
-//    stays open for STRAY_TICS and is then gone.
+//    stays open for 2 to 5 seconds (StrayTics) and is then gone.
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
 
@@ -127,7 +127,7 @@ class AjarHandler : EventHandler
 	const SQUEEZE_ID = 500;       // line id of every squeeze (ajarmap.squeeze)
 	const STRAY_ID = 270;         // 270..289: the places a Stray door may open onto (ajarmap.stray_place)
 	const STRAY_PLACES = 20;
-	const STRAY_TICS = 175;       // how long a Stray door stays open
+	const STRAY_TICS = 175;       // the longest a Stray door stays open: see StrayTics()
 	const HOME_MOUTH = 590;       // both mouths of a way out the player builds (ajarmap.way_home)
 	AjarDoor carried;
 	int testTic;
@@ -173,6 +173,16 @@ class AjarHandler : EventHandler
 	// without repeats until every place has come up (so no streaks, and a
 	// secret place does come up in the end). 0: the level has none free.
 	Array<int> strayLeft;
+	// How long this hanging stays open: 2 to 5 seconds, drawn afresh each
+	// time, the short ones likelier (2 s 35%, 3 s 35%, 4 s 20%, 5 s 10%).
+	// (The smoke tests always get the longest.)
+	int StrayTics()
+	{
+		if (CVar.GetCVar("ajar_autotest").GetInt()) return STRAY_TICS;
+		int r = random[AjarStray](0, 99);
+		return 35 * (r < 35 ? 2 : r < 70 ? 3 : r < 90 ? 4 : 5);
+	}
+
 	int DrawStray()
 	{
 		Array<int> free;
@@ -297,7 +307,7 @@ class AjarHandler : EventHandler
 
 	void Hang(AjarDoor d, AjarFrame f)
 	{
-		if (d.IsStray()) { d.args[0] = DrawStray(); d.strayTics = STRAY_TICS; }
+		if (d.IsStray()) { d.args[0] = DrawStray(); d.strayTics = StrayTics(); }
 		else if (f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
 		Link(f.args[0], d.args[0], FRAME_TEX);
 		Link(d.args[0], f.args[0], d.BackTex());
