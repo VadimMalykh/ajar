@@ -808,6 +808,13 @@ has to be carried round to the other end of the night room, and then that
 this cannot be done without going through RED to get up to the bridge: one
 door's errand needs another door's far side. Build later puzzles on that.
 
+**Idea for later levels** (Vadim, 2026-11-15): the same twist one step
+deeper. To bring the right door where it is needed you must first hang
+another door in place, then carry a second one there and swap, and only
+through that swap does the route open; a third door (as RED here) is the
+one you have to remember exists and where it hangs. So the player holds
+two colours in mind, works out how to set them up, and recalls the third.
+
 **Idea for a later level** (user, 2026-11-15, not for MAP05): the exit
 room's door is opened by a switch and shuts again on a timer, so the player
 first has to lay a fast route of doors from the switch to it.
