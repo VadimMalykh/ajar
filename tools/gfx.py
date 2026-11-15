@@ -1,4 +1,5 @@
 """Procedural placeholder art, written as PNG with no dependencies."""
+import os
 import random
 import struct
 import zlib
@@ -1021,35 +1022,22 @@ def make_all():
                 nl.rect(31, 40, 43, 47, steel)
         out[f"sprites/AJNL{fr_name}0.png"] = nl.png(grab=(22, 56))
 
-    # lodger: made of the same dark as an empty frame, with the frame's two
-    # brass hinge plates for eyes. A/B walking, C arm up, D striking, E dead.
-    body, edge, brass = (44, 42, 46), (20, 18, 22), (190, 170, 110)
-    for fr_name in "ABCDE":
-        lg = Img(40, 64, (0, 0, 0, 0))
-        if fr_name == "E":
-            lg.rect(2, 56, 38, 64, body)
-            lg.frame(2, 56, 38, 64, edge, 2)
-            lg.rect(8, 58, 14, 61, brass)
-        else:
-            lg.rect(12, 6, 28, 54, body)                         # a tall narrow slab
-            lg.frame(12, 6, 28, 54, edge, 2)
-            lg.rect(15, 12, 19, 20, brass)
-            lg.rect(21, 12, 25, 20, brass)
-            lg.rect(16, 14, 18, 16, edge)
-            lg.rect(22, 14, 24, 16, edge)
-            step = 0 if fr_name in "ACD" else 3
-            lg.rect(13 + step, 54, 18 + step, 64, edge)
-            lg.rect(22 - step, 54, 27 - step, 64, edge)
-            if fr_name == "C":
-                lg.rect(28, 2, 32, 26, body)
-                lg.rect(28, 0, 36, 5, brass)
-            elif fr_name == "D":
-                lg.rect(28, 24, 40, 28, body)
-                lg.rect(35, 22, 40, 31, brass)
-            else:
-                lg.rect(28, 22, 32, 46, body)
-            lg.rect(8, 22, 12, 46, body)
-        out[f"sprites/AJLG{fr_name}0.png"] = lg.png(grab=(20, 64))
+    # lodger: the shadow of a revenant, drawn by the engine from Doom's own
+    # sprites (AjarLodger in enemies.zs). Only its eyes are ours: the two
+    # brass hinge plates of an empty frame.
+    brass, screw = (214, 192, 122), (60, 50, 30)
+    le = Img(10, 7, (0, 0, 0, 0))
+    for x in (0, 7):
+        le.rect(x, 0, x + 3, 7, brass)
+        le.set(x + 1, 1, screw)
+        le.set(x + 1, 5, screw)
+    out["sprites/AJLEA0.png"] = le.png(grab=(5, 4))
+
+    # AJAR_LODGER=1..7 adds the AJLG sprites of a look that lost, for the
+    # board's photographs (gfx_lodger.py, design/lodger-board.html)
+    if os.environ.get("AJAR_LODGER", "0") not in ("", "0"):
+        import gfx_lodger
+        gfx_lodger.make(out, os.environ["AJAR_LODGER"])
 
     for c in DOOR_COLOURS:
         d = door(c)

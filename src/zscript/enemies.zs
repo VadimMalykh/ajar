@@ -607,8 +607,19 @@ class AjarNailer : AjarWorker
 // has a view of you (the frame glows and knocks first), goes for you, and
 // after a while or when hurt walks back into the nearest empty frame.
 // A frame with a door in it is shut to the lodger: hang a door to plug it.
+//
+// Look (user, 2026-11-15, design/lodger-board.html): the shadow of a revenant.
+// It is drawn with the revenant's own sprites as one flat near-black shape
+// that the room shows through, with a pair of brass eyes (AjarLodgerEyes)
+// carried at its head. The eyes open in the frame while it knocks; it fades in
+// as it steps out and fades away as it goes back in.
 class AjarLodger : AjarWorker
 {
+	const SHADE = 0.6;         // how solid the shadow is once it is out
+	const EYE_Z = 70;          // the eyes' height above its feet
+	Actor eyes;
+	bool sinking;              // fading into a frame
+	bool noEyes;               // tests: tools/lodger_shots.sh
 	const OUT_STEPS = 110;     // hunting steps before it wants back in
 	const PATIENCE = 100;
 	AjarFrame hole;            // the frame it is coming out of or going back to
@@ -630,6 +641,7 @@ class AjarLodger : AjarWorker
 		SeeSound "wolfss/sight";
 		PainSound "skeleton/pain";
 		DeathSound "skeleton/death";
+		StencilColor "0A090E";
 	}
 	States
 	{
@@ -643,29 +655,67 @@ class AjarLodger : AjarWorker
 		TNT1 A 0 A_LodgerEmerge();
 		Goto Spawn;
 	Prowl:
-		AJLG AABB 2 A_LodgerHunt();
+		SKEL AABBCCDDEEFF 2 A_LodgerHunt();
 		Loop;
 	Melee:
-		AJLG C 6 A_FaceTarget();
-		AJLG D 6 A_CustomMeleeAttack(2 * random[AjarLodger](2, 5), "skeleton/melee", "skeleton/swing");
-		AJLG A 8;
+		SKEL G 6 A_FaceTarget();
+		SKEL H 6 A_CustomMeleeAttack(2 * random[AjarLodger](2, 5), "skeleton/melee", "skeleton/swing");
+		SKEL I 8;
 		Goto Prowl;
 	Back:
-		AJLG AABB 2 A_LodgerBack();
+		SKEL AABBCCDDEEFF 2 A_LodgerBack();
+		Loop;
+	Enter:
+		SKEL AABB 2 A_LodgerSink();
 		Loop;
 	Pain:
-		AJLG A 3 A_Pain();
+		SKEL L 3 A_Pain();
 		Goto Prowl;
 	Death:
-		AJLG E 6 A_Scream();
-		AJLG E 0 A_NoBlocking();
-		AJLG E -1;
+		SKEL LM 7;
+		SKEL N 7 A_Scream();
+		SKEL O 7 A_NoBlocking();
+		SKEL P 7;
+		SKEL Q -1;
 		Stop;
+	}
+
+	override void Tick()
+	{
+		Super.Tick();
+		if (!inside && !sinking && health > 0 && alpha < SHADE) alpha = min(SHADE, alpha + 0.05);
+		if (!eyes) eyes = Spawn("AjarLodgerEyes", pos);
+		bool knocking = inside && hole && InStateSequence(CurState, FindState("Knock"));
+		let cam = players[consoleplayer].camera;
+		if (noEyes || health <= 0 || (inside && !knocking) || !cam)
+		{
+			eyes.bInvisible = true;
+			return;
+		}
+		// in the frame they sit just inside its mouth; out, at the front of
+		// the head, and they show only while it faces you: on a head seen
+		// from the side a pair of eyes looks stuck on
+		Vector2 at = pos.xy + AngleToVector(angle, 6);
+		if (knocking)
+		{
+			Line l = Handler() ? Handler().FindLine(hole.args[0]) : null;
+			if (l) at = Front(l, 2);
+		}
+		eyes.SetOrigin((at, pos.z + EYE_Z), !eyes.bInvisible);
+		eyes.bInvisible = !knocking && abs(DeltaAngle(angle, AngleTo(cam))) > 50;
+		eyes.alpha = knocking ? 1.0 : clamp(alpha / SHADE, 0.0, 1.0);
+	}
+
+	override void OnDestroy()
+	{
+		if (eyes) eyes.Destroy();
+		Super.OnDestroy();
 	}
 
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
+		A_SetRenderStyle(SHADE, STYLE_TranslucentStencil);       // has no name as a property
 		GoInside(70);
 	}
 
@@ -675,6 +725,7 @@ class AjarLodger : AjarWorker
 		wait = tics;
 		hole = null;
 		target = null;
+		sinking = false;
 		bInvisible = true;
 		bSolid = false;
 		bShootable = false;
@@ -733,6 +784,7 @@ class AjarLodger : AjarWorker
 		// plugged while it was knocking, or somebody is standing in the way
 		if (!hole || hole.door || !TestMobjLocation()) { GoInside(70); return; }
 		inside = false;
+		alpha = 0.05;                            // Tick thickens it as it steps out
 		bInvisible = false;
 		bSolid = true;
 		bShootable = true;
@@ -762,6 +814,7 @@ class AjarLodger : AjarWorker
 	void A_LodgerHunt()
 	{
 		let p = players[consoleplayer].mo;
+		sinking = false;
 		if (++steps > OUT_STEPS || health <= hurtAt)
 		{
 			hole = WayBack();
@@ -786,11 +839,38 @@ class AjarLodger : AjarWorker
 		if (Distance2D(spot) < 40)
 		{
 			A_StartSound("misc/chat2", CHAN_BODY);
-			GoInside(random[AjarLodger](60, 130));
-			SetStateLabel("Spawn");
+			sinking = true;
+			SetStateLabel("Enter");
 			return;
 		}
 		StepToSpot();
+	}
+
+	// at the frame: fade into it
+	void A_LodgerSink()
+	{
+		if (!hole || hole.door) { sinking = false; SetStateLabel("Prowl"); return; }   // plugged at the last moment
+		alpha -= 0.15;
+		if (alpha > 0.05) return;
+		GoInside(random[AjarLodger](60, 130));
+		SetStateLabel("Spawn");
+	}
+}
+
+class AjarLodgerEyes : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOBLOCKMAP
+		+BRIGHT
+		RenderStyle "Translucent";
+	}
+	States
+	{
+	Spawn:
+		AJLE A -1;
+		Stop;
 	}
 }
 

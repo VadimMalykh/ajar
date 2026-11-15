@@ -536,6 +536,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
+		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
@@ -549,6 +550,71 @@ class AjarHandler : EventHandler
 	// picked up by walking over them and locked doors are tried with USE.
 	bool Has(Actor mo, int key) { return mo.FindInventory(String.Format("AjarKey%d", key)) != null; }
 	bool RoomOpen(int lineId) { Line l = FindLine(lineId); return l && l.backsector.CenterCeiling() > l.backsector.CenterFloor() + 40; }
+
+	// MODE=3 on MAP02: the lodger posed in the kitchen for the look board
+	// (tools/lodger_shots.sh). Five poses of 60 tics: in the frame, stepping
+	// out, walking, striking, dead. ajar_lodger_look 0 photographs the lodger
+	// as it is (9: the same, turned aside). The rest are the looks that lost.
+	// 1..6, the second round: the shadow of one of Doom's monsters (1
+	// revenant, 2 arch-vile, 3 zombie, 4 imp, 5 revenant seen through, 6
+	// revenant shimmering). 7 is the smoke figure, drawn four times as fine,
+	// and 8 a first-round look (build with AJAR_LODGER=7, or 1..6 for 8).
+	AjarLodger sitter;
+
+	void LodgerPortrait(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		Pose(mo, -1664, 650, 0, 90);
+		if (t == 5)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next()))
+			{
+				if (a is "AjarLodger") sitter = AjarLodger(a);
+				else if (a.bIsMonster && a.Distance2D(mo) < 600) a.Destroy();
+			}
+		}
+		if (!sitter || t < 240 || t % 60) return;     // after the level's opening message
+		static const double ys[] = { 846, 818, 772, 744, 762 };
+		static const int frames[] = {
+			5, 6, 0, 3, 4,          // AJLG: F G A D E
+			0, 1, 2, 7, 16,         // SKEL: walking, the punch, the bones
+			0, 1, 2, 13, 25,        // VILE: walking, arms up, dead
+			0, 1, 2, 5, 11,         // POSS
+			0, 1, 2, 6, 12          // TROO
+		};
+		static const string sprites[] = { "SKEL", "SKEL", "VILE", "POSS", "TROO", "SKEL", "SKEL", "AJLG", "AJLG", "SKEL" };
+		int look = clamp(CVar.GetCVar("ajar_lodger_look").GetInt(), 0, 9);
+		int set = look >= 7 && look <= 8 ? 0 : look >= 5 || !look ? 1 : look;
+		bool real = look == 0 || look == 9;
+		int i = t / 60 - 4;
+		if (i > 4) return;
+		sitter.inside = false;
+		sitter.noEyes = !real;
+		sitter.bInvisible = false;
+		sitter.SetStateLabel("Prowl");                   // takes a step and turns to the player
+		sitter.SetOrigin((-1664, ys[i], 0), false);
+		sitter.angle = look == 9 ? 345 : 270;
+		sitter.sprite = Actor.GetSpriteIndex(sprites[look]);
+		sitter.frame = frames[set * 5 + i];
+		sitter.tics = -1;
+		if (real) sitter.alpha = i == 0 ? 0.2 : i == 1 ? 0.4 : AjarLodger.SHADE;
+		else if (look >= 1 && look <= 6)
+		{
+			double a = i == 0 ? 0.5 : i == 1 ? 0.8 : 1.0;
+			if (look == 5) a *= 0.6;
+			sitter.A_SetRenderStyle(a, look == 6 ? STYLE_Fuzzy : a < 1 ? STYLE_TranslucentStencil : STYLE_Stencil);
+			sitter.SetShade(0x0A090E);
+		}
+		else
+		{
+			if (look == 7) sitter.scale = (0.25, 0.25);
+			sitter.A_SetRenderStyle(1.0, STYLE_Translucent);
+		}
+		if (i < 2) sitter.A_AttachLight('knock', DynamicLight.PointLight, 0xD8FFD0, 64, 64, 0, (0, 0, 48));
+		else sitter.A_RemoveLight('knock');
+	}
 
 	void NoVacancyScript(Actor mo, int t)
 	{

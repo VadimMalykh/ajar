@@ -1,0 +1,275 @@
+<title>Lodger Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, like the room boards. A line-up of all candidates at one scale on top,
+   then one band per look: notes on the left; a moving preview, the seven frames and five
+   photographs from the hotel kitchen on the right. Picks are collected at the foot. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --wall: #d2d1ca; --floor: #9c4a38; --recess: #2c2a2e; --knock: #bdf2bd;   /* the game's own colours, same in both themes */
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h2 span { color: var(--accent); margin-right: 8px; font-variant-numeric: tabular-nums; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.small { font-size: 13.5px; }
+.mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+img.px { image-rendering: pixelated; display: block; max-width: none; }
+
+/* the line-up */
+.scroll { overflow-x: auto; border: 1px solid var(--line); }
+.lineup { --u: 2px; position: relative; display: flex; align-items: flex-end; gap: calc(6 * var(--u));
+  width: max-content; min-width: 100%; box-sizing: border-box;
+  padding: calc(10 * var(--u)) calc(10 * var(--u)) 0; background: var(--wall);
+  border-bottom: calc(26 * var(--u)) solid var(--floor); }
+.lineup figure { margin: 0; position: relative; width: calc(64 * var(--u)); height: calc(96 * var(--u));
+  display: flex; align-items: flex-end; justify-content: center; }
+.lineup figcaption { position: absolute; top: 100%; left: 0; right: 0; text-align: center;
+  font: 600 12px/1.2 var(--body); color: #fff; padding-top: 6px; }
+.lineup figcaption small { display: block; font-weight: 400; opacity: .8; }
+.lineup .ref { background: url("pk3/textures/AJFRAME.png") 0 0 / 100% 100%; image-rendering: pixelated; }
+
+/* one band per look */
+.part { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 13.5px; }
+.side dt { color: var(--muted); }
+.side dd { margin: 0; }
+.main { display: flex; flex-direction: column; gap: 14px; }
+.tag { align-self: flex-start; font: 600 11px var(--body); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--bg); background: var(--pick); padding: 3px 8px; }
+
+.stage { --u: 2.5px; position: relative; width: calc(250 * var(--u)); max-width: 100%;
+  height: calc(112 * var(--u)); background: var(--wall); overflow: hidden; border: 1px solid var(--line); }
+.stage .floor { position: absolute; left: 0; right: 0; bottom: 0; height: calc(10 * var(--u)); background: var(--floor); }
+.stage .recess { position: absolute; left: calc(12 * var(--u)); bottom: calc(10 * var(--u));
+  width: calc(64 * var(--u)); height: calc(96 * var(--u)); image-rendering: pixelated;
+  background: url("pk3/textures/AJFRAME.png") 0 0 / 100% 100%; transition: box-shadow .2s; }
+.stage.glow .recess { box-shadow: 0 0 calc(16 * var(--u)) calc(2 * var(--u)) var(--knock); }
+.stage .actor { position: absolute; bottom: calc(10 * var(--u)); left: calc(12 * var(--u));
+  width: calc(64 * var(--u)); height: calc(76 * var(--u)); transition: transform .14s linear; }
+.stage .actor img { position: absolute; bottom: 0; left: 50%; translate: -50% 0; }
+.stage .what { position: absolute; right: 8px; top: 6px; font: 500 12px var(--body); color: #33383f; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.cell { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.cell div { --u: 1.5px; height: calc(82 * var(--u)); background: var(--wall); border: 1px solid var(--line);
+  display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+.cell.in div { background: var(--recess); }
+
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.shot { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.shot button { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.shot img { width: 100%; height: auto; aspect-ratio: 640 / 440; display: block; background: var(--chip); }
+.shot.big { grid-column: 1 / -1; }
+.shot.big button { cursor: zoom-out; }
+.stage.soft { --u: 2.5px; }
+.stage.soft .actor img { image-rendering: auto; max-width: none; }
+.group { display: flex; flex-direction: column; gap: 30px; }
+.group > header p { max-width: 72ch; }
+details.old { border-top: 1px solid var(--line); padding-top: 18px; }
+details.old summary { cursor: pointer; font: 600 15px var(--display); }
+details.old .scroll { margin-top: 14px; }
+
+button.chip { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+button.chip[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.sum .q { display: flex; flex-direction: column; gap: 6px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+ol.open { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+  .stage { --u: 1.3px; }
+  .lineup { --u: 1.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .stage .actor, .stage .recess { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>Decided: the revenant's shadow, seen through, with brass eyes</b> &nbsp;The lodger, Ajar's monster of the empty frames · photographed 15 Nov 2026 in MAP02's kitchen</div>
+    <h1>The Lodger: shadows</h1>
+    <p>The first six looks were stiff figures built from rectangles, and beside Doom's own monsters they read as placeholders. This round changes how the lodger is made instead of only what it is.</p>
+    <p class="muted">Two ways are shown. In the first the lodger is the shadow of one of Doom's monsters: it borrows that monster's drawings, so it moves as well as they do and can be seen from every side. In the second it is a new figure of smoke, drawn soft and four times as fine as before. Your picks are collected at the bottom as one line to paste into the chat. You can also comment on this page. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="group">
+    <header class="stack"><h3>A. The shadow of a Doom monster</h3>
+      <p class="small">Each is the monster's own animation filled with one flat near-black. In the frame it is faint, stepping out it thickens, and its corpse is a black stain. The four differ only in whose shadow it is.</p></header>
+    <div class="stack" id="shapes" style="gap:34px"></div>
+  </section>
+
+  <section class="group">
+    <header class="stack"><h3>B. How the shadow is drawn</h3>
+      <p class="small">The same revenant two ways. This choice is separate from whose shadow it is. A third way exists, the shimmer Doom uses for its spectre, but the renderer these photographs are taken with cannot show it, so it is only among the picks.</p></header>
+    <div class="stack" id="styles" style="gap:34px"></div>
+  </section>
+
+  <section class="group">
+    <header class="stack"><h3>C. A figure of smoke</h3>
+      <p class="small">Not borrowed from anything: a soft dark shape that keeps the two brass hinge plates for eyes.</p></header>
+    <div class="stack" id="smoke" style="gap:34px"></div>
+  </section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <div class="q"><h3>Shape</h3><div class="row" id="pick-shape"></div></div>
+    <div class="q"><h3>If a Doom shadow: drawn how</h3><div class="row" id="pick-style"></div></div>
+    <div class="q"><h3>Brass eyes on it</h3><div class="row" id="pick-eyes"></div></div>
+    <p class="muted small">Kept in this browser only. Paste the line into the chat and I will build the lodger that way.</p>
+    <output id="picksline"></output>
+    <div class="row"><button type="button" class="chip" id="copy">Copy</button><span class="muted small" id="copied" role="status"></span></div>
+  </section>
+
+  <section class="stack">
+    <h3>Worth knowing before you pick</h3>
+    <ol class="open">
+      <li><b>The Doom shadows have no eyes here.</b> A borrowed shape is filled with one colour, so the brass hinge-plate eyes are gone. They can be put back as a small glowing pair that floats at head height, but that is extra work and I have not tried it yet.</li>
+      <li><b>The lodger already sounds like a revenant.</b> Its pain, death and hit sounds are the revenant's, picked when it was first built. With the revenant's shadow, sound and shape would agree.</li>
+      <li><b>A borrowed shape ties the lodger to Doom II.</b> That fits the game as it stands, a Doom II mod. If Ajar ever ships without Doom's files, only the smoke figure could come along.</li>
+      <li><b>These are posed photographs.</b> In the game the lodger still appears all at once in front of the frame and is still the old slab. Fading in and out of the frame is added once you choose.</li>
+    </ol>
+  </section>
+
+  <details class="old">
+    <summary>First round, set aside</summary>
+    <div class="scroll"><div class="lineup" id="lineup"></div></div>
+  </details>
+</div>
+
+<script>
+const POSES = ["In the frame, knocking", "Stepping out", "Walking", "Striking", "Dead"];
+const SHAPES = [
+  { id: 1, name: "Revenant", idea: "Tall, thin and long-armed, with a swinging punch.", pro: "The tallest and thinnest, so it looks like something that lives in a door frame. Its punch is the clearest blow of the four.", con: "Anyone who knows Doom will see a revenant, shoulder launchers and all." },
+  { id: 2, name: "Arch-vile", idea: "Gaunt and hunched; it strikes with both arms thrown up.", pro: "The most unsettling outline: hunched, with long hands.", con: "Its attack was drawn for a slow spell, not a blow: the picture here is a wide stance, and nothing in it reads as a hit." },
+  { id: 3, name: "Zombie", idea: "A man's shadow: the nearest thing to a guest who never left.", pro: "A plain human shadow, which suits something called a lodger. The least likely to be read as one particular Doom monster.", con: "The smallest and least threatening. The rifle shows in the outline although the lodger only hits by hand." },
+  { id: 4, name: "Imp", idea: "Squat and spiked, with a clawing swipe.", pro: "Compact and spiky, with a good claw.", con: "The most familiar outline in Doom. It reads as a black imp." },
+];
+const STYLES = [
+  { id: 1, name: "Solid", idea: "Flat black, nothing shows through. The same pictures as the revenant above.", pro: "Reads at once against any lit wall, and is easy to aim at.", con: "Can look like a monster painted black rather than a shadow." },
+  { id: 5, name: "Seen through", idea: "The same black, thinned so the room shows through it.", pro: "Reads as a shadow rather than a body: you see the room through it.", con: "Fainter, so harder to spot and to aim at, most of all in a dark room." },
+];
+const SMOKE = [
+  { id: 7, name: "Smoke", idea: "A column of black smoke with arms, thinning to a green haze at its edge and to a wisp at the floor. It boils rather than walks, lunges with both arms, and falls as a low drift of soot.", pro: "Ajar's own, keeps the brass eyes, and has no hard pixels.", con: "Drawn from the front only, with two pictures of movement, so it will never move as well as Doom's monsters. Its softness sits oddly beside their crisp pixels.", sprites: true },
+];
+const FRAMES = [["F", "In the frame"], ["G", "Stepping out"], ["A", "Walk"], ["B", "Walk"], ["C", "Arm up"], ["D", "Strike"], ["E", "Dead"]];
+const PLAY = [["F", 0, 900, 1], ["G", 8, 600, 1], ["A", 40, 190], ["B", 58, 190], ["A", 76, 190], ["B", 94, 190], ["A", 112, 190],
+  ["B", 130, 190], ["C", 140, 380], ["D", 146, 420], ["A", 146, 300], ["C", 146, 380], ["D", 146, 420], ["E", 146, 1500]];
+const sprite = (id, f, alt) => `<img src="s/${id}/${f}.png" alt="${alt}" style="width:calc(64 * var(--u));height:calc(76 * var(--u))">`;
+
+const band = (l, letter) => `
+  <article class="part">
+    <div class="side">
+      <h2><span>${letter}${l.n}</span>${l.name}</h2>
+      <p class="small">${l.idea}</p>
+      <dl><dt>For</dt><dd>${l.pro}</dd><dt>Against</dt><dd>${l.con}</dd></dl>
+    </div>
+    <div class="main">
+      ${l.sprites ? `<div class="stage soft"><div class="recess"></div><div class="floor"></div>
+        <div class="actor">${"ABCDEFG".split("").map(f => sprite(l.id, f, "").replace("<img ", `<img data-f="${f}" hidden `)).join("")}</div>
+        <div class="what" aria-hidden="true"></div></div>
+      <div class="row"><button type="button" class="chip play" aria-pressed="false">Play</button>
+        <span class="muted small">Knocks, steps out, moves, strikes twice, dies.</span></div>
+      <h3>In the hotel kitchen</h3>` : ""}
+      <div class="shots">${POSES.map((p, i) => `<div class="shot"><button type="button" aria-label="Enlarge: ${l.name}, ${p}"><img src="r2/${l.id}/pose_${i}.jpg" alt="${l.name} in the kitchen: ${p}" loading="lazy"></button>${p}</div>`).join("")}</div>
+    </div>
+  </article>`;
+const fill = (id, list, letter) => { document.getElementById(id).innerHTML = list.map((l, i) => band({ ...l, n: list.length > 1 ? i + 1 : "" }, letter)).join(""); };
+fill("shapes", SHAPES, "A");
+fill("styles", STYLES, "B");
+fill("smoke", SMOKE, "C");
+
+const OLD = [[1, "Shadow"], [2, "Guest"], [3, "Missing door"], [4, "Knocker"], [5, "Reach"], [6, "Shadow guest"]];
+document.getElementById("lineup").innerHTML = `<figure class="ref"><figcaption>Empty frame</figcaption></figure>` +
+  OLD.map(([id, name]) => `<figure><img class="px" src="s/${id}/A.png" alt="${name}" style="width:calc(64 * var(--u));height:calc(76 * var(--u))"><figcaption>${name}</figcaption></figure>`).join("");
+
+document.querySelectorAll(".shot button").forEach(b => b.addEventListener("click", () => b.parentElement.classList.toggle("big")));
+
+document.querySelectorAll(".stage").forEach(stage => {
+  const actor = stage.querySelector(".actor"), what = stage.querySelector(".what");
+  const btn = stage.parentElement.querySelector(".play");
+  const names = Object.fromEntries(FRAMES);
+  let i = 0, timer = 0;
+  const show = k => {
+    const [f, x, , glow] = PLAY[k];
+    actor.querySelectorAll("img").forEach(im => { im.hidden = im.dataset.f !== f; });
+    actor.style.transform = `translateX(calc(${x} * var(--u)))`;
+    stage.classList.toggle("glow", !!glow);
+    what.textContent = names[f];
+  };
+  const tick = () => { show(i); timer = setTimeout(tick, PLAY[i][2]); i = (i + 1) % PLAY.length; };
+  const set = on => {
+    clearTimeout(timer);
+    btn.setAttribute("aria-pressed", on);
+    btn.textContent = on ? "Pause" : "Play";
+    if (on) tick();
+  };
+  btn.addEventListener("click", () => set(btn.getAttribute("aria-pressed") !== "true"));
+  show(2);
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) set(true);
+});
+
+// picks
+const QS = [
+  ["shape", "pick-shape", "shape", ["Revenant's shadow", "Arch-vile's shadow", "Zombie's shadow", "Imp's shadow", "Smoke", "None of these"]],
+  ["style", "pick-style", "drawn", ["Solid", "Seen through", "Shimmering"]],
+  ["eyes", "pick-eyes", "brass eyes", ["Yes", "No"]],
+];
+let picks = {};
+try { picks = JSON.parse(localStorage.getItem("lodger-picks-2") || "{}"); } catch (e) {}
+const line = document.getElementById("picksline");
+function render() {
+  QS.forEach(([key, id, , opts]) => {
+    document.getElementById(id).innerHTML = opts.map((o, n) =>
+      `<button type="button" class="chip" id="${id}-${n}" data-k="${key}" data-v="${n}" aria-pressed="${picks[key] === n}">${o}</button>`).join("");
+  });
+  const said = QS.filter(([k]) => picks[k] !== undefined).map(([k, , word, opts]) => `${word}: ${opts[picks[k]]}`);
+  line.textContent = said.length ? "Lodger look, round 2. " + said.join("; ") : "Nothing picked yet.";
+}
+document.getElementById("summary").addEventListener("click", e => {
+  const b = e.target.closest("button[data-k]");
+  if (!b) return;
+  const v = +b.dataset.v;
+  if (picks[b.dataset.k] === v) delete picks[b.dataset.k]; else picks[b.dataset.k] = v;
+  try { localStorage.setItem("lodger-picks-2", JSON.stringify(picks)); } catch (e) {}
+  render();
+});
+document.getElementById("copy").addEventListener("click", async () => {
+  const note = document.getElementById("copied");
+  try { await navigator.clipboard.writeText(line.textContent); note.textContent = "Copied"; }
+  catch (e) { getSelection().selectAllChildren(line); note.textContent = "Selected: press Ctrl+C"; }
+});
+render();
+</script>

@@ -797,7 +797,7 @@ nailer is dead; then the nails fall out of every door it nailed. Nailed
 doors show two planks (`AJN1`..`AJN5`). With nothing left to nail it goes
 for the player with the hammer (8-20 damage). `MODE=6` tests it.
 
-Lodger (2026-11-14): `AjarLodger` (editor number 20005, sprites `AJLG`, 60
+Lodger (2026-11-14): `AjarLodger` (editor number 20005, 60
 health), the user's "monster for empty frames". It lives inside the empty
 frames, where it cannot be seen or hurt. It picks an
 empty frame the player can see (96 to 1024 units away); the frame glows
@@ -992,3 +992,40 @@ Next for the look, in order:
    at the light strips.
 4. Doom's props (torches, candelabra, barrels) against the new surfaces.
 5. Update the board's lower "before" section, then MAP02-MAP04.
+
+## Look: the lodger (started 2026-11-15)
+
+Board: https://claude.ai/artifact/3Z9UPJgafVasVmHJZfAEXp (source
+`design/lodger-board.html`, images in `build/board_lodger/`). Six candidate
+looks in `tools/gfx_lodger.py`, each with seven frames (A/B walk, C arm up,
+D strike, E dead, F/G coming out of a frame): 1 Shadow, 2 Guest, 3 Missing
+door, 4 Knocker, 5 Reach, 6 Shadow guest (my suggestion). `AJAR_LODGER=1..6
+./build.sh` puts one into the game; unset is the slab as first built.
+`tools/lodger_shots.sh` rebuilds the board's images: sprites, and five posed
+photographs per look in MAP02's kitchen (`MAP=MAP02 MODE=3`,
+`LodgerPortrait` in `ajar.zs`). None of the six was liked.
+
+Second round (same day; the user found all six of the first "pretty bad"):
+the board now shows the lodger as the shadow of a Doom monster (its sprites
+drawn with the stencil style in near-black: revenant, arch-vile, zombie,
+imp; solid or see-through) and a soft smoke figure (`gfx_lodger.py` look 7,
+four times as fine, shown at quarter scale). `tools/lodger_shots2.sh`
+photographs them: `ajar_lodger_look 1..7` picks the look in `MAP=MAP02
+MODE=3`, passed through `EXTRA` in `tools/smoke.sh`. The headless renderer
+shows Doom's fuzz style as plain translucent black, so the shimmer is not
+photographed.
+
+**Chosen (user, 2026-11-15): the revenant's shadow, seen through, with brass
+eyes.** Built: `AjarLodger` draws Doom's `SKEL` sprites with the
+translucent stencil style (near-black, alpha 0.6; set in `PostBeginPlay`
+because the style has no name as a property). `AjarLodgerEyes` (`AJLE`, two
+brass hinge plates, bright) is carried at its head by the lodger's `Tick`
+and shown only while it faces the camera within 50 degrees. While it knocks
+the eyes show in the mouth of the frame; it fades in as it steps out and
+fades into the frame over a few tics (`Enter` state) instead of vanishing.
+`MAP=TEST MODE=7` passes. `EXTRA="+set ajar_lodger_look 0" MAP=MAP02 MODE=3
+./tools/smoke.sh DIR` photographs it posed (9: turned aside). Not played by
+hand yet. Open: the eyes' height (`EYE_Z` 70) is one number for every
+frame, so they drift a little off the head in the punch; the looks that
+lost (`gfx_lodger.py`, both `lodger_shots` scripts, looks 1..8 in
+`LodgerPortrait`) can be deleted.
