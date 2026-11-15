@@ -69,8 +69,34 @@ DOOR_COLOURS = {1: (200, 60, 50), 2: (60, 110, 220), 3: (60, 170, 80),
                 4: (215, 170, 40), 5: (150, 80, 200), 6: (240, 120, 180)}
 
 
+STRAY = 7           # the Stray door: every colour at once, and no far side of its own
+STRAY_GREY = (120, 120, 130)
+
+
+def stray_door():
+    """The Stray door's leaf: slanting bands of all six colours and a question mark."""
+    im = Img(64, 96)
+    for y in range(96):
+        for x in range(64):
+            im.set(x, y, DOOR_COLOURS[1 + ((x + y) // 12) % 6])
+    im.frame(0, 0, 64, 96, (40, 40, 48), 3)
+    for y1, y2 in ((8, 44), (52, 88)):
+        im.frame(9, y1, 55, y2, (40, 40, 48), 2)
+    im.noise(6, 7)
+    im.disc(53, 49, 3, (235, 215, 140))
+    white = (245, 245, 235)
+    im.rect(24, 15, 40, 19, white)                # ?
+    im.rect(36, 19, 40, 27, white)
+    im.rect(30, 25, 40, 29, white)
+    im.rect(30, 29, 34, 33, white)
+    im.rect(30, 35, 34, 39, white)
+    return im
+
+
 def door(colour):
     """64x96 door leaf: two panels, a knob and a glyph that names the far side."""
+    if colour == STRAY:
+        return stray_door()
     base = DOOR_COLOURS[colour]
     im = Img(64, 96, base)
     im.frame(0, 0, 64, 96, shade(base, 0.45), 3)
@@ -1051,7 +1077,41 @@ def make_all():
             lg.rect(8, 22, 12, 46, body)
         out[f"sprites/AJLG{fr_name}0.png"] = lg.png(grab=(20, 64))
 
-    for c in DOOR_COLOURS:
+    # MAP05, the terminus: a carriage side (176 high: rail to roof), track
+    # ballast with two rails, and the signal box's lever.
+    GREENC, CREAM = (38, 78, 58), (226, 214, 180)
+    tr = Img(64, 176, GREENC)
+    tr.noise(5, 90)
+    tr.rect(0, 0, 64, 6, (60, 62, 66))                          # roof edge
+    tr.rect(0, 22, 64, 78, CREAM)
+    for x in (6, 36):
+        tr.rect(x, 28, x + 22, 70, (30, 40, 56))                # windows
+        tr.frame(x, 28, x + 22, 70, (120, 96, 50), 2)
+    tr.rect(0, 120, 64, 124, (206, 180, 96))
+    tr.rect(0, 140, 64, 176, (26, 26, 28))                      # underframe
+    for cx in (16, 48):
+        tr.disc(cx, 160, 13, (58, 58, 62))
+        tr.disc(cx, 160, 4, (120, 120, 126))
+    out["textures/AJTRN.png"] = tr.png()
+    bl = Img(64, 64, (86, 78, 70))
+    bl.noise(14, 91)
+    for x in range(0, 64, 16):
+        bl.rect(x + 2, 12, x + 12, 52, (70, 52, 36))            # sleepers
+    for y in (18, 44):
+        bl.rect(0, y, 64, y + 3, (150, 150, 158))
+        bl.rect(0, y + 3, 64, y + 4, (60, 60, 66))
+    out["flats/AJRAILS.png"] = bl.png()
+    lv = Img(64, 128, (58, 62, 60))
+    lv.noise(4, 92)
+    lv.frame(0, 0, 64, 128, (30, 32, 30), 3)
+    lv.rect(10, 86, 54, 96, (24, 24, 24))
+    for i, c in enumerate(((200, 60, 50), (215, 170, 40), (60, 170, 80))):
+        x = 16 + i * 14
+        lv.rect(x, 40, x + 4, 90, (170, 170, 176))
+        lv.rect(x - 2, 32, x + 6, 44, c)
+    out["textures/AJLEVR.png"] = lv.png()
+
+    for c in list(DOOR_COLOURS) + [STRAY]:
         d = door(c)
         out[f"textures/AJDR{c}.png"] = d.png()
         out[f"sprites/AJD{c}A0.png"] = d.png(grab=(32, 96))
@@ -1065,10 +1125,14 @@ def make_all():
             for x in (5, 58):
                 d.disc(x, y0 + x // 6 + 3, 1, (220, 220, 225))
         out[f"sprites/AJN{c}A0.png"] = d.png(grab=(32, 96))
-        t = Img(64, 64, shade(DOOR_COLOURS[c], 0.7))
+        rgb = DOOR_COLOURS.get(c, STRAY_GREY)
+        t = Img(64, 64, shade(rgb, 0.7))
         t.noise(5, 20 + c)
         for y in range(0, 64, 16):
-            t.rect(0, y, 64, y + 1, shade(DOOR_COLOURS[c], 0.4))
+            t.rect(0, y, 64, y + 1, shade(rgb, 0.4))
+        if c == STRAY:                             # a band of every colour round a place it may open onto
+            for i in range(64):
+                t.rect(i, 6, i + 1, 10, DOOR_COLOURS[1 + (i // 11) % 6])
         out[f"textures/AJTR{c}.png"] = t.png()
         out[f"flats/AJTF{c}.png"] = t.png()
     return out

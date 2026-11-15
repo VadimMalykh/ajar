@@ -7,6 +7,11 @@
 //    args[1] = colour (1..6), args[2] = id of the frame it starts in (0 = leaning),
 //    args[3] = 1 for a fixed doorway: no leaf, no colour, and it stays in that
 //    frame for the whole level (ajarmap.doorway).
+//    Colour 7 is a Stray door (ajarmap.stray): it has no far side of its own.
+//    Hung, it opens onto one of the level's stray places (lines 270..289),
+//    stays open for STRAY_TICS and is then gone.
+//  * AjarFrame args[1]: the far-side line id of the door that turns this
+//    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
 
 class AjarFrame : Actor
 {
@@ -35,6 +40,7 @@ class AjarDoor : Actor
 	AjarFrame frame;   // where it hangs, or null
 	bool carried;
 	Actor nailer;      // who nailed it to its frame, or null (itself: a fixed doorway)
+	int strayTics;     // a Stray door that is open: how long it has left
 
 	Default
 	{
@@ -62,6 +68,9 @@ class AjarDoor : Actor
 	Colour6:
 		AJD6 A -1;
 		Stop;
+	Colour7:
+		AJD7 A -1;
+		Stop;
 	Nailed:            // only so that these sprites are loaded
 		AJN1 A -1;
 		AJN2 A -1;
@@ -69,20 +78,25 @@ class AjarDoor : Actor
 		AJN4 A -1;
 		AJN5 A -1;
 		AJN6 A -1;
+		AJN7 A -1;
 		Stop;
 	}
 
-	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0 };
-	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK" };
+	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF };
+	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK", "STRAY" };
+	const STRAY = 7;
 
-	int Colour() { return clamp(args[1], 1, 6); }
+	int Colour() { return clamp(args[1], 1, 7); }
+	bool IsStray() { return args[1] == STRAY; }
+	// Nobody can take it out of its frame: nailed, a fixed doorway, or a Stray door once open.
+	bool Stuck() { return nailer || (IsStray() && frame); }
 	string BackTex() { return String.Format("AJDR%d", Colour()); }
 	string Label() { return names[Colour()]; }
 
 	void Show()
 	{
-		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6' };
-		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5', 'AJN6' };
+		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7' };
+		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5', 'AJN6', 'AJN7' };
 		if (nailer == self) { Hide(); return; }      // a fixed doorway has no leaf
 		int c = Colour();
 		sprite = GetSpriteIndex(nailer ? nailedSpr[c] : spr[c]);
@@ -111,6 +125,10 @@ class AjarHandler : EventHandler
 {
 	const FRAME_TEX = "AJFRAME";
 	const SQUEEZE_ID = 500;       // line id of every squeeze (ajarmap.squeeze)
+	const STRAY_ID = 270;         // 270..289: the places a Stray door may open onto (ajarmap.stray_place)
+	const STRAY_PLACES = 20;
+	const STRAY_TICS = 175;       // how long a Stray door stays open
+	const HOME_MOUTH = 590;       // both mouths of a way out the player builds (ajarmap.way_home)
 	AjarDoor carried;
 	int testTic;
 
@@ -150,8 +168,137 @@ class AjarHandler : EventHandler
 	}
 
 	// --- door state changes ----------------------------------------------
+	// --- the Stray door ----------------------------------------------------
+	// Which place a Stray door opens onto is drawn from the level's pool,
+	// without repeats until every place has come up (so no streaks, and a
+	// secret place does come up in the end). 0: the level has none free.
+	Array<int> strayLeft;
+	int DrawStray()
+	{
+		Array<int> free;
+		for (int pass = 0; pass < 2 && !free.Size(); pass++)
+		{
+			if (pass || !strayLeft.Size())
+			{
+				strayLeft.Clear();
+				for (int id = STRAY_ID; id < STRAY_ID + STRAY_PLACES; id++) if (FindLine(id)) strayLeft.Push(id);
+			}
+			// not a place another Stray door is open onto right now
+			for (int i = 0; i < strayLeft.Size(); i++)
+			{
+				bool used = false;
+				let di = ThinkerIterator.Create("AjarDoor");
+				AjarDoor o;
+				while (o = AjarDoor(di.Next())) if (o.frame && o.args[0] == strayLeft[i]) used = true;
+				if (!used) free.Push(strayLeft[i]);
+			}
+		}
+		if (!free.Size()) return 0;
+		// (the smoke tests take the pool in order)
+		int id = free[CVar.GetCVar("ajar_autotest").GetInt() ? 0 : random[AjarStray](0, free.Size() - 1)];
+		strayLeft.Delete(strayLeft.Find(id));
+		return id;
+	}
+
+	// Is there a place left for one more Stray door to open onto?
+	bool StrayRoom()
+	{
+		int places = 0;
+		for (int id = STRAY_ID; id < STRAY_ID + STRAY_PLACES; id++) if (FindLine(id)) places++;
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next())) if (d.IsStray() && d.frame) places--;
+		return places > 0;
+	}
+
+	// The least time any open Stray door has left, or -1; `held`: a nailer
+	// has nailed it open, and it stays until the nails fall out.
+	int, bool StrayTime()
+	{
+		int best = -1;
+		bool held = false;
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next()))
+		{
+			if (!d.IsStray() || !d.frame) continue;
+			if (best < 0 || d.strayTics < best) { best = d.strayTics; held = d.nailer != null; }
+		}
+		return best, held;
+	}
+
+	// Whatever stands in an opening when it shuts is cut in two, the player
+	// included. (A thing goes through when its centre crosses the line, so
+	// nothing is ever half-way: this is whoever overlaps the line.)
+	void Telefrag(Line l)
+	{
+		if (!l) return;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bShootable || a.health <= 0) continue;
+			Vector2 w = a.pos.xy - l.v1.p;
+			double u = clamp((w dot l.delta) / (l.delta dot l.delta), 0, 1);
+			if ((w - l.delta * u).Length() >= a.radius) continue;
+			double fz = l.frontsector.floorplane.ZAtPoint(a.pos.xy);
+			if (a.pos.z > fz + 96 || a.pos.z + a.height < fz) continue;
+			a.DamageMobj(null, null, 1000000, 'Telefrag');
+		}
+	}
+
+	void StrayTick()
+	{
+		Array<AjarDoor> over;
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next()))
+		{
+			if (!d.IsStray() || !d.frame) continue;
+			if (d.nailer) continue;                    // nailed open
+			if (d.strayTics > 0 && d.strayTics % 35 == 0) d.A_StartSound("misc/chat2", CHAN_AUTO);
+			if (--d.strayTics <= 0) over.Push(d);
+		}
+		for (int i = 0; i < over.Size(); i++)
+		{
+			d = over[i];
+			AjarFrame f = d.frame;
+			Telefrag(FindLine(f.args[0]));
+			Telefrag(FindLine(d.args[0]));
+			Link(f.args[0], 0, FRAME_TEX);
+			Link(d.args[0], 0, d.BackTex());
+			f.door = null;
+			d.A_StartSound("doors/dr1_clos", CHAN_AUTO);
+			Say("The STRAY door is gone.");
+			d.Destroy();
+		}
+	}
+
+	// --- a way out the player builds ---------------------------------------
+	// The door whose far side is in the night room, hung in the frame that
+	// faces it: the room opens onto itself. The door stays there for good,
+	// as the doorway of every earlier level's way out, and walking into
+	// either end ends the level.
+	bool wayOutBuilt;
+	void ComeHome(AjarDoor d)
+	{
+		d.nailer = d;
+		wayOutBuilt = true;
+		let it = level.CreateLineIdIterator(HOME_MOUTH);
+		int i;
+		while ((i = it.Next()) >= 0)
+		{
+			Line l = level.lines[i];
+			l.special = 243;                           // Exit_Normal
+			l.args[0] = 0;
+			l.activation = SPAC_Cross;
+		}
+	}
+
 	void Hang(AjarDoor d, AjarFrame f)
 	{
+		if (d.IsStray()) { d.args[0] = DrawStray(); d.strayTics = STRAY_TICS; }
+		else if (f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
 		Link(f.args[0], d.args[0], FRAME_TEX);
 		Link(d.args[0], f.args[0], d.BackTex());
 		d.frame = f;
@@ -251,11 +398,33 @@ class AjarHandler : EventHandler
 		if (n) Say("The nails fall out.");
 	}
 
+	// What hanging the carried door in f has to say.
+	void SayHung(AjarDoor d, AjarDoor old)
+	{
+		if (d.IsStray())
+			Say((old ? "You swap the " .. old.Label() .. " door for the STRAY one.\n" : "") ..
+				"The STRAY door opens onto somewhere. It will not stay.");
+		else if (d.nailer == d)
+			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is the way out.");
+		else if (old) Say("You swap the " .. old.Label() .. " door for the " .. d.Label() .. " one.");
+		else Say("The " .. d.Label() .. " door opens where it always opens.");
+	}
+
 	void UseFrame(AjarFrame f, Actor user)
 	{
+		if (f.door && f.door.IsStray() && !f.door.nailer)
+		{
+			Say("The STRAY door is already on its way.\nNobody takes it down now.");
+			return;
+		}
+		if (carried && carried.IsStray() && !StrayRoom())
+		{
+			Say("The STRAY door has nowhere to open onto here.");
+			return;
+		}
 		if (f.door && f.door.nailer)
 		{
-			if (f.door.nailer == f.door) Say("This doorway is part of the building.\nIt is not yours to take.");
+			if (f.door.nailer == f.door) Say(wayOutBuilt && f.args[1] ? "This is the way out now." : "This doorway is part of the building.\nIt is not yours to take.");
 			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
 			return;
 		}
@@ -269,7 +438,7 @@ class AjarHandler : EventHandler
 		{
 			Hang(carried, f);
 			user.A_StartSound("doors/dr1_open", CHAN_AUTO);
-			Say("The " .. carried.Label() .. " door opens where it always opens.");
+			SayHung(carried, null);
 			carried = null;
 		}
 		else if (f.door && carried)
@@ -277,7 +446,7 @@ class AjarHandler : EventHandler
 			AjarDoor old = Unhang(f);
 			Hang(carried, f);
 			user.A_StartSound("doors/dr1_open", CHAN_AUTO);
-			Say("You swap the " .. old.Label() .. " door for the " .. carried.Label() .. " one.");
+			SayHung(carried, old);
 			carried = old;
 		}
 		else
@@ -297,7 +466,8 @@ class AjarHandler : EventHandler
 		d.Hide();
 		carried = d;
 		user.A_StartSound("doors/dr1_clos", CHAN_AUTO);
-		Say("You pick up the " .. d.Label() .. " door.");
+		if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for five seconds.");
+		else Say("You pick up the " .. d.Label() .. " door.");
 	}
 
 	// --- events ----------------------------------------------------------
@@ -332,6 +502,7 @@ class AjarHandler : EventHandler
 		let fi = ThinkerIterator.Create("AjarFrame");
 		AjarFrame f;
 		while (f = AjarFrame(fi.Next())) Link(f.args[0], 0, FRAME_TEX);
+		for (int id = STRAY_ID; id < STRAY_ID + STRAY_PLACES; id++) Link(id, 0, "AJDR7");
 
 		let di = ThinkerIterator.Create("AjarDoor");
 		AjarDoor d;
@@ -524,6 +695,7 @@ class AjarHandler : EventHandler
 	override void WorldTick()
 	{
 		SelfShots();
+		StrayTick();
 		let mo = players[consoleplayer].mo;
 		if (mo) Squeeze(mo);
 		if (mo && mo.health > 0) Followers(mo);
@@ -536,6 +708,8 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
+		else if (level.mapname ~== "MAP05" && mode == 3) LostPropertyStrays(mo, t);
+		else if (level.mapname ~== "MAP05") LostPropertyScript(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
@@ -789,6 +963,133 @@ class AjarHandler : EventHandler
 		Forward(mo, t, 975, 10);
 	}
 
+	// MAP05: a solution of the same length as the one tools/build.py prints.
+	// No Stray door is used; the nailer is gone with the other monsters.
+	void LostPropertyScript(Actor mo, int t)
+	{
+		string have = carried ? carried.Label() : "-";
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(304) && !RoomOpen(305) && !RoomOpen(307));
+		// the waiting room's RED into the vestibule frame: the bridge
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 384, 80, 0, 270); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("onBridge", mo.pos.z == 160 && mo.pos.x > 2048 && mo.pos.x < 2240);
+		// the signal box: key 1, the lever, GREEN
+		if (t == 85) Pose(mo, 2400, 1120, 160, 0);
+		Forward(mo, t, 90, 12);
+		if (t == 110) Check("haveKey1", Has(mo, 1));
+		if (t == 112) { FindLine(306).Activate(mo, 0, SPAC_Use); Take(mo, 3); }
+		if (t == 150) Check("leverOpensLampRoom", RoomOpen(307));
+		// off the bridge into the yard with it; walking west draws the gate's bolt
+		if (t == 152) Pose(mo, 2100, 1920, 160, 180);
+		Forward(mo, t, 155, 15);
+		if (t == 205) Check("inYardWithGreen", mo.pos.z == 0 && mo.pos.x < 2048 && mo.pos.y > 1680 && have == "GREEN");
+		if (t == 210) Pose(mo, 1100, 1760, 0, 180);
+		Forward(mo, t, 215, 20);
+		if (t == 260) Check("gateUnbolted", RoomOpen(305));
+		if (t == 262) Pose(mo, 256, 1720, 0, 270);
+		Forward(mo, t, 265, 25);
+		if (t == 295) Check("throughTheGate", mo.pos.y < 1600 && mo.pos.x < 512);
+		// GREEN into platform 1's frame: the gallery, key 2, and over the rail
+		if (t == 300) { FindFrame(102).Activate(mo); Pose(mo, 896, 330, 0, 270); }
+		Forward(mo, t, 305, 25);
+		if (t == 340) Check("onGallery", mo.pos.z == 192 && mo.pos.x < 0);
+		if (t == 345) Pose(mo, -128, 380, 192, 270);
+		Forward(mo, t, 350, 12);
+		if (t == 370) Check("haveKey2", Has(mo, 2));
+		if (t == 375) Pose(mo, -60, 464, 192, 0);
+		Forward(mo, t, 380, 15);
+		if (t == 430) Check("inConcourse", mo.pos.z == 0 && mo.pos.x > 0);
+		// keys 1 and 2 open the lost property office: key 3
+		if (t == 435) { Pose(mo, 1088, 330, 0, 270); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (t == 475) Check("lostPropertyOpens", RoomOpen(301) && !RoomOpen(302));
+		if (t == 480) Pose(mo, 1060, 200, 0, 180);
+		Forward(mo, t, 485, 10);
+		if (t == 505) Check("haveKey3", Has(mo, 3));
+		// through the turnstile, with empty hands
+		if (t == 510) Pose(mo, 440, 1152, 0, 0);
+		Forward(mo, t, 515, 20);
+		if (t == 545) Check("throughTheTurnstile", mo.pos.x > 528 && mo.pos.y > 1024 && mo.pos.y < 1280);
+		// BLUE into platform 2's frame: the parcels office, key 4, and out by its own door
+		if (t == 550) { Take(mo, 2); FindFrame(104).Activate(mo); Pose(mo, 1120, 1200, 0, 90); }
+		Forward(mo, t, 555, 25);
+		if (t == 590) Check("inParcels", mo.pos.x > 752 && mo.pos.x < 1056 && mo.pos.y > 1296);
+		if (t == 595) Pose(mo, 900, 1470, 0, 180);
+		Forward(mo, t, 600, 15);
+		if (t == 620) Check("haveKey4", Has(mo, 4));
+		if (t == 625) Pose(mo, 912, 1450, 0, 270);
+		Forward(mo, t, 630, 10);
+		if (t == 675) Check("parcelsDoorUnbolted", RoomOpen(303));
+		if (t == 680) Pose(mo, 912, 1340, 0, 270);
+		Forward(mo, t, 685, 20);
+		if (t == 710) Check("onPlatform2", mo.pos.z == 0 && mo.pos.y < 1280 && mo.pos.y > 1024);
+		// keys 3 and 4 open the station master's office: VIOLET
+		if (t == 715) { Pose(mo, 448, 2060, 0, 90); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 755) Check("masterOpens", RoomOpen(302));
+		// which does not go through the turnstile
+		if (t == 760) { Take(mo, 5); Pose(mo, 440, 1152, 0, 0); }
+		Forward(mo, t, 765, 20);
+		if (t == 795) Check("turnstileRefusesADoor", mo.pos.x < 512 && have == "VIOLET");
+		// so: over the bridge, along the train's roof, down onto platform 2
+		if (t == 800) Pose(mo, 384, 80, 0, 270);
+		Forward(mo, t, 805, 25);
+		if (t == 835) Check("onBridgeWithViolet", mo.pos.z == 160 && have == "VIOLET");
+		if (t == 840) Pose(mo, 2100, 912, 160, 180);
+		Forward(mo, t, 845, 15);
+		if (t == 870) Check("onTheTrain", mo.pos.z == 112 && mo.pos.x < 2048);
+		if (t == 875) Pose(mo, 1500, 960, 112, 90);
+		Forward(mo, t, 880, 15);
+		if (t == 915) Check("onPlatform2WithViolet", mo.pos.z == 0 && mo.pos.y > 1024 && have == "VIOLET");
+		// VIOLET for BLUE in the frame here: the night room, whose bolt you draw
+		if (t == 920) { FindFrame(104).Activate(mo); Pose(mo, 1120, 1200, 0, 90); }
+		Forward(mo, t, 925, 25);
+		if (t == 960) Check("inNightRoom", mo.pos.x > 1280 && mo.pos.x < 1600 && mo.pos.y > 1296 && mo.pos.y < 1552 && have == "BLUE");
+		if (t == 965) Pose(mo, 1440, 1420, 0, 270);
+		Forward(mo, t, 970, 6);
+		if (t == 1015) Check("nightDoorUnbolted", RoomOpen(304) && !wayOutBuilt);
+		if (t == 1020) Pose(mo, 1440, 1360, 0, 270);
+		Forward(mo, t, 1025, 20);
+		if (t == 1050) Check("outOntoPlatform2", mo.pos.y < 1280 && mo.pos.y > 1024);
+		// BLUE back for VIOLET, in by the door, and VIOLET into the night room's frame
+		if (t == 1055) { FindFrame(104).Activate(mo); Pose(mo, 1440, 1200, 0, 90); }
+		Forward(mo, t, 1060, 25);
+		if (t == 1090) Check("inNightRoomWithViolet", mo.pos.y > 1296 && mo.pos.x > 1280 && mo.pos.x < 1600 && have == "VIOLET");
+		if (t == 1095) { FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
+		// the way out is walked into
+		if (t == 1100) Pose(mo, 1400, 1424, 0, 0);
+		Forward(mo, t, 1130, 30);
+	}
+
+	// MAP05 mode 3: the level's four Stray doors, one after another, each
+	// hung in the vestibule frame and walked through. (In a test the pool
+	// is taken in order: the night room, the gallery, the lamp room, the
+	// parcels office.) Each must be gone again afterwards.
+	void LostPropertyStrays(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		if (t == 1)                                 // nobody standing in the openings
+		{
+			let mi = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(mi.Next())) if (a.bIsMonster) a.Destroy();
+		}
+		int c = (t - 35) / 240, u = (t - 35) % 240;
+		if (t < 35 || c > 3) return;
+		AjarFrame f = FindFrame(101);
+		if (u == 0) { Take(mo, 7); f.Activate(mo); Pose(mo, 384, 80, 0, 270); }
+		Forward(mo, u, 5, 25);
+		if (u == 40)
+		{
+			bool there = c == 0 ? mo.pos.x > 1280 && mo.pos.x < 1600 && mo.pos.y > 1296 && mo.pos.y < 1552
+				: c == 1 ? mo.pos.z == 192 && mo.pos.x < 0
+				: c == 2 ? mo.pos.x > 1696 && mo.pos.x < 1920 && mo.pos.y < 240
+				: mo.pos.x > 752 && mo.pos.x < 1056 && mo.pos.y > 1296;
+			Console.Printf("AJARTEST stray %d: at (%d,%d,%d)", c, mo.pos.x, mo.pos.y, mo.pos.z);
+			Check(String.Format("stray%dOpensOntoItsPlace", c), there);
+		}
+		if (u == 200) Check(String.Format("stray%dGone", c), !f.door && !carried);
+	}
+
 	// MAP04 mode 3: sending something somewhere worse. VIOLET hangs in the
 	// frame by the office; the player stands in the kennel, in view through
 	// it. A baron in the yard follows them in, the player leaves by the
@@ -861,6 +1162,71 @@ class AjarHandler : EventHandler
 		for (int k = 0; k < houses.Size(); k++) tourViews.Push(houses[k]);
 	}
 
+	// MAP05's tour, in two halves (see PartyWallViews).
+	void LostPropertyViews1()
+	{
+		static const double v[] = {
+			256, 64, 0, 90, 0,          // from the start
+			120, 64, 0, 180, 0,         // a Stray door by the start
+			384, 100, 0, 270, 0,        // the vestibule's frame
+			256, 400, 0, 90, -10,       // the concourse
+			400, 800, 0, 180, -20,      // the gallery
+			300, 1432, 0, 0, 0,         // the kiosk behind its bars
+			256, 1450, 0, 90, 0,        // the yard gate, bolted
+			400, 1152, 0, 0, 0,         // the turnstile, BLUE beyond it
+			480, 380, 0, 0, 0,          // platform 1
+			500, 700, 0, 0, -5,         // the tracks, the train
+			688, 330, 0, 270, 0,        // the waiting room's door
+			690, 200, 0, 270, 0,        // the waiting room: RED
+			896, 360, 0, 270, 0,        // platform 1's frame
+			1088, 340, 0, 270, 0,       // the lost property office: two locks
+			1020, 200, 0, 0, 0,         // in it: Stray doors
+			1300, 80, 0, 0, 0,          // the hole to the lockers
+			1450, 128, 0, 0, 0,         // the lockers: PINK
+			4040, 192, 0, 0, 0,         // the store
+			1808, 330, 0, 270, 0,       // the lamp room's door
+			1808, 200, 0, 270, 0,       // the lamp room
+			1950, 360, 0, 45, -20,      // the bridge from platform 1
+			1952, 420, 0, 90, 20,       // the steps down to the tracks
+			2100, 576, 160, 0, 0,       // on the bridge: RED's far side
+			2144, 300, 160, 90, 0,      // along the bridge
+			2100, 400, 160, 180, 15   // over platform 1
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void LostPropertyViews2()
+	{
+		static const double v[] = {
+			2100, 912, 160, 180, 10,    // the train's roof
+			2120, 1024, 160, 0, 0,      // the signal box's door
+			2300, 1024, 160, 0, 0,      // the signal box: the lever
+			2300, 1024, 160, 330, 0,    // the signal box: GREEN
+			1900, 912, 112, 180, 0,     // on the roof
+			1900, 1150, 0, 180, 0,      // platform 2
+			1120, 1100, 0, 90, 0,       // its frame
+			1440, 1100, 0, 90, 0,       // the night room's door, bolted
+			912, 1100, 0, 90, 0,        // the parcels office's door, bolted
+			900, 1340, 0, 90, 0,        // the parcels office
+			1320, 1424, 0, 0, 0,        // the night room: the frame
+			1560, 1424, 0, 180, 0,      // the night room: VIOLET's far side
+			-128, 400, 192, 90, 0,      // the gallery
+			-40, 800, 192, 0, 20,       // from it, the concourse
+			-128, 1250, 192, 90, 0,     // the nook
+			256, 1760, 0, 20, 0,        // the yard
+			600, 1936, 0, 0, 0,         // the engine shed
+			1100, 1936, 0, 0, 0,        // in the shed
+			1376, 2040, 0, 90, 0,       // YELLOW in the shed's frame
+			1900, 1900, 0, 90, -20,     // the loft from below
+			1900, 2300, 160, 270, 15,   // from the loft
+			1960, 2320, 160, 180, 0,    // the loft: YELLOW's far side
+			448, 2060, 0, 90, 0,        // the station master's door: two locks
+			448, 2260, 0, 90, 0,        // the station master's office
+			592, 1340, 0, 90, 0
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
 	// Mode 2 in MAP02 and MAP03: a tour, as BorrowedRoomsTour. Each view is
 	// x, y, z, angle, pitch.
 	Array<double> tourViews;
@@ -925,6 +1291,7 @@ class AjarHandler : EventHandler
 				5030, 128, 0, 0, 0          // the way out
 			};
 			if (level.mapname ~== "MAP04") PartyWallViews();
+			else if (level.mapname ~== "MAP05") { LostPropertyViews1(); LostPropertyViews2(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}
@@ -1479,8 +1846,49 @@ class AjarHandler : EventHandler
 		}
 	}
 
+	// MODE=11: the Stray door. Hung in the hall it opens onto the first place
+	// of the pool (the green room); the player goes through; a probe is left
+	// standing in the opening; when the time is up the door is gone, the
+	// frame is empty, the place is a wall again and the probe is dead.
+	void StrayScript(Actor mo, int t)
+	{
+		AjarFrame f = FindFrame(102);
+		if (t == 35) { Take(mo, 7); f.Activate(mo); }
+		if (t == 36) Check("strayOpensOntoAPlace", f.door && f.door.IsStray() && f.door.args[0] == STRAY_ID && StrayTime() > 0);
+		if (t == 37) { f.Activate(mo); Check("openStrayCannotBeTaken", !carried && f.door); }
+		if (t == 40) Pose(mo, 448, 400, 0, 90);
+		Forward(mo, t, 45, 25);
+		if (t == 80) Check("throughStray", mo.pos.x > 2000 && mo.pos.x < 2320 && mo.pos.y > 2000 && mo.pos.y < 2260);
+		if (t == 100) probe = Actor.Spawn("AjarProbe", (448, 520, 0));
+		if (t == 205) Check("stillOpenBeforeTime", f.door != null && probe && probe.health > 0);
+		if (t == 215)
+		{
+			Check("strayGone", !f.door && !DoorOf(7));
+			Check("placeShutAgain", (FindLine(STRAY_ID).flags & Line.ML_BLOCKING) && (FindLine(102).flags & Line.ML_BLOCKING));
+			Check("telefragged", !probe || probe.health <= 0);
+		}
+	}
+
+	// MODE=12: building the way out. With YELLOW in hand in the night room,
+	// walking into the empty frame does nothing; hung there, YELLOW opens
+	// onto the room it hangs in, cannot be taken again, and walking into it
+	// ends the level.
+	void HomeScript(Actor mo, int t)
+	{
+		AjarFrame f = FindFrame(190);
+		if (t == 35) { Take(mo, 4); Pose(mo, 3200, 2128, 0, 0); }
+		Forward(mo, t, 40, 25);
+		if (t == 70) Check("noWayOutYet", mo.pos.x > 3300 && !wayOutBuilt && carried);
+		if (t == 75) { f.Activate(mo); Check("wayOutBuilt", wayOutBuilt && f.door && f.door.nailer == f.door && !carried); }
+		if (t == 76) { f.Activate(mo); Check("itStays", f.door && !carried); }
+		if (t == 80) Pose(mo, 3100, 2128, 0, 0);
+		Forward(mo, t, 130, 40);
+	}
+
 	void TestLevelScript(Actor mo, int t, int mode)
 	{
+		if (mode == 12) { HomeScript(mo, t); return; }
+		if (mode == 11) { StrayScript(mo, t); return; }
 		if (mode == 10) { CrowdScript(mo, t); return; }
 		if (mode == 9) { SelfShotScript(PlayerPawn(mo), t); return; }
 		if (mode == 8) { ShootScript(mo, t); return; }
@@ -1662,7 +2070,25 @@ class AjarStatusBar : BaseStatusBar
 			kx -= 62;
 		}
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
-		if (!h || !h.carried) return;
+		if (!h) return;
+		// an open Stray door: how long it has left, always
+		int left = -1;
+		bool held = false;
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor sd;
+		while (sd = AjarDoor(di.Next()))
+		{
+			if (sd.args[1] != 7 || !sd.frame) continue;
+			if (left < 0 || sd.strayTics < left) { left = sd.strayTics; held = sd.nailer != null; }
+		}
+		if (left >= 0)
+		{
+			DrawImage("AJDR7", (-12, 8), DI_SCREEN_CENTER_TOP | DI_ITEM_RIGHT_TOP, 1.0, (-1, -1), (0.5, 0.5));
+			if (held) DrawString(big, "NAILED", (0, 20), DI_SCREEN_CENTER_TOP | DI_TEXT_ALIGN_LEFT, Font.CR_GOLD);
+			else DrawString(big, String.Format("%d.%d", left / 35, (left % 35) * 10 / 35), (0, 20), DI_SCREEN_CENTER_TOP | DI_TEXT_ALIGN_LEFT,
+				left < 70 ? Font.CR_RED : Font.CR_WHITE);
+		}
+		if (!h.carried) return;
 		DrawImage(String.Format("AJDR%d", h.carried.args[1]), (-8, 28),
 			DI_SCREEN_RIGHT_BOTTOM | DI_ITEM_RIGHT_BOTTOM, 1.0, (-1, -1), (1.5, 1.5));
 	}

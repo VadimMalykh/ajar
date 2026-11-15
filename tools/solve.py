@@ -17,6 +17,13 @@ A puzzle is a dict:
                 or dict(home=region, thief=True): the thief starts with it}
   thief         optional dict(zone=region, sees=[regions]): one thief, which
                 stays in `zone` and can see the player there and in `sees`
+  nailer        optional dict(zone=region or [regions]): one nailer, which can
+                walk to the frames in those regions. (region, key) in the
+                list: only once the player has that key (a gate that opens)
+  home_frame    optional frame id (ajarmap.way_home): the level is also won by
+                hanging in it the door whose home is that frame's region
+  pool          optional [regions] a Stray door may open onto. The Stray
+                doors themselves are not listed: see below
 
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
@@ -28,13 +35,28 @@ empty frame there, and, while it can see the player, take a hung door down or
 swap it. The player can kill it when in its zone; its door then leans there.
 Every arrangement the two of them can produce is explored, and from each one
 the player must be able to win by their own moves alone.
+
+The nailer is the same kind of thing. While it lives, a door hanging in a
+frame in its zone may or may not be nailed, so taking it down or swapping it
+there is luck: it can happen, but no win may depend on it. The player, in
+its zone, can kill it. (Which doors are nailed is not kept: that would
+multiply the states by every subset of doors.)
+
+So is a Stray door's draw. With empty hands (that is, perhaps holding a Stray
+door: they are not counted, and a level may have any number) in a place with
+a frame, the player may at any time find themselves in any place of the
+pool: with empty hands, or with a door that leant nearby, if the frame was
+empty; with the door that hung there, and the frame empty, if it was not.
+The printed solution uses no Stray door, and no win may depend on a draw.
 """
 from collections import deque
 
 
-def _moves(p, state):
-    """Yields (cost, description, next state)."""
-    here, carried, locs, keys, thief = state
+def _moves(p, state, nailed=False):
+    """Yields (cost, description, next state): what the player can be sure
+    of doing. With `nailed`, instead, only what they can do if the nailer
+    has not got there first."""
+    here, carried, locs, keys, thief, nails = state
     colours = sorted(p["doors"])
     where = dict(zip(colours, locs))
     nm = lambda c: p.get("names", {}).get(c, c)
@@ -42,11 +64,11 @@ def _moves(p, state):
     def out(region=here, carry=carried, **change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (region, carry, tuple(w[c] for c in colours), keys, thief)
+        return (region, carry, tuple(w[c] for c in colours), keys, thief, nails)
 
     for k, region in p.get("keys", {}).items():
         if region == here and k not in keys:
-            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief)
+            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails)
             if k in p.get("auto", ()):
                 return                               # it happens by itself, before anything else
     for a, b, *more in p["walk"]:
@@ -62,7 +84,9 @@ def _moves(p, state):
         for c in loot:
             w[c] = ("lean", here)
         yield 0, "kill the thief" + (f" (it drops {nm(loot[0])})" if loot else ""), (
-            here, carried, tuple(w[c] for c in colours), keys, 0)
+            here, carried, tuple(w[c] for c in colours), keys, 0, nails)
+    if nails and here in _zone(p["nailer"], keys):
+        yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0)
     hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
     for f, c in hung.items():
         ends = (p["frames"][f], p["doors"][c]["home"])
@@ -78,6 +102,8 @@ def _moves(p, state):
         c = hung.get(f)
         if c is None and carried is not None:
             yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", f)})
+        elif c is not None and bool(nails and region in _zone(p["nailer"], keys)) != nailed:
+            continue                                 # it may be nailed: see _luck
         elif c is not None and carried is None:
             yield 1, f"unhinge {nm(c)} from {f}", out(carry=c, **{f"d{c}": ("carried",)})
         elif c is not None:
@@ -85,9 +111,51 @@ def _moves(p, state):
                 carry=c, **{f"d{c}": ("carried",), f"d{carried}": ("frame", f)})
 
 
+def _zone(who, keys):
+    z = who["zone"]
+    z = (z,) if isinstance(z, str) else tuple(z)
+    return tuple(r if isinstance(r, str) else r[0] for r in z if isinstance(r, str) or r[1] in keys)
+
+
+def _won(p, s):
+    if s[0] == p["goal"]:
+        return True
+    f = p.get("home_frame")
+    if f is None:
+        return False
+    return any(loc == ("frame", f) and p["doors"][c].get("home") == p["frames"][f]
+               for c, loc in zip(sorted(p["doors"]), s[2]))
+
+
+def _luck(p, state):
+    """Yields the states that the nailer being slow, or the draw of a Stray
+    door, can turn `state` into."""
+    here, carried, locs, keys, thief, nails = state
+    if nails:
+        for _, _, n in _moves(p, state, True):
+            yield n
+    if carried is not None or not p.get("pool"):
+        return
+    colours = sorted(p["doors"])
+    where = dict(zip(colours, locs))
+    hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
+    for f, region in p["frames"].items():
+        if region != here:
+            continue
+        hands = [hung.get(f)]                       # what was swapped out, or nothing...
+        if hands[0] is None:                         # ...or a door snatched up on the way
+            hands += [c for c, loc in where.items() if loc == ("lean", here)]
+        for c in hands:
+            w = dict(where)
+            if c is not None:
+                w[c] = ("carried",)
+            for place in p["pool"]:
+                yield (place, c, tuple(w[k] for k in colours), keys, thief, nails)
+
+
 def _thief(p, state):
     """Yields the states the thief can turn `state` into."""
-    here, carried, locs, keys, thief = state
+    here, carried, locs, keys, thief, nails = state
     if not thief:
         return
     t = p["thief"]
@@ -98,7 +166,7 @@ def _thief(p, state):
     def out(**change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (here, carried, tuple(w[c] for c in colours), keys, thief)
+        return (here, carried, tuple(w[c] for c in colours), keys, thief, nails)
 
     loot = next((c for c, loc in where.items() if loc == ("thief",)), None)
     if loot is None:
@@ -118,12 +186,12 @@ def _thief(p, state):
             yield out(**{f"d{c}": ("thief",), f"d{loot}": ("frame", f)})
 
 
-def _search(p, start, with_thief):
+def _search(p, start, with_luck):
     dist, prev, back = {start: 0}, {}, {}
     queue = deque([start])
     while queue:                                   # 0-1 BFS
         s = queue.popleft()
-        if s[0] == p["goal"]:
+        if _won(p, s):
             continue
         for cost, what, n in _moves(p, s):
             back.setdefault(n, []).append(s)
@@ -131,8 +199,8 @@ def _search(p, start, with_thief):
                 dist[n] = dist[s] + cost
                 prev[n] = (s, what)
                 (queue.append if cost else queue.appendleft)(n)
-        if with_thief:
-            for n in _thief(p, s):
+        if with_luck:
+            for n in list(_thief(p, s)) + list(_luck(p, s)):
                 if n not in dist:                  # not in `back`: not the player's doing
                     dist[n] = dist[s]
                     queue.appendleft(n)
@@ -146,9 +214,11 @@ def solve(p):
     colours = sorted(p["doors"])
     start = (p["start"], None, tuple(
         ("frame", d["frame"]) if "frame" in d else ("thief",) if d.get("thief") else ("lean", d["lean"])
-        for d in (p["doors"][c] for c in colours)), (), 1 if p.get("thief") else 0)
+        for d in (p["doors"][c] for c in colours)), (), 1 if p.get("thief") else 0,
+        0)
+    # the solution: the thief and the nailer do nothing in it, and no Stray door is used
     dist, prev, back = _search(p, start, False)
-    wins = [s for s in dist if s[0] == p["goal"]]
+    wins = [s for s in dist if _won(p, s)]
     if not wins:
         return None, [], len(dist), []
     best = min(wins, key=dist.get)
@@ -158,9 +228,9 @@ def solve(p):
         s, what = prev[s]
         steps.append(what)
     steps.reverse()
-    if p.get("thief"):
-        dist, prev, back = _search(p, start, True)
-        wins = [s for s in dist if s[0] == p["goal"]]
+    if p.get("thief") or p.get("nailer") or p.get("pool"):
+        dist, prev, back = _search(p, start[:5] + (1 if p.get("nailer") else 0,), True)
+        wins = [s for s in dist if _won(p, s)]
     alive, todo = set(wins), list(wins)
     while todo:
         for s in back.get(todo.pop(), ()):
@@ -178,10 +248,11 @@ def lost(p):
     stays fully reachable whatever the player (and the thief) does, for
     those who want every kill, item and secret."""
     back, dist = solve.back, solve.dist
-    live = [s for s in dist if s[0] != p["goal"]]
+    live = [s for s in dist if not _won(p, s)]
     regions = {p["start"]} | {r for link in p["walk"] for r in link[:2]} | set(p["frames"].values())
+    regions |= set(p.get("pool", ()))
     for d in p["doors"].values():
-        regions |= {d["home"]} | ({d["lean"]} if "lean" in d else set())
+        regions |= ({d["home"]} if "home" in d else set()) | ({d["lean"]} if "lean" in d else set())
     if p.get("thief"):
         regions.add(p["thief"]["zone"])
     tests = [(r, lambda s, r=r: s[0] == r) for r in sorted(regions - {p["goal"]})]

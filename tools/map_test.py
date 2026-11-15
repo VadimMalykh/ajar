@@ -1,6 +1,6 @@
 """The Ajar test level (map TEST): every mechanic in one box."""
 import ajarmap
-from ajarmap import RED, BLUE, GREEN, DOOR_T
+from ajarmap import RED, BLUE, GREEN, YELLOW, DOOR_T
 from udmf import Map, rect
 
 m = Map()
@@ -38,6 +38,15 @@ m.sector([(2000, 2000), (2000, 2256), (2320, 2256), (2320, 2160), (2320, 2096), 
          ceil=160, light=220, color=GRNC)
 recess((2000, 2096), (2000, 2160), (-1, 0), 0, 203, 101, far_colour=GREEN, color=GRNC)
 m.line((2320, 2096), (2320, 2160), special=243, playeruse=True, mid="AJEXIT", exact=True)
+
+# --- a way out to build: YELLOW's far side at one end of a night room, an
+# empty frame at the other (ajarmap.way_home); YELLOW leans in the green room.
+# And a Stray door in the red room, with two places it may open onto ------------
+ajarmap.way_home(m, 3000, 2000, YELLOW)
+ajarmap.stray_place(m, 0, (2128, 2256), (2192, 2256), (0, 1), 0, color=GRNC)
+ajarmap.stray_place(m, 1, (3128, 2000), (3192, 2000), (0, -1), 0)
+ajarmap.door(m, YELLOW, 2300, 2030, angle=180)
+ajarmap.stray(m, 200, 2370, angle=270)
 
 # --- things ----------------------------------------------------------------
 m.thing(96, 256, 1, angle=0)                                              # player start

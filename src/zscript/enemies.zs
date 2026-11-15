@@ -263,7 +263,7 @@ class AjarThief : AjarWorker
 		AjarFrame f;
 		while (f = AjarFrame(fi.Next()))
 		{
-			if (f == lastFrame || f == avoid || (f.door && f.door.nailer)) continue;
+			if (f == lastFrame || f == avoid || (f.door && f.door.Stuck())) continue;
 			// with a door: hang it, or swap; without: take the one that hangs there.
 			// Anything that takes a hung door down needs the player watching.
 			bool job = loot ? (!f.door || seen) : (f.door && seen);
@@ -274,7 +274,7 @@ class AjarThief : AjarWorker
 		AjarDoor d;
 		while (d = AjarDoor(di.Next()))
 		{
-			if (d.carried) continue;
+			if (d.carried || d.IsStray()) continue;      // a Stray door is nothing to a thief
 			if (!d.frame)
 			{
 				if (!loot && d != avoid && CanReach(d.pos.xy)) leaning.Push(d);
@@ -395,7 +395,7 @@ class AjarThief : AjarWorker
 		target = null;
 		bool ok = h && JobStillThere() && Distance2D(spot) <= 64;
 		// taking a hung door down needs the player watching
-		if (ok && jobFrame && jobFrame.door && (!SeesPlayer() || jobFrame.door.nailer)) ok = false;
+		if (ok && jobFrame && jobFrame.door && (!SeesPlayer() || jobFrame.door.Stuck())) ok = false;
 		if (!ok) { GoIdle(); return; }
 		if (jobDoor)
 		{
