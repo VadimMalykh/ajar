@@ -70,7 +70,18 @@ map MAP04 "Party Wall"
 // Act 1, level 5 (tools/map_hinges5.py)
 map MAP05 "Lost Property"
 {
-	next = "MAP05"
+	next = "MAP06"
+	sky1 = "SKY1", 0
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 1, level 6 (tools/map_hinges6.py)
+map MAP06 "After Hours"
+{
+	next = "MAP06"
 	sky1 = "SKY1", 0
 	nointermission
 	nojump

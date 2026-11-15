@@ -858,6 +858,69 @@ two colours in mind, works out how to set them up, and recalls the third.
 room's door is opened by a switch and shuts again on a timer, so the player
 first has to lay a fast route of doors from the switch to it.
 
+## MAP06 "After Hours" (2026-11-16)
+
+Built, solver-proven and walked headlessly. **Not played by hand yet.**
+`tools/map_hinges6.py`: a museum at night. Five doors in the puzzle (PINK is
+a sixth, in a secret), four keys, six frames, four Stray doors, 13 door
+actions, 271787 states, none stuck, nothing losable. 149 monsters, 5
+secrets. `MAP=MAP06 ./run.sh`; MAP05's exit leads here.
+
+Vadim's brief: no new ideas (there was one in each of the first five
+levels); a big map with puzzles like MAP05's, more of a classic Doom II
+level where you go between places and find your way; the way out built as in
+MAP05. So nothing here is new to the engine or the solver, and none of
+Ajar's own monsters but two lodgers.
+
+**The level.**
+- One floor to walk about in: lobby (start, frame), great hall (frame),
+  cloakroom (RED), gift shop, cafe (GREEN) and, down steps, a sunken court
+  under the sky. Round the court: the upper gallery over its west side
+  (RED's far side; key 1), the roof over its east side (YELLOW's; key 3),
+  the terrace north of it with the night room off it, bolted inside. A
+  mezzanine over the great hall (VIOLET's; key 4). The cellar (GREEN's; key
+  2, a frame), whose door up to the cafe is bolted on the cellar side.
+- West wing (key 1): four rooms in a ring, YELLOW, a frame, and the office
+  (keys 3 and 4). East wing (key 2): four rooms in a ring, VIOLET, and the
+  archive (keys 2 and 3): two Stray doors and a super shotgun, optional.
+- Two doors from the start, in either order (RED and GREEN); then the two
+  wings in either order; the office needs both.
+- **The catch** is Vadim's set-up-and-swap idea (see "Idea for later
+  levels"). BLUE, the door that belongs in the night room, leans in the
+  strongroom behind the office, and the only way in or out of there is a
+  hole no door fits through. The strongroom has a frame. Hang BLUE in it
+  and you are in the night room without it. To get BLUE out, another door
+  must hang in the strongroom's frame instead, and it can only be brought
+  there through the night room and BLUE's far side. A door reaches the
+  terrace only from above: off the upper gallery (RED) or the roof
+  (YELLOW). Then BLUE goes out through the door it was swapped for, and
+  round to the terrace the same way.
+- The terrace can also be reached from the court with empty hands: steps up
+  to a gap by a gatepost (a squeeze: a bare line with id 500, no hole built
+  round it). Without it a door hung in the night room by a Stray door's
+  luck left the terrace unreachable (the solver found it).
+- Why two ways down to the terrace: with only one, that door could end up in
+  the strongroom's frame after BLUE is out, and nothing could be carried to
+  the night room again.
+- Stray pool: the grotto (secret) and the boiler room (a mancubus), and the
+  far side of whatever is not hung.
+- Secrets: stockroom behind the gift shop (squeeze) and PINK's store; the
+  grotto off the court (the office's lever, or a Stray door); the gardener's
+  shed (shoot its bell through the bars); a nook off the roof.
+- `MAP=MAP06 ./tools/smoke.sh`: 38 checks, to the exit. `MODE=2`: tour, 58
+  views (`TIMEOUT=400`). No test of the level's Stray doors or of the bell.
+
+Tried and dropped: a thief in the west wing with YELLOW on its back. With
+a wing behind a lock the solver found the player locked out of their own
+key (RED swapped into the wing's frame from the far side, key 1 not yet
+taken), and it took the state count from 270 thousand to 1.7 million.
+
+`tools/mapcheck.py map_hinges6 out.png` (new; run it in the `ajar-tools`
+image) reports overlapping sectors and things standing in walls, and draws
+the level's plan.
+
+The level wears stock textures; its look is for a design session.
+
 ## Flip door (designed 2026-11-15, not built)
 
 User agreed. A special door, not a property of every door: two-coloured,
