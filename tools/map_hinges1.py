@@ -120,13 +120,11 @@ def things(kind, *spots, angle=0):
 
 # the cell: nothing but two candles
 things(CANDLE, (20, -1480), (236, -1480))
-# the hall: two zombies with their backs to a pair of barrels, a shotgun in
-# the far corner by the pit, red torches by the RED far side
+# the hall: two zombies with their backs to a pair of barrels, red torches by
+# the RED far side. No shotgun on this side of the pit: pistol only
 things(ZOMBIE, (540, 470), (600, 170), angle=180)
 things(BARREL, (690, 60), (724, 100))
 things(TORCH_R, (24, 232), (24, 408))
-things(SHOTGUN, (700, 580))                                           # far corner, past both zombies
-things(SHELLS, (724, 604))
 things(STIM, (40, 40))
 # the pit: a demon, and what it left of the last visitors
 things(DEMON, (896, 180), angle=90)
@@ -135,11 +133,12 @@ things(MESS, (960, 470))
 things(DEAD_ZOMBIE, (830, 520))
 things(DEAD_IMP, (990, 70))
 things(CLIP, (800, 600))
-# the ledge: an imp throwing across the pit, lamps by the YELLOW far side
+# the ledge: an imp throwing across the pit, the shotgun, lamps by the YELLOW far side
 things(IMP, (1160, 150), angle=180)
 things(CANDELABRA, (1256, 232), (1256, 408))
 things(LAMP, (1256, 24), (1256, 616))
-things(SHELLS, (1200, 560))
+things(SHOTGUN, (1190, 320))                                              # on the runner, where YELLOW lets you out
+things(SHELLS, (1200, 560), (1150, 470))
 things(STIM, (1100, 610))
 # the gallery: an imp looking down into the hall, blue torches
 things(IMP, (610, 740), angle=270)
