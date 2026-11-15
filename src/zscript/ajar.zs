@@ -8,7 +8,8 @@
 //    args[3] = 1 for a fixed doorway: no leaf, no colour, and it stays in that
 //    frame for the whole level (ajarmap.doorway).
 //    Colour 7 is a Stray door (ajarmap.stray): it has no far side of its own.
-//    Hung, it opens onto one of the level's stray places (lines 270..289),
+//    Hung, it opens onto one of the level's stray places (lines 270..289)
+//    or the far side of a coloured door that hangs nowhere just then,
 //    stays open for 2 to 5 seconds (StrayTics) and is then gone.
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
@@ -183,25 +184,53 @@ class AjarHandler : EventHandler
 		return 35 * (r < 35 ? 2 : r < 70 ? 3 : r < 90 ? 4 : 5);
 	}
 
+	// Where a Stray door may open: the level's own stray places, and the far
+	// side of every coloured door. (In that order, and the far sides by
+	// number: the smoke tests take the pool in order.)
+	void StrayPool(out Array<int> ids)
+	{
+		ids.Clear();
+		for (int id = STRAY_ID; id < STRAY_ID + STRAY_PLACES; id++) if (FindLine(id)) ids.Push(id);
+		int places = ids.Size();
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next()))
+		{
+			if (d.IsStray() || !FindLine(d.args[0]) || ids.Find(d.args[0]) < ids.Size()) continue;
+			int at = places;
+			while (at < ids.Size() && ids[at] < d.args[0]) at++;
+			ids.Insert(at, d.args[0]);
+		}
+	}
+
+	// Is some door open onto this place right now? A coloured door that
+	// hangs anywhere is open onto its far side; so is a Stray door onto the
+	// place it drew.
+	bool StrayUsed(int id)
+	{
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor o;
+		while (o = AjarDoor(di.Next())) if (o.frame && o.args[0] == id) return true;
+		return false;
+	}
+
+	// What a place shows while nothing is open onto it: the shut door of its
+	// colour if it is a coloured door's far side, a shut Stray door if not.
+	string PlaceTex(int id)
+	{
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor o;
+		while (o = AjarDoor(di.Next())) if (!o.IsStray() && o.args[0] == id) return o.BackTex();
+		return "AJDR7";
+	}
+
 	int DrawStray()
 	{
 		Array<int> free;
 		for (int pass = 0; pass < 2 && !free.Size(); pass++)
 		{
-			if (pass || !strayLeft.Size())
-			{
-				strayLeft.Clear();
-				for (int id = STRAY_ID; id < STRAY_ID + STRAY_PLACES; id++) if (FindLine(id)) strayLeft.Push(id);
-			}
-			// not a place another Stray door is open onto right now
-			for (int i = 0; i < strayLeft.Size(); i++)
-			{
-				bool used = false;
-				let di = ThinkerIterator.Create("AjarDoor");
-				AjarDoor o;
-				while (o = AjarDoor(di.Next())) if (o.frame && o.args[0] == strayLeft[i]) used = true;
-				if (!used) free.Push(strayLeft[i]);
-			}
+			if (pass || !strayLeft.Size()) StrayPool(strayLeft);
+			for (int i = 0; i < strayLeft.Size(); i++) if (!StrayUsed(strayLeft[i])) free.Push(strayLeft[i]);
 		}
 		if (!free.Size()) return 0;
 		// (the smoke tests take the pool in order)
@@ -213,12 +242,10 @@ class AjarHandler : EventHandler
 	// Is there a place left for one more Stray door to open onto?
 	bool StrayRoom()
 	{
-		int places = 0;
-		for (int id = STRAY_ID; id < STRAY_ID + STRAY_PLACES; id++) if (FindLine(id)) places++;
-		let di = ThinkerIterator.Create("AjarDoor");
-		AjarDoor d;
-		while (d = AjarDoor(di.Next())) if (d.IsStray() && d.frame) places--;
-		return places > 0;
+		Array<int> ids;
+		StrayPool(ids);
+		for (int i = 0; i < ids.Size(); i++) if (!StrayUsed(ids[i])) return true;
+		return false;
 	}
 
 	// The least time any open Stray door has left, or -1; `held`: a nailer
@@ -269,19 +296,21 @@ class AjarHandler : EventHandler
 			if (d.strayTics > 0 && d.strayTics % 35 == 0) d.A_StartSound("misc/chat2", CHAN_AUTO);
 			if (--d.strayTics <= 0) over.Push(d);
 		}
-		for (int i = 0; i < over.Size(); i++)
-		{
-			d = over[i];
-			AjarFrame f = d.frame;
-			Telefrag(FindLine(f.args[0]));
-			Telefrag(FindLine(d.args[0]));
-			Link(f.args[0], 0, FRAME_TEX);
-			Link(d.args[0], 0, d.BackTex());
-			f.door = null;
-			d.A_StartSound("doors/dr1_clos", CHAN_AUTO);
-			Say("The STRAY door is gone.");
-			d.Destroy();
-		}
+		for (int i = 0; i < over.Size(); i++) StrayShut(over[i]);
+	}
+
+	// An open Stray door shuts and is gone, with whatever stands in it.
+	void StrayShut(AjarDoor d)
+	{
+		AjarFrame f = d.frame;
+		Telefrag(FindLine(f.args[0]));
+		Telefrag(FindLine(d.args[0]));
+		Link(f.args[0], 0, FRAME_TEX);
+		Link(d.args[0], 0, PlaceTex(d.args[0]));
+		f.door = null;
+		d.A_StartSound("doors/dr1_clos", CHAN_AUTO);
+		Say("The STRAY door is gone.");
+		d.Destroy();
 	}
 
 	// --- a way out the player builds ---------------------------------------
@@ -308,7 +337,14 @@ class AjarHandler : EventHandler
 	void Hang(AjarDoor d, AjarFrame f)
 	{
 		if (d.IsStray()) { d.args[0] = DrawStray(); d.strayTics = StrayTics(); }
-		else if (f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
+		else
+		{
+			// a Stray door open onto this door's far side gives way to it
+			let si = ThinkerIterator.Create("AjarDoor");
+			AjarDoor o;
+			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
+			if (f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
+		}
 		Link(f.args[0], d.args[0], FRAME_TEX);
 		Link(d.args[0], f.args[0], d.BackTex());
 		d.frame = f;
@@ -476,7 +512,7 @@ class AjarHandler : EventHandler
 		d.Hide();
 		carried = d;
 		user.A_StartSound("doors/dr1_clos", CHAN_AUTO);
-		if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for five seconds.");
+		if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for a few seconds.");
 		else Say("You pick up the " .. d.Label() .. " door.");
 	}
 
@@ -1156,10 +1192,11 @@ class AjarHandler : EventHandler
 		Forward(mo, u, 5, 25);
 		if (u == 40)
 		{
-			bool there = c == 0 ? mo.pos.x > 1280 && mo.pos.x < 1600 && mo.pos.y > 1296 && mo.pos.y < 1552
-				: c == 1 ? mo.pos.z == 192 && mo.pos.x < 0
-				: c == 2 ? mo.pos.x > 1696 && mo.pos.x < 1920 && mo.pos.y < 240
-				: mo.pos.x > 752 && mo.pos.x < 1056 && mo.pos.y > 1296;
+			// the lamp room, the shed, the kiosk, and then RED's far side on the bridge
+			bool there = c == 0 ? mo.pos.x > 1696 && mo.pos.x < 1920 && mo.pos.y < 240
+				: c == 1 ? mo.pos.x > 1024 && mo.pos.x < 1728 && mo.pos.y > 1680 && mo.pos.y < 2192
+				: c == 2 ? mo.pos.x > 528 && mo.pos.x < 656 && mo.pos.y > 1312 && mo.pos.y < 1568
+				: mo.pos.z == 160 && mo.pos.x > 2000;
 			Console.Printf("AJARTEST stray %d: at (%d,%d,%d)", c, mo.pos.x, mo.pos.y, mo.pos.z);
 			Check(String.Format("stray%dOpensOntoItsPlace", c), there);
 		}

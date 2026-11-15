@@ -751,6 +751,15 @@ A thief ignores them. `MAP=TEST MODE=11`, `MAP=MAP05 MODE=3`.
   likelier (2 s 35%, 3 s 35%, 4 s 20%, 5 s 10%; `StrayTics`). Vadim,
   2026-11-15, after playing: a fixed 5 seconds was too long. The headless
   tests always get 5.
+- **The pool is mixed** (agreed 2026-11-15, after playing): a Stray door
+  opens onto one of the level's own stray places or onto the far side of
+  any coloured door that hangs nowhere at that moment (`StrayPool`). So
+  the pool shrinks as doors are hung, and a draw can show where a colour
+  leads before its door is found. Stray places are now only for somewhere
+  no coloured door leads: MAP05 keeps three (lamp room, kiosk, engine
+  shed). If a coloured door is hung while a Stray door is open onto its
+  far side, the Stray door shuts at once (telefrag and all); no test
+  covers that. The solver adds the home of every unhung door to `pool`.
 
 **The level.**
 - Concourse (start), platform 1 and the tracks are one place to walk in.
@@ -793,9 +802,11 @@ Limits of 2.5D met here: nothing can be under anything, so the train is
 solid (no carriages to walk through), nothing runs under the bridge, and a
 frame cannot be cut into a platform edge or the foot of the bridge.
 
-Not known until it is played: whether the night room reads as "bring the
-door here"; whether 2 to 5 seconds is enough to read a place; whether the
-shed's Stray place is too nasty; whether 133 monsters is too many.
+**Played by Vadim, 2026-11-15: "looks great".** What he liked most, and
+wants more of in later levels: the twist at the end. You see that VIOLET
+has to be carried round to the other end of the night room, and then that
+this cannot be done without going through RED to get up to the bridge: one
+door's errand needs another door's far side. Build later puzzles on that.
 
 **Idea for a later level** (user, 2026-11-15, not for MAP05): the exit
 room's door is opened by a switch and shuts again on a timer, so the player

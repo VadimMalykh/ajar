@@ -130,7 +130,6 @@ m.sector(rect(-256, 256, 0, 1280), floor=GALLERY, ceil=384, light=190, color=LEA
          ftex="AJBOARD")
 rail(((0, 256), (0, 400)), ((0, 528), (0, 1280)))
 recess((-256, 960), (-256, 1024), (-1, 0), GALLERY, far_id(GREEN), 101, far_colour=GREEN, color=LEAF)
-ajarmap.stray_place(m, 1, (-256, 608), (-256, 672), (-1, 0), GALLERY, color=LEAF)
 m.sector(rect(-176, 1280, -80, 1376), floor=GALLERY, ceil=GALLERY + 96, light=110, wall="AJBRICK",
          ftex="AJBOARD", special=1024)                                       # a nook (secret)
 
@@ -162,14 +161,12 @@ ajarmap.fitted(m, (752, 1392, 1056, 1552), [((784, 1504, 944, 1552), dict(WOOD, 
 ajarmap.bolted(m, (880, 1280), (944, 1280), (0, 1), 0, PARCELS_BOLT, line_id=303)
 ajarmap.unbolt(m, (752, 1392), (1056, 1392), PARCELS_BOLT)
 recess((1056, 1440), (1056, 1504), (1, 0), 0, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
-ajarmap.stray_place(m, 3, (752, 1424), (752, 1488), (-1, 0), 0, color=SKY)
 
 # the night room: VIOLET's far side at one end, the frame at the other. Its
 # door onto the platform is bolted inside
 ajarmap.way_home(m, NX, NY, VIOLET)
 ajarmap.bolted(m, (NX + 128, 1280), (NX + 192, 1280), (0, 1), 0, NIGHT_BOLT, line_id=304)
 ajarmap.unbolt(m, (NX, NY + 96), (NX + 320, NY + 96), NIGHT_BOLT)
-ajarmap.stray_place(m, 0, (NX + 128, NY + 256), (NX + 192, NY + 256), (0, 1), 0)
 
 # the kiosk (secret), seen through bars from the concourse: shoot its bell
 m.sector(rect(528, 1312, 656, 1568), ceil=112, light=170, color=ROSE, wall="AJSAFE", special=1024)
@@ -422,6 +419,6 @@ PUZZLE = dict(
         YELLOW: dict(home="loft", frame=105),
         VIOLET: dict(home="night", lean="master"),
     },
-    pool=["night", "gallery", "hall", "parcels", "yard"],
+    pool=["hall", "yard"],                 # the lamp room and the kiosk; the shed
     nailer=dict(zone=["yard", ("hall", "a")]),
 )

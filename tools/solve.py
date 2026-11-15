@@ -22,8 +22,10 @@ A puzzle is a dict:
                 list: only once the player has that key (a gate that opens)
   home_frame    optional frame id (ajarmap.way_home): the level is also won by
                 hanging in it the door whose home is that frame's region
-  pool          optional [regions] a Stray door may open onto. The Stray
-                doors themselves are not listed: see below
+  pool          optional [regions] of the level's stray places, which only a
+                Stray door opens onto (it may also open onto the far side
+                of a coloured door). The Stray doors themselves are not
+                listed: see below
 
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
@@ -45,7 +47,7 @@ multiply the states by every subset of doors.)
 So is a Stray door's draw. With empty hands (that is, perhaps holding a Stray
 door: they are not counted, and a level may have any number) in a place with
 a frame, the player may at any time find themselves in any place of the
-pool: with empty hands, or with a door that leant nearby, if the frame was
+pool, or at the far side of any door that hangs nowhere just then: with empty hands, or with a door that leant nearby, if the frame was
 empty; with the door that hung there, and the frame empty, if it was not.
 The printed solution uses no Stray door, and no win may depend on a draw.
 """
@@ -149,7 +151,9 @@ def _luck(p, state):
             w = dict(where)
             if c is not None:
                 w[c] = ("carried",)
-            for place in p["pool"]:
+            # the pool: the level's stray places, and the far side of every
+            # door that hangs nowhere
+            for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame"}):
                 yield (place, c, tuple(w[k] for k in colours), keys, thief, nails)
 
 

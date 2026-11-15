@@ -146,6 +146,9 @@ def stray_place(m, k, m1, m2, out, floor, *, color=None, target=101):
     like a far side, with mouth m1-m2, showing a shut Stray door until one
     opens onto it. Which place a Stray door opens onto is drawn from the
     pool when it is hung; it stays open for a few seconds and is then gone.
+    The far side of every coloured door that hangs nowhere at that moment
+    is in the pool too, by itself: a stray place is for somewhere no
+    coloured door leads (a secret, a nasty spot).
     Rules (PLAN.md, "Stray door"): every place needs a way out on foot, and
     a secret one also an ordinary way in. In a PUZZLE graph: `pool`.
     `target` is any frame's line id in the level (see recess)."""
