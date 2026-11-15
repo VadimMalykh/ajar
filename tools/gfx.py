@@ -768,6 +768,8 @@ def make_all():
     out["textures/AJHDOR.png"] = rd.png()
     import gfx_hotel                                             # MAP02's candidate looks
     gfx_hotel.make(out, rd, front, keyrack)
+    import gfx_theatre                                           # MAP03's candidate looks
+    gfx_theatre.make(out, rd)
 
     # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate
     # per key it needs, each with that key's number, where a hand would be

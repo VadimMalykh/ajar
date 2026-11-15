@@ -1177,3 +1177,61 @@ hand yet. Open: the eyes' height (`EYE_Z` 70) is one number for every
 frame, so they drift a little off the head in the punch; the looks that
 lost (`gfx_lodger.py`, both `lodger_shots` scripts, looks 1..8 in
 `LodgerPortrait`) can be deleted.
+
+## Look: MAP03 (started 2026-11-15)
+
+Board: https://claude.ai/artifact/XvjBbHN3d9YvRAaJfWZNNz (source
+`design/map03-board.html`, images in `build/board3/`: `<look>/view_NN.jpg`
+cut from the tour shots, `tex/` swatches unzipped from the pk3).
+
+`AJAR_THEATRE=1..3` dresses the whole theatre in one candidate look
+(`tools/gfx_theatre.py`): 1 Opera (crimson damask, ivory, gilt), 2 Playhouse
+(whitewash, oak, green baize), 3 Civic (teak slats, concrete, orange seats).
+The back of the house (corridor, dressing rooms with mirrors, the star's
+room, green room, booth, flies, under the stage, back stairs) is the same in
+all three. **The user chose look 1, Opera, for every part (2026-11-15)**; it
+is the default now. `AJAR_THEATRE=0` is the theatre as first built, 2 and 3
+the losers. The board still shows the choice as open.
+`EXTRA=-nomonsters MAP=MAP03 tools/trial.sh AJAR_THEATRE 0 1 2 3` shoots
+them (monsters off: they walk into the cameras). The property store is not
+dressed. The board also lists options that change the level's shape, none
+built: a proscenium arch, seats with backs, a chandelier and dim house
+lights, boxes.
+
+Built for it:
+- `Map.align` (`udmf.py`): a set of wall textures laid by world position
+  instead of from each line's start, so a wall cut into pieces by furniture
+  shows no seams. Such textures are 64 wide and symmetric. Only MAP03's
+  looks use it.
+- `fitted`/`room`: `lite` (ceiling flat over a runner) and `lift` (how far
+  that ceiling is raised; the theatre's looks use 0). `roomdoor(skin=)`.
+- A tier's front is its sector's `side`: a parapet over the house wall,
+  one texture per face height.
+
+Bug fixed on the way (user's screenshot of MAP02's lobby, the wall under
+the mouth of the upstairs hall drawn 16 too high): a wall hung from the
+ceiling (`dontpegtop` upper, `dontpegbottom` lower, any one-sided wall) was
+hung from the raised ceiling of a runner's light strip. Runner cells are
+now sectors with `lift`, and `udmf.py` draws their hung walls that much
+lower. It applies to every level.
+
+## Handoff (2026-11-16)
+
+State: MAP01-MAP05 build and pass the solver. MAP01, MAP02 and MAP03 are
+settled in look (MAP03: Opera, chosen from the board, not yet played by
+hand in that look). After the look and the wall fix only MAP03's
+walkthrough was rerun (17 checks pass) and MAP02's lobby was photographed;
+the other levels' smoke tests were not rerun since `udmf.py` changed
+(`lift`), so run them first: `MAP=MAP0x ./tools/smoke.sh` for 1, 2, 4, 5.
+
+Open, the user's call:
+1. MAP03 beyond paint (foot of the board): a proscenium arch, seats with
+   backs, a chandelier with dim house lights, boxes beside the stage; and
+   whether the room tints are missed as a guide to the six doors.
+2. The property store (PINK's far side) is not dressed; no direction given.
+3. MAP04's and MAP05's look, same method (candidates behind a switch,
+   `tools/trial.sh`, a board). Shoot with `EXTRA=-nomonsters`.
+4. Not played by hand yet: MAP03 as rebuilt, MAP05, the lodger's new look.
+5. Tidying when wanted: the losing looks (`AJAR_HOTEL` 0, 2, 3;
+   `AJAR_THEATRE` 0, 2, 3; `gfx_lodger.py`), and the three boards could be
+   marked decided.

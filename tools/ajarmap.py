@@ -163,7 +163,7 @@ def stray(m, x, y, *, angle=0):
     m.thing(x, y, DOOR_T, angle=angle, args=(far_id(STRAY), STRAY, 0))
 
 
-def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look=""):
+def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look="", skin=""):
     """An ordinary door, as in any Doom level: opened with USE, shuts by
     itself, and monsters can open it too. It fills the wall between two
     rooms that are `thick` apart; a-b is its 64-wide mouth on one side and
@@ -175,10 +175,11 @@ def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look=""):
     room keys (see key()); its lock plates show their numbers, and monsters
     cannot open it. In a PUZZLE graph that is a walk link with keys.
     `line_id` names the mouth line a-b, for tests. `look` picks one of
-    MAP02's candidate doors (gfx_hotel.py)."""
+    MAP02's candidate doors (gfx_hotel.py); `skin` is the name of another
+    door texture, to which the keys of a locked door are added."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=(f"AJ2K{look}{keys}" if keys else f"AJ2D{look}") if look else f"AJHK{keys}" if keys else "AJHDOR",
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=skin + keys if skin else (f"AJ2K{look}{keys}" if keys else f"AJ2D{look}") if look else f"AJHK{keys}" if keys else "AJHDOR",
              ftex="AJTRIMF", ctex="AJTRIMF")
     for p, q in ((a, b), (c, d)):
         if keys:
@@ -197,7 +198,7 @@ def key(m, number, x, y):
     m.thing(x, y, KEY_T[str(number)])
 
 
-def room(m, xs, ys, runner, *, ceil, light, rug="AJRUG", **base):
+def room(m, xs, ys, runner, *, ceil, light, rug="AJRUG", lite="AJLITE", lift=16, **base):
     """A flat rectangular room cut into a grid by the lists xs and ys. Cells
     for which runner(i, j) is true (column i, row j) are a strip of carpet
     under a raised row of ceiling lights; use it to lead from door to door.
@@ -206,8 +207,8 @@ def room(m, xs, ys, runner, *, ceil, light, rug="AJRUG", **base):
         for j in range(len(ys) - 1):
             cell = [(xs[i], ys[j]), (xs[i], ys[j + 1]), (xs[i + 1], ys[j + 1]), (xs[i + 1], ys[j])]
             if runner(i, j):
-                m.sector(cell, ceil=ceil + 16, light=min(255, light + 30),
-                         **dict(base, ftex=rug, ctex="AJLITE"))
+                m.sector(cell, ceil=ceil + lift, lift=lift, light=min(255, light + 30),
+                         **dict(base, ftex=rug, ctex=lite))
             else:
                 m.sector(cell, ceil=ceil, light=light, **base)
 
@@ -223,13 +224,14 @@ def picture(m, a, b, colour, height, tex=None):
 RUNNER = dict(runner=True)      # for fitted(): carpet under a raised row of lights
 
 
-def fitted(m, box, features, rug="AJRUG", **base):
+def fitted(m, box, features, rug="AJRUG", lite="AJLITE", lift=16, **base):
     """A flat rectangular room (x1, y1, x2, y2) with furniture. `features` is
     a list of ((x1, y1, x2, y2), changes): each rectangle inside the room gets
     those sector properties instead of the room's (later ones win), or, for
     RUNNER, the carpet and lights of room(). The room is cut into a grid
     along every rectangle's edges, so a wall piece that needs its own texture
-    must not have such an edge crossing it. `rug` is the carpet's flat."""
+    must not have such an edge crossing it. `rug` is the carpet's flat, `lite`
+    the ceiling over it and `lift` how far that ceiling is raised."""
     xs = sorted({box[0], box[2]} | {v for r, _ in features for v in (r[0], r[2])})
     ys = sorted({box[1], box[3]} | {v for r, _ in features for v in (r[1], r[3])})
     for x1, x2 in zip(xs, xs[1:]):
@@ -238,8 +240,8 @@ def fitted(m, box, features, rug="AJRUG", **base):
             for (a, b, c, d), change in features:
                 if a <= x1 and x2 <= c and b <= y1 and y2 <= d:
                     if change.get("runner"):
-                        props.update(ceil=base["ceil"] + 16, light=min(255, base["light"] + 30),
-                                     ftex=rug, ctex="AJLITE")
+                        props.update(ceil=base["ceil"] + lift, light=min(255, base["light"] + 30),
+                                     ftex=rug, ctex=lite, lift=lift)
                     else:
                         props.update(change)
             m.sector([(x1, y1), (x1, y2), (x2, y2), (x2, y1)], **props)

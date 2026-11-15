@@ -23,16 +23,20 @@ class Map:
         self.lineprops = {}    # frozenset({a, b}) -> dict
         self.things = []
         self.cuts = set()      # extra vertices that split the edges they lie on
+        self.align = set()     # textures laid by world position, not from each line's start
 
     def sector(self, poly, floor=0, ceil=192, light=200, wall="AJWALL",
-               ftex="AJFLOOR", ctex="AJCEIL", color=None, side=None, id=0, special=0, raw=None):
+               ftex="AJFLOOR", ctex="AJCEIL", color=None, side=None, id=0, special=0, raw=None, lift=0):
         """`wall` is what the sector's own walls show; `side` (default: the
         same) is what a step up to it shows, e.g. the side of a bed. `raw` is
-        a dict of further UDMF sector properties (lightfloor and the like)."""
+        a dict of further UDMF sector properties (lightfloor and the like).
+        `lift` says the ceiling is that much higher than the room's (a strip
+        of lights): walls hung from the ceiling are then drawn that much
+        lower, so that they stay in line with the rest of the room's."""
         self.polys.append(_clockwise([tuple(p) for p in poly]))
         self.sectors.append(dict(floor=floor, ceil=ceil, light=light, wall=wall,
                                  ftex=ftex, ctex=ctex, color=color, side=side or wall,
-                                 id=id, special=special, raw=raw or {}))
+                                 id=id, special=special, raw=raw or {}, lift=lift))
         return len(self.sectors) - 1
 
     def line(self, a, b, **props):
@@ -105,8 +109,20 @@ class Map:
                 edges[(a, b)] = si
 
         lines, sides = [], []
-        def side(si, **tex):
-            sides.append(dict(sector=si, **tex))
+        def side(si, a=None, b=None, hung=(), **tex):
+            # a wall texture in self.align starts at its place in the world,
+            # so a wall cut into pieces (furniture, openings) shows no seams.
+            # Such textures must be 64 wide and symmetric left to right.
+            d = dict(sector=si, **tex)
+            if a and (a[0] == b[0] or a[1] == b[1]):
+                u = (a[0] if b[0] > a[0] else -a[0]) if a[1] == b[1] else (a[1] if b[1] > a[1] else -a[1])
+                for part in ("top", "mid", "bottom"):
+                    if tex.get("texture" + ("middle" if part == "mid" else part)) in self.align and u % 64:
+                        d["offsetx_" + part] = float(u % 64)
+            for part in hung:                  # see sector(lift=)
+                if self.sectors[si]["lift"]:
+                    d["offsety_" + part] = float(-self.sectors[si]["lift"])
+            sides.append(d)
             return len(sides) - 1
 
         done = set()
@@ -123,7 +139,8 @@ class Map:
             ld = dict(v1=vi(a), v2=vi(b))
             other = edges.get((b, a))
             if other is None:
-                ld["sidefront"] = side(si, texturemiddle=mid or s["wall"])
+                ld["sidefront"] = side(si, a, b, () if p.get("dontpegbottom") else ("mid",),
+                                       texturemiddle=mid or s["wall"])
                 ld["blocking"] = True
             else:
                 done.add((b, a))
@@ -131,11 +148,12 @@ class Map:
                 front = dict(texturetop=upper or o["wall"], texturebottom=lower or o["side"])
                 if mid:
                     front["texturemiddle"] = mid
-                ld["sidefront"] = side(si, **front)
+                hung = [part for part, flag in (("top", "dontpegtop"), ("bottom", "dontpegbottom")) if p.get(flag)]
+                ld["sidefront"] = side(si, a, b, hung, **front)
                 back = dict(texturetop=upper or s["wall"], texturebottom=lower or s["side"])
                 if mid and midboth:
                     back["texturemiddle"] = mid
-                ld["sideback"] = side(other, **back)
+                ld["sideback"] = side(other, b, a, hung, **back)
                 ld["twosided"] = True
             args = p.pop("args", ())
             for i, v in enumerate(args):

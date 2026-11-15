@@ -32,6 +32,8 @@ Keys 2 and 3 open the star's dressing room, backstage: RED, which opens
 onto the way out. The stage is too high to climb, so it goes out by the drop
 into the pit, or into the room under the stage, which has a frame.
 """
+import os
+
 import ajarmap
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, PINK, far_id
 from udmf import Map, rect
@@ -48,8 +50,43 @@ STAGE, UNDER, PIT, CIRCLE, GODS, FLIES = 64, -64, -48, 128, 224, 288
 WARM, GOLD, SKY, LEAF, PLUM, ROSE = 0xFFD8CC, 0xFFE890, 0xA8C0FF, 0xD4F4D0, 0xD0A0FF, 0xFFC0DC
 OPEN = dict(ctex="F_SKY1", wall="AJBRICK")
 RAIL = dict(mid="AJRAIL", midboth=True, blocking=True, dontpegbottom=True)
-SEAT = dict(ftex="AJSOFA", side="AJSOFA")
 WOOD = dict(ftex="AJWOOD", side="AJWOOD")
+
+# The theatre's look (gfx_theatre.py): 1, an opera house, is the user's choice
+# for the whole building. AJAR_THEATRE=2 and 3 are the candidates that lost
+# (an old playhouse, a civic theatre of the 1960s); AJAR_THEATRE=0 is the
+# theatre as first built.
+# With a look, rooms are not tinted, runners' lights sit flush in the ceiling,
+# and the back of the house is the same in all three.
+LOOK = (os.environ.get("AJAR_THEATRE") or "1").replace("0", "")
+if LOOK:
+    WARM = GOLD = SKY = LEAF = PLUM = ROSE = None
+    LOWC, TOPC, DARKC = f"AJ3E{LOOK}", f"AJ3C{LOOK}", "AJ3XC"
+    RUN = dict(rug=f"AJ3R{LOOK}", lite=f"AJ3L{LOOK}", lift=0)
+    FOYER = dict(wall=f"AJ3F{LOOK}", ftex=f"AJ3O{LOOK}", ctex=LOWC)
+    SIDE = dict(wall=f"AJ3G{LOOK}", ftex=f"AJ3O{LOOK}", ctex=LOWC)      # passage, cloakroom, office
+    BAR = dict(wall=f"AJ3B{LOOK}", ftex=f"AJ3M{LOOK}", ctex=LOWC)
+    STALLS = dict(wall=f"AJ3H{LOOK}A", ftex=f"AJ3M{LOOK}", ctex=TOPC)
+    TIER1 = dict(wall=f"AJ3H{LOOK}B", side=f"AJ3T{LOOK}A", ftex=f"AJ3M{LOOK}", ctex=TOPC)
+    TIER2 = dict(wall=f"AJ3H{LOOK}C", side=f"AJ3T{LOOK}B", ftex=f"AJ3M{LOOK}", ctex=TOPC)
+    BRIDGE = dict(wall=f"AJ3H{LOOK}D", side=f"AJ3T{LOOK}C", ctex=TOPC)
+    FLY = dict(wall="AJ3XL", ctex=DARKC)
+    CURTAIN, UNDERW, BOOTHW = f"AJ3K{LOOK}", "AJ3XU", "AJ3XB"
+    SEAT = dict(ftex=f"AJ3S{LOOK}", side=f"AJ3S{LOOK}")
+    BACKL = dict(wall="AJ3XW", ftex="AJ3XF", lift=0)
+    DRESS, STARS, GREENS = (dict(wall=w, ftex="AJ3XF") for w in ("AJ3XD", "AJ3XS", "AJ3XG"))
+    STAIR = dict(wall="AJ3XP", ftex="AJ3XF")
+    FDOOR, BDOOR = f"AJ3D{LOOK}F", "AJ3DXB"
+    m.align = ({f"AJ3{k}{LOOK}{t}" for k, ts in (("H", "ABCD"), ("T", "ABC")) for t in ts} |
+               {f"AJ3{k}{LOOK}" for k in "FGBK"} |
+               {"AJ3XW", "AJ3XD", "AJ3XS", "AJ3XG", "AJ3XM", "AJ3XN", "AJ3XB", "AJ3XU", "AJ3XL", "AJ3XP"})
+else:
+    LOWC = TOPC = DARKC = "AJCEIL"
+    RUN = FOYER = SIDE = BAR = STALLS = TIER1 = TIER2 = BRIDGE = FLY = {}
+    BACKL = DRESS = STARS = GREENS = STAIR = {}
+    CURTAIN, UNDERW, BOOTHW = "AJCURT", "AJBRICK", "AJSAFE"
+    SEAT = dict(ftex="AJSOFA", side="AJSOFA")
+    FDOOR = BDOOR = ""
 GATE_PIT, GATE_BOOTH, GATE_STAIRS = 401, 402, 403           # the three bolted ways
 
 
@@ -64,26 +101,29 @@ ajarmap.fitted(m, (-640, 1024, 240, 1680), [
     ((-640, 1320, 240, 1384), ajarmap.RUNNER), ((96, 1024, 160, 1680), ajarmap.RUNNER),
     ((-640, 1440, -576, 1616), dict(WOOD, floor=40)),                        # box office counter
     ((-480, 1648, -352, 1680), dict(SEAT, floor=40)), ((-480, 1616, -352, 1648), dict(SEAT, floor=16)),
-], ceil=176, light=190)
-m.sector(rect(64, 896, 192, 1024), ceil=128, light=170)                     # the way into the stalls
+], ceil=176, light=190, **FOYER, **RUN)
+m.sector(rect(64, 896, 192, 1024), ceil=128, light=170, **SIDE)             # the way into the stalls
+if LOOK:                                  # the taller rooms' walls carry on over its two mouths
+    m.line((64, 1024), (192, 1024), upper=FOYER["wall"], dontpegtop=True)
+    m.line((64, 896), (192, 896), upper=STALLS["wall"], dontpegtop=True)
 recess((-256, 1024), (-192, 1024), (0, -1), 0, 101, 201)                    # foyer frame
-ajarmap.picture(m, (-448, 1024), (-384, 1024), VIOLET, 176)
-ajarmap.picture(m, (-64, 1024), (0, 1024), BLUE, 176)
+ajarmap.picture(m, (-448, 1024), (-384, 1024), VIOLET, 176, tex=f"AJ3P{LOOK}{VIOLET}" if LOOK else None)
+ajarmap.picture(m, (-64, 1024), (0, 1024), BLUE, 176, tex=f"AJ3P{LOOK}{BLUE}" if LOOK else None)
 # the cloakroom (VIOLET leans here)
 ajarmap.fitted(m, (-912, 1100, -656, 1356), [((-912, 1100, -880, 1356), dict(WOOD, floor=48))],
-               ceil=128, light=150)
-ajarmap.roomdoor(m, (-640, 1196), (-640, 1260), (-1, 0), 0)
+               ceil=128, light=150, **SIDE)
+ajarmap.roomdoor(m, (-640, 1196), (-640, 1260), (-1, 0), 0, skin=FDOOR)
 # the manager's office, locked (key 1): its frame starts with PINK in it
 ajarmap.fitted(m, (-384, 1696, -128, 1952), [((-384, 1760, -320, 1888), dict(WOOD, floor=32))],
-               ceil=128, light=160, color=ROSE)
-ajarmap.roomdoor(m, (-288, 1680), (-224, 1680), (0, 1), 0, keys="1", line_id=301)
+               ceil=128, light=160, color=ROSE, **SIDE)
+ajarmap.roomdoor(m, (-288, 1680), (-224, 1680), (0, 1), 0, keys="1", line_id=301, skin=FDOOR)
 recess((-288, 1952), (-224, 1952), (0, 1), 0, 106, 201, color=ROSE)
 # the bar (BLUE leans here); the circle's stairs come down into it
 ajarmap.fitted(m, (256, 1360, 1024, 1680), [
     ((480, 1616, 864, 1648), dict(WOOD, floor=40)),                          # the bar itself
     ((640, 1424, 704, 1488), dict(floor=28, ftex="AJCLOTH", side="AJCLOTH")),
     ((832, 1424, 896, 1488), dict(floor=28, ftex="AJCLOTH", side="AJCLOTH")),
-], ceil=144, light=180, color=SKY)
+], ceil=144, light=180, color=SKY, **BAR)
 ajarmap.opening(m, (240, 1488), (240, 1552), (1, 0), 0)
 
 # --- the stalls: rows of seats, an aisle down to the pit --------------------
@@ -91,86 +131,98 @@ ajarmap.fitted(m, (0, 0, 1024, 896),
                [((0, 416, 1024, 480), ajarmap.RUNNER)] +
                [((x, y, x + 48, y + 320), dict(SEAT, floor=16))
                 for x in range(320, 896, 128) for y in (64, 512)],
-               ceil=HOUSE, light=170)
+               ceil=HOUSE, light=170, **STALLS, **RUN)
 recess((224, 896), (288, 896), (0, 1), 0, 104, 201)                         # stalls frame
 # the orchestra pit, a step down and another
-m.sector(rect(1024, 0, 1056, 896), floor=PIT // 2, ceil=HOUSE, light=160)
-m.sector(rect(1056, 0, 1152, 896), floor=PIT, ceil=HOUSE, light=150, ftex="AJBOARD")
+m.sector(rect(1024, 0, 1056, 896), floor=PIT // 2, ceil=HOUSE, light=160, **STALLS)
+m.sector(rect(1056, 0, 1152, 896), floor=PIT, ceil=HOUSE, light=150, **dict(STALLS, ftex="AJBOARD"))
 
 # === the stage, too high to climb; the room under it is open from above =====
-BOARDS = dict(floor=STAGE, ceil=HOUSE, light=200, wall="AJCURT", ftex="AJBOARD", side="AJWOOD")
+BOARDS = dict(floor=STAGE, ceil=HOUSE, light=200, wall=CURTAIN, ftex="AJBOARD", side="AJWOOD", ctex=DARKC)
 m.sector(rect(1152, 0, 1792, 640), **BOARDS)
 m.sector(rect(1424, 640, 1792, 896), **BOARDS)
 for y1, y2 in ((640, 736), (800, 896)):                                     # the stage's lip
     m.sector(rect(1152, y1, 1168, y2), **BOARDS)
-m.sector(rect(1168, 640, 1424, 896), floor=UNDER, ceil=HOUSE, light=140, wall="AJBRICK",
-         ftex="AJPIT", color=PLUM)
+m.sector(rect(1168, 640, 1424, 896), floor=UNDER, ceil=HOUSE, light=140, wall=UNDERW,
+         ftex="AJPIT", color=PLUM, ctex=DARKC)
 recess((1200, 896), (1264, 896), (0, 1), UNDER, 102, 201, color=PLUM)       # frame under the stage
 recess((1328, 896), (1392, 896), (0, 1), UNDER, far_id(VIOLET), 101, far_colour=VIOLET, color=PLUM)
 # the grate between it and the pit: a block of the stage front that sinks
 # for good when anything comes down here
-m.sector(rect(1152, 736, 1168, 800), floor=STAGE, ceil=HOUSE, light=160, wall="AJCURT",
-         ftex="AJTRIMF", side="AJGRATE", id=GATE_PIT)
+m.sector(rect(1152, 736, 1168, 800), floor=STAGE, ceil=HOUSE, light=160, wall=CURTAIN,
+         ftex="AJTRIMF", side="AJGRATE", id=GATE_PIT, ctex=DARKC)
 for a, b in (((1168, 640), (1424, 640)), ((1424, 640), (1424, 896)), ((1168, 640), (1168, 736)),
              ((1168, 800), (1168, 896)), ((1328, 896), (1392, 896))):
     ajarmap.unbolt(m, a, b, GATE_PIT, special=21)
+    if LOOK and b != (1392, 896):                             # the room's walls are the stage's sides
+        m.line(a, b, lower=UNDERW)
 m.line((1168, 736), (1168, 800), id=304)
 
 # --- backstage: a corridor, dressing rooms, the green room ------------------
 BACK = dict(floor=STAGE, ceil=STAGE + 128)
-m.sector(rect(1536, 896, 1728, 960), light=170, **BACK)
-ajarmap.room(m, [1152, 2112], [960, 992, 1056, 1088], lambda i, j: j == 1, light=165, **BACK)
+m.sector(rect(1536, 896, 1728, 960), light=170, **BACK, **{k: v for k, v in BACKL.items() if k != "lift"})
+ajarmap.room(m, [1152, 2112], [960, 992, 1056, 1088], lambda i, j: j == 1, light=165, **BACK, **BACKL)
 ROOM = dict(floor=STAGE, ceil=STAGE + 112)
 TABLE = dict(WOOD, floor=STAGE + 32)                                        # dressing tables
-ajarmap.fitted(m, (1152, 1104, 1408, 1360), [((1152, 1328, 1408, 1360), TABLE)], light=175, **ROOM)
-ajarmap.roomdoor(m, (1248, 1088), (1312, 1088), (0, 1), STAGE)
-ajarmap.fitted(m, (1472, 1104, 1728, 1360), [((1472, 1328, 1728, 1360), TABLE)], light=140, **ROOM)
-ajarmap.roomdoor(m, (1568, 1088), (1632, 1088), (0, 1), STAGE)
+if LOOK:                                  # a mirror with bulbs over every table; the room's wall at its ends
+    m.line((1536, 896), (1728, 896), upper=CURTAIN, dontpegtop=True)
+    TABLE["wall"] = "AJ3XM"
+    for x, w in ((1152, "AJ3XD"), (1408, "AJ3XD"), (1472, "AJ3XD"), (1728, "AJ3XD"), (1792, "AJ3XS"), (2048, "AJ3XS")):
+        m.line((x, 1328), (x, 1360), mid=w)
+ajarmap.fitted(m, (1152, 1104, 1408, 1360), [((1152, 1328, 1408, 1360), TABLE)], light=175, **ROOM, **DRESS)
+ajarmap.roomdoor(m, (1248, 1088), (1312, 1088), (0, 1), STAGE, skin=BDOOR)
+ajarmap.fitted(m, (1472, 1104, 1728, 1360), [((1472, 1328, 1728, 1360), TABLE)], light=140, **ROOM, **DRESS)
+ajarmap.roomdoor(m, (1568, 1088), (1632, 1088), (0, 1), STAGE, skin=BDOOR)
 ajarmap.fitted(m, (1792, 1104, 2048, 1360),                                  # the star's: two locks
-               [((1792, 1328, 2048, 1360), TABLE),
+               [((1792, 1328, 2048, 1360), dict(TABLE, wall="AJ3XN") if LOOK else TABLE),
                 ((1792, 1136, 1808, 1264), dict(SEAT, floor=STAGE + 40)),
                 ((1808, 1136, 1840, 1264), dict(SEAT, floor=STAGE + 16))],
-               light=185, color=WARM, **ROOM)
-ajarmap.roomdoor(m, (1888, 1088), (1952, 1088), (0, 1), STAGE, keys="23", line_id=302)
+               light=185, color=WARM, **ROOM, **STARS)
+ajarmap.roomdoor(m, (1888, 1088), (1952, 1088), (0, 1), STAGE, keys="23", line_id=302, skin=BDOOR)
 ajarmap.fitted(m, (2128, 896, 2448, 1152),                                   # the green room
                [((2416, 928, 2448, 1120), dict(SEAT, floor=STAGE + 40)),
                 ((2384, 928, 2416, 1120), dict(SEAT, floor=STAGE + 16))],
-               light=170, color=LEAF, **ROOM)
+               light=170, color=LEAF, **ROOM, **GREENS)
 ajarmap.opening(m, (2112, 992), (2112, 1056), (1, 0), STAGE)
 
 # === above the house =========================================================
 # --- the dress circle (BLUE's far side): a ledge along the north wall --------
 ajarmap.fitted(m, (320, 896, 1024, 1088), [((480, 976, 992, 1024), dict(SEAT, floor=CIRCLE + 16))],
-               floor=CIRCLE, ceil=HOUSE, light=185, color=SKY)
+               floor=CIRCLE, ceil=HOUSE, light=185, color=SKY, **TIER1)
 rail(((320, 896), (640, 896)), ((768, 896), (1024, 896)))
 recess((640, 1088), (704, 1088), (0, 1), CIRCLE, far_id(BLUE), 101, far_colour=BLUE, color=SKY)
 ajarmap.unbolt(m, (640, 1088), (704, 1088), GATE_STAIRS)
 # its stairs, down to a door into the bar that is bolted on this side
-ajarmap.stairs(m, (352, 1088), (416, 1088), (0, 1), CIRCLE, -CIRCLE, ceil=CIRCLE + 128, light=170)
+ajarmap.stairs(m, (352, 1088), (416, 1088), (0, 1), CIRCLE, -CIRCLE, ceil=CIRCLE + 128, light=170, **STAIR)
+if LOOK:
+    m.line((352, 1088), (416, 1088), upper=TIER1["wall"], dontpegtop=True)
 ajarmap.bolted(m, (352, 1360), (416, 1360), (0, -1), 0, GATE_STAIRS, line_id=303)
 
 # --- the gods (YELLOW's far side): the top tier, at the back -----------------
 ajarmap.fitted(m, (-448, 128, 0, 768), [((-352, 176, -304, 368), dict(SEAT, floor=GODS + 16)),
                                         ((-352, 528, -304, 720), dict(SEAT, floor=GODS + 16))],
-               floor=GODS, ceil=HOUSE, light=175, color=GOLD)
+               floor=GODS, ceil=HOUSE, light=175, color=GOLD, **TIER2)
 rail(((0, 128), (0, 384)), ((0, 512), (0, 768)))
 recess((-256, 768), (-192, 768), (0, 1), GODS, far_id(YELLOW), 101, far_colour=YELLOW, color=GOLD)
 # the lighting booth behind them: shut, with YELLOW hanging in its frame. Its
 # door to the gods is bolted inside; a window shows what is in there
-BOOTH = dict(floor=GODS, ceil=GODS + 112, light=200, wall="AJSAFE", color=GOLD)
+BOOTH = dict(floor=GODS, ceil=GODS + 112, light=200, wall=BOOTHW, color=GOLD, ctex=LOWC)
 m.sector(rect(-720, 320, -672, 576), **BOOTH)
 m.sector(rect(-672, 320, -464, 576), **BOOTH)
 ajarmap.unbolt(m, (-672, 320), (-672, 576), GATE_BOOTH)
 recess((-720, 416), (-720, 480), (-1, 0), GODS, 105, 201, color=GOLD)        # booth frame
 ajarmap.bolted(m, (-448, 416), (-448, 480), (-1, 0), GODS, GATE_BOOTH, line_id=305)
-m.sector(rect(-464, 496, -448, 560), floor=GODS + 40, ceil=GODS + 96, light=220, wall="AJSAFE",
+m.sector(rect(-464, 496, -448, 560), floor=GODS + 40, ceil=GODS + 96, light=220, wall=BOOTHW,
          ftex="AJTRIMF", ctex="AJTRIMF")
 m.line((-448, 496), (-448, 560), mid="AJWIN", midboth=True, blocking=True)
+if LOOK:
+    m.line((-448, 496), (-448, 560), upper=TIER2["wall"], dontpegtop=True, lower="AJ3XP")
 
 # --- the flies (GREEN's far side) over the stage, and the lighting bridge
 # from them along the south wall to a landing above the gods ------------------
 HIGH = dict(floor=FLIES, ceil=HOUSE, light=170, wall="AJTRIM", ftex="AJBOARD", color=LEAF)
-m.sector(rect(1152, -192, 1792, 0), **HIGH)
+m.sector(rect(1152, -192, 1792, 0), **dict(HIGH, **FLY))
+HIGH = dict(HIGH, **BRIDGE)
 recess((1440, -192), (1504, -192), (0, -1), FLIES, far_id(GREEN), 101, far_colour=GREEN, color=LEAF)
 m.sector(rect(0, -96, 1152, 0), **HIGH)
 m.sector(rect(-448, -96, 0, 128), **HIGH)

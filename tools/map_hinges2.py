@@ -140,6 +140,7 @@ m.sector(rect(0, 448, 512, 576), floor=BALC, ceil=TALL, light=205, **BALCONY)   
 RAIL = dict(mid="AJRAIL", midboth=True, blocking=True, dontpegbottom=True)
 for a, b in (((0, 448), (224, 448)), ((288, 448), (512, 448))):
     m.line(a, b, **RAIL)
+m.line((224, 448), (288, 448), dontpegbottom=True)    # the gap in the rail: its wall hangs like the rest
 m.line((48, 448), (208, 448), lower=f"AJ2Y{LOOK}" if LOOK else "AJKEYS", exact=True, **RAIL)         # the key rack behind the desk
 m.cut((512, 16), (512, 144))
 m.line((512, 16), (512, 144), mid=f"AJ2X{LOOK}" if LOOK else "AJFRONT", exact=True)
