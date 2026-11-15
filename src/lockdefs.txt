@@ -1,0 +1,61 @@
+// Ajar's room keys (src/zscript/ajar.zs) and the locks that ordinary room
+// doors can have (tools/ajarmap.py, roomdoor). A lock with two keys needs both.
+
+Lock 41
+{
+	AjarKey1
+	Message "Locked. The plate says 1."
+	RemoteMessage "Locked. The plate says 1."
+	Mapcolor 206 180 96
+}
+
+Lock 42
+{
+	AjarKey2
+	Message "Locked. The plate says 2."
+	RemoteMessage "Locked. The plate says 2."
+	Mapcolor 206 180 96
+}
+
+Lock 43
+{
+	AjarKey3
+	Message "Locked. The plate says 3."
+	RemoteMessage "Locked. The plate says 3."
+	Mapcolor 206 180 96
+}
+
+Lock 44
+{
+	AjarKey4
+	Message "Locked. The plate says 4."
+	RemoteMessage "Locked. The plate says 4."
+	Mapcolor 206 180 96
+}
+
+Lock 45
+{
+	AjarKey1
+	AjarKey2
+	Message "Two locks: 1 and 2. You need both keys."
+	RemoteMessage "Two locks: 1 and 2. You need both keys."
+	Mapcolor 206 180 96
+}
+
+Lock 46
+{
+	AjarKey2
+	AjarKey3
+	Message "Two locks: 2 and 3. You need both keys."
+	RemoteMessage "Two locks: 2 and 3. You need both keys."
+	Mapcolor 206 180 96
+}
+
+Lock 47
+{
+	AjarKey3
+	AjarKey4
+	Message "Two locks: 3 and 4. You need both keys."
+	RemoteMessage "Two locks: 3 and 4. You need both keys."
+	Mapcolor 206 180 96
+}

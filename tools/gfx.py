@@ -94,6 +94,20 @@ def door(colour):
     return im
 
 
+DIGITS = {"1": ("010", "110", "010", "010", "111"), "2": ("111", "001", "111", "100", "111"),
+          "3": ("111", "001", "111", "001", "111"), "4": ("101", "101", "111", "001", "001")}
+BRASS = (206, 180, 96)
+LOCKS = ("1", "2", "3", "4", "12", "23", "34")     # which keys a locked room door can ask for
+
+
+def digit(im, ch, x, y, c, s=2):
+    """Draws a 3x5 digit, each dot s pixels, with its top left at x, y."""
+    for j, row in enumerate(DIGITS[ch]):
+        for i, on in enumerate(row):
+            if on == "1":
+                im.rect(x + i * s, y + j * s, x + i * s + s, y + j * s + s, c)
+
+
 def make_all():
     """Returns {path inside pk3: png bytes}."""
     out = {}
@@ -106,6 +120,54 @@ def make_all():
     wall.rect(0, 0, 128, 2, (150, 146, 140))
     wall.rect(0, 118, 128, 128, (120, 116, 112))
     out["textures/AJWALL.png"] = wall.png()
+
+    # an ordinary hotel-room door (ajarmap.roomdoor): plain wood, no colour, so
+    # it cannot be mistaken for one of yours. The leaf is the bottom 96 rows;
+    # the 32 above it are wall, for rooms taller than the door.
+    wood = (122, 86, 54)
+    rd = Img(64, 128)
+    for y in range(128):
+        for x in range(64):
+            rd.set(x, y, wall.px[(y % 128) * 128 + x])
+    rd.rect(0, 28, 64, 32, (96, 92, 88))                         # lintel
+    rd.rect(0, 32, 64, 128, wood)
+    for x in range(4, 64, 9):
+        rd.rect(x, 32, x + 1, 128, shade(wood, 0.86))            # grain
+    rd.frame(0, 32, 64, 128, shade(wood, 0.5), 3)
+    for y1, y2 in ((42, 76), (84, 120)):
+        rd.frame(10, y1, 54, y2, shade(wood, 0.62), 2)
+    rd.rect(26, 50, 38, 58, (206, 180, 96))                      # brass number plate
+    rd.frame(26, 50, 38, 58, (120, 96, 40), 1)
+    rd.disc(53, 81, 3, (206, 180, 96))                           # knob
+    rd.noise(5, 77)
+    out["textures/AJHDOR.png"] = rd.png()
+
+    # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate
+    # per key it needs, each with that key's number, where a hand would be
+    for keys in LOCKS:
+        lk = Img(64, 128)
+        lk.px = [list(p) for p in rd.px]
+        for n, ch in enumerate(keys):
+            x = 32 - 9 * len(keys) + 18 * n + 1
+            lk.rect(x, 62, x + 16, 82, BRASS)
+            lk.frame(x, 62, x + 16, 82, (110, 88, 36), 1)
+            digit(lk, ch, x + 5, 65, (60, 40, 16))
+            lk.rect(x + 7, 77, x + 9, 80, (30, 22, 10))          # keyhole
+        out[f"textures/AJHK{keys}.png"] = lk.png()
+
+    # room keys, numbered: a brass key on a tag. Sprite, and a HUD icon
+    for ch in "1234":
+        for name in (f"sprites/AJK{ch}A0.png", f"graphics/AJKI{ch}.png"):
+            k = Img(28, 20, (0, 0, 0, 0))
+            k.disc(6, 8, 5, BRASS)                               # bow
+            k.disc(6, 8, 2, (0, 0, 0, 0))
+            k.rect(10, 7, 22, 10, BRASS)                         # stem
+            k.rect(18, 10, 20, 14, BRASS)                        # bits
+            k.rect(21, 10, 23, 13, BRASS)
+            k.rect(13, 3, 27, 19, (236, 228, 204))               # tag
+            k.frame(13, 3, 27, 19, (120, 96, 40), 1)
+            digit(k, ch, 17, 6, (40, 30, 20))
+            out[name] = k.png(grab=(14, 20) if "sprites" in name else None)
 
     # framed pictures of doors, one per colour, on a strip of that wall as
     # tall as the wall they hang on (A: 336, the hall; B: 176, the gallery)

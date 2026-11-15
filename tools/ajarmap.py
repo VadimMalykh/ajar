@@ -4,6 +4,8 @@ Line ids: 1xx = frames, 200 + colour = that door's far side; a fixed
 doorway number n uses 150 + n and 250 + n.
 """
 FRAME_T, DOOR_T = 20001, 20002
+KEY_T = {"1": 20011, "2": 20012, "3": 20013, "4": 20014}      # room keys, by number
+LOCK = {"1": 41, "2": 42, "3": 43, "4": 44, "12": 45, "23": 46, "34": 47}   # src/lockdefs.txt
 RED, BLUE, GREEN, YELLOW, VIOLET = 1, 2, 3, 4, 5
 NAMES = {RED: "RED", BLUE: "BLUE", GREEN: "GREEN", YELLOW: "YELLOW", VIOLET: "VIOLET"}
 DEPTH = 16          # recess depth
@@ -63,6 +65,39 @@ def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=Non
     recess(m, b1, b2, b_out, b_floor, 250 + n, 150 + n, color=b_color, arch="far")
     m.thing((a1[0] + a2[0]) / 2 - a_out[0] * 24, (a1[1] + a2[1]) / 2 - a_out[1] * 24, DOOR_T,
             args=(250 + n, 0, 150 + n, 1))
+
+
+def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0):
+    """An ordinary door, as in any Doom level: opened with USE, shuts by
+    itself, and monsters can open it too. It fills the wall between two
+    rooms that are `thick` apart; a-b is its 64-wide mouth on one side and
+    `out` points to the other. It is plain wood and nobody can carry it.
+    Declare both rooms first, so that the door is at the back of its lines.
+    The rooms should be no more than 128 high where it stands (see gfx.py).
+
+    With `keys` ("1", "23"...) it is locked and needs every one of those
+    room keys (see key()); its lock plates show their numbers, and monsters
+    cannot open it. In a PUZZLE graph that is a walk link with keys.
+    `line_id` names the mouth line a-b, for tests."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=f"AJHK{keys}" if keys else "AJHDOR",
+             ftex="AJTRIMF", ctex="AJTRIMF")
+    for p, q in ((a, b), (c, d)):
+        if keys:
+            m.line(p, q, special=13, args=(0, 24, 150, LOCK[keys]), playeruse=True, repeatspecial=True)
+        else:
+            m.line(p, q, special=12, args=(0, 24, 150), playeruse=True, monsteruse=True,
+                   repeatspecial=True)
+    if line_id:
+        m.line(a, b, id=line_id)
+    for p, q in ((a, c), (b, d)):
+        m.line(p, q, mid="AJTRIM", dontpegbottom=True)
+
+
+def key(m, number, x, y):
+    """A numbered room key lying at x, y."""
+    m.thing(x, y, KEY_T[str(number)])
 
 
 def room(m, xs, ys, runner, *, ceil, light, **base):

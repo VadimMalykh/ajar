@@ -49,6 +49,7 @@ exceptions.
 | Heavy | Slow to carry, cannot be unhinged by enemies | Act 3 |
 | Small | Hatch-sized: objects and small enemies only | Act 3 |
 | Tilted | Far side is a floor or ceiling: you fall out of it | Act 4 |
+| Stray | One shot: opens onto a random place, then vanishes on a timer (see "Stray door") | Level 4 or 5 |
 | Stale | Far side is the same place at an earlier time (see "Time doors") | Act 5 (stretch) |
 
 ## Combat
@@ -282,6 +283,66 @@ and can come later.
 the replay through the door, step in and fight beside yourself. Needs a
 weapon and something killable first, so it comes after M3.
 
+## Stray door (designed 2026-11-15, not built)
+
+User's idea, first called the random door.
+
+**Premise.** A door you hang like a coloured one, but it opens onto a random
+place. A timer starts at once: go through or do not, and when it runs out the
+door is gone either way. Missing a place means reaching it the ordinary way,
+with another random door, or the long way round. Some of the places can be
+secrets.
+
+Rules the user set:
+
+- A place reached by random door must have a way out once the door is gone.
+- A secret reachable by random door must also have a normal way in, for
+  players the door did not favour.
+
+Notes (Claude's, to be argued over):
+
+- It breaks core rule 1 on purpose, but can keep the readability rule: you
+  see the place through the frame before you step. The timer turns "know
+  where it leads" into "read the room in five seconds", which is the fun.
+  Places in the pool should therefore be readable at a glance.
+- "Random" should be a draw from a pool authored per level, without repeats
+  until the pool is used up, not a free dice roll: no streaks of the same
+  room, and the secret comes up eventually.
+- It works both ways while it is open (rule 5): whatever is there can come
+  out, so a bad draw costs something even if you stay put.
+- Cheap to build: a pool place is an ordinary far-side stub; the door picks
+  its target when hung and unhangs itself on a timer. Nothing new in the
+  engine.
+- Solver: the level must be winnable without any random door, and every
+  pool place must pass the no-stuck-states check, including with a carried
+  coloured door taken through.
+
+Answers from the user (2026-11-15):
+
+- **Shortcuts are allowed.** A draw may skip part of the level, later even
+  put you behind a lock you have no key for. But there is always a way
+  back: a player after 100% kills, items and secrets must be able to reach
+  everything they skipped, by the long way. For the solver this is stronger
+  than "can still win": from every state, every place must stay reachable.
+- **Bad draws are pretty dangerous,** more so on later levels.
+- **Timer:** start at 5 seconds and see. Possibly random per hanging, 3 to
+  10 seconds.
+- **Caught in it when it closes: telefrag** (to be tried). These portals
+  move a thing when its centre crosses the line, so nothing is ever really
+  half-way; the script would kill whatever overlaps the line at closing.
+- **Look: multicoloured.** No clock on it: the clock sign is kept for the
+  time doors.
+
+- **One shot.** Once hung it is used up and disappears with its opening. A
+  level can have several.
+- **The time left is always shown** to the player.
+- **The telefrag kills the player too.**
+- **Introduced around level 4 or 5.**
+
+- **Name: the Stray door** (a door that has forgotten where it belongs).
+
+Nothing is left open; it is ready to build when its turn comes.
+
 ## Prototype status (2026-11-14)
 
 A test level exists (now map `TEST`): `./build.sh` (docker) builds `build/ajar.pk3`,
@@ -367,8 +428,8 @@ checks scripted shots backwards, at a slant and through the pit frame;
 ## Second and third levels (2026-11-15)
 
 Both are built, solver-proven and walked headlessly. MAP02's first version
-was played and liked by the user; **the reworked MAP02 and MAP03 are not
-played by hand yet.** `MAP=MAP02 ./run.sh`, `MAP=MAP03 ./run.sh`; each
+was played and liked by the user; the reworked MAP02 and MAP03 were played
+on 2026-11-15 too (see "Less linear levels"). `MAP=MAP02 ./run.sh`, `MAP=MAP03 ./run.sh`; each
 level's exit leads to the next, MAP03's loops back to itself.
 `MAP=MAP0x ./tools/smoke.sh` is the walkthrough, `MODE=2` the tour.
 
@@ -380,21 +441,8 @@ fixed in its frame (door thing `args[3]`), so monsters, shots and lodgers
 treat it as a hung door. In a `PUZZLE` graph it is one walk link each way.
 Every coloured door stays one the player can take.
 
-`MAP02` "No Vacancy" (`tools/map_hinges2.py`), a hotel: 11 door actions,
-2006 states, none stuck.
-
-- Lobby (start; RED, one frame) under a railed balcony nothing climbs to
-  (VIOLET, one empty frame, the doorway). Upstairs corridor (RED's far
-  side, two frames, YELLOW at the far end) drops back into the lobby.
-  Attic (YELLOW's, BLUE) drops into the corridor. Kitchen (BLUE's, GREEN),
-  a dead end. Terrace (GREEN's, one frame) drops into the garden; the
-  doorway joins garden and balcony. The street (VIOLET's) has the exit.
-- The first version had GREEN nailed on the balcony as the garden link.
-  It was replaced by the doorway, which freed GREEN to be a fifth door.
-- Company: two lodgers (one wakes halfway along the corridor, one on the
-  terrace; a lodger thing's `args[0]` is its wake-up distance), former
-  humans upstairs, imps in the attic, imps and a sergeant in the kitchen,
-  demons and an imp in the garden, two former humans in the street.
+`MAP02` "No Vacancy": that version (five doors in a chain) was played and
+called too obvious; it is replaced, see "Less linear levels" below.
 
 `MAP03` "Stage Door" (`tools/map_hinges3.py`), a theatre: 9 door actions,
 460 states, none stuck.
@@ -418,6 +466,90 @@ Every coloured door stays one the player can take.
 Puzzle length: searches over variants of both layouts found nothing much
 longer with five doors and no stuck states. More length needs a sixth
 door colour or more doors that start hung and have to be displaced.
+
+## Less linear levels (2026-11-15)
+
+User, after playing MAP02 and MAP03: all works, but MAP02 is obvious ("I
+take the next door, it moves me to the proper place, then I see the next
+one"). Wanted: a puzzle, where using a door at the wrong time costs you a
+long way back; bigger maps; rooms behind normal doors; doors you have to
+look for. The theatre is liked but should be much bigger, with keys and
+perhaps secrets.
+
+**Finding: plain doors alone always give a chain.** Any door can hang in
+any frame and works both ways, so reaching a place never needs more than
+one door, and that door lies in one place. Random and hill-climbing
+searches over hotel layouts (several hundred thousand) found nothing else.
+Two things break the chain:
+
+- **Something that asks for two things at once**: keys, above all a lock
+  that needs two. (Later: nailed doors, one-way doors.)
+- **Running out of frames.** A door cannot be put down, only hung. To pick
+  one up you need empty hands, so with as many frames as doors every frame
+  matters, and a frame somewhere awkward becomes the puzzle.
+
+Also: the solver counts door actions, but what a mistake costs the player
+is walking. Rating a level with every move costing one shows it (old MAP02:
+no move ever set you back).
+
+Two rules that came out of it:
+
+- No frame in a place that is only reached through one door: hang that
+  door there and the place is lost for good. (The terrace frame did this
+  as soon as the balcony could be left by dropping.)
+- A level should stay fully reachable from every state, for players who
+  want everything; `rate.py` in the search checked this, `tools/solve.py`
+  does not yet.
+
+**Built for it:**
+
+- `ajarmap.roomdoor`: an ordinary Doom door (USE opens it, it shuts by
+  itself, monsters open it), plain wood, texture `AJHDOR`. Rooms beside it
+  should be at most 128 high.
+- Room keys (user chose these over Doom's keycards, and to have them in
+  MAP02 already): `AjarKey1`..`AjarKey4`, editor numbers 20011-20014,
+  numbered brass keys, shown top right on the HUD, taken away at the end
+  of the level like Doom's. `roomdoor(keys="1")` locks a door; `keys="23"`
+  gives it two locks that need both. Lock plates on the door show the
+  numbers. Locks are in `src/lockdefs.txt` (41-47), `ajarmap.key` places a
+  key.
+- `tools/solve.py` knows keys: `keys={name: region}` and walk links
+  `(from, to, "23")`.
+
+`MAP02` "No Vacancy" (`tools/map_hinges2.py`), rebuilt: 10 door actions,
+3 keys, 2590 states, none stuck. **Not played by hand yet.**
+
+- Ground floor to walk about in: lobby, a hall with six guest rooms
+  (101-106), dining room, kitchen. Upstairs a hall with four rooms
+  (201-204), reached by RED and left by dropping into the lobby. Attic
+  (drops into the upstairs hall), cellar (a dead end), terrace over a
+  garden, stone doorway from the garden to the balcony, and a gap in the
+  balcony rail to drop back into the lobby. The street is the way out.
+- Four frames: lobby, kitchen, upstairs hall, cellar. None beyond the
+  terrace.
+- RED is in room 104. Upstairs: key 1 (room 201) and YELLOW (room 204),
+  which leads to the attic and key 3. Key 1 opens room 106: BLUE, which
+  leads to the cellar and key 2. Keys 2 and 3 open room 203: GREEN, which
+  leads to the terrace. VIOLET leans on the balcony. Attic and cellar can
+  be done in either order.
+- The catch: VIOLET needs empty hands, and nothing can be hung beyond the
+  terrace, so GREEN has to go into an empty frame, never a swap. With RED,
+  YELLOW and BLUE hung, the only empty frame is the cellar's. Go through
+  with a door in hand and it is the long way round: garden, balcony, drop,
+  and all the way back.
+- Company: 32 monsters. One lodger, in the kitchen. Spectres in the
+  cellar, a demon shut in 106, imps and a sergeant with GREEN.
+- `MAP=MAP02 ./tools/smoke.sh`: 28 checks, including both locks refusing
+  without keys. `MODE=2` is the tour (15 views).
+
+Door colours: five now, and the limit is the player's memory, not the
+solver (MAP02's 2590 states take well under a second; even eight doors
+would be fine). Adding one is a colour and a glyph in `tools/gfx.py`, a
+sprite state and three table entries in `AjarDoor`. Suggested ceiling:
+six or seven per level, and not all new at once. Not added yet.
+
+Next for this: the user plays the new MAP02; then MAP03 gets the same
+treatment (much bigger, keys, secrets).
 
 ## Handoff (2026-11-14)
 
@@ -522,8 +654,8 @@ monsters.
 
 Next, in order:
 
-1. Play the reworked MAP02 and MAP03 by hand. With three playable levels
-   the user wants to focus on design next (2026-11-15).
+1. Play the rebuilt MAP02 by hand, then rebuild MAP03 the same way (see
+   "Less linear levels").
 2. Teach `tools/solve.py` about the thief and nailer before a level uses
    them.
 3. Door swing animation and carry delay (left over from M2).

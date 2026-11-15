@@ -18,4 +18,4 @@ docker run --rm -v "$PWD":/work:ro -v /opt/gzdoom:/opt/gzdoom:ro -v "$IWAD":/iwa
     /opt/gzdoom/gzdoom -iwad /iwad/doom2.wad -file /work/build/ajar.pk3 -nosound -shotdir /out \
     +vid_preferbackend 1 +vid_fullscreen 0 +set ajar_autotest $MODE +map $MAP +exec /work/tools/smoke_${MAP}_${MODE}.cfg \
     > /out/log.txt 2>&1; echo "exit=$?"; chmod -R a+rw /out'
-grep -E "AJARTEST [a-zA-Z]+=|rror|arning|Unknown|nvalid" "$OUT/log.txt" || true
+grep -E "AJARTEST [a-zA-Z0-9]+=|rror|arning|Unknown|nvalid" "$OUT/log.txt" || true

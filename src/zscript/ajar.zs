@@ -468,48 +468,86 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP01") BorrowedRoomsScript(mo, t);
 	}
 
-	// MAP02: the shortest solution as printed by tools/build.py.
+	// MAP02: the shortest solution as printed by tools/build.py. Keys are
+	// picked up by walking over them and locked doors are tried with USE.
+	bool Has(Actor mo, int key) { return mo.FindInventory(String.Format("AjarKey%d", key)) != null; }
+	bool RoomOpen(int lineId) { Line l = FindLine(lineId); return l && l.backsector.CenterCeiling() > l.backsector.CenterFloor() + 40; }
+
 	void NoVacancyScript(Actor mo, int t)
 	{
 		string have = carried ? carried.Label() : "-";
-		// lobby: take RED, hang it, walk through to the corridor upstairs
-		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 80, 224, 0, 180); }
+		// both locked rooms refuse to open without their keys
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedWithoutKeys", !RoomOpen(301) && !RoomOpen(302));
+		// room 104's RED into the lobby frame, and through it upstairs
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 256, 80, 0, 270); }
 		Forward(mo, t, 40, 25);
 		if (t == 80) Check("upstairs", mo.pos.z == 144 && mo.pos.x > 512);
-		// hang YELLOW in the first corridor frame, through to the attic
-		if (t == 85) { Take(mo, 4); FindFrame(102).Activate(mo); Pose(mo, 864, 230, 144, 270); }
+		// room 204's YELLOW into the upstairs frame, through to the attic
+		if (t == 85) { Take(mo, 4); FindFrame(102).Activate(mo); Pose(mo, 1024, 230, 144, 270); }
 		Forward(mo, t, 90, 25);
-		if (t == 125) Check("inAttic", mo.pos.z == 304 && mo.pos.x > 1536);
-		// take BLUE and drop off the edge into the corridor
-		if (t == 130) { Take(mo, 2); Pose(mo, 1600, 224, 304, 180); }
-		Forward(mo, t, 135, 15);
-		if (t == 200) Check("droppedWithBlue", mo.pos.z == 144 && mo.pos.x < 1536 && have == "BLUE");
-		// hang BLUE in the second corridor frame, fetch GREEN from the kitchen
-		if (t == 205) { FindFrame(103).Activate(mo); Pose(mo, 1120, 230, 144, 270); }
-		Forward(mo, t, 210, 25);
-		if (t == 245) Check("inKitchen", mo.pos.x > 4200 && mo.pos.x < 4520);
-		if (t == 250) { Take(mo, 3); Pose(mo, 4300, 160, 0, 180); }
-		Forward(mo, t, 255, 25);
-		if (t == 290) Check("backWithGreen", mo.pos.z == 144 && mo.pos.x < 1536 && have == "GREEN");
-		// swap YELLOW for GREEN, through to the terrace
-		if (t == 295) { Pose(mo, 864, 230, 144, 270); FindFrame(102).Activate(mo); }
-		Forward(mo, t, 300, 25);
-		if (t == 335) Check("onTerraceWithYellow", mo.pos.z == 128 && mo.pos.x > 3000 && have == "YELLOW");
-		// leave YELLOW in the terrace frame, drop into the garden
-		if (t == 340) { FindFrame(104).Activate(mo); Pose(mo, 3200, 224, 128, 0); }
-		Forward(mo, t, 345, 15);
-		if (t == 410) Check("inGardenEmptyHanded", mo.pos.z == 0 && mo.pos.x > 3256 && have == "-");
-		// through the fixed doorway to the balcony over the lobby
-		if (t == 415) Pose(mo, 3830, 224, 0, 0);
-		Forward(mo, t, 420, 20);
-		if (t == 455) Check("onBalcony", mo.pos.z == 112 && mo.pos.y > 448 && mo.pos.x < 512);
-		// the doorway is not a door to take; VIOLET goes in the frame
-		if (t == 460) { FindFrame(151).Activate(mo); Check("doorwayStays", !carried && FindFrame(151).door); }
-		if (t == 465) { Take(mo, 5); FindFrame(106).Activate(mo); Pose(mo, 384, 500, 112, 90); }
-		Forward(mo, t, 495, 20);
-		if (t == 525) Check("inStreet", mo.pos.x > 4900);
+		if (t == 125) Check("inAttic", mo.pos.z == 304 && mo.pos.x > 1792);
+		// key 3, then off the edge into the upstairs hall
+		if (t == 130) Pose(mo, 2100, 180, 304, 270);
+		Forward(mo, t, 135, 12);
+		if (t == 155) Check("haveKey3", Has(mo, 3));
+		if (t == 160) Pose(mo, 1830, 224, 304, 180);
+		Forward(mo, t, 165, 15);
+		if (t == 215) Check("droppedUpstairs", mo.pos.z == 144 && mo.pos.x < 1792);
+		// key 1 in room 201, then down the missing stairs into the lobby
+		if (t == 220) Pose(mo, 832, 420, 144, 90);
+		Forward(mo, t, 225, 12);
+		if (t == 245) Check("haveKey1", Has(mo, 1));
+		if (t == 250) Pose(mo, 560, 224, 144, 180);
+		Forward(mo, t, 255, 15);
+		if (t == 300) Check("inLobby", mo.pos.z == 0 && mo.pos.x < 512);
+		// key 1 opens room 106, but 203 still wants key 2: take BLUE
+		if (t == 305) { Pose(mo, -1120, 200, 0, 270); FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 345) Check("room106Opens", RoomOpen(301) && !RoomOpen(302));
+		// BLUE into the kitchen frame, through to the cellar, key 2, and back
+		if (t == 350) { Take(mo, 2); FindFrame(105).Activate(mo); Pose(mo, -1664, 770, 0, 90); }
+		Forward(mo, t, 360, 25);
+		if (t == 400) Check("inCellar", mo.pos.x > 4200 && mo.pos.x < 4520);
+		if (t == 405) Pose(mo, 4360, 60, 0, 0);
+		Forward(mo, t, 410, 12);
+		if (t == 430) Check("haveKey2", Has(mo, 2));
+		if (t == 435) Pose(mo, 4300, 160, 0, 180);
+		Forward(mo, t, 440, 25);
+		if (t == 475) Check("backInKitchen", mo.pos.x < -1408 && mo.pos.y > 528);
+		// upstairs again through RED; keys 2 and 3 open room 203: GREEN
+		if (t == 480) Pose(mo, 256, 80, 0, 270);
+		Forward(mo, t, 485, 25);
+		if (t == 520) Check("upstairsAgain", mo.pos.z == 144 && mo.pos.x > 512);
+		if (t == 525) { Pose(mo, 1344, 240, 144, 90); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 565) Check("room203Opens", RoomOpen(302));
+		if (t == 570) { Take(mo, 3); Pose(mo, 560, 224, 144, 180); }
+		Forward(mo, t, 580, 15);
+		if (t == 625) Check("inLobbyWithGreen", mo.pos.z == 0 && mo.pos.x < 512 && have == "GREEN");
+		// the only empty frame left is in the cellar: GREEN goes there
+		if (t == 630) Pose(mo, -1664, 770, 0, 90);
+		Forward(mo, t, 635, 25);
+		if (t == 670) Check("inCellarWithGreen", mo.pos.x > 4200 && mo.pos.x < 4520 && have == "GREEN");
+		if (t == 675) { FindFrame(104).Activate(mo); Pose(mo, 4440, 160, 0, 0); }
+		Forward(mo, t, 680, 25);
+		if (t == 715) Check("onTerraceEmptyHanded", mo.pos.z == 128 && mo.pos.x > 3000 && mo.pos.x < 3256 && have == "-");
+		// off the terrace into the garden, through the stone doorway to the balcony
+		if (t == 720) Pose(mo, 3200, 224, 128, 0);
+		Forward(mo, t, 725, 15);
+		if (t == 775) Check("inGarden", mo.pos.z == 0 && mo.pos.x > 3256);
+		if (t == 780) Pose(mo, 3830, 224, 0, 0);
+		Forward(mo, t, 785, 20);
+		if (t == 820) Check("onBalcony", mo.pos.z == 112 && mo.pos.y > 448 && mo.pos.x < 512);
+		// the doorway is not a door to take; VIOLET is, and goes down through the gap in the rail
+		if (t == 822) { FindFrame(151).Activate(mo); Check("doorwayStays", !carried && FindFrame(151).door); }
+		if (t == 825) { Take(mo, 5); Pose(mo, 256, 500, 112, 270); }
+		Forward(mo, t, 835, 15);
+		if (t == 880) Check("inLobbyWithViolet", mo.pos.z == 0 && mo.pos.y < 448 && have == "VIOLET");
+		// swap RED for VIOLET in the lobby frame and leave
+		if (t == 885) { FindFrame(101).Activate(mo); Pose(mo, 256, 80, 0, 270); }
+		Forward(mo, t, 890, 25);
+		if (t == 925) Check("inStreet", mo.pos.x > 4900);
 		// face the exit switch; the real USE press comes from tools/smoke_MAP02_1.cfg
-		if (t == 530) Pose(mo, 5418, 96, 0, 0);
+		if (t == 930) Pose(mo, 5418, 96, 0, 0);
 	}
 
 	// MAP03: a solution of the same length as the one tools/build.py prints.
@@ -568,17 +606,20 @@ class AjarHandler : EventHandler
 		if (!tourViews.Size())
 		{
 			static const double hotel[] = {
-				256, 40, 0, 90, -12,        // lobby: the balcony, VIOLET and the doorway
-				470, 420, 0, 215, 0,        // lobby: frame, RED, pictures
-				60, 400, 0, 0, -20,         // lobby: up at the corridor's open end
-				540, 224, 144, 0, 0,        // corridor
-				1470, 190, 144, 20, -35,    // under the attic, looking up
-				1880, 224, 304, 180, 0,     // attic
-				4240, 160, 0, 0, 0,         // kitchen
-				3040, 60, 128, 60, 0,       // terrace and its frame
+				256, 96, 0, 90, -12,        // lobby: the balcony, VIOLET, the gap in the rail
+				400, 224, 0, 180, 0,        // lobby: the mouth of the ground-floor hall
+				-100, 224, 0, 180, 0,       // the hall
+				-672, 110, 0, 270, 0,       // room 104: RED
+				-1120, 250, 0, 270, 0,      // room 106's door: one lock
+				-1500, 224, 0, 180, 0,      // dining room
+				-1664, 600, 0, 90, 0,       // kitchen: the frame
+				540, 224, 144, 0, 0,        // upstairs hall
+				832, 330, 144, 90, 0,       // room 201: key 1
+				1344, 190, 144, 90, 0,      // room 203's door: two locks
+				1820, 224, 304, 0, 0,       // attic: key 3
+				4240, 160, 0, 0, 0,         // cellar: the frame, key 2
 				3060, 224, 128, 0, 12,      // terrace, down into the garden
-				3300, 224, 0, 0, 0,         // garden: the doorway
-				300, 520, 112, 180, 0,      // balcony: the doorway, the lobby below
+				300, 520, 112, 270, 20,     // balcony: the gap in the rail
 				5040, 96, 0, 0, 0           // street
 			};
 			static const double theatre[] = {
@@ -1098,6 +1139,43 @@ class AjarProbePuff : Actor
 }
 
 // No Doom status bar: only the door you are carrying, held at your side.
+// Room keys: numbered, brass, and not Doom's coloured cards, so that a key
+// is never mistaken for a door colour. The locks are in src/lockdefs.txt;
+// like Doom's keys they are taken away at the end of the level.
+class AjarKey : Key
+{
+	Default
+	{
+		Radius 20;
+		Height 16;
+		+NOTDMATCH
+	}
+}
+
+class AjarKey1 : AjarKey
+{
+	Default { Inventory.PickupMessage "Room key 1."; Inventory.Icon "AJKI1"; }
+	States { Spawn: AJK1 A -1; Stop; }
+}
+
+class AjarKey2 : AjarKey
+{
+	Default { Inventory.PickupMessage "Room key 2."; Inventory.Icon "AJKI2"; }
+	States { Spawn: AJK2 A -1; Stop; }
+}
+
+class AjarKey3 : AjarKey
+{
+	Default { Inventory.PickupMessage "Room key 3."; Inventory.Icon "AJKI3"; }
+	States { Spawn: AJK3 A -1; Stop; }
+}
+
+class AjarKey4 : AjarKey
+{
+	Default { Inventory.PickupMessage "Room key 4."; Inventory.Icon "AJKI4"; }
+	States { Spawn: AJK4 A -1; Stop; }
+}
+
 class AjarStatusBar : BaseStatusBar
 {
 	HUDFont big;
@@ -1118,6 +1196,14 @@ class AjarStatusBar : BaseStatusBar
 		Ammo a1, a2;
 		[a1, a2] = GetCurrentAmmo();
 		if (a1) DrawString(big, FormatNumber(a1.Amount, 3), (76, -24), DI_SCREEN_LEFT_BOTTOM, Font.CR_GOLD);
+		// room keys held, top right
+		int kx = -8;
+		for (int k = 4; k >= 1; k--)
+		{
+			if (!CPlayer.mo.FindInventory(String.Format("AjarKey%d", k))) continue;
+			DrawImage(String.Format("AJKI%d", k), (kx, 8), DI_SCREEN_RIGHT_TOP | DI_ITEM_RIGHT_TOP, 1.0, (-1, -1), (2, 2));
+			kx -= 62;
+		}
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (!h || !h.carried) return;
 		DrawImage(String.Format("AJDR%d", h.carried.args[1]), (-8, 28),

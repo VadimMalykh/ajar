@@ -11,6 +11,10 @@ DoomEdNums
 	20003 = AjarThief
 	20004 = AjarNailer
 	20005 = AjarLodger
+	20011 = AjarKey1
+	20012 = AjarKey2
+	20013 = AjarKey3
+	20014 = AjarKey4
 }
 
 clearepisodes
