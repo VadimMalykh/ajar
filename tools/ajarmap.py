@@ -110,9 +110,10 @@ def way_out(m, x, y, colour):
 
 
 HOME, HOME_MOUTH = 190, 590
+SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze): see squeeze()
 
 
-def way_home(m, x, y, colour):
+def way_home(m, x, y, colour, *, grille=False):
     """A way out the player has to build (MAP05 on). The same night room as
     way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
     its two ends are not joined yet: the far side of the door `colour` is in
@@ -126,9 +127,21 @@ def way_home(m, x, y, colour):
     it, so the room needs another way in, by which the door can be carried:
     the caller's job (its north and south walls are free). In a PUZZLE graph:
     the door's home and the frame HOME are in the same region, and
-    `home_frame=HOME` makes hanging it there the goal."""
-    room(m, [x, x + 320], [y, y + 96, y + 160, y + 256], lambda i, j: j == 1,
-         ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+    `home_frame=HOME` makes hanging it there the goal.
+
+    With `grille` (MAP08) a brass grille stands across the middle of the
+    room, with a gap by the south wall that only empty hands pass (a
+    squeeze). Coming through the door from wherever it hangs then brings
+    you to the west half and no further with anything in hand: the frame's
+    half needs a way in of its own. In a PUZZLE graph the halves are two
+    regions and `home_door` names the door."""
+    room(m, [x, x + 160, x + 320] if grille else [x, x + 320], [y, y + 96, y + 160, y + 256],
+         lambda i, j: j == 1, ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+    if grille:
+        m.cut((x + 160, y + 16), (x + 160, y + 64))
+        for a, b in ((y, y + 16), (y + 64, y + 96), (y + 96, y + 160), (y + 160, y + 256)):
+            m.line((x + 160, a), (x + 160, b), mid="AJGRIL", midboth=True, blocking=True, wrapmidtex=True)
+        m.line((x + 160, y + 16), (x + 160, y + 64), id=SQUEEZE, blockmonsters=True)
     brass = ("AJXA", "AJXAF")
     # the far side keeps the surround of its colour, so that whoever gets here
     # by another way (a Stray door) can tell which door belongs in the frame
@@ -323,7 +336,7 @@ def unbolt(m, a, b, tag, special=11):
     m.line(a, b, special=special, args=(tag, 32), playercross=True)
 
 
-SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze)
+SHUTTER = 600       # sector tag of a level's timed shutter (AjarHandler.ShutterTick)
 
 
 def squeeze(m, a, b, out, floor, *, thick=16, unbolt=None):
@@ -351,3 +364,32 @@ def stairs(m, a, b, out, floor, rise, *, steps=8, depth=32, ceil=None, **k):
         p4 = (a[0] + out[0] * depth * (i + 1), a[1] + out[1] * depth * (i + 1))
         m.sector([p1, p2, p3, p4], floor=floor + rise * (i + 1) // steps,
                  ceil=ceil if ceil is not None else floor + 128, **k)
+
+
+def shutter(m, a, b, out, floor, *, thick=16, line_id=0):
+    """A rolling shutter that a lever() somewhere else sends up, and that
+    comes down again by itself a few seconds later (Vadim's idea,
+    2026-11-15): a-b is its mouth on the side the lever serves, `out`
+    points to the other. From that other side it can be pushed up with USE,
+    but only for a moment: enough to walk out, not to fetch anything.
+    Declare the rooms on both sides first. One to a level (sector tag
+    SHUTTER); the time left is on the HUD while it is up. Keep monsters
+    from standing under it: a shutter that meets something goes up again.
+    In a PUZZLE graph: `dash`, and a walk link from the far side back."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall="AJSHUT",
+             ftex="AJTRIMF", ctex="AJTRIMF", id=SHUTTER)
+    m.line(c, d, special=12, args=(SHUTTER, 64, 35), playeruse=True, repeatspecial=True)
+    if line_id:
+        m.line(a, b, id=line_id)
+    for p, q in ((a, c), (b, d)):
+        m.line(p, q, mid="AJTRIM", dontpegbottom=True)
+
+
+def lever(m, a, b, seconds, *, line_id=0):
+    """The lever of the level's shutter(), on the 64-long wall piece a-b:
+    USE sends the shutter up for `seconds`."""
+    m.cut(a, b)
+    m.line(a, b, special=12, args=(SHUTTER, 64, seconds * 35), playeruse=True, repeatspecial=True,
+           mid="AJLEVR", exact=True, id=line_id)

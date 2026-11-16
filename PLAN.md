@@ -1019,6 +1019,102 @@ Found on the way (the solver):
 The level wears stock textures; its look is for a design session. The
 planetarium borrows the night room's walls and ceiling.
 
+## MAP08 "Closing Time" (2026-11-16)
+
+Built, solver-proven and walked headlessly. **Not played by hand yet.**
+`tools/map_hinges8.py`: a department store after the doors are locked. Five
+doors in the puzzle (PINK is a sixth, in a secret), four keys, five frames
+and the brass one, five Stray doors, 10 door actions, 547056 states, none
+stuck, nothing losable. 184 monsters, 5 secrets. `MAP=MAP08 ./run.sh`;
+MAP07's exit leads here.
+
+Vadim's brief: the timed exit (see "Idea for a later level"), chosen from
+four options put to him on 2026-11-16. The other three, for later: "Deep End"
+(public baths, the Flip door, counting your hangings), "Wrong Number" (a
+telephone exchange, the Pair door), "Night Shift" (a foundry, no new rule,
+disposal as the whole level).
+
+**The shutter** (`ajarmap.shutter`, `ajarmap.lever`; sector tag 600). A
+lever sends a rolling shutter up and it comes down by itself 8 seconds later
+(`SECONDS` in the map; Doom's own `Door_Raise`). The time left is on the HUD
+(`AjarHandler.ShutterTick`), and pulling the lever says what went up and for
+how long. From the far side it can be pushed up with USE, for one second: a
+way out, not a way to fetch anything. Porch lines keep monsters from under
+it, because a shutter that meets something goes up again; the player can hold
+it up by standing in it, which only helps someone who is already there.
+
+**A grille across the night room** (`way_home(grille=True)`). Without it the
+shutter would be for nothing: any door hung in the brass frame is a way to
+carry BLUE in (MAP06's trick). BLUE's far side is in the west half, the frame
+in the east half, and the gap in the grille is a squeeze. The east half is
+entered with a door only under the shutter. The west half's door to the dock
+is bolted inside, as in MAP05 to MAP07; arriving in either half draws it.
+
+**The level.**
+- One place to walk about in ("store"): the arcade (start), the lobby (RED, a
+  frame), the atrium, the goods passage, and under it the stockroom (a
+  frame). The gallery over the atrium's west side (RED's far side; key 1)
+  has a gap over the atrium and a hole into the showroom. The roof (GREEN's;
+  key 2) has a hole down onto the gallery.
+- The door showroom (two frames) is a place doors do not leave: a turnstile
+  from the atrium, a hatch to the dock. A door comes in from above only. The
+  caretaker's office is a balcony over it (YELLOW's far side; key 4; the
+  lever; a window on the dock): its stairs end at a gatepost, so a door comes
+  into the office only through YELLOW, and leaves by a gap in the rail.
+- The loading dock (VIOLET leans there; VIOLET's far side faces the shutter)
+  has a chute down into the stockroom: the way out with VIOLET.
+- West wing (key 1): toys, haberdashery, furniture (GREEN, a frame). East
+  wing (key 2): china, linen (key 3), carpets (YELLOW). Cash office (keys 3
+  and 4): BLUE, and the lever of the shop window.
+- **The catch.** VIOLET has to hang in the showroom, and BLUE has to be in
+  hand at the lever. Both come into the showroom from above: over the
+  gallery (through RED, or GREEN and the roof) or off the balcony (through
+  YELLOW, hung in the store). Then: through YELLOW into the office, the
+  lever, off the balcony, through VIOLET, across the dock, under the
+  shutter. The script's walk does it in 124 tics of the 280.
+- The frames the dash can use are the showroom's two. The others are too far
+  apart for a runner by the solver's count (the lobby's and the stockroom's:
+  2500 units and two ordinary doors; the furniture's: three doors), which is
+  why the stockroom's frame is at the far end and why ordinary doors stand
+  on those ways. A strafe-runner may beat that. Nothing breaks if so.
+- Stray pool: the boiler room off the passage (a mancubus; bolted inside)
+  and the shop window (secret), and the far side of whatever is not hung.
+- Secrets: the shop window, seen from the start (the cash office's lever, or
+  a Stray door); the kiosk in the arcade (shoot its bell through the bars);
+  the lamp store behind the carpets (a squeeze; PINK and a frame) and beyond
+  its bars the strongroom (PINK's far side); an alcove off the stockroom.
+- One lodger, in the showroom, whose two frames are empty until you fill
+  them. No thief (proposed as an extra, not built).
+- `MAP=MAP08 ./tools/smoke.sh`: 36 checks, to the exit, the dash on foot.
+  `MODE=2`: tour, 66 views (`TIMEOUT=400`). No test of the push from inside
+  the shutter, the level's Stray doors, the bell or the PINK secret.
+
+`tools/solve.py` now knows:
+- `dash=dict(at=, to=, limit=, legs={(a, b): units})`: from region `at` the
+  player gets to `to` with whatever they carry if the legs and the doors
+  that hang make a route from "lever" to "shutter" within `limit`. A quicker
+  runner is luck: allowed for, never relied on.
+- `home_door`: the door that makes `home_frame` the way out when its far
+  side is in another region (the grille). With it the search goes on past a
+  built way out, the door fixed in its frame: having had to build it to get
+  out of somewhere loses nothing.
+- `AJAR_QUICK=1 ./build.sh` builds without the solver, which now takes about
+  three minutes for the eight levels.
+
+Found on the way (the solver):
+- A door-island (the showroom) needs two ways in for doors. With the office
+  the only one, YELLOW carried into the showroom by a Stray door's luck was
+  there for good, and BLUE could never reach the lever.
+- With one frame in the store the hands are never empty again after the
+  second door. Hence the stockroom's.
+- A wrong door run in under the shutter and hung in the brass frame has to
+  be able to come out again: hence the push from inside.
+
+Open, Vadim's call: the 8 seconds (one number); whether the lobby and
+stockroom frames should be closer, so that a second, harder route exists on
+purpose; a thief in the showroom. The level wears stock textures; its look
+is for a design session.
+
 ## Flip door (designed 2026-11-15, not built)
 
 User agreed. A special door, not a property of every door: two-coloured,

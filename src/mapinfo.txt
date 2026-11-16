@@ -92,7 +92,18 @@ map MAP06 "After Hours"
 // Act 1, level 7 (tools/map_hinges7.py)
 map MAP07 "Small Hours"
 {
-	next = "MAP07"
+	next = "MAP08"
+	sky1 = "SKY1", 0
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 1, level 8 (tools/map_hinges8.py)
+map MAP08 "Closing Time"
+{
+	next = "MAP08"
 	sky1 = "SKY1", 0
 	nointermission
 	nojump

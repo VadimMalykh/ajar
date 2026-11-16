@@ -22,10 +22,20 @@ A puzzle is a dict:
                 list: only once the player has that key (a gate that opens)
   home_frame    optional frame id (ajarmap.way_home): the level is also won by
                 hanging in it the door whose home is that frame's region
+                (or the door `home_door`, where a grille parts the two;
+                the search then goes on past that, with the door fixed)
   pool          optional [regions] of the level's stray places, which only a
                 Stray door opens onto (it may also open onto the far side
                 of a coloured door). The Stray doors themselves are not
                 listed: see below
+  dash          optional dict(at=region, to=region, limit=units, legs={(a, b):
+                units}): a way that a lever in `at` opens for a few seconds
+                (ajarmap.shutter). Whatever is carried gets from `at` to `to`
+                if a route from "lever" to "shutter" is no longer than
+                `limit`. A leg is a stretch that can be run with a door in
+                hand, one way; its ends are "lever", "shutter", a frame's
+                line id or a far side's (200 + colour). A hung door joins
+                its frame and its far side
 
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
@@ -43,6 +53,10 @@ frame in its zone may or may not be nailed, so taking it down or swapping it
 there is luck: it can happen, but no win may depend on it. The player, in
 its zone, can kill it. (Which doors are nailed is not kept: that would
 multiply the states by every subset of doors.)
+
+So is a dash that is not sure: a quicker runner may get through with any
+arrangement of doors, so from `at` the player may find themselves in `to`
+with whatever they carry, but no win may depend on it.
 
 So is a Stray door's draw. With empty hands (that is, perhaps holding a Stray
 door: they are not counted, and a level may have any number) in a place with
@@ -90,6 +104,9 @@ def _moves(p, state, nailed=False):
     if nails and here in _zone(p["nailer"], keys):
         yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0)
     hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
+    dash = p.get("dash")
+    if dash and here == dash["at"] and _run(dash, hung) <= dash["limit"]:
+        yield 0, f"pull the lever and run to {dash['to']}", out(region=dash["to"])
     for f, c in hung.items():
         ends = (p["frames"][f], p["doors"][c]["home"])
         for a, b in (ends, ends[::-1]):
@@ -102,6 +119,8 @@ def _moves(p, state, nailed=False):
         if region != here:
             continue
         c = hung.get(f)
+        if c is not None and f == p.get("home_frame") and c == p.get("home_door"):
+            continue                                 # the way out, built: it stays
         if c is None and carried is not None:
             yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", f)})
         elif c is not None and bool(nails and region in _zone(p["nailer"], keys)) != nailed:
@@ -111,6 +130,25 @@ def _moves(p, state, nailed=False):
         elif c is not None:
             yield 1, f"swap {nm(c)} for {nm(carried)} in {f}", out(
                 carry=c, **{f"d{c}": ("carried",), f"d{carried}": ("frame", f)})
+
+
+DOOR_STEP = 64      # what stepping through a hung door adds to a run
+
+
+def _run(dash, hung):
+    """The shortest run from the lever to the shutter, in map units, by the
+    legs of `dash` and the doors that hang (`hung`: {frame id: colour})."""
+    best, todo = {"lever": 0}, ["lever"]
+    while todo:
+        a = todo.pop()
+        steps = [(y, d) for (x, y), d in dash["legs"].items() if x == a]
+        steps += [(200 + c, DOOR_STEP) for f, c in hung.items() if f == a]
+        steps += [(f, DOOR_STEP) for f, c in hung.items() if 200 + c == a]
+        for b, d in steps:
+            if best[a] + d < best.get(b, 1e9):
+                best[b] = best[a] + d
+                todo.append(b)
+    return best.get("shutter", 1e9)
 
 
 def _zone(who, keys):
@@ -125,7 +163,8 @@ def _won(p, s):
     f = p.get("home_frame")
     if f is None:
         return False
-    return any(loc == ("frame", f) and p["doors"][c].get("home") == p["frames"][f]
+    return any(loc == ("frame", f) and (c == p["home_door"] if "home_door" in p
+                                        else p["doors"][c].get("home") == p["frames"][f])
                for c, loc in zip(sorted(p["doors"]), s[2]))
 
 
@@ -136,6 +175,8 @@ def _luck(p, state):
     if nails:
         for _, _, n in _moves(p, state, True):
             yield n
+    if p.get("dash") and here == p["dash"]["at"]:
+        yield (p["dash"]["to"],) + state[1:]
     if carried is not None or not p.get("pool"):
         return
     colours = sorted(p["doors"])
@@ -195,8 +236,8 @@ def _search(p, start, with_luck):
     queue = deque([start])
     while queue:                                   # 0-1 BFS
         s = queue.popleft()
-        if _won(p, s):
-            continue
+        if _won(p, s) and (s[0] == p["goal"] or "home_door" not in p):
+            continue                               # (with home_door the player may go on: see lost())
         for cost, what, n in _moves(p, s):
             back.setdefault(n, []).append(s)
             if n not in dist or dist[s] + cost < dist[n]:
@@ -232,7 +273,7 @@ def solve(p):
         s, what = prev[s]
         steps.append(what)
     steps.reverse()
-    if p.get("thief") or p.get("nailer") or p.get("pool"):
+    if p.get("thief") or p.get("nailer") or p.get("pool") or p.get("dash"):
         dist, prev, back = _search(p, start[:5] + (1 if p.get("nailer") else 0,), True)
         wins = [s for s in dist if _won(p, s)]
     alive, todo = set(wins), list(wins)
@@ -250,7 +291,10 @@ def lost(p):
     """After solve(p): the places and keys that can be lost for good, as
     [(what, a state it cannot be reached from)]. A level where this is empty
     stays fully reachable whatever the player (and the thief) does, for
-    those who want every kill, item and secret."""
+    those who want every kill, item and secret. With `home_door` a way out
+    that has been built is not the end: the player may still go anywhere
+    they can with that door fixed in its frame, so having had to build it
+    to get out of somewhere loses nothing."""
     back, dist = solve.back, solve.dist
     live = [s for s in dist if not _won(p, s)]
     regions = {p["start"]} | {r for link in p["walk"] for r in link[:2]} | set(p["frames"].values())
