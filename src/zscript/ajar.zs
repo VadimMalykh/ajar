@@ -758,6 +758,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP05" && mode == 3) LostPropertyStrays(mo, t);
 		else if (level.mapname ~== "MAP05") LostPropertyScript(mo, t);
 		else if (level.mapname ~== "MAP06") AfterHoursScript(mo, t);
+		else if (level.mapname ~== "MAP07") SmallHoursScript(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
@@ -1298,6 +1299,209 @@ class AjarHandler : EventHandler
 		Forward(mo, t, 1650, 30);
 	}
 
+	// MAP07: a solution of the same length as the one tools/build.py prints.
+	// No Stray door is used.
+	void SmallHoursScript(Actor mo, int t)
+	{
+		string have = carried ? carried.Label() : "-";
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(304) && !RoomOpen(305) && !RoomOpen(307) && !RoomOpen(311));
+		// RED into the frame by the gate: three steps on, inside it, and the gate's bolt is drawn
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 192, -400, 0, 90); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("throughRedPastTheGate", mo.pos.x > -128 && mo.pos.x < 128 && mo.pos.y > -256 && mo.pos.y < 0);
+		if (t == 115) Check("gateUnbolted", RoomOpen(311));
+		// GREEN into the hall's frame: the stacks, key 1, and off them into the library
+		if (t == 120) { Take(mo, 3); FindFrame(105).Activate(mo); Pose(mo, 180, 592, 0, 0); }
+		Forward(mo, t, 125, 25);
+		if (t == 165) Check("onStacks", mo.pos.z == 160 && mo.pos.x < -800 && mo.pos.x > -992 && mo.pos.y > 528);
+		if (t == 170) Pose(mo, -896, 800, 160, 90);
+		Forward(mo, t, 175, 12);
+		if (t == 195) Check("haveKey1", Has(mo, 1));
+		if (t == 200) Pose(mo, -840, 720, 160, 0);
+		Forward(mo, t, 205, 20);
+		if (t == 240) Check("droppedIntoLibrary", mo.pos.z <= 32 && mo.pos.x > -800 && mo.pos.x < -272);    // perhaps on a table
+		// key 1 opens the west wing, off the lane: key 4 in the clock room
+		if (t == 245) { Pose(mo, -1120, 832, 0, 180); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (t == 285) Check("westWingOpens", RoomOpen(301));
+		if (t == 290) Pose(mo, -1600, 340, 0, 270);
+		Forward(mo, t, 295, 12);
+		if (t == 315) Check("haveKey4", Has(mo, 4));
+		// over the stile onto the hillside, up the steps past the gatepost onto the roof, and into the gallery
+		if (t == 320) Pose(mo, -1050, 1824, 0, 0);
+		Forward(mo, t, 325, 22);
+		if (t == 360) Check("overTheStile", mo.pos.z == 0 && mo.pos.x > -992 && mo.pos.y > 1696 && mo.pos.y < 2000);
+		if (t == 365) Pose(mo, -440, 1990, 0, 270);
+		Forward(mo, t, 370, 42);
+		if (t == 425) Check("upTheStepsToTheRoof", mo.pos.z == 160 && mo.pos.y < 1696);
+		if (t == 430) { Pose(mo, -440, 1280, 160, 0); FindLine(306).Activate(mo, 0, SPAC_Use); }
+		Forward(mo, t, 470, 20);
+		if (t == 500) Check("onGallery", mo.pos.z == 160 && mo.pos.x > -384 && mo.pos.x < -256);
+		if (t == 505) Pose(mo, 320, 1190, 160, 270);
+		Forward(mo, t, 510, 12);
+		if (t == 530) Check("haveKey2", Has(mo, 2));
+		if (t == 535) Pose(mo, 300, 1440, 160, 180);
+		Forward(mo, t, 540, 14);
+		if (t == 570) Check("droppedIntoDome", mo.pos.z == 0 && mo.pos.x > -256 && mo.pos.x < 256);
+		// key 2 opens the east wing: key 3 in the cellar
+		if (t == 575) { Pose(mo, 200, 720, 0, 0); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 615) Check("eastWingOpens", RoomOpen(302));
+		if (t == 620) Pose(mo, 1340, 1730, -128, 270);
+		Forward(mo, t, 625, 12);
+		if (t == 645) Check("haveKey3", Has(mo, 3));
+		// VIOLET into the hillside's frame: across the ravine. Keys 3 and 4 open the transit house; its lever
+		if (t == 650) { Take(mo, 5); FindFrame(104).Activate(mo); Pose(mo, 120, 2336, 0, 180); }
+		Forward(mo, t, 655, 25);
+		if (t == 695) Check("onKnoll", mo.pos.z == 0 && mo.pos.y > 2592 && mo.pos.y < 2944 && have == "-");
+		if (t == 700) { Pose(mo, -256, 2900, 0, 90); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 740) Check("transitHouseOpens", RoomOpen(303));
+		if (t == 745) { Pose(mo, -400, 3120, 0, 180); FindLine(308).Activate(mo, 0, SPAC_Use); }
+		if (t == 785) Check("leverOpensCave", RoomOpen(307));
+		// BLUE down off the knoll, up the ravine's steps, and no further: the stile refuses it
+		if (t == 790) { Take(mo, 2); Pose(mo, 0, 2640, 0, 270); }
+		Forward(mo, t, 795, 20);
+		if (t == 830) Check("inRavineWithBlue", mo.pos.z == -128 && have == "BLUE");
+		if (t == 835) Pose(mo, -720, 2432, -128, 180);
+		Forward(mo, t, 840, 36);
+		if (t == 885) Check("upTheRavineSteps", mo.pos.z == 0 && mo.pos.x < -940);
+		if (t == 886) Pose(mo, -960, 2432, 0, 270);
+		Forward(mo, t, 890, 10);
+		if (t == 910) Check("onHillsideWithBlue", mo.pos.z == 0 && mo.pos.y < 2400 && have == "BLUE");
+		if (t == 915) Pose(mo, -940, 1824, 0, 180);
+		Forward(mo, t, 920, 20);
+		if (t == 950) Check("stileRefusesADoor", mo.pos.x > -992 && have == "BLUE");
+		// BLUE for VIOLET in the hillside's frame, and through it: the night room, whose bolt you draw
+		if (t == 955) { Pose(mo, 120, 2336, 0, 180); FindFrame(104).Activate(mo); }
+		if (t == 958) Check("swappedForViolet", have == "VIOLET");
+		Forward(mo, t, 960, 25);
+		if (t == 1000) Check("inNightRoomWithViolet", mo.pos.z == 160 && mo.pos.x > -160 && mo.pos.x < 160 && mo.pos.y > 1712 && mo.pos.y < 1968 && have == "VIOLET");
+		if (t == 1005) Pose(mo, 0, 1800, 160, 270);
+		Forward(mo, t, 1010, 10);
+		if (t == 1055) Check("nightDoorUnbolted", RoomOpen(304) && !wayOutBuilt);
+		// the ready-made pair in its west wall turns you round
+		if (t == 1060) Pose(mo, -100, 1776, 160, 180);
+		Forward(mo, t, 1065, 14);
+		if (t == 1090) Check("turnedRound", mo.pos.x > -160 && mo.pos.x < 160 && mo.pos.y > 1860 && mo.pos.y < 1950 && abs(Actor.DeltaAngle(mo.angle, 0)) < 1 && !wayOutBuilt);
+		// out onto the gallery, down into the dome, and VIOLET into the frame there
+		if (t == 1095) Pose(mo, 0, 1740, 160, 270);
+		Forward(mo, t, 1100, 12);
+		if (t == 1125) Check("outOntoGallery", mo.pos.z == 160 && mo.pos.y < 1696 && have == "VIOLET");
+		if (t == 1128) Pose(mo, -300, 1440, 160, 0);
+		Forward(mo, t, 1130, 14);
+		if (t == 1163) Check("downInDome", mo.pos.z == 0);
+		if (t == 1165) FindFrame(103).Activate(mo);
+		if (t == 1168) Check("violetHungInDome", have == "-");
+		// YELLOW through it: over the knoll and the ravine to the hillside, and YELLOW for BLUE
+		if (t == 1170) Take(mo, 4);
+		if (t == 1175) Pose(mo, 320, 1010, 0, 270);
+		Forward(mo, t, 1180, 25);
+		if (t == 1215) Check("onKnollWithYellow", mo.pos.z == 0 && mo.pos.y > 2592 && mo.pos.y < 2944 && have == "YELLOW");
+		if (t == 1220) Pose(mo, 0, 2640, 0, 270);
+		Forward(mo, t, 1225, 20);
+		if (t == 1255) Pose(mo, -720, 2432, -128, 180);
+		Forward(mo, t, 1260, 36);
+		if (t == 1305) Pose(mo, -960, 2432, 0, 270);
+		Forward(mo, t, 1310, 10);
+		if (t == 1330) Check("onHillsideWithYellow", mo.pos.z == 0 && mo.pos.y < 2400 && have == "YELLOW");
+		if (t == 1335) { Pose(mo, 120, 2336, 0, 180); FindFrame(104).Activate(mo); }
+		if (t == 1338) Check("swappedForBlue", have == "BLUE");
+		// through YELLOW onto the gallery, into the night room, and BLUE beside its own far side
+		Forward(mo, t, 1340, 25);
+		if (t == 1380) Check("onGalleryWithBlue", mo.pos.z == 160 && mo.pos.y < 1696 && mo.pos.x > 256 && have == "BLUE");
+		if (t == 1385) Pose(mo, 0, 1660, 160, 90);
+		Forward(mo, t, 1390, 12);
+		if (t == 1415) Check("inNightRoomWithBlue", mo.pos.y > 1712 && mo.pos.x > -160 && mo.pos.x < 160 && have == "BLUE");
+		if (t == 1420) { FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
+		// the way out is walked into
+		if (t == 1425) Pose(mo, -100, 1776, 160, 180);
+		Forward(mo, t, 1455, 30);
+	}
+
+	// MAP07's tour, in three parts (see PartyWallViews).
+	void SmallHoursViews1()
+	{
+		static const double v[] = {
+			0, -768, 0, 90, 0,             // from the start: the road, the gate
+			192, -420, 0, 90, 0,           // the frame by the gate, RED leaning
+			96, -380, 0, 110, 0,           // through the bars: RED's far side
+			0, -200, 0, 160, 0,            // inside the gate: RED's far side
+			0, 40, 0, 90, 0,               // the forecourt
+			-300, 256, 0, 180, 0,          // the arch to the yard
+			0, 560, 0, 90, 0,              // the hall: the dome's door
+			100, 592, 0, 0, 0,             // the hall's frame
+			100, 740, 0, 20, 0,            // GREEN, and the east wing's door: one lock
+			-100, 720, 0, 180, 0,          // the library's door
+			-300, 720, 0, 180, -15,        // the library, the stacks over it
+			-560, 740, 0, 225, 0,          // the frame under the stacks
+			-720, 700, 0, 215, -30,        // GREEN's far side, from below
+			-896, 640, 160, 270, 0,        // on the stacks: GREEN's far side
+			-880, 720, 160, 0, 25,         // from the stacks, the library
+			-896, 700, 160, 90, 0,         // along the stacks: key 1
+			0, 960, 0, 90, -15,            // the dome: the telescope, the gallery
+			160, 1000, 0, 300, 0,          // the frame under the gallery
+			200, 1200, 0, 60, -25,         // YELLOW's far side, from below
+			-320, 1100, 160, 90, 0         // along the west gallery
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void SmallHoursViews2()
+	{
+		static const double v[] = {
+			-300, 1280, 160, 180, 0,       // the gallery: the door to the roof
+			-300, 1500, 160, 315, 25,      // from the gallery, the dome floor
+			0, 1600, 160, 90, 0,           // the night room's door, bolted
+			200, 1620, 160, 45, 0,         // YELLOW's far side
+			320, 1300, 160, 270, 0,        // the east gallery: key 2
+			-20, 1840, 160, 180, 0,        // the night room: the ready-made pair
+			20, 1840, 160, 0, 0,           // the night room: BLUE's far side and the frame
+			-500, 1280, 160, 180, 0,       // the roof
+			-900, 960, 160, 45, 0,         // across the roof
+			-672, 1640, 160, 90, 25,       // the gap in the roof's rail: the hillside
+			-440, 1640, 160, 90, 20,       // the gatepost at the head of the steps
+			-600, 1900, 0, 0, -10,         // the steps up to the roof
+			-900, 1824, 0, 180, 0,         // the stile
+			-800, 300, 0, 0, 0,            // the west yard
+			-1008, 200, 0, 270, 0,         // the boiler house's door, bolted
+			-1008, 20, 0, 270, 0,          // the boiler house
+			-1088, 500, 0, 90, 0,          // the lane
+			-1050, 832, 0, 180, 0,         // the west wing's door: one lock
+			-1088, 1700, 0, 135, 0,        // the shed behind its bars
+			-1060, 1824, 0, 0, 0           // the stile, from the lane
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void SmallHoursViews3()
+	{
+		static const double v[] = {
+			-200, 2100, 0, 45, 0,          // the hillside: the tower stump
+			200, 2336, 0, 180, 0,          // the hillside's frame
+			200, 2300, 0, 80, 0,           // VIOLET's far side, across the ravine
+			300, 2100, 0, 270, 0,          // VIOLET
+			-500, 2380, 0, 200, 20,        // the ravine's steps
+			-400, 2500, -128, 150, 0,      // the ravine: the cave's door
+			-784, 2640, -128, 90, 0,       // the cave
+			192, 2700, 0, 90, 0,           // the knoll: VIOLET's far side
+			-256, 2700, 0, 90, 0,          // the transit house's door: two locks
+			0, 2650, 0, 270, 10,           // from the knoll, the hillside's frame
+			-256, 3000, 0, 60, 0,          // the transit house
+			-200, 3120, 0, 180, 0,         // its lever, and BLUE
+			-1250, 832, 0, 180, 0,         // the west wing: the workshop
+			-1408, 1100, 0, 90, 0,         // the instrument room: YELLOW, the hole
+			-1408, 560, 0, 270, 0,         // the clock room: key 4
+			-1536, 1480, 0, 90, 0,         // the lens store: PINK and its frame
+			-1500, 1560, 0, 0, 0,          // through its bars, the armoury
+			-1296, 1480, 0, 90, 0,         // the armoury: PINK's far side
+			400, 720, 0, 0, 0,             // the east wing: the lecture room
+			830, 700, 0, 0, -10,           // the planetarium
+			1024, 1020, 0, 90, 0,          // the orrery, the steps down
+			1024, 1700, -128, 45, 0,       // the cellar: the cistern
+			1300, 1824, -128, 0, 0         // the hole into the alcove
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
 	// MAP05 mode 3: the level's four Stray doors, one after another, each
 	// hung in the vestibule frame and walked through. (In a test the pool
 	// is taken in order: the lamp room, the shed, the kiosk, and then RED's
@@ -1612,6 +1816,7 @@ class AjarHandler : EventHandler
 			if (level.mapname ~== "MAP04") PartyWallViews();
 			else if (level.mapname ~== "MAP05") { LostPropertyViews1(); LostPropertyViews2(); }
 			else if (level.mapname ~== "MAP06") { AfterHoursViews1(); AfterHoursViews2(); AfterHoursViews3(); }
+			else if (level.mapname ~== "MAP07") { SmallHoursViews1(); SmallHoursViews2(); SmallHoursViews3(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}
@@ -2205,8 +2410,26 @@ class AjarHandler : EventHandler
 		Forward(mo, t, 130, 40);
 	}
 
+	// MODE=13: the way out that turns you round (ajarmap.way_round). The
+	// fixed pair in the west wall brings you back into the room; VIOLET hung
+	// beside its own far side makes all four openings ways out.
+	void RoundScript(Actor mo, int t)
+	{
+		AjarFrame f = FindFrame(191);
+		if (t == 35) Pose(mo, 4200, 2064, 0, 180);         // shot 1: the fixed pair, nothing built
+		Forward(mo, t, 70, 30);
+		if (t == 105) Check("turnedRound", mo.pos.x > 4000 && mo.pos.x < 4320 && mo.pos.y > 2160 && abs(Actor.DeltaAngle(mo.angle, 0)) < 1 && !wayOutBuilt);
+		if (t == 110) { Take(mo, 5); Pose(mo, 4290, 2192, 0, 0); }
+		if (t == 115) { f.Activate(mo); Check("wayOutBuilt", wayOutBuilt && f.door && !carried); }
+		if (t == 120) Pose(mo, 4200, 2064, 0, 180);        // shot 2: west, built
+		if (t == 180) Pose(mo, 4120, 2064, 0, 0);          // shot 3: east, built
+		if (t == 240) Pose(mo, 4250, 2100, 0, 170);        // shot 4: off the axis
+		Forward(mo, t, 300, 40);
+	}
+
 	void TestLevelScript(Actor mo, int t, int mode)
 	{
+		if (mode == 13) { RoundScript(mo, t); return; }
 		if (mode == 12) { HomeScript(mo, t); return; }
 		if (mode == 11) { StrayScript(mo, t); return; }
 		if (mode == 10) { CrowdScript(mo, t); return; }

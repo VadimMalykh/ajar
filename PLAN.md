@@ -921,6 +921,104 @@ the level's plan.
 
 The level wears stock textures; its look is for a design session.
 
+## MAP07 "Small Hours" (2026-11-16)
+
+Built, solver-proven and walked headlessly. **Not played by hand yet.**
+`tools/map_hinges7.py`: an observatory on a hill at night. Five doors in the
+puzzle (PINK is a sixth, in a secret), four keys, six frames, five Stray
+doors, 12 door actions, 268139 states, none stuck, nothing losable. 170
+monsters, 5 secrets. `MAP=MAP07 ./run.sh`; MAP06's exit leads here.
+
+Vadim's brief: the new exit; "side by side" as the level's motif; an
+observatory; bigger than MAP06; a calm beginning, monsters a little later;
+ways to make the monsters easier by choosing doors well (left to Claude).
+
+**The way out turns you round** (Vadim's idea; `ajarmap.way_round`). The
+night room, but nothing in it faces anything. Its west wall has a ready-made
+pair of brass openings that are one fixed doorway: into one, out of the
+other, back into the room. Its east wall has the far side of an ordinary door
+and beside it an empty brass frame. Hang that door there and the east wall
+turns you round too: the room repeats through every opening, with you in
+every second copy, seen from behind. All four mouths then end the level
+(line id 590, `ComeHome`, as in MAP05). No change to the engine or solver.
+- One pair alone never shows you yourself: the room seen through it is the
+  room turned half round about the pier between the two openings, and the
+  pier hides where you would be. So the sight is saved for the end.
+- You are small in it: the nearest you is two room lengths away. A shorter
+  room would bring it closer. Not tried.
+- Open, Vadim's call: once built, should the player be able to walk the loop
+  before leaving (the exit somewhere else), instead of every mouth ending
+  the level?
+- `MAP=TEST MODE=13` checks the room (VIOLET, frame 191, at 4000, 2000 in the
+  test box: `warp 4160 2128`).
+
+**Side by side.** Every far side has an empty frame next to it with
+something between that cannot be walked: the gate's bars (RED), the height
+of the stacks over the library (GREEN) and of the gallery in the dome
+(YELLOW), the ravine (VIOLET), bars again in a secret (PINK). The exit is
+the same step with nothing to cross. Only RED's and VIOLET's are forced; the
+others are where the frames happen to be.
+
+**The level.**
+- Quiet start: the road (start), the gate, the forecourt, the hall and the
+  west yard have nobody in them. RED leans by the gate, which is bolted
+  inside; the frame is beside it and RED's far side three steps beyond the
+  bars. Coming through draws the bolt.
+- One place to walk about in ("grounds"): gate passage, forecourt, hall
+  (GREEN, a frame), library (a frame), dome (a frame), west yard, lane.
+- Up: the stacks over the library (GREEN's far side; key 1), the dome's
+  gallery (YELLOW's; key 2), the roof between them and the lane, and the
+  night room off the gallery, bolted inside.
+- North: the hillside (VIOLET leans there; one frame, in the stump of a
+  bridge tower), the ravine, the knoll (VIOLET's far side), the transit
+  house (keys 3 and 4: BLUE, and the cave's lever).
+- The hillside is reached from the lane by a stile (a squeeze), and the roof
+  from the hillside by steps and a gatepost (a squeeze: bare line 500, as
+  MAP06's). With a door the only ways onto the hillside are off the roof (a
+  gap in its rail) and off the knoll.
+- West wing (key 1, off the lane): workshop, instrument room (YELLOW), clock
+  room (key 4). East wing (key 2, off the hall): lecture room, planetarium,
+  orrery, steps down to the cellar (key 3).
+- **The catch.** VIOLET cannot leave the hillside by the stile, so it hangs
+  in the hillside's one frame: the real step across the ravine. BLUE comes
+  down off the knoll to that frame and no further. Swapped in, it takes you
+  to the night room (the bolt) with VIOLET in hand. What must hang on the
+  hillside instead is YELLOW, and YELLOW gets there only over the knoll:
+  through VIOLET, hung somewhere in the grounds by then. Then BLUE goes up
+  through YELLOW. (Or RED instead of YELLOW on the hillside, and YELLOW in
+  the grounds: the solver allows both.)
+- **Monsters made easier by doors.** The library and the dome are the two
+  big fights, and both can be had from above. GREEN leans in the quiet hall
+  beside a frame: hung there, it puts you on the stacks over the library
+  before anything in it has seen you; the frame "beside its far side" is
+  down among them. The gallery is reached over the roof with empty hands, or
+  through YELLOW later; the dome's own frame is on its floor. Also there for
+  whoever thinks of it: nothing that follows you onto the knoll can get off
+  it (monsters do not jump into the ravine), and the gate's bars can be shot
+  through. None of this is tested or required.
+- Stray pool: the boiler house off the yard (a mancubus; bolted inside) and
+  the cave in the ravine (secret), and the far side of whatever is not hung.
+  No Stray door in the quiet part.
+- Secrets: the lens store behind the instrument room (a squeeze; PINK and a
+  frame) and, beyond its bars, the armoury (PINK's far side; its own door is
+  bolted inside, so a Stray door cannot strand anyone there); the cave (the
+  transit house's lever, or a Stray door); the shed in the lane (shoot its
+  bell through the bars); an alcove past the cistern (a squeeze).
+- `MAP=MAP07 ./tools/smoke.sh`: 36 checks, to the exit. `MODE=2`: tour, 63
+  views (`TIMEOUT=400`). No test of the level's Stray doors, the bell, the
+  PINK secret, or the fights from above.
+
+Found on the way (the solver):
+- A door that only one door leads to (the gallery, by YELLOW) is lost if
+  that door ends up in the night room's frame by a Stray door's luck. Hence
+  the steps and gatepost: the gallery is always reachable with empty hands.
+- A frame in the transit house made the knoll losable (VIOLET hung in it).
+- With VIOLET leaning anywhere a door can walk from, the hillside's frame
+  is not needed for VIOLET at all: any frame leads to the knoll.
+
+The level wears stock textures; its look is for a design session. The
+planetarium borrows the night room's walls and ceiling.
+
 ## Flip door (designed 2026-11-15, not built)
 
 User agreed. A special door, not a property of every door: two-coloured,
