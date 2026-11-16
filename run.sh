@@ -21,4 +21,7 @@ fi
 # Vulkan (1) will not start. The GLES backend (2) works, so it is set again
 # before every start.
 [ -f ajar.ini ] && sed -i -e 's/^vid_preferbackend=.*/vid_preferbackend=2/' -e 's/^vid_rendermode=.*/vid_rendermode=4/' ajar.ini
-gzdoom -config "$PWD/ajar.ini" -iwad doom2.wad -file build/ajar.pk3 +skill "$((${SKILL:-3} - 1))" +map "${MAP:-MAP01}" "$@" 2>&1 | tee build/run.log
+# -noautoload: the config is a copy of yours, and so are its Autoload lists.
+# Whatever you load on top of Doom II by habit (a megawad with its own
+# monsters and palette) must not be under Ajar.
+gzdoom -config "$PWD/ajar.ini" -noautoload -iwad doom2.wad -file build/ajar.pk3 +skill "$((${SKILL:-3} - 1))" +map "${MAP:-MAP01}" "$@" 2>&1 | tee build/run.log
