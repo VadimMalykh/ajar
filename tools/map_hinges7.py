@@ -288,7 +288,7 @@ ajarmap.stairs(m, (992, 1376), (1056, 1376), (0, 1), 0, CELLAR, light=150, wall=
 CELL = dict(floor=CELLAR, ceil=0, light=140, wall="AJBRICK", ftex="AJPIT")
 ajarmap.fitted(m, (800, 1632, 1376, 1968), [
     ((1120, 1728, 1312, 1904), dict(floor=CELLAR - 16, ftex="AJWATER")),
-    ((832, 1840, 960, 1936), dict(WOOD, floor=CELLAR + 48)),
+    ((848, 1840, 960, 1920), dict(WOOD, floor=CELLAR + 48)),     # a crate, 48 clear of the walls: a Stray door leans behind it
 ], **CELL)
 m.sector(rect(1392, 1760, 1536, 1888), floor=CELLAR, ceil=CELLAR + 96, light=120, wall="AJSAFE", ftex="AJPIT",
          special=1024)
