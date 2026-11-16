@@ -2177,3 +2177,29 @@ is built in pieces and each piece drew the door's face from its own left
 edge. 21 doors in MAP04 to MAP09 had it. `roomdoor()` and `bolted()` now mark
 their mouth lines `exact`, and `udmf.py` carries a cut line's offset to the
 wall over the opening as well as to its middle texture.
+
+## Levers that look like levers; ambushes (2026-11-16)
+
+**Levers.** Vadim, in MAP06's office: the lever does not look like a switch
+and nothing happens when it is pulled. It worked (the grotto opened, out of
+sight). Now:
+- `gfx.lever` / `gfx.levers`: a brass-rimmed switch box at hand height on the
+  room's own wall, lamp red and lever up, lamp green and lever down once
+  pulled: `AJ5LV` (signal box), `AJ6LV<look>` (museum office), `AJ7LV<look>`
+  (transit house), `AJLEVR` (plain wall, MAP08's cash office), `AJLEVB`
+  (brick, the shutter's lever), each with an `N` twin. `animdefs.txt` is
+  generated and names every pair as a switch, so Doom moves it and gives it
+  its sound.
+- `AjarHandler.WorldLinePreActivated` says what a lever or a bell did
+  ("Somewhere in the building a bolt is drawn").
+
+**Ambushes** (`ajarmap.ambush`, thing 20030 `AjarAmbush`,
+`AjarHandler.AmbushTick`). There were none: every monster stood in its place
+from the start. An ambusher is a monster that comes in a teleport flash when
+the player takes a room key (cause 1..4) or first takes a door (10 + colour;
+not used yet). No closets, no geometry: the thing is a marker and the script
+spawns the monster there, awake, once the place is free. Thinned on the
+easier difficulties like placed monsters. Two or three per level from MAP03
+to MAP09, five to eight monsters a level; the list is at the foot of each
+map's things. `tools/budget.py` and `tools/thingcheck.py` count an ambusher
+as the monster it will be.

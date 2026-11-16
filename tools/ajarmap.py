@@ -195,6 +195,23 @@ def way_round(m, x, y, colour, *, frame=HOME, n=WAY_OUT, floor=0):
         m.thing(x + cx, y + 128, 35)                              # candelabra, on the piers
 
 
+AMBUSH_T = 20030    # AjarAmbush: a monster that is not there yet
+
+
+def ambush(m, cause, kind, *spots, angle=0):
+    """Monsters of Doom editor number `kind` that come in a flash at `spots`
+    when the player takes something: `cause` is a room key's number (1..4),
+    or 10 plus the colour of a door, taken for the first time. Doom's oldest
+    trick, and nothing the solver needs to know about. They are thinned on
+    the easier difficulties as placed monsters are (udmf.Map._skills): of a
+    level's ambushers, in the order given, every second one stays on 1 and
+    three in four on 2. Keep the spots clear of walls and of each other;
+    one whose place is taken waits until it is free."""
+    for x, y in spots:
+        i = m.ambushers = getattr(m, "ambushers", -1) + 1
+        m.thing(x, y, AMBUSH_T, angle=angle, args=(cause, kind), skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
+
+
 LINE_T = 20006      # AjarLine: the middle of the room a chain runs through
 HOME2 = 191         # the second brass frame of a chain
 
@@ -436,12 +453,12 @@ def shutter(m, a, b, out, floor, *, thick=16, line_id=0):
         m.line(p, q, mid="AJTRIM", dontpegbottom=True)
 
 
-def lever(m, a, b, seconds, *, line_id=0):
+def lever(m, a, b, seconds, *, line_id=0, tex="AJLEVR"):
     """The lever of the level's shutter(), on the 64-long wall piece a-b:
     USE sends the shutter up for `seconds`."""
     m.cut(a, b)
     m.line(a, b, special=12, args=(SHUTTER, 64, seconds * 35), playeruse=True, repeatspecial=True,
-           mid="AJLEVR", exact=True, id=line_id)
+           mid=tex, exact=True, id=line_id)
 
 
 # --- rooms that are not rectangles ---------------------------------------------

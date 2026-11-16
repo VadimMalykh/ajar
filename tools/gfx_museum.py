@@ -41,7 +41,7 @@ its own place in its wall instead (the shift in FACES). What stands free in a ro
 import math
 import random
 
-from gfx import Img, shade, BRASS, bell
+from gfx import Img, shade, BRASS, bell, levers
 import gfx_theatre as th
 import gfx_yard as gy
 from gfx_station import arch, copy
@@ -1163,6 +1163,7 @@ def make(out, rd):
             walls[tag] = tex(name(tag), wall(c[part], 128, seed=k + ord(tag)))
         tex(name("C", 1), hang(copy(walls["C"]), menu(36, 40, 990 + k), n, 44))
         walls.update(same)
+        levers(out, f"AJ6LV{n}", walls["O"])                         # the office's lever
 
         # doors
         for letter, (tag, s, keys) in FACES.items():

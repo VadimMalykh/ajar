@@ -748,6 +748,44 @@ def bell(wall, cx, cy, h=None):
     return im
 
 
+def lever(wall, on, h=None, up=52):
+    """A copy of the wall `wall`, tiled down to `h` rows, with a switch on it at
+    hand height (`up` rows above its foot): an iron plate in a brass rim, a
+    lamp, and one lever with a red grip, up, or down once it has been pulled
+    (`on`). Both are named in ANIMDEFS, so the lever moves and clacks when it
+    is used. It used to be a dark panel from floor to ceiling with three rods
+    on it, which did not look like anything to pull (Vadim, 2026-11-16)."""
+    h = h or wall.h
+    im = Img(wall.w, h)
+    im.px = [list(wall.px[(y % wall.h) * wall.w + x]) for y in range(h) for x in range(wall.w)]
+    cy = h - up
+    iron, rim, dark = (52, 54, 58), (176, 140, 66), (22, 22, 24)
+    im.rect(17, cy - 25, 47, cy + 25, (30, 26, 20))                  # its shadow on the wall
+    im.rect(18, cy - 26, 46, cy + 24, rim)
+    im.rect(20, cy - 24, 44, cy + 22, iron)
+    im.rect(18, cy - 26, 46, cy - 25, shade(rim, 1.3))
+    im.disc(32, cy - 18, 3, (60, 200, 90) if on else (210, 60, 50)) # the lamp
+    im.disc(32, cy - 18, 1, (200, 255, 210) if on else (255, 190, 170))
+    im.rect(30, cy - 10, 34, cy + 16, dark)                          # the slot
+    im.disc(32, cy + 3, 3, (120, 122, 128))                          # the pivot
+    y1, y2 = (cy + 3, cy + 15) if on else (cy - 9, cy + 3)
+    im.rect(31, y1, 33, y2, (190, 190, 196))                         # the arm
+    gy = cy + 15 if on else cy - 9
+    im.rect(27, gy - 3, 37, gy + 3, (200, 50, 40))                   # the grip
+    im.rect(27, gy - 3, 37, gy - 2, (240, 120, 100))
+    return im
+
+
+LEVERS = []         # the textures lever() pairs made: [off, on], for ANIMDEFS
+
+
+def levers(out, name, wall, h=None):
+    """Both states of a lever on `wall` as textures `name` and `name`N."""
+    out[f"textures/{name}.png"] = lever(wall, False, h).png()
+    out[f"textures/{name}N.png"] = lever(wall, True, h).png()
+    LEVERS.append(name)
+
+
 def make_all():
     """Returns {path inside pk3: png bytes}."""
     out = {}
@@ -1112,15 +1150,8 @@ def make_all():
         bl.rect(0, y, 64, y + 3, (150, 150, 158))
         bl.rect(0, y + 3, 64, y + 4, (60, 60, 66))
     out["flats/AJRAILS.png"] = bl.png()
-    lv = Img(64, 128, (58, 62, 60))
-    lv.noise(4, 92)
-    lv.frame(0, 0, 64, 128, (30, 32, 30), 3)
-    lv.rect(10, 86, 54, 96, (24, 24, 24))
-    for i, c in enumerate(((200, 60, 50), (215, 170, 40), (60, 170, 80))):
-        x = 16 + i * 14
-        lv.rect(x, 40, x + 4, 90, (170, 170, 176))
-        lv.rect(x - 2, 32, x + 6, 44, c)
-    out["textures/AJLEVR.png"] = lv.png()
+    levers(out, "AJLEVR", wall)                                      # on the plain wall (MAP08)
+    levers(out, "AJLEVB", brick, 160)                                # and on brick: the caretaker's office
 
     for c in list(DOOR_COLOURS) + [STRAY]:
         d = door(c)
@@ -1146,4 +1177,6 @@ def make_all():
                 t.rect(i, 6, i + 1, 10, DOOR_COLOURS[1 + (i // 11) % 6])
         out[f"textures/AJTR{c}.png"] = t.png()
         out[f"flats/AJTF{c}.png"] = t.png()
+    # a lever is a switch: it moves when it is used, and Doom gives it a sound
+    out["animdefs.txt"] = "".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS)).encode()
     return out

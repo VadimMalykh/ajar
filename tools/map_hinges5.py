@@ -238,7 +238,7 @@ recess((2240, 544), (2240, 608), (1, 0), BRIDGE, far_id(RED), 101, far_colour=RE
 m.sector(rect(2256, 896, 2512, 1152), floor=BRIDGE, ceil=BRIDGE + 128, light=180, color=WARM, **BOX)
 ajarmap.roomdoor(m, (2240, 992), (2240, 1056), (1, 0), BRIDGE, skin=DOOR)
 m.cut((2512, 992), (2512, 1056))
-m.line((2512, 992), (2512, 1056), special=11, args=(LAMPS, 32), playeruse=True, mid="AJLEVR", exact=True,
+m.line((2512, 992), (2512, 1056), special=11, args=(LAMPS, 32), playeruse=True, mid="AJ5LV" if LOOK else "AJLEVR", exact=True,
        id=306)
 
 # === platform 2 and what is off it ================================================
@@ -517,6 +517,14 @@ things(BARON, (448, 2320), angle=270, ambush=True)
 things(KNIGHT, (320, 2260), (560, 2420), angle=270, ambush=True)
 things(TECHLAMP, (280, 2440), (616, 2232))
 things(MEDIKIT, (280, 2232))
+
+# --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
+# key 1, in the signal box: the bridge outside its door
+ajarmap.ambush(m, 1, REVENANT, (2140, 1030), angle=0)
+ajarmap.ambush(m, 1, IMP, (2120, 820), (2120, 1230), angle=0)
+# key 3, in the lost property office: between you and the door
+ajarmap.ambush(m, 3, DEMON, (1340, 200), (1200, 200), angle=180)
+ajarmap.ambush(m, 3, CHAINGUNNER, (1130, 90), angle=270)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "hall" is the concourse, platform 1, the tracks and the waiting room, and

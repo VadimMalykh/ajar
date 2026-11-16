@@ -18,14 +18,17 @@ for name in sys.argv[1:]:
     def sec(x, y):
         for i, p in enumerate(m.polys):
             if inside(p, x + .5, y + .5): return m.sectors[i]
-    T = [t for t in m.things if t["type"] in R]
+    # an ambusher (ajarmap.ambush) is checked as what it will be, but not against
+    # monsters: it waits for its place to be free
+    T = [dict(t, type=t["args"][1], late=True) if t["type"] == 20030 else t for t in m.things]
+    T = [t for t in T if t["type"] in R]
     bad = 0
     for i, a in enumerate(T):
         sa = sec(a["x"], a["y"])
         if sa and a["type"] in MON and sa["ceil"] - sa["floor"] < H.get(a["type"], 56):
             print(name, "LOW ceiling", a["type"], a["x"], a["y"]); bad += 1
         for b in T[i + 1:]:
-            if a["type"] == 20003: continue
+            if a["type"] == 20003 or (a.get("late") != b.get("late") and {a["type"], b["type"]} <= MON): continue
             d = max(abs(a["x"] - b["x"]), abs(a["y"] - b["y"]))      # Doom's boxes
             if d < R[a["type"]] + R[b["type"]]:
                 sb = sec(b["x"], b["y"])

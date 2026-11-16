@@ -468,6 +468,16 @@ things(ROCKETBOX, (1432, 400), (1608, 400))
 things(MEGA, (1432, 250))
 things(AMMOBOX, (1608, 250))
 
+# --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
+# key 1, on the gallery: up from the switchroom, at a man with a rocket launcher
+ajarmap.ambush(m, 1, CACO, (-232, 40), (-232, 420), angle=180)
+# key 3, behind the racks: the aisles
+ajarmap.ambush(m, 3, REVENANT, (760, -50), angle=0)
+ajarmap.ambush(m, 3, IMP, (950, 100), (950, 360), angle=0)
+# key 4, on the balcony: the floor below
+ajarmap.ambush(m, 4, KNIGHT, (0, 780), angle=90)
+ajarmap.ambush(m, 4, IMP, (220, 720), (-200, 760), angle=90)
+
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "main" is the forecourt, the call office, the switchroom, the cable passage
 # and the battery room, and also the kiosk and the generator room, which open

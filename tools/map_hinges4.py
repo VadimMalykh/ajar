@@ -421,6 +421,13 @@ things(LAMP, (1960, 696))
 things(REVENANT, (5264, 128), angle=180)
 things(SERGEANT, (5230, 48), (5230, 208), angle=180)
 
+# --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
+# key 2, at the far end of the roof: the way back over the slates
+ajarmap.ambush(m, 2, CACO, (420, 1250), angle=0)
+ajarmap.ambush(m, 2, SOUL, (330, 1440), (560, 1440), (700, 1200), angle=0)
+# key 3, in the kennel: more dogs
+ajarmap.ambush(m, 3, DEMON, (150, 1750), (150, 1880), angle=180)
+
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "yard" is the yard, gate passage and wash house: where the thief works.
 # "boiler" is the light well. a is the cellar door's bolt.
