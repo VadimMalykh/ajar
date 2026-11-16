@@ -274,7 +274,7 @@ def stray(m, x, y, *, angle=0):
     m.thing(x, y, DOOR_T, angle=angle, args=(far_id(STRAY), STRAY, 0))
 
 
-def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look="", skin=""):
+def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look="", skin="", free_inside=False):
     """An ordinary door, as in any Doom level: opened with USE, shuts by
     itself, and monsters can open it too. It fills the wall between two
     rooms that are `thick` apart; a-b is its 64-wide mouth on one side and
@@ -287,13 +287,16 @@ def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look="", skin
     cannot open it. In a PUZZLE graph that is a walk link with keys.
     `line_id` names the mouth line a-b, for tests. `look` picks one of
     MAP02's candidate doors (gfx_hotel.py); `skin` is the name of another
-    door texture, to which the keys of a locked door are added."""
+    door texture, to which the keys of a locked door are added.
+    `free_inside`: a locked door needs no key from the side `out` points to
+    (MAP09's east wing, which can be come into another way: nobody is locked
+    in). In a PUZZLE graph the walk link out of there has no key."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
     m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=skin + keys if skin else (f"AJ2K{look}{keys}" if keys else f"AJ2D{look}") if look else f"AJHK{keys}" if keys else "AJHDOR",
              ftex="AJTRIMF", ctex="AJTRIMF")
     for p, q in ((a, b), (c, d)):
-        if keys:
+        if keys and not (free_inside and p == c):
             m.line(p, q, special=13, args=(0, 24, 150, LOCK[keys]), playeruse=True, repeatspecial=True,
                    exact=True)
         else:
