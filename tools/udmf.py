@@ -160,8 +160,8 @@ class Map:
             if a and whole:                    # a piece of one picture: see props_for
                 o = min(whole, key=lambda q: (q[0] - a[0]) * (b[0] - a[0]) + (q[1] - a[1]) * (b[1] - a[1]))
                 u = ((a[0] - o[0]) ** 2 + (a[1] - o[1]) ** 2) ** 0.5
-                if u:
-                    d["offsetx_mid"] = float(u)
+                if u:                          # (a door's face is the wall over its sunk leaf)
+                    d["offsetx_mid"] = d["offsetx_top"] = float(u)
             elif a and fit:
                 (ox, oy), scale = fit
                 u = (((a[0] - ox) ** 2 + (a[1] - oy) ** 2) ** 0.5 * scale) % 64

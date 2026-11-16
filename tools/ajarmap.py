@@ -277,10 +277,11 @@ def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look="", skin
              ftex="AJTRIMF", ctex="AJTRIMF")
     for p, q in ((a, b), (c, d)):
         if keys:
-            m.line(p, q, special=13, args=(0, 24, 150, LOCK[keys]), playeruse=True, repeatspecial=True)
+            m.line(p, q, special=13, args=(0, 24, 150, LOCK[keys]), playeruse=True, repeatspecial=True,
+                   exact=True)
         else:
             m.line(p, q, special=12, args=(0, 24, 150), playeruse=True, monsteruse=True,
-                   repeatspecial=True)
+                   repeatspecial=True, exact=True)             # one leaf, even where the room's floor cuts its line
     if line_id:
         m.line(a, b, id=line_id)
     for p, q in ((a, c), (b, d)):
@@ -373,7 +374,8 @@ def bolted(m, a, b, out, floor, tag, *, thick=16, line_id=0):
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
     m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall="AJBOLT",
              ftex="AJTRIMF", ctex="AJTRIMF", id=tag)
-    m.line(c, d, special=11, args=(tag, 32), playeruse=True, id=line_id)
+    m.line(c, d, special=11, args=(tag, 32), playeruse=True, id=line_id, exact=True)
+    m.line(a, b, exact=True)                  # one leaf, even where the room's floor cuts its line
     for p, q in ((a, c), (b, d)):
         m.line(p, q, mid="AJTRIM", dontpegbottom=True)
 
