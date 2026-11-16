@@ -1369,7 +1369,7 @@ class AjarHandler : EventHandler
 		if (t == 505) Pose(mo, 320, 1190, 160, 270);
 		Forward(mo, t, 510, 12);
 		if (t == 530) Check("haveKey2", Has(mo, 2));
-		if (t == 535) Pose(mo, 300, 1440, 160, 180);
+		if (t == 535) Pose(mo, 300, 1376, 160, 180);
 		Forward(mo, t, 540, 14);
 		if (t == 570) Check("droppedIntoDome", mo.pos.z == 0 && mo.pos.x > -256 && mo.pos.x < 256);
 		// key 2 opens the east wing: key 3 in the cellar
@@ -1415,14 +1415,14 @@ class AjarHandler : EventHandler
 		if (t == 1095) Pose(mo, 0, 1740, 160, 270);
 		Forward(mo, t, 1100, 12);
 		if (t == 1125) Check("outOntoGallery", mo.pos.z == 160 && mo.pos.y < 1696 && have == "VIOLET");
-		if (t == 1128) Pose(mo, -300, 1440, 160, 0);
+		if (t == 1128) Pose(mo, -300, 1376, 160, 0);
 		Forward(mo, t, 1130, 14);
 		if (t == 1163) Check("downInDome", mo.pos.z == 0);
 		if (t == 1165) FindFrame(103).Activate(mo);
 		if (t == 1168) Check("violetHungInDome", have == "-");
 		// YELLOW through it: over the knoll and the ravine to the hillside, and YELLOW for BLUE
 		if (t == 1170) Take(mo, 4);
-		if (t == 1175) Pose(mo, 320, 1010, 0, 270);
+		if (t == 1175) Pose(mo, 320, 1000, 0, 270);
 		Forward(mo, t, 1180, 25);
 		if (t == 1215) Check("onKnollWithYellow", mo.pos.z == 0 && mo.pos.y > 2592 && mo.pos.y < 2944 && have == "YELLOW");
 		if (t == 1220) Pose(mo, 0, 2640, 0, 270);
@@ -1751,7 +1751,21 @@ class AjarHandler : EventHandler
 			830, 700, 0, 0, -10,           // the planetarium
 			1024, 1020, 0, 90, 0,          // the orrery, the steps down
 			1024, 1700, -128, 45, 0,       // the cellar: the cistern
-			1300, 1824, -128, 0, 0         // the hole into the alcove
+			1300, 1824, -128, 0, 0,        // the hole into the alcove
+			0, 1010, 0, 90, -30,           // the telescope, from under it
+			300, 1312, 160, 180, -20,      // the telescope, from the gallery
+			-200, 1100, 0, 47, -35,        // the telescope and the dome's roof
+			-100, 1100, 0, 320, 0,         // the frame's bay
+			-620, 1300, 160, 0, -10,       // the dome from the roof
+			890, 640, 0, 45, -20,          // the planetarium's dome and projector
+			1024, 940, 0, 270, 0,          // the planetarium from the orrery's door
+			1024, 1230, 0, 270, 0,         // the orrery
+			60, 800, 0, 20, 0,             // the hall's globe
+			500, 2200, 0, 0, 0,            // the hill's east edge
+			-700, 2200, 0, 180, 0,         // the hill's west edge
+			100, 2760, 0, 0, 0,            // the knoll's east edge
+			600, 2500, -128, 45, -20,      // the ravine's far corner
+			-700, 1640, 160, 60, 0         // the hill from the roof
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}
@@ -2837,6 +2851,39 @@ class AjarKey4 : AjarKey
 {
 	Default { Inventory.PickupMessage "Room key 4."; Inventory.Icon "AJKI4"; }
 	States { Spawn: AJK4 A -1; Stop; }
+}
+
+// What stands in MAP07's rooms to be looked at (tools/gfx_things.py): the
+// telescope on its pier, the planetarium's projector, an orrery, a globe.
+// Nothing touches them: what blocks the way is the pier or plinth under them.
+class AjarExhibit : Actor
+{
+	Default
+	{
+		Radius 16;
+		Height 16;
+		+NOBLOCKMAP
+	}
+}
+
+class AjarTelescope : AjarExhibit
+{
+	States { Spawn: AJTE A -1; Stop; }
+}
+
+class AjarProjector : AjarExhibit
+{
+	States { Spawn: AJPJ A -1; Stop; }
+}
+
+class AjarOrrery : AjarExhibit
+{
+	States { Spawn: AJOY A -1; Stop; }
+}
+
+class AjarGlobe : AjarExhibit
+{
+	States { Spawn: AJGB A -1; Stop; }
 }
 
 class AjarStatusBar : BaseStatusBar

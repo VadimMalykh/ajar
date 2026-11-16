@@ -15,6 +15,10 @@ DoomEdNums
 	20012 = AjarKey2
 	20013 = AjarKey3
 	20014 = AjarKey4
+	20021 = AjarTelescope
+	20022 = AjarProjector
+	20023 = AjarOrrery
+	20024 = AjarGlobe
 }
 
 clearepisodes
@@ -126,7 +130,7 @@ map MAP06 "After Hours"
 map MAP07 "Small Hours"
 {
 	next = "MAP08"
-	sky1 = "SKY1", 0
+	sky1 = "AJ7SKY", 0
 	nointermission
 	nojump
 	nocrouch
