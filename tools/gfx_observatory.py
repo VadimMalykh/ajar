@@ -16,14 +16,21 @@ Three looks for the whole observatory, numbered 1 to 3. For look n (name = AJ7 +
   WK workshop, WI instrument room, WC clock room, EL lecture room, EO orrery,
   T  transit house (all 160; each with <n>1, <n>2: tools, charts, clocks, a
      blackboard, a diagram)
+  EP the planetarium, 176: a town's roofs against the sky that is thrown on its
+     dome. ES the band of that sky between the dome's steps (64); DS the same
+     for the dome of the telescope (64, the top of D)
   RL railing   V the side of an instrument case, VT its top
   WD tables and desks, BN benches (wall and flat)
   flats: F hall floor, P the way through it, FL library, FD dome, FW wings,
          FI the transit house, FR roof, FS a lit skylight, FT paving, FO the
          drive, FA the gallery's and the stacks' floor; CH hall ceiling, CL
-         library, CD the dome's shell, CW rooms, CP porches
+         library, CD the dome's shell, CW rooms, CP porches; FE the
+         planetarium's carpet, CS the sky on its dome
 The same in all three: AJ7XN the wood round the hill (640), AJ7XR rock (the
-ravine's banks, wall and flat), AJ7XL the lens store, AJ7XA the armoury. The
+ravine's banks, wall and flat), AJ7XL the lens store, AJ7XA the armoury. Where
+the hill is open: AJ7XT the tops of the wood below (256 by 128, see-through),
+AJ7XK the wood from above (flat), AJ7XH the country beyond (128). AJ7SKY is
+the level's sky (1024 by 256). The
 cellar, boiler house, cave and shed wear the museum's (AJ6XC, XB, XG, XS), and
 stone is the museum's AJ6XP.
 
@@ -100,9 +107,9 @@ LOOKS = {
 }
 
 ROOMS = {"WK": "wk", "WI": "wi", "WC": "wc", "EL": "el", "EO": "eo", "T": "tr"}
-ALIGNED = ("Y", "YA", "YB", "YU", "YS", "YD", "G", "H", "A", "S", "L", "LS", "LV", "D", "DV") + tuple(ROOMS)
+ALIGNED = ("Y", "YA", "YB", "YU", "YS", "YD", "G", "H", "A", "S", "L", "LS", "LV", "D", "DV", "DS", "EP", "ES") + tuple(ROOMS)
 PICTURES = dict({t: 2 for t in ROOMS}, H=2)
-SAME = ("AJ7XN", "AJ7XL", "AJ7XA", "AJ6XC", "AJ6XB", "AJ6XG", "AJ6XS")
+SAME = ("AJ7XN", "AJ7XL", "AJ7XA", "AJ7XH", "AJ6XC", "AJ6XB", "AJ6XG", "AJ6XS")
 
 
 def aligned(n):
@@ -808,6 +815,136 @@ def case(n, top):
     im.rect(0, 36, 64, 64, shade(wood, 0.7))
     return im
 
+# --- the planetarium ------------------------------------------------------------
+SKYLOW, SKYHIGH = (58, 60, 104), (12, 16, 44)
+
+
+def planetarium(n):
+    """176: the roofs of a town, black against the sky the projector throws."""
+    c = LOOKS[n]
+    im = Img(64, 176)
+    for y in range(128):
+        f = y / 128
+        im.rect(0, y, 64, y + 1, mix(SKYHIGH, SKYLOW, f * f))
+    stars(im, 10, 104, 1190, 16)
+    roofs, r = (8, 10, 20), random.Random(1191)
+    x = 0
+    while x < 22:                                                    # roofs and chimneys
+        w, h = r.choice((3, 4, 5, 6)), r.choice((5, 8, 10, 13, 18))
+        im.rect(x, 128 - h, min(22, x + w), 128, roofs)
+        if w > 3 and r.random() < 0.6:
+            im.set(x + 1, 128 - h + 3, LAMP)
+        x += w
+    for dx in range(11):                                             # and, in the middle of every 64, a dome
+        im.rect(31 - dx, 128 - 12 - int(math.sqrt(121 - dx * dx)), 32 - dx, 128, roofs)
+    im.rect(31, 96, 32, 106, roofs)
+    wood = c["wood"]
+    im.rect(0, 128, 64, 176, wood)
+    im.noise(3, 1192)
+    im.rect(0, 128, 64, 131, BRONZE)
+    im.rect(0, 131, 64, 132, shade(wood, 0.4))
+    im.frame(4, 138, 30, 168, shade(wood, 0.66), 2)
+    im.rect(0, 170, 64, 176, shade(wood, 0.5))
+    im.rect(0, 0, 64, 6, shade(BRONZE, 0.7))
+    im.rect(0, 6, 64, 7, (6, 8, 20))
+    return gy.mirror(im)
+
+
+def starband():
+    """64: the thrown sky, where the dome steps up."""
+    im = Img(64, 64, SKYHIGH)
+    stars(im, 2, 60, 1193, 9)
+    im.rect(0, 62, 64, 64, shade(BRONZE, 0.6))
+    return gy.mirror(im)
+
+
+def starflat(seed, base=(10, 13, 38), n=16):
+    f, half = Img(64, 64, base), Img(32, 64, base)
+    stars(half, 0, 64, seed, n)
+    for y in range(64):
+        for x in range(64):
+            f.px[y * 64 + x] = list(half.px[y * 32 + x % 32]) if x < 32 else list(half.px[((y + 29) % 64) * 32 + (63 - x)])
+    return f
+
+
+# --- where the hill is open -----------------------------------------------------
+def treetops():
+    """256 by 128, see-through: the tops of the wood below the hill."""
+    im = Img(256, 128, (0, 0, 0, 0))
+    r = random.Random(1194)
+    for k in range(26):
+        far = k < 12
+        cx, top = r.randrange(256), r.randrange(52, 100) if far else r.randrange(6, 84)
+        c = shade((30, 44, 52) if far else (16, 32, 26), r.choice((0.8, 1.0, 1.2)))
+        w = 0.0
+        for y in range(top, 128):
+            w = min(17, w + r.choice((0.0, 0.2, 0.34)))
+            jag = int(w) - (y % 7) // 2
+            for x in range(cx - jag, cx + jag + 1):
+                im.set(x % 256, y, c)
+    for x in range(256):                                             # nothing shows between their feet
+        for y in range(112 + (x * 7 % 5), 128):
+            im.set(x, y, (12, 24, 20))
+    return im
+
+
+def canopy():
+    f = Img(64, 64, (12, 24, 20))
+    r = random.Random(1195)
+    for _ in range(60):
+        f.disc(r.randrange(64), r.randrange(64), r.choice((2, 3, 4)), shade((16, 32, 26), r.choice((0.7, 1.0, 1.25))))
+    f.noise(4, 1196)
+    return f
+
+
+def country():
+    """128: what lies beyond and below the wood, under the haze of the horizon."""
+    im = Img(64, 128)
+    for y in range(128):
+        im.rect(0, y, 64, y + 1, mix((50, 58, 96), (10, 14, 24), min(1, y / 30)))
+    r = random.Random(1197)
+    for _ in range(7):                                               # a village's lights, a long way off
+        im.set(r.randrange(3, 30), r.randrange(9, 26), shade(LAMP, r.choice((0.5, 0.7, 0.9))))
+    im.noise(2, 1198)
+    return gy.mirror(im)
+
+
+def night_sky():
+    """1024 by 256: once round. Stars, the Milky Way slanting across, a moon."""
+    w, h = 1024, 256
+    top, low = (4, 6, 18), (36, 42, 76)
+    rows = [mix(top, low, (y / (h - 1)) ** 2.2) for y in range(h)]
+    im = Img(w, h)
+    for y in range(h):
+        row = list(rows[y]) + [255]
+        im.px[y * w:(y + 1) * w] = [list(row) for _ in range(w)]
+    r = random.Random(1199)
+    def star(x, y, b):
+        c = tuple(min(255, int(v + (255 - v) * b)) for v in rows[y])
+        im.set(x % w, y, c)
+        if b > 0.85:
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                if 0 <= y + dy < h:
+                    im.set((x + dx) % w, y + dy, mix(rows[y + dy], c, 0.4))
+    for _ in range(900):
+        y = int(r.random() ** 1.3 * 236)
+        star(r.randrange(w), y, r.choice((0.25, 0.35, 0.5, 0.7, 0.9, 1.0)) * (1 - 0.5 * y / h))
+    for _ in range(1500):                                            # the Milky Way
+        x = r.randrange(w)
+        y = int(20 + 190 * abs(((x / w) * 2) % 2 - 1) + r.gauss(0, 14))
+        if 0 <= y < 232:
+            star(x, y, r.choice((0.12, 0.18, 0.25, 0.4)))
+    mx, my = 690, 70                                                 # a moon, some days old
+    for y in range(my - 16, my + 17):
+        for x in range(mx - 16, mx + 17):
+            d = math.hypot(x - mx, y - my)
+            if d <= 14 and math.hypot(x - mx - 7, y - my + 3) > 13.5:
+                im.set(x, y, (236, 232, 208))
+            elif d <= 17:
+                p = im.px[y * w + x]
+                p[:3] = mix(p[:3], (120, 124, 150), 0.12)
+    return im
+
 
 def make(out, rd, faces={}):
     """`rd` is the plain room door (leaf in its bottom 96 rows). `faces` is the
@@ -861,6 +998,10 @@ def make(out, rd, faces={}):
         arm.rect(x, 24, x + 2, 100, (30, 30, 34))
         arm.rect(x - 1, 70, x + 3, 104, (96, 62, 38))
     same["XA"] = tex("AJ7XA", gy.mirror(arm))
+    tex("AJ7XT", treetops())
+    out["flats/AJ7XK.png"] = canopy().png()
+    tex("AJ7XH", country())
+    tex("AJ7SKY", night_sky())
 
     # --- the three looks ---------------------------------------------------------
     for n, c in LOOKS.items():
@@ -896,6 +1037,9 @@ def make(out, rd, faces={}):
         tex(name("LV"), lv)
         tex(name("LB"), gy.crop(walls["L"], 160, 288))
         walls["D"] = tex(name("D"), dome_in(n))
+        tex(name("DS"), gy.crop(walls["D"], 0, 64))
+        walls["EP"] = tex(name("EP"), planetarium(n))
+        tex(name("ES"), starband())
         tex(name("DV"), gallery_front(n))
         tex(name("DP"), pier(n))
         for tag, part in ROOMS.items():
@@ -947,3 +1091,5 @@ def make(out, rd, faces={}):
         out[f"textures/{name('FS')}.png"] = out[f"flats/{name('FS')}.png"]       # a skylight's sides are glass too
         for i, tag in enumerate(("CH", "CL", "CD", "CW", "CP")):
             out[f"flats/{name(tag)}.png"] = ceiling(n, tag, 1260 + 10 * k + i).png()
+        out[f"flats/{name('FE')}.png"] = th.flat("carpet", (22, 26, 56), (120, 96, 50), 1290 + k).png()
+        out[f"flats/{name('CS')}.png"] = starflat(1294).png()

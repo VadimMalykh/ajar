@@ -393,3 +393,148 @@ def lever(m, a, b, seconds, *, line_id=0):
     m.cut(a, b)
     m.line(a, b, special=12, args=(SHUTTER, 64, seconds * 35), playeruse=True, repeatspecial=True,
            mid="AJLEVR", exact=True, id=line_id)
+
+
+# --- rooms that are not rectangles ---------------------------------------------
+def octagon(x1, y1, x2, y2, c):
+    """The rectangle with its corners cut off c along each wall."""
+    return [(x1 + c, y1), (x2 - c, y1), (x2, y1 + c), (x2, y2 - c), (x2 - c, y2), (x1 + c, y2), (x1, y2 - c),
+            (x1, y1 + c)]
+
+
+def _inside(p, shape):
+    if len(shape) == 4 and not isinstance(shape[0], (tuple, list)):
+        return shape[0] < p[0] < shape[2] and shape[1] < p[1] < shape[3]
+    signs = [(b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+             for a, b in zip(shape, list(shape[1:]) + [shape[0]])]
+    return all(s > 0 for s in signs) or all(s < 0 for s in signs)
+
+
+def _halves(poly, a, b):
+    """The convex polygon `poly` cut along the line through a and b."""
+    from fractions import Fraction
+    def s(p):
+        return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+    left, right = [], []
+    for p, q in zip(poly, poly[1:] + poly[:1]):
+        sp, sq = s(p), s(q)
+        if sp >= 0:
+            left.append(p)
+        if sp <= 0:
+            right.append(p)
+        if sp * sq < 0:
+            t = Fraction(sp, sp - sq)
+            x = (p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1]))
+            left.append(x)
+            right.append(x)
+    return [h for h in (left, right) if len(h) > 2 and any(s(p) != 0 for p in h)]
+
+
+def shaped(m, box, features, outline=None, **base):
+    """fitted() for rooms with slanting walls and many small changes. `outline`
+    is the room, a convex polygon inside `box` (default: the box). A feature's
+    place is a rectangle (x1, y1, x2, y2) or a convex polygon; later ones win.
+    Rectangles reaching past the box are cut off at it. No RUNNER. Pieces
+    alike are joined, so that a room with a pool of light at every lamp does
+    not become a thousand sectors."""
+    def is_rect(s):
+        return len(s) == 4 and not isinstance(s[0], (tuple, list))
+
+    feats = []
+    for shape, change in features:
+        if is_rect(shape):
+            shape = (max(shape[0], box[0]), max(shape[1], box[1]), min(shape[2], box[2]), min(shape[3], box[3]))
+            if shape[0] >= shape[2] or shape[1] >= shape[3]:
+                continue
+        feats.append((shape, change))
+    polys = [s for s, _ in feats if not is_rect(s)] + ([outline] if outline else [])
+    slants = [(a, b) for poly in polys for a, b in zip(poly, list(poly[1:]) + [poly[0]]) if a[0] != b[0] and a[1] != b[1]]
+    xs = sorted({box[0], box[2]} | {v for s, _ in feats if is_rect(s) for v in (s[0], s[2])} | {p[0] for poly in polys for p in poly})
+    ys = sorted({box[1], box[3]} | {v for s, _ in feats if is_rect(s) for v in (s[1], s[3])} | {p[1] for poly in polys for p in poly})
+
+    def props_at(piece):
+        c = (sum(p[0] for p in piece) / len(piece), sum(p[1] for p in piece) / len(piece))
+        if outline and not _inside(c, outline):
+            return None
+        props = dict(base)
+        for shape, change in feats:
+            if _inside(c, shape):
+                props.update(change)
+        return props
+
+    def num(v):
+        return int(v) if v == int(v) else float(v)
+
+    whole = {}                                                       # (i, j) -> props of an uncut cell
+    for i, (x1, x2) in enumerate(zip(xs, xs[1:])):
+        for j, (y1, y2) in enumerate(zip(ys, ys[1:])):
+            pieces = [[(x1, y1), (x1, y2), (x2, y2), (x2, y1)]]
+            for a, b in slants:
+                if min(a[0], b[0]) <= x1 and x2 <= max(a[0], b[0]) and min(a[1], b[1]) <= y1 and y2 <= max(a[1], b[1]):
+                    pieces = [h for piece in pieces for h in _halves(piece, a, b)]
+            if len(pieces) == 1:
+                whole[i, j] = props_at(pieces[0])
+                continue
+            for piece in pieces:
+                props = props_at(piece)
+                if props is not None:
+                    m.sector([(num(x), num(y)) for x, y in piece], **props)
+    # join uncut cells that are alike: along x, then rows of the same run along y
+    runs = {}                                                        # (i1, i2, key) -> [j1, j2, props]
+    for j in range(len(ys) - 1):
+        i, row = 0, []
+        while i < len(xs) - 1:
+            props = whole.get((i, j))
+            if props is None:
+                i += 1
+                continue
+            k = i
+            while whole.get((k + 1, j)) == props:
+                k += 1
+            row.append((i, k + 1, props))
+            i = k + 1
+        for i1, i2, props in row:
+            key = (i1, i2, repr(sorted(props.items(), key=repr)))
+            if key in runs and runs[key][-1][1] == j:
+                runs[key][-1][1] = j + 1
+            else:
+                runs.setdefault(key, []).append([j, j + 1, props])
+    for (i1, i2, _), spans in runs.items():
+        for j1, j2, props in spans:
+            m.sector([(xs[i1], ys[j1]), (xs[i1], ys[j2]), (xs[i2], ys[j2]), (xs[i2], ys[j1])], **props)
+
+
+def beyond(m, path, steps, *, start=None, end=None):
+    """Strips of ground along the outside of a place's edge. `path` is the
+    edge, a list of points with the outside on the right hand, turning only
+    by right angles; `steps` is [(distance out, sector properties), ...], each
+    strip reaching from the one before (or the edge) to its distance. At the
+    path's two ends the strips are cut square, or, given the direction
+    (dx, dy) the edge would go on in (`end`) or came from (`start`), mitred
+    as at a corner. Returns (ends, lines): the strips' end edges, [[(a, b),
+    ...] at the start, the same at the end], one per strip; and each strip's
+    far edge, piece by piece."""
+    def right(a, b):
+        dx, dy = (b[0] > a[0]) - (b[0] < a[0]), (b[1] > a[1]) - (b[1] < a[1])
+        return (dy, -dx)
+
+    n = len(path)
+    norms = [right(path[i], path[i + 1]) for i in range(n - 1)]
+    first = right((0, 0), start) if start else norms[0]
+    last = right((0, 0), end) if end else norms[-1]
+    pairs = [(first, norms[0])] + [(norms[i - 1], norms[i]) for i in range(1, n - 1)] + [(norms[-1], last)]
+
+    def off(i, d):
+        (ax, ay), (bx, by) = pairs[i]
+        nx, ny = (ax, ay) if (ax, ay) == (bx, by) else (ax + bx, ay + by)
+        return (path[i][0] + nx * d, path[i][1] + ny * d)
+
+    caps, lines, d0 = [[], []], [], 0
+    for d1, props in steps:
+        for i in range(n - 1):
+            m.sector([off(i, d0), off(i + 1, d0), off(i + 1, d1), off(i, d1)], **props)
+        caps[0].append((off(0, d0), off(0, d1)))
+        caps[1].append((off(n - 1, d0), off(n - 1, d1)))
+        lines.append([(off(i, d1), off(i + 1, d1)) for i in range(n - 1)])
+        d0 = d1
+    return caps, lines

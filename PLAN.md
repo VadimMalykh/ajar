@@ -1757,10 +1757,11 @@ shows the choice as open. Not played by hand in this look yet.
 cream panelling, oak, brass), 2 Mountain (granite, shutters, limewash and
 pine, a riveted iron dome), 3 Star Palace (fluted concrete, bronze, midnight
 blue and gold, travertine). `AJAR_OBSERVATORY=0` is the level as first built
-(its map is byte for byte the one before this work); 1 and 2 are the losers. The same in all three:
+(until the next section's changes: its map was byte for byte the one before
+this work); 1 and 2 are the losers. The same in all three:
 the wood round the hill (`AJ7XN`), rock in the ravine, the lens store, the
 armoury; the cellar, boiler house, cave and shed wear MAP06's (`AJ6XC`,
-`XB`, `XG`, `XS`). The planetarium and the night room are not touched.
+`XB`, `XG`, `XS`). The night room is not touched.
 
 How the observatory is built in a look (`map_hinges7.py`):
 - Three kinds of open air: the grounds (`OPEN`: a garden wall with trees
@@ -1782,6 +1783,67 @@ Run: the tour in 0 to 3 (63 views, monsters off, no engine warnings);
 `MAP=MAP07 MODE=1` in looks 1 and 3 to the exit; the full build. Not run: the
 walkthrough in look 2, and nothing played by hand.
 
-Options that change shape, light or play are at the foot of the board, none
-built: a telescope on the pier, an octagonal dome, dim rooms, a horizon
-instead of the wood, the planetarium's own look, an orrery and a globe.
+Options that change shape, light or play were at the foot of the board: a
+telescope on the pier, an octagonal dome, dim rooms, a horizon instead of the
+wood, the planetarium's own look, an orrery and a globe. The user said yes to
+all six (2026-11-16, "let's try" for the dome and the dim rooms): see the
+next section.
+
+## MAP07: the dome, the dark, the hill (2026-11-16)
+
+Built on top of the Star Palace look; all of it is there in looks 0 to 2 as
+well (`AJAR_OBSERVATORY=0` is no longer the level as first built). The board
+does not show any of this. Not played by hand.
+
+- **The dome is eight-sided**: the square 768 with 192 cut off each corner.
+  The gallery follows it round the west, north and east. The frame on the
+  floor and YELLOW's far side on the gallery are where they were, each now in
+  a low bay that opens out of a slanting wall (a frame cannot stand in a
+  slanting wall: its recess would run into the hall or the night room, and
+  portals are only tried square to the grid). The gaps in the gallery's rail
+  moved 64 south (west and east) and to x 64..128 (north). The middle of the
+  roof is stepped up 64 (`LANTERN`); the slit runs through it. On the roof
+  outside, the floor runs into the two cut corners, so the dome shows three
+  faces. The puzzle graph is unchanged.
+- **The telescope** stands on the pier (`AjarTelescope`, sprite `AJTE`, 16
+  sides), pointing north out of the slit. It is a sprite and stops nothing:
+  no shot, no monster. `tools/gfx_things.py` draws it, the planetarium's
+  projector (`AJPJ`), the orrery (`AJOY`) and the hall's globe (`AJGB`) from
+  solids (tubes, balls, rings), once from each side. The orrery and the globe
+  stand on plinths where glass cases were.
+- **The planetarium** has its own look: eight-sided, a dome in three steps
+  with the sky on it (`CS`, `ES`), a town's roofs round the wall (`EP`), a
+  carpet (`FE`), the projector in the middle. It no longer wears the night
+  room's walls.
+- **Small hours**: indoors is dim (hall 140, library and stacks 120, dome
+  120, rooms 125, planetarium 100) with a pool of light in three steps round
+  every lamp (`LAMPS`, which also places them) and a lit top and a ring round
+  every glass case, plinth and the pier. `AJAR_DIM=0` builds it evenly bright
+  as before. New lamps: one on the stacks, two on the gallery's corners.
+- **The hill is open** on the east and west of the hillside and the ravine
+  and round the knoll (`horizon()`, `ajarmap.beyond`): a bank of rock 32
+  high that nothing walks or flies over, the tops of the wood below
+  (`AJ7XT`), and the country beyond under the sky. The ravine's far bank
+  west of the knoll has the cave behind it, so there the sky comes down to
+  48 along its foot (`SHELF`) and the bank ends at that height. The level has
+  its own sky, `AJ7SKY`: stars, the Milky Way, a moon. The walls round the
+  grounds are as they were.
+
+In the tools:
+- `ajarmap.shaped` is `fitted` for rooms with slanting walls and many small
+  changes: features may be convex polygons, the room an `outline`, and
+  pieces alike are joined (MAP07 is 1215 sectors with all its pools).
+  `ajarmap.octagon`, `ajarmap.beyond` (strips along the outside of an edge).
+- `udmf.py`: `fit=(point, stretch)` on a line lays aligned textures along a
+  slanting wall, stretched to a whole number of 64s (`slant()` in the map);
+  `midraise` lifts a middle texture; `upper="-"` leaves the wall over a line
+  bare, which is what lets a middle texture stand above a lowered sky. A
+  line marked `exact` that something else cuts (a pool's edge through the
+  transit house's lever) now keeps its special and shows its part of the
+  picture on each piece; before, it silently lost both.
+- A thing by a slanting wall needs its whole square clear of it, not its
+  radius: `tools/mapcheck.py` says so.
+
+Run: the tour (77 views, monsters off, no engine warnings); `MAP=MAP07
+MODE=1`, 38 checks to the exit; `mapcheck`; the full build with the solver.
+Looks 0 to 2 and `AJAR_DIM=0` were built and loaded, not toured.

@@ -28,7 +28,10 @@ knoll: through VIOLET, hung somewhere else by then.
 
 Places. The road (start), the gate, the forecourt, the hall, the library
 under its stacks, the dome under its gallery, the west yard and the lane are
-one place to walk about in. Up: the stacks (GREEN's far side; key 1), the
+one place to walk about in. The dome is eight-sided, with the telescope on
+its pier; so is the planetarium. It is night indoors too: each lamp and
+glass case has its pool of light (AJAR_DIM). North of the building the hill
+is open: the wood is below it, and the country beyond. Up: the stacks (GREEN's far side; key 1), the
 gallery (YELLOW's; key 2), the roof between the lane and the dome, the night
 room. North: the hillside (VIOLET, a frame), the ravine, the knoll (VIOLET's
 far side) and the transit house (keys 3 and 4: BLUE). West wing (key 1): the
@@ -41,6 +44,7 @@ frame) and beyond its bars the armoury (PINK's far side); the cave in the
 ravine (the transit house's lever, or a Stray door); the shed in the lane
 (shoot its bell through the bars); an alcove past the cistern.
 """
+import math
 import os
 
 import ajarmap
@@ -66,13 +70,34 @@ GATE, NIGHT_BOLT, BOILER, CAVE, ARMOURY, SHED = 401, 402, 403, 404, 405, 406
 NX, NY = -160, 1712                                   # the night room's south-west corner
 NIGHT = 150                                           # light under the sky
 
+# Small hours: indoors is dim, with a pool of light at every lamp, glass case
+# and exhibit. AJAR_DIM=0 is evenly bright, as the level was first lit.
+DIM = (os.environ.get("AJAR_DIM") or "1") != "0"
+TECHLAMP, CANDELABRA, TORCH_R = 86, 35, 46
+LAMPS = {                                             # what lights the rooms, and where
+    TECHLAMP: [(-232, 552), (232, 888),                                              # the hall
+               (-232, 1080), (232, 1080), (-176, 1456), (176, 1456),                 # the dome's floor
+               (-424, 2984), (-88, 2984),                                            # the transit house
+               (-1608, 664), (-1208, 1000), (-1608, 1064), (-1208, 1400), (-1608, 600), (-1208, 264),   # west wing
+               (360, 552), (760, 824), (824, 1016), (1224, 1352)],                   # east wing
+    CANDELABRA: [(872, 600), (1176, 600), (872, 904), (1176, 904),                   # the planetarium
+                 (-256, 1536), (256, 1536),                                          # the gallery's corners
+                 (-968, 872)],                                                       # the stacks
+    TORCH_R: [(-776, 616), (-296, 552)],                                             # the library
+}
+
+
+def lux(bright, dim):
+    return dim if DIM else bright
+
 
 # The observatory's look (gfx_observatory.py): 3, Star Palace (fluted concrete,
 # bronze, midnight blue and gold), is the user's choice for the whole of it.
 # AJAR_OBSERVATORY=1 and 2 are the candidates that lost (Royal: brick and
 # Portland stone, oak, brass; Mountain: granite, riveted iron, limewash, pine);
-# AJAR_OBSERVATORY=0 is the level as first built. A look changes textures only:
-# no floor, wall or railing moves. Rooms are not tinted in a look.
+# AJAR_OBSERVATORY=0 is the level in the plain textures it was first built in.
+# A look changes textures only: no floor, wall or railing moves. Rooms are not
+# tinted in a look.
 LOOK = (os.environ.get("AJAR_OBSERVATORY") or "3").replace("0", "")
 FACES = {}                  # the door faces this build needs, and their textures: gfx_observatory.make draws them
 
@@ -96,6 +121,9 @@ if LOOK:
     CASE = dict(ftex=T("VT"), side=T("V"), floor=40)
     CRATE = WOOD
     WOOD = dict(ftex=T("WD"), side=T("WD"))
+    PLINTH = dict(ftex=T("WD"), side=T("WD"), floor=32)                   # what an exhibit stands on
+    PLANET = dict(wall=T("EP"), ftex=T("FE"), ctex=T("CS"))               # the planetarium
+    STARS, SHELL = T("ES"), T("DS")                                       # between the steps of its dome; of the telescope's
     BOOKS = dict(ftex=T("WD"), side=T("LB"))
     PATH, RUN = dict(ftex=T("FO")), dict(ftex=T("P"))
     STONE, PAVE, ROCKF = "AJ6XP", T("FT"), "AJ7XR"
@@ -117,6 +145,9 @@ else:
     PORCH, HOLE = "AJBOARD", "AJBRICK"
     BUILT = WILD = ROOFO = OPEN
     GSEAT, CRATE, BOOKS, RUN = SEAT, WOOD, WOOD, PATH
+    PLINTH = dict(WOOD, floor=32)
+    PLANET = dict(wall="AJXW2", ftex="AJXG2", ctex="AJXC2")
+    STARS, SHELL = "AJXW2", "AJBRICK"
     STONE, PAVE, ROCKF = "AJTRIM", "AJARCHF", "AJPIT"
     HALL = LIB = DOME = dict(wall="AJBRICK", ftex="AJFLOOR")
     STACKS = dict(wall="AJBRICK", ftex="AJBOARD", side="AJWOOD")
@@ -144,23 +175,56 @@ def over(a, b, tex, **k):
         m.line(a, b, upper=tex, dontpegtop=True, **k)
 
 
-def fit(box, features, above=None, **base):
-    """ajarmap.fitted. In a look the walls over the open sides of its porches
-    (low()) carry on as `above` (default: the room's own wall)."""
-    ajarmap.fitted(m, box, features, **base)
-    for (x1, y1, x2, y2), change in features:
-        if change.get("ctex") != PORCH:
+def pools(box, base):
+    """Small hours: the light round each lamp in the room `box`, falling off in three steps."""
+    spots = [p for kind in LAMPS.values() for p in kind if box[0] <= p[0] <= box[2] and box[1] <= p[1] <= box[3]]
+    return [((x - d, y - d, x + d, y + d), dict(light=min(255, base + up)))
+            for d, up in ((112, 25), (80, 50), (48, 80)) for x, y in spots] if DIM else []
+
+
+def glowing(features, base):
+    """Small hours: a glass case or an exhibit is lit, and lights the floor round it."""
+    def lit(change):
+        return DIM and (change is CASE or change is PLINTH or change is PIER)
+    return ([((r[0] - 32, r[1] - 32, r[2] + 32, r[3] + 32), dict(light=min(255, base + 40)))
+             for r, change in features if lit(change)]
+            + [(r, dict(change, light=min(255, base + 85)) if lit(change) else change) for r, change in features])
+
+
+def fit(box, features, above=None, outline=None, **base):
+    """ajarmap.shaped: a room `box` (or the polygon `outline` inside it) with
+    furniture, and at night its pools of light. In a look the walls over the
+    open sides of its porches (low()) carry on as `above` (default: the
+    room's own wall)."""
+    ajarmap.shaped(m, box, pools(box, base["light"]) + glowing(features, base["light"]), outline, **base)
+    for shape, change in features:
+        if change.get("ctex") != PORCH or isinstance(shape[0], tuple):
             continue
+        x1, y1, x2, y2 = shape
         for a, b, on_wall in (((x1, y1), (x2, y1), y1 == box[1]), ((x2, y1), (x2, y2), x2 == box[2]),
                               ((x2, y2), (x1, y2), y2 == box[3]), ((x1, y2), (x1, y1), x1 == box[0])):
             if not on_wall:
                 over(a, b, above or base.get("wall"))
 
 
-def rail(*runs):
+def rail(*runs, **k):
     for a, b in runs:
         m.cut(a, b)
-        m.line(a, b, **RAIL)
+        m.line(a, b, **dict(RAIL, **k))
+
+
+def edges(poly):
+    return list(zip(poly, poly[1:] + poly[:1]))
+
+
+def slant(a, b, whole=None, **k):
+    """Properties for the slanting wall a-b, part of the wall `whole` (default:
+    all of it). In a look its textures are stretched to a whole number of 64s
+    over `whole`, so that they meet the walls at its two ends as they meet
+    each other."""
+    w = whole or (a, b)
+    length = math.dist(*w)
+    m.line(a, b, **dict(k, **(dict(fit=(w[0], max(1, round(length / 64)) * 64 / length)) if LOOK else {})))
 
 
 def windows(fixed, starts, axis="x"):
@@ -247,9 +311,10 @@ def bars(a, b, out, floor, near=None, far=None, thick=16):
         m.line(c, d, upper=_wall(far), lower=_wall(far), dontpegtop=True, dontpegbottom=True)
 
 
-def hall(box, cases, tag, **k):
+def hall(box, cases, tag, plinths=(), **k):
     """A room of a wing: 160 high, with benches of instruments."""
-    ajarmap.fitted(m, box, [(c, CASE) for c in cases], **dict(dict(ceil=160, light=175), **dict(k, **wing(tag))))
+    fit(box, [(c, CASE) for c in cases] + [(c, PLINTH) for c in plinths],
+        **dict(dict(ceil=160, light=lux(175, 125)), **dict(k, **wing(tag))))
 
 
 # === the way in: nobody about ====================================================
@@ -288,8 +353,8 @@ bars((64, -320), (128, -320), (0, 1), 0, T("G"), T("G"), thick=64)
 fit((-256, 528, 256, 912), [
     ((-64, 528, 64, 912), RUN),
     ((-224, 560, -160, 624), SEAT), ((-224, 816, -160, 880), SEAT),
-    ((160, 816, 224, 880), CASE),                                            # a globe on its stand
-], floor=0, ceil=256, light=185, **HALL)
+    ((160, 816, 224, 880), PLINTH),                                          # a globe on its stand
+], floor=0, ceil=256, light=lux(185, 140), **HALL)
 pictures("H", 528, (-192, 128))
 pictures("H", 912, (128, -192))
 door((-32, 512), (32, 512), (0, 1), 0, "A", "H")
@@ -331,34 +396,59 @@ fit((-800, 528, -272, 912), [
     ((-784, 528, -656, 592), low()),                                         # before the frame
     ((-640, 656, -448, 720), dict(WOOD, floor=32)), ((-640, 784, -448, 848), dict(WOOD, floor=32)),   # tables
     ((-432, 528, -368, 592), dict(BOOKS, floor=112)), ((-432, 848, -368, 912), dict(BOOKS, floor=112)),
-], floor=0, ceil=320, light=170, color=WARM, **LIB)
+], floor=0, ceil=320, light=lux(170, 120), color=WARM, **LIB)
 door((-256, 688), (-256, 752), (-1, 0), 0, "H", "A")
 recess((-752, 528), (-688, 528), (0, -1), 0, 102, 201, color=WARM)           # the frame under the stacks
-ajarmap.fitted(m, (-992, 528, -800, 912), [
+fit((-992, 528, -800, 912), [
     ((-992, 624, -960, 848), dict(BOOKS, floor=UP + 72)),                    # shelves
-], floor=UP, ceil=320, light=180, color=WARM, **STACKS)
+], floor=UP, ceil=320, light=lux(180, 120), color=WARM, **STACKS)
 rail(((-800, 528), (-800, 688)), ((-800, 752), (-800, 912)))                 # a gap over the library
 recess((-928, 528), (-864, 528), (0, -1), UP, far_id(GREEN), 101, far_colour=GREEN, color=WARM)
 
 # === the dome, under its gallery =================================================
-fit((-384, 928, 384, 1696), [
+# Eight-sided: a square 768 with 192 cut off each corner. The gallery runs
+# round the west, north and east of it, 160 up. Two low bays open out of the
+# slanting walls, where the corners were: the frame's on the floor, and over
+# on the gallery YELLOW's far side. The middle of the roof is stepped up, and
+# the slit runs through it from wall to wall.
+DOME_BOX = (-384, 928, 384, 1696)
+ROUND = ajarmap.octagon(*DOME_BOX, 192)
+LANTERN = ajarmap.octagon(-240, 1072, 240, 1552, 144)
+DARK = lux(175, 120)
+fit(DOME_BOX, [
+    (LANTERN, dict(ceil=512)),
     ((-32, 928, 32, 1696), dict(ctex="F_SKY1")),                             # the slit, open to the stars
     ((-96, 928, 96, 992), low()),                                            # before the hall's door
-    ((224, 928, 352, 992), low()),                                           # before the frame
-    ((-384, 1056, -256, 1696), GAL), ((256, 1056, 384, 1696), GAL), ((-384, 1568, 384, 1696), GAL),
+    ((-384, 1056, -256, 1440), GAL), ((256, 1056, 384, 1440), GAL), ((-128, 1568, 128, 1696), GAL),
+    ([(-384, 1440), (-256, 1440), (-128, 1568), (-128, 1696), (-384, 1696)], GAL),
+    ([(384, 1440), (256, 1440), (128, 1568), (128, 1696), (384, 1696)], GAL),
     ((-384, 1216, -320, 1344), dict(GAL, **low(UP))),                        # before the roof's door
     ((-96, 1632, 96, 1696), dict(GAL, **low(UP))),                           # before the night room's
-    ((224, 1632, 352, 1696), dict(GAL, **low(UP))),                          # before YELLOW's far side
     ((-64, 1248, 64, 1376), PIER),                                           # the pier of the telescope
     ((-160, 1088, -96, 1152), CASE), ((96, 1088, 160, 1152), CASE),
-], floor=0, ceil=448, light=175, color=SKY, **DOME)
+], outline=ROUND, floor=0, ceil=448, light=DARK, color=SKY, **DOME)
+for a, b in edges(LANTERN):                                                  # the step in the roof
+    slant(a, b, upper=SHELL) if a[0] != b[0] and a[1] != b[1] else m.line(a, b, upper=SHELL)
+SE, NE = ((192, 928), (384, 1120)), ((192, 1696), (384, 1504))               # the slanting walls with a bay in them
+slant((-384, 1120), (-192, 928))
+slant((-384, 1504), (-192, 1696))
+m.sector([(192, 928), (288, 1024), (352, 1024), (352, 928)], floor=0, light=DARK, color=SKY,
+         **dict(DOME, **low()))                                              # the frame's bay
+slant((192, 928), (288, 1024), SE, **(dict(upper=T("D"), dontpegtop=True) if LOOK else {}))
+slant((288, 1024), (384, 1120), SE)
+m.sector([(192, 1696), (352, 1696), (352, 1600), (288, 1600)], light=DARK, color=SKY,
+         **dict(DOME, **dict(GAL, **low(UP))))                               # the bay of YELLOW's far side
+slant((192, 1696), (288, 1600), NE, **(dict(upper=T("D"), dontpegtop=True) if LOOK else {}))
+slant((288, 1600), (384, 1504), NE)
 door((-32, 912), (32, 912), (0, 1), 0, "H", "A")
 recess((288, 928), (352, 928), (0, -1), 0, 103, 201, color=SKY)              # the frame under the gallery
 recess((256, 1696), (320, 1696), (0, 1), UP, far_id(YELLOW), 101, far_colour=YELLOW, color=SKY)
-rail(((-384, 1056), (-256, 1056)), ((256, 1056), (384, 1056)),
-     ((-256, 1056), (-256, 1408)), ((-256, 1472), (-256, 1568)),             # a gap on the west side
-     ((256, 1056), (256, 1408)), ((256, 1472), (256, 1568)),                 # and on the east
-     ((-256, 1568), (96, 1568)), ((160, 1568), (256, 1568)))                 # and on the north
+rail(((-320, 1056), (-256, 1056)), ((256, 1056), (320, 1056)),
+     ((-256, 1056), (-256, 1344)), ((-256, 1408), (-256, 1440)),             # a gap on the west side
+     ((256, 1056), (256, 1344)), ((256, 1408), (256, 1440)),                 # and on the east
+     ((-128, 1568), (64, 1568)))                                             # and on the north
+for a, b in (((-256, 1440), (-128, 1568)), ((256, 1440), (128, 1568))):      # the gallery's slanting fronts
+    rail((a, b), **(dict(fit=(a, 192 / math.dist(a, b))) if LOOK else {}))
 # the night room off the gallery: bolted inside
 ajarmap.way_round(m, NX, NY, BLUE, floor=UP)
 bolted((-32, 1696), (32, 1696), (0, 1), UP, NIGHT_BOLT, "A", None, line_id=304)
@@ -370,7 +460,10 @@ fit((-992, 928, -400, 1696), [
     ((-832, 1088, -704, 1216), SKYLIGHT),                                    # skylights
     ((-832, 1408, -704, 1536), SKYLIGHT),
 ], above=LOOK and T("YD"), floor=UP, light=NIGHT + 10, ftex=ROOFF, **ROOFO)
-front(((-400, 928), (-400, 1216)), ((-400, 1344), (-400, 1696)), tex=T("YD"))     # the dome
+for corner in ([(-400, 1120), (-208, 928), (-400, 928)], [(-400, 1504), (-208, 1696), (-400, 1696)]):
+    m.sector(corner, floor=UP, light=NIGHT + 10, ftex=ROOFF, **ROOFO)        # the roof runs in where the dome's corners were
+    slant(corner[0], corner[1], **(dict(mid=T("YD")) if LOOK else {}))
+front(((-400, 1120), (-400, 1216)), ((-400, 1344), (-400, 1504)), tex=T("YD"))    # the dome
 door((-384, 1248), (-384, 1312), (-1, 0), UP, "A", "A", line_id=306)
 
 # === the hillside, the ravine, the knoll ==========================================
@@ -398,18 +491,51 @@ front(((-400, 2000), (-96, 2000)), ((-96, 2000), (32, 2000)), ((32, 2000), (800,
 front(((-96, 2272), (-96, 2400)), ((-96, 2272), (32, 2272)), ((-96, 2400), (32, 2400)))   # the tower's stump
 recess((32, 2304), (32, 2368), (-1, 0), 0, 104, 201)                         # the hillside's frame
 # the ravine: steps out of it at the west end, a cave at the foot of the far bank
+# Its far bank west of the knoll has the cave in it, so nothing can lie on
+# top of it: the sky comes down to 48 along its foot instead (SHELF), and the
+# bank ends there, with the wood's tops over it.
+SHELF = dict(ceil=48, wall="AJ7XR")
 fit((-992, 2400, 800, 2592), [
+    ((-992, 2576, -480, 2592), SHELF), ((-864, 2512, -704, 2592), SHELF),
+] + [
     ((-768 - 32 * i, 2400, -736 - 32 * i, 2464), dict(floor=PIT + 16 * (i + 1), ftex=PAVE, side=STONE))
     for i in range(8)] + [
     ((-848, 2528, -720, 2592), low(PIT)),
     ((200, 2464, 328, 2528), dict(ftex="AJWATER")),
-], above=LOOK and "AJ7XN", floor=PIT, light=NIGHT - 20, ftex=ROCKF, **WILD)
+], above=LOOK and "AJ7XR", floor=PIT, light=NIGHT - 20, ftex=ROCKF, **WILD)
+for a, b in (((-992, 2576), (-864, 2576)), ((-864, 2576), (-864, 2512)), ((-864, 2512), (-704, 2512)),
+             ((-704, 2512), (-704, 2576)), ((-704, 2576), (-480, 2576))):
+    m.line(a, b, mid="AJ7XT", midboth=True, upper="-", midraise=128)
 m.sector(rect(-896, 2608, -672, 2672), floor=PIT, ceil=PIT + 112, light=140, wall=CAVEW, ftex=ROCKF)
 m.sector(rect(-896, 2672, -672, 2800), floor=PIT, ceil=PIT + 112, light=140, wall=CAVEW, ftex=ROCKF,
          special=1024)
 bolted((-816, 2592), (-752, 2592), (0, 1), PIT, CAVE, "A", "XG", line_id=307)
 ajarmap.unbolt(m, (-896, 2672), (-672, 2672), CAVE)
 ajarmap.stray_place(m, 1, (-896, 2704), (-896, 2768), (-1, 0), PIT, color=ROSE)
+# Where the hill ends the wood is below it: a bank of rock to stop at, the
+# tops of the trees over it, and beyond them the country under the stars.
+def horizon(path, first, last, **ends):
+    """`path` as ajarmap.beyond's. `first` and `last` are the walls the bank and
+    the wood end against."""
+    sky = dict(ceil=512, ctex="F_SKY1", light=NIGHT, wall="AJ7XN")
+    caps, lines = ajarmap.beyond(m, path, [
+        (16, dict(sky, floor=32, ftex="AJ7XR", side="AJ7XR")),
+        (112, dict(sky, floor=-96, ftex="AJ7XK")),
+        (144, dict(sky, floor=-96, ceil=32, ftex="AJ7XK", wall="AJ7XH")),
+    ], **ends)
+    for a, b in zip(path, path[1:]):
+        m.line(a, b, blocking=True)                                          # nothing walks or flies off the hill
+    for a, b in lines[0]:
+        m.line(a, b, mid="AJ7XT", midboth=True, dontpegbottom=True)
+    for end, tex in zip(caps, (first, last)):
+        for a, b in end[:2]:
+            m.line(a, b, mid=tex)
+
+
+BACK = FRONT or "AJBRICK"
+horizon([(800, 2000), (800, 2592), (416, 2592), (416, 2944)], BACK, BACK)    # east of the hill and of the knoll
+horizon([(-992, 2592), (-992, 2000)], "AJ7XN", BACK)                         # west of the hill
+horizon([(-480, 2944), (-480, 2592)], BACK, "AJ7XN", end=(-1, 0))            # west of the knoll
 # the knoll: VIOLET's far side looks back across the ravine at the frame
 fit((-480, 2592, 416, 2944), [
     ((128, 2880, 256, 2944), low()),
@@ -420,10 +546,10 @@ windows(2944, (-128, 0, 320))                                                # t
 front(((-480, 2944), (-320, 2944)), ((-192, 2944), (128, 2944)), ((256, 2944), (416, 2944)))
 recess((160, 2944), (224, 2944), (0, 1), 0, far_id(VIOLET), 101, far_colour=VIOLET)
 # the transit house: two locks. BLUE, and the lever of the cave
-ajarmap.fitted(m, (-448, 2960, -64, 3280), [
+fit((-448, 2960, -64, 3280), [
     ((-288, 3088, -224, 3152), CASE),                                        # the transit instrument
     ((-128, 3216, -64, 3280), SEAT),
-], floor=0, ceil=160, light=170, color=PLUM, **TRANSIT)
+], floor=0, ceil=160, light=lux(170, 125), color=PLUM, **TRANSIT)
 pictures("T", 3280, (-384, -256))
 door((-288, 2944), (-224, 2944), (0, 1), 0, "A", "T", keys="34", line_id=303)
 m.cut((-448, 3088), (-448, 3152))
@@ -461,16 +587,27 @@ ajarmap.unbolt(m, (-1408, 1504), (-1184, 1504), ARMOURY)
 hall((336, 528, 784, 848), [((432, 624, 688, 656)), ((432, 720, 688, 752))], "EL", color=GOLD)          # lecture room
 pictures("EL", 848, (448, 576))
 pictures("EL", 528, (384, 512, 640))
-ajarmap.fitted(m, (800, 528, 1248, 976), [((992, 720, 1056, 784), CASE)],                              # planetarium
-               ceil=224, light=120, wall="AJXW2", ftex="AJXG2", ctex="AJXC2")
-hall((800, 992, 1248, 1376), [((864, 1120, 928, 1184)), ((1120, 1120, 1184, 1184)), ((992, 1056, 1056, 1120))],
-     "EO", color=PLUM)                                                                                 # orrery
+# the planetarium: eight-sided, under a dome in three steps, the projector in the middle
+SKYBOX = (800, 528, 1248, 976)
+SKYROOM = ajarmap.octagon(*SKYBOX, 96)
+STEPS3 = [(ajarmap.octagon(864, 592, 1184, 912, 72), 208), (ajarmap.octagon(912, 640, 1136, 864, 56), 232),
+          (ajarmap.octagon(960, 688, 1088, 816, 32), 248)]
+fit(SKYBOX, [(ring, dict(ceil=h)) for ring, h in STEPS3] + [((992, 720, 1056, 784), PLINTH)],
+    outline=SKYROOM, floor=0, ceil=176, light=lux(120, 100), **PLANET)
+for ring, _ in STEPS3:
+    for a, b in edges(ring):
+        slant(a, b, upper=STARS) if a[0] != b[0] and a[1] != b[1] else m.line(a, b, upper=STARS)
+for a, b in edges(SKYROOM):
+    if a[0] != b[0] and a[1] != b[1]:
+        slant(a, b)
+hall((800, 992, 1248, 1376), [((864, 1120, 928, 1184)), ((1120, 1120, 1184, 1184))], "EO",
+     plinths=[(992, 1056, 1056, 1120)], color=PLUM)                                                    # orrery
 pictures("EO", 800, (1024, 1216), "y")
 pictures("EO", 1248, (1024, 1216), "y")
 pictures("EO", 1376, (832, 1152))
 door((256, 688), (256, 752), (1, 0), 0, "H", "EL", keys="2", thick=80, line_id=302)
-opening((784, 656), (784, 720), (1, 0), 0, "EL", None)
-opening((992, 976), (1056, 976), (0, 1), 0, None, "EO")
+opening((784, 656), (784, 720), (1, 0), 0, "EL", LOOK and "EP")
+opening((992, 976), (1056, 976), (0, 1), 0, LOOK and "EP", "EO")
 over((992, 1376), (1056, 1376), LOOK and T("EO"))                            # the head of the cellar steps
 # steps down to the cellar: the cistern, and past it a hole into an alcove (secret)
 ajarmap.stairs(m, (992, 1376), (1056, 1376), (0, 1), 0, CELLAR, light=150, **STEPS)
@@ -506,8 +643,8 @@ CHAINGUNNER, KNIGHT, BARON, REVENANT, SOUL, CACO, MANCUBUS, ARACHNO, PAIN = 65, 
 SHOTGUN, SUPER, CHAINGUN, LAUNCHER, PLASMA, SHELLS, SHELLBOX, CLIP, AMMOBOX, ROCKETS, ROCKETBOX, CELLS = (
     2001, 82, 2002, 2003, 2004, 2008, 2049, 2007, 2048, 2010, 2046, 17)
 STIM, MEDIKIT, BONUS, HELMET, ARMOR, MEGA, SPHERE, BERSERK = 2011, 2012, 2014, 2015, 2018, 2019, 2013, 2023
-CANDLE, CANDELABRA, LAMP, TECHLAMP = 34, 35, 2028, 86
-TORCH_R, TORCH_G, TORCH_B = 46, 45, 55
+CANDLE, LAMP = 34, 2028
+TORCH_G, TORCH_B = 45, 55
 POOL, BARREL = 24, 2035
 
 
@@ -518,7 +655,12 @@ def things(kind, *spots, angle=0, **k):
 
 # the road, the passage, the forecourt, the hall, the yard: lamps and nobody
 things(LAMP, (-96, -352), (280, -352), (-96, -32), (96, -32), (-96, 480), (96, 480), (-500, 416), (-1136, 416))
-things(TECHLAMP, (-232, 552), (232, 888))
+for kind, spots in LAMPS.items():                                         # indoors: every lamp, and its pool of light
+    things(kind, *spots)
+things(20024, (192, 848), angle=200)                                      # the hall's globe
+things(20021, (0, 1312), angle=90)                                        # the telescope, pointing out of the slit
+things(20022, (1024, 752), angle=225)                                     # the planetarium's projector
+things(20023, (1024, 1088), angle=270)                                    # the orrery
 things(SHOTGUN, (0, 720))                                                 # for anyone who came without one
 things(SHELLS, (-40, 760), (40, 760))
 things(STIM, (-200, 720), (-500, 100))
@@ -546,7 +688,6 @@ things(SERGEANT, (-680, 700), (-420, 620), (-560, 880), angle=0)
 things(SPECTRE, (-760, 640), (-320, 880), angle=0)
 things(KNIGHT, (-720, 820), angle=0)
 things(CACO, (-540, 620), angle=0, ambush=True)
-things(TORCH_R, (-776, 616), (-296, 552))
 things(SHELLS, (-544, 688), (-544, 816))
 things(MEDIKIT, (-300, 890))
 # the stacks: key 1, a chaingun, and a quiet reader or two
@@ -559,12 +700,11 @@ things(STIM, (-960, 590))
 things(BARON, (-160, 1440), (160, 1440), angle=270)
 things(KNIGHT, (0, 1160), (-200, 1240), (200, 1240), angle=270)
 things(REVENANT, (-120, 1520), (120, 1520), angle=270)
-things(IMP, (-320, 980), (320, 1010), (-200, 1020), (200, 1040), (-150, 1320), (150, 1320), angle=270)
+things(IMP, (-240, 1030), (240, 1030), (-200, 1020), (200, 1040), (-150, 1320), (150, 1320), angle=270)
 things(DEMON, (-220, 1150), (220, 1150), (0, 1100), angle=270)
 things(MANCUBUS, (0, 1500), angle=270, ambush=True)
-things(TECHLAMP, (-232, 1080), (232, 1080), (-232, 1544), (232, 1544))
-things(SHELLBOX, (-220, 1500))
-things(MEDIKIT, (220, 1500), (-350, 950))
+things(SHELLBOX, (-160, 1480))
+things(MEDIKIT, (160, 1480), (-160, 950))
 things(ROCKETS, (-40, 1410), (40, 1410))
 # the gallery: key 2, cells, and those who watch from above
 things(CHAINGUNNER, (-320, 1500), (320, 1500), angle=270)
@@ -572,8 +712,8 @@ things(IMP, (-320, 1120), (-100, 1630), (140, 1610), angle=270)
 things(SERGEANT, (320, 1230), angle=270)
 things(REVENANT, (60, 1600), angle=270)
 things(PLASMA, (-200, 1640))
-things(CELLS, (-250, 1640), (-300, 1640), (340, 1660))
-things(STIM, (-350, 1670), (350, 1400))
+things(CELLS, (-220, 1620), (-280, 1560), (328, 1650))
+things(STIM, (-340, 1500), (350, 1400))
 # the night room: someone has been waiting
 things(REVENANT, (NX + 160, NY + 128), angle=270)
 things(KNIGHT, (NX + 96, NY + 224), (NX + 224, NY + 224), angle=270)
@@ -622,7 +762,6 @@ things(ROCKETBOX, (380, 2900))
 # the transit house: the astronomer, working late, and deaf to the garden
 things(BARON, (-160, 3120), angle=270, ambush=True)
 things(KNIGHT, (-380, 3040), (-160, 3020), angle=270, ambush=True)
-things(TECHLAMP, (-424, 2984), (-88, 2984))
 things(MEDIKIT, (-200, 3250))
 things(CELLS, (-340, 3250))
 # the west wing: the workshop, the instruments, the clocks
@@ -634,7 +773,6 @@ things(CHAINGUNNER, (-1600, 1380), (-1240, 580), angle=0)
 things(REVENANT, (-1500, 300), angle=0)
 things(KNIGHT, (-1300, 420), angle=0)
 things(PAIN, (-1400, 1220), angle=0)
-things(TECHLAMP, (-1608, 664), (-1208, 1000), (-1608, 1064), (-1208, 1400), (-1608, 600), (-1208, 264))
 things(SHELLS, (-1220, 680), (-1600, 1000))
 things(MEDIKIT, (-1210, 1064), (-1600, 600))
 things(STIM, (-1600, 680), (-1220, 1300))
@@ -648,18 +786,16 @@ things(MEGA, (-1380, 1470))
 things(AMMOBOX, (-1210, 1470))
 # the east wing: the lecture room, the planetarium, the orrery
 things(ZOMBIE, (400, 580), (720, 580), (400, 800), angle=180)
-things(IMP, (560, 580), (720, 800), (860, 600), (1180, 600), (860, 900), (1180, 1040), (860, 1320), angle=180)
+things(IMP, (560, 580), (720, 800), (872, 612), (1180, 600), (860, 900), (1180, 1040), (860, 1320), angle=180)
 things(SERGEANT, (560, 690), (1180, 900), (1180, 1320), angle=180)
 things(DEMON, (720, 690), (1020, 900), (1020, 1260), angle=180)
 things(SPECTRE, (900, 760), (1150, 760), angle=180)
-things(CHAINGUNNER, (1200, 560), (840, 1040), angle=180)
+things(CHAINGUNNER, (1160, 580), (840, 1040), angle=180)
 things(ARACHNO, (1024, 620), angle=270)
 things(CACO, (1024, 1220), angle=270, ambush=True)
 things(REVENANT, (1210, 1250), angle=180)
 things(KNIGHT, (930, 1300), angle=180)
 things(SERGEANT, (640, 800), angle=180)
-things(TECHLAMP, (360, 552), (760, 824), (824, 1016), (1224, 1352))
-things(CANDELABRA, (824, 552), (1224, 552), (824, 952), (1224, 952))
 things(SHELLBOX, (760, 552))
 things(MEDIKIT, (1224, 1016), (360, 824))
 things(STIM, (824, 1352), (1224, 760))
