@@ -776,6 +776,9 @@ def make_all():
     gfx_station.make(out, rd)
     import gfx_museum                                            # MAP06's candidate looks
     gfx_museum.make(out, rd)
+    import gfx_observatory                                       # MAP07's candidate looks
+    import map_hinges7                                           # ... and the door faces the map asks for
+    gfx_observatory.make(out, rd, map_hinges7.FACES)
 
     # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate
     # per key it needs, each with that key's number, where a hand would be

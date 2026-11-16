@@ -1,0 +1,245 @@
+<title>Small Hours Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, the same as the boards of MAP01 to MAP06. Three looks
+   summarised on top with the plan, then one band per part of the observatory: notes and a pick on the
+   left, the same camera in every look on the right. Picks are collected in one line; points to argue about close the page. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.talk li strong { font-family: var(--display); }
+.sws i { display: block; height: 72px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: bottom left; background-size: 64px auto; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 512; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+ol.open { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+}
+.cand { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--line); padding-top: 22px; }
+.cand > * { min-width: 0; }
+.cand.chosen h2 { color: var(--pick); }
+.poses { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.poses figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.poses img { width: 100%; height: auto; aspect-ratio: 1; display: block; background: var(--chip); border: 1px solid var(--line); }
+.poses figcaption { font-size: 11.5px; color: var(--muted); }
+.cand h2 span { color: var(--accent); margin-right: 6px; }
+@media (max-width: 820px) { .cand { grid-template-columns: minmax(0, 1fr); } .poses { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.lede { border-top: 2px solid var(--fg); padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.sws { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+</style>
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP07 "Small Hours" · captured 16 Nov 2026 · GZDoom 4.12.2, software GL, monsters off</div>
+    <h1>Small Hours: three looks for the observatory</h1>
+    <p>The observatory still wears grey brick from cellar to dome. Below are three looks for the whole of it, each built into the level and photographed from the same 63 cameras as the level is now. A look changes textures only: no wall, floor or railing moves, and the level plays the same.</p>
+    <p class="muted">Picks can be mixed, for example the dome from one look and the rooms from another. Your picks are collected near the bottom as one line to paste into the chat. You can also comment on this page. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The three looks</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>Plan of the observatory, with camera numbers</h3>
+    <div class="plan" id="plan"></div>
+    <p class="muted" style="font-size:13px">One grid square is 128 map units; north is up, and you start on the road at the bottom. Upper floors are drawn darker and what lies below ground grey, each with its floor height; secrets are pink. The small square on the hillside is the stump of the bridge tower.</p>
+  </section>
+
+  <section class="stack" id="parts" style="gap:34px"></section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and I will build the observatory that way.</p>
+    <output id="picksline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+
+  <section class="stack">
+    <h3>Beyond paint: options to talk about</h3>
+    <p class="muted" style="font-size:13.5px">None of these is in the pictures. Each changes the level's shape, lighting or how it plays, so I would rather agree them first.</p>
+    <ol class="open talk">
+      <li><strong>A telescope.</strong> The pier in the dome carries nothing. A telescope on it, pointing out of the slit, would be a new thing drawn for the level; it would stand above head height, so it blocks no shots from the floor and some from the gallery.</li>
+      <li><strong>A round dome.</strong> The dome is a square room. Cutting its corners to an octagon would make it read as a dome from inside and from the roof; the gallery, its frames and the fight would be rebuilt around that.</li>
+      <li><strong>Small hours.</strong> Indoors is evenly bright. Dim rooms with a pool of light at each lamp and case would suit all three looks and the level's name, and make the snipers on the stacks and the gallery harder to see.</li>
+      <li><strong>The hill.</strong> The wood stands as a wall 512 high on every side of the hillside and the knoll. A low wall with a horizon and stars beyond it would open the hill up; those edges would be rebuilt.</li>
+      <li><strong>The planetarium.</strong> It borrows the night room's walls and ceiling. It could have a projector in the middle and its own look, at the cost of the echo with the way out.</li>
+      <li><strong>Orrery and globe.</strong> The orrery room and the hall have glass cases where an orrery and a globe would stand. Both would be new things to draw.</li>
+      <li><strong>Room tints are gone in the looks</strong>, as in MAP01 to MAP06: the coloured column over each far side, the torches and the doors carry the colour.</li>
+      <li><strong>Mixing.</strong> Outside, hall, library, dome and rooms are textured apart, so the dome of one look with the rooms of another costs nothing.</li>
+    </ol>
+  </section>
+</div>
+<script>
+const LOOKS = [["0", "As it is now", "Grey brick on every wall indoors and out, office ceilings, steel-topped boxes for cases. Rooms tinted after the door that leads to them."], ["1", "Royal", "A royal observatory of the 1770s. Red brick dressed in Portland stone, tall sash windows, a stone balustrade at the roof. Indoors cream panelling over a sage dado, oak, brass and green baize; a library in leather; the dome lined with cream boards between oak ribs over mahogany chart drawers."], ["2", "Mountain", "A mountain station of the 1890s. Granite as it came out of the hill, small deep windows with green shutters, iron eaves. Indoors limewash over pine boarding, pine-boarded rooms, flagstones and rush matting; the dome is riveted iron plate on iron brackets, with a grating for a gallery."], ["3", "Star Palace", "A planetarium of the 1930s. Smooth pale concrete with fluted piers, bronze bands and tall windows behind bronze grilles. Indoors midnight blue and gold over travertine, walnut, terrazzo with compass stars; the dome has the sky painted on it between bronze ribs."]];
+const SW = ["Y#", "G#", "H#", "L#", "D#", "WC#", "F#"];
+const SWCAP = "The front, the garden wall, hall wall, library, dome, clock room; hall floor";
+const NOTES = {"1": "The warmest and the most homely, and the brightest indoors: the hall and the dome are nearly white, so monsters and doors stand out. The clock room's red is close to RED's door colour; RED itself never goes there unless you carry it.", "2": "The plainest, and the one that most says a hill at night: grey outside, timber inside. The dome is the darkest of the three. It has the least colour of its own, so the six door colours carry furthest here.", "3": "The showiest. The hall, the dome and the orrery are dark blue, which suits a level called Small Hours but makes those rooms the darkest to fight in; BLUE's and VIOLET's far sides are the least distinct against it."};
+const PARTS = [{"id": "out", "name": "Road, gate, forecourt, yard and lane", "looks": "0123", "cams": [[4, "The forecourt and the front door"], [0, "From the start: the road and the gate"], [1, "The frame by the gate, RED leaning"], [3, "Inside the gate: RED's far side"], [5, "The arch to the yard"], [33, "The west yard"], [36, "The lane"], [37, "The west wing's door: one lock"], [39, "The stile, from the lane"]], "text": "The quiet way in. Everything here is under the night sky, with walls 512 high all round as in the earlier levels.", "asks": ["The grounds get a garden wall with dark trees over it, instead of one tall front all round. The building's own fronts carry windows, some lit.", "Doors and frames stand under low porches; out of doors the wall over a porch is the building's, so the gate reads as two towers.", "Each room door wears the wall of the place it is seen from, so it differs from side to side.", "The grass is the same in all three; the drive and the lane's paving change."]}, {"id": "hall", "name": "Hall", "looks": "0123", "cams": [[6, "The hall: the dome's door"], [7, "The hall's frame"], [8, "GREEN, and the east wing's door"], [9, "The library's door"]], "text": "The first room, 256 high, with three doors and a frame. Nobody is in it.", "asks": ["A portrait and a star chart hang by turns on the two long walls.", "The case is the globe's stand; a globe would be a new thing to draw."]}, {"id": "library", "name": "Library and stacks", "looks": "0123", "cams": [[10, "The library, the stacks over it"], [14, "From the stacks"], [13, "On the stacks: GREEN's far side"], [11, "The frame under the stacks"], [12, "GREEN's far side, from below"], [15, "Along the stacks: key 1"]], "text": "One of the two big fights: 320 high, with the stacks as an upper floor along its west side.", "asks": ["Books from floor to ceiling in two tiers, with the stacks' floor carried round as a rail. The free-standing cases and the shelves on the stacks are books too.", "The same shelving in every look; the wood and the bindings change."]}, {"id": "dome", "name": "Dome and gallery", "looks": "0123", "cams": [[16, "The dome: the pier, the gallery"], [21, "From the gallery"], [19, "Along the west gallery"], [17, "The frame under the gallery"], [18, "YELLOW's far side, from below"], [20, "The gallery: the door to the roof"], [22, "The night room's door, bolted"], [23, "YELLOW's far side"], [24, "The east gallery: key 2"]], "text": "The other big fight, 448 high, with a gallery round three sides and a slit of sky down the middle of the roof.", "asks": ["The top 176 of the wall is the dome's shell, then the ring it turns on, then the wall. The ceiling is the shell overhead.", "The gallery stands on chart drawers (Royal, Star Palace) or iron brackets (Mountain).", "The pier in the middle has a brass plate and a bed plate, but no telescope: see the foot of the page."]}, {"id": "roof", "name": "Roof", "looks": "0123", "cams": [[27, "The roof, from the gallery's door"], [28, "Across the roof"], [29, "The gap in the rail: the hillside"], [30, "The gatepost at the head of the steps"]], "text": "Between the lane and the dome, 160 up. Its east wall is the dome from outside.", "asks": ["The two raised boxes become skylights, lit from the library below."]}, {"id": "hill", "name": "Hillside, ravine and knoll", "looks": "0123", "cams": [[40, "The hillside: the tower's stump"], [41, "The hillside's frame"], [42, "VIOLET's far side, across the ravine"], [31, "The steps up to the roof"], [44, "The ravine's steps"], [45, "The ravine: the cave's door"], [47, "The knoll: VIOLET's far side"], [48, "The transit house's door: two locks"], [49, "From the knoll, the hillside's frame"]], "text": "North of the building. The hill itself is the same in all three: a wood all round and rock in the ravine. The back of the building, the tower's stump and the transit house's front change.", "asks": ["The wood is nearly black at this light. It could be lighter, or the hill could have a horizon instead: say if it is too dark."]}, {"id": "rooms", "name": "The wings and the transit house", "looks": "0123", "cams": [[54, "The clock room: key 4"], [52, "The workshop"], [53, "The instrument room: YELLOW, the hole"], [58, "The lecture room"], [60, "The orrery, the steps down"], [50, "The transit house"], [51, "Its lever, and BLUE"]], "text": "Six rooms 160 high. Each has its own wall and its own things hung on it: tools, charts, regulator clocks, a blackboard, diagrams of the planets.", "asks": ["The planetarium keeps the night room's walls and ceiling in every look.", "The benches of instruments are glass cases with brass circles and small telescopes in them."]}, {"id": "below", "name": "Cellar, boiler house, cave, shed, lens store, armoury", "looks": "01", "cams": [[61, "The cellar: the cistern"], [35, "The boiler house"], [46, "The cave"], [38, "The shed behind its bars"], [55, "The lens store: PINK and its frame"], [57, "The armoury: PINK's far side"], [62, "The hole into the alcove"]], "text": "The same in all three looks, so only one is shown beside the level as it is. The cellar, boiler house, cave and shed wear what MAP06's wear; the lens store and the armoury are new.", "asks": []}];
+const V = [[0, -768, 90], [192, -420, 90], [96, -380, 110], [0, -200, 160], [0, 40, 90], [-300, 256, 180], [0, 560, 90], [100, 592, 0], [100, 740, 20], [-100, 720, 180], [-300, 720, 180], [-560, 740, 225], [-720, 700, 215], [-896, 640, 270], [-880, 720, 0], [-896, 700, 90], [0, 960, 90], [160, 1000, 300], [200, 1200, 60], [-320, 1100, 90], [-300, 1280, 180], [-300, 1500, 315], [0, 1600, 90], [200, 1620, 45], [320, 1300, 270], [-20, 1840, 180], [20, 1840, 0], [-500, 1280, 180], [-900, 960, 45], [-672, 1640, 90], [-440, 1640, 90], [-600, 1900, 0], [-900, 1824, 180], [-800, 300, 0], [-1008, 200, 270], [-1008, 20, 270], [-1088, 500, 90], [-1050, 832, 180], [-1088, 1700, 135], [-1060, 1824, 0], [-200, 2100, 45], [200, 2336, 180], [200, 2300, 80], [300, 2100, 270], [-500, 2380, 200], [-400, 2500, 150], [-784, 2640, 90], [192, 2700, 90], [-256, 2700, 90], [0, 2650, 270], [-256, 3000, 60], [-200, 3120, 180], [-1250, 832, 180], [-1408, 1100, 90], [-1408, 560, 270], [-1536, 1480, 90], [-1500, 1560, 0], [-1296, 1480, 90], [400, 720, 0], [830, 700, 0], [1024, 1020, 90], [1024, 1700, 45], [1300, 1824, 0]];
+const RECTS = [[-384, -832, 384, -320, "open", "Road", "start"], [-128, -256, 128, 0, "open", "Gate", ""], [-448, 0, 448, 512, "open", "Forecourt", ""], [-1168, 64, -464, 448, "open", "West yard", ""], [-1168, 448, -1008, 2000, "open", "Lane", ""], [-1168, -208, -848, 48, "room", "Boiler house", ""], [-1440, 1744, -1184, 1936, "secret", "Shed", ""], [-256, 528, 256, 912, "hall", "Hall", "frame"], [-800, 528, -272, 912, "hall", "Library", "frame"], [-992, 528, -800, 912, "up", "Stacks", "+160"], [-384, 928, 384, 1696, "hall", "Dome", "frame"], [-384, 1056, -256, 1696, "up", "", ""], [256, 1056, 384, 1696, "up", "", ""], [-256, 1568, 256, 1696, "up", "Gallery", "+160"], [-160, 1712, 160, 2000, "up", "Night room", "+160"], [-992, 928, -400, 1696, "up", "Roof", "+160"], [-992, 1696, -400, 2000, "open", "", ""], [-992, 2000, 800, 2400, "open", "Hillside", "frame"], [-96, 2272, 32, 2400, "room", "", ""], [-992, 2400, 800, 2592, "down", "Ravine", "-128"], [-896, 2608, -672, 2800, "secret", "Cave", ""], [-480, 2592, 416, 2944, "open", "Knoll", ""], [-448, 2960, -64, 3280, "room", "Transit house", ""], [-1632, 640, -1184, 1024, "room", "Workshop", ""], [-1632, 1040, -1184, 1424, "room", "Instruments", ""], [-1632, 240, -1184, 624, "room", "Clocks", ""], [-1632, 1440, -1424, 1648, "secret", "Lens", ""], [-1408, 1440, -1184, 1648, "secret", "Armoury", ""], [336, 528, 784, 848, "room", "Lecture room", ""], [800, 528, 1248, 976, "room", "Planetarium", ""], [800, 992, 1248, 1376, "room", "Orrery", ""], [992, 1376, 1056, 1632, "down", "", ""], [800, 1632, 1376, 1968, "down", "Cellar", "-128"], [1392, 1760, 1536, 1888, "secret", "", ""]];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l][1];
+document.getElementById("looks").innerHTML = LOOKS.slice(1).map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sws" role="img" aria-label="${name}: ${SWCAP}">${SW.map(t =>
+     `<i style="background-image:url(tex/${t.replace("#", n)}.png)"></i>`).join("")}</div>
+   <div class="swcap">${SWCAP}</div>
+   <p>${d}</p><p class="muted">${NOTES[n]}</p></div>`).join("");
+let picks = {}, cams = {};
+try { picks = JSON.parse(localStorage.getItem("map07-picks") || "{}"); } catch (e) {}
+PARTS.forEach(p => cams[p.id] = p.cams[0][0]);
+function drawPart(p) {
+  const cam = cams[p.id], label = p.cams.find(c => c[0] === cam)[1];
+  const camBar = p.cams.length > 1 ? `<div class="cams" role="group" aria-label="Camera, ${p.name}">${p.cams.map(([v, n]) =>
+    `<button type="button" id="cam-${p.id}-${v}" data-part="${p.id}" data-cam="${v}" aria-pressed="${v === cam}">${v + 1}. ${n}</button>`).join("")}</div>` : "";
+  document.getElementById("main-" + p.id).innerHTML = camBar + `<div class="opts">${[...p.looks].map(l =>
+    `<div class="opt${picks[p.id] === l && p.looks.length > 1 ? " chosen" : ""}">
+       <button type="button" class="shot" aria-label="Enlarge: ${lookName(l)}, ${label}"><img src="${l}/view_${pad(cam)}.jpg" alt="${p.name}, ${lookName(l)}: ${label}" loading="lazy"></button>
+       <h4>${l === "0" ? "" : `<span>${l}</span>`}${lookName(l)}</h4>
+     </div>`).join("")}</div>`;
+}
+function drawPicks(p) {
+  const el = document.getElementById("picks-" + p.id);
+  if (!el) return;
+  el.innerHTML = [...p.looks].map(l =>
+    `<button type="button" id="pick-${p.id}-${l}" data-part="${p.id}" data-look="${l}" aria-pressed="${picks[p.id] === l}">${l === "0" ? "Keep as now" : lookName(l)}</button>`).join("");
+}
+function drawSummary() {
+  const line = PARTS.filter(p => p.looks.length > 1).map(p =>
+    `${p.name}: ${picks[p.id] === undefined ? "?" : picks[p.id] === "0" ? "as now" : lookName(picks[p.id])}`).join("; ");
+  document.getElementById("picksline").textContent = "MAP07 look. " + line + ".";
+}
+function save() { try { localStorage.setItem("map07-picks", JSON.stringify(picks)); } catch (e) {} }
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<article class="part" id="${p.id}">
+     <div class="side">
+       <h2>${p.name}</h2>
+       <p>${p.text}</p>
+       ${p.asks.length ? `<ul>${p.asks.map(a => `<li>${a}</li>`).join("")}</ul>` : ""}
+       ${p.looks.length > 1 ? `<h3>Your pick</h3><div class="picks" id="picks-${p.id}" role="group" aria-label="Pick for ${p.name}"></div>` : ""}
+     </div>
+     <div class="main" id="main-${p.id}"></div>
+   </article>`).join("");
+PARTS.forEach(p => { drawPart(p); drawPicks(p); });
+drawSummary();
+document.getElementById("parts").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.classList.contains("shot")) { b.parentElement.classList.toggle("big"); return; }
+  const p = PARTS.find(q => q.id === b.dataset.part);
+  if (!p) return;
+  if (b.dataset.cam !== undefined) {
+    cams[p.id] = +b.dataset.cam;
+    drawPart(p);
+    document.getElementById(`cam-${p.id}-${b.dataset.cam}`).focus();
+  } else if (b.dataset.look !== undefined) {
+    if (picks[p.id] === b.dataset.look) delete picks[p.id]; else picks[p.id] = b.dataset.look;
+    save();
+    drawPart(p); drawPicks(p); drawSummary();
+    document.getElementById(`pick-${p.id}-${b.dataset.look}`).focus();
+  }
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+// Plan at a fifth of full size, y flipped.
+(function () {
+  const S = 0.2, X0 = -1792, X1 = 1664, Y0 = -896, Y1 = 3328, X = x => 16 + (x - X0) * S, Y = y => 16 + (Y1 - y) * S;
+  const C = { hall: "#e9dfc8", open: "#dfe6d6", room: "#d9d3ee", up: "#d9b3a6", down: "#b9bec7", secret: "#f0c9dc" };
+  const rect = (x1, y1, x2, y2, fill, label, sub) => {
+    const cx = (X(x1) + X(x2)) / 2, cy = (Y(y1) + Y(y2)) / 2;
+    return `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${fill}" stroke="#1a1f27" stroke-width="1"/>` +
+      (label ? `<text x="${cx}" y="${cy + (sub ? -1 : 4)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1a1f27">${label}</text>` : "") +
+      (sub ? `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="8.5" fill="#3b4350">${sub}</text>` : "");
+  };
+  let g = "";
+  for (let x = X0; x <= X1; x += 128) g += `<line x1="${X(x)}" y1="${Y(Y1)}" x2="${X(x)}" y2="${Y(Y0)}" stroke="var(--line)" stroke-width=".5"/>`;
+  for (let y = Y0; y <= Y1; y += 128) g += `<line x1="${X(X0)}" y1="${Y(y)}" x2="${X(X1)}" y2="${Y(y)}" stroke="var(--line)" stroke-width=".5"/>`;
+  RECTS.forEach(r => { g += rect(r[0], r[1], r[2], r[3], C[r[4]], r[5], r[6]); });
+  V.forEach((v, i) => {
+    if (v[0] > 3000) return;
+    const a = v[2] * Math.PI / 180, x = X(v[0]), y = Y(v[1]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 13 * Math.cos(a)}" y2="${y - 13 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="6.5" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 2.8}" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 ${32 + (X1 - X0) * S} ${32 + (Y1 - Y0) * S}" role="img" aria-label="Plan of the observatory with camera positions">${g}</svg>`;
+})();
+</script>

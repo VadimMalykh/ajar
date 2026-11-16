@@ -134,6 +134,7 @@ ALIGNED = ("Y", "YA", "YB", "YC", "YCA", "YCB", "YT", "YTA", "YTB", "YU", "YR", 
            "H", "HK", "HL", "HV", "HG", "HM", "L", "A", "S", "U", "WA", "WB", "EA", "EB", "K", "M", "C", "O", "R")
 PICTURES = {"H": 2, "L": 1, "U": 2, "WA": 3, "WB": 3, "EA": 3, "EB": 3, "C": 1}
 SAME = ("AJ6XC", "AJ6XB", "AJ6XG", "AJ6XS", "AJ6XK")
+WALLS = {}              # the walls that are the same in every look, once make() has drawn them
 
 
 def aligned(n):
@@ -1071,6 +1072,7 @@ def make(out, rd):
     same["XK"] = stock
     for tag, im in same.items():
         both("AJ6" + tag, gy.mirror(im))
+    WALLS.update(same)                                               # MAP07 wears some of these too
     stone = Img(64, 64, (190, 184, 168))                             # steps, the fountain's rim, garden seats
     stone.noise(7, 950)
     stone.rect(0, 0, 64, 3, (214, 208, 192))
