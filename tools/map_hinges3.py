@@ -369,6 +369,14 @@ things(CANDELABRA, (4424, 24), (4424, 360))
 things(REVENANT, (5264, 128), angle=180)
 things(SERGEANT, (5230, 48), (5230, 208), angle=180)
 
+# --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
+# key 2, at the far end of the circle: the way back along it, and the house below
+ajarmap.ambush(m, 2, IMP, (380, 940), (380, 1050), angle=0)
+ajarmap.ambush(m, 2, DEMON, (300, 448), (600, 448), angle=0)
+# key 3, in the booth: the gods outside its door
+ajarmap.ambush(m, 3, IMP, (-200, 250), (-200, 650), angle=180)
+ajarmap.ambush(m, 3, DEMON, (-150, 448), angle=180)
+
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "front" is foyer, cloakroom, bar, stalls and pit; "stage" includes backstage;
 # "flies" includes the bridge. a, b, c are the three bolts.

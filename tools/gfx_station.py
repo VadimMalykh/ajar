@@ -26,7 +26,7 @@ lines them up by world position (Map.align), so cuts in a wall do not show.
 """
 import random
 
-from gfx import Img, shade
+from gfx import Img, shade, levers
 import gfx_theatre as th
 import gfx_yard as gy
 
@@ -588,6 +588,7 @@ def make(out, rd):
     box.rect(0, 12, 64, 14, (30, 44, 36))
     box.rect(0, 120, 64, 128, (60, 52, 40))
     out["textures/AJ5XL.png"] = gy.mirror(box).png()
+    levers(out, "AJ5LV", gy.mirror(box))                             # the signal box's lever
     eng = Img(64, 96, (30, 30, 34))                                  # the engine: boiler, footplate, a wheel
     eng.noise(4, 901)
     eng.rect(0, 0, 64, 3, (70, 70, 76))

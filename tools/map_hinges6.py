@@ -402,7 +402,7 @@ ajarmap.fitted(m, (-720, 1616, -352, 1904), [((-656, 1728, -464, 1792), dict(WOO
                                              ((-400, 1616, -352, 1728), SEAT)],
                ceil=128, light=175, color=PLUM, **OFFICE)
 door((-656, 1600), (-592, 1600), (0, 1), 0, "JK", keys="34", line_id=303)
-m.line((-720, 1728), (-720, 1792), special=11, args=(GROTTO, 32), playeruse=True, mid="AJLEVR", exact=True,
+m.line((-720, 1728), (-720, 1792), special=11, args=(GROTTO, 32), playeruse=True, mid=f"AJ6LV{LOOK}" if LOOK else "AJLEVR", exact=True,
        id=308)
 # the strongroom: BLUE, and a frame. No door comes in or out by the hole
 m.sector(rect(-720, 1920, -352, 2176), ceil=128, light=150, color=SKY, wall="AJSAFE")
@@ -660,6 +660,15 @@ things(CANDELABRA, (1000, 1896), (1400, 1896))
 things(SUPER, (1200, 2060))
 things(SHELLBOX, (1160, 2180))
 things(MEDIKIT, (1240, 2180))
+
+# --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
+# key 1, at the north end of the upper gallery: the whole gallery, behind you
+ajarmap.ambush(m, 1, REVENANT, (-160, 1250), angle=90)
+ajarmap.ambush(m, 1, IMP, (-200, 1420), (-120, 1560), angle=90)
+# key 2, in the cellar: out of the dark
+ajarmap.ambush(m, 2, SPECTRE, (1650, -360), (1500, -340), (1760, -130), angle=0)
+# key 4, on the mezzanine: up from the great hall
+ajarmap.ambush(m, 4, CACO, (-150, 620), (200, 600), angle=180)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "hall" is the lobby, the great hall, the cloakroom, the gift shop, the cafe
