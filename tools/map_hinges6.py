@@ -471,6 +471,7 @@ STIM, MEDIKIT, BONUS, HELMET, ARMOR, MEGA, SPHERE, BERSERK = 2011, 2012, 2014, 2
 CANDLE, CANDELABRA, LAMP, TECHLAMP = 34, 35, 2028, 86
 TORCH_R, TORCH_G, TORCH_B = 46, 45, 55
 POOL, BARREL = 24, 2035
+BACKPACK = 8
 
 
 def things(kind, *spots, angle=0, **k):
@@ -486,14 +487,19 @@ things(LAMP, (24, 24), (616, 24))
 things(ZOMBIE, (120, 200), (520, 240), angle=270)
 things(IMP, (320, 340), angle=270)
 # the great hall: the night staff. The lodger wakes when you are well into it
-things(ZOMBIE, (-100, 500), (700, 500), (200, 800), (440, 800), (-150, 1050), angle=270)
-things(IMP, (-200, 420), (840, 420), (96, 640), (544, 640), (160, 1040), (480, 1040), angle=270)
-things(SERGEANT, (320, 700), (0, 980), (640, 980), angle=270)
-things(DEMON, (320, 1000), (760, 900), angle=270)
+# Fireballs and teeth at the front, guns at the back: from the lobby the men at
+# the far end shoot through everything that is coming for you
+things(ZOMBIE, (-100, 500), (700, 500), (-150, 1050), (160, 1060), (480, 1060), angle=270)
+things(IMP, (-180, 450), (820, 450), (96, 640), (544, 640), (200, 800), (440, 800), angle=270)
+things(SERGEANT, (0, 980), (640, 980), (320, 1080), angle=270)
+things(DEMON, (320, 620), (760, 900), angle=270)
 things(CACO, (320, 880), angle=270, ambush=True)
 things(LODGER, (320, 760), args=(300,))
 things(LAMP, (-232, 408), (872, 408), (-232, 870), (872, 1128))
 things(SHELLS, (-32, 600), (672, 600), (320, 1120))
+things(SHELLBOX, (864, 600))
+things(LAUNCHER, (420, 1120))                                              # at the head of the steps: the court is next
+things(ROCKETS, (460, 1120), (460, 1090))
 things(CLIP, (320, 460), (320, 540))
 things(STIM, (-220, 760), (860, 800))
 things(MEDIKIT, (860, 1100))
@@ -507,6 +513,7 @@ things(SERGEANT, (700, 100), (900, 100), angle=180)
 things(IMP, (800, 250), angle=180)
 things(CLIP, (680, 240), (720, 240))
 things(HELMET, (900, 300))
+things(BACKPACK, (900, 160))                                               # the shop sells bags
 # the stockroom
 things(IMP, (1000, 100), (1100, 100), angle=90)
 things(SHELLBOX, (1100, 280))
@@ -527,15 +534,18 @@ things(DEMON, (1100, 740), angle=180)
 things(TORCH_G, (1336, 840), (1336, 936))
 things(CHAINGUN, (980, 920))
 things(AMMOBOX, (1020, 920))
+things(BERSERK, (1280, 900))                                               # by GREEN: for what is in the cellar
 things(STIM, (940, 500), (1340, 500))
 # the court: under the sky, and overlooked from three sides
-things(IMP, (0, 1420), (640, 1440), (0, 1900), (590, 1900), (160, 1664), (480, 1664), angle=270)
+# The sergeants are at the far end, under the terrace: from the steps they shoot
+# through the whole court. The galleries on either side look at each other
+things(IMP, (0, 1420), (640, 1440), (60, 1830), (580, 1830), (160, 1664), (480, 1664), angle=270)
 things(DEMON, (120, 1500), (520, 1500), (320, 1820), angle=270)
-things(SPECTRE, (120, 1860), (520, 1860), angle=270)
-things(SERGEANT, (200, 1440), (440, 1440), angle=270)
+things(SPECTRE, (140, 1890), (500, 1890), angle=270)
+things(SERGEANT, (220, 1950), (440, 1940), angle=270)
 things(KNIGHT, (320, 1500), angle=270)
 things(CACO, (160, 1760), (480, 1760), angle=270, ambush=True)
-things(SOUL, (320, 1560), (320, 1780), angle=270)
+things(SOUL, (320, 1560), (420, 1900), angle=270)
 things(BARREL, (-32, 1560), (672, 1560), (-32, 1960))
 things(LAMP, (232, 1368), (408, 1368))
 things(SHELLS, (64, 1520), (576, 1520))
@@ -557,6 +567,7 @@ things(IMP, (-200, 1300), (-200, 1760), (-120, 2100), angle=0)
 things(SERGEANT, (-160, 1200), angle=270)
 things(REVENANT, (-200, 2000), angle=270)
 things(TORCH_R, (-232, 1576), (-232, 1688))
+things(MEDIKIT, (-230, 1250))
 things(SUPER, (-220, 2200))
 things(SHELLS, (-220, 2160), (-220, 2120))
 things(STIM, (-100, 1180))
@@ -585,34 +596,36 @@ things(IMP, (-460, 780), (-300, 500), angle=0)
 things(KNIGHT, (-440, 520), angle=0)
 things(STIM, (-480, 800))
 things(SHELLBOX, (-480, 480))
+things(PLASMA, (-400, 810))                                                # the cells have been lying about since the strongroom
+things(CELLS, (-360, 810))
 # the cellar
 things(SPECTRE, (1300, -380), (1700, -380), (1300, -100), (1760, -100), angle=90)
 things(DEMON, (1500, -160), (1600, -300), (1300, 60), angle=90)
-things(IMP, (1472, 80), (1568, 112), (1728, -224), angle=180)              # on the crates
+things(IMP, (1440, 90), (1504, 50), (1728, -224), angle=180)               # on the crates
 things(SERGEANT, (1700, 80), (1800, 20), angle=180)
 things(SOUL, (1500, -100), (1700, -20), angle=90)
 things(LODGER, (1400, -120), args=(300,))
 things(TORCH_G, (1480, -424), (1592, -424))
 things(CANDLE, (1240, -424), (1832, -424), (1240, 120), (1832, 120))
-things(MEDIKIT, (1820, 110))
+things(MEDIKIT, (1820, 110), (1250, -330))
 things(SHELLBOX, (1240, 60))
 # the boiler room: do not open this door
 things(MANCUBUS, (2100, -256), angle=180)
 things(KNIGHT, (1980, -340), (1980, -170), angle=180)
-things(BERSERK, (2160, -360))
-things(ROCKETS, (2160, -160), (2120, -160))
+things(SPHERE, (2160, -360))
+things(ROCKETBOX, (2160, -160), (2120, -160))
 # the west wing: antiquities
 things(ZOMBIE, (-600, 900), (-320, 1100), angle=0)
 things(IMP, (-680, 1100), (-400, 900), (-680, 1200), (-400, 1560), angle=0)
 things(SERGEANT, (-640, 1400), (-420, 1240), angle=270)
 things(DEMON, (-540, 1560), (-1000, 1280), (-820, 1520), angle=270)
-things(CHAINGUNNER, (-1160, 1560), (-780, 1180), angle=270)
+things(CHAINGUNNER, (-1130, 1540), (-780, 1180), angle=270)
 things(REVENANT, (-960, 1000), angle=0)
 things(KNIGHT, (-1100, 1060), angle=0)
 things(PAIN, (-960, 1500), angle=270)
 things(TECHLAMP, (-696, 872), (-296, 872), (-1176, 1576), (-760, 1576))
 things(SHELLS, (-560, 1180), (-1160, 1180))
-things(MEDIKIT, (-1170, 880))
+things(MEDIKIT, (-1170, 880), (-1100, 1570))
 things(STIM, (-380, 1180), (-760, 870))
 things(AMMOBOX, (-760, 1100))
 # the office: the director, working late, and deaf to the wing
@@ -642,7 +655,7 @@ things(STIM, (1864, 1832), (1400, 1368))
 things(ROCKETS, (1660, 1184), (1700, 1184))
 # the archive
 things(REVENANT, (1200, 2160), angle=270)
-things(IMP, (1010, 1920), (1390, 1920), angle=270)
+things(IMP, (1050, 1930), (1350, 1930), angle=270)
 things(CANDELABRA, (1000, 1896), (1400, 1896))
 things(SUPER, (1200, 2060))
 things(SHELLBOX, (1160, 2180))

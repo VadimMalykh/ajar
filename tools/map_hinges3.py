@@ -261,6 +261,7 @@ STIM, MEDIKIT, BONUS, HELMET, ARMOR, MEGA, SPHERE = 2011, 2012, 2014, 2015, 2018
 CANDLE, CANDELABRA, LAMP, TECHLAMP = 34, 35, 2028, 86
 TORCH_R, TORCH_G, TORCH_B = 46, 45, 55
 POOL, DEAD_ZOMBIE = 24, 18
+BACKPACK, BERSERK = 8, 2023
 
 
 def things(kind, *spots, angle=0, **k):
@@ -274,12 +275,15 @@ things(SHELLS, (-520, 1480), (-520, 1576))
 things(CANDELABRA, (-616, 1048), (216, 1048), (-616, 1656), (216, 1656))
 things(LAMP, (40, 1048), (216, 1440), (216, 1600))
 things(STIM, (-300, 1640))
-# the cloakroom: the attendant
+# the cloakroom: the attendant, and a bag nobody came back for
 things(ZOMBIE, (-760, 1140), angle=0)
 things(CLIP, (-700, 1330))
+things(BACKPACK, (-840, 1320))
 # the bar: last orders
-things(SERGEANT, (540, 1560), (800, 1560), angle=180)
-things(IMP, (672, 1400), (940, 1400), angle=180)
+# The sergeants drink nearest the door and the imps at the far end, so that
+# what the imps throw at you lands in the sergeants' backs
+things(SERGEANT, (540, 1560), (720, 1540), angle=180)
+things(IMP, (940, 1410), (930, 1590), angle=180)
 things(ZOMBIE, (330, 1640), angle=90)
 things(TORCH_B, (1000, 1456), (1000, 1584))
 things(STIM, (500, 1632), (700, 1632))
@@ -292,14 +296,18 @@ things(LAMP, (24, 24), (24, 872))
 things(CLIP, (120, 448), (150, 448))
 things(MEDIKIT, (990, 30))
 things(LODGER, (512, 448), args=(260,))
-# the pit: the orchestra
-things(DEMON, (1104, 200), (1104, 620), angle=180)
-things(SPECTRE, (1104, 410), angle=180)
+# the way into the stalls: something for your hands before the orchestra
+things(BERSERK, (128, 960))
+# the pit: the orchestra, the whole row of it
+things(DEMON, (1104, 140), (1104, 300), (1104, 600), (1104, 760), angle=180)
+things(SPECTRE, (1104, 450), angle=180)
 things(SHELLS, (1100, 30), (1100, 860))
 # the stage: tonight's act
-things(KNIGHT, (1500, 300), angle=180)
-things(IMP, (1300, 120), (1700, 120), (1700, 760), angle=180)
-things(CHAINGUNNER, (1740, 448), angle=180)
+# The knight has the front of the stage, the chorus and the gunner are behind
+# him: seen from the house, whatever they send at you goes past his back
+things(KNIGHT, (1300, 380), angle=180)
+things(IMP, (1560, 200), (1560, 520), (1700, 760), angle=180)
+things(CHAINGUNNER, (1740, 380), angle=180)
 things(CANDELABRA, (1176, 24), (1176, 616))
 things(SHELLBOX, (1760, 40))
 things(STIM, (1500, 860), (1540, 860))
@@ -342,7 +350,7 @@ things(CANDELABRA, (-280, 744), (-168, 744))
 things(AMMOBOX, (-420, 160))
 things(MEDIKIT, (-420, 740))
 # the booth: key 3, and the man who works the lights
-things(SERGEANT, (-520, 360), angle=180)
+things(SERGEANT, (-540, 400), angle=180)
 things(TECHLAMP, (-488, 344), (-488, 552))
 # the flies and the bridge: lost souls among the ropes
 things(SOUL, (1250, -96), (1700, -96), (700, -48), (200, -48), angle=180)
@@ -354,8 +362,8 @@ things(LAUNCHER, (4380, 192))
 things(ROCKETS, (4380, 140), (4380, 244), (4420, 192))
 things(MEGA, (4400, 340))
 things(SHELLBOX, (4400, 40))
-things(REVENANT, (4250, 100), (4250, 290), angle=180)
-things(IMP, (4130, 60), (4130, 330), angle=180)
+things(REVENANT, (4220, 100), (4220, 290), angle=180)
+things(IMP, (4330, 70), (4330, 320), angle=180)                             # behind them, and throwing
 things(CANDELABRA, (4424, 24), (4424, 360))
 # the way out: the last things between you and it
 things(REVENANT, (5264, 128), angle=180)

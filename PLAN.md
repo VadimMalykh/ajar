@@ -2084,3 +2084,54 @@ level too (it does now); the two switchboards under the gallery's gap, which
 a jump down lands on. The level wears stock textures; its look is for a
 design session. Next: the level after has the secret exit, the loop of three
 with PINK.
+
+## Fights, MAP03 to MAP09 (2026-11-16)
+
+Asked for by Vadim: a backpack (there was none), and the monsters of MAP03
+to MAP09 placed for livelier fights, judged as a Doom II player would.
+Only things moved: no wall, door, key or frame, and the solver's graphs are
+as they were.
+
+What was wrong, by the numbers (`tools/budget.py`, `tools/thingcheck.py`):
+
+- No backpack anywhere, with 150 to 230 shells lying about a level and room
+  for 50.
+- From MAP04 on the rocket launcher was only in PINK's secret, from MAP08 the
+  plasma rifle only in the kiosk, while rockets and cells lay on the main
+  way.
+- MAP07 to MAP09: ammunition worth 1.3 to 1.5 times the monsters' health,
+  secrets included, and about 400 health on the way for 25000 to 28000 of
+  theirs.
+- About 70 monsters stood inside another monster or a lamp (MAP05 2, MAP06 7,
+  MAP07 17, MAP08 23, MAP09 21, MAP03 1), and one imp on a crate under a
+  ceiling too low for it.
+- The berserk pack was behind the fight it is for (MAP05: the far corner of
+  the yard; MAP06 to MAP09: in the boiler room, behind a mancubus).
+
+What changed:
+
+- A backpack in every level from MAP03, early and in plain sight: cloakroom,
+  wash house, waiting room, gift shop, the hall, the enquiry desk, the call
+  office.
+- Berserk before the teeth: MAP03 at the mouth of the stalls (the pit now
+  has four demons and a spectre), MAP05 at the head of platform 1 over the
+  tracks, MAP06 by GREEN in the cafe (the cellar), MAP07 by the library's
+  door, MAP08 and MAP09 at the head of the stairs down. MAP04's was right.
+  The boiler rooms have a soul sphere and rocket boxes instead.
+- Weapons on the way: launcher in MAP05's signal box, at the head of MAP06's
+  court steps, on MAP07's stacks and MAP08's and MAP09's gallery (each over a
+  crowd); plasma on MAP06's mezzanine, in MAP08's office, on MAP09's balcony.
+- Monsters that fight each other: guns behind fireballs and teeth as seen
+  from where the player comes in (MAP05 concourse, MAP06 great hall and
+  court, MAP03 bar and stage, PINK's store), the mancubus at the far end of
+  MAP05's shed behind the spectres, men round barrels by the way in (MAP04
+  yard, MAP05 platform 1).
+- Shell boxes, rocket boxes and medikits until every level has ammunition
+  worth 1.8 to 2.7 times its monsters and 360 to 900 health.
+- Every monster stands clear.
+
+Not done, Vadim's call: the numbers of monsters are as they were (MAP07 to
+MAP09 have 166 to 184, fifteen hell knights each); the crossfire from the
+galleries over MAP06's court and the 30 monsters of MAP08's atrium and
+MAP09's switchroom are still what a pistol start meets. None of it has been
+played by hand.
