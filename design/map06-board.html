@@ -1,0 +1,245 @@
+<title>After Hours Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, the same as the boards of MAP01 to MAP04 and the thief's. Three looks
+   summarised on top with the plan, then one band per part of the museum: notes and a pick on the
+   left, the same camera in every look on the right. Picks are collected in one line; points to argue about close the page. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.talk li strong { font-family: var(--display); }
+.sws i { display: block; height: 72px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: bottom left; background-size: 64px auto; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 512; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+ol.open { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+}
+.cand { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--line); padding-top: 22px; }
+.cand > * { min-width: 0; }
+.cand.chosen h2 { color: var(--pick); }
+.poses { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.poses figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.poses img { width: 100%; height: auto; aspect-ratio: 1; display: block; background: var(--chip); border: 1px solid var(--line); }
+.poses figcaption { font-size: 11.5px; color: var(--muted); }
+.cand h2 span { color: var(--accent); margin-right: 6px; }
+@media (max-width: 820px) { .cand { grid-template-columns: minmax(0, 1fr); } .poses { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.lede { border-top: 2px solid var(--fg); padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.sws { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+</style>
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP06 "After Hours" · captured 16 Nov 2026 · GZDoom 4.12.2, software GL, monsters off</div>
+    <h1>After Hours: three looks for the museum</h1>
+    <p>The museum still wears grey brick from cellar to roof. Below are three looks for the whole of it, each built into the level and photographed from the same 58 cameras as the level is now. A look changes textures only: no wall, floor or railing moves, and the level plays the same.</p>
+    <p class="muted">Picks can be mixed, for example the court from one look and the wings from another. Your picks are collected near the bottom as one line to paste into the chat. You can also comment on this page. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The three looks</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>Plan of the museum, with camera numbers</h3>
+    <div class="plan" id="plan"></div>
+    <p class="muted" style="font-size:13px">One grid square is 128 map units; north is up, and you start in the lobby at the bottom. Upper floors are drawn darker and the cellar grey, each with its floor height; secrets are pink. The store is reached only by door, so it is not on the plan.</p>
+  </section>
+
+  <section class="stack" id="parts" style="gap:34px"></section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and I will build the museum that way.</p>
+    <output id="picksline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+
+  <section class="stack">
+    <h3>Beyond paint: options to talk about</h3>
+    <p class="muted" style="font-size:13.5px">None of these is in the pictures. Each changes the level's shape, lighting or how it plays, so I would rather agree them first.</p>
+    <ol class="open talk">
+      <li><strong>After hours.</strong> The museum is evenly bright. It is shut for the night: dim rooms with a pool of light on each case and picture would suit all three looks, and the night roof over the hall. It makes the snipers on the mezzanine, the upper gallery and the roof harder to see.</li>
+      <li><strong>Statues.</strong> The four plinths in the great hall carry glass cases. A statue on each would be a new thing drawn for the level, and it blocks shots.</li>
+      <li><strong>The roof's edge.</strong> The roof stands against a taller wall on three sides. A parapet with sky and a horizon beyond it would make it a roof; that edge would be rebuilt.</li>
+      <li><strong>The frames.</strong> A frame is a dark doorway with a dark column over it. In rooms hung with pictures it could have a lamp or an empty gilt frame over it; that helps more with four Stray doors about.</li>
+      <li><strong>Fewer exhibits.</strong> Every free wall has two or three. Fewer would make each room calmer and each exhibit a landmark.</li>
+      <li><strong>Room tints are gone in the looks</strong>, as in MAP01 to MAP05: the coloured column over each far side, the torches and the doors carry the colour. Here the two wall colours in each wing do some of that work.</li>
+      <li><strong>The earlier levels' secrets.</strong> If you take the dressed cellar, grotto, shed and stockroom, the same could be done for the stores and secrets of MAP03 to MAP05.</li>
+      <li><strong>Mixing.</strong> Outside, hall, wings and rooms are textured apart, so the court of one look with the wings of another costs nothing.</li>
+    </ol>
+  </section>
+</div>
+<script>
+const LOOKS = [["0", "As it is now", "Grey brick on every wall, office ceilings, steel-topped boxes for cases. Rooms tinted after the door that leads to them."], ["1", "Athenaeum", "A museum of the 1830s. Portland stone outside: a rusticated ground floor, tall windows under pediments, an attic of sunk panels; urns and figures in niches round the court, a lawn, a stone balustrade. The great hall is ashlar between pilasters over a grey marble dado, under a coffered glass roof with the night behind it, on black and white marble. Antiquities hang on Pompeian red and ochre over black marble, paintings in gilt frames on green and blue damask, on oak herringbone."], ["2", "Cabinet", "A natural history museum of the 1870s. Buff terracotta banded in slate blue, round-headed windows in pairs, a blind arcade under the eaves, iron spear railings, gravel in the court. The hall is terracotta piers over bottle-green glazed tile, under iron ribs and night glass, on encaustic tiles. The wings are deep green, tan, Prussian blue and maroon over mahogany panelling, with pinned butterflies, an ammonite and old maps beside the portraits; mahogany cases, dark boards."], ["3", "Kunsthalle", "A gallery of the 1970s. White render over board-marked concrete, ribbons of glass, black steel, glass railings, raked gravel. The hall is white over a concrete dado under a ceiling of lit panels, on terrazzo. The wings are white, sand and one charcoal room, the exhibits in thin black frames with abstracts in the east wing, white plinths, pale oak boards."]];
+const SW = ["Y#", "H#", "A#", "WA#", "EA#", "F#", "FW#"];
+const SWCAP = "The front, hall wall, porch wall, a west and an east wing room; hall floor, wing floor";
+const NOTES = {"1": "The one that says museum soonest, and the richest. It is also the palest: stone outside and in, so the court and the hall are bright. The red of the first antiquities room is close to RED's door colour; RED itself is in the cloakroom and on the upper gallery, not there.", "2": "The darkest and warmest indoors: the wings read as rooms full of things. Monsters stand out least against it. Brick-like and banded straight after MAP05's terminus, though buff where that was red. Its bottle green sits near GREEN, which lives in the cafe and the cellar.", "3": "Unlike anything in MAP01 to MAP05. Doors, keys and monsters stand out best on white, and the one charcoal room is easy to remember as a landmark. The plainest of the three; the hall depends on its pictures."};
+const PARTS = [{"id": "hall", "name": "Lobby, great hall and mezzanine", "looks": "0123", "cams": [[3, "The great hall"], [0, "From the start"], [4, "The mezzanine"], [5, "The upper gallery over the hall"], [42, "The hall from the mezzanine"], [34, "The hall from the upper gallery"], [6, "The hall's frame, the head of the steps"], [7, "The west wing's door: one lock"], [8, "The cafe's door"], [9, "The cloakroom's door"], [1, "The lobby's frame"], [2, "A Stray door in the lobby"], [41, "On the mezzanine: VIOLET's far side"]], "text": "Where you start. The lobby is 192 high and opens straight into the great hall, 384 high, which every other part is reached from. The mezzanine is the upper floor of its west wall.", "asks": ["The hall wall is one texture from skirting to cornice; doors and the frame stand under low porches, and the wall carries on over them.", "Two big pictures by turns on the hall's walls, and the museum's plan three times in the lobby.", "The plinths are display cases like the rest. Statues would be new things to stand on them: see the foot of the page.", "Each room door wears the wall of the room it is seen from, so it differs from side to side."]}, {"id": "court", "name": "Court, terrace, upper gallery and roof", "looks": "0123", "cams": [[24, "The court, the terrace beyond"], [25, "The upper gallery from the court"], [26, "The roof from the court"], [35, "The court from the upper gallery"], [39, "The court from the roof"], [31, "Along the terrace"], [30, "The night room's door, bolted"], [36, "The terrace from the upper gallery"], [29, "The steps to the terrace, the gatepost"], [23, "The steps down to the court"], [27, "The grotto's door"], [28, "The shed behind its bars"], [33, "Along the upper gallery"], [32, "Upper gallery: RED's far side"], [37, "Along the roof"], [38, "The roof: YELLOW's far side"], [40, "The nook"]], "text": "Under the sky. The court is sunk 72 below the ground floor, with the hall's back wall to the south, the upper gallery over arches to the west, the lower east front with the roof on it, and the terrace to the north. All four are one front, 512 high, counted down from the sky.", "asks": ["Windows are paint: lit upstairs here and there, dark below.", "The upper gallery has a ceiling, so it reads as a loggia: open between its floor and the attic above.", "The roof stands halfway up the taller building behind it. A parapet with sky beyond would need that edge rebuilt.", "The fountain's water, the frames and the bolted doors' steel are the same in all three."]}, {"id": "west", "name": "West wing: antiquities, and the office", "looks": "0123", "cams": [[44, "The second room, the office's door: two locks"], [43, "The first room"], [45, "The third room: the frame"], [46, "The fourth room: YELLOW"], [47, "The office: the desk, the hole behind it"], [48, "The office's lever"]], "text": "Four rooms in a ring behind one lock, 160 high, and the office behind two. The rooms take two wall colours by turns, so going round the ring you always step from one into the other.", "asks": ["Three exhibits by turns on the walls: a relief, a vase, a mask (pinned butterflies and an ammonite in look 2). Say if you want fewer on a wall, or none near the frame.", "Cases are glass over a plinth, with coins and sherds under the glass."]}, {"id": "east", "name": "East wing: paintings, and the archive", "looks": "0123", "cams": [[51, "The first room"], [52, "The second room, the archive's door: two locks"], [53, "The third room: VIOLET"], [54, "The fourth room"], [55, "The archive: Stray doors"]], "text": "The other ring of four, also behind one lock, with the archive behind two. Two wall colours by turns again, different from the west wing's, so you can tell the wings apart.", "asks": ["Three paintings by turns: a landscape, a portrait, a still life (a map in look 2, abstracts in look 3).", "The archive's shelves are box files, the same in all three."]}, {"id": "rooms", "name": "Cloakroom, gift shop and cafe", "looks": "0123", "cams": [[15, "The cafe: GREEN"], [10, "The cloakroom: RED"], [11, "The gift shop"], [12, "The hole to the stockroom"], [16, "The east wing's door: one lock"], [17, "The steps down to the cellar"]], "text": "Three rooms 128 high off the lobby and the hall. The cafe has a tiled floor, laid tables and its menu on the wall.", "asks": ["The tables are laid with cloths, the same in all three.", "The green and red glow in the pictures comes from the torches and the doors: rooms are not tinted in the looks."]}, {"id": "below", "name": "Cellar, boiler room and stockroom", "looks": "01", "cams": [[19, "The cellar: GREEN's far side"], [20, "The cellar's frame"], [18, "The cellar's door, bolted"], [21, "The boiler room's door"], [22, "The boiler room"], [13, "The stockroom: PINK"]], "text": "One candidate, the same in every look, shown beside the level as it is: limewashed brick in the cellar, pipes along sooty brick in the boiler room, shelves of boxes in the stockroom. The grotto (rockwork and shells) and the gardener's shed (boards and tools) are dressed the same way; the tour has no camera inside them.", "asks": ["Pick it or keep these as they are; it does not depend on the look you choose upstairs.", "This is the first time secrets are dressed. MAP03's property store, MAP04's closet and MAP05's lockers and lamp room are still safes."]}, {"id": "kept", "name": "Strongroom, store and night room", "looks": "0", "cams": [[49, "The strongroom: the frame"], [50, "The strongroom: BLUE"], [14, "The store: PINK's far side"], [56, "The night room: the frame"], [57, "The night room: BLUE's far side"]], "text": "Not dressed in any look. The strongroom keeps its wall of safes, which suits it; the store is as in every level; the night room is decided.", "asks": []}];
+const V = [[320, 64, 90], [448, 100, 270], [540, 280, 45], [320, 420, 90], [320, 700, 180], [320, 800, 135], [576, 1000, 90], [-100, 992, 180], [760, 672, 0], [100, 192, 180], [-150, 250, 270], [700, 100, 45], [900, 256, 0], [1048, 120, 90], [4040, 192, 0], [960, 720, 0], [1136, 860, 90], [1264, 520, 270], [1264, 100, 90], [1536, -100, 270], [1500, -136, 180], [1700, -256, 0], [1900, -256, 0], [320, 1120, 90], [320, 1400, 90], [500, 1500, 180], [100, 1500, 0], [96, 1450, 270], [560, 1450, 270], [672, 1700, 90], [320, 2040, 90], [600, 2100, 180], [-100, 1632, 180], [-160, 1300, 90], [-160, 1300, 270], [-120, 1856, 0], [-120, 2112, 0], [800, 1500, 90], [760, 1760, 0], [760, 1632, 180], [800, 2180, 90], [-300, 640, 180], [-300, 640, 0], [-500, 900, 45], [-540, 1300, 90], [-800, 1400, 180], [-1000, 1000, 180], [-536, 1650, 90], [-600, 1840, 150], [-536, 1960, 90], [-600, 2050, 0], [1100, 1100, 45], [1200, 1500, 90], [1500, 1600, 0], [1660, 1340, 270], [1200, 1900, 90], [280, 2384, 0], [400, 2384, 180]];
+const RECTS = [[0, 0, 640, 384, "hall", "Lobby", "start"], [-256, 384, 896, 1152, "hall", "Great hall", "frame"], [-288, 64, -16, 320, "room", "Cloakroom", ""], [656, 64, 944, 320, "room", "Gift shop", ""], [960, 64, 1136, 320, "secret", "Stock", ""], [912, 480, 1360, 960, "room", "Cafe", ""], [1232, 160, 1296, 480, "down", "", ""], [1216, -448, 1856, 144, "down", "Cellar", "-128, frame"], [1872, -384, 2192, -128, "down", "Boiler", ""], [256, 1152, 384, 1344, "open", "", ""], [-64, 1344, 704, 1984, "open", "Court", "-72"], [-32, 1168, 176, 1328, "secret", "Grotto", ""], [416, 1232, 688, 1328, "secret", "Shed", ""], [-64, 1984, 704, 2240, "open", "Terrace", ""], [160, 2256, 480, 2512, "room", "Night room", "the way out"], [-256, 1152, -64, 2240, "up", "Upper gallery", "+160"], [704, 1344, 896, 2240, "up", "Roof", "+224"], [752, 2240, 848, 2336, "secret", "", ""], [-512, 448, -256, 832, "up", "Mezzanine", "+192"], [-720, 848, -272, 1136, "room", "West 1", ""], [-720, 1152, -352, 1600, "room", "West 2", ""], [-1200, 1152, -736, 1600, "room", "West 3", "frame"], [-1200, 848, -736, 1136, "room", "West 4", ""], [-720, 1616, -352, 1904, "room", "Office", "keys 3 + 4"], [-720, 1920, -352, 2176, "room", "Strongroom", "frame"], [976, 976, 1424, 1392, "room", "East 1", ""], [976, 1408, 1424, 1856, "room", "East 2", ""], [1440, 1408, 1888, 1856, "room", "East 3", ""], [1440, 976, 1888, 1392, "room", "East 4", ""], [976, 1872, 1424, 2208, "room", "Archive", "keys 2 + 3"]];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l][1];
+document.getElementById("looks").innerHTML = LOOKS.slice(1).map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sws" role="img" aria-label="${name}: ${SWCAP}">${SW.map(t =>
+     `<i style="background-image:url(tex/${t.replace("#", n)}.png)"></i>`).join("")}</div>
+   <div class="swcap">${SWCAP}</div>
+   <p>${d}</p><p class="muted">${NOTES[n]}</p></div>`).join("");
+let picks = {}, cams = {};
+try { picks = JSON.parse(localStorage.getItem("map06-picks") || "{}"); } catch (e) {}
+PARTS.forEach(p => cams[p.id] = p.cams[0][0]);
+function drawPart(p) {
+  const cam = cams[p.id], label = p.cams.find(c => c[0] === cam)[1];
+  const camBar = p.cams.length > 1 ? `<div class="cams" role="group" aria-label="Camera, ${p.name}">${p.cams.map(([v, n]) =>
+    `<button type="button" id="cam-${p.id}-${v}" data-part="${p.id}" data-cam="${v}" aria-pressed="${v === cam}">${v + 1}. ${n}</button>`).join("")}</div>` : "";
+  document.getElementById("main-" + p.id).innerHTML = camBar + `<div class="opts">${[...p.looks].map(l =>
+    `<div class="opt${picks[p.id] === l && p.looks.length > 1 ? " chosen" : ""}">
+       <button type="button" class="shot" aria-label="Enlarge: ${lookName(l)}, ${label}"><img src="${l}/view_${pad(cam)}.jpg" alt="${p.name}, ${lookName(l)}: ${label}" loading="lazy"></button>
+       <h4>${l === "0" ? "" : `<span>${l}</span>`}${lookName(l)}</h4>
+     </div>`).join("")}</div>`;
+}
+function drawPicks(p) {
+  const el = document.getElementById("picks-" + p.id);
+  if (!el) return;
+  el.innerHTML = [...p.looks].map(l =>
+    `<button type="button" id="pick-${p.id}-${l}" data-part="${p.id}" data-look="${l}" aria-pressed="${picks[p.id] === l}">${l === "0" ? "Keep as now" : lookName(l)}</button>`).join("");
+}
+function drawSummary() {
+  const line = PARTS.filter(p => p.looks.length > 1).map(p =>
+    `${p.name}: ${picks[p.id] === undefined ? "?" : picks[p.id] === "0" ? "as now" : lookName(picks[p.id])}`).join("; ");
+  document.getElementById("picksline").textContent = "MAP06 look. " + line + ".";
+}
+function save() { try { localStorage.setItem("map06-picks", JSON.stringify(picks)); } catch (e) {} }
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<article class="part" id="${p.id}">
+     <div class="side">
+       <h2>${p.name}</h2>
+       <p>${p.text}</p>
+       ${p.asks.length ? `<ul>${p.asks.map(a => `<li>${a}</li>`).join("")}</ul>` : ""}
+       ${p.looks.length > 1 ? `<h3>Your pick</h3><div class="picks" id="picks-${p.id}" role="group" aria-label="Pick for ${p.name}"></div>` : ""}
+     </div>
+     <div class="main" id="main-${p.id}"></div>
+   </article>`).join("");
+PARTS.forEach(p => { drawPart(p); drawPicks(p); });
+drawSummary();
+document.getElementById("parts").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.classList.contains("shot")) { b.parentElement.classList.toggle("big"); return; }
+  const p = PARTS.find(q => q.id === b.dataset.part);
+  if (!p) return;
+  if (b.dataset.cam !== undefined) {
+    cams[p.id] = +b.dataset.cam;
+    drawPart(p);
+    document.getElementById(`cam-${p.id}-${b.dataset.cam}`).focus();
+  } else if (b.dataset.look !== undefined) {
+    if (picks[p.id] === b.dataset.look) delete picks[p.id]; else picks[p.id] = b.dataset.look;
+    save();
+    drawPart(p); drawPicks(p); drawSummary();
+    document.getElementById(`pick-${p.id}-${b.dataset.look}`).focus();
+  }
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+// Plan at a fifth of full size, y flipped.
+(function () {
+  const S = 0.2, X0 = -1280, X1 = 2304, Y0 = -512, Y1 = 2560, X = x => 16 + (x - X0) * S, Y = y => 16 + (Y1 - y) * S;
+  const C = { hall: "#e9dfc8", open: "#dfe6d6", room: "#d9d3ee", up: "#d9b3a6", down: "#b9bec7", secret: "#f0c9dc" };
+  const rect = (x1, y1, x2, y2, fill, label, sub) => {
+    const cx = (X(x1) + X(x2)) / 2, cy = (Y(y1) + Y(y2)) / 2;
+    return `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${fill}" stroke="#1a1f27" stroke-width="1"/>` +
+      (label ? `<text x="${cx}" y="${cy + (sub ? -1 : 4)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1a1f27">${label}</text>` : "") +
+      (sub ? `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="8.5" fill="#3b4350">${sub}</text>` : "");
+  };
+  let g = "";
+  for (let x = X0; x <= X1; x += 128) g += `<line x1="${X(x)}" y1="${Y(Y1)}" x2="${X(x)}" y2="${Y(Y0)}" stroke="var(--line)" stroke-width=".5"/>`;
+  for (let y = Y0; y <= Y1; y += 128) g += `<line x1="${X(X0)}" y1="${Y(y)}" x2="${X(X1)}" y2="${Y(y)}" stroke="var(--line)" stroke-width=".5"/>`;
+  RECTS.forEach(r => { g += rect(r[0], r[1], r[2], r[3], C[r[4]], r[5], r[6]); });
+  V.forEach((v, i) => {
+    if (v[0] > 3000) return;
+    const a = v[2] * Math.PI / 180, x = X(v[0]), y = Y(v[1]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 13 * Math.cos(a)}" y2="${y - 13 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="6.5" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 2.8}" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 ${32 + (X1 - X0) * S} ${32 + (Y1 - Y0) * S}" role="img" aria-label="Plan of the museum with camera positions">${g}</svg>`;
+})();
+</script>

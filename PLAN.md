@@ -1513,6 +1513,52 @@ shed is too dark to find a shadow in, and the "beyond paint" list (light,
 sky beside the bridge, a platform edge, the train, station things, marking
 the frames).
 
+## Look: MAP06 (started 2026-11-16)
+
+Board: https://claude.ai/artifact/TjZtXwZGefUcSF8V4twLmG (source
+`design/map06-board.html`, images in `build/board6/`: `<look>/view_NN.jpg`
+cut from the tour shots, `tex/` swatches). **Not chosen yet**: unset (or 0),
+`AJAR_MUSEUM` builds the museum as first built, byte for byte the map before
+this work. Done on the branch `look06` (worktree `.claude/worktrees/look06`),
+not merged.
+
+`AJAR_MUSEUM=1..3` dresses the whole museum in one candidate look
+(`tools/gfx_museum.py`): 1 Athenaeum (Portland stone, marble, antiquities on
+Pompeian red and ochre, paintings on damask), 2 Cabinet (buff terracotta
+banded in slate, glazed tile, mahogany, specimens), 3 Kunsthalle (white
+render over concrete, black steel, abstracts). The same in all three, and
+dressed for the first time in any level: cellar, boiler room, stockroom,
+grotto, gardener's shed. The strongroom keeps its safes; the store (PINK's
+far side) and the night room are not touched. In look 1 `MAP=MAP06 MODE=1`
+passes (38 checks); the tour was shot in 0 to 3 (58 views, monsters off),
+no engine warnings.
+
+How the museum is built in a look (`map_hinges6.py`):
+- One front (`AJ6Y`), 640 high, stands round the court and the terrace,
+  counted down from the sky's edge at 512: attic to 336, upper floor to 160,
+  ground floor to 0, 128 rows below ground for the sunk court. What stands in
+  front of it is a cut of it: under the upper gallery an arcade (`AJ6YG`),
+  under the roof the east front (`AJ6YS`), the terrace's edge (`AJ6YE`), the
+  wall round the roof (`AJ6YU`).
+- The upper gallery has a ceiling, so its railings also carry the wall over
+  it (`rail(..., upper=, dontpegtop=)`), and a 16-deep strip of it at the
+  great hall has its own `side`, the hall's wall.
+- `pieces()` / `pictures()`: 64-long wall pieces with windows or exhibits,
+  each starting at a multiple of 64. Those over an opening are declared
+  before the `porch()` / `over()` of the whole opening: a piece of wall takes
+  the first declared line that contains it.
+- Room and bolted doors have a face per side (`door()`, `bolted()`;
+  `FACES`, `BOLTS` in `gfx_museum.py`): the wall of the room it is seen from
+  carries on over the leaf, drawn for the door's own place in that wall's 64.
+- The rooms of each wing take two wall colours by turns round the ring.
+- Cases, desks, benches and railings repeat every 16, so they need no
+  aligning; walls are in `Map.align` (`gfx_museum.aligned`).
+
+Options that change shape, light or play are at the foot of the board, none
+built: dim rooms with lit exhibits, statues on the hall's plinths, a parapet
+and sky at the roof's edge, marking the frames, fewer exhibits, dressing the
+earlier levels' secrets the same way.
+
 ## Handoff (2026-11-16, night)
 
 State: `main` has MAP01-MAP06; all build and pass the solver. Every level
