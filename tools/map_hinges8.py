@@ -6,10 +6,11 @@ for eight seconds. The lever is in the caretaker's office, the shutter is
 across the loading dock, and nothing but a route of doors laid beforehand
 gets a door from the one to the other in that time.
 
-The night room has a grille across it (ajarmap.way_home, grille). BLUE's far
-side is in its west half, the brass frame in its east half, and only empty
-hands pass the grille. The shutter is the only way into the frame's half with
-anything in hand: so BLUE has to be carried under it.
+The night room has no door of its own. You come into it through BLUE, hung
+anywhere, and leave the same way; but then BLUE is not in your hands. Its
+brass frame takes no door but BLUE (ajarmap.way_home, only), so no other
+door hung there makes a way in. The shutter is the only way into the room
+with anything in hand: so BLUE has to be carried under it.
 
 The catch. The caretaker's office is a balcony over the door showroom. The
 stairs up to it end at a gatepost no door passes, so a door comes into the
@@ -171,7 +172,6 @@ ajarmap.opening(m, (-480, 1040), (-416, 1040), (0, 1), UP)                   # t
 ajarmap.fitted(m, (-512, 1520, 384, 1840), [
     ((-320, 1520, -192, 1584), low()),                                       # before VIOLET's far side
     ((-320, 1776, -192, 1840), low()),                                       # before the shutter
-    ((-480, 1776, -352, 1840), low()),                                       # before the night room's door
     ((0, 1616, 128, 1744), dict(WOOD, floor=48)),                            # crates
     ((192, 1552, 256, 1616), dict(WOOD, floor=48)),
 ], floor=0, light=NIGHT, ftex="AJARCHF", **OPEN)
@@ -181,12 +181,10 @@ for a, b in (((-320, 1776), (-192, 1776)), ((-192, 1776), (-192, 1840)), ((-320,
 ajarmap.squeeze(m, (-440, 1440), (-392, 1440), (0, 1), 0, thick=80)          # the hatch, from the showroom
 bars((32, 1440), (96, 1440), (0, 1), 0, thick=80)                            # the showroom's window on the dock
 bars((304, 1440), (368, 1440), (0, 1), UP, thick=80)                         # and the office's
-ajarmap.way_home(m, NX, NY, BLUE, grille=True)
+ajarmap.way_home(m, NX, NY, BLUE, only=True)
 m.sector(rect(-288, 1856, -224, 1936), ceil=96, light=160, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
 ajarmap.shutter(m, (-288, 1840), (-224, 1840), (0, 1), 0, line_id=310)
-ajarmap.bolted(m, (-448, 1840), (-384, 1840), (0, 1), 0, NIGHT_BOLT, thick=96, line_id=304)
-ajarmap.unbolt(m, (NX, NY + 96), (NX + 320, NY + 96), NIGHT_BOLT)
-ajarmap.unbolt(m, (-288, 1936), (-224, 1936), NIGHT_BOLT)
+m.line((-288, 1936), (-224, 1936), blockmonsters=True)                       # nor does the room's company
 
 # === the stockroom under the goods passage ========================================
 # a chute down from the dock; stairs up to the passage, and two doors on the way
@@ -316,20 +314,20 @@ things(SPHERE, (380, -300))
 things(CANDLE, (360, -408), (536, -296))
 # the cash office: counting the takings, and deaf to the lobby
 things(BARON, (-430, -180), angle=0, ambush=True)
-things(KNIGHT, (-350, -360), (-540, -360), angle=0, ambush=True)
+things(KNIGHT, (-350, -360), angle=0, ambush=True)
 things(TECHLAMP, (-296, -136), (-296, -408))
 things(MEDIKIT, (-560, -220))
 things(CELLS, (-330, -150))
 # the atrium: late shoppers, round the fountain
-things(IMP, (-300, 120), (300, 120), (-200, 400), (200, 400), (-300, 640), (300, 700), (-150, 940), (150, 940), angle=270)
-things(DEMON, (-120, 340), (120, 340), (-250, 560), (230, 620), (0, 760), angle=270)
+things(IMP, (-300, 120), (300, 120), (-200, 400), (200, 400), (-300, 640), (300, 700), angle=270)
+things(DEMON, (-120, 340), (120, 340), (0, 760), angle=270)
 things(SERGEANT, (-330, 320), (330, 300), (-100, 880), (380, 860), angle=270)
 things(ZOMBIE, (0, 160), (-200, 700), (400, 420), angle=270)
-things(KNIGHT, (0, 660), (-280, 900), angle=270)
-things(CACO, (-120, 520), (140, 520), angle=270, ambush=True)
+things(KNIGHT, (0, 660), angle=270)
+things(CACO, (140, 520), angle=270, ambush=True)
 things(REVENANT, (280, 960), angle=270)
-things(SPECTRE, (-300, 480), (300, 240), (60, 880), angle=270)
-things(CHAINGUNNER, (440, 200), (440, 700), angle=180)
+things(SPECTRE, (-300, 480), (60, 880), angle=270)
+things(CHAINGUNNER, (440, 700), angle=180)
 things(TECHLAMP, (-360, 40), (360, 40), (-360, 1016), (488, 1016))
 things(SHELLBOX, (-192, 320), (300, 1000))
 things(MEDIKIT, (192, 320), (-340, 760), (0, 1000))
@@ -340,8 +338,8 @@ things(STIM, (-480, 40), (480, 780))
 things(LAUNCHER, (-420, 300))
 things(ROCKETBOX, (-480, 300), (-480, 1000))
 things(MEDIKIT, (-480, 600))
-things(CHAINGUNNER, (-448, 560), (-448, 880), angle=0)
-things(IMP, (-448, 340), (-448, 1000), angle=0)
+things(CHAINGUNNER, (-448, 880), angle=0)
+things(IMP, (-448, 340), (-448, 1000), (-448, 560), angle=0)
 things(SERGEANT, (-420, 780), angle=0)
 things(CHAINGUN, (-448, 480))
 things(AMMOBOX, (-480, 180))
@@ -349,10 +347,10 @@ things(STIM, (-420, 960))
 # the showroom: somebody lives in the frames
 things(LODGER, (-320, 1320), args=(300,))
 things(IMP, (-440, 1120), (-200, 1300), (70, 1160), (-360, 1400), angle=270)
-things(DEMON, (-300, 1140), (-60, 1340), (40, 1400), angle=270)
+things(DEMON, (-300, 1140), (-60, 1340), angle=270)
 things(SERGEANT, (-100, 1160), (-480, 1300), angle=270)
 things(KNIGHT, (-240, 1380), angle=270)
-things(SPECTRE, (-420, 1220), (20, 1220), angle=270)
+things(SPECTRE, (-420, 1220), angle=270)
 things(ZOMBIE, (-220, 1150), (-300, 1260), angle=270)
 things(TORCH_R, (-488, 1080), (104, 1416))
 things(SHELLS, (-400, 1280), (-40, 1280))
@@ -366,22 +364,21 @@ things(SHELLBOX, (350, 1360))
 things(PLASMA, (300, 1160))                                                # for the dock, and the run
 things(CELLS, (250, 1160), (250, 1120))
 # the dock: between you and the shutter
-things(DEMON, (-100, 1600), (200, 1700), (-400, 1680), angle=270)
-things(SPECTRE, (-60, 1780), (280, 1800), (-460, 1600), angle=270)
+things(DEMON, (-100, 1600), (200, 1700), angle=270)
+things(SPECTRE, (-60, 1780), (-460, 1600), angle=270)
 things(IMP, (60, 1680), (-160, 1700), (340, 1560), angle=270)
-things(KNIGHT, (160, 1790), angle=270)
 things(CHAINGUNNER, (224, 1584), angle=180)
 things(REVENANT, (-20, 1560), angle=270)
 things(SERGEANT, (300, 1720), (-460, 1760), angle=270)
-things(SOUL, (-100, 1720), (100, 1580), angle=270)
+things(SOUL, (100, 1580), angle=270)
 things(LAMP, (-340, 1548), (-170, 1548), (-340, 1812), (-170, 1812))
 things(SHELLS, (300, 1640), (-480, 1740))
 things(SHELLBOX, (-480, 1560))
 things(STIM, (360, 1560))
 things(MEDIKIT, (-140, 1548), (350, 1700))
-# the night room: someone has been waiting, on BLUE's side of the grille
+# the night room: someone has been waiting
 things(REVENANT, (NX + 80, NY + 200), angle=270)
-things(KNIGHT, (NX + 90, NY + 40), (NX + 120, NY + 128), angle=270)
+things(KNIGHT, (NX + 200, NY + 40), angle=270)
 # the stockroom and its alcove
 things(SPECTRE, (460, 1620), (760, 1820), (1000, 1600), (1120, 1850), angle=180)
 things(DEMON, (700, 1600), (900, 1880), (460, 1900), angle=180)
@@ -420,7 +417,7 @@ things(CHAINGUNNER, (-1370, 300), (-1020, 300), angle=0)
 things(DEMON, (-1300, 140), (-1100, 140), angle=0)
 things(REVENANT, (-1200, 100), angle=0)
 things(PAIN, (-1200, 180), angle=0)
-things(KNIGHT, (-1300, -300), (-1120, -300), angle=90)
+things(KNIGHT, (-1120, -300), angle=90)
 things(BARON, (-1216, -220), angle=90)
 things(IMP, (-1400, -60), (-1060, -390), (-1400, -400), angle=90)
 things(SERGEANT, (-1040, -60), (-1216, -60), angle=90)
@@ -435,9 +432,9 @@ things(ROCKETS, (-1216, -144), (-1250, -144))
 things(IMP, (-1360, 600), (-700, 480), (-1000, 480), (-660, 800), angle=0)
 things(SERGEANT, (-1300, 900), (-800, 900), angle=0)
 things(CHAINGUNNER, (-1360, 760), (-640, 620), angle=0)
-things(CACO, (-1000, 700), (-800, 520), (-1300, 480), angle=0, ambush=True)
+things(CACO, (-1000, 700), (-1300, 480), angle=0, ambush=True)
 things(REVENANT, (-700, 980), angle=0)
-things(SOUL, (-1100, 460), (-760, 800), (-1340, 1000), angle=0)
+things(SOUL, (-1100, 460), (-760, 800), angle=0)
 things(KNIGHT, (-840, 980), angle=0)
 things(SUPER, (-1000, 800))
 things(SHELLS, (-1000, 760), (-1000, 840))
@@ -455,7 +452,7 @@ things(SPECTRE, (660, 400), (850, 400), angle=270)
 things(CHAINGUNNER, (940, 680), (560, 680), angle=270)
 things(ARACHNO, (752, 520), angle=270)
 things(CACO, (752, 650), angle=270, ambush=True)
-things(KNIGHT, (1240, 100), (1390, 250), angle=180)
+things(KNIGHT, (1390, 250), angle=180)
 things(REVENANT, (1060, 270), (1260, 300), angle=180)
 things(IMP, (1040, 60), (1410, 130), angle=180)
 things(SERGEANT, (1170, 50), angle=180)
@@ -479,11 +476,9 @@ things(AMMOBOX, (1410, -30))
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "store" is the arcade, the lobby, the atrium, the goods passage and the
 # stockroom, and also the kiosk, the shop window and the boiler room, which
-# open from inside. "office" is the balcony; "night" is the night room west of
-# its grille (BLUE's far side) and "home" east of it (the brass frame). b is
-# the night room's bolt, drawn from either half (c). The lamp store, the
-# strongroom and PINK are left out: PINK never leaves, and nothing else needs
-# it.
+# open from inside. "office" is the balcony; "night" is the night room, whose
+# brass frame takes BLUE only. The lamp store, the strongroom and PINK are left
+# out: PINK never leaves, and nothing else needs it.
 #
 # The dash: a leg is how far it is, in map units, between two ends that can be
 # run with a door in hand; an ordinary door on the way counts as a second of
@@ -493,22 +488,19 @@ things(AMMOBOX, (1410, -30))
 RUN = 583
 PUZZLE = dict(
     start="store", goal="exit", names=ajarmap.NAMES, complete=True,
-    home_frame=ajarmap.HOME, home_door=BLUE,
+    home_frame=ajarmap.HOME, only={ajarmap.HOME: BLUE},
     walk=[("gallery", "store"), ("gallery", "showroom"), ("roof", "gallery"),
           ("store", "showroom", "", "squeeze"), ("showroom", "store", "", "squeeze"),     # the turnstile
           ("showroom", "office", "", "squeeze"), ("office", "showroom"),                  # the gatepost; the gap
           ("showroom", "dock", "", "squeeze"), ("dock", "showroom", "", "squeeze"),       # the hatch
           ("dock", "store"),                                                              # the chute
-          ("dock", "night", "b"), ("night", "dock", "b"), ("dock", "night", "c"), ("night", "dock", "c"),
-          ("night", "home", "", "squeeze"), ("home", "night", "", "squeeze"),             # the grille
-          ("home", "dock"),                                                               # the shutter, pushed
+          ("night", "dock"),                                                              # the shutter, pushed
           ("store", "west", "1"), ("west", "store", "1"),
           ("store", "east", "2"), ("east", "store", "2"),
           ("store", "cash", "34"), ("cash", "store", "34")],
-    keys={"1": "gallery", "2": "roof", "3": "east", "4": "office", "b": "night", "c": "home"},
-    auto="bc",
+    keys={"1": "gallery", "2": "roof", "3": "east", "4": "office"},
     frames={101: "store", 103: "store", 102: "west", 106: "showroom", 107: "showroom",
-            ajarmap.HOME: "home"},
+            ajarmap.HOME: "night"},
     doors={
         RED: dict(home="gallery", lean="store"),
         GREEN: dict(home="roof", lean="west"),
@@ -517,7 +509,7 @@ PUZZLE = dict(
         BLUE: dict(home="night", lean="cash"),
     },
     pool=["store"],                        # the boiler room; the shop window
-    dash=dict(at="office", to="home", limit=(SECONDS - 2) * RUN, legs={
+    dash=dict(at="office", to="night", limit=(SECONDS - 2) * RUN, legs={
         ("lever", 106): 460, ("lever", 107): 560,              # off the balcony
         ("lever", far_id(YELLOW)): 200,                        # back the way you came
         (106, 107): 190, (107, 106): 190,

@@ -25,7 +25,7 @@ world position (Map.align), so cuts in a wall do not show.
 """
 import random
 
-from gfx import Img, shade
+from gfx import Img, shade, bell
 import gfx_theatre as th
 
 STONE, OAK, IRON, TERRA = (192, 182, 162), (64, 46, 32), (34, 34, 40), (186, 98, 62)
@@ -506,6 +506,7 @@ def make(out, rd):
     st = mirror(th.brick(64, 64, (104, 88, 78), (54, 46, 44), 762))
     st.noise(6, 763)
     out["textures/AJ4XR.png"] = st.png()
+    out["textures/AJTARG4.png"] = bell(st, 32, 24, 48).png()             # the bell in the hole over the yard
     kennel = mirror(th.brick(64, 128, (190, 186, 172), (150, 146, 134), 764))   # whitewash, once
     kennel.noise(5, 765)
     grime(kennel, 70, 128, 0.55)

@@ -11,6 +11,7 @@
 //    Hung, it opens onto one of the level's stray places (lines 270..289)
 //    or the far side of a coloured door that hangs nowhere just then,
 //    stays open for 2 to 5 seconds (StrayTics) and is then gone.
+//  * AjarFrame args[4]: 1 if no door but that of args[1] hangs in it.
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
 //    With args[3] the frame is one end of a chain (ajarmap.brass_pair):
@@ -557,6 +558,11 @@ class AjarHandler : EventHandler
 		{
 			if (f.door.nailer == f.door) Say(wayOutBuilt && f.args[1] ? "This is the way out now." : "This doorway is part of the building.\nIt is not yours to take.");
 			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
+			return;
+		}
+		if (carried && f.args[4] && carried.args[0] != f.args[1])
+		{
+			Say("The brass frame takes one door only:\nthe one that opens onto this room.");
 			return;
 		}
 		if (f.door && !carried)
@@ -1515,7 +1521,7 @@ class AjarHandler : EventHandler
 	{
 		string have = carried ? carried.Label() : "-";
 		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); FindLine(303).Activate(mo, 0, SPAC_Use); }
-		if (t == 34) Check("lockedBoltedAndShut", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(304) && !RoomOpen(305) && !RoomOpen(306) && !RoomOpen(310) && shutterLeft < 0);
+		if (t == 34) Check("lockedBoltedAndShut", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(305) && !RoomOpen(306) && !RoomOpen(310) && shutterLeft < 0);
 		// RED into the lobby's frame: the gallery over the atrium, key 1, and down through the gap
 		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 180, -96, 0, 0); }
 		Forward(mo, t, 40, 25);
@@ -1601,7 +1607,7 @@ class AjarHandler : EventHandler
 		if (t == 1050) FindFrame(106).Activate(mo);
 		if (t == 1055) Pose(mo, -32, 1380, 0, 90);
 		Forward(mo, t, 1060, 25);
-		if (t == 1095) Check("throughVioletToDock", have == "-" && mo.pos.y > 1520 && mo.pos.y < 1840 && mo.pos.x > -320 && mo.pos.x < -192 && !RoomOpen(304));
+		if (t == 1095) Check("throughVioletToDock", have == "-" && mo.pos.y > 1520 && mo.pos.y < 1840 && mo.pos.x > -320 && mo.pos.x < -192);
 		// back by the hatch and the turnstile, with empty hands
 		if (t == 1100) Pose(mo, -416, 1560, 0, 270);
 		Forward(mo, t, 1105, 22);
@@ -1634,10 +1640,10 @@ class AjarHandler : EventHandler
 		if (t > 1445 && !dashTook && mo.pos.y > 1936) dashTook = t - dashFrom;
 		if (t == 1535) Check("underTheShutterWithBlue", dashTook > 0 && dashTook < 280 && mo.pos.y > 1936 && mo.pos.x > -320 && mo.pos.x < -160 && have == "BLUE");
 		if (t == 1536) Console.Printf("AJARTEST dashTics=%d", dashTook);
-		// only empty hands pass the grille; coming in drew the bolt of the other half
+		// nothing stands across the room: BLUE is carried the length of it
 		if (t == 1540) Pose(mo, -290, 1976, 0, 180);
 		Forward(mo, t, 1545, 10);
-		if (t == 1565) Check("grilleRefusesADoor", mo.pos.x > -320 && have == "BLUE" && RoomOpen(304));
+		if (t == 1565) Check("acrossTheRoomWithBlue", mo.pos.x < -320 && have == "BLUE");
 		if (t == 1570) { FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
 		// the way out is walked into
 		if (t == 1575) Pose(mo, -220, 2064, 0, 0);
@@ -1909,14 +1915,14 @@ class AjarHandler : EventHandler
 			200, 1312, 160, 180, 20,       // from the balcony: the gap, the frames
 			-256, 1680, 0, 270, 0,         // the dock: VIOLET's far side
 			-256, 1620, 0, 90, 0,          // the shutter
-			-416, 1700, 0, 90, 0,          // the night room's door, bolted
+			-416, 1700, 0, 90, 0,          // the wall beside the shutter
 			200, 1700, 0, 0, 0,            // VIOLET, and the chute
 			100, 1560, 0, 180, 0,          // the dock, from its east end
-			-400, 2064, 0, 0, 0,           // the night room: the grille, the frame beyond it
+			-400, 2064, 0, 0, 0,           // the night room, and the frame at its far end
 			-340, 2064, 0, 180, 0,         // BLUE's far side
 			-240, 2064, 0, 0, 0,           // the frame's half: the brass frame
 			-240, 2100, 0, 270, 0,         // the shutter from inside
-			-260, 2000, 0, 180, 0          // the gap in the grille
+			-260, 2000, 0, 180, 0          // the room from its south wall
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}

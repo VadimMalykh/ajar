@@ -729,6 +729,25 @@ def pit_walls(out, hall):
         out[f"textures/AJPE{n}.png"] = end.png()
 
 
+def bell(wall, cx, cy, h=None):
+    """A copy of the wall `wall` (its top `h` rows) with a small brass bell
+    hanging on it at cx, cy: what there is to shoot at where a shot opens a
+    secret. It used to be a red and white target, which nobody could miss
+    (Vadim, 2026-11-16); a bell wants looking for."""
+    im = Img(wall.w, h or wall.h)
+    im.px = [list(p) for p in wall.px[:wall.w * im.h]]
+    dark, brass, shine = (58, 46, 26), (150, 118, 54), (198, 168, 96)
+    im.rect(cx - 1, cy - 9, cx + 1, cy - 5, dark)                    # the bracket it hangs from
+    im.rect(cx - 3, cy - 10, cx + 3, cy - 9, dark)
+    im.disc(cx, cy - 1, 4, brass)
+    im.rect(cx - 4, cy - 1, cx + 5, cy + 3, brass)
+    im.rect(cx - 5, cy + 3, cx + 6, cy + 5, brass)                   # the lip
+    im.rect(cx - 5, cy + 5, cx + 6, cy + 6, dark)
+    im.rect(cx - 2, cy - 3, cx - 1, cy + 2, shine)
+    im.disc(cx, cy + 7, 1, dark)                                     # the clapper
+    return im
+
+
 def make_all():
     """Returns {path inside pk3: png bytes}."""
     out = {}
@@ -877,6 +896,7 @@ def make_all():
             safe.disc(bx + 22, by + 16, 2, (60, 60, 66))
             safe.rect(bx + 21, by + 17, bx + 24, by + 21, (60, 60, 66))
     out["textures/AJSAFE.png"] = safe.png()
+    out["textures/AJTARG.png"] = bell(safe, 32, 44).png()            # the bell of a kiosk (MAP05, MAP08, MAP09)
 
     # carpet for the runners between doors: pale, so the room's tint colours it
     rug = Img(64, 64, (214, 204, 190))
@@ -1014,12 +1034,6 @@ def make_all():
         xa.rect(0, y + 2, 64, y + 4, shade(BRASSY, 1.25))
     out["textures/AJXA.png"] = xa.png()
     out["flats/AJXAF.png"] = xa.png()
-
-    # a target to shoot at (MAP04's hole in the south wall)
-    tg = Img(64, 48, (40, 44, 40))
-    for r, c in ((22, (236, 232, 222)), (16, (200, 60, 50)), (10, (236, 232, 222)), (4, (200, 60, 50))):
-        tg.disc(32, 24, r, c)
-    out["textures/AJTARG.png"] = tg.png()
 
     # thief: a small hooded figure. A/B walking, C picking a hinge, D dead,
     # E/F walking with a door on its back.
