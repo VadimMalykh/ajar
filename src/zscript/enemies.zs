@@ -671,6 +671,160 @@ class AjarNailer : AjarWorker
 	}
 }
 
+// Repainter (in the plan since 2026-11-14: "swaps where two doors lead";
+// built 2026-11-16). A door's colour is where it leads, so a door painted
+// another colour leads somewhere else. The repainter walks to a door, hung
+// or leaning, and takes its colour: its shadow turns that colour, and that is
+// the warning. Then it walks to a second door, and the two change places:
+// each now opens where the other did. It does not put them back, and it
+// paints no door twice. Killed with a colour on its brush it has changed
+// nothing.
+//
+// It leaves alone a door in somebody's hands, a nailed door, a Stray door,
+// and whatever hangs in a brass frame. It does not fight.
+//
+// Look: provisional (the others were chosen from boards): the shadow of an
+// imp, without eyes; the colour it carries is its mark.
+class AjarRepainter : AjarWorker
+{
+	const PATIENCE = 160;
+	const SHADE = 0.7;
+	AjarDoor first;            // the door whose colour is on its brush
+	Array<AjarDoor> done;      // the doors it has painted: it does not paint a door twice
+	AjarDoor job;
+	int steps, rest;
+
+	Default
+	{
+		Radius 20;
+		Height 56;
+		Health 70;
+		Speed 10;
+		Mass 120;
+		PainChance 140;
+		SeeSound "imp/sight";
+		PainSound "imp/pain";
+		DeathSound "imp/death";
+	}
+	States
+	{
+	Spawn:
+		TROO A 8 A_PaintLook();
+		Loop;
+	Walk:
+		TROO AABBCCDD 3 A_PaintWalk();
+		Loop;
+	Work:
+		TROO E 8 A_PaintFace();
+		TROO F 8 A_StartSound("imp/melee", CHAN_WEAPON);
+		TROO G 8 A_PaintDab();
+		Goto Spawn;
+	Pain:
+		TROO H 4 A_Pain();
+		Goto Spawn;
+	Death:
+		TROO I 8 A_Scream();
+		TROO J 8 A_PaintSpilt();
+		TROO K 6 A_NoBlocking();
+		TROO L 6;
+		TROO M -1;
+		Stop;
+	}
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		A_SetRenderStyle(SHADE, STYLE_TranslucentStencil);
+		SetShade(0x0A090E);
+	}
+
+	bool Paintable(AjarDoor d)
+	{
+		return d && !d.carried && !d.nailer && !d.IsStray() && !(d.frame && d.frame.args[1]) && done.Find(d) == done.Size();
+	}
+
+	// where it stands to paint d
+	Vector2 At(AjarDoor d)
+	{
+		let h = Handler();
+		Line l = d.frame && h ? h.FindLine(d.frame.args[0]) : null;
+		return l ? Front(l, REACH) : d.pos.xy;
+	}
+
+	// the nearest door it may paint and can walk to, other than the one whose colour it has
+	AjarDoor FindJob()
+	{
+		AjarDoor best;
+		double bestDist = 1e9;
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next()))
+		{
+			if (d == first || !Paintable(d)) continue;
+			double dist = (At(d) - pos.xy).Length();
+			if (dist < bestDist && CanReach(At(d))) { best = d; bestDist = dist; }
+		}
+		if (best) CanReach(At(best));              // leaves the marker there
+		return best;
+	}
+
+	void A_PaintLook()
+	{
+		if (first && !Paintable(first)) A_PaintSpilt();    // somebody took it: the colour is wasted
+		if (rest > 0) { rest--; return; }
+		job = FindJob();
+		if (job)
+		{
+			steps = 0;
+			A_StartSound(SeeSound, CHAN_VOICE);
+			SetStateLabel("Walk");
+		}
+		else if (!random[AjarRepainter](0, 3)) A_Wander();
+	}
+
+	void A_PaintWalk()
+	{
+		if (!Paintable(job) || ++steps > PATIENCE) { job = null; target = null; SetStateLabel("Spawn"); return; }
+		if (Distance2D(spot) < 44) { SetStateLabel("Work"); return; }
+		StepToSpot();
+	}
+
+	void A_PaintFace()
+	{
+		if (job) angle = AngleTo(job.frame ? Actor(job.frame) : Actor(job));
+	}
+
+	void A_PaintDab()
+	{
+		let h = Handler();
+		if (h && Paintable(job) && Distance2D(spot) <= 72)
+		{
+			if (!first)
+			{
+				first = job;
+				SetShade(AjarDoor.glow[first.Colour()]);
+				h.Say("Something has put its brush to the " .. first.Label() .. " door.");
+			}
+			else
+			{
+				h.Repaint(first, job, self);
+				done.Push(first);
+				done.Push(job);
+				A_PaintSpilt();
+				rest = 12;
+			}
+		}
+		job = null;
+		target = null;
+	}
+
+	void A_PaintSpilt()
+	{
+		first = null;
+		SetShade(0x0A090E);
+	}
+}
+
 // Lodger: it lives in the empty frames and uses them as its own doors. While
 // it is inside it cannot be seen or hurt. It comes out of an empty frame that
 // has a view of you (the frame glows and knocks first), goes for you, and

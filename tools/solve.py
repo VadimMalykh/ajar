@@ -17,6 +17,10 @@ A puzzle is a dict:
                 or dict(home=region, thief=True): the thief starts with it}
   thief         optional dict(zone=region, sees=[regions]): one thief, which
                 stays in `zone` and can see the player there and in `sees`
+  repainter     optional dict(zone=[regions]): one repainter. While it lives,
+                any two doors that hang or lean in those regions (the brass
+                frames apart) may change places at any time; the player,
+                in its zone, can kill it. Disorder, like the thief
   nailer        optional dict(zone=region or [regions]): one nailer, which can
                 walk to the frames in those regions. (region, key) in the
                 list: only once the player has that key (a gate that opens)
@@ -98,13 +102,15 @@ def _moves(p, state, nailed=False):
         if a == here and all(k in keys for k in need):
             yield 0, f"walk to {b}" + (f" (key {', '.join(need)})" if need else "") + (
                 " (squeeze)" if len(more) > 1 else ""), out(region=b)
-    if thief and here == p["thief"]["zone"]:
+    if thief & 1 and here == p["thief"]["zone"]:
         loot = [c for c, loc in where.items() if loc == ("thief",)]
         w = dict(where)
         for c in loot:
             w[c] = ("lean", here)
         yield 0, "kill the thief" + (f" (it drops {nm(loot[0])})" if loot else ""), (
-            here, carried, tuple(w[c] for c in colours), keys, 0, nails)
+            here, carried, tuple(w[c] for c in colours), keys, thief & 2, nails)
+    if thief & 2 and here in p["repainter"]["zone"]:
+        yield 0, "kill the repainter", (here, carried, locs, keys, thief & 1, nails)
     if nails and here in _zone(p["nailer"], keys):
         yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0)
     hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
@@ -208,10 +214,28 @@ def _luck(p, state):
                 yield (place, c, tuple(w[k] for k in colours), keys, thief, nails)
 
 
+def _repaint(p, state):
+    """Yields the states the repainter can turn `state` into: any two doors
+    that hang or lean in its zone change places. Not the brass frames."""
+    here, carried, locs, keys, thief, nails = state
+    if not thief & 2:
+        return
+    zone = set(p["repainter"]["zone"])
+    brass = {p.get("home_frame")} | set(p.get("home_chain", {}).get("frames", ()))
+    ok = [i for i, loc in enumerate(locs)
+          if (loc[0] == "lean" and loc[1] in zone)
+          or (loc[0] == "frame" and loc[1] not in brass and p["frames"][loc[1]] in zone)]
+    for n, i in enumerate(ok):
+        for j in ok[n + 1:]:
+            w = list(locs)
+            w[i], w[j] = w[j], w[i]
+            yield (here, carried, tuple(w), keys, thief, nails)
+
+
 def _thief(p, state):
     """Yields the states the thief can turn `state` into."""
     here, carried, locs, keys, thief, nails = state
-    if not thief:
+    if not thief & 1:
         return
     t = p["thief"]
     colours = sorted(p["doors"])
@@ -255,7 +279,7 @@ def _search(p, start, with_luck):
                 prev[n] = (s, what)
                 (queue.append if cost else queue.appendleft)(n)
         if with_luck:
-            for n in list(_thief(p, s)) + list(_luck(p, s)):
+            for n in list(_thief(p, s)) + list(_repaint(p, s)) + list(_luck(p, s)):
                 if n not in dist:                  # not in `back`: not the player's doing
                     dist[n] = dist[s]
                     queue.appendleft(n)
@@ -269,7 +293,7 @@ def solve(p):
     colours = sorted(p["doors"])
     start = (p["start"], None, tuple(
         ("frame", d["frame"]) if "frame" in d else ("thief",) if d.get("thief") else ("lean", d["lean"])
-        for d in (p["doors"][c] for c in colours)), (), 1 if p.get("thief") else 0,
+        for d in (p["doors"][c] for c in colours)), (), (1 if p.get("thief") else 0) + (2 if p.get("repainter") else 0),
         0)
     # the solution: the thief and the nailer do nothing in it, and no Stray door is used
     dist, prev, back = _search(p, start, False)
@@ -283,7 +307,7 @@ def solve(p):
         s, what = prev[s]
         steps.append(what)
     steps.reverse()
-    if p.get("thief") or p.get("nailer") or p.get("pool") or p.get("dash"):
+    if p.get("thief") or p.get("repainter") or p.get("nailer") or p.get("pool") or p.get("dash"):
         dist, prev, back = _search(p, start[:5] + (1 if p.get("nailer") else 0,), True)
         wins = [s for s in dist if _won(p, s)]
     alive, todo = set(wins), list(wins)
