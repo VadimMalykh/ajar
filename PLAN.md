@@ -1979,6 +1979,11 @@ What the chain needs before the level (checked in the code, not built):
   brass frames at the ends of the other), and a `MAP=TEST` mode for it.
 - `src/mapinfo.txt`: MAP08's `next` is still MAP08.
 
+**Built: see "MAP09".** Vadim's answers (2026-11-16): the player walks the
+chain, but not a full lap: one crossing into the real exit room, and leaving
+that room ends the level. The secret exit (the loop of three, PINK) is for
+the level after. The place is a telephone exchange. No other new idea.
+
 ### Claude's view
 
 - The chain (2) is the smallest step and the surest: build it next, with the
@@ -1996,3 +2001,86 @@ What the chain needs before the level (checked in the code, not built):
 3. Chain: walk the loop, or leave at once?
 4. Secret exit: where does it lead? There are no secret levels yet.
 5. Same level for the chain and the bus, or one each?
+
+## MAP09 "Putting You Through" (2026-11-16)
+
+Built, solver-proven and walked headlessly. **Not played by hand yet.**
+`tools/map_hinges9.py`: a telephone exchange at night. Five doors in the
+puzzle (PINK is a sixth, in a secret), four keys, six frames and the two
+brass ones, five Stray doors, 12 door actions, 513330 states, none stuck,
+nothing losable. 166 monsters, 4 secrets. `MAP=MAP09 ./run.sh`; MAP08's exit
+leads here.
+
+Vadim's brief: the way out as a chain (see "Ideas for the next levels", 2);
+walked, one crossing; a telephone exchange; otherwise the usual puzzles.
+
+**The chain** (`ajarmap.way_through`, `ajarmap.brass_pair`).
+- The line: the night room, with nothing in it but BLUE's far side at its
+  west end and VIOLET's at its east end. The trunk room has two brass frames
+  (190 and 191) facing each other. With BLUE and VIOLET hung in them, either
+  way round, the two rooms open onto each other without end and both doors
+  stay for good. Nothing ends yet: the player walks through one of them onto
+  the line, and leaving the line again, by either door or by its hole, ends
+  the level.
+- One of the two in a brass frame is a door like any other and can be taken
+  down again.
+- Engine: a brass frame's thing has `args[3]`, the other brass frame, and
+  `args[1]`, `args[2]`, the two doors' far-side lines (`AjarHandler.Chain`).
+  An `AjarLine` thing (editor number 20006) stands in the middle of the line
+  with the room's half lengths as its args; `ChainTick` ends the level when
+  the player has been inside that box and is then 24 beyond it. Solver:
+  `home_chain=dict(frames=, doors=)`.
+- `MAP=MAP09 MODE=3 ./tools/smoke.sh` checks it by itself (9 checks). There
+  is no chain in the test box: it has no two colours to spare.
+- The line is a way between any two frames BLUE and VIOLET hang in, for
+  whatever is carried. The level is built on that.
+- A Stray door may open onto either end of the line, so it needs a way out
+  on foot. It stands 96 above the forecourt and a hole in its south wall
+  lets you drop out: never in. From the start you see the hole and a starry
+  ceiling behind it.
+
+**The level.**
+- One place to walk about in ("main"): the forecourt (start, nobody), the
+  call office (RED, a frame), the switchroom (a frame), the cable passage,
+  and under it the battery room (a frame).
+- Up: the supervisor's gallery over the switchroom's west side, with the
+  cable loft as its north end (RED's far side; key 1); the roof (GREEN's;
+  key 2), with a hole down onto the gallery; the monitor's balcony over the
+  switchroom's north-east corner (YELLOW's; key 4).
+- The trunk room is a place doors come into from above only: a hole in the
+  loft's floor. Its way in from the switchroom is a hatch (a squeeze); a
+  chute lets a door out again into the battery room.
+- West wing (key 1): canteen, cloakroom, rest room (GREEN, a frame). East
+  wing (key 2): apparatus room (key 3), relay room (YELLOW, a frame), and
+  off the apparatus room the test room. Manager's office (keys 3 and 4):
+  BLUE.
+- **The catch.** VIOLET leans in the test room, whose only way in or out is
+  a hatch no door fits through; the test room has a frame. Hung there,
+  VIOLET takes you onto the line without it. Another door has to hang in
+  that frame instead, and a door comes into the test room only along the
+  line: through BLUE, hung somewhere, and out by VIOLET's far side. Then
+  VIOLET leaves through the door it was swapped for. Any of RED, GREEN and
+  YELLOW will do; the solver's own answer hangs BLUE in a brass frame for
+  it, so the first trip along the line starts in the trunk room.
+- Stray pool: the generator room off the passage (a mancubus; bolted inside)
+  and the kiosk (secret), and the far side of whatever is not hung.
+- Secrets: the kiosk in the forecourt (shoot its bell through the bars, or a
+  Stray door); the stationery store behind the relay room (a squeeze; PINK
+  and a frame) and beyond its bars the strongroom (PINK's far side); an
+  alcove off the battery room.
+- One lodger, in the trunk room, whose brass frames are empty until the end.
+- `MAP=MAP09 ./tools/smoke.sh`: 34 checks, to the exit. `MODE=2`: tour, 41
+  views (`TIMEOUT=400`). No test of the chute, the level's Stray doors, the
+  bell or the PINK secret.
+
+Found on the way (the solver):
+- YELLOW's far side was first on a mezzanine inside the east wing. A Stray
+  door could open onto it before the wing was unlocked, with RED in hand;
+  RED hung in the wing's frame and the player out through it, and the wing's
+  key was out of reach for good. A far side must not be behind a lock.
+
+Open, Vadim's call: whether leaving the line by its hole should end the
+level too (it does now); the two switchboards under the gallery's gap, which
+a jump down lands on. The level wears stock textures; its look is for a
+design session. Next: the level after has the secret exit, the loop of three
+with PINK.

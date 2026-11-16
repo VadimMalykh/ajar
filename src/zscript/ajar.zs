@@ -13,6 +13,11 @@
 //    stays open for 2 to 5 seconds (StrayTics) and is then gone.
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
+//    With args[3] the frame is one end of a chain (ajarmap.brass_pair):
+//    args[3] is the other brass frame, args[1] and args[2] the far-side
+//    lines of the two doors that belong in the pair, either way round. Their
+//    far sides are the two ends of the room an AjarLine thing stands in
+//    (ajarmap.way_through); with both hung, leaving that room ends the level.
 
 class AjarFrame : Actor
 {
@@ -33,6 +38,22 @@ class AjarFrame : Actor
 	{
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (h) h.UseFrame(self, activator);
+	}
+}
+
+// The middle of the room a chain of doors runs through (ajarmap.way_through):
+// args[0] and args[1] are half its length along x and y.
+class AjarLine : Actor
+{
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
 	}
 }
 
@@ -360,6 +381,41 @@ class AjarHandler : EventHandler
 		}
 	}
 
+	// The way out as a chain (Vadim, 2026-11-16): two brass frames in one
+	// room, and two doors whose far sides are the two ends of another. With
+	// both hung, either way round, the two rooms open onto each other
+	// without end; both doors stay, and the level ends when the player,
+	// having walked into that other room, leaves it again (ChainTick).
+	bool chainBuilt, onTheLine;
+
+	bool ChainDoor(AjarFrame f, AjarDoor d) { return d && (d.args[0] == f.args[1] || d.args[0] == f.args[2]); }
+
+	void Chain(AjarDoor d, AjarFrame f)
+	{
+		AjarFrame o = FindFrame(f.args[3]);
+		if (!o || !o.door || o.door == d || !ChainDoor(f, d) || !ChainDoor(f, o.door)) return;
+		o.door.nailer = o.door;
+		o.door.Show();
+		ComeHome(d);
+		chainBuilt = true;
+	}
+
+	void ChainTick(Actor mo)
+	{
+		if (!chainBuilt) return;
+		let it = ThinkerIterator.Create("AjarLine");
+		Actor room = Actor(it.Next());
+		if (!room) return;
+		Vector2 d = mo.pos.xy - room.pos.xy;
+		// the mouths are 16 deep: 24 past a wall is through a door, or out by the drop
+		if (abs(d.x) < room.args[0] && abs(d.y) < room.args[1]) onTheLine = true;
+		else if (onTheLine && (abs(d.x) > room.args[0] + 24 || abs(d.y) > room.args[1] + 24))
+		{
+			onTheLine = false;
+			level.ExecuteSpecial(243 /* Exit_Normal */, mo, null, false, 0);
+		}
+	}
+
 	void Hang(AjarDoor d, AjarFrame f)
 	{
 		if (d.IsStray()) { d.args[0] = DrawStray(); d.strayTics = StrayTics(); }
@@ -369,7 +425,8 @@ class AjarHandler : EventHandler
 			let si = ThinkerIterator.Create("AjarDoor");
 			AjarDoor o;
 			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
-			if (f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
+			if (f.args[3]) Chain(d, f);
+			else if (f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
 		}
 		Link(f.args[0], d.args[0], FRAME_TEX);
 		Link(d.args[0], f.args[0], d.BackTex());
@@ -476,6 +533,8 @@ class AjarHandler : EventHandler
 		if (d.IsStray())
 			Say((old ? "You swap the " .. old.Label() .. " door for the STRAY one.\n" : "") ..
 				"The STRAY door opens onto somewhere. It will not stay.");
+		else if (d.nailer == d && chainBuilt)
+			Say("Two doors, two frames, one room at the other end of both.\nThe way out runs through it.");
 		else if (d.nailer == d)
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is the way out.");
 		else if (old) Say("You swap the " .. old.Label() .. " door for the " .. d.Label() .. " one.");
@@ -771,6 +830,7 @@ class AjarHandler : EventHandler
 		StrayTick();
 		ShutterTick();
 		let mo = players[consoleplayer].mo;
+		if (mo) ChainTick(mo);
 		if (mo) Squeeze(mo);
 		if (mo && mo.health > 0) Followers(mo);
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
@@ -781,6 +841,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
+		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);
 		else if (level.mapname ~== "MAP05" && mode == 3) LostPropertyStrays(mo, t);
@@ -788,6 +849,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP06") AfterHoursScript(mo, t);
 		else if (level.mapname ~== "MAP07") SmallHoursScript(mo, t);
 		else if (level.mapname ~== "MAP08") ClosingTimeScript(mo, t);
+		else if (level.mapname ~== "MAP09") PuttingThroughScript(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
@@ -1583,6 +1645,224 @@ class AjarHandler : EventHandler
 	}
 	int dashFrom, dashTook;
 
+	// MAP09: the shortest solution as printed by tools/build.py, with the
+	// places that refuse a door tried on the way.
+	void PuttingThroughScript(Actor mo, int t)
+	{
+		string have = carried ? carried.Label() : "-";
+		bool inTrunk = mo.pos.z == 0 && mo.pos.x > -256 && mo.pos.x < 256 && mo.pos.y > 944 && mo.pos.y < 1200;
+		bool onBalcony = mo.pos.z == 160 && mo.pos.x > 128 && mo.pos.x < 512 && mo.pos.y > 784 && mo.pos.y < 912;
+		bool inTest = mo.pos.z == 0 && mo.pos.x > 640 && mo.pos.x < 960 && mo.pos.y > -384 && mo.pos.y < -112;
+		bool onLine = mo.pos.z == 96 && mo.pos.x > -1008 && mo.pos.x < -688 && mo.pos.y > -560 && mo.pos.y < -304;
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(305) && !RoomOpen(306));
+		// RED into the call office's frame: the gallery over the switchroom, key 1, and down through the gap
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 180, -224, 0, 0); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("onGallery", mo.pos.z == 160 && mo.pos.x > -512 && mo.pos.x < -384 && mo.pos.y > 16);
+		if (t == 85) Pose(mo, -448, 60, 160, 90);
+		Forward(mo, t, 90, 10);
+		if (t == 110) Check("haveKey1", Has(mo, 1));
+		if (t == 115) Pose(mo, -440, 304, 160, 0);
+		Forward(mo, t, 120, 10);
+		if (t == 150) Check("droppedIntoSwitchroom", mo.pos.z < 160 && mo.pos.x > -384);
+		// key 1 opens the west wing: GREEN into the rest room's frame, the roof, key 2
+		if (t == 155) { Pose(mo, -470, -48, 0, 180); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (t == 195) Check("westWingOpens", RoomOpen(301));
+		if (t == 200) { Take(mo, 3); FindFrame(103).Activate(mo); Pose(mo, -1360, 432, 0, 180); }
+		Forward(mo, t, 205, 25);
+		if (t == 245) Check("onRoof", mo.pos.z == 320 && mo.pos.y > 672 && mo.pos.y < 1296 && have == "-");
+		if (t == 250) Pose(mo, -1340, 800, 320, 270);
+		Forward(mo, t, 255, 12);
+		if (t == 275) Check("haveKey2", Has(mo, 2));
+		// off the roof by the hole, onto the gallery, and down
+		if (t == 280) Pose(mo, -580, 816, 320, 0);
+		Forward(mo, t, 285, 14);
+		if (t == 314) Check("fromRoofOntoGallery", mo.pos.z == 160 && mo.pos.x > -512 && mo.pos.x < -384);
+		if (t == 315) Pose(mo, -440, 304, 160, 0);
+		Forward(mo, t, 320, 10);
+		// key 2 opens the east wing: key 3 behind the racks, YELLOW in the relay room
+		if (t == 350) { Pose(mo, 470, -48, 0, 0); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 390) Check("eastWingOpens", RoomOpen(302));
+		if (t == 395) Pose(mo, 1072, -40, 0, 270);
+		Forward(mo, t, 400, 8);
+		if (t == 420) Check("haveKey3", Has(mo, 3));
+		if (t == 425) Take(mo, 4);
+		// YELLOW through RED, along the gallery into the cable loft, and down the hole into the trunk room
+		if (t == 430) Pose(mo, 180, -224, 0, 0);
+		Forward(mo, t, 435, 25);
+		if (t == 470) Check("onGalleryWithYellow", mo.pos.z == 160 && mo.pos.x < -384 && have == "YELLOW");
+		if (t == 475) Pose(mo, -448, 860, 160, 90);
+		Forward(mo, t, 480, 16);
+		if (t == 500) Check("inCableLoft", mo.pos.z == 160 && mo.pos.y > 928);
+		if (t == 505) Pose(mo, 0, 1240, 160, 270);
+		Forward(mo, t, 510, 20);
+		if (t == 540) Check("inTrunkRoomWithYellow", inTrunk && have == "YELLOW");
+		// it does not leave by the hatch
+		if (t == 545) Pose(mo, 0, 1000, 0, 270);
+		Forward(mo, t, 550, 12);
+		if (t == 575) Check("hatchRefusesADoor", mo.pos.y > 912 && have == "YELLOW");
+		if (t == 580) FindFrame(190).Activate(mo);
+		if (t == 583) Check("yellowInABrassFrame", have == "-" && !wayOutBuilt);
+		// through it: the monitor's balcony, key 4, and down through the gap
+		if (t == 585) Pose(mo, -200, 1072, 0, 180);
+		Forward(mo, t, 590, 20);
+		if (t == 620) Check("onBalcony", onBalcony);
+		if (t == 625) Pose(mo, 420, 880, 160, 0);
+		Forward(mo, t, 630, 8);
+		if (t == 650) Check("haveKey4", Has(mo, 4));
+		if (t == 655) Pose(mo, 256, 840, 160, 270);
+		Forward(mo, t, 660, 14);
+		if (t == 690) Check("offTheBalcony", mo.pos.z == 0 && mo.pos.y < 784);
+		// the test room, by its hatch: VIOLET, which the hatch refuses; into the test room's frame
+		if (t == 695) Pose(mo, 816, -60, 0, 270);
+		Forward(mo, t, 700, 16);
+		if (t == 730) Check("inTestRoom", inTest);
+		if (t == 735) Take(mo, 5);
+		if (t == 740) Pose(mo, 816, -200, 0, 90);
+		Forward(mo, t, 745, 12);
+		if (t == 770) Check("testHatchRefusesADoor", inTest && have == "VIOLET");
+		if (t == 775) FindFrame(104).Activate(mo);
+		if (t == 778) Check("violetHungInTestRoom", have == "-");
+		if (t == 780) Pose(mo, 816, -200, 0, 90);
+		Forward(mo, t, 785, 16);
+		if (t == 815) Check("outByTheHatch", mo.pos.y > -112);
+		// keys 3 and 4 open the manager's office: BLUE
+		if (t == 820) { Pose(mo, -200, -400, 0, 180); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 860) Check("officeOpens", RoomOpen(303));
+		if (t == 865) Take(mo, 2);
+		// BLUE through RED and down into the trunk room, swapped for YELLOW
+		if (t == 870) Pose(mo, 180, -224, 0, 0);
+		Forward(mo, t, 875, 25);
+		if (t == 910) Pose(mo, -448, 860, 160, 90);
+		Forward(mo, t, 915, 16);
+		if (t == 940) Pose(mo, 0, 1240, 160, 270);
+		Forward(mo, t, 945, 20);
+		if (t == 975) Check("inTrunkRoomWithBlue", inTrunk && have == "BLUE");
+		if (t == 980) FindFrame(190).Activate(mo);
+		if (t == 983) Check("blueSwappedForYellow", have == "YELLOW" && !wayOutBuilt);
+		// along the line with YELLOW: in by BLUE, out by VIOLET, into the test room
+		if (t == 985) Pose(mo, -200, 1072, 0, 180);
+		Forward(mo, t, 990, 20);
+		if (t == 1020) Check("onTheLineWithYellow", onLine && have == "YELLOW");
+		Forward(mo, t, 1025, 45);
+		if (t == 1080) Check("alongTheLineIntoTestRoom", inTest && have == "YELLOW");
+		if (t == 1085) { Pose(mo, 800, -340, 0, 270); FindFrame(104).Activate(mo); }
+		if (t == 1088) Check("violetSwappedOut", have == "VIOLET");
+		// VIOLET leaves through YELLOW: the balcony, and down
+		Forward(mo, t, 1090, 12);
+		if (t == 1115) Check("onBalconyWithViolet", onBalcony && have == "VIOLET");
+		if (t == 1120) Pose(mo, 256, 840, 160, 270);
+		Forward(mo, t, 1125, 14);
+		// VIOLET through RED and down into the trunk room, into the other brass frame
+		if (t == 1160) Pose(mo, 180, -224, 0, 0);
+		Forward(mo, t, 1165, 25);
+		if (t == 1200) Pose(mo, -448, 860, 160, 90);
+		Forward(mo, t, 1205, 16);
+		if (t == 1230) Pose(mo, 0, 1240, 160, 270);
+		Forward(mo, t, 1235, 20);
+		if (t == 1265) Check("inTrunkRoomWithViolet", inTrunk && have == "VIOLET");
+		if (t == 1270) { FindFrame(191).Activate(mo); Check("chainBuilt", wayOutBuilt && chainBuilt && !carried); }
+		// the way out is walked: through VIOLET onto the line, along it, and out by BLUE
+		if (t == 1275) Pose(mo, 0, 1072, 0, 0);
+		if (t == 1330) Check("stillHere", inTrunk && !onTheLine);
+		Forward(mo, t, 1335, 90);
+		if (t == 1385) Check("walkedOntoTheLine", onLine && onTheLine);
+	}
+
+	// MAP09 mode 3: the chain by itself. One of the two doors in a brass
+	// frame is a door like any other; both, and they stay; nothing ends
+	// until the player has been onto the line and left it again.
+	void ChainScript(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		string have = carried ? carried.Label() : "-";
+		bool onLine = mo.pos.z == 96 && mo.pos.x > -1008 && mo.pos.x < -688 && mo.pos.y > -560 && mo.pos.y < -304;
+		if (t == 5)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster) a.Destroy();
+		}
+		if (t == 35) { Take(mo, 5); Pose(mo, -200, 1072, 0, 180); }
+		if (t == 40) { FindFrame(190).Activate(mo); Check("oneDoorIsOnlyADoor", have == "VIOLET" && !carried && !wayOutBuilt); }
+		if (t == 45) { FindFrame(190).Activate(mo); Check("itCanBeTakenAgain", carried && carried.Label() == "VIOLET"); }
+		if (t == 50) FindFrame(190).Activate(mo);
+		// through it onto the line, and out by the hole: nothing ends
+		Forward(mo, t, 55, 20);
+		if (t == 85) Check("ontoTheLine", onLine && !onTheLine);
+		if (t == 90) Pose(mo, -848, -500, 96, 270);
+		Forward(mo, t, 95, 14);
+		if (t == 125) Check("outByTheHole", mo.pos.z == 0 && mo.pos.y < -576);
+		if (t == 130) { Take(mo, 2); Pose(mo, 200, 1072, 0, 0); }
+		if (t == 135) { FindFrame(191).Activate(mo); Check("chainBuilt", wayOutBuilt && chainBuilt && !carried); }
+		if (t == 137) { FindFrame(191).Activate(mo); FindFrame(190).Activate(mo); Check("bothStay", !carried && FindFrame(190).door && FindFrame(191).door); }
+		if (t == 140) Pose(mo, 0, 1072, 0, 0);           // shot: east down the chain
+		if (t == 200) Pose(mo, 100, 1072, 0, 180);       // shot: west
+		if (t == 260) Check("nothingEndsInTheTrunkRoom", !onTheLine);
+		if (t == 261) Pose(mo, 0, 1072, 0, 0);
+		Forward(mo, t, 265, 44);                         // through BLUE: onto the line at its west end, and along it
+		if (t == 300) mo.vel.xy = (0, 0);
+		if (t == 315) Check("walkedOntoTheLine", onLine && onTheLine);
+		Forward(mo, t, 360, 60);                         // out by VIOLET's end
+	}
+
+	// MAP09's tour (see PartyWallViews).
+	void PuttingThroughViews1()
+	{
+		static const double v[] = {
+			0, -768, 0, 90, 0,             // from the start: the forecourt, the front door
+			-500, -780, 0, 135, -20,       // the hole high in the wall: the line
+			300, -720, 0, 0, 0,            // the kiosk behind its bars
+			0, -520, 0, 90, 0,             // the call office
+			100, -300, 0, 180, 0,          // RED leaning, the manager's two locks
+			150, -224, 0, 0, 0,            // the call office's frame
+			-300, -400, 0, 180, 0,         // the manager's office: BLUE
+			0, -80, 0, 90, -8,             // the switchroom from the way in
+			-200, 200, 0, 135, -15,        // the supervisor's gallery, RED's far side
+			100, 500, 0, 60, -15,          // the monitor's balcony, YELLOW's far side
+			384, 60, 0, 270, 0,            // the switchroom's frame
+			0, 760, 0, 90, 0,              // the hatch to the trunk room
+			-448, 100, 160, 90, 0,         // on the gallery
+			-448, 700, 160, 0, 15,         // from the gallery, the boards
+			400, 860, 160, 180, 5,         // on the balcony
+			-448, 1000, 160, 90, 0,        // the way into the cable loft
+			-300, 1330, 160, 0, 0,         // the cable loft
+			0, 1330, 160, 270, 25,         // the hole down into the trunk room
+			60, 1072, 0, 180, 0            // the trunk room: the west brass frame
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void PuttingThroughViews2()
+	{
+		static const double v[] = {
+			-60, 1072, 0, 0, 0,            // the east brass frame
+			-180, 1150, 0, 320, 0,         // the trunk room across: the hatch, the chute
+			400, 1160, -128, 45, 0,        // the battery room
+			1088, 1090, -128, 270, -15,    // its stairs
+			600, 640, 0, 0, 0,             // the cable passage
+			768, 760, 0, 90, 0,            // the generator room
+			-560, 48, 0, 180, 0,           // the canteen
+			-1020, 48, 0, 180, 0,          // the cloakroom
+			-1216, 280, 0, 100, 0,         // the rest room: GREEN, the frame
+			-700, 1000, 320, 180, 0,       // the roof
+			-992, 1080, 320, 90, 0,        // GREEN's far side
+			-640, 816, 320, 0, 20,         // the hole onto the gallery
+			560, -60, 0, 45, 0,            // the apparatus room
+			944, 500, 0, 270, 0,           // down the racks
+			1150, 48, 0, 0, 0,             // the relay room: YELLOW, the frame
+			816, -180, 0, 270, 0,          // the test room: its frame
+			700, -330, 0, 30, 0,           // VIOLET, the hatch
+			1288, 260, 0, 90, 0,           // the stationery store: PINK, a frame
+			1520, 250, 0, 90, 0,           // the strongroom: PINK's far side
+			-848, -432, 96, 180, 0,        // the line: BLUE's far side
+			-848, -432, 96, 0, 0,          // VIOLET's
+			-848, -360, 96, 270, 15        // the hole over the forecourt
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
 	// MAP08's tour, in three parts (see PartyWallViews).
 	void ClosingTimeViews1()
 	{
@@ -2086,6 +2366,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP06") { AfterHoursViews1(); AfterHoursViews2(); AfterHoursViews3(); }
 			else if (level.mapname ~== "MAP07") { SmallHoursViews1(); SmallHoursViews2(); SmallHoursViews3(); }
 			else if (level.mapname ~== "MAP08") { ClosingTimeViews1(); ClosingTimeViews2(); ClosingTimeViews3(); }
+			else if (level.mapname ~== "MAP09") { PuttingThroughViews1(); PuttingThroughViews2(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}

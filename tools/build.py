@@ -13,10 +13,11 @@ import map_hinges5
 import map_hinges6
 import map_hinges7
 import map_hinges8
+import map_hinges9
 import map_test
 import solve
 
-MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "TEST": map_test}
+MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "TEST": map_test}
 
 for name, mod in MAPS.items():
     if not hasattr(mod, "PUZZLE") or os.environ.get("AJAR_QUICK"):     # AJAR_QUICK=1 ./build.sh: no solver
