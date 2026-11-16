@@ -58,12 +58,12 @@ NX, NY = 160, 2256                                    # the night room's south-w
 
 CRATE = dict(ftex="AJWOOD", side="AJWOOD")
 
-# The museum's look (gfx_museum.py). AJAR_MUSEUM=1..3 dresses the whole of it
-# in one candidate: 1 Athenaeum (ashlar and marble), 2 Cabinet (terracotta,
-# mahogany), 3 Kunsthalle (white walls, concrete). Unset or 0 is the level as
-# first built, until the user has chosen. A look changes textures only: no
-# floor, wall or railing moves. Rooms are not tinted in a look.
-LOOK = (os.environ.get("AJAR_MUSEUM") or "").replace("0", "")
+# The museum's look (gfx_museum.py): 2, Cabinet (terracotta, glazed tile,
+# mahogany), is the user's choice for the whole of it. AJAR_MUSEUM=1 and 3 are
+# the candidates that lost (Athenaeum: ashlar and marble; Kunsthalle: white
+# walls, concrete); AJAR_MUSEUM=0 is the level as first built. A look changes
+# textures only: no floor, wall or railing moves. Rooms are not tinted in a look.
+LOOK = (os.environ.get("AJAR_MUSEUM") or "2").replace("0", "")
 
 
 def T(tag, pic=""):

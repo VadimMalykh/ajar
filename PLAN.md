@@ -1517,10 +1517,13 @@ the frames).
 
 Board: https://claude.ai/artifact/TjZtXwZGefUcSF8V4twLmG (source
 `design/map06-board.html`, images in `build/board6/`: `<look>/view_NN.jpg`
-cut from the tour shots, `tex/` swatches). **Not chosen yet**: unset (or 0),
-`AJAR_MUSEUM` builds the museum as first built, byte for byte the map before
-this work. Done on the branch `look06` (worktree `.claude/worktrees/look06`),
-not merged.
+cut from the tour shots, `tex/` swatches). **The user chose look 2, Cabinet,
+for every part (2026-11-16)**; it is the default now, with the dressed cellar,
+boiler room, stockroom, grotto and shed (the user did not pick those
+separately: ask if they should go back to safes). `AJAR_MUSEUM=0` is the
+museum as first built (its map is byte for byte the one before this work), 1
+and 3 the losers. The board still shows the choice as open. Not played by
+hand in this look yet.
 
 `AJAR_MUSEUM=1..3` dresses the whole museum in one candidate look
 (`tools/gfx_museum.py`): 1 Athenaeum (Portland stone, marble, antiquities on
@@ -1529,8 +1532,8 @@ banded in slate, glazed tile, mahogany, specimens), 3 Kunsthalle (white
 render over concrete, black steel, abstracts). The same in all three, and
 dressed for the first time in any level: cellar, boiler room, stockroom,
 grotto, gardener's shed. The strongroom keeps its safes; the store (PINK's
-far side) and the night room are not touched. In look 1 `MAP=MAP06 MODE=1`
-passes (38 checks); the tour was shot in 0 to 3 (58 views, monsters off),
+far side) and the night room are not touched. In looks 1 and 2 `MAP=MAP06
+MODE=1` passes to the exit; the tour was shot in 0 to 3 (58 views, monsters off),
 no engine warnings.
 
 How the museum is built in a look (`map_hinges6.py`):
