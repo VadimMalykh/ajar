@@ -1743,3 +1743,45 @@ level itself made easier. Four levels, `src/mapinfo.txt`:
 - To try one: `SKILL=1 MAP=MAP05 ./run.sh`. A new game from the menu asks.
 - Not known: whether the numbers are right. None of the four has been played
   by hand.
+
+## Look: MAP07 (started 2026-11-16)
+
+Board: https://claude.ai/artifact/8JZuyVeqzcCYRmVED2SNbu (source
+`design/map07-board.html`, images in `build/board7/`: `<look>/view_NN.jpg`
+cut from the tour shots, `tex/` swatches). **The user chose look 3, Star
+Palace, for every part (2026-11-16)**; it is the default now. The board still
+shows the choice as open. Not played by hand in this look yet.
+
+`AJAR_OBSERVATORY=1..3` dresses the whole observatory in one candidate look
+(`tools/gfx_observatory.py`): 1 Royal (brick and Portland stone, sashes,
+cream panelling, oak, brass), 2 Mountain (granite, shutters, limewash and
+pine, a riveted iron dome), 3 Star Palace (fluted concrete, bronze, midnight
+blue and gold, travertine). `AJAR_OBSERVATORY=0` is the level as first built
+(its map is byte for byte the one before this work); 1 and 2 are the losers. The same in all three:
+the wood round the hill (`AJ7XN`), rock in the ravine, the lens store, the
+armoury; the cellar, boiler house, cave and shed wear MAP06's (`AJ6XC`,
+`XB`, `XG`, `XS`). The planetarium and the night room are not touched.
+
+How the observatory is built in a look (`map_hinges7.py`):
+- Three kinds of open air: the grounds (`OPEN`: a garden wall with trees
+  over it, `G`), between the building's own walls (`BUILT`: the front, `Y`)
+  and the hill (`WILD`). Pieces of a place's wall that are the building's
+  are named with `front()`, windows with `windows()` before it.
+- `fit()` is `ajarmap.fitted` and also carries the wall on over the open
+  sides of every porch in the room; a porch at the room's edge that faces
+  another place needs its own `over()` (the tower's stump, from the ravine).
+- A door's face is drawn for its own place in its wall. The map works out
+  the shift, names the texture and lists it in `FACES`; `gfx.make_all` hands
+  that to `gfx_observatory.make`, so only the look being built has doors.
+  Texture names stop at 8 letters: hence numbered faces.
+- Library: two tiers of books, the stacks' floor carried round as a rail;
+  `LS`, `LV`, `LB` are cuts of the same wall. Dome: shell, ring and wall in
+  one texture 448 high.
+
+Run: the tour in 0 to 3 (63 views, monsters off, no engine warnings);
+`MAP=MAP07 MODE=1` in looks 1 and 3 to the exit; the full build. Not run: the
+walkthrough in look 2, and nothing played by hand.
+
+Options that change shape, light or play are at the foot of the board, none
+built: a telescope on the pier, an octagonal dome, dim rooms, a horizon
+instead of the wood, the planetarium's own look, an orrery and a globe.
