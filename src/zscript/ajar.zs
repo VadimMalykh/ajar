@@ -42,6 +42,24 @@ class AjarFrame : Actor
 	}
 }
 
+// A monster that is not there yet (ajarmap.ambush, AjarHandler.AmbushTick).
+class AjarAmbush : Actor
+{
+	bool armed;
+	int wait;
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+}
+
 // The middle of the room a chain of doors runs through (ajarmap.way_through):
 // args[0] and args[1] are half its length along x and y.
 class AjarLine : Actor
@@ -345,6 +363,85 @@ class AjarHandler : EventHandler
 	{
 		Line l = e.ActivatedLine;
 		if (l && l.special == 12 && l.args[0] == SHUTTER_TAG) shutterWait = l.args[2];
+	}
+
+	// A lever or a bell that opens something out of sight (Door_Open on a
+	// wall with nothing behind it): say so, or nothing seems to happen.
+	override void WorldLinePreActivated(WorldEvent e)
+	{
+		Line l = e.ActivatedLine;
+		if (!l || l.special != 11 || l.backsector) return;
+		if (e.ActivationType == SPAC_Impact) Say("The bell rings.\nSomewhere close a bolt is drawn.");
+		else if (e.ActivationType == SPAC_Use) Say("You pull the lever.\nSomewhere in the building a bolt is drawn.");
+	}
+
+	// --- ambushes (ajarmap.ambush) ------------------------------------------
+	// An AjarAmbush thing is a monster that is not there yet. args[0] is what
+	// brings it: 1..4, taking that room key; 11..16, taking the door of that
+	// colour (less 10) for the first time. args[1] is the monster's Doom
+	// editor number. It comes in a flash where the thing stands, a moment
+	// after, facing the way the thing faces, and knows where the player is.
+	// If something stands in its place it waits until the place is free.
+	static class<Actor> AmbushClass(int n)
+	{
+		switch (n)
+		{
+		case 3004: return "ZombieMan";
+		case 9: return "ShotgunGuy";
+		case 3001: return "DoomImp";
+		case 3002: return "Demon";
+		case 58: return "Spectre";
+		case 65: return "ChaingunGuy";
+		case 69: return "HellKnight";
+		case 3003: return "BaronOfHell";
+		case 66: return "Revenant";
+		case 3006: return "LostSoul";
+		case 3005: return "Cacodemon";
+		case 67: return "Fatso";
+		case 68: return "Arachnotron";
+		case 71: return "PainElemental";
+		}
+		return null;
+	}
+
+	void AmbushTick(PlayerPawn mo)
+	{
+		if (level.maptime % 5) return;
+		let it = ThinkerIterator.Create("AjarAmbush");
+		AjarAmbush a;
+		while (a = AjarAmbush(it.Next()))
+		{
+			int g = a.args[0];
+			if (!a.armed)
+			{
+				if (g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
+				a.armed = true;
+				a.wait = 20 + 5 * random(0, 5);
+			}
+			if (a.wait > 0) { a.wait -= 5; continue; }
+			class<Actor> cls = AmbushClass(a.args[1]);
+			if (!cls) { a.Destroy(); continue; }
+			Actor m = Actor.Spawn(cls, a.pos, ALLOW_REPLACE);
+			if (!m) continue;
+			if (!m.TestMobjLocation()) { m.ClearCounters(); m.Destroy(); continue; }
+			m.angle = a.angle;
+			Actor.Spawn("TeleportFog", a.pos, ALLOW_REPLACE);
+			if (CVar.GetCVar("ajar_autotest").GetInt())
+			{
+				// a scripted walkthrough: it came, which is all the test wants
+				// to know, and it must not stand in the walker's way
+				Console.Printf("AJARTEST ambusher=%s cause=%d", m.GetClassName(), g);
+				m.ClearCounters();
+				m.Destroy();
+			}
+			else
+			{
+				m.target = mo;
+				if (m.SeeState) m.SetState(m.SeeState);
+				m.A_StartSound(m.SeeSound, CHAN_VOICE);
+			}
+			a.Destroy();
+		}
 	}
 
 	void ShutterTick()
@@ -837,6 +934,7 @@ class AjarHandler : EventHandler
 		ShutterTick();
 		let mo = players[consoleplayer].mo;
 		if (mo) ChainTick(mo);
+		if (mo && mo.health > 0) AmbushTick(mo);
 		if (mo) Squeeze(mo);
 		if (mo && mo.health > 0) Followers(mo);
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();

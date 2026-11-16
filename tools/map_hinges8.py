@@ -340,7 +340,7 @@ rail(((128, 1120), (128, 1280)), ((128, 1344), (128, 1440)))                 # a
 recess((-64, 1440), (0, 1440), (0, 1), 0, 106, 201, color=WARM)              # the showroom's two frames
 recess((-192, 1440), (-128, 1440), (0, 1), 0, 107, 201, color=WARM)
 recess((224, 1440), (288, 1440), (0, 1), UP, far_id(YELLOW), 101, far_colour=YELLOW, color=WARM)
-ajarmap.lever(m, (384, 1248), (384, 1312), SECONDS, line_id=309)
+ajarmap.lever(m, (384, 1248), (384, 1312), SECONDS, line_id=309, tex="AJLEVB")
 squeeze((-312, 1040), (-264, 1040), (0, 1), 0, "H", "SH")                    # the turnstile, from the atrium
 opening((-480, 1040), (-416, 1040), (0, 1), UP, "H", "SH")                   # the hole from the gallery
 
@@ -665,6 +665,15 @@ things(LAUNCHER, (1328, -130))
 things(ROCKETBOX, (1240, -180), (1410, -180))
 things(MEGA, (1240, -30))
 things(AMMOBOX, (1410, -30))
+
+# --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
+# key 1, on the gallery: up from the atrium, at a man with a rocket launcher
+ajarmap.ambush(m, 1, CACO, (-250, 300), (-250, 640), angle=180)
+# key 3, among the linen
+ajarmap.ambush(m, 3, REVENANT, (560, 740), angle=0)
+ajarmap.ambush(m, 3, IMP, (700, 400), (820, 400), angle=90)
+# key 4, in the office: the showroom you are about to jump into
+ajarmap.ambush(m, 4, DEMON, (-100, 1340), (-300, 1340), (-380, 1130), angle=0)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "store" is the arcade, the lobby, the atrium, the goods passage and the

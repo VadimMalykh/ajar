@@ -44,7 +44,7 @@ position (Map.align). What stands free in a room repeats every 16.
 import math
 import random
 
-from gfx import Img, shade, BRASS
+from gfx import Img, shade, BRASS, levers
 import gfx_theatre as th
 import gfx_yard as gy
 import gfx_museum as mu
@@ -1044,6 +1044,7 @@ def make(out, rd, faces={}):
         tex(name("DP"), pier(n))
         for tag, part in ROOMS.items():
             walls[tag] = tex(name(tag), mu.wall(c[part], 160, seed=k + sum(map(ord, tag))))
+        levers(out, f"AJ7LV{n}", walls["T"])                         # the transit house's lever
         for tag, painters in PICS.items():
             for i, painter in enumerate(painters):
                 w, h = SIZES[painter]

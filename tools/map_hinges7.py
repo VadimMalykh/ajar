@@ -553,7 +553,7 @@ fit((-448, 2960, -64, 3280), [
 pictures("T", 3280, (-384, -256))
 door((-288, 2944), (-224, 2944), (0, 1), 0, "A", "T", keys="34", line_id=303)
 m.cut((-448, 3088), (-448, 3152))
-m.line((-448, 3088), (-448, 3152), special=11, args=(CAVE, 32), playeruse=True, mid="AJLEVR", exact=True,
+m.line((-448, 3088), (-448, 3152), special=11, args=(CAVE, 32), playeruse=True, mid=f"AJ7LV{LOOK}" if LOOK else "AJLEVR", exact=True,
        id=308)
 
 # === the west wing: one lock, off the lane =========================================
@@ -822,6 +822,14 @@ things(ARMOR, (1500, 1824))
 things(SHELLBOX, (1500, 1780))
 things(CELLS, (1500, 1868))
 things(CANDLE, (1416, 1784), (1416, 1864))
+
+# --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
+# key 3, in the cellar: out of the dark
+ajarmap.ambush(m, 3, SPECTRE, (1000, 1700), (880, 1770), angle=0)
+ajarmap.ambush(m, 3, DEMON, (1060, 1930), angle=0)
+# key 4, in the clock room: the clocks strike
+ajarmap.ambush(m, 4, IMP, (-1300, 300), (-1340, 590), (-1500, 560), angle=180)
+ajarmap.ambush(m, 4, REVENANT, (-1250, 430), angle=180)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "grounds" is the gate passage, the forecourt, the hall, the library, the
