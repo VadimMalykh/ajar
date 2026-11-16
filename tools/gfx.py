@@ -798,6 +798,9 @@ def make_all():
     import gfx_observatory                                       # MAP07's candidate looks
     import map_hinges7                                           # ... and the door faces the map asks for
     gfx_observatory.make(out, rd, map_hinges7.FACES)
+    import gfx_store                                             # MAP08's candidate looks
+    import map_hinges8
+    gfx_store.make(out, rd, map_hinges8.FACES)
     import gfx_things                                            # ... and what stands in its rooms
     gfx_things.make(out)
 
