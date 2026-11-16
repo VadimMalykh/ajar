@@ -1043,6 +1043,9 @@ way out, not a way to fetch anything. Porch lines keep monsters from under
 it, because a shutter that meets something goes up again; the player can hold
 it up by standing in it, which only helps someone who is already there.
 
+(Superseded 2026-11-16: see "Playable, and less obvious". The grille is gone;
+the brass frame takes BLUE only and the room has no door.)
+
 **A grille across the night room** (`way_home(grille=True)`). Without it the
 shutter would be for nothing: any door hung in the brass frame is a way to
 carry BLUE in (MAP06's trick). BLUE's far side is in the west half, the frame
@@ -2135,3 +2138,33 @@ MAP09 have 166 to 184, fifteen hell knights each); the crossfire from the
 galleries over MAP06's court and the 30 monsters of MAP08's atrium and
 MAP09's switchroom are still what a pistol start meets. None of it has been
 played by hand.
+
+## Playable, and less obvious (2026-11-16)
+
+Vadim, after playing MAP08: the grille across the night room spoils the
+endless room; the fights of MAP06 to MAP09 may be thinned; the targets that
+open secrets are too easy to see.
+
+**MAP08's night room has no grille.** What the grille was for: any door hung
+in the brass frame was a way to carry BLUE in, without the shutter. Now the
+brass frame takes no door but BLUE (`way_home(only=True)`, AjarFrame
+`args[4]`, in a PUZZLE `only={HOME: BLUE}`; it says so when another is
+tried), and the room's bolted door to the dock is gone: you come in through
+BLUE and leave through it, or push the shutter from inside, and BLUE comes in
+under the shutter or not at all. "night" and "home" are one region again and
+`home_door` is not used by any level (the solver still knows it, and
+`way_home(grille=True)` still builds). This is one more exception to "a
+frame takes any door": only this frame, only in MAP08.
+
+**A bell, not a target.** `AJTARG` was a red and white bullseye. It is now
+the secret room's own wall with a small brass bell on it (`gfx.bell`):
+`AJTARG` on the vault wall (MAP05, MAP08, MAP09), `AJTARG4` in the hole over
+MAP04's yard (no longer floodlit), `AJTARG6` among the tools on the shed's
+wall (MAP06, MAP07). MAP04's two bonuses on the roof still mark where to
+stand.
+
+**Thinner.** MAP06: one chaingunner on each gallery over the court instead
+of two, one cacodemon in it, one knight in the night room. MAP07 155 monsters
+(170), MAP08 164 (184), MAP09 152 (166): eight or nine hell knights each
+instead of fifteen, and about a quarter fewer in MAP08's atrium and MAP09's
+switchroom, with one chaingunner on the gallery over each.

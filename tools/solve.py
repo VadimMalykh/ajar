@@ -31,6 +31,7 @@ A puzzle is a dict:
                 Stray door opens onto (it may also open onto the far side
                 of a coloured door). The Stray doors themselves are not
                 listed: see below
+  only          optional {frame id: colour}: no other door hangs in that frame
   dash          optional dict(at=region, to=region, limit=units, legs={(a, b):
                 units}): a way that a lever in `at` opens for a few seconds
                 (ajarmap.shutter). Whatever is carried gets from `at` to `to`
@@ -124,6 +125,8 @@ def _moves(p, state, nailed=False):
         c = hung.get(f)
         if c is not None and f == p.get("home_frame") and c == p.get("home_door"):
             continue                                 # the way out, built: it stays
+        if carried is not None and p.get("only", {}).get(f, carried) != carried:
+            continue                                 # a frame that takes one door only
         if c is None and carried is not None:
             yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", f)})
         elif c is not None and bool(nails and region in _zone(p["nailer"], keys)) != nailed:

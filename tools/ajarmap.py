@@ -26,7 +26,7 @@ def far_id(colour):
 
 
 def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None, trim=None,
-           home=0, chain=None):
+           home=0, chain=None, only=False):
     """A 64-wide door recess whose mouth is m1-m2 and which goes `out` of the room.
 
     Frames (far_colour None) get an AjarFrame thing and a usable mouth line.
@@ -37,7 +37,7 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     `home` (frames only) is the far-side line id of the door that makes this
     frame a way out: see way_home(). `chain` (frames only) is (the far-side
     line id of the pair's other door, the line id of the other brass frame):
-    see brass_pair().
+    see brass_pair(). `only` (frames with `home`): no other door hangs in it.
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
     b2 = (m2[0] + out[0] * DEPTH, m2[1] + out[1] * DEPTH)
@@ -61,7 +61,7 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     if arch == "frame" or not (arch or far_colour):
         m.line(m1, m2, special=130, args=(line_id,), playeruse=True, repeatspecial=True)
         m.thing((b1[0] + b2[0]) / 2 - out[0] * 8, (b1[1] + b2[1]) / 2 - out[1] * 8,
-                FRAME_T, id=line_id, height=0, args=(line_id, home) + tuple(chain or ()))
+                FRAME_T, id=line_id, height=0, args=(line_id, home) + tuple(chain or (0, 0)) + (int(only),))
 
 
 def door(m, colour, x, y, *, angle=0, frame=0):
@@ -115,7 +115,7 @@ HOME, HOME_MOUTH = 190, 590
 SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze): see squeeze()
 
 
-def way_home(m, x, y, colour, *, grille=False):
+def way_home(m, x, y, colour, *, grille=False, only=False):
     """A way out the player has to build (MAP05 on). The same night room as
     way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
     its two ends are not joined yet: the far side of the door `colour` is in
@@ -136,7 +136,12 @@ def way_home(m, x, y, colour, *, grille=False):
     squeeze). Coming through the door from wherever it hangs then brings
     you to the west half and no further with anything in hand: the frame's
     half needs a way in of its own. In a PUZZLE graph the halves are two
-    regions and `home_door` names the door."""
+    regions and `home_door` names the door.
+
+    With `only` (MAP08 since 2026-11-16, instead of the grille) the brass
+    frame takes no door but `colour`. Then no other door hung there makes a
+    way in for it, and it comes in on foot or not at all. In a PUZZLE graph:
+    `only={HOME: colour}`."""
     room(m, [x, x + 160, x + 320] if grille else [x, x + 320], [y, y + 96, y + 160, y + 256],
          lambda i, j: j == 1, ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
     if grille:
@@ -149,7 +154,7 @@ def way_home(m, x, y, colour, *, grille=False):
     # by another way (a Stray door) can tell which door belongs in the frame
     recess(m, (x, y + 96), (x, y + 160), (-1, 0), 0, far_id(colour), HOME, far_colour=colour)
     recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0, HOME, far_id(colour), trim=brass,
-           home=far_id(colour))
+           home=far_id(colour), only=only)
     for xx in (x, x + 320):
         m.line((xx, y + 96), (xx, y + 160), id=HOME_MOUTH)
     for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):

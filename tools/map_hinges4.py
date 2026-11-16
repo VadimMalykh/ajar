@@ -193,10 +193,10 @@ recess((2240, 208), (2240, 272), (1, 0), 0, 105, 201, color=WARM)           # st
 
 # --- secrets in the south wall: a target in a hole that only the roof looks
 # into, and the closet it opens --------------------------------------------------
-m.sector(rect(1100, -256, 1164, 0), floor=ROOF, ceil=ROOF + 48, light=255,
+m.sector(rect(1100, -256, 1164, 0), floor=ROOF, ceil=ROOF + 48, light=190,
          ftex="AJTRIMF", ctex="AJTRIMF", **HOLE)
 front((1100, 0), (1164, 0), "S", lower=FRONT["S"], dontpegbottom=True)
-m.line((1100, -256), (1164, -256), special=11, args=(CLOSET, 16), impact=True, mid="AJTARG")
+m.line((1100, -256), (1164, -256), special=11, args=(CLOSET, 16), impact=True, mid="AJTARG4" if LOOK else "AJTARG")
 m.sector(rect(1312, -16, 1376, 0), floor=0, ceil=0, light=160, id=CLOSET, **HOLE)
 front((1312, 0), (1376, 0), "S")
 m.sector(rect(1280, -144, 1408, -16), ceil=96, light=150, wall="AJSAFE", special=1024)

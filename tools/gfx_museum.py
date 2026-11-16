@@ -41,7 +41,7 @@ its own place in its wall instead (the shift in FACES). What stands free in a ro
 import math
 import random
 
-from gfx import Img, shade, BRASS
+from gfx import Img, shade, BRASS, bell
 import gfx_theatre as th
 import gfx_yard as gy
 from gfx_station import arch, copy
@@ -1054,6 +1054,7 @@ def make(out, rd):
             shed.rect(x + dx, 70, x + dx + 1, 82, iron)
         shed.rect(x + 9, 70, x + 14, 71, iron)
     same["XS"] = shed
+    out["textures/AJTARG6.png"] = bell(shed, 24, 54).png()                # the shed's bell (and MAP07's)
     stock = Img(64, 128, (60, 52, 44))                               # the stockroom: shelves of boxes
     r = random.Random(948)
     for y in range(0, 128, 28):
