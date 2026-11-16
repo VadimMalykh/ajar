@@ -1847,3 +1847,152 @@ In the tools:
 Run: the tour (77 views, monsters off, no engine warnings); `MAP=MAP07
 MODE=1`, 38 checks to the exit; `mapcheck`; the full build with the solver.
 Looks 0 to 2 and `AJAR_DIM=0` were built and loaded, not toured.
+
+## Ideas for the next levels (2026-11-16, to discuss)
+
+Vadim's three ideas, with Claude's notes. Nothing here is built, and nothing
+marked "to test" has been tried in the engine.
+
+### 1. The bus stop
+
+Vadim: the teleporter bus of "Гостья из будущего" (1984). In the film it is
+the flat red outline of a bus standing at a stop, with six numbered doors;
+each door opens onto another part of Moscow, and which doors you get depends
+on which side you come at it from. Ours has empty frames and far sides of
+coloured doors mixed along it.
+
+Notes:
+- **No new rule.** It is a slab with recesses in it: far sides, frames, and
+  perhaps fixed doorways (`ajarmap.doorway`) as lines that always run. A
+  helper `ajarmap.bus()` and a look (red outline, a number over each door, a
+  destination board in the door's colour) is all it needs.
+- **It turns the levels inside out.** Until now doors lie near the middle and
+  their far sides are far away. With the far sides on the bus, every coloured
+  door is a ticket back to the stop, and it is found out in a district. Hang
+  it there and that district has a line; the player builds the network.
+  With frames on the bus too, a door whose far side is in a district makes an
+  outbound line. Fewer bus frames than doors that want one is the puzzle:
+  which lines run at the same time.
+- **Two faces.** The slab can stand in a wall between two places that do not
+  otherwise meet (the square and a fenced depot): the same bus, other doors,
+  as in the film.
+- **Company fits.** A thief whose zone is the stop is a dispatcher changing
+  the routes (the solver has this already). Lodgers live in the bus's empty
+  frames. A Stray door in a bus frame is the bus with no number on it.
+- **How flat.** A portal line needs its 48 stub behind it, so the slab is
+  about 64 thick with the recesses flush in its face, and doors of the two
+  faces have to alternate along it instead of standing back to back. On a
+  slab 500 long that should still read as flat. To test.
+- **To test:** six openings in view at once, each drawing another place
+  (MAP04's yard shows three). Doors in one flat wall never face each other,
+  so there is no hall-of-mirrors depth to pay for.
+- Several buses, one per district, would be the film's network, but the far
+  sides can only be in one place: the other stops would be frames and fixed
+  doorways only.
+
+### 2. The way out as a chain
+
+Vadim: the exit room has the far sides of two doors of different colours.
+Another room has two frames on opposite walls. Hang the two doors there and
+the chain closes: the endless way.
+
+Notes:
+- **It works, and both ways round.** Say BLUE's far side is in the exit
+  room's east wall and VIOLET's in its west wall, and the other room has a
+  west and an east frame. BLUE west and VIOLET east gives a straight endless
+  corridor in which the two rooms alternate. The other way round, each door
+  turns you about (as MAP07's does) and the loop still closes. So there is no
+  wrong way to hang them, only two different sights.
+- **The exit room needs no other entrance** and no bolted door: it is reached
+  through BLUE or VIOLET only, from wherever they hang. Seen early it is a
+  room with two door backs in it and nothing else, which is the hint.
+- **Where the puzzle is.** Two doors have to end up in one room, each carried
+  there with the other one's errands already done, and both are then spent.
+  The frame room is where a door is hard to bring (MAP05's turnstile, MAP06's
+  strongroom, MAP08's shutter all carry over).
+- **It grows.** A loop of n rooms needs n doors: each room has a way in and a
+  way on, each a frame or a far side. Three rooms and three colours is the
+  secret exit, below.
+- Engine: `ComeHome` checks one frame for one door; it would check that a
+  loop of hung doors runs through the exit room. Solver: `home_frame` becomes
+  a set of (frame, door) choices. Both small. The view is the one
+  `way_out()` already draws.
+- Open, as since MAP07: when the chain closes, does every mouth end the
+  level, or may the player walk the loop first?
+
+### 3. More colours, other shapes
+
+**Secret exit by the longer loop (three colours; Claude's suggestion for
+PINK).** The exit room has BLUE's and VIOLET's far sides; the brass room has
+two frames; PINK's far side is in a third room that has one frame. The plain
+way out is the loop of two: BLUE and VIOLET in the brass room. The secret one
+is the loop of three: BLUE in the brass room, PINK in its other frame, VIOLET
+in the pink room's frame. Which loop was closed decides the exit. Nothing new
+to learn: a player who understood the chain can find it, and sees a pink room
+in the corridor where no pink room was.
+
+**Rooms that are not square.**
+- A door joining two walls that are not opposite turns you. In a six-sided
+  room with three far sides and three frames, all walls open, the room
+  repeats in every direction like a honeycomb; in a three-sided one, three
+  colours tile the floor with triangles. Which door hangs in which frame
+  changes the pattern, so one arrangement can be the secret. To test:
+  recesses on slanted walls (every opening must stay 64 wide, so the corners
+  fall off the grid; `recess()` is written for straight walls only), and how
+  deep the engine draws when every wall is a door.
+- A round room (a dome) with frames all round its wall and a thing in the
+  middle to fight round: which far side is behind you matters.
+
+**Mirrors.** GZDoom has real wall mirrors (`Line_Mirror`). To test: with
+these portals in view, and in the GLES backend.
+- For reading a room: a mirror at a corner shows a frame, a far side or a
+  monster before you are in front of it.
+- Things only a mirror shows (the engine has a flag for it, to test in
+  4.12): the lodger's eyes in the frame it is waiting in. A mirror then tells
+  you which frame to plug.
+- A door hung beside its own far side is already a kind of mirror that shows
+  your back (MAP07). A hall with one of each makes the difference a joke.
+- Not proposed: a mirror door with a rule of its own. The plan's rule is new
+  situations, not new rules.
+
+**The arrangement is the map (three or more colours, no new rule).** Three
+frames in three places that can only be reached through the doors hanging in
+them, and a lock that wants a certain door in a certain frame (the frame's
+surround in the door's colour says which). With one hand, moving a door
+changes what you can reach next. The solver can search for arrangements that
+take many moves; the limit on colours is still the player's memory (six or
+seven a level).
+
+### Decided
+
+**MAP09's way out is the chain** (Vadim, 2026-11-16). The rest of the level's
+brief is open: see "Questions for Vadim", 3 and 4, and the place.
+
+What the chain needs before the level (checked in the code, not built):
+- `AjarHandler.Hang` calls `ComeHome` when one frame gets its one door
+  (`f.args[1] == d.args[0]`). The chain calls it when the loop through the
+  exit room is closed, from whichever of the two doors is hung last, and
+  fixes both doors. Taking either down before that must stay possible.
+- `tools/solve.py`: `_won` and the "it stays" test know one `home_frame`.
+  They become a set of frames, each with the doors that count there.
+- `ajarmap`: a helper for the two rooms (far sides at the ends of one,
+  brass frames at the ends of the other), and a `MAP=TEST` mode for it.
+- `src/mapinfo.txt`: MAP08's `next` is still MAP08.
+
+### Claude's view
+
+- The chain (2) is the smallest step and the surest: build it next, with the
+  loop of three as the secret exit of the same level.
+- The bus (1) deserves a level of its own, a town square with districts; it
+  changes how a level is laid out more than it changes any rule.
+- Mirrors and slanted rooms need an engine test in the test box before any
+  level counts on them.
+
+### Questions for Vadim
+
+1. Bus: are its fixed lines two-way doorways, or one-way (you step out at a
+   stop and need the district's door to come back)?
+2. Bus: one face or two?
+3. Chain: walk the loop, or leave at once?
+4. Secret exit: where does it lead? There are no secret levels yet.
+5. Same level for the chain and the bus, or one each?
