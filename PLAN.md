@@ -2168,3 +2168,12 @@ of two, one cacodemon in it, one knight in the night room. MAP07 155 monsters
 (170), MAP08 164 (184), MAP09 152 (166): eight or nine hell knights each
 instead of fifteen, and about a quarter fewer in MAP08's atrium and MAP09's
 switchroom, with one chaingunner on the gallery over each.
+
+## Doors drawn as two left halves (2026-11-16)
+
+Seen by Vadim in MAP06 (the boiler room's door, the gift shop's). Where a
+room's floor pattern puts a vertex in the middle of a door's line, the line
+is built in pieces and each piece drew the door's face from its own left
+edge. 21 doors in MAP04 to MAP09 had it. `roomdoor()` and `bolted()` now mark
+their mouth lines `exact`, and `udmf.py` carries a cut line's offset to the
+wall over the opening as well as to its middle texture.
