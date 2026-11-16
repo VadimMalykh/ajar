@@ -2862,6 +2862,7 @@ class AjarExhibit : Actor
 	{
 		Radius 16;
 		Height 16;
+		YScale 0.8333;       // see TALL in gfx_things.py
 		+NOBLOCKMAP
 	}
 }
