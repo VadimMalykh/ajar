@@ -141,6 +141,40 @@ def way_home(m, x, y, colour):
         m.thing(x + cx, y + cy, 35)                               # candelabra
 
 
+def way_round(m, x, y, colour, *, frame=HOME, n=WAY_OUT, floor=0):
+    """A way out the player builds, the other way round (Vadim, 2026-11-16).
+    The night room again, 320 by 256 with its south-west corner at x, y, but
+    nothing in it faces anything. In its west wall two brass openings stand
+    side by side and are one fixed doorway (number n): walk into either and
+    you come out of the other, back into the room. In its east wall, the
+    same way, the far side of the door `colour` and beside it an empty brass
+    frame (line id `frame`). Hang that door in that frame and the east wall
+    turns you round as well: through any of the four openings the room now
+    repeats, and you stand in every second one, seen from behind. Then
+    walking into any of them ends the level.
+
+    Until then one turn alone never shows you yourself: the room seen
+    through an opening is the room turned half round about the pier between
+    the two, and the pier hides the spot where you would be.
+
+    Everything else as way_home(): the door needs another way in (the north
+    and south walls are free), and in a PUZZLE graph `home_frame=frame` is
+    the goal."""
+    lo, hi = (y + 32, y + 96), (y + 160, y + 224)
+    room(m, [x, x + 320], [y, lo[0], lo[1], hi[0], hi[1], y + 256], lambda i, j: j in (1, 3),
+         floor=floor, ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+    brass = ("AJXA", "AJXAF")
+    doorway(m, n, (x, lo[0]), (x, lo[1]), (-1, 0), floor, (x, hi[0]), (x, hi[1]), (-1, 0), floor, trim=brass)
+    recess(m, (x + 320, lo[0]), (x + 320, lo[1]), (1, 0), floor, far_id(colour), frame, far_colour=colour)
+    recess(m, (x + 320, hi[0]), (x + 320, hi[1]), (1, 0), floor, frame, far_id(colour), trim=brass,
+           home=far_id(colour))
+    for xx in (x, x + 320):
+        for a, b in (lo, hi):
+            m.line((xx, a), (xx, b), id=HOME_MOUTH)
+    for cx in (32, 288):
+        m.thing(x + cx, y + 128, 35)                              # candelabra, on the piers
+
+
 STRAY_ID = 270      # line ids 270..289: the places Stray doors may open onto
 
 

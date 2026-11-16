@@ -1,6 +1,6 @@
 """The Ajar test level (map TEST): every mechanic in one box."""
 import ajarmap
-from ajarmap import RED, BLUE, GREEN, YELLOW, DOOR_T
+from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, DOOR_T
 from udmf import Map, rect
 
 m = Map()
@@ -47,6 +47,10 @@ ajarmap.stray_place(m, 0, (2128, 2256), (2192, 2256), (0, 1), 0, color=GRNC)
 ajarmap.stray_place(m, 1, (3128, 2000), (3192, 2000), (0, -1), 0)
 ajarmap.door(m, YELLOW, 2300, 2030, angle=180)
 ajarmap.stray(m, 200, 2370, angle=270)
+
+# --- the same, the other way round (ajarmap.way_round): VIOLET leans in it ---
+ajarmap.way_round(m, 4000, 2000, VIOLET, frame=191, n=8)
+ajarmap.door(m, VIOLET, 4160, 2240, angle=270)
 
 # --- things ----------------------------------------------------------------
 m.thing(96, 256, 1, angle=0)                                              # player start
