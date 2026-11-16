@@ -11,6 +11,7 @@ DoomEdNums
 	20003 = AjarThief
 	20004 = AjarNailer
 	20005 = AjarLodger
+	20006 = AjarLine
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
@@ -140,7 +141,18 @@ map MAP07 "Small Hours"
 // Act 1, level 8 (tools/map_hinges8.py)
 map MAP08 "Closing Time"
 {
-	next = "MAP08"
+	next = "MAP09"
+	sky1 = "SKY1", 0
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 1, level 9 (tools/map_hinges9.py)
+map MAP09 "Putting You Through"
+{
+	next = "MAP09"
 	sky1 = "SKY1", 0
 	nointermission
 	nojump

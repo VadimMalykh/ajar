@@ -24,6 +24,9 @@ A puzzle is a dict:
                 hanging in it the door whose home is that frame's region
                 (or the door `home_door`, where a grille parts the two;
                 the search then goes on past that, with the door fixed)
+  home_chain    optional dict(frames=[two frame ids], doors=[two colours])
+                (ajarmap.way_through): the level is won when those two doors
+                hang in those two frames, either way round
   pool          optional [regions] of the level's stray places, which only a
                 Stray door opens onto (it may also open onto the far side
                 of a coloured door). The Stray doors themselves are not
@@ -160,6 +163,10 @@ def _zone(who, keys):
 def _won(p, s):
     if s[0] == p["goal"]:
         return True
+    chain = p.get("home_chain")
+    if chain:
+        where = dict(zip(sorted(p["doors"]), s[2]))
+        return {where[c] for c in chain["doors"]} == {("frame", f) for f in chain["frames"]}
     f = p.get("home_frame")
     if f is None:
         return False

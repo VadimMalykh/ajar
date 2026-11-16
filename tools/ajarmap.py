@@ -26,7 +26,7 @@ def far_id(colour):
 
 
 def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None, trim=None,
-           home=0):
+           home=0, chain=None):
     """A 64-wide door recess whose mouth is m1-m2 and which goes `out` of the room.
 
     Frames (far_colour None) get an AjarFrame thing and a usable mouth line.
@@ -35,7 +35,9 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     `arch` ("frame" or "far") makes it one end of a fixed doorway instead: see doorway().
     `trim` is (texture, flat) for the surround instead of the usual one.
     `home` (frames only) is the far-side line id of the door that makes this
-    frame a way out: see way_home().
+    frame a way out: see way_home(). `chain` (frames only) is (the far-side
+    line id of the pair's other door, the line id of the other brass frame):
+    see brass_pair().
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
     b2 = (m2[0] + out[0] * DEPTH, m2[1] + out[1] * DEPTH)
@@ -59,7 +61,7 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     if arch == "frame" or not (arch or far_colour):
         m.line(m1, m2, special=130, args=(line_id,), playeruse=True, repeatspecial=True)
         m.thing((b1[0] + b2[0]) / 2 - out[0] * 8, (b1[1] + b2[1]) / 2 - out[1] * 8,
-                FRAME_T, id=line_id, height=0, args=(line_id, home))
+                FRAME_T, id=line_id, height=0, args=(line_id, home) + tuple(chain or ()))
 
 
 def door(m, colour, x, y, *, angle=0, frame=0):
@@ -186,6 +188,46 @@ def way_round(m, x, y, colour, *, frame=HOME, n=WAY_OUT, floor=0):
             m.line((xx, a), (xx, b), id=HOME_MOUTH)
     for cx in (32, 288):
         m.thing(x + cx, y + 128, 35)                              # candelabra, on the piers
+
+
+LINE_T = 20006      # AjarLine: the middle of the room a chain runs through
+HOME2 = 191         # the second brass frame of a chain
+
+
+def way_through(m, x, y, a, b, *, floor=0):
+    """The way out as a chain (Vadim, 2026-11-16; MAP09 on): this is the room
+    at its far end. The night room, 320 by 256 with its south-west corner at
+    x, y, and nothing in it but the far sides of two doors: `a` in its west
+    end, `b` in its east end, each in its own colour's surround, facing each
+    other down the room. Somewhere else brass_pair() puts two brass frames.
+    With both doors hung in those, either way round, the two rooms open onto
+    each other without end; the player walks through into this one, and
+    leaving it again, by either door, ends the level (AjarHandler.ChainTick).
+
+    Nothing else leads here, so until then it is a dead end with two door
+    backs in it; and with the two doors hung in any two frames it is a way
+    between them, for whatever is carried. A Stray door may open onto either
+    far side, so the room needs a way out on foot: the caller's job (its
+    north and south walls are free; a drop, so that it stays a way out only).
+    In a PUZZLE graph: both doors' home, and `home_chain`."""
+    room(m, [x, x + 320], [y, y + 96, y + 160, y + 256], lambda i, j: j == 1, floor=floor,
+         ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+    recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far_id(a), HOME, far_colour=a)
+    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, far_id(b), HOME, far_colour=b)
+    m.thing(x + 160, y + 128, LINE_T, args=(160, 128))
+    for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
+        m.thing(x + cx, y + cy, 35)                               # candelabra
+
+
+def brass_pair(m, w1, w2, e1, e2, floor, a, b):
+    """The two brass frames of a chain (see way_through), line ids HOME and
+    HOME2: w1-w2 is the mouth of the one in a west wall, e1-e2 of the one in
+    an east wall, facing each other across the caller's room. The doors `a`
+    and `b` belong in them, either way round. Until both hang there each can
+    be taken down again like any door."""
+    brass = ("AJXA", "AJXAF")
+    recess(m, w1, w2, (-1, 0), floor, HOME, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME2))
+    recess(m, e1, e2, (1, 0), floor, HOME2, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME))
 
 
 STRAY_ID = 270      # line ids 270..289: the places Stray doors may open onto
