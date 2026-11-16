@@ -1792,6 +1792,50 @@ wood, the planetarium's own look, an orrery and a globe. The user said yes to
 all six (2026-11-16, "let's try" for the dome and the dim rooms): see the
 next section.
 
+## Look: MAP08 (started 2026-11-16)
+
+Board: https://claude.ai/artifact/WMj8oWyQRb9cwQpwjaPf3N (source
+`design/map08-board.html`, images in `build/board8/`: `<look>/view_NN.jpg`
+cut from the tour shots, `tex/` swatches). **Nothing is chosen yet**: without
+`AJAR_STORE` the level is built as before (its map is byte for byte the one
+before this work), and that is the default.
+
+`AJAR_STORE=1..3` dresses the whole store in one candidate look
+(`tools/gfx_store.py`): 1 Emporium (1880s: red brick over green cast iron, oak
+panelling, encaustic tile, pressed tin, a deep paper to each department),
+2 Grand Magasin (1900s: cream stone, sea-green iron and gilt, ivory panels over
+marble, mahogany, coloured glass round the atrium), 3 Festival (1950s: buff
+brick, plate glass over turquoise mosaic, teak, lino, one flat colour to a
+department). The same in all three: the houses round the arcade (`AJ8XS`), the
+goods passage (`XP`), the kiosk (`XN`), the shop window from inside (`XW`), the
+lamp store (`XL`), the doors on show (`XD`); the stockroom and the boiler room
+wear MAP06's (`AJ6XK`, `XB`). The strongroom keeps its safes; the night room
+is not touched.
+
+How the store is built in a look (`map_hinges8.py`, as MAP07's):
+- The arcade's wall is the houses; the pieces that are the store are named
+  with `front()`, its windows with `pieces()` before it. The dock and the
+  roof have the store's back (`K`). Outdoor porches take the foot of the wall
+  they stand in (`low(wall=)`: `YP`, `KA`, `AJ8XT`).
+- The atrium's wall is one texture 448 high: a clerestory, the gallery's
+  wall, the ground floor's. The showroom's is two storeys of 160.
+- `shelves(tag, ...)`: 64-long pieces of a department's wall with fitted
+  shelves of what it sells, two kinds by turns.
+- `over()` carries a wall on above and below an opening, so holes above the
+  floor (from the gallery, from the roof, the chute) need nothing else.
+- Door faces as in MAP07 (`FACES`; "D" room doors, "Z" bolted, "S" the
+  shutter). Both levers stand on the look's own wall (`LV`, `LC`).
+
+Run: the tour in 0 to 3 (66 views, monsters off, no engine warnings).
+To shoot again: build with `AJAR_QUICK=1 AJAR_STORE=n`, then `MAP=MAP08 MODE=2
+TIMEOUT=400 EXTRA=-nomonsters tools/smoke.sh <dir>`; the board's pictures were
+cut to 819 by 512 with the `dpokidov/imagemagick` image.
+
+Options that change shape, light or play are at the foot of the board, none
+built: a dim store with pools of light, a glazed lantern, signs over the
+departments, things on the floor (mannequins, a till), a parapet and sky at
+the roof's edge, the arcade as a real arcade or a street.
+
 ## MAP07: the dome, the dark, the hill (2026-11-16)
 
 Built on top of the Star Palace look; all of it is there in looks 0 to 2 as

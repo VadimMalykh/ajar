@@ -304,7 +304,7 @@ fit((-592, -432, -272, -112), [
 ], floor=0, ceil=128, light=170, color=PLUM, **CASH)
 door((-256, -304), (-256, -240), (-1, 0), 0, "L", "CO", keys="34", line_id=303)
 m.cut((-592, -304), (-592, -240))
-m.line((-592, -304), (-592, -240), special=11, args=(WINDOW, 32), playeruse=True, mid="AJLEVR", exact=True,
+m.line((-592, -304), (-592, -240), special=11, args=(WINDOW, 32), playeruse=True, mid=T("LC") if LOOK else "AJLEVR", exact=True,
        id=308)
 
 # === the atrium, under its gallery ===============================================
@@ -340,7 +340,7 @@ rail(((128, 1120), (128, 1280)), ((128, 1344), (128, 1440)))                 # a
 recess((-64, 1440), (0, 1440), (0, 1), 0, 106, 201, color=WARM)              # the showroom's two frames
 recess((-192, 1440), (-128, 1440), (0, 1), 0, 107, 201, color=WARM)
 recess((224, 1440), (288, 1440), (0, 1), UP, far_id(YELLOW), 101, far_colour=YELLOW, color=WARM)
-ajarmap.lever(m, (384, 1248), (384, 1312), SECONDS, line_id=309, tex="AJLEVB")
+ajarmap.lever(m, (384, 1248), (384, 1312), SECONDS, line_id=309, tex=T("LV") if LOOK else "AJLEVB")
 squeeze((-312, 1040), (-264, 1040), (0, 1), 0, "H", "SH")                    # the turnstile, from the atrium
 opening((-480, 1040), (-416, 1040), (0, 1), UP, "H", "SH")                   # the hole from the gallery
 

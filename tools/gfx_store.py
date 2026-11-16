@@ -14,6 +14,8 @@ Three looks for the whole store, numbered 1 to 3. For look n (name = AJ8 + tag +
   CO   cash office, 128
   TY toys, HB haberdashery, FU furniture, CH china, LN linen, CP carpets (all
      160; each with <n>1, <n>2: fitted shelves of what the department sells)
+  LV the shutter's lever on the office wall, LC the shop window's in the cash
+     office (each with its pulled state, <name>N)
   RL railing   V the side of a glass counter, VT its top
   WD tables (wall and flat), BN seats (wall and flat), PL stone: steps, the
      fountain's rim (wall and flat)
@@ -37,7 +39,7 @@ position (Map.align). What stands free in a room repeats every 16.
 """
 import random
 
-from gfx import Img, shade, BRASS, bell
+from gfx import Img, shade, BRASS, bell, levers
 import gfx_theatre as th
 import gfx_yard as gy
 import gfx_museum as mu
@@ -280,7 +282,7 @@ def display(im, n, lit):
             f = (y - y0) / (y1 - y0)
             im.rect(x0 + 2, y, 62 - x0, y + 1, mix((250, 226, 160), (180, 140, 90), f))
         im.rect(x0 + 2, y1 - 12, 62 - x0, y1 - 2, {"1": (110, 40, 44), "2": (60, 110, 100), "3": (236, 234, 226)}[n])
-        mannequin(im, 32, y1 - 12, {"1": (60, 50, 90), "2": (190, 60, 80), "3": MUST})
+        mannequin(im, 32, y1 - 12, {"1": (60, 50, 90), "2": (190, 60, 80), "3": MUST}[n])
         for cx, c in ((17, (90, 60, 40)), (47, (90, 60, 40))):       # a hat on a stand each side
             im.rect(cx, y1 - 34, cx + 1, y1 - 12, (60, 50, 40))
             im.rect(cx - 5, y1 - 37, cx + 6, y1 - 34, c)
@@ -983,6 +985,8 @@ def make(out, rd, faces={}):
         walls["SH"] = tex(name("SH"), showroom(n))
         walls["CO"] = tex(name("CO"), mu.wall(c["cash"], 128, seed=k + 3))
         tex(name("GV"), gallery_front(n))
+        levers(out, name("LV"), shifted(gy.crop(walls["SH"], 0, 160), 32))    # the shutter's lever, in the office
+        levers(out, name("LC"), shifted(walls["CO"], 16))                     # the shop window's, in the cash office
         for tag, part in ROOMS.items():
             walls[tag] = tex(name(tag), mu.wall(c[part], 160, seed=k + sum(map(ord, tag))))
             for i in (1, 2):
@@ -1027,6 +1031,13 @@ def make(out, rd, faces={}):
         out[f"textures/{name('FL')}.png"] = out[f"flats/{name('FL')}.png"]       # a skylight's sides are glass too
         for i, tag in enumerate(("CL", "CA", "CD", "CS", "CP")):
             out[f"flats/{name(tag)}.png"] = ceiling(n, tag, 1460 + 10 * k + i).png()
+
+
+def shifted(im, s):
+    """The wall `im` as it runs past a piece that starts `s` along its 64."""
+    out = Img(im.w, im.h)
+    out.px = [list(im.px[y * im.w + (x + s) % im.w]) for y in range(im.h) for x in range(im.w)]
+    return out
 
 
 def copy_field(im):
