@@ -5,13 +5,17 @@ globe (AJGB), eight sides each.
 Each is a model of a few solids (tubes, balls, rings), drawn once from every
 side: its surfaces are scattered with points, and each point is shaded and
 put on the picture if nothing nearer is there already. A model faces +x; one
-unit is one pixel and one map unit. Its origin is where it stands.
+unit is one map unit. Its origin is where it stands. The engine draws
+everything a fifth taller than it is wide (Doom's pixels), so a picture is
+drawn a fifth taller than the model and the actor squeezes it back (TALL;
+YScale in AjarExhibit): a ball then stays round on the screen.
 """
 import math
 import random
 
 from gfx import Img, shade
 
+TALL = 1.2
 BRONZE, GILT, CREAM, IRON, WALNUT = (156, 112, 60), (224, 184, 90), (226, 214, 184), (52, 54, 62), (84, 54, 38)
 
 
@@ -94,8 +98,8 @@ class Model:
     def sprites(self, out, name, sides):
         """Writes sprites/<name>A<side>.png for `sides` (8 or 16) sides."""
         half = int(max(math.hypot(p[0], p[1]) for p in self.pts)) + 2
-        top = int(max(p[2] for p in self.pts)) + 2
-        low = int(min(p[2] for p in self.pts))
+        top = int(max(p[2] for p in self.pts) * TALL) + 2
+        low = int(min(p[2] for p in self.pts) * TALL)
         w, h = 2 * half, top - low
         codes = "12345678" if sides == 8 else "192A3B4C5D6E7F8G"
         for s in range(sides):
@@ -107,7 +111,7 @@ class Model:
                 toward = nx * ca + ny * sa
                 if toward < -0.05:
                     continue
-                key = (int(half - x * sa + y * ca), int(top - z))
+                key = (int(half - x * sa + y * ca), int(top - z * TALL))
                 d = x * ca + y * sa
                 if depth.get(key, -1e9) >= d:
                     continue
