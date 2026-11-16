@@ -6,6 +6,11 @@ another sector's vertex lies on them, so rooms only need to touch.
 """
 import struct
 
+# Doom's monsters by editor number: zombie, sergeant, imp, demon, spectre,
+# chaingunner, knight, baron, revenant, lost soul, cacodemon, mancubus,
+# arachnotron, pain elemental, arch-vile, cyberdemon, spider mastermind
+MONSTERS = {3004, 9, 3001, 3002, 58, 65, 69, 3003, 66, 3006, 3005, 67, 68, 71, 64, 16, 7}
+
 
 def rect(x1, y1, x2, y2):
     return [(x1, y1), (x1, y2), (x2, y2), (x2, y1)]
@@ -49,7 +54,28 @@ class Map:
         self.cuts.update(tuple(p) for p in points)
 
     def thing(self, x, y, type, angle=0, **props):
+        """`skill=N` (1 to 4): the thing is only there from that difficulty up.
+        Without it, Doom's monsters are thinned on the two easier ones (see
+        _skills); everything else is there on all of them."""
         self.things.append(dict(x=x, y=y, type=type, angle=angle, **props))
+
+    def _skills(self):
+        """The lowest difficulty each thing is there on (mapinfo.txt: 1 "Just
+        visiting", 2 "Short stay", 3 "Resident", the level as designed, 4
+        "Night shift"). Of each kind of Doom monster, in the order they were
+        placed, 1 keeps every second one and 2 three in four; the first of a
+        kind is always kept. Ajar's own monsters are part of the puzzle and
+        are never thinned."""
+        seen, out = {}, []
+        for t in self.things:
+            if "skill" in t:
+                out.append(t["skill"])
+            elif t["type"] in MONSTERS:
+                i = seen[t["type"]] = seen.get(t["type"], -1) + 1
+                out.append(1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
+            else:
+                out.append(1)
+        return out
 
     # ------------------------------------------------------------------
     def _split(self):
@@ -212,14 +238,17 @@ class Map:
                     d["color_" + part] = s["color"]
             d.update(s["raw"])
             out.append(block("sector", d))
-        for t in self.things:
+        for t, least in zip(self.things, self._skills()):
             d = dict(t)
+            d.pop("skill", None)
             d["x"], d["y"] = float(d["x"]), float(d["y"])
             args = d.pop("args", ())
             for i, v in enumerate(args):
                 if v:
                     d[f"arg{i}"] = v
-            for f in ("skill1", "skill2", "skill3", "skill4", "skill5", "single", "coop", "dm"):
+            for n in range(least, 6):
+                d[f"skill{n}"] = True
+            for f in ("single", "coop", "dm"):
                 d[f] = True
             out.append(block("thing", d))
         return "".join(out)

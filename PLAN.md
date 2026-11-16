@@ -1719,3 +1719,27 @@ Open, the user's call:
 5. Tidying when wanted: the losing looks (`AJAR_HOTEL` 0, 2, 3;
    `AJAR_THEATRE` 0, 2, 3; `gfx_lodger.py`), and the three boards could be
    marked decided.
+
+## Difficulty (2026-11-16)
+
+Asked for after MAP05 by hand: too hard for the user, who does not want the
+level itself made easier. Four levels, `src/mapinfo.txt`:
+
+| `SKILL` | name | Doom's monsters | damage taken | ammo |
+|---|---|---|---|---|
+| 1 | Just visiting | about half | x0.5 | x1.5 |
+| 2 | Short stay | about three in four | x0.75 | x1.25 |
+| 3 | Resident | all (the levels as designed) | x1 | x1 |
+| 4 | Night shift | all, and quicker to attack | x1.5 | x1 |
+
+- "Resident" is the default in the menu and what `+map` starts, so the smoke
+  tests play it as before.
+- The thinning is automatic (`Map._skills` in `tools/udmf.py`): of each kind
+  of monster, in the order placed, every second one stays on 1 and three in
+  four on 2; the first of a kind always stays. `m.thing(..., skill=N)` pins
+  one thing to "from N up" by hand. Nothing is pinned yet.
+- Doors, keys, pickups, the thief, the nailer and the lodger are the same on
+  all four: the puzzle and the solver do not know about difficulty.
+- To try one: `SKILL=1 MAP=MAP05 ./run.sh`. A new game from the menu asks.
+- Not known: whether the numbers are right. None of the four has been played
+  by hand.

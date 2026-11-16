@@ -21,7 +21,40 @@ clearepisodes
 episode MAP01
 {
 	name = "Ajar"
-	noskillmenu
+}
+
+// Difficulty. "Resident" is the game as designed, and the third in the list
+// so that it is also what "+map" starts when nothing is said (GZDoom's skill
+// cvar is 2 by default). The two easier ones also thin out Doom's monsters:
+// tools/udmf.py, Map._skills. The doors, keys and Ajar's own monsters are the
+// same on all four. To try one: SKILL=1 MAP=MAP05 ./run.sh
+clearskills
+skill visitor
+{
+	Name = "Just visiting"
+	SpawnFilter = Baby
+	DamageFactor = 0.5
+	AmmoFactor = 1.5
+}
+skill guest
+{
+	Name = "Short stay"
+	SpawnFilter = Easy
+	DamageFactor = 0.75
+	AmmoFactor = 1.25
+}
+skill resident
+{
+	Name = "Resident"
+	SpawnFilter = Normal
+	DefaultSkill
+}
+skill nightshift
+{
+	Name = "Night shift"
+	SpawnFilter = Hard
+	DamageFactor = 1.5
+	Aggressiveness = 0.5
 }
 
 // Act 1, level 1 (tools/map_hinges1.py)

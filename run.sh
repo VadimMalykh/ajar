@@ -7,6 +7,8 @@
 # its own config, ajar.ini: a copy of your GZDoom config (keys, mouse, IWAD
 # paths) with the settings below left out, which puts them at GZDoom's
 # defaults. Your own config is never written. Delete ajar.ini to make it again.
+# SKILL=1..4 picks the difficulty (1 "Just visiting", 2 "Short stay",
+# 3 "Resident": the game as designed and the default, 4 "Night shift").
 # The game's output is kept in build/run.log.
 cd "$(dirname "$0")"
 [ -f build/ajar.pk3 ] || ./build.sh
@@ -19,4 +21,4 @@ fi
 # Vulkan (1) will not start. The GLES backend (2) works, so it is set again
 # before every start.
 [ -f ajar.ini ] && sed -i -e 's/^vid_preferbackend=.*/vid_preferbackend=2/' -e 's/^vid_rendermode=.*/vid_rendermode=4/' ajar.ini
-gzdoom -config "$PWD/ajar.ini" -iwad doom2.wad -file build/ajar.pk3 +map "${MAP:-MAP01}" "$@" 2>&1 | tee build/run.log
+gzdoom -config "$PWD/ajar.ini" -iwad doom2.wad -file build/ajar.pk3 +skill "$((${SKILL:-3} - 1))" +map "${MAP:-MAP01}" "$@" 2>&1 | tee build/run.log
