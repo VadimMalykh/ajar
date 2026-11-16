@@ -348,6 +348,7 @@ STIM, MEDIKIT, BONUS, HELMET, ARMOR, MEGA, SPHERE, BERSERK = 2011, 2012, 2014, 2
 CANDLE, CANDELABRA, LAMP, TECHLAMP = 34, 35, 2028, 86
 TORCH_R, TORCH_G, TORCH_B = 46, 45, 55
 POOL, BARREL = 24, 2035
+BACKPACK = 8
 
 
 def things(kind, *spots, angle=0, **k):
@@ -360,17 +361,20 @@ things(SHOTGUN, (420, 100))
 things(SHELLS, (460, 100), (460, 60))
 things(STIM, (60, 110))
 # the concourse: travellers. The lodger wakes when you are well into it
-things(ZOMBIE, (120, 420), (400, 480), (256, 700), (120, 1100), (400, 1150), angle=270)
-things(IMP, (60, 300), (460, 320), (60, 1450), (256, 1300), (128, 768), (384, 768), angle=270)
-things(SERGEANT, (256, 520), (180, 980), (330, 980), angle=270)
-things(DEMON, (256, 1150), (120, 1300), angle=270)
+# Fireballs and teeth at the front, guns at the back: from the vestibule the
+# men at the far end shoot through everything that is coming for you
+things(ZOMBIE, (256, 460), (120, 1100), (400, 1100), (120, 1450), (400, 1240), angle=270)
+things(IMP, (60, 300), (460, 320), (180, 560), (330, 560), (128, 768), (384, 768), angle=270)
+things(SERGEANT, (180, 1200), (330, 1200), (256, 1420), angle=270)
+things(DEMON, (256, 700), (256, 1060), angle=270)
 things(CACO, (256, 900), angle=270, ambush=True)
-things(LODGER, (300, 1000), args=(300,))
+things(LODGER, (320, 960), args=(300,))
 things(LAMP, (24, 152), (488, 152), (24, 1576), (424, 1576))
 things(MEDIKIT, (40, 1560))
 things(SHELLS, (128, 620), (384, 620), (480, 1240))
 things(CLIP, (256, 300), (256, 380))
 things(STIM, (480, 560), (40, 900))
+things(MEDIKIT, (480, 1000))
 # the gallery: watching the concourse
 things(CHAINGUNNER, (-60, 800), angle=0)
 things(IMP, (-180, 500), (-180, 1100), (-60, 1200), angle=0)
@@ -379,11 +383,14 @@ things(TORCH_G, (-232, 936), (-232, 1048))
 things(STIM, (-40, 1250))
 things(ARMOR, (-128, 1340))                                                # in the nook
 # platform 1
-things(ZOMBIE, (700, 400), (1000, 440), (1500, 400), angle=180)
-things(IMP, (840, 360), (1400, 460), (1800, 360), (2000, 300), angle=180)
-things(SERGEANT, (1150, 420), (1700, 440), angle=180)
+# Porters round their barrels, and the imps beyond them down the platform. At
+# its head, before you look down at the tracks: something for your hands
+things(BERSERK, (600, 440))
+things(ZOMBIE, (930, 340), (1030, 340), (1510, 340), angle=180)
+things(IMP, (760, 380), (1400, 460), (1800, 360), (2000, 300), angle=180)
+things(SERGEANT, (1610, 340), (1150, 440), angle=180)
 things(DEMON, (1300, 440), angle=180)
-things(BARREL, (980, 290), (1560, 290))
+things(BARREL, (980, 300), (1560, 300))
 things(LAMP, (600, 290), (1900, 290))
 things(SHELLS, (1264, 420))
 things(STIM, (1750, 290))
@@ -392,13 +399,14 @@ things(DEMON, (700, 600), (1100, 700), (1500, 600), (1900, 700), angle=180)
 things(SPECTRE, (900, 640), (1300, 700), (1700, 640), (640, 900), (760, 960), angle=180)
 things(SOUL, (1000, 560), (1600, 760), angle=180)
 things(POOL, (1200, 620), (700, 800))
-things(MEDIKIT, (560, 990))
+things(MEDIKIT, (560, 990), (2020, 990))
 things(SHELLBOX, (2000, 560))
 # the waiting room: RED, and those still waiting
 things(ZOMBIE, (620, 100), (760, 100), angle=90)
 things(IMP, (690, 180), angle=90)
 things(TORCH_R, (600, 200), (780, 200))
 things(STIM, (590, 40))
+things(BACKPACK, (770, 60))                                                # left by the bench
 # the lost property office: the clerks
 things(CHAINGUNNER, (1100, 60), angle=90)
 things(SERGEANT, (1000, 80), (1340, 80), angle=90)
@@ -444,6 +452,8 @@ things(SERGEANT, (2400, 960), angle=180)
 things(ZOMBIE, (2440, 1080), (2330, 1100), angle=180)
 things(TECHLAMP, (2290, 920))
 things(STIM, (2290, 1120))
+things(LAUNCHER, (2380, 1030))                                             # the yard and the shed are still to come
+things(ROCKETBOX, (2340, 940))
 # platform 2
 things(ZOMBIE, (700, 1150), (1000, 1100), (1500, 1150), angle=180)
 things(IMP, (900, 1200), (1250, 1080), (1800, 1200), (1950, 1080), angle=180)
@@ -453,9 +463,10 @@ things(CACO, (1000, 1160), angle=180, ambush=True)
 things(LAMP, (560, 1250), (2016, 1250))
 things(SHELLS, (1664, 1240))
 things(STIM, (620, 1040), (1900, 1250))
+things(MEDIKIT, (1250, 1250))
 # the parcels office
 things(DEMON, (840, 1340), (980, 1340), angle=270)
-things(SERGEANT, (1000, 1520), angle=180)
+things(SERGEANT, (980, 1480), angle=180)
 things(TORCH_B, (1032, 1416), (1032, 1528))
 things(SHELLBOX, (780, 1340))
 things(MEDIKIT, (1020, 1320))
@@ -474,25 +485,27 @@ things(DEMON, (400, 1960), (900, 1850), angle=270)
 things(CACO, (512, 1936), angle=270, ambush=True)
 things(BARREL, (600, 1800), (840, 1960), (220, 1960))
 things(LAMP, (24, 1704), (24, 2168), (1000, 1704), (1000, 2168))
-things(MEDIKIT, (60, 1900))
+things(MEDIKIT, (60, 1900), (40, 2160))
 things(SHELLBOX, (980, 2160))
-things(BERSERK, (40, 2160))
 things(ROCKETS, (700, 2160), (740, 2160))
 # under the bridge
 things(SERGEANT, (1800, 1760), (1960, 2100), angle=180)
 things(IMP, (1900, 1800), (1800, 2040), angle=180)
 things(KNIGHT, (1900, 1940), angle=180)
 things(STIM, (2020, 1700))
+things(MEDIKIT, (2020, 2160))
 # the engine shed: the nailer and its mates
 things(NAILER, (1376, 2080), angle=270)
-things(SPECTRE, (1100, 1800), (1100, 2100), (1650, 1800), (1650, 2100), angle=180)
-things(DEMON, (1160, 1940), (1650, 1940), angle=180)
+# The mancubus has the far end of the lane north of the engine, and all the
+# teeth in the shed are between it and the yard
+things(SPECTRE, (1100, 1780), (1260, 1800), (1100, 2100), (1650, 2100), angle=180)
+things(DEMON, (1160, 1940), (1420, 1780), angle=180)
 things(IMP, (1376, 1936), (1300, 1936), (1450, 1936), angle=180)                  # on the engine
-things(SERGEANT, (1250, 2120), (1500, 2120), (1300, 1760), angle=180)
-things(MANCUBUS, (1560, 1780), angle=180)
+things(SERGEANT, (1250, 2120), (1500, 2120), (1660, 1960), angle=180)
+things(MANCUBUS, (1640, 1780), angle=180)
 things(CANDLE, (1048, 1704), (1704, 1704), (1048, 2168), (1704, 2168))
 things(AMMOBOX, (1680, 2160))
-things(MEDIKIT, (1060, 2150))
+things(MEDIKIT, (1060, 2150), (1700, 1870))
 # the loft
 things(CHAINGUNNER, (1900, 2260), angle=270)
 things(IMP, (1820, 2400), (2000, 2300), angle=270)

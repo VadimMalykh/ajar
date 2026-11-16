@@ -302,6 +302,7 @@ STIM, MEDIKIT, BONUS, HELMET, ARMOR, MEGA, SPHERE, BERSERK = 2011, 2012, 2014, 2
 CANDLE, CANDELABRA, LAMP, TECHLAMP = 34, 35, 2028, 86
 TORCH_R, TORCH_G, TORCH_B = 46, 45, 55
 POOL, BARREL = 24, 2035
+BACKPACK = 8
 
 
 def things(kind, *spots, angle=0, **k):
@@ -315,17 +316,20 @@ things(SHELLS, (856, -280), (856, -240))
 things(STIM, (680, -60))
 things(LAMP, (664, -24), (872, -24))
 # the yard: tenants. The lodger wakes when you are well into it
-things(ZOMBIE, (500, 200), (1050, 200), (300, 600), (1250, 620), (560, 980), (980, 1000), angle=270)
+# Either side of the path a knot of men round a barrel: the first shots from
+# the gate are worth taking. Everything with a fireball stands further back
+things(ZOMBIE, (480, 180), (560, 180), (1010, 180), (1090, 180), (560, 980), (980, 1000), angle=270)
 things(IMP, (150, 150), (1400, 150), (150, 1000), (1400, 1050), (640, 760), (900, 760), angle=270)
-things(SERGEANT, (420, 420), (1120, 420), (420, 900), (1120, 950), angle=270)
+things(SERGEANT, (520, 270), (1050, 270), (420, 900), (1120, 950), angle=270)
 things(DEMON, (200, 500), (1340, 700), (768, 900), angle=270)
 things(CACO, (400, 700), (1100, 600), angle=270, ambush=True)
 things(LODGER, (1300, 1000), args=(300,))
 things(IMP, (304, 304), (1232, 848), angle=270)                             # on the crates
-things(BARREL, (380, 300), (1160, 860), (1300, 300))
+things(BARREL, (520, 214), (1050, 214), (380, 300), (1160, 860))
 things(LAMP, (24, 24), (1512, 24), (24, 1128), (1512, 1128), (728, 664), (808, 664))
-things(MEDIKIT, (60, 60), (1480, 1100))
+things(MEDIKIT, (60, 60), (1480, 1100), (768, 1100))
 things(SHELLS, (300, 380), (1230, 920), (60, 1100))
+things(SHELLBOX, (40, 600))                                                  # under the balcony
 things(CLIP, (768, 100), (768, 180))
 things(STIM, (1480, 60), (768, 700))
 # the wash house: washing day
@@ -333,6 +337,7 @@ things(ZOMBIE, (-200, 60), (-300, 180), angle=0)
 things(SERGEANT, (-120, 180), angle=0)
 things(IMP, (-340, 40), angle=0)
 things(SHELLBOX, (-380, 30))
+things(BACKPACK, (-384, 68))                                               # the washing somebody left
 things(STIM, (-100, 30))
 # the pantry: something eating
 things(IMP, (-220, -80), (-220, -240), angle=90)
@@ -360,6 +365,7 @@ things(IMP, (-180, 480), (-180, 760), angle=0)
 things(SERGEANT, (-120, 840), angle=270)
 things(TORCH_B, (-232, 520), (-232, 632))
 things(SHELLS, (-230, 280))
+things(AMMOBOX, (-230, 420))
 things(STIM, (-40, 870))
 # the roof: snipers at the edge, souls round the chimneys, a guard on key 2
 things(CHAINGUNNER, (420, 1190), (1020, 1190), angle=270)
@@ -388,7 +394,8 @@ things(ZOMBIE, (1400, 1600), (1400, 1880), angle=180)
 things(SERGEANT, (1340, 1740), angle=180)
 things(CANDLE, (280, 1640), (1256, 1640), (280, 1912), (1320, 1912))
 things(SHELLBOX, (540, 1780))
-things(MEDIKIT, (1010, 1740))
+things(MEDIKIT, (1010, 1740), (290, 1770))
+things(STIM, (1320, 1560), (1500, 1900))
 # the kennel: the dogs, on key 3
 things(DEMON, (60, 1680), (100, 1880), angle=180)
 things(POOL, (0, 1800))
@@ -402,11 +409,13 @@ things(CHAINGUN, (1880, 760))
 things(AMMOBOX, (1880, 720))
 things(CANDELABRA, (1672, 1080), (1784, 1080))
 things(MEDIKIT, (1560, 580))
+things(SHELLBOX, (1890, 1060))
 # the suite: VIOLET, and whoever sleeps here
 things(CHAINGUNNER, (2100, 720), angle=180)
 things(IMP, (2000, 940), (2000, 720), angle=180)
 things(SERGEANT, (2100, 900), angle=180)
 things(SHELLBOX, (2230, 960))
+things(MEDIKIT, (1960, 960))
 things(LAMP, (1960, 696))
 # the way out
 things(REVENANT, (5264, 128), angle=180)
