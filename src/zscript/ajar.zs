@@ -313,6 +313,32 @@ class AjarHandler : EventHandler
 		d.Destroy();
 	}
 
+	// --- a shutter on a timer (ajarmap.shutter) -----------------------------
+	// A lever sends it up (Door_Raise on sector tag 600) and it comes down by
+	// itself. This only keeps the time for the HUD and says what happened.
+	const SHUTTER_TAG = 600;
+	int shutterLeft;       // tics until it starts down again; -1: it is shut
+	int shutterWait;       // how long the last pull (or push from inside) holds it up
+	override void WorldLineActivated(WorldEvent e)
+	{
+		Line l = e.ActivatedLine;
+		if (l && l.special == 12 && l.args[0] == SHUTTER_TAG) shutterWait = l.args[2];
+	}
+
+	void ShutterTick()
+	{
+		let it = level.CreateSectorTagIterator(SHUTTER_TAG);
+		int i = it.Next();
+		if (i < 0) { shutterLeft = -1; return; }
+		Sector s = level.sectors[i];
+		if (s.CenterCeiling() <= s.CenterFloor()) { shutterLeft = -1; return; }
+		if (shutterLeft >= 0) { if (shutterLeft > 0) shutterLeft--; return; }
+		if (!shutterWait) shutterWait = 280;
+		shutterLeft = shutterWait + 12;        // and the time it takes to go up
+		if (shutterWait > 70)
+			Say(String.Format("Across the loading dock a shutter goes up.\nIt comes down again in %d seconds.", shutterWait / 35));
+	}
+
 	// --- a way out the player builds ---------------------------------------
 	// The door whose far side is in the night room, hung in the frame that
 	// faces it: the room opens onto itself. The door stays there for good,
@@ -520,6 +546,7 @@ class AjarHandler : EventHandler
 	override void WorldLoaded(WorldEvent e)
 	{
 		if (e.IsSaveGame) return;
+		shutterLeft = -1;
 
 		// "+set ajar_only N" leaves one kind of Ajar's own monsters in a map.
 		int only = CVar.GetCVar("ajar_only").GetInt();
@@ -742,6 +769,7 @@ class AjarHandler : EventHandler
 	{
 		SelfShots();
 		StrayTick();
+		ShutterTick();
 		let mo = players[consoleplayer].mo;
 		if (mo) Squeeze(mo);
 		if (mo && mo.health > 0) Followers(mo);
@@ -759,6 +787,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP05") LostPropertyScript(mo, t);
 		else if (level.mapname ~== "MAP06") AfterHoursScript(mo, t);
 		else if (level.mapname ~== "MAP07") SmallHoursScript(mo, t);
+		else if (level.mapname ~== "MAP08") ClosingTimeScript(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
@@ -1417,6 +1446,231 @@ class AjarHandler : EventHandler
 		Forward(mo, t, 1455, 30);
 	}
 
+	// MAP08: a solution of the same length as the one tools/build.py prints.
+	// No Stray door is used. The last part is the dash: from the lever to the
+	// frame's half of the night room on foot, with no help from the script.
+	void ClosingTimeScript(Actor mo, int t)
+	{
+		string have = carried ? carried.Label() : "-";
+		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 34) Check("lockedBoltedAndShut", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(304) && !RoomOpen(305) && !RoomOpen(306) && !RoomOpen(310) && shutterLeft < 0);
+		// RED into the lobby's frame: the gallery over the atrium, key 1, and down through the gap
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 180, -96, 0, 0); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("onGallery", mo.pos.z == 160 && mo.pos.x > -512 && mo.pos.x < -384 && mo.pos.y > 144);
+		if (t == 85) Pose(mo, -448, 200, 160, 90);
+		Forward(mo, t, 90, 10);
+		if (t == 110) Check("haveKey1", Has(mo, 1));
+		if (t == 115) Pose(mo, -440, 432, 160, 0);
+		Forward(mo, t, 120, 16);
+		if (t == 150) Check("droppedIntoAtrium", mo.pos.z == 0 && mo.pos.x > -384);
+		// key 1 opens the west wing: GREEN into the furniture department's frame, the roof, key 2
+		if (t == 155) { Pose(mo, -470, 80, 0, 180); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (t == 195) Check("westWingOpens", RoomOpen(301));
+		if (t == 200) { Take(mo, 3); FindFrame(102).Activate(mo); Pose(mo, -1216, -360, 0, 270); }
+		Forward(mo, t, 205, 25);
+		if (t == 245) Check("onRoof", mo.pos.z == 320 && mo.pos.y > 416 && mo.pos.y < 1040 && have == "-");
+		if (t == 250) Pose(mo, -1340, 540, 320, 270);
+		Forward(mo, t, 255, 12);
+		if (t == 275) Check("haveKey2", Has(mo, 2));
+		// off the roof by the hole, onto the gallery, and down
+		if (t == 280) Pose(mo, -580, 944, 320, 0);
+		Forward(mo, t, 285, 14);
+		if (t == 314) Check("fromRoofOntoGallery", mo.pos.z == 160 && mo.pos.x > -512 && mo.pos.x < -384);
+		if (t == 315) Pose(mo, -440, 432, 160, 0);
+		Forward(mo, t, 320, 16);
+		// key 2 opens the east wing: key 3 among the linen, YELLOW among the carpets
+		if (t == 350) { Pose(mo, 470, 80, 0, 0); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 390) Check("eastWingOpens", RoomOpen(302));
+		if (t == 395) Pose(mo, 944, 760, 0, 90);
+		Forward(mo, t, 400, 10);
+		if (t == 420) Check("haveKey3", Has(mo, 3));
+		if (t == 425) Take(mo, 4);
+		// YELLOW through RED, along the gallery and down the hole into the showroom
+		if (t == 430) Pose(mo, 180, -96, 0, 0);
+		Forward(mo, t, 435, 25);
+		if (t == 470) Check("onGalleryWithYellow", mo.pos.z == 160 && mo.pos.x < -384 && have == "YELLOW");
+		if (t == 475) Pose(mo, -448, 980, 160, 90);
+		Forward(mo, t, 480, 16);
+		if (t == 514) Check("inShowroomWithYellow", mo.pos.z == 0 && mo.pos.y > 1056 && mo.pos.y < 1440 && have == "YELLOW");
+		// it does not leave by the turnstile
+		if (t == 515) Pose(mo, -288, 1100, 0, 270);
+		Forward(mo, t, 520, 12);
+		if (t == 545) Check("turnstileRefusesADoor", mo.pos.y > 1056 && have == "YELLOW");
+		if (t == 550) FindFrame(107).Activate(mo);
+		if (t == 553) Check("yellowHungInShowroom", have == "-");
+		// up the stairs, past the gatepost, into the office: key 4, and the lever
+		if (t == 555) Pose(mo, -190, 1080, 0, 0);
+		Forward(mo, t, 560, 45);
+		if (t == 610) Check("upTheStairsToTheOffice", mo.pos.z == 160 && mo.pos.x > 128);
+		if (t == 615) Pose(mo, 336, 1180, 160, 270);
+		Forward(mo, t, 620, 12);
+		if (t == 640) Check("haveKey4", Has(mo, 4));
+		if (t == 645) FindLine(309).Activate(mo, 0, SPAC_Use);
+		if (t == 665) Check("leverSendsShutterUp", RoomOpen(310) && shutterLeft > 200 && shutterLeft < 280);
+		// off the balcony, through the hatch into the dock: VIOLET, which the hatch refuses
+		if (t == 670) Pose(mo, 180, 1312, 160, 180);
+		Forward(mo, t, 675, 14);
+		if (t == 704) Check("offTheBalcony", mo.pos.z == 0 && mo.pos.x < 128);
+		if (t == 705) Pose(mo, -416, 1400, 0, 90);
+		Forward(mo, t, 710, 22);
+		if (t == 740) Check("throughTheHatch", mo.pos.z == 0 && mo.pos.y > 1520 && mo.pos.y < 1840);
+		if (t == 745) Take(mo, 5);
+		if (t == 750) Pose(mo, -416, 1560, 0, 270);
+		Forward(mo, t, 755, 10);
+		if (t == 775) Check("hatchRefusesADoor", mo.pos.y > 1440 && have == "VIOLET");
+		// down the chute into the stockroom, up its stairs, through the door into the passage
+		if (t == 780) Pose(mo, 340, 1776, 0, 0);
+		Forward(mo, t, 785, 14);
+		if (t == 815) Check("downTheChute", mo.pos.z == -128 && mo.pos.x > 400 && have == "VIOLET");
+		if (t == 820) Pose(mo, 1088, 1560, -128, 270);
+		Forward(mo, t, 825, 40);
+		if (t == 870) Check("upTheStockroomStairs", mo.pos.z == 0 && mo.pos.y < 1264 && mo.pos.y > 1120);
+		if (t == 872) FindLine(307).Activate(mo, 0, SPAC_Use);
+		Forward(mo, t, 905, 22);
+		if (t == 935) Check("inGoodsPassage", mo.pos.y < 1104 && mo.pos.y > 896);
+		if (t == 960) Check("shutterCameDown", !RoomOpen(310) && shutterLeft < 0);
+		// VIOLET through RED and down the hole, into the showroom's other frame; through it, the dock
+		if (t == 965) Pose(mo, 180, -96, 0, 0);
+		Forward(mo, t, 970, 25);
+		if (t == 1010) Pose(mo, -448, 980, 160, 90);
+		Forward(mo, t, 1015, 16);
+		if (t == 1049) Check("inShowroomWithViolet", mo.pos.z == 0 && mo.pos.y > 1056 && mo.pos.y < 1440 && have == "VIOLET");
+		if (t == 1050) FindFrame(106).Activate(mo);
+		if (t == 1055) Pose(mo, -32, 1380, 0, 90);
+		Forward(mo, t, 1060, 25);
+		if (t == 1095) Check("throughVioletToDock", have == "-" && mo.pos.y > 1520 && mo.pos.y < 1840 && mo.pos.x > -320 && mo.pos.x < -192 && !RoomOpen(304));
+		// back by the hatch and the turnstile, with empty hands
+		if (t == 1100) Pose(mo, -416, 1560, 0, 270);
+		Forward(mo, t, 1105, 22);
+		if (t == 1135) Check("backThroughTheHatch", mo.pos.y < 1440);
+		if (t == 1140) Pose(mo, -288, 1100, 0, 270);
+		Forward(mo, t, 1145, 14);
+		if (t == 1170) Check("throughTheTurnstile", mo.pos.y < 1040);
+		// keys 3 and 4 open the cash office: its lever opens the shop window; BLUE
+		if (t == 1175) { Pose(mo, -200, -272, 0, 180); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 1215) Check("cashOfficeOpens", RoomOpen(303));
+		if (t == 1220) { Pose(mo, -540, -272, 0, 180); FindLine(308).Activate(mo, 0, SPAC_Use); }
+		if (t == 1260) Check("leverOpensShopWindow", RoomOpen(305));
+		if (t == 1265) Take(mo, 2);
+		// BLUE through RED, down the hole, and through YELLOW into the office
+		if (t == 1270) Pose(mo, 180, -96, 0, 0);
+		Forward(mo, t, 1275, 25);
+		if (t == 1310) Pose(mo, -448, 980, 160, 90);
+		Forward(mo, t, 1315, 16);
+		if (t == 1349) Check("inShowroomWithBlue", mo.pos.z == 0 && mo.pos.y > 1056 && mo.pos.y < 1440 && have == "BLUE");
+		if (t == 1350) Pose(mo, -160, 1380, 0, 90);
+		Forward(mo, t, 1355, 25);
+		if (t == 1390) Check("inOfficeWithBlue", mo.pos.z == 160 && mo.pos.x > 128 && mo.pos.y < 1440 && have == "BLUE");
+		// the dash. To the lever; then nothing but walking: off the balcony,
+		// through VIOLET, across the dock, under the shutter
+		if (t == 1393) Pose(mo, 340, 1312, 160, 0);
+		if (t == 1395) { FindLine(309).Activate(mo, 0, SPAC_Use); dashFrom = t; mo.angle = 180; }
+		Forward(mo, t, 1396, 46);                                   // 368 west: off the balcony, to x = -28
+		if (t == 1444) { mo.vel.xy = (0, 0); mo.angle = 90; }
+		Forward(mo, t, 1445, 82);                                   // north: the frame, the dock, the shutter
+		if (t > 1445 && !dashTook && mo.pos.y > 1936) dashTook = t - dashFrom;
+		if (t == 1535) Check("underTheShutterWithBlue", dashTook > 0 && dashTook < 280 && mo.pos.y > 1936 && mo.pos.x > -320 && mo.pos.x < -160 && have == "BLUE");
+		if (t == 1536) Console.Printf("AJARTEST dashTics=%d", dashTook);
+		// only empty hands pass the grille; coming in drew the bolt of the other half
+		if (t == 1540) Pose(mo, -290, 1976, 0, 180);
+		Forward(mo, t, 1545, 10);
+		if (t == 1565) Check("grilleRefusesADoor", mo.pos.x > -320 && have == "BLUE" && RoomOpen(304));
+		if (t == 1570) { FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
+		// the way out is walked into
+		if (t == 1575) Pose(mo, -220, 2064, 0, 0);
+		Forward(mo, t, 1580, 30);
+	}
+	int dashFrom, dashTook;
+
+	// MAP08's tour, in three parts (see PartyWallViews).
+	void ClosingTimeViews1()
+	{
+		static const double v[] = {
+			0, -640, 0, 90, 0,             // from the start: the arcade, the front door
+			300, -600, 0, 60, 0,           // the shop window, behind glass
+			-560, -592, 0, 180, 0,         // the kiosk behind its bars
+			0, -400, 0, 90, 0,             // the lobby
+			100, -96, 0, 0, 0,             // the lobby's frame
+			-100, -380, 0, 180, 0,         // RED, leaning
+			-100, -272, 0, 180, 0,         // the cash office's door: two locks
+			100, -368, 0, 0, 0,            // the shop window's door, bolted
+			448, -400, 0, 90, 0,           // in the shop window
+			-400, -272, 0, 180, 0,         // the cash office: its lever, BLUE
+			0, 40, 0, 90, -15,             // the atrium: the fountain, the lantern
+			-200, 80, 0, 180, 0,           // the west wing's door: one lock
+			200, 80, 0, 0, 0,              // the east wing's: one lock
+			200, 500, 0, 180, -20,         // the gallery, RED's far side, from below
+			200, 944, 0, 0, 0,             // the goods passage's door
+			-288, 900, 0, 90, 0,           // the turnstile into the showroom
+			-448, 600, 160, 180, 0,        // on the gallery: RED's far side
+			-448, 300, 160, 270, 0,        // along the gallery: key 1
+			-420, 432, 160, 0, 25,         // the gap in the rail: the atrium
+			-448, 900, 160, 90, 0          // the hole into the showroom; the hole from the roof
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void ClosingTimeViews2()
+	{
+		static const double v[] = {
+			-448, 1100, 0, 0, 0,           // the showroom: doors on show, the stairs, the balcony
+			-300, 1150, 0, 250, 0,         // the turnstile, from inside
+			-448, 1150, 0, 110, -30,       // the hole from the gallery, from below
+			-96, 1300, 0, 90, 0,           // the showroom's two frames
+			-100, 1300, 0, 0, -20,         // the balcony: the gap in its rail
+			64, 1300, 0, 90, 0,            // the window on the dock
+			-416, 1300, 0, 90, 0,          // the hatch to the dock
+			-190, 1088, 0, 0, -10,         // the stairs up to the office
+			80, 1080, 160, 0, 0,           // the gatepost at their head
+			256, 1150, 160, 90, 0,         // the office: YELLOW's far side, the window
+			256, 1280, 160, 0, 0,          // the lever
+			336, 1380, 160, 90, 10,        // from the office window: the dock, the shutter
+			200, 1312, 160, 180, 20,       // from the balcony: the gap, the frames
+			-256, 1680, 0, 270, 0,         // the dock: VIOLET's far side
+			-256, 1620, 0, 90, 0,          // the shutter
+			-416, 1700, 0, 90, 0,          // the night room's door, bolted
+			200, 1700, 0, 0, 0,            // VIOLET, and the chute
+			100, 1560, 0, 180, 0,          // the dock, from its east end
+			-400, 2064, 0, 0, 0,           // the night room: the grille, the frame beyond it
+			-340, 2064, 0, 180, 0,         // BLUE's far side
+			-240, 2064, 0, 0, 0,           // the frame's half: the brass frame
+			-240, 2100, 0, 270, 0,         // the shutter from inside
+			-260, 2000, 0, 180, 0          // the gap in the grille
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void ClosingTimeViews3()
+	{
+		static const double v[] = {
+			460, 1776, -128, 0, 0,         // the stockroom, from under the chute
+			768, 1800, -128, 90, 0,        // the stockroom's frame
+			1088, 1700, -128, 270, 0,      // the stairs up
+			1100, 1744, -128, 0, 0,        // the hole into the alcove
+			1088, 1200, 0, 270, 0,         // the door into the passage
+			1100, 1000, 0, 180, 0,         // the goods passage
+			768, 960, 0, 90, 0,            // the boiler room's door, bolted
+			768, 1150, 0, 90, 0,           // the boiler room
+			-600, 80, 0, 180, 0,           // the west wing: toys
+			-1040, 176, 0, 180, 0,         // haberdashery
+			-1216, 100, 0, 270, 0,         // the door to the furniture
+			-1216, -100, 0, 270, 0,        // furniture: the frame
+			-1300, -200, 0, 135, 0,        // GREEN
+			-992, 900, 320, 90, 0,         // the roof: GREEN's far side
+			-700, 600, 320, 180, 0,        // across the roof: key 2
+			-600, 944, 320, 0, 15,         // the hole down onto the gallery
+			600, 80, 0, 0, 0,              // the east wing: china
+			752, 400, 0, 90, 0,            // linen: key 3
+			1040, 176, 0, 0, 0,            // carpets: YELLOW
+			1088, 100, 0, 270, 0,          // the hole into the lamp store
+			1096, -60, 0, 270, 0,          // the lamp store: PINK and its frame
+			1120, -120, 0, 0, 0,           // through its bars, the strongroom
+			1328, -30, 0, 270, 0           // the strongroom: PINK's far side
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
 	// MAP07's tour, in three parts (see PartyWallViews).
 	void SmallHoursViews1()
 	{
@@ -1817,6 +2071,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP05") { LostPropertyViews1(); LostPropertyViews2(); }
 			else if (level.mapname ~== "MAP06") { AfterHoursViews1(); AfterHoursViews2(); AfterHoursViews3(); }
 			else if (level.mapname ~== "MAP07") { SmallHoursViews1(); SmallHoursViews2(); SmallHoursViews3(); }
+			else if (level.mapname ~== "MAP08") { ClosingTimeViews1(); ClosingTimeViews2(); ClosingTimeViews3(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}
@@ -2630,6 +2885,13 @@ class AjarStatusBar : BaseStatusBar
 			if (held) DrawString(big, "NAILED", (0, 20), DI_SCREEN_CENTER_TOP | DI_TEXT_ALIGN_LEFT, Font.CR_GOLD);
 			else DrawString(big, String.Format("%d.%d", left / 35, (left % 35) * 10 / 35), (0, 20), DI_SCREEN_CENTER_TOP | DI_TEXT_ALIGN_LEFT,
 				left < 70 ? Font.CR_RED : Font.CR_WHITE);
+		}
+		// a shutter that is up: how long before it comes down, always
+		if (h.shutterLeft >= 0)
+		{
+			DrawImage("AJLEVR", (-12, 60), DI_SCREEN_CENTER_TOP | DI_ITEM_RIGHT_TOP, 1.0, (-1, -1), (0.3, 0.3));
+			DrawString(big, String.Format("%d.%d", h.shutterLeft / 35, (h.shutterLeft % 35) * 10 / 35), (0, 68),
+				DI_SCREEN_CENTER_TOP | DI_TEXT_ALIGN_LEFT, h.shutterLeft < 70 ? Font.CR_RED : Font.CR_WHITE);
 		}
 		if (!h.carried) return;
 		DrawImage(String.Format("AJDR%d", h.carried.args[1]), (-8, 28),

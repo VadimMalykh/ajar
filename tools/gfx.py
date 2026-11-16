@@ -801,6 +801,23 @@ def make_all():
             bd.disc(x, y + 1, 2, (200, 204, 210))
     bd.noise(5, 78)
     out["textures/AJBOLT.png"] = bd.png()
+    # a rolling shutter (ajarmap.shutter): steel slats and a pull at the foot
+    sh = Img(64, 128 + T)
+    sh.px = [list(p) for p in rd.px]
+    sh.rect(0, T + 32, 64, T + 128, steel)
+    for y in range(T + 32, T + 128, 8):
+        sh.rect(0, y, 64, y + 1, shade(steel, 0.5))
+        sh.rect(0, y + 1, 64, y + 2, (176, 182, 192))
+    sh.rect(0, T + 120, 64, T + 128, shade(steel, 0.6))
+    sh.rect(24, T + 122, 40, T + 126, (200, 204, 210))
+    sh.noise(4, 79)
+    out["textures/AJSHUT.png"] = sh.png()
+    # a brass grille from floor to ceiling (ajarmap.way_home): see-through, tiles
+    gr = Img(64, 64, (0, 0, 0, 0))
+    for x in range(6, 64, 16):
+        gr.rect(x, 0, x + 4, 64, (150, 118, 48))
+    gr.rect(0, 30, 64, 34, (176, 140, 60))
+    out["textures/AJGRIL.png"] = gr.png()
     # the same as a block of floor that sinks (the stage front)
     bl = Img(64, 128, steel)
     bl.frame(0, 0, 64, 128, shade(steel, 0.5), 3)
