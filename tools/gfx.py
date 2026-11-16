@@ -772,6 +772,8 @@ def make_all():
     gfx_theatre.make(out, rd)
     import gfx_yard                                              # MAP04's candidate looks
     gfx_yard.make(out, rd)
+    import gfx_station                                           # MAP05's candidate looks
+    gfx_station.make(out, rd)
 
     # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate
     # per key it needs, each with that key's number, where a hand would be
@@ -1022,35 +1024,14 @@ def make_all():
                 th.rect(28, 4, 34, 8, face)
         out[f"sprites/AJTH{fr_name}0.png"] = th.png(grab=(18, 52))
 
-    # nailer: a broad figure in grey overalls with a hammer. A/B walking,
-    # C hammer raised, D hammer down, E dead.
-    suit, dark, skin, steel, wood = (96, 104, 116), (40, 44, 52), (224, 196, 170), (190, 196, 204), (150, 110, 70)
-    for fr_name in "ABCDE":
-        nl = Img(44, 56, (0, 0, 0, 0))
-        if fr_name == "E":
-            nl.rect(4, 46, 40, 56, suit)
-            nl.frame(4, 46, 40, 56, dark, 2)
-        else:
-            nl.rect(10, 18, 34, 48, suit)
-            nl.frame(10, 18, 34, 48, dark, 2)
-            nl.rect(15, 24, 29, 27, dark)                        # bib
-            nl.disc(22, 11, 8, skin)
-            nl.rect(13, 3, 31, 8, dark)                          # cap
-            nl.rect(17, 10, 20, 13, dark)
-            nl.rect(24, 10, 27, 13, dark)
-            step = 0 if fr_name in "ACD" else 4
-            nl.rect(12 + step, 48, 20 + step, 56, dark)
-            nl.rect(26 - step, 48, 34 - step, 56, dark)
-            if fr_name == "C":                                   # hammer raised
-                nl.rect(35, 6, 38, 30, wood)
-                nl.rect(31, 2, 43, 9, steel)
-            elif fr_name == "D":                                 # hammer down
-                nl.rect(34, 30, 37, 46, wood)
-                nl.rect(30, 44, 42, 51, steel)
-            else:                                                # hammer at its side
-                nl.rect(35, 22, 38, 44, wood)
-                nl.rect(31, 40, 43, 47, steel)
-        out[f"sprites/AJNL{fr_name}0.png"] = nl.png(grab=(22, 56))
+    # nailer: the shadow of a hell knight, drawn by the engine from Doom's own
+    # sprites (AjarNailer in enemies.zs). Only its eyes are ours: two nail heads.
+    head = (232, 236, 244)
+    ne = Img(13, 5, (0, 0, 0, 0))
+    for cx in (2, 10):
+        ne.disc(cx, 2, 2, head)
+        ne.set(cx, 2, (120, 124, 134))
+    out["sprites/AJNEA0.png"] = ne.png(grab=(6, 3))
 
     # lodger: the shadow of a revenant, drawn by the engine from Doom's own
     # sprites (AjarLodger in enemies.zs). Only its eyes are ours: the two

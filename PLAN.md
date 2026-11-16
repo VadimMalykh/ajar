@@ -1357,6 +1357,105 @@ sprites in `gfx.py` are no longer used and can be deleted.
 Put to the user and not answered: a sound while it works at the hinges, its
 voice (still the revenant's, as the lodger's), what it does when hurt.
 
+## Look: MAP05 and the nailer (started 2026-11-16)
+
+Board: https://claude.ai/artifact/NPE1NJydqajQ3AfFL61K3v (source
+`design/map05-board.html`, images in `build/board5/`: `<look>/view_NN.jpg`
+cut from the tour shots, `tex/` swatches, `nailer/<look>/pose_N.jpg`). One
+page for both. **The user chose look 1, Terminus, for every part, and the
+knight's shadow for the nailer (2026-11-16)**; both are the default now.
+`AJAR_STATION=0` is the station as first built (its map is byte for byte
+the one before this work), 2 and 3 the losers. The board still shows the
+choice as open. Not played by hand in this look yet.
+
+`AJAR_STATION=1..3` dresses the whole station in one candidate look
+(`tools/gfx_station.py`): 1 Terminus (red brick and stone, iron and glass,
+a brick viaduct under the bridge), 2 Metropolitan (cream faience with green
+and black bands, steel windows, concrete), 3 Branch line (cream weatherboard
+over chocolate, timber trestle, tarred goods side). The signal box, the
+engine's painted side and ends, the shed's roof and the benches are the same
+in all three. Lockers, lamp room, kiosk and store are not dressed.
+`TIMEOUT=500 EXTRA=-nomonsters MAP=MAP05 tools/trial.sh AJAR_STATION 0 1 2 3`
+shoots them (50 views each).
+
+How the station is built in a look (`map_hinges5.py`):
+- Outdoor walls are 576 high and count down from the sky's edge at 512:
+  three storeys of 160 under eaves, 64 more rows below platform level. The
+  station's front (`AJ5Y`) stands round the platforms and along the bridge,
+  the goods wall (`AJ5G`) round the yard and the loft.
+- A canopy, the vestibule and the porches are low pieces (`LOW`) of a taller
+  place with their own 128 wall; the wall over their open sides is set with
+  `over()` / `low()` (upper, unpegged at the top) so that it carries on as
+  the wall beside it. `low()` names the open sides: a bolted door in a
+  closed side has no line of its own and would be painted over.
+- Windows are 64-long pieces as in MAP04 (`windows()`), also in the wall
+  over a canopy's edge.
+- Bridge, gallery and loft have a `side`: their front from the deck down
+  (the bridge's goes on past the platforms to the rails), with `floorpeg`
+  railings as in MAP04. Where a canopy ends against the bridge the line has
+  the canopy's wall below and the front above.
+- Checked by script: in every look the railings, the sectors' heights,
+  lights and tags, and the things are the same as in the stock level. In
+  look 1 `MAP=MAP05 MODE=1` (28 checks) and `MODE=3` (8) pass.
+
+The nailer. Six looks were shown: the prototype sprite, the shadows of a
+hell knight, a mancubus and a chaingunner, a hell knight in iron grey, and
+the knight's shadow with nails in its shoulders. **Chosen: the knight's
+shadow.** Built: `AjarNailer` draws Doom's `BOS2` sprites at 0.8 with the
+translucent stencil style (near-black, alpha 0.7), walks on the knight's
+four frames, nails and strikes with its throwing arm (E back, G down) and
+dies with the knight's death. `AjarNailerEyes` (`AJNE`, two nail heads,
+bright) is carried at its head by `Tick` and shown only while it faces the
+camera, 5 lower while the arm is down. `MAP=TEST MODE=6` passes (4 checks).
+Not played by hand. The portrait mode, its tooling and the `AJNL` sprites
+are gone; the board's images are in `build/board5/nailer/`.
+Put to the user on the board and not answered: a hammering sound that
+carries across the station, its voice (still the revenant's), whether the
+shed is too dark to find a shadow in, and the "beyond paint" list (light,
+sky beside the bridge, a platform edge, the train, station things, marking
+the frames).
+
+## Handoff (2026-11-16, night)
+
+State: `main` has MAP01-MAP06; all build and pass the solver. Every level
+up to MAP05 is settled in look (MAP05: Terminus, chosen from the board on
+2026-11-16), and all three of Ajar's own monsters have their looks: lodger
+(revenant's shadow), thief (arch-vile's shadow), nailer (hell knight's
+shadow). No branches or worktrees are left besides `main`.
+
+Run after the last change (MAP05's look and the nailer): the full build,
+`MAP=MAP05 MODE=1` and `MODE=3`, `MAP=TEST MODE=6`. Not rerun: the other
+levels' walkthroughs (their maps did not change; `gfx.py` only gained
+textures and lost the `AJNL` sprites), MAP05's tour as built by default.
+
+Open, the user's call:
+1. Play MAP05 in the Terminus look and meet the new nailer; neither has
+   been played by hand. In the dark engine shed the shadow is hard to see:
+   ask whether that is right.
+2. MAP05 beyond paint and the nailer's sound (foot of the board, see
+   "Look: MAP05 and the nailer").
+3. MAP06 has no look yet: same method (candidates behind a switch,
+   `tools/trial.sh`, a board; shoot with `EXTRA=-nomonsters`).
+4. Still unanswered from before: MAP03 beyond paint, the undressed stores
+   and secrets (MAP03's property store, MAP04's closet and store, MAP05's
+   lockers, lamp room, kiosk and store: one direction could do for all),
+   the thief's sound and what it does when hurt, a nailed Stray door
+   staying open.
+5. Tidying when wanted: the losing looks (`AJAR_HOTEL` 0, 2, 3;
+   `AJAR_THEATRE` 0, 2, 3; `AJAR_YARD` 0, 2, 3; `AJAR_STATION` 0, 2, 3;
+   `gfx_lodger.py`; the `AJTH` sprites), and the boards could be marked
+   decided.
+
+Working notes for the next session:
+- The user plays from the main checkout's `build/ajar.pk3`. Do design work
+  in a worktree so that builds and smoke runs do not replace it under a
+  running game, and give `tools/smoke.sh` an output directory of its own.
+- A build without the solver is enough while only textures change (the
+  solver is most of the two minutes); run the real `./build.sh` at the end.
+- `Map.textmap` refuses a line that ends inside a piece of wall: `m.cut()`
+  its ends. A line given for a whole edge also applies to every piece of
+  that edge without a line of its own, a bolted door's face among them.
+
 ## Handoff (2026-11-16)
 
 State: MAP01-MAP05 build and pass the solver. MAP01, MAP02 and MAP03 are
