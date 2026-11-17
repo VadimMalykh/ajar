@@ -2716,8 +2716,9 @@ certainly; what a leaf hung alone shows, to be seen both ways in the demo.
 Still open: whether a brass frame takes a Pair leaf (brass frames are the
 ones that take only certain doors: MAP07's way out, MAP09's trunk room).
 
-**Built: the lab** (`tools/map_lab.py`, branch `pair-demo`, not merged;
-`MAP=LAB ./run.sh`). Both TEAL leaves and a plain RED door in a hall with
+**Built: the lab** (`tools/map_lab.py`; `MAP=LAB ./run.sh`). Vadim played it
+(2026-11-17): "all looks great", and the Pair goes into the levels to come.
+He has not said which of the lever's two he prefers; both stay for now. Both TEAL leaves and a plain RED door in a hall with
 frames 111 west and 112 east (opposite: the endless corridor), 113 south
 (round the corner from 112: the room repeats turned), 114 and 115 south
 (side by side: each turns you round) and 117 (a spare). A gallery too high
@@ -2737,7 +2738,7 @@ shut door, or a picture of what its twin looks out on from where it leans
   1 and 13 and MAP09's chain still do (those three on the host's GZDoom
   with SDL's offscreen video driver, while docker was down; the lab's 15
   in the `ajar-tools` image as well). Built with `AJAR_QUICK=1`: the solver
-  was not run on this branch. Not played by hand.
+  was not run on the branch.
 
 Supporting types from the table, for the same levels: One-way (loops that
 run one way round) and Small (a hatch: shots and sight, no walking).
