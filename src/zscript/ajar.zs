@@ -967,6 +967,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 4) RepaintScript(mo, t);
+		else if (level.mapname ~== "MAP09" && mode == 5) RepaintPortrait(mo, t);
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);
 		else if (level.mapname ~== "MAP05" && mode == 3) LostPropertyStrays(mo, t);
@@ -1984,6 +1985,30 @@ class AjarHandler : EventHandler
 		if (t == 740) Check("frameOpensOntoTheLine", mo.pos.z == 96 && mo.pos.x > 760 && mo.pos.x < 1080);
 	}
 
+	// MAP09 mode 5: the repainter photographed at work. GREEN hangs in the
+	// switchroom's frame and BLUE leans beside it; the repainter is put before
+	// them and the camera stands in the hall and looks on.
+	void RepaintPortrait(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		if (t == 5)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster && !(a is "AjarRepainter")) a.Destroy();
+		}
+		if (t == 10) { Take(mo, 3); FindFrame(102).Activate(mo); }
+		if (t == 12) { Take(mo, 2); Pose(mo, 404, -262, 0, 0); }
+		if (t == 14 && carried) { DropDoor(carried, mo); carried = null; }
+		if (t == 16)
+		{
+			let it = ThinkerIterator.Create("AjarRepainter");
+			Actor r = Actor(it.Next());
+			if (r) { r.SetOrigin((500, -190, 0), false); r.angle = 90; }
+		}
+		if (t > 14) { Pose(mo, 474, -104, 0, 270); mo.pitch = 0; }
+	}
+
 	// MAP09's tour (see PartyWallViews).
 	void PuttingThroughViews1()
 	{
@@ -2037,6 +2062,19 @@ class AjarHandler : EventHandler
 			920, -432, 96, 180, 0,         // the line: BLUE's far side
 			920, -432, 96, 0, 0,           // VIOLET's
 			920, -360, 96, 270, 15         // the hole over the forecourt
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void PuttingThroughViews3()
+	{
+		static const double v[] = {
+			-416, -110, 0, 75, -18,        // from the hall: the gallery, GREEN's far side
+			250, 620, 160, 12, 0,          // the cable loft, past its drums
+			-200, -200, 0, 180, -12,       // from the hall: the balcony, YELLOW's far side
+			40, -400, 0, 335, 0,           // the call boxes
+			330, -810, 0, 115, -10,        // the front and its windows
+			1136, 600, -128, 90, 0         // the battery room: the cells, the frame
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}
@@ -2560,7 +2598,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP06") { AfterHoursViews1(); AfterHoursViews2(); AfterHoursViews3(); }
 			else if (level.mapname ~== "MAP07") { SmallHoursViews1(); SmallHoursViews2(); SmallHoursViews3(); }
 			else if (level.mapname ~== "MAP08") { ClosingTimeViews1(); ClosingTimeViews2(); ClosingTimeViews3(); ClosingTimeViews4(); }
-			else if (level.mapname ~== "MAP09") { PuttingThroughViews1(); PuttingThroughViews2(); }
+			else if (level.mapname ~== "MAP09") { PuttingThroughViews1(); PuttingThroughViews2(); PuttingThroughViews3(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}

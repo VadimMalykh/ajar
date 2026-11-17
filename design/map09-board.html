@@ -1,0 +1,286 @@
+<title>Putting You Through Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, the same as the boards of MAP01 to MAP08. Three looks
+   summarised on top with the plan, then one band per part of the exchange: notes and a pick on the
+   left, the same camera in every look on the right. Then the repainter's candidates, posed. Picks are collected in one line; points to argue about close the page. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body);
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.talk li strong { font-family: var(--display); }
+.sws i { display: block; height: 72px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: bottom left; background-size: 64px auto; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 512; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+ol.open { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; max-width: 72ch; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+}
+.cand { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--line); padding-top: 22px; }
+.cand > * { min-width: 0; }
+.cand.chosen h2 { color: var(--pick); }
+.poses { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.poses figure { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.poses img { width: 100%; height: auto; aspect-ratio: 1; display: block; background: var(--chip); border: 1px solid var(--line); }
+.poses figcaption { font-size: 11.5px; color: var(--muted); }
+.cand h2 span { color: var(--accent); margin-right: 6px; }
+@media (max-width: 820px) { .cand { grid-template-columns: minmax(0, 1fr); } .poses { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.lede { border-top: 2px solid var(--fg); padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.poses img { aspect-ratio: 1; }
+.band { border-top: 2px solid var(--fg); padding-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+</style>
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP09 "Putting You Through" · captured 17 Nov 2026 · GZDoom 4.12.2, software GL, monsters off</div>
+    <h1>Putting You Through: three looks for the telephone exchange, and six for the repainter</h1>
+    <p>The exchange still wears grey brick from forecourt to roof. Below are three looks for the whole of it, each built into the level and photographed from the same 48 cameras as the level is now. A look changes textures only: no wall, floor or railing moves, and the level plays the same.</p>
+    <p>The repainter, new in this level, still has a provisional look. Its six candidates follow the rooms.</p>
+    <p class="muted">Picks can be mixed, for example the switchroom from one look and the wings from another. Your picks are collected near the bottom as one line to paste into the chat. You can also comment on this page. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The three looks</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>Plan of the exchange, with camera numbers</h3>
+    <div class="plan" id="plan"></div>
+    <p class="muted" style="font-size:13px">One grid square is 128 map units; north is up, and you start in the forecourt at the bottom. Upper floors are drawn darker and what lies below ground grey, each with its floor height; secrets are pink. The gallery and the balcony stand over the switchroom, the cable loft over nothing, and the roof over the west wing. Cameras 40 to 42 are on the line, which no look touches; 11 and 18 are blocked by furniture and are replaced by 43 and 44.</p>
+  </section>
+
+  <section class="stack" id="parts" style="gap:34px"></section>
+
+  <section class="band">
+    <h2>The repainter</h2>
+    <p>It goes about the switchroom and does not fight. It walks to a door, hung or leaning, and takes its colour; then to a second door, and the two change places for good. The colour it carries is the warning: kill it with a colour on its brush and nothing has changed. The lodger, the thief and the nailer are each the shadow of one of Doom's monsters with a pair of eyes; the repainter was built as an imp's shadow without eyes and has not been chosen.</p>
+    <p class="muted">Each candidate is one of Doom's own sprites. Poses two to four show it with BLUE on its brush, which is what a look has to make plain.</p>
+  </section>
+  <section class="stack" id="cands" style="gap:30px"></section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and I will build the exchange and the repainter that way.</p>
+    <output id="picksline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+
+  <section class="stack">
+    <h3>Beyond paint: options to talk about</h3>
+    <p class="muted" style="font-size:13.5px">None of these is in the pictures. Each changes the level's shape, lighting or how it plays, so I would rather agree them first.</p>
+    <ol class="open talk">
+      <li><strong>Lights out.</strong> Indoors is evenly bright. On the night shift the hall could be dim, with a lamp over each rank of boards and the boards' own lamps glowing, as MAP07 and MAP08 are now; the call office and the manager's office would stay lit. It makes the chaingunners on the gallery harder to see.</li>
+      <li><strong>Signs.</strong> CANTEEN, APPARATUS, TRUNKS, MANAGER and the rest on a plate over each door, as in MAP08. It would help to keep the two wings apart when carrying a door through them.</li>
+      <li><strong>Things on the floor.</strong> Operators' chairs with a headset left on each, the supervisor's desk, a wall clock, a trolley of cable: sprites that stop nothing, as the dummies and the till are in MAP08.</li>
+      <li><strong>The forecourt.</strong> It is a walled yard. It could have railings and a gate on the road with the street going by, as MAP08's arcade has now; the kiosk could be a lit call box.</li>
+      <li><strong>The roof's edge.</strong> Walled in on all sides. A parapet with the town beyond, and wires running off a mast to the poles, would open it as MAP08's roof was opened; its edges would be rebuilt.</li>
+      <li><strong>Sound.</strong> A telephone ringing somewhere that nobody answers; the clatter of selectors in the apparatus room; a bell when the chain is made.</li>
+      <li><strong>The switchboards under the gallery's gap.</strong> Still open from when the level was built: a jump down from the gap lands on a board.</li>
+      <li><strong>Room tints are gone in the looks</strong>, as in MAP01 to MAP08: the coloured column over each far side, the torches and the doors carry the colour.</li>
+      <li><strong>Mixing.</strong> The front, the call office, the switchroom, the trunk room and each room of the wings are textured apart, so the switchroom of one look with the wings of another costs nothing. Switchboards, racks and call boxes can be chosen apart from the walls too.</li>
+    </ol>
+  </section>
+
+  <section class="stack">
+    <h3>Beyond the sprite: the repainter</h3>
+    <ol class="open talk">
+      <li><strong>The warning.</strong> Now a line on screen says which door it has touched, and the shadow turns. Looks 2 and 6 lean on the line; say if a sound should go with it, or drips of the colour on the floor behind it.</li>
+      <li><strong>Seen at work.</strong> The thief must be seen before it may take a door down. The repainter may swap two doors with nobody looking. Say if it should be held to the thief's rule.</li>
+      <li><strong>Voice.</strong> It borrows the imp's sounds. A different set from Doom's costs nothing, and none at all is a choice too.</li>
+      <li><strong>Size.</strong> The thief is six tenths of an arch-vile. Any of these can be made smaller or larger.</li>
+      <li><strong>Shown here, not built.</strong> These are posed photographs before the switchroom's frame, in the level as it is now, with GREEN hung and BLUE leaning beside it. The repainter in the game is unchanged until you choose.</li>
+    </ol>
+  </section>
+</div>
+<script>
+const LOOKS = [["0", "As it is now", "Grey brick on every wall indoors and out, steel-topped boxes for switchboards and racks, plain wood for call boxes. Rooms tinted after the door that leads to them."], ["1", "Central", "A manual exchange of the 1900s. Red brick banded with terracotta and stone, round-headed windows. Indoors cream plaster over mahogany or brown glazed brick, bottle-green iron and brass, wood-block floors under a green runner, boarded ceilings. The switchboards are mahogany, with brass jacks and cords up from the keyshelf."], ["2", "Trunk", "A trunk exchange of the 1930s. Brown brick over a ground floor of Portland stone, steel windows in small panes. Indoors two coats of gloss paint, cream over green, with a black line between them; oak, brown lino, opal bowls for lamps. The switchboards are black, with an ivory strip and cords."], ["3", "Crossbar", "A crossbar exchange of the 1960s. A concrete frame filled with blue panels and glass over dark brick. Indoors white and pale grey with one flat colour to a room, teak slats in the call office, vinyl tile, acoustic ceilings with strip lights. The switchboards are grey steel desks with rows of keys that light, and no cords."]];
+const SW = ["Y", "L", "H", "S", "R", "B", "F"];
+const SWCAP = "The front, call office, switchroom, a switchboard, a rack, a call box; the floor";
+const NOTES = {"1": "The warmest and the darkest, and the one most like a place with a night shift. The manager's office is oxblood damask and the test room is mahogany all over: BLUE and VIOLET lean there and stand out well, but monsters do not. RED leans on cream in the call office.", "2": "The most even: every room is the same two bands of paint in other colours, so the wings are easy to tell apart and nothing is dark. GREEN's far side stands on the gallery over a green dado, though on cream itself. The plainest switchroom of the three.", "3": "The brightest, and the least like any earlier level. The trunk room is orange and the manager's office mustard; YELLOW's far side is on a pale grey balcony, RED leans against teak. Without cords the switchboards read as desks; the racks carry the look instead."};
+const PARTS = [{"id": "out", "name": "Forecourt and front", "looks": "0123", "cams": [[0, "From the start: the forecourt, the front door"], [46, "The front and its windows"], [1, "The hole high in the wall: the line"], [2, "The kiosk behind its bars"]], "text": "Where you start, under the night sky, with nobody about: the exchange's front on the north side, the kiosk (a secret) behind bars at the west end, and high in the wall to the east the hole you can drop out of the line by.", "asks": ["The front has windows, lit where the night staff are and dark elsewhere.", "The other three sides are the same in every look: a terrace across the road behind its railings, a telegraph pole to every house and the wires along the lot.", "The grass becomes paving, with a path across it to the door."]}, {"id": "call", "name": "Call office and manager's office", "looks": "0123", "cams": [[3, "The call office"], [45, "The call boxes"], [4, "RED leaning; the manager's two locks"], [5, "The call office's frame"], [6, "The manager's office: BLUE"]], "text": "The first room, 192 high: a counter, three call boxes, a frame and RED. The manager's office off it is behind two locks and holds BLUE.", "asks": ["The three tall boxes become call boxes: a glazed door with the instrument inside and TELEPHONE over it.", "Each room door wears the wall of the room it is seen from, so it differs from side to side."]}, {"id": "switch", "name": "Switchroom", "looks": "0123", "cams": [[7, "From the way in"], [8, "West down the hall: the balcony"], [9, "East down the hall"], [42, "The gallery, GREEN's far side"], [44, "The balcony, YELLOW's far side"], [11, "The switchroom's frame"], [12, "The hatch to the trunk room"]], "text": "The big fight: a long hall 448 high, with ranks of switchboards along it, the supervisor's gallery along the north wall and the monitor's balcony in the south-west corner.", "asks": ["The wall is in three storeys: the ground floor's, the gallery's, and a clerestory of windows under the roof.", "The boxes become switchboards, one operator's place to every 32, with a face on both long sides.", "The gallery and the balcony stand on the distribution frame: terminal blocks and a jumper wire to every line in the town."]}, {"id": "gal", "name": "Gallery and balcony", "looks": "0123", "cams": [[13, "On the gallery"], [14, "From the gallery: the boards"], [15, "On the balcony"]], "text": "160 up. The gallery has key 1, GREEN's far side and the way into the cable loft; the balcony has key 4 and YELLOW's far side.", "asks": ["The railing changes with the look. Its gaps are where they were."]}, {"id": "trunk", "name": "Trunk room", "looks": "0123", "cams": [[19, "The west brass frame"], [20, "The east brass frame"], [21, "Across the room: the hatch, the chute"], [18, "The hole down from the cable loft"]], "text": "Where the level ends: two brass frames facing each other, two trunk positions, and a hole in the ceiling that is the only way in with a door.", "asks": ["The brass frames and the runner between them are the same in every look: they belong to the way out, as in MAP06 to MAP08.", "The hole from the loft is a brick shaft with cables down it."]}, {"id": "roof", "name": "Roof", "looks": "0123", "cams": [[29, "The roof, from RED's far side"], [30, "RED's far side"], [31, "The hole onto the gallery"]], "text": "Over the west wing, 320 up, where RED brings you first. The switchroom's upper storey stands round it.", "asks": ["The switchroom's clerestory is seen from outside, lit.", "The three raised boxes become skylights, lit from the rooms below."]}, {"id": "west", "name": "West wing: canteen, cloakroom, rest room", "looks": "0123", "cams": [[26, "The canteen"], [27, "The cloakroom"], [28, "The rest room: GREEN, the frame"]], "text": "Three rooms 160 high behind one lock, each with its own wall.", "asks": ["The cloakroom's two tall blocks become rows of pegs with coats and hats, the same in every look."]}, {"id": "east", "name": "East wing: apparatus room, relay room, test room", "looks": "0123", "cams": [[32, "The apparatus room"], [33, "Down the racks"], [34, "The relay room"], [35, "The test room: its frame"], [36, "The test room: VIOLET, the hatch"]], "text": "Behind the other lock, where the thief lives. The apparatus room is 192 high; the test room off it is where VIOLET leans.", "asks": ["The racks change with the look: relays wound in cotton (Central), selectors under their cans (Trunk), crossbar switches (Crossbar)."]}, {"id": "below", "name": "Cable loft, battery room, cable passage, generator room, stationery store", "looks": "01", "cams": [[16, "The way into the cable loft"], [43, "The cable loft, past its drums"], [22, "The battery room"], [47, "The battery room: the cells, the frame"], [23, "Its stairs"], [24, "The cable passage"], [25, "The generator room"], [37, "The stationery store: PINK and its frame"], [38, "Through its bars, the strongroom"]], "text": "The same in all three looks, so only one is shown beside the level as it is. The loft is bare brick with cables on hangers and drums of cable; the battery room white glazed brick over glass cells; the passage whitewash over black; the generator room engine-room green with dials. The strongroom keeps its safes, and the line is not touched.", "asks": []}];
+const V = [[0,-768,90],[600,-780,45],[-300,-720,180],[0,-520,90],[-100,-432,180],[250,-432,0],[-450,-432,180],[0,-250,90],[0,-100,180],[0,-100,0],[-200,-100,90],[480,-160,270],[448,100,90],[-700,160,0],[0,160,270],[-640,-160,0],[224,300,90],[300,690,0],[592,640,270],[650,432,180],[530,432,0],[400,520,320],[900,520,0],[1440,520,270],[820,150,0],[1104,280,90],[-880,32,180],[-1400,-96,180],[-1136,140,120],[-928,860,270],[-700,600,135],[-608,340,270],[820,-168,0],[1200,-130,180],[1400,-168,0],[1280,-330,250],[1400,-400,150],[1880,-200,290],[1870,-32,0],[920,-432,180],[920,-432,0],[920,-360,270],[-416,-110,75],[250,620,12],[-200,-200,180],[40,-400,335],[330,-810,115],[1136,600,90]];
+const RECTS = [[-512,-832,1100,-576,"open","Forecourt","start"],[-784,-816,-528,-624,"secret","Kiosk",""],[-384,-560,384,-304,"hall","Call office","frame"],[-720,-560,-400,-304,"room","Manager",""],[760,-560,1080,-304,"up","The line","+96"],[-768,-288,768,224,"hall","Switchroom","frame"],[-768,96,384,224,"up","Gallery","+160"],[-768,-288,-512,-32,"up","Balcony","+160"],[-1344,304,-528,928,"up","Roof","+320"],[192,224,256,576,"up","",""],[192,576,848,800,"up","Cable loft","+160"],[336,304,848,560,"room","Trunk room","two brass frames"],[864,480,1504,928,"down","Battery room","-128, frame"],[1520,660,1664,788,"secret","",""],[1408,224,1472,480,"down","",""],[784,80,1472,224,"room","Cable passage",""],[944,240,1264,464,"room","Generator",""],[-1360,-288,-848,96,"room","Canteen",""],[-1680,-288,-1376,96,"room","Cloakroom",""],[-1360,112,-912,288,"room","Rest room","frame"],[784,-288,1360,64,"room","Apparatus room",""],[1376,-288,1824,32,"room","Relay room",""],[1200,-560,1520,-304,"room","Test room","frame"],[1840,-288,2048,-112,"secret","Stationery",""],[1840,-96,2064,32,"secret","Strongroom",""]];
+const RP = [["1", "As it is now", "The shadow of one of Doom's imps, without eyes. When it has put its brush to a door the whole shadow turns that door's colour.", "The colour is its only mark, and it is a big one: a blue shape in a room is hard to miss. Without a colour it is a plain dark imp among real imps, and it is the only one of Ajar's four without eyes."], ["2", "Family", "The same imp's shadow with the brass eyes the lodger, the thief and the nailer have. The body stays dark; only the eyes take the door's colour.", "Makes the four one family. The warning is much smaller: two coloured points, seen only while it faces you. The message on screen would have to carry more."], ["3", "Two brushes", "The shadow of a mancubus at six tenths of its size, with brass eyes. The whole shadow takes the colour.", "Squat and wide, so it is told from the other three shadows by its outline alone, and its two arms read as a brush in each hand. No mancubus is met before MAP06's boiler room, and none this small."], ["4", "Decorator", "Doom's marine in white overalls, not a shadow. The overalls take the colour of the door it has touched.", "A painter in the plain sense, and the easiest to understand at a glance. It is your own figure, which is either the joke or the trouble, and it holds a rifle it will never fire. It breaks the rule that Ajar's own monsters are shadows."], ["5", "Whitewash", "An imp in whitewash from head to foot, not a shadow. Dipped in the colour once it has one.", "The brightest thing in any room, so it cannot be lost among the real imps, and the colour shows on the whole of it with its shading kept. Also not a shadow."], ["6", "Night painter", "The shadow of a chaingunner, man-sized, with brass eyes. Only the eyes take the colour.", "What it holds reads as a roller on a pole. Among the chaingunners on the gallery it is the hardest of the six to pick out, and it promises a gun it does not have."]];
+const POSES = ["Standing, no colour", "Coming at you, BLUE on its brush", "From the side", "At a door, painting", "Dead: the colour is spilt"];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l][1];
+document.getElementById("looks").innerHTML = LOOKS.slice(1).map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sws" role="img" aria-label="${name}: ${SWCAP}">${SW.map(t =>
+     `<i style="background-image:url(tex/${t}${n}.png)"></i>`).join("")}</div>
+   <div class="swcap">${SWCAP}</div>
+   <p>${d}</p><p class="muted">${NOTES[n]}</p></div>`).join("");
+let picks = {}, cams = {}, rp = null;
+try { rp = localStorage.getItem("map09-repainter"); } catch (e) {}
+try { picks = JSON.parse(localStorage.getItem("map09-picks") || "{}"); } catch (e) {}
+PARTS.forEach(p => cams[p.id] = p.cams[0][0]);
+function drawPart(p) {
+  const cam = cams[p.id], label = p.cams.find(c => c[0] === cam)[1];
+  const camBar = p.cams.length > 1 ? `<div class="cams" role="group" aria-label="Camera, ${p.name}">${p.cams.map(([v, n]) =>
+    `<button type="button" id="cam-${p.id}-${v}" data-part="${p.id}" data-cam="${v}" aria-pressed="${v === cam}">${v + 1}. ${n}</button>`).join("")}</div>` : "";
+  document.getElementById("main-" + p.id).innerHTML = camBar + `<div class="opts">${[...p.looks].map(l =>
+    `<div class="opt${picks[p.id] === l && p.looks.length > 1 ? " chosen" : ""}">
+       <button type="button" class="shot" aria-label="Enlarge: ${lookName(l)}, ${label}"><img src="${l}/view_${pad(cam)}.jpg" alt="${p.name}, ${lookName(l)}: ${label}" loading="lazy"></button>
+       <h4>${l === "0" ? "" : `<span>${l}</span>`}${lookName(l)}</h4>
+     </div>`).join("")}</div>`;
+}
+function drawPicks(p) {
+  const el = document.getElementById("picks-" + p.id);
+  if (!el) return;
+  el.innerHTML = [...p.looks].map(l =>
+    `<button type="button" id="pick-${p.id}-${l}" data-part="${p.id}" data-look="${l}" aria-pressed="${picks[p.id] === l}">${l === "0" ? "Keep as now" : lookName(l)}</button>`).join("");
+}
+function drawSummary() {
+  const line = PARTS.filter(p => p.looks.length > 1).map(p =>
+    `${p.name}: ${picks[p.id] === undefined ? "?" : picks[p.id] === "0" ? "as now" : lookName(picks[p.id])}`).join("; ");
+  document.getElementById("picksline").textContent = "MAP09 look. " + line + ". Repainter: " + (rp ? (rp === "1" ? "as now" : rp + " " + RP.find(x => x[0] === rp)[1]) : "?") + ".";
+}
+function save() { try { localStorage.setItem("map09-picks", JSON.stringify(picks)); } catch (e) {} }
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<article class="part" id="${p.id}">
+     <div class="side">
+       <h2>${p.name}</h2>
+       <p>${p.text}</p>
+       ${p.asks.length ? `<ul>${p.asks.map(a => `<li>${a}</li>`).join("")}</ul>` : ""}
+       ${p.looks.length > 1 ? `<h3>Your pick</h3><div class="picks" id="picks-${p.id}" role="group" aria-label="Pick for ${p.name}"></div>` : ""}
+     </div>
+     <div class="main" id="main-${p.id}"></div>
+   </article>`).join("");
+PARTS.forEach(p => { drawPart(p); drawPicks(p); });
+drawSummary();
+document.getElementById("parts").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.classList.contains("shot")) { b.parentElement.classList.toggle("big"); return; }
+  const p = PARTS.find(q => q.id === b.dataset.part);
+  if (!p) return;
+  if (b.dataset.cam !== undefined) {
+    cams[p.id] = +b.dataset.cam;
+    drawPart(p);
+    document.getElementById(`cam-${p.id}-${b.dataset.cam}`).focus();
+  } else if (b.dataset.look !== undefined) {
+    if (picks[p.id] === b.dataset.look) delete picks[p.id]; else picks[p.id] = b.dataset.look;
+    save();
+    drawPart(p); drawPicks(p); drawSummary();
+    document.getElementById(`pick-${p.id}-${b.dataset.look}`).focus();
+  }
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+// Plan at a quarter of full size, y flipped.
+(function () {
+  const S = 0.25, X0 = -1792, X1 = 2176, Y0 = -896, Y1 = 1024, X = x => 16 + (x - X0) * S, Y = y => 16 + (Y1 - y) * S;
+  const C = { hall: "#e9dfc8", open: "#dfe6d6", room: "#d9d3ee", up: "#d9b3a6", down: "#b9bec7", secret: "#f0c9dc" };
+  const rect = (x1, y1, x2, y2, fill, label, sub) => {
+    const cx = (X(x1) + X(x2)) / 2, cy = (Y(y1) + Y(y2)) / 2;
+    return `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${fill}" stroke="#1a1f27" stroke-width="1"/>` +
+      (label ? `<text x="${cx}" y="${cy + (sub ? -1 : 4)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1a1f27">${label}</text>` : "") +
+      (sub ? `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="8.5" fill="#3b4350">${sub}</text>` : "");
+  };
+  let g = "";
+  for (let x = X0; x <= X1; x += 128) g += `<line x1="${X(x)}" y1="${Y(Y1)}" x2="${X(x)}" y2="${Y(Y0)}" stroke="var(--line)" stroke-width=".5"/>`;
+  for (let y = Y0; y <= Y1; y += 128) g += `<line x1="${X(X0)}" y1="${Y(y)}" x2="${X(X1)}" y2="${Y(y)}" stroke="var(--line)" stroke-width=".5"/>`;
+  RECTS.forEach(r => { g += rect(r[0], r[1], r[2], r[3], C[r[4]], r[5], r[6]); });
+  V.forEach((v, i) => {
+    if (v[0] > 3000) return;
+    const a = v[2] * Math.PI / 180, x = X(v[0]), y = Y(v[1]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 13 * Math.cos(a)}" y2="${y - 13 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="6.5" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 2.8}" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 ${32 + (X1 - X0) * S} ${32 + (Y1 - Y0) * S}" role="img" aria-label="Plan of the exchange with camera positions">${g}</svg>`;
+})();
+function drawRp() {
+  document.getElementById("cands").innerHTML = RP.map(([n, name, d, note]) =>
+    `<article class="cand${rp === n ? " chosen" : ""}">
+       <div class="side"><h2><span>${n}</span>${name}</h2><p>${d}</p><p class="muted">${note}</p>
+         <div class="picks"><button type="button" id="rp-${n}" data-rp="${n}" aria-pressed="${rp === n}">${n === "1" ? "Keep as now" : "Pick " + name}</button></div></div>
+       <div class="poses">${POSES.map((p, i) => `<figure><img src="rp/${n}/pose_${i}.jpg" alt="${name}: ${p}" loading="lazy"><figcaption>${p}</figcaption></figure>`).join("")}</div>
+     </article>`).join("");
+}
+drawRp();
+document.getElementById("cands").addEventListener("click", e => {
+  const b = e.target.closest("button[data-rp]");
+  if (!b) return;
+  rp = rp === b.dataset.rp ? null : b.dataset.rp;
+  try { rp ? localStorage.setItem("map09-repainter", rp) : localStorage.removeItem("map09-repainter"); } catch (e) {}
+  drawRp(); drawSummary();
+  document.getElementById("rp-" + b.dataset.rp).focus();
+});
+</script>

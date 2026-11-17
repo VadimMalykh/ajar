@@ -56,6 +56,8 @@ Stray door); the stationery store behind the relay room (a squeeze; PINK and
 a frame) and beyond its bars the strongroom (PINK's far side); an alcove off
 the battery room.
 """
+import os
+
 import ajarmap
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, PINK, far_id
 from udmf import Map, rect
@@ -82,10 +84,109 @@ KIOSK, GENERATOR, STRONG = 401, 403, 405
 NX, NY = 760, -560                                    # the night room's south-west corner
 NIGHT = 150                                           # light under the sky
 
+# The exchange's look (gfx_exchange.py), chosen from a board of three
+# (user, 2026-11-17, design/map09-board.html): 1 Central, a manual exchange
+# of the 1900s: red brick and terracotta, mahogany, glazed tile, brass. The
+# two that lost can still be built to compare: AJAR_EXCHANGE=2 Trunk (the
+# 1930s), 3 Crossbar (the 1960s), 0 the plain textures the level was built
+# in. A look changes textures only: no floor, wall or railing moves. Rooms
+# are not tinted in a look.
+LOOK = (os.environ.get("AJAR_EXCHANGE") or "1").replace("0", "")
+FACES = {}                  # the door faces this build needs, and their textures: gfx_exchange.make draws them
 
-def low(floor=0):
-    """A porch: doors and frames in tall rooms and under the sky stand under one."""
-    return dict(ceil=floor + 128, ctex="AJBOARD")
+
+def T(tag):
+    return f"AJ9{tag}{LOOK}"
+
+
+import gfx_exchange
+if LOOK:
+    m.align = gfx_exchange.aligned(LOOK)
+    WARM = GOLD = SKY = LEAF = PLUM = ROSE = None
+    FRONT, ROUND, STREET = T("Y"), T("K"), "AJ9XS"
+    LOWW, PORCH, HOLE = T("A"), T("CP"), "AJTRIM"
+    YARD = dict(ceil=512, ctex="F_SKY1", wall=STREET)                     # the houses across the road; the front is named
+    OPEN = dict(ceil=512, ctex="F_SKY1", wall=ROUND)                      # the roof
+    RAIL = dict(RAIL, mid=T("RL"))
+    SEAT = dict(ftex=T("BN"), side=T("BN"), floor=16)
+    GSEAT = dict(ftex=T("PL"), side=T("PL"), floor=16)                    # a stone seat out of doors
+    CASE = dict(ftex=T("VT"), side=T("V"), floor=40)
+    BOARD = dict(ftex=T("ST"), side=T("S"), floor=88)
+    RACK = dict(ftex=T("RT"), side=T("R"), floor=128)
+    BOOTH = dict(ftex=T("WD"), side=T("BS"), floor=128)                   # a call box: its front is named
+    WOOD = dict(ftex=T("WD"), side=T("WD"))
+    DRUM = dict(ftex="AJ9XD", side="AJ9XD")
+    PEGS = dict(ftex=T("WD"), side="AJ9XK", floor=96)                     # coats
+    CELL = dict(floor=PIT + 40, ftex="AJ9XJT", side="AJ9XJ")
+    PATH, WALK = dict(ftex=T("P")), dict(ftex=T("FT"))
+    YARDF, ROOFF = T("FA"), T("FR")
+    CALL = dict(wall=T("L"), ftex=T("F"), ctex=T("CL"))
+    MANAGER = dict(wall=T("MG"), ftex=T("FO"), ctex=T("CD"))
+    SWITCH = dict(wall=T("H"), ftex=T("F"), ctex=T("CA"))
+    GAL = BAL = dict(floor=UP, ftex=T("FG"), side=T("GV"))
+    SKYLIGHT = dict(floor=ROOF + 40, ftex=T("FL"), side=T("FL"), light=255)
+    LOFTW, SHAFT = "AJ9XC", dict(ceil=288, wall=T("TRH"))
+    TRUNK = dict(wall=T("TR"), ftex=T("FS"), ctex=T("CD"))
+    BATTERY, PASSAGE = dict(wall="AJ9XB", ftex="AJPIT"), dict(wall="AJ9XP", ftex="AJBOARD")
+    APPARATUS = dict(wall=T("AP"), ftex=T("FE"), ctex=T("CL"))
+    TEST = dict(wall=T("TS"), ftex=T("FE"), ctex=T("CD"))
+    GENW, KIOSKW, STOREW, ALCOVEW = "AJ9XG", "AJ9XN", "AJ9XL", "AJ6XC"
+    BELL = "AJTARG9"
+
+    def wing(tag, east):
+        return dict(wall=T(tag), ftex=T("FE" if east else "FD"), ctex=T("CD"))
+else:
+    FRONT = ROUND = STREET = LOWW = None
+    PORCH, HOLE = "AJBOARD", "AJBRICK"
+    YARD = OPEN
+    GSEAT, WALK = SEAT, PATH
+    BOOTH, DRUM, PEGS = dict(WOOD, floor=128), WOOD, dict(WOOD, floor=96)
+    CELL = dict(floor=PIT + 40, ftex="AJWATER", side="AJSTEEL")
+    YARDF, ROOFF = "AJGRASS", "AJSTEEL"
+    CALL = SWITCH = TRUNK = APPARATUS = dict(wall="AJBRICK", ftex="AJFLOOR")
+    MANAGER = TEST = {}
+    GAL = dict(floor=UP, ftex="AJSTEEL", side="AJSTEEL")
+    BAL = dict(floor=UP, ftex="AJBOARD", side="AJWOOD")
+    SKYLIGHT = dict(floor=ROOF + 40, ftex="AJSTEEL", side="AJSTEEL")
+    LOFTW, SHAFT = "AJBRICK", dict(ceil=288)
+    BATTERY, PASSAGE = dict(wall="AJBRICK", ftex="AJPIT"), dict(wall="AJBRICK", ftex="AJBOARD")
+    GENW = KIOSKW = STOREW = ALCOVEW = "AJSAFE"
+    BELL = "AJTARG"
+
+    def wing(tag, east):
+        return {}
+
+
+def low(floor=0, wall=None):
+    """A porch: doors and frames in tall rooms and under the sky stand under one.
+    In a look `wall` is the wall under it (default: the indoor porches')."""
+    return dict(dict(ceil=floor + 128, ctex=PORCH), **(dict(wall=wall or LOWW) if LOOK else {}))
+
+
+def _wall(tag):
+    return tag and (tag if tag.startswith("AJ") else "AJ9" + tag if tag.startswith("X") else T(tag))
+
+
+def over(a, b, tex):
+    """In a look: the wall over the opening a-b (under a lower ceiling) carries
+    on as `tex`, in line with the wall beside it; and so does the wall under
+    it, where the opening's floor is higher than the room's."""
+    if LOOK and tex:
+        m.line(a, b, upper=_wall(tex), lower=_wall(tex), dontpegtop=True, dontpegbottom=True)
+
+
+def fit(box, features, above=None, **base):
+    """ajarmap.fitted: a room with furniture. In a look the walls over the open
+    sides of its porches (low()) carry on as `above` (default: the room's own wall)."""
+    ajarmap.fitted(m, box, features, **base)
+    for shape, change in features if LOOK else ():
+        if change.get("ctex") != PORCH:
+            continue
+        x1, y1, x2, y2 = shape
+        for a, b, on_wall in (((x1, y1), (x2, y1), y1 == box[1]), ((x2, y1), (x2, y2), x2 == box[2]),
+                              ((x2, y2), (x1, y2), y2 == box[3]), ((x1, y2), (x1, y1), x1 == box[0])):
+            if not on_wall:
+                m.line(a, b, upper=above or base.get("wall"), dontpegtop=True)
 
 
 def rail(*runs):
@@ -94,69 +195,145 @@ def rail(*runs):
         m.line(a, b, **RAIL)
 
 
-def bars(a, b, out, floor, thick=16):
-    """A barred opening in a wall: to look and shoot through."""
+def pieces(tex, fixed, starts, axis="x"):
+    """In a look: 64-long pieces of a wall in the textures `tex`, by turns. Each
+    starts at a multiple of 64. Declared before front()."""
+    for i, s in enumerate(starts if LOOK else ()):
+        a, b = ((s, fixed), (s + 64, fixed)) if axis == "x" else ((fixed, s), (fixed, s + 64))
+        m.cut(a, b)
+        m.line(a, b, mid=tex[i % len(tex)])
+
+
+def front(*runs):
+    """In a look: these pieces of the forecourt's wall are the exchange's front."""
+    for a, b in runs if LOOK else ():
+        m.line(a, b, mid=FRONT)
+
+
+def _face(kind, tag, a, out, keys=""):
+    """The face of a door whose mouth starts at `a` in the wall `tag`, seen by
+    someone the door goes `out` from: the wall carries on over the leaf."""
+    lo = a[0] if out[0] == 0 else a[1]
+    s = lo % 64 if out in ((0, 1), (-1, 0)) else -lo % 64
+    return FACES.setdefault((LOOK, kind, tag, s, keys), f"AJ9{kind}{LOOK}{len(FACES):02d}")
+
+
+def _doors(kind, a, b, out, near, far, thick, keys=""):
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    m.sector([a, b, d, c], floor=floor + 32, ceil=floor + 96, light=170, wall="AJBRICK",
+    lo = (min(a[0], b[0]), min(a[1], b[1]))
+    if LOOK and near:
+        m.line(a, b, upper=_face(kind, near, lo, out, keys))
+    if LOOK and far:
+        m.line(c, d, upper=_face(kind, far, lo, (-out[0], -out[1]), keys))
+
+
+def door(a, b, out, floor, near, far, **k):
+    """A room door. In a look each side has its own face: `near` and `far` are
+    the walls it stands in (tags of gfx_exchange's: "L", "XP"...)."""
+    ajarmap.roomdoor(m, a, b, out, floor, **k)
+    _doors("D", a, b, out, near, far, k.get("thick", 16), k.get("keys", ""))
+
+
+def bolted(a, b, out, floor, tag, near, far, **k):
+    """A bolted door; `near`, `far` as door()'s, None for a side that stays as it is."""
+    ajarmap.bolted(m, a, b, out, floor, tag, **k)
+    _doors("Z", a, b, out, near, far, k.get("thick", 16))
+
+
+def _far(a, b, out, thick):
+    return (a[0] + out[0] * thick, a[1] + out[1] * thick), (b[0] + out[0] * thick, b[1] + out[1] * thick)
+
+
+def opening(a, b, out, floor, near, far, thick=16):
+    """An open way between two rooms; in a look their walls carry on round it."""
+    ajarmap.opening(m, a, b, out, floor, thick=thick)
+    over(a, b, near)
+    over(*_far(a, b, out, thick), far)
+
+
+def squeeze(a, b, out, floor, near, far, thick=16):
+    ajarmap.squeeze(m, a, b, out, floor, thick=thick)
+    over(a, b, near)
+    over(*_far(a, b, out, thick), far)
+
+
+def bars(a, b, out, floor, near=None, far=None, thick=16):
+    """A barred opening in a wall: to look and shoot through. In a look, `near`
+    and `far` are the walls it is cut through on either side."""
+    c, d = _far(a, b, out, thick)
+    m.sector([a, b, d, c], floor=floor + 32, ceil=floor + 96, light=170, wall=HOLE,
              ftex="AJTRIMF", ctex="AJTRIMF")
     m.line(a, b, mid="AJWIN", midboth=True, blocking=True)
+    over(a, b, near)
+    over(c, d, far)
 
 
-def hall(box, cases, **k):
+def hall(box, cases, tag, east=False, **k):
     """A room of the wings: 160 high, with furniture."""
-    ajarmap.fitted(m, box, cases, **dict(dict(ceil=160, light=175), **k))
+    fit(box, cases, **dict(dict(ceil=160, light=175), **dict(k, **wing(tag, east))))
 
 
 # === the forecourt, the line over its east end ===================================
 # start here: nobody about. The kiosk is behind bars at the west end; high in
 # the north wall, to the east, a hole shows a starry ceiling
-ajarmap.fitted(m, (-512, -832, 1100, -576), [
-    ((-64, -832, 64, -576), PATH),
-    ((-64, -640, 64, -576), low()),                                          # before the front door
-    ((-512, -816, -448, -624), low()),                                       # before the kiosk
-    ((-320, -800, -192, -768), SEAT), ((192, -800, 320, -768), SEAT), ((640, -800, 768, -768), SEAT),
-], floor=0, light=NIGHT, ftex="AJGRASS", **OPEN)
+fit((-512, -832, 1100, -576), [
+    ((-64, -832, 64, -576), WALK),
+    ((-64, -640, 64, -576), low(wall=T("YP"))),                              # before the front door
+    ((-512, -816, -448, -624), low(wall="AJ9XT")),                           # before the kiosk
+    ((-320, -800, -192, -768), GSEAT), ((192, -800, 320, -768), GSEAT), ((640, -800, 768, -768), GSEAT),
+], above=FRONT, floor=0, light=NIGHT, ftex=YARDF, **YARD)
+if LOOK:
+    for a, b in (((-512, -816), (-448, -816)), ((-448, -816), (-448, -624)), ((-448, -624), (-512, -624))):
+        m.line(a, b, upper=STREET, dontpegtop=True)                          # over the kiosk's porch
+pieces((T("YB"), T("YA"), T("YA"), T("YA"), T("YA"), T("YB"), T("YA"), T("YB"), T("YB")), -576,
+       (-448, -320, -192, 128, 256, 448, 576, 704, 1024))                    # the exchange's windows
+front(((-512, -576), (-64, -576)), ((64, -576), (888, -576)), ((952, -576), (1100, -576)))
+pieces(("AJ9XSA",), -832, (-384, -128, 384, 832))                            # somebody is still up, across the road
 # the line: BLUE's far side at its west end, VIOLET's at its east end, and a
 # hole to drop out by
 ajarmap.way_through(m, NX, NY, BLUE, VIOLET, floor=LINE)
-m.sector(rect(NX + 128, NY - 16, NX + 192, NY), floor=LINE, ceil=LINE + 96, light=150, wall="AJBRICK",
+m.sector(rect(NX + 128, NY - 16, NX + 192, NY), floor=LINE, ceil=LINE + 96, light=150, wall=HOLE,
          ftex="AJTRIMF", ctex="AJTRIMF")
+over((NX + 128, NY - 16), (NX + 192, NY - 16), FRONT)
 # the kiosk (secret), seen through bars: shoot its bell. One of the places a
 # Stray door opens onto
-m.sector(rect(-592, -816, -528, -624), ceil=112, light=170, color=ROSE, wall="AJSAFE")
-m.sector(rect(-784, -816, -592, -624), ceil=112, light=170, color=ROSE, wall="AJSAFE", special=1024)
-ajarmap.bolted(m, (-512, -800), (-512, -736), (-1, 0), 0, KIOSK, line_id=305)
+m.sector(rect(-592, -816, -528, -624), ceil=112, light=170, color=ROSE, wall=KIOSKW)
+m.sector(rect(-784, -816, -592, -624), ceil=112, light=170, color=ROSE, wall=KIOSKW, special=1024)
+bolted((-512, -800), (-512, -736), (-1, 0), 0, KIOSK, "XT", "XN", line_id=305)
 ajarmap.unbolt(m, (-592, -816), (-592, -624), KIOSK)
-bars((-512, -704), (-512, -640), (-1, 0), 0)
+bars((-512, -704), (-512, -640), (-1, 0), 0, "XT", KIOSKW)
 m.cut((-784, -704), (-784, -640))
-m.line((-784, -704), (-784, -640), special=11, args=(KIOSK, 32), impact=True, mid="AJTARG", exact=True)
+m.line((-784, -704), (-784, -640), special=11, args=(KIOSK, 32), impact=True, mid=BELL, exact=True)
 ajarmap.stray_place(m, 1, (-720, -816), (-656, -816), (0, -1), 0, color=ROSE)
 
 # === the call office ==============================================================
-# wide and shallow: RED, a frame, booths, the manager's two locks, the way on
-ajarmap.fitted(m, (-384, -560, 384, -304), [
+# wide and shallow: RED, a frame, call boxes, the manager's two locks, the way on
+fit((-384, -560, 384, -304), [
     ((-64, -560, 64, -304), PATH),
-    ((128, -544, 192, -480), dict(WOOD, floor=128)), ((224, -544, 288, -480), dict(WOOD, floor=128)),   # booths
-    ((320, -544, 384, -480), dict(WOOD, floor=128)),
+    ((128, -544, 192, -480), BOOTH), ((224, -544, 288, -480), BOOTH),        # call boxes
+    ((320, -544, 384, -480), BOOTH),
     ((-320, -416, -192, -352), CASE),                                        # the counter
     ((-320, -544, -192, -512), SEAT),
-], floor=0, ceil=192, light=185, wall="AJBRICK", ftex="AJFLOOR")
-ajarmap.roomdoor(m, (-32, -576), (32, -576), (0, 1), 0)
+], floor=0, ceil=192, light=185, **CALL)
+if LOOK:
+    for x in (128, 224, 320):
+        m.line((x, -480), (x + 64, -480), lower=T("B"))                      # their doors
+door((-32, -576), (32, -576), (0, 1), 0, "YP", "L")
 recess((384, -464), (384, -400), (1, 0), 0, 101, 201)                        # the call office's frame
 m.sector(rect(-96, -304, 96, -288), ceil=160, light=185, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+over((-96, -304), (96, -304), "L")
+over((-96, -288), (96, -288), "H")
 # the manager's office: two locks. BLUE
-ajarmap.fitted(m, (-720, -560, -400, -304), [
+fit((-720, -560, -400, -304), [
     ((-592, -464, -528, -400), CASE),                                        # the desk
     ((-720, -368, -656, -304), SEAT),
-], floor=0, ceil=128, light=170, color=PLUM)
-ajarmap.roomdoor(m, (-384, -464), (-384, -400), (-1, 0), 0, keys="34", line_id=303)
+], floor=0, ceil=128, light=170, color=PLUM, **MANAGER)
+door((-384, -464), (-384, -400), (-1, 0), 0, "L", "MG", keys="34", line_id=303)
 
 # === the switchroom: a long hall, its gallery along the north wall, its balcony
 # in the south-west corner ===========================================================
-GAL = dict(floor=UP, ftex="AJSTEEL", side="AJSTEEL")
-BAL = dict(floor=UP, ftex="AJBOARD", side="AJWOOD")
-ajarmap.fitted(m, (-768, -288, 768, 224), [
+fit((-768, -288, 768, 224), [
     ((-64, -288, 64, 96), PATH),
     ((-768, -32, -704, 96), low()),                                          # before the west wing's door
     ((704, -232, 768, -104), low()),                                         # before the east wing's
@@ -172,7 +349,7 @@ ajarmap.fitted(m, (-768, -288, 768, 224), [
     ((128, -192, 384, -160), BOARD), ((128, -64, 384, -32), BOARD),
     ((480, -96, 672, -64), BOARD), ((480, 32, 672, 64), BOARD),
     ((-288, -128, -224, -96), SEAT), ((224, -128, 288, -96), SEAT),
-], floor=0, ceil=448, light=180, color=SKY, wall="AJBRICK", ftex="AJFLOOR")
+], floor=0, ceil=448, light=180, color=SKY, **SWITCH)
 recess((-448, 224), (-384, 224), (0, 1), UP, far_id(GREEN), 101, far_colour=GREEN, color=SKY)
 recess((-768, -192), (-768, -128), (-1, 0), UP, far_id(YELLOW), 101, far_colour=YELLOW, color=SKY)
 recess((448, -288), (512, -288), (0, -1), 0, 102, 201, color=SKY)            # the switchroom's frame
@@ -180,103 +357,111 @@ rail(((-768, 96), (-256, 96)), ((-192, 96), (384, 96)), ((384, 96), (384, 224)))
 rail(((-768, -32), (-512, -32)), ((-512, -32), (-512, -128)), ((-512, -192), (-512, -288)))   # and one in the balcony's
 
 # === the roof (RED's far side): a hole lets down onto the gallery ==================
-ajarmap.fitted(m, (-1344, 304, -528, 928), [
-    ((-992, 864, -864, 928), low(ROOF)),                                     # before RED's far side
-    ((-1216, 432, -1088, 560), dict(floor=ROOF + 40, ftex="AJSTEEL", side="AJSTEEL")),   # skylights
-    ((-896, 496, -768, 624), dict(floor=ROOF + 40, ftex="AJSTEEL", side="AJSTEEL")),
-    ((-1216, 688, -1088, 816), dict(floor=ROOF + 40, ftex="AJSTEEL", side="AJSTEEL")),
-], floor=ROOF, light=NIGHT + 10, ftex="AJSTEEL", **OPEN)
-m.sector(rect(-640, 240, -576, 304), floor=ROOF, light=NIGHT + 10, ftex="AJSTEEL", **OPEN)
+fit((-1344, 304, -528, 928), [
+    ((-992, 864, -864, 928), low(ROOF, wall=T("KA"))),                       # before RED's far side
+    ((-1216, 432, -1088, 560), SKYLIGHT),                                    # skylights
+    ((-896, 496, -768, 624), SKYLIGHT),
+    ((-1216, 688, -1088, 816), SKYLIGHT),
+], floor=ROOF, light=NIGHT + 10, ftex=ROOFF, **OPEN)
+m.sector(rect(-640, 240, -576, 304), floor=ROOF, light=NIGHT + 10, ftex=ROOFF, **OPEN)
 recess((-960, 928), (-896, 928), (0, 1), ROOF, far_id(RED), 101, far_colour=RED)
-ajarmap.opening(m, (-640, 224), (-576, 224), (0, 1), ROOF)
+opening((-640, 224), (-576, 224), (0, 1), ROOF, "H", ROUND)
 
 # === the cable loft, the trunk room under its edge =================================
 # The loft opens off the gallery's east end. From it a hole lets down into the
 # trunk room: the only way in there with a door
-LOFT = dict(floor=UP, ceil=320, light=150, wall="AJBRICK", ftex="AJBOARD")
-ajarmap.opening(m, (192, 224), (256, 224), (0, 1), UP)
+LOFT = dict(floor=UP, ceil=320, light=150, wall=LOFTW, ftex="AJBOARD")
+opening((192, 224), (256, 224), (0, 1), UP, "A", LOFTW)
 m.sector(rect(192, 240, 256, 576), **LOFT)
-ajarmap.fitted(m, (192, 576, 848, 800), [
-    ((320, 672, 448, 736), dict(WOOD, floor=UP + 48)),                       # cable drums
-    ((704, 640, 768, 768), dict(WOOD, floor=UP + 48)),
+fit((192, 576, 848, 800), [
+    ((320, 672, 448, 736), dict(DRUM, floor=UP + 48)),                       # cable drums
+    ((704, 640, 768, 768), dict(DRUM, floor=UP + 48)),
 ], **LOFT)
 m.sector(rect(560, 560, 624, 576), floor=UP, ceil=UP + 96, light=150, wall="AJTRIM", ftex="AJTRIMF",
          ctex="AJTRIMF")
+over((560, 576), (624, 576), LOFTW)
+over((560, 560), (624, 560), "TRH")
 # the trunk room: two brass frames, and nothing else to hang a door in
-ajarmap.fitted(m, (336, 304, 848, 560), [
+fit((336, 304, 848, 560), [
     ((336, 400, 848, 464), ajarmap.RUNNER),
-    ((528, 464, 656, 560), dict(ceil=288)),                                  # under the hole
+    ((528, 464, 656, 560), SHAFT),                                           # under the hole
     ((400, 336, 528, 368), BOARD), ((656, 336, 784, 368), BOARD),            # the trunk positions
-], rug="AJXR2", floor=0, ceil=160, light=170, color=GOLD, wall="AJBRICK", ftex="AJFLOOR")
+], rug="AJXR2", floor=0, ceil=160, light=170, color=GOLD, **TRUNK)
+if LOOK:
+    for a, b in (((528, 464), (656, 464)), ((528, 464), (528, 560)), ((656, 464), (656, 560))):
+        m.line(a, b, upper="AJ9XH")                                          # the shaft's own sides
 ajarmap.brass_pair(m, (336, 400), (336, 464), (848, 400), (848, 464), 0, BLUE, VIOLET)
-ajarmap.squeeze(m, (424, 224), (472, 224), (0, 1), 0, thick=80)              # the hatch, from the switchroom
+squeeze((424, 224), (472, 224), (0, 1), 0, "A", "TR", thick=80)              # the hatch, from the switchroom
 m.sector(rect(848, 496, 864, 560), ceil=96, light=150, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")   # the chute
+over((848, 496), (848, 560), "TR")
+over((864, 496), (864, 560), BATTERY["wall"])
 
 # === the battery room, the cable passage ==========================================
 # a chute down from the trunk room; stairs up to the passage
-ajarmap.fitted(m, (864, 480, 1504, 928), [
-    ((960, 672, 1088, 864), dict(floor=PIT + 40, ftex="AJWATER", side="AJSTEEL")),       # cells
-    ((1184, 672, 1312, 864), dict(floor=PIT + 40, ftex="AJWATER", side="AJSTEEL")),
-    ((1056, 512, 1248, 576), dict(floor=PIT + 40, ftex="AJWATER", side="AJSTEEL")),
-], floor=PIT, ceil=128, light=140, wall="AJBRICK", ftex="AJPIT")
+fit((864, 480, 1504, 928), [
+    ((960, 672, 1088, 864), CELL),                                           # cells
+    ((1184, 672, 1312, 864), CELL),
+    ((1056, 512, 1248, 576), CELL),
+], floor=PIT, ceil=128, light=140, **BATTERY)
 recess((1100, 928), (1164, 928), (0, 1), PIT, 105, 201)                      # the battery room's frame
-ajarmap.stairs(m, (1408, 224), (1472, 224), (0, 1), 0, -128, ceil=128, light=150, wall="AJBRICK",
+ajarmap.stairs(m, (1408, 224), (1472, 224), (0, 1), 0, -128, ceil=128, light=150, wall=BATTERY["wall"],
                ftex="AJBOARD")
-m.sector(rect(1520, 660, 1664, 788), floor=PIT, ceil=PIT + 96, light=120, wall="AJSAFE", ftex="AJPIT",
+m.sector(rect(1520, 660, 1664, 788), floor=PIT, ceil=PIT + 96, light=120, wall=ALCOVEW, ftex="AJPIT",
          special=1024)
-ajarmap.squeeze(m, (1504, 700), (1504, 748), (1, 0), PIT)
-ajarmap.fitted(m, (784, 80, 1472, 224), [
+squeeze((1504, 700), (1504, 748), (1, 0), PIT, BATTERY["wall"], ALCOVEW)
+fit((784, 80, 1472, 224), [
     ((896, 80, 1024, 112), dict(WOOD, floor=48)),
     ((1216, 192, 1280, 224), dict(WOOD, floor=48)),
-], floor=0, ceil=160, light=165, wall="AJBRICK", ftex="AJBOARD")
-ajarmap.roomdoor(m, (768, 112), (768, 176), (1, 0), 0)
+], floor=0, ceil=160, light=165, **PASSAGE)
+door((768, 112), (768, 176), (1, 0), 0, "A", "XP")
 # the generator room: bolted inside, and one of the places a Stray door opens onto
-m.sector(rect(944, 240, 1264, 304), ceil=128, light=120, wall="AJSAFE", ftex="AJPIT")
-m.sector(rect(944, 304, 1264, 464), ceil=128, light=120, wall="AJSAFE", ftex="AJPIT")
-ajarmap.bolted(m, (1072, 224), (1136, 224), (0, 1), 0, GENERATOR, line_id=306)
+m.sector(rect(944, 240, 1264, 304), ceil=128, light=120, wall=GENW, ftex="AJPIT")
+m.sector(rect(944, 304, 1264, 464), ceil=128, light=120, wall=GENW, ftex="AJPIT")
+bolted((1072, 224), (1136, 224), (0, 1), 0, GENERATOR, "XP", "XG", line_id=306)
 ajarmap.unbolt(m, (944, 304), (1264, 304), GENERATOR)
 ajarmap.stray_place(m, 0, (1264, 352), (1264, 416), (1, 0), 0)
 
 # === the west wing: one lock. Canteen, cloakroom, rest room =======================
 hall((-1360, -288, -848, 96), [((-1232, -160, -1104, -96), CASE), ((-1040, -32, -976, 32), CASE),
-                               ((-1264, 32, -1136, 64), SEAT)], color=GOLD)                                     # canteen
-hall((-1680, -288, -1376, 96), [((-1616, -224, -1552, -96), WOOD | dict(floor=96)),
-                                ((-1488, -32, -1424, 32), WOOD | dict(floor=96))], color=LEAF)                   # cloakroom
+                               ((-1264, 32, -1136, 64), SEAT)], "CN", color=GOLD)                               # canteen
+hall((-1680, -288, -1376, 96), [((-1616, -224, -1552, -96), PEGS),
+                                ((-1488, -32, -1424, 32), PEGS)], "CK", color=LEAF)                              # cloakroom
 hall((-1360, 112, -912, 288), [((-1040, 224, -912, 288), SEAT),
-                               ((-1232, 144, -1104, 176), dict(WOOD, floor=32))], color=PLUM)                    # rest room
-ajarmap.roomdoor(m, (-768, 0), (-768, 64), (-1, 0), 0, keys="1", line_id=301, thick=80)
-ajarmap.roomdoor(m, (-1360, -128), (-1360, -64), (-1, 0), 0)
-ajarmap.roomdoor(m, (-1168, 96), (-1104, 96), (0, 1), 0)
+                               ((-1232, 144, -1104, 176), dict(WOOD, floor=32))], "RR", color=PLUM)              # rest room
+door((-768, 0), (-768, 64), (-1, 0), 0, "A", "CN", keys="1", line_id=301, thick=80)
+door((-1360, -128), (-1360, -64), (-1, 0), 0, "CN", "CK")
+door((-1168, 96), (-1104, 96), (0, 1), 0, "CN", "RR")
 recess((-1360, 168), (-1360, 232), (-1, 0), 0, 103, 201, color=PLUM)         # the rest room's frame
 
 # === the east wing: one lock. Apparatus room, relay room; the test room ===========
-ajarmap.fitted(m, (784, -288, 1360, 64), [
+fit((784, -288, 1360, 64), [
     ((848, -224, 1168, -192), RACK), ((848, -96, 1168, -64), RACK),
     ((1232, -160, 1296, 0), RACK),
-], floor=0, ceil=192, light=165, color=LEAF, wall="AJBRICK", ftex="AJFLOOR")
-hall((1376, -288, 1824, 32), [((1504, -96, 1568, -32), CASE), ((1696, -224, 1760, -160), CASE)], color=PLUM)   # relay room
-ajarmap.roomdoor(m, (768, -200), (768, -136), (1, 0), 0, keys="2", line_id=302)
-ajarmap.roomdoor(m, (1360, -200), (1360, -136), (1, 0), 0)
+], floor=0, ceil=192, light=165, color=LEAF, **APPARATUS)
+hall((1376, -288, 1824, 32), [((1504, -96, 1568, -32), CASE), ((1696, -224, 1760, -160), CASE)], "RY", True,
+     color=PLUM)                                                             # relay room
+door((768, -200), (768, -136), (1, 0), 0, "A", "AP", keys="2", line_id=302)
+door((1360, -200), (1360, -136), (1, 0), 0, "AP", "RY")
 # No frame in this wing: the thief has nowhere to hang what it carries, and a
 # door hung in here would be a way in past the lock (the solver found the
 # player shut out for good that way)
 # the test room: a hatch no door fits through, VIOLET, and a frame
-ajarmap.fitted(m, (1200, -560, 1520, -304), [
+fit((1200, -560, 1520, -304), [
     ((1440, -528, 1504, -400), CASE),                                        # the test desk
-], floor=0, ceil=128, light=160, color=GOLD)
-ajarmap.squeeze(m, (1256, -288), (1304, -288), (0, -1), 0)
+], floor=0, ceil=128, light=160, color=GOLD, **TEST)
+squeeze((1256, -288), (1304, -288), (0, -1), 0, "AP", "TS")
 recess((1328, -560), (1392, -560), (0, -1), 0, 104, 201, color=GOLD)         # the test room's frame
 # the stationery store (secret): a hole no door fits through, PINK, and a frame.
 # Beyond its bars the strongroom (secret): PINK's far side. The strongroom's own
 # door into the relay room is bolted inside
-m.sector(rect(1840, -288, 2048, -112), ceil=112, light=150, color=ROSE, wall="AJSAFE", special=1024)
-ajarmap.squeeze(m, (1824, -216), (1824, -168), (1, 0), 0)
+m.sector(rect(1840, -288, 2048, -112), ceil=112, light=150, color=ROSE, wall=STOREW, special=1024)
+squeeze((1824, -216), (1824, -168), (1, 0), 0, "RY", STOREW)
 m.sector(rect(1840, -96, 1904, 32), ceil=112, light=150, color=ROSE, wall="AJSAFE")
 m.sector(rect(1904, -96, 2064, 32), ceil=112, light=150, color=ROSE, wall="AJSAFE", special=1024)
-bars((1936, -112), (2000, -112), (0, 1), 0)
+bars((1936, -112), (2000, -112), (0, 1), 0, STOREW, None)
 recess((1912, -288), (1976, -288), (0, -1), 0, 109, 201, color=ROSE)
 recess((2064, -64), (2064, 0), (1, 0), 0, far_id(PINK), 101, far_colour=PINK, color=ROSE)
-ajarmap.bolted(m, (1824, -64), (1824, 0), (1, 0), 0, STRONG)
+bolted((1824, -64), (1824, 0), (1, 0), 0, STRONG, "RY", None)
 ajarmap.unbolt(m, (1904, -96), (1904, 32), STRONG)
 
 # --- doors and keys ----------------------------------------------------------

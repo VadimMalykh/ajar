@@ -683,12 +683,15 @@ class AjarNailer : AjarWorker
 // It leaves alone a door in somebody's hands, a nailed door, a Stray door,
 // and whatever hangs in a brass frame. It does not fight.
 //
-// Look: provisional (the others were chosen from boards): the shadow of an
-// imp, without eyes; the colour it carries is its mark.
+// Look (user, 2026-11-17, design/map09-board.html): one of the family. The
+// shadow of an imp with the lodger's brass eyes; while a colour is on its
+// brush its eyes are that colour.
 class AjarRepainter : AjarWorker
 {
 	const PATIENCE = 160;
 	const SHADE = 0.7;
+	const EYE_Z = 45;          // the eyes' height above its feet
+	Actor eyes;
 	AjarDoor first;            // the door whose colour is on its brush
 	Array<AjarDoor> done;      // the doors it has painted: it does not paint a door twice
 	AjarDoor job;
@@ -736,6 +739,32 @@ class AjarRepainter : AjarWorker
 		Super.PostBeginPlay();
 		A_SetRenderStyle(SHADE, STYLE_TranslucentStencil);
 		SetShade(0x0A090E);
+	}
+
+	// The family's brass eyes, shown only while it faces you, as the thief's
+	// are. With a colour on its brush the eyes are that colour: the shadow
+	// itself stays black.
+	void Dress()
+	{
+		if (!eyes) { eyes = Spawn("AjarLodgerEyes", pos); eyes.scale = (0.7, 0.7); }
+		let cam = players[consoleplayer].camera;
+		eyes.bInvisible = health <= 0 || !cam || abs(DeltaAngle(angle, AngleTo(cam))) > 50;
+		if (eyes.bInvisible) return;
+		eyes.SetOrigin((pos.xy + AngleToVector(angle, 6), pos.z + EYE_Z), true);
+		if (first) { eyes.A_SetRenderStyle(1, STYLE_Stencil); eyes.SetShade(AjarDoor.glow[first.Colour()]); }
+		else eyes.A_SetRenderStyle(1, STYLE_Translucent);
+	}
+
+	override void Tick()
+	{
+		Super.Tick();
+		Dress();
+	}
+
+	override void OnDestroy()
+	{
+		if (eyes) eyes.Destroy();
+		Super.OnDestroy();
 	}
 
 	bool Paintable(AjarDoor d)
@@ -802,7 +831,6 @@ class AjarRepainter : AjarWorker
 			if (!first)
 			{
 				first = job;
-				SetShade(AjarDoor.glow[first.Colour()]);
 				h.Say("Something has put its brush to the " .. first.Label() .. " door.");
 			}
 			else
@@ -821,7 +849,6 @@ class AjarRepainter : AjarWorker
 	void A_PaintSpilt()
 	{
 		first = null;
-		SetShade(0x0A090E);
 	}
 }
 

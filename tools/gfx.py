@@ -844,7 +844,10 @@ def make_all():
     import gfx_store                                             # MAP08's candidate looks
     import map_hinges8
     gfx_store.make(out, rd, map_hinges8.FACES, map_hinges8.SIGNS)
-    import gfx_things                                            # ... and what stands in its rooms
+    import gfx_exchange                                          # MAP09's candidate looks
+    import map_hinges9
+    gfx_exchange.make(out, rd, map_hinges9.FACES)
+    import gfx_things                                            # ... and what stands in MAP08's rooms
     gfx_things.make(out)
 
     # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate

@@ -2337,3 +2337,56 @@ irreversible, not built"); Vadim asked for it in MAP09. `AjarRepainter`
   whether it should be seen at work before it may swap, as the thief must be
   seen to take a door down. In MAP09 it only bites when two doors are left
   about the switchroom at once (a second door hung in 102 as a shortcut).
+
+## Look: MAP09 and the repainter (started 2026-11-17)
+
+Board: https://claude.ai/artifact/EzEwGjnDYZv6be3jTcPKyr (source
+`design/map09-board.html`, images in `build/board9/`: `<look>/view_NN.jpg`,
+`tex/` swatches, `rp/<look>/pose_N.jpg`). **Chosen by Vadim, 2026-11-17:
+look 1, Central, for the exchange; candidate 2, Family, for the repainter.**
+Both are built and are what the game now is. Branch `look9`, not committed.
+Not played by hand.
+
+`AJAR_EXCHANGE` picks the exchange's look (`tools/gfx_exchange.py`); the
+default is 1, 2 and 3 build the two that lost, 0 the plain level (whose map
+was byte for byte what it had been before the looks, checked). 1 Central (1900s: red brick and
+terracotta, cream over mahogany and brown glazed brick, bottle-green iron,
+brass, mahogany cord boards), 2 Trunk (1930s: brown brick over Portland
+stone, cream over green gloss paint, oak, lino, black cord boards), 3 Crossbar
+(1960s: a concrete frame and blue panels, white and grey with one colour to a
+room, teak, vinyl tile, grey desks of keys). The same in all three: the
+houses across the road (`AJ9XS`), the kiosk (`XN`), the stationery store
+(`XL`), the cable loft and its drums (`XC`, `XD`), the shaft from it (`XH`),
+the battery room and its cells (`XB`, `XJ`), the cable passage (`XP`), the
+generator room (`XG`), coats (`XK`). The strongroom keeps its safes; the line
+is not touched.
+
+How it is built (`map_hinges9.py`, as MAP08's): `fit()`, `low()`, `over()`,
+`pieces()`, `front()`, `door()`, `bolted()`, `opening()`, `squeeze()`,
+`bars()`, `hall()`; door faces in `FACES`. New here: a call box's front is
+one picture on its north line (`lower=`), switchboards repeat every 32 and
+have a face on both long sides, the trunk room's wall under the hole from the
+loft is its own 288-high texture (`TRH`).
+
+The tour has six more views (42 to 47: the gallery and the balcony from the
+hall, the loft past its drums, the call boxes, the front, the battery room's
+cells), because 10 and 17 look into furniture; 48 in all, and
+`smoke_MAP09_2.cfg` takes 48 shots. `tools/board9_shots.sh` builds and shoots
+all four (about 15 minutes), look 1 last, so the pk3 is left as the game is.
+
+**The repainter** (`AjarRepainter.Dress`): the imp's shadow with the lodger's
+brass eyes at 0.7 (`EYE_Z` 45), shown while it faces you as the thief's are.
+The shadow no longer turns the colour: while a colour is on its brush only
+its eyes are that colour. `MAP=MAP09 MODE=5` photographs it at work before
+the switchroom's frame (six shots); `MODE=4`, its test, passes, and so does
+MAP09's walkthrough in look 1. The candidates that lost (a mancubus' shadow,
+the marine in overalls, an imp in whitewash, a chaingunner's shadow) and
+their portrait mode, cvar and translations are deleted; the board's
+photographs of them remain in `build/board9/rp/`. With a colour on its brush
+it walks to the second door, so the coloured eyes are seen only when that
+walk is towards you.
+
+Put to Vadim at the foot of the board, none built: lights out, signs,
+things on the floor, the forecourt as a street, the roof's edge, sound, the
+switchboards under the gallery's gap; for the repainter: a sound or drips
+with the warning, whether it must be seen at work, its voice, its size.
