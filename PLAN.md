@@ -2247,3 +2247,65 @@ easier difficulties like placed monsters. Two or three per level from MAP03
 to MAP09, five to eight monsters a level; the list is at the foot of each
 map's things. `tools/budget.py` and `tools/thingcheck.py` count an ambusher
 as the monster it will be.
+
+## MAP09 rebuilt (2026-11-16)
+
+Vadim, after playing MAP08 and starting MAP09: the two begin alike. They
+did: MAP09 had been laid out on MAP08's plan with the rooms renamed, down to
+the monster lists. The puzzle (the chain, VIOLET in the test room, the trunk
+room entered from above only) is kept; the building and the way into it are
+new (`tools/map_hinges9.py`, its docstring has the plan).
+
+- The switchroom is a long hall, east to west, with the gallery along its
+  north wall and the balcony in its south-west corner. The line hangs over
+  the east end of the forecourt; the kiosk is at the west end.
+- RED opens onto the roof now and GREEN onto the gallery: the first trip is
+  out under the sky, key 2 is in the roof's far corner, and the hole down
+  onto the gallery leads to key 1. Both wings can then be opened in either
+  order. Key 3 moved to the west wing (the cloakroom), so that wing is still
+  needed.
+- The thief is back, in the east wing, with YELLOW on its back
+  (`thief=dict(zone="east")`). The east wing has no frame: with one, the
+  thief hangs YELLOW in it, a Stray door can put the player on the balcony,
+  and from there the wing is entered without its key; the solver then found
+  the player shut out for good (RED left inside, key 2 on the roof). So the
+  thief is to be caught, and has nowhere to hang what it carries.
+- The battery room, the cable passage and the generator room are north-east,
+  under the trunk room's chute.
+- 10 door actions, 312528 states, none stuck, nothing losable. 145 monsters
+  with the ambushers. `MODE=1` (58 checks, the thief killed first), `MODE=3`
+  and the tour (`MODE=2`) are rewritten for the new plan; `smoke_MAP09_1.cfg`
+  waits longer.
+- `roomdoor(free_inside=True)` exists (a locked door that needs no key from
+  inside) and is not used: it did not cure the above.
+
+Not done: a look for MAP08 and MAP09; neither has been played by hand as
+rebuilt.
+
+## The repainter (built 2026-11-16)
+
+In the plan since 2026-11-14 as one line ("swaps where two doors lead,
+irreversible, not built"); Vadim asked for it in MAP09. `AjarRepainter`
+(`src/zscript/enemies.zs`, editor number 20007, 70 health, does not fight):
+
+- A door's colour is where it leads. The repainter walks to a door, hung or
+  leaning, and takes its colour: its shadow turns that colour and a line says
+  which door it touched. That is the warning. Then it walks to a second door
+  and the two change places (`AjarHandler.Repaint`: the two doors trade
+  colour and far-side line; what hangs is linked again). It does not put them
+  back and paints no door twice. Killed with a colour on its brush it has
+  changed nothing.
+- It leaves alone a door in somebody's hands, a nailed door, a Stray door and
+  whatever hangs in a brass frame. With nothing to do it wanders.
+- `tools/solve.py`: `repainter=dict(zone=[regions])`: while it lives any two
+  doors hanging or leaning in its zone may change places; the player can kill
+  it there. Its life is the second bit of the state's thief flag.
+- MAP09 has one, in the switchroom (zone: main and the west wing): 10 door
+  actions, none stuck, nothing losable with it. `MAP=MAP09 MODE=4` tests it
+  (GREEN in a frame, BLUE leaning: they change places and the frame opens
+  onto the line).
+- Open, Vadim's call: its look is provisional (the shadow of an imp, no
+  eyes; the other three were chosen from boards); its sounds are the imp's;
+  whether it should be seen at work before it may swap, as the thief must be
+  seen to take a door down. In MAP09 it only bites when two doors are left
+  about the switchroom at once (a second door hung in 102 as a shortcut).
