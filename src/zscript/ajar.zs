@@ -385,8 +385,10 @@ class AjarHandler : EventHandler
 	// --- ambushes (ajarmap.ambush) ------------------------------------------
 	// An AjarAmbush thing is a monster that is not there yet. args[0] is what
 	// brings it: 1..4, taking that room key; 11..16, taking the door of that
-	// colour (less 10) for the first time. args[1] is the monster's Doom
-	// editor number. It comes in a flash where the thing stands, a moment
+	// colour (less 10) for the first time; 20, work for a repainter: a door
+	// it may paint, hung or leaning, within WORK_NEAR of the thing (so it is
+	// not found standing idle and shot before it has done anything). args[1]
+	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
 	// after, facing the way the thing faces, and knows where the player is.
 	// If something stands in its place it waits until the place is free.
 	static class<Actor> AmbushClass(int n)
@@ -407,8 +409,23 @@ class AjarHandler : EventHandler
 		case 67: return "Fatso";
 		case 68: return "Arachnotron";
 		case 71: return "PainElemental";
+		case 20007: return "AjarRepainter";
 		}
 		return null;
+	}
+
+	const WORK = 20;
+	const WORK_NEAR = 700;
+	bool WorkNear(Actor a)
+	{
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next()))
+		{
+			if (d.carried || d.IsStray() || d.nailer || (d.frame && d.frame.args[1])) continue;
+			if (a.Distance2D(d.frame ? Actor(d.frame) : Actor(d)) < WORK_NEAR) return true;
+		}
+		return false;
 	}
 
 	void AmbushTick(PlayerPawn mo)
@@ -421,7 +438,7 @@ class AjarHandler : EventHandler
 			int g = a.args[0];
 			if (!a.armed)
 			{
-				if (g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
+				if (g == WORK ? !WorkNear(a) : g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
 				a.armed = true;
 				a.wait = 20 + 5 * random(0, 5);
 			}
