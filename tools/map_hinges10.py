@@ -5,7 +5,7 @@ A town square at night, and a bus standing at its stop (Vadim's idea,
 red outline of a bus with numbered doors, and every door is another place:
 the places are the earlier levels. It has two faces. From the square you see
 doors 1 to 6; the bus stands in the gateway of the depot, and from in there
-you see 7 to 9 (ajarmap.bus).
+you see 7 and 8 (ajarmap.bus).
 
   1  the hotel (MAP02): a line that always runs
   2  a frame: whatever you hang there is a line of your own
@@ -15,8 +15,9 @@ you see 7 to 9 (ajarmap.bus).
   6  a brass frame, and facing it across the pavement, in the shelter, the
      other one: the way out
   7  YELLOW's far side: YELLOW is a ticket to the depot
-  8  a frame
-  9  the observatory (MAP07): a line that always runs
+  8  the observatory (MAP07): a line that always runs
+     (no frame on this face: with one, two doors could be left hanging on
+     the depot's side at once, and the solver found the level lost that way)
 
 RED opens onto the theatre (MAP03). The museum (MAP06) stands on the square,
 locked. A route board in the shelter has a lamp for each door of the bus and
@@ -39,7 +40,9 @@ The catches. VIOLET leans in the museum's cellar: you drop in with whatever
 you carry and leave by a hole no door fits through, so VIOLET comes out
 through another door, hung in the cellar's frame (GREEN takes you straight
 to the stop). BLUE is under the observatory's dome, on the depot's side of
-the bus, behind a lock whose key lies in the depot.
+the bus, and the dome is such a place too: a ledge, a drop, stairs up to a
+hole. Two doors have to be spared for the two of them while a third keeps a
+line running.
 
 Places. "main" is the square, the hotel and the station (the lines that
 always run). The theatre (RED's far side): GREEN, key 1; its stage door
@@ -120,16 +123,15 @@ ajarmap.fitted(m, (224, -208, 512, -48), [
     ((448, -208, 512, -48), low()),                                          # over the route board
 ], floor=0, light=NIGHT + 10, **PAVE, **OPEN)
 south = ajarmap.bus(m, -400, 0, face=1, floor=0, first=1, light=NIGHT + 20, **PAVE)
-north = ajarmap.bus(m, -400, 144, face=-1, floor=D, first=7, slots=(0, 2, 4), light=NIGHT + 20, ftex="AJSTEEL")
+north = ajarmap.bus(m, -400, 144, face=-1, floor=D, first=7, slots=(1, 4), light=NIGHT + 20, ftex="AJSTEEL")
 recess(*south[1], (0, 1), 0, 101, 201)                                       # 2: a frame
 recess(*south[2], (0, 1), 0, far_id(GREEN), 101, far_colour=GREEN)           # 3: GREEN's far side
 ajarmap.stray_place(m, 0, *south[3], (0, 1), 0)                              # 4: no number
 m.line(*south[3], upper="AJBN0")
 ajarmap.brass_pair(m, *south[5], (288, -208), (352, -208), 0, BLUE, VIOLET, outs=((0, 1), (0, -1)))   # 6, and the shelter
 recess(*north[0], (0, -1), D, far_id(YELLOW), 101, far_colour=YELLOW)        # 7: YELLOW's far side
-recess(*north[1], (0, -1), D, 105, 201)                                      # 8: a frame
 ajarmap.route_board(m, (512, -56), [(1, None), (2, 101), (3, GREEN), (5, None), (6, HOME), (0, HOME2),
-                                    (7, YELLOW), (8, 105), (9, None)], step=(0, -16))
+                                    (7, YELLOW), (8, None)], step=(0, -16))
 # the line: BLUE's far side at its west end, VIOLET's at its east end, and a
 # hole to drop out by, into the shelter
 ajarmap.way_through(m, NX, NY, BLUE, VIOLET, floor=LINE, longer=PINK)
@@ -260,17 +262,29 @@ ajarmap.way_longer(m, 96, 720, PINK, BLUE, VIOLET, floor=PF)
 m.sector(rect(224, 640, 288, 720), floor=PF, ceil=PF + 96, light=150, wall="AJBRICK",
          ftex="AJTRIMF", ctex="AJTRIMF")
 
-# === the observatory (line 9, from the depot) ======================================
+# === the observatory (line 8, from the depot) ======================================
 ajarmap.fitted(m, (1600, 1000, 2112, 1384), [
     ((1824, 1000, 1888, 1384), dict(ftex="AJ7P3")),
     ((1632, 1160, 1760, 1224), dict(ftex="AJ7WD3", side="AJ7LB3", floor=96)),            # stacks
     ((1952, 1160, 2080, 1224), dict(ftex="AJ7WD3", side="AJ7LB3", floor=96)),
 ], floor=0, ceil=192, light=175, **LIBRARY)
-ajarmap.doorway(m, 3, *north[2], (0, -1), D, (1824, 1000), (1888, 1000), (0, -1), 0)
+ajarmap.doorway(m, 3, *north[1], (0, -1), D, (1824, 1000), (1888, 1000), (0, -1), 0)
+# the dome: its floor is sunk. The door lets onto a ledge; you drop in with what
+# you carry and leave by stairs and a hole no door fits through, as in the
+# museum's cellar. So BLUE leaves through another door, hung in the dome's frame
+PIT = -96
 ajarmap.fitted(m, (1664, 1400, 2048, 1784), [
-    ((1808, 1544, 1904, 1640), dict(ftex="AJSTEEL", side="AJ7DP3", floor=64)),           # the pier
-], floor=0, ceil=320, light=165, **DOME)
+    ((1792, 1400, 1920, 1464), dict(floor=0, ftex="AJ7WD3", side="AJ7WD3")),             # the ledge inside the door
+    ((1808, 1544, 1904, 1640), dict(ftex="AJSTEEL", side="AJ7DP3", floor=PIT + 64)),     # the pier
+], floor=PIT, ceil=320, light=165, **DOME)
 ajarmap.roomdoor(m, (1824, 1384), (1888, 1384), (0, 1), 0, keys="2", line_id=302)
+recess((2048, 1560), (2048, 1624), (1, 0), PIT, 116, 201)                    # the dome's frame
+ajarmap.stairs(m, (1664, 1700), (1664, 1764), (-1, 0), PIT, 96, steps=6, ceil=160, light=150, **DOME)
+m.sector(rect(1408, 1700, 1472, 1764), floor=0, ceil=128, light=150, **LIBRARY)
+ajarmap.squeeze(m, (1416, 1700), (1464, 1700), (0, -1), 0)
+m.sector(rect(1408, 1320, 1472, 1684), floor=0, ceil=128, light=150, **LIBRARY)
+m.sector(rect(1472, 1320, 1584, 1384), floor=0, ceil=128, light=150, **LIBRARY)
+ajarmap.opening(m, (1600, 1320), (1600, 1384), (-1, 0), 0)
 
 # --- doors and keys ----------------------------------------------------------
 REPAINTER = 20007
@@ -430,10 +444,10 @@ things(SHELLBOX, (1630, 1350))
 things(MEDIKIT, (2080, 1350))
 # the dome: BLUE
 things(BARON, (1856, 1700), angle=270)
-things(ARACHNO, (1740, 1480), angle=270)
+things(ARACHNO, (1740, 1580), angle=270)
 things(MEDIKIT, (1760, 1750))
 things(CELLS, (2010, 1440))
-things(TECHLAMP, (1688, 1760), (2024, 1424))
+things(TECHLAMP, (1688, 1424), (2024, 1424))
 
 # --- ambushes: what a key or a door brings (ajarmap.ambush) -------------------
 # The square is where they come: an arena that fills from its own stop.
@@ -454,19 +468,20 @@ ajarmap.ambush(m, 10 + BLUE, REVENANT, (1730, 1100), (1980, 1100), angle=90)
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "main" is the square, the hotel, the station (lines 1 and 5 always run) and
 # the kiosk; "museum" its hall, gallery and PINK's store; "depot" the depot and
-# the observatory's library (line 9); "night" is the line, "pink" PINK's room.
+# the observatory's library (line 8); "night" is the line, "pink" PINK's room.
 PUZZLE = dict(
     start="main", goal="exit", names=ajarmap.NAMES, complete=True,
     home_chain=dict(frames=[HOME, HOME2], doors=[BLUE, VIOLET], secret=dict(frame=HOME3, door=PINK)),
     walk=[("main", "museum", "1"), ("museum", "main", "1"),
           ("museum", "cellar"), ("cellar", "museum", "", "squeeze"),      # down the hole; up the stairs and out
           ("depot", "main"),                                              # the side gate, a step down
-          ("depot", "dome", "2"), ("dome", "depot", "2"),
+          ("depot", "dome", "2"), ("dome", "depot", "", "squeeze"),       # down off the ledge; up the stairs and out
           ("theatre", "main"),                                            # the stage door
           ("night", "main"),                                              # the hole over the shelter
           ("pink", "depot")],                                             # the hole over the depot
     keys={"1": "theatre", "2": "depot"},
-    frames={101: "main", HOME: "main", HOME2: "main", 105: "depot", 114: "cellar", HOME3: "pink"},
+    frames={101: "main", HOME: "main", HOME2: "main", 114: "cellar", 116: "dome",
+            HOME3: "pink"},
     doors={
         RED: dict(home="theatre", lean="main"),
         YELLOW: dict(home="depot", lean="main"),

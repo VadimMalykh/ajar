@@ -2150,13 +2150,14 @@ class AjarHandler : EventHandler
 			-1068, 370, 0, 90, 0,          // PINK's store through its bars
 			-1020, 620, 0, 200, 0,         // PINK's store
 			-320, 230, 48, 90, 0,          // the depot from YELLOW's far side
-			0, 600, 48, 270, 0,            // the bus from behind: doors 7 to 9
+			0, 600, 48, 270, 0,            // the bus from behind: doors 7 and 8
 			480, 620, 48, 215, 0,          // the depot from its far corner
 			250, 500, 48, 90, -30,         // the hole from PINK's room
 			120, 848, 144, 0, 0,           // PINK's room: its brass frame
 			400, 760, 144, 160, 0,         // PINK's room: PINK's far side
-			1856, 1020, 0, 90, 0,          // line 9: the observatory's library
-			1700, 1440, 0, 45, -10         // the dome: BLUE
+			1856, 1020, 0, 90, 0,          // line 8: the observatory's library
+			1856, 1440, 0, 90, 20,         // the dome from its ledge: BLUE, the frame
+			1700, 1500, -96, 30, -10       // down in the dome
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}

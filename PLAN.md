@@ -2362,8 +2362,8 @@ irreversible, not built"); Vadim asked for it in MAP09. `AjarRepainter`
 Built, solver-proven, its two ways out walked headlessly. **Not played by
 hand, and no walkthrough test of the whole level yet.** `tools/map_hinges10.py`:
 a town square at night and a bus at its stop. Six doors, all in the puzzle,
-two keys, six frames (three of them brass), four Stray doors, 8 door actions
-(the secret way out: 9), 881474 states, none stuck, nothing losable, the
+two keys, six frames (three of them brass), four Stray doors, 9 door actions
+(the secret way out: 11), 809866 states, none stuck, nothing losable, the
 secret way out included. 102 monsters and 15 that come by ambush, 4 secrets.
 `MAP=MAP10 ./run.sh`; MAP09's exit leads here.
 
@@ -2375,10 +2375,10 @@ ambushes; the repainter; lodgers in the bus.
 **The bus** (`ajarmap.bus`, `tools/gfx_bus.py`). See "Ideas for the next
 levels", 1; the engine questions there are answered.
 - It stands in the gateway of the depot and has two faces: doors 1 to 6 from
-  the square, 7 to 9 from the depot. 1 the hotel and 5 the station (lines that
-  always run: fixed doorways), 2 a frame, 3 GREEN's far side, 4 no number (a
-  place Stray doors open onto), 6 a brass frame; 7 YELLOW's far side, 8 a
-  frame, 9 the observatory (always runs).
+  the square, 7 and 8 from the depot. 1 the hotel and 5 the station (lines
+  that always run: fixed doorways), 2 a frame, 3 GREEN's far side, 4 no
+  number (a place Stray doors open onto), 6 a brass frame; 7 YELLOW's far
+  side, 8 the observatory (always runs).
 - How it is drawn: the bus is no room and no block. Its face is a wall 144
   high in a strip of pavement whose sky is 144 up, so the engine draws no
   wall over the doors and the sky shows over the roof; nothing flies over.
@@ -2409,11 +2409,15 @@ levels", 1; the engine questions there are answered.
   a PUZZLE `only={HOME3: (BLUE, VIOLET)}`). The third exception to "a frame
   takes any door", after MAP08's.
 - `MAP=MAP10 MODE=3 ./tools/smoke.sh`: 18 checks, both loops, out by the
-  secret one. `MODE=2`: tour, 41 views (`TIMEOUT=400`).
+  secret one. `MODE=2`: tour, 42 views (`TIMEOUT=400`).
 
 **The level.** "main" is the square, the hotel and the station. RED (hotel)
 opens onto the theatre: GREEN, key 1. YELLOW (station) onto the depot: key 2,
-and line 9 to the observatory, BLUE under its dome (key 2). The museum is on
+and line 8 to the observatory, BLUE under its dome (key 2). The dome's floor
+is sunk (Vadim, 2026-11-17: a longer puzzle if the solver can bear it; it
+was 8 door actions): a ledge, a drop, stairs up to a hole no door fits, and
+a frame, as in the museum's cellar. So two doors are spared for BLUE and
+VIOLET while a third keeps a line running. The museum is on
 the square (key 1): VIOLET in its cellar, which you drop into with what you
 carry and leave by a hole no door fits, so VIOLET leaves through another
 door hung in the cellar's frame; PINK in its store.
@@ -2428,12 +2432,16 @@ Found on the way (the solver):
 - The depot's way out was a hole for empty hands. Whoever carried YELLOW in
   (through PINK's room) had shut the depot, BLUE inside. It is a gate now, a
   step down, and takes a door through.
+- The depot's face of the bus had a frame (door 8 of three). With that and
+  the dome's, RED and YELLOW could both be left hanging on the depot's side,
+  and nothing led to the theatre or the depot any more. That face has no
+  frame now.
 - With six doors the first draft (seven frames, three keys, a locked office)
   took the solver past ten minutes and 2.5 GB. This one takes two minutes.
   `tools/build.py` now keeps each level's proof (`build/proofs.json`) until
   its puzzle or the solver changes.
 
-Open, Vadim's call: 8 door actions is short beside MAP08 and MAP09 (12, 10);
-door 2 is the only plain frame on the square (a second one roughly doubles
-the solver's work); the square is empty until a key or a door brings company
-to it; nothing of this level's fights has been played.
+Settled (Vadim, 2026-11-17): the square is empty until a key or a door brings
+company to it. Open: GREEN is in no shortest solution (the solver hangs
+YELLOW in the cellar and has a line from there to the depot); nothing of
+this level's fights has been played.
