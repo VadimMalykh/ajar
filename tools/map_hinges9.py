@@ -104,7 +104,7 @@ if LOOK:
     m.align = gfx_exchange.aligned(LOOK)
     WARM = GOLD = SKY = LEAF = PLUM = ROSE = None
     FRONT, ROUND, STREET = T("Y"), T("K"), "AJ9XS"
-    LOWW, PORCH, HOLE = T("A"), T("CP"), "AJTRIM"
+    LOWW, HIGHW, PORCH, HOLE = T("HP"), T("HQ"), T("CP"), "AJTRIM"
     YARD = dict(ceil=512, ctex="F_SKY1", wall=STREET)                     # the houses across the road; the front is named
     OPEN = dict(ceil=512, ctex="F_SKY1", wall=ROUND)                      # the roof
     RAIL = dict(RAIL, mid=T("RL"))
@@ -136,7 +136,7 @@ if LOOK:
     def wing(tag, east):
         return dict(wall=T(tag), ftex=T("FE" if east else "FD"), ctex=T("CD"))
 else:
-    FRONT = ROUND = STREET = LOWW = None
+    FRONT = ROUND = STREET = LOWW = HIGHW = None
     PORCH, HOLE = "AJBOARD", "AJBRICK"
     YARD = OPEN
     GSEAT, WALK = SEAT, PATH
@@ -159,8 +159,9 @@ else:
 
 def low(floor=0, wall=None):
     """A porch: doors and frames in tall rooms and under the sky stand under one.
-    In a look `wall` is the wall under it (default: the indoor porches')."""
-    return dict(dict(ceil=floor + 128, ctex=PORCH), **(dict(wall=wall or LOWW) if LOOK else {}))
+    In a look `wall` is the wall under it (default: the switchroom's own, where
+    all the indoor porches are: its ground floor's, or its gallery's)."""
+    return dict(dict(ceil=floor + 128, ctex=PORCH), **(dict(wall=wall or (LOWW if floor == 0 else HIGHW)) if LOOK else {}))
 
 
 def _wall(tag):
@@ -371,7 +372,7 @@ opening((-640, 224), (-576, 224), (0, 1), ROOF, "H", ROUND)
 # The loft opens off the gallery's east end. From it a hole lets down into the
 # trunk room: the only way in there with a door
 LOFT = dict(floor=UP, ceil=320, light=150, wall=LOFTW, ftex="AJBOARD")
-opening((192, 224), (256, 224), (0, 1), UP, "A", LOFTW)
+opening((192, 224), (256, 224), (0, 1), UP, "HQ", LOFTW)
 m.sector(rect(192, 240, 256, 576), **LOFT)
 fit((192, 576, 848, 800), [
     ((320, 672, 448, 736), dict(DRUM, floor=UP + 48)),                       # cable drums
@@ -391,7 +392,7 @@ if LOOK:
     for a, b in (((528, 464), (656, 464)), ((528, 464), (528, 560)), ((656, 464), (656, 560))):
         m.line(a, b, upper="AJ9XH")                                          # the shaft's own sides
 ajarmap.brass_pair(m, (336, 400), (336, 464), (848, 400), (848, 464), 0, BLUE, VIOLET)
-squeeze((424, 224), (472, 224), (0, 1), 0, "A", "TR", thick=80)              # the hatch, from the switchroom
+squeeze((424, 224), (472, 224), (0, 1), 0, "HP", "TR", thick=80)              # the hatch, from the switchroom
 m.sector(rect(848, 496, 864, 560), ceil=96, light=150, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")   # the chute
 over((848, 496), (848, 560), "TR")
 over((864, 496), (864, 560), BATTERY["wall"])
@@ -413,7 +414,7 @@ fit((784, 80, 1472, 224), [
     ((896, 80, 1024, 112), dict(WOOD, floor=48)),
     ((1216, 192, 1280, 224), dict(WOOD, floor=48)),
 ], floor=0, ceil=160, light=165, **PASSAGE)
-door((768, 112), (768, 176), (1, 0), 0, "A", "XP")
+door((768, 112), (768, 176), (1, 0), 0, "HP", "XP")
 # the generator room: bolted inside, and one of the places a Stray door opens onto
 m.sector(rect(944, 240, 1264, 304), ceil=128, light=120, wall=GENW, ftex="AJPIT")
 m.sector(rect(944, 304, 1264, 464), ceil=128, light=120, wall=GENW, ftex="AJPIT")
@@ -428,7 +429,7 @@ hall((-1680, -288, -1376, 96), [((-1616, -224, -1552, -96), PEGS),
                                 ((-1488, -32, -1424, 32), PEGS)], "CK", color=LEAF)                              # cloakroom
 hall((-1360, 112, -912, 288), [((-1040, 224, -912, 288), SEAT),
                                ((-1232, 144, -1104, 176), dict(WOOD, floor=32))], "RR", color=PLUM)              # rest room
-door((-768, 0), (-768, 64), (-1, 0), 0, "A", "CN", keys="1", line_id=301, thick=80)
+door((-768, 0), (-768, 64), (-1, 0), 0, "HP", "CN", keys="1", line_id=301, thick=80)
 door((-1360, -128), (-1360, -64), (-1, 0), 0, "CN", "CK")
 door((-1168, 96), (-1104, 96), (0, 1), 0, "CN", "RR")
 recess((-1360, 168), (-1360, 232), (-1, 0), 0, 103, 201, color=PLUM)         # the rest room's frame
@@ -440,7 +441,7 @@ fit((784, -288, 1360, 64), [
 ], floor=0, ceil=192, light=165, color=LEAF, **APPARATUS)
 hall((1376, -288, 1824, 32), [((1504, -96, 1568, -32), CASE), ((1696, -224, 1760, -160), CASE)], "RY", True,
      color=PLUM)                                                             # relay room
-door((768, -200), (768, -136), (1, 0), 0, "A", "AP", keys="2", line_id=302)
+door((768, -200), (768, -136), (1, 0), 0, "HP", "AP", keys="2", line_id=302)
 door((1360, -200), (1360, -136), (1, 0), 0, "AP", "RY")
 # No frame in this wing: the thief has nowhere to hang what it carries, and a
 # door hung in here would be a way in past the lock (the solver found the

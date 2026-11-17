@@ -10,8 +10,9 @@ Three looks for the whole exchange, numbered 1 to 3. For look n (name = AJ9 + ta
        upper storey, its windows lit. KA plain wall of it (128), for the porch
   L    call office, 192          A  porches indoors, 128
   H    switchroom, 448: clerestory (128), the gallery's wall (160), the
-       ground floor's (160). GV what carries the gallery and the balcony
-       (160): the distribution frame
+       ground floor's (160). HP, HQ the lowest 128 of the ground floor's and
+       of the gallery's, for its porches. GV what carries the gallery and the
+       balcony (160): the distribution frame
   MG manager's office (128), TR trunk room (160; TRH the same under the hole
      from the loft, 288), CN canteen, CK cloakroom, RR rest room (160),
      AP apparatus room (192), RY relay room (160), TS test room (128)
@@ -125,7 +126,7 @@ LOOKS = {
 }
 
 ROOMS = {"CN": "cn", "CK": "ck", "RR": "rr", "RY": "ry"}                      # the rooms 160 high
-ALIGNED = ("Y", "YA", "YB", "YP", "K", "KA", "L", "A", "H", "GV", "MG", "TR", "TRH", "AP", "TS", "BS") + tuple(ROOMS)
+ALIGNED = ("Y", "YA", "YB", "YP", "K", "KA", "L", "A", "H", "HP", "HQ", "GV", "MG", "TR", "TRH", "AP", "TS", "BS") + tuple(ROOMS)
 SAME = ("AJ9XS", "AJ9XSA", "AJ9XT", "AJ9XN", "AJ9XL", "AJ9XC", "AJ9XH", "AJ9XB", "AJ9XP", "AJ9XG", "AJ6XC")
 
 
@@ -1052,6 +1053,11 @@ def make(out, rd, faces={}):
         walls["L"] = tex(name("L"), mu.wall(c["call"], 192, seed=k))
         walls["A"] = tex(name("A"), mu.wall(c["low"], 128, seed=k))
         walls["H"] = tex(name("H"), switchroom(n))
+        # under the switchroom's porches its own wall goes on (Vadim, 2026-11-17: the porches' wall,
+        # A, has its dado lower, and the panelling broke at every door): the lowest 128 of its
+        # ground floor's wall, and of its gallery's
+        walls["HP"] = tex(name("HP"), gy.crop(walls["H"], 320, 448))
+        walls["HQ"] = tex(name("HQ"), gy.crop(walls["H"], 160, 288))
         walls["MG"] = tex(name("MG"), mu.wall(c["manager"], 128, seed=k + 3))
         walls["TR"] = tex(name("TR"), mu.wall(c["trunk"], 160, seed=k + 5))
         high = Img(64, 288)                                          # the trunk room's wall under the hole from the loft

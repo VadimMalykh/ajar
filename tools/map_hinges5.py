@@ -190,6 +190,8 @@ recess((864, 256), (928, 256), (0, -1), 0, 102, 201)                         # f
 ajarmap.fitted(m, (512, 512, 2048, 1024), [
     ((832, 816, 2048, 1008), TRAIN),
 ], floor=PIT, light=200, ftex="AJRAILS", **OPEN)
+if LOOK:                                                                     # the carriage's end is an end, not a side
+    m.line((832, 816), (832, 1008), lower=f"AJ5NE{LOOK}", exact=True)
 
 # --- off platform 1 -----------------------------------------------------------
 # the waiting room: RED

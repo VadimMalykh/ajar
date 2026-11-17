@@ -68,7 +68,12 @@ and never in.
 Company: a repainter at the stop (it changes where the lines go), lodgers in
 the bus's empty frames. What a key or a door brings arrives at the square.
 """
+import os
+
 import ajarmap
+import gfx_museum
+import map_hinges6 as six                             # the museum, as MAP06 dresses it
+import map_hinges7 as seven                           # the observatory, as MAP07 does
 from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, PINK, far_id, HOME, HOME2, HOME3
 from udmf import Map, rect
 
@@ -84,10 +89,16 @@ LINE = 64                                             # the floor of the night r
 PF = D + 96                                           # PINK's room, over the depot
 NIGHT = 150
 WARM, GOLD, SKY, LEAF, PLUM, ROSE = 0xFFD8CC, 0xFFE890, 0xA8C0FF, 0xD4F4D0, 0xD0A0FF, ajarmap.ROSE
-OPEN = dict(ceil=512, ctex="F_SKY1", wall="AJBRICK")
-SQUARE = dict(ceil=ajarmap.BUS_H, ctex="F_SKY1", wall="AJBRICK")     # no wall taller than the bus (ajarmap.bus)
+# The square's look (gfx_square.py): where the film's bus was left, forty years
+# on: a concrete fence, cracked asphalt, a sheet-steel shelter, a kiosk.
+# AJAR_SQUARE=0 is the square in the plain textures it was first built in. A
+# look changes textures only. The bus has one look (gfx_bus.py).
+LOOK = (os.environ.get("AJAR_SQUARE") or "1") != "0"
+FENCE, BRICK = ("AJQF", "AJQB") if LOOK else ("AJBRICK", "AJBRICK")
+OPEN = dict(ceil=512, ctex="F_SKY1", wall=BRICK)
+SQUARE = dict(ceil=ajarmap.BUS_H, ctex="F_SKY1", wall=FENCE)         # no wall taller than the bus (ajarmap.bus)
 DY = 352                                              # how far north of the bus the depot's yard begins, less 192
-SEAT = dict(ftex="AJSOFA", side="AJSOFA", floor=16)
+SEAT = dict(ftex="AJQBE", side="AJQBE", floor=16) if LOOK else dict(ftex="AJSOFA", side="AJSOFA", floor=16)
 CASE = dict(ftex="AJSTEEL", side="AJWOOD", floor=40)
 WOOD = dict(ftex="AJWOOD", side="AJWOOD")
 KIOSK, STORE = 401, 402
@@ -102,50 +113,108 @@ PLATFORM = dict(ceil=512, ctex="F_SKY1", wall="AJ5Y1", ftex="AJ5P1")  # ... a pl
 FOYER = dict(wall="AJ3F1", ftex="AJ3O1", ctex="AJ3E1")                # MAP03's foyer
 STALLS = dict(wall="AJ3H1A", ftex="AJ3M1", ctex="AJ3C1")              # ... the house
 BACKSTAGE = dict(wall="AJ3XW", ftex="AJ3XF")                          # ... behind it
-MUSEUM = dict(wall="AJ6H2", ftex="AJ6F2", ctex="AJ6CH2")              # MAP06's great hall
-GALLERY = dict(wall="AJ6WA2", ftex="AJ6FW2", ctex="AJ6CG2")           # ... a gallery
-CELLAR = dict(wall="AJ6XC", ftex="AJPIT")                             # ... the cellar
-LIBRARY = dict(wall="AJ7L3", ftex="AJ7FL3", ctex="AJ7CL3")            # MAP07's library
-DOME = dict(wall="AJ7D3", ftex="AJ7FD3", ctex="AJ7CD3")               # ... the dome
-PAVE = dict(ftex="AJ4F1")                                             # MAP04's yard, for the square
+PAVE = dict(ftex="AJQAS" if LOOK else "AJ4F1")                        # asphalt (plain: MAP04's yard)
+STOP = dict(ftex="AJQPV" if LOOK else "AJ4F1")                        # the slabs a stop is paved with
+if LOOK:
+    import gfx_square
+    m.align |= gfx_square.ALIGNED
+m.align |= six.m.align | seven.m.align
 
 
-def low(floor=0):
-    """A porch: doors and frames under the sky stand under one."""
-    return dict(ceil=floor + 128, ctex="AJBOARD")
+def low(floor=0, wall=None, ctex=None):
+    """A porch: doors and frames under the sky stand under one. In the look
+    `wall` is the wall under it and `ctex` what it is roofed with."""
+    return dict(dict(ceil=floor + 128, ctex=ctex if LOOK and ctex else "AJBOARD"), **(dict(wall=wall) if LOOK and wall else {}))
 
 
-def bars(a, b, out, floor, thick=16):
-    """A barred opening in a wall: to look and shoot through."""
+def over(a, b, tex, **k):
+    """The wall over the opening a-b (under a lower ceiling) carries on as
+    `tex`, in line with the wall beside it."""
+    if tex:
+        m.line(a, b, upper=tex, dontpegtop=True, **k)
+
+
+def porch(box, tex, sides, peg=True):
+    """What is over the open sides ("SENW") of a low-roofed piece of a taller
+    place: the taller place's wall (`peg`), or the edge of a canopy."""
+    x1, y1, x2, y2 = box
+    ends = dict(S=((x1, y1), (x2, y1)), E=((x2, y1), (x2, y2)), N=((x2, y2), (x1, y2)), W=((x1, y2), (x1, y1)))
+    for side in sides if tex else ():
+        m.line(*ends[side], upper=tex, **(dict(dontpegtop=True) if peg else dict(exact=True)))
+
+
+def pieces(fixed, starts, axis, tex):
+    """64-long pieces of a wall with a texture of their own, each starting at a multiple of 64."""
+    for s in starts if tex else ():
+        a, b = ((s, fixed), (s + 64, fixed)) if axis == "x" else ((fixed, s), (fixed, s + 64))
+        m.cut(a, b)
+        m.line(a, b, mid=tex)
+
+
+def bars(a, b, out, floor, thick=16, near=None, far=None):
+    """A barred opening in a wall: to look and shoot through. `near` and `far`
+    are the walls it is cut through on either side."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    m.sector([a, b, d, c], floor=floor + 32, ceil=floor + 96, light=170, wall="AJBRICK",
+    m.sector([a, b, d, c], floor=floor + 32, ceil=floor + 96, light=170, wall="AJTRIM" if near else "AJBRICK",
              ftex="AJTRIMF", ctex="AJTRIMF")
     m.line(a, b, mid="AJWIN", midboth=True, blocking=True)
+    if near:
+        m.line(a, b, upper=near, lower=near, dontpegtop=True, dontpegbottom=True)
+    if far:
+        m.line(c, d, upper=far, lower=far, dontpegtop=True, dontpegbottom=True)
 
+
+def pools(spots, base):
+    """Small hours, as in MAP07: the light round each lamp, falling off in three steps."""
+    return [((x - d, y - d, x + d, y + d), dict(light=min(255, base + up)))
+            for d, up in ((112, 25), (80, 50), (48, 80)) for x, y in spots] if seven.DIM else []
+
+
+Q = (lambda name: name) if LOOK else (lambda name: None)             # a texture of the square's look, or nothing
+T6, T7 = (six.T if six.LOOK else (lambda *a: None)), (seven.T if seven.LOOK else (lambda *a: None))
 
 # === the square, the bus ===========================================================
 # start here: nobody about but whoever lives in the bus
 ajarmap.fitted(m, (-512, -640, 224, -48), [
-    ((-448, -640, -256, -576), low()),                                       # before the kiosk
-    ((-512, -432, -448, -304), low()),                                       # before the museum's door
+    ((-448, -640, -256, -576), low(wall="AJQK", ctex="AJQSC")),              # before the kiosk: its canopy
+    ((-512, -432, -448, -304), low(wall="AJQMP")),                           # before the museum's door
     ((-192, -400, -64, -368), SEAT), ((64, -400, 192, -368), SEAT),
 ], floor=0, light=NIGHT, **PAVE, **SQUARE)
+porch((-448, -640, -256, -576), Q("AJQKF"), "NEW", peg=False)
+porch((-512, -432, -448, -304), Q("AJQMF"), "NES", peg=False)
+for a, b in (((-512, -640), (-512, -432)), ((-512, -304), (-512, -128))):    # the museum's side of the square
+    m.cut(a, b)
+    if LOOK:
+        m.line(a, b, mid="AJQM")
+pieces(-512, (-576, -256), "y", Q("AJQMA"))
+pieces(-640, (-192,), "x", Q("AJQFA"))                                       # the fence: posters, a corner knocked out
+pieces(-640, (64,), "x", Q("AJQFB"))
 # the shelter: the second brass frame, facing door 6 across the pavement; the
 # route board; over it, a hole with a starry ceiling behind
+SHELTER = low(wall="AJQS", ctex="AJQSC")
 ajarmap.fitted(m, (224, -208, 512, -48), [
-    ((256, -208, 512, -144), low()),                                         # the shelter's roof: its frame, the hole
-    ((448, -208, 512, -48), low()),                                          # over the route board
-], floor=0, light=NIGHT + 10, **PAVE, **SQUARE)
+    ((256, -208, 512, -144), SHELTER),                                       # the shelter's roof: its frame, the hole
+    ((448, -208, 512, -48), SHELTER),                                        # over the route board
+], floor=0, light=NIGHT + 10, **STOP, **SQUARE)
+if LOOK:                                                                     # the edge of its roof; the stop's sign
+    for a, b in (((256, -144), (448, -144)), ((256, -208), (256, -144)), ((448, -144), (448, -48)), ((448, -48), (512, -48))):
+        m.line(a, b, upper="AJQSF", exact=True)
+    pieces(-208, (448,), "x", "AJQSA")
 # the bus stands free: past its two ends and along the lane behind it
 ajarmap.fitted(m, (-640, -48, -400, 192), [], floor=0, light=NIGHT, **PAVE, **SQUARE)
 ajarmap.fitted(m, (400, -48, 640, 192), [], floor=0, light=NIGHT, **PAVE, **SQUARE)
 ajarmap.fitted(m, (-640, 192, 640, 448), [
-    ((416, 384, 512, 448), low()),                                           # under the depot's gate
+    ((416, 384, 512, 448), low(wall=Q("AJQB"))),                             # under the depot's gate
     ((-192, 304, -64, 336), SEAT), ((64, 304, 192, 336), SEAT),
 ], floor=0, light=NIGHT, **PAVE, **SQUARE)
-south = ajarmap.bus(m, -400, 0, face=1, floor=0, first=1, free=True, light=NIGHT + 20, **PAVE)
-north = ajarmap.bus(m, -400, 144, face=-1, floor=0, first=7, slots=(4, 1), free=True, light=NIGHT + 20, **PAVE)
+porch((416, 384, 512, 448), Q("AJQDF"), "SEW", peg=False)
+pieces(448, (-448, 256), "x", Q("AJQFA"))
+pieces(448, (-128,), "x", Q("AJQFB"))
+pieces(640, (64,), "y", Q("AJQFA"))
+pieces(-640, (256,), "y", Q("AJQFB"))
+south = ajarmap.bus(m, -400, 0, face=1, floor=0, first=1, free=True, light=NIGHT + 20, **STOP)
+north = ajarmap.bus(m, -400, 144, face=-1, floor=0, first=7, slots=(4, 1), free=True, light=NIGHT + 20, **STOP)
 ajarmap.bus_ends(m, -400, 0)
 recess(*south[1], (0, 1), 0, 101, 201)                                       # 2: a frame
 recess(*south[2], (0, 1), 0, far_id(GREEN), 101, far_colour=GREEN)           # 3: GREEN's far side
@@ -165,7 +234,7 @@ m.sector(rect(-464, -720, -240, -656), ceil=112, light=170, color=ROSE, wall="AJ
 m.sector(rect(-464, -848, -240, -720), ceil=112, light=170, color=ROSE, wall="AJSAFE", special=1024)
 ajarmap.bolted(m, (-448, -640), (-384, -640), (0, -1), 0, KIOSK, line_id=305)
 ajarmap.unbolt(m, (-464, -720), (-240, -720), KIOSK)
-bars((-320, -640), (-256, -640), (0, -1), 0)
+bars((-320, -640), (-256, -640), (0, -1), 0, near=Q("AJQK"), far=Q("AJSAFE"))
 m.cut((-320, -848), (-256, -848))
 m.line((-320, -848), (-256, -848), special=11, args=(KIOSK, 32), impact=True, mid="AJTARG", exact=True)
 ajarmap.stray_place(m, 1, (-464, -816), (-464, -752), (-1, 0), 0, color=ROSE)
@@ -178,7 +247,8 @@ import map_hinges2, map_hinges3, map_hinges5
 HX, SX, TY = -6400, 3200, -4480                       # where the hotel, the station and the theatre are put
 hotel = ajarmap.excerpt(m, map_hinges2.m, (256, 96), HX, 0)          # MAP02's ground floor
 station = ajarmap.excerpt(m, map_hinges5.m, (256, 64), SX, 0)        # MAP05: concourse, platforms, tracks
-theatre = ajarmap.excerpt(m, map_hinges3.m, (-200, 1352), 0, TY)     # MAP03: foyer, house, the rooms behind
+theatre = ajarmap.excerpt(m, map_hinges3.m, (-200, 1352), 0, TY,     # MAP03: foyer, house, the rooms behind
+                          without=[(224, 912 + TY, 672, 1008 + TY), (224, 896 + TY, 288, 912 + TY)])   # (the stage door, its pit and the pit's line are this level's)
 m.things = [t for t in m.things if (t["x"], t["y"]) != (HX - 16, 272)]     # a candle whose niche stayed behind
 # line 1 comes in where MAP02 began, line 5 where MAP05 did
 ajarmap.doorway(m, 1, *south[0], (0, 1), 0, *hotel[0])
@@ -194,6 +264,8 @@ ajarmap.opening(m, (224, 896 + TY), (288, 896 + TY), (0, 1), 0)
 ajarmap.fitted(m, (224, 912 + TY, 608, 1008 + TY), [
     ((224, 912 + TY, 288, 1008 + TY), dict(floor=0, ftex="AJBOARD", side="AJWOOD")),     # the ledge
 ], floor=-48, ceil=128, light=160, **BACKSTAGE)
+for a, b in (((288, 912 + TY), (608, 912 + TY)), ((608, 912 + TY), (608, 1008 + TY)), ((224, 1008 + TY), (608, 1008 + TY))):
+    m.line(a, b, lower=BACKSTAGE["wall"])               # the circle is over the pit, round it: the pit's walls stay its own
 
 # === the other stop: another bus, other doors ======================================
 # (Vadim, 2026-11-17.) Door 8 of the first bus is door 1 of this one.
@@ -201,9 +273,13 @@ BY = 3168                                             # this bus's south face
 for box, feats in (((-640, BY - 288, 640, BY - 48), [((-192, BY - 208, -64, BY - 176), SEAT), ((64, BY - 208, 192, BY - 176), SEAT)]),
                    ((-640, BY - 48, -400, BY + 192), []), ((400, BY - 48, 640, BY + 192), []),
                    ((-640, BY + 192, 640, BY + 432), [])):
-    ajarmap.fitted(m, box, feats, floor=0, light=NIGHT, ftex="AJ5P1", **SQUARE)
-south2 = ajarmap.bus(m, -400, BY, face=1, first=1, slots=(0, 2, 4), free=True, livery="C", light=NIGHT + 20, ftex="AJ5P1")
-north2 = ajarmap.bus(m, -400, BY + 144, face=-1, first=4, slots=(3,), free=True, livery="C", light=NIGHT + 20, ftex="AJ5P1")
+    ajarmap.fitted(m, box, feats, floor=0, light=NIGHT, **(PAVE if LOOK else dict(ftex="AJ5P1")), **SQUARE)
+STOP2 = STOP if LOOK else dict(ftex="AJ5P1")
+south2 = ajarmap.bus(m, -400, BY, face=1, first=1, slots=(0, 2, 4), free=True, livery="C", light=NIGHT + 20, **STOP2)
+north2 = ajarmap.bus(m, -400, BY + 144, face=-1, first=4, slots=(3,), free=True, livery="C", light=NIGHT + 20, **STOP2)
+pieces(BY - 288, (-320, 384), "x", Q("AJQFA"))
+pieces(BY + 432, (128,), "x", Q("AJQFB"))
+pieces(BY + 432, (-512,), "x", Q("AJQFA"))
 ajarmap.bus_ends(m, -400, BY, livery="C")
 ajarmap.doorway(m, 3, *north[1], (0, -1), 0, *south2[0], (0, 1), 0)          # 8 of the first bus: 1 of this one
 ajarmap.doorway(m, 5, *south2[1], (0, 1), 0, (608, 928 + TY), (608, 992 + TY), (1, 0), -48)   # 2: under the stage door
@@ -211,48 +287,76 @@ ajarmap.stray_place(m, 3, *south2[2], (0, 1), 0)                             # 3
 m.line(*south2[2], upper="AJCN0")
 
 # === the museum, on the square: one lock ===========================================
+# Rooms of this level's own plan, dressed as MAP06 dresses its own (Vadim,
+# 2026-11-17: what is of another level is to look as it does there): the great
+# hall 384 high with its porches, a wing's gallery 160 high with its pictures,
+# the cellar 128 high. Its dictionaries are MAP06's (the look chosen there).
+HK, LOW6 = T6("HK"), six.LOW
 ajarmap.fitted(m, (-1168, -640, -528, -128), [
-    ((-592, -432, -528, -304), low()),                                       # inside its door
-    ((-1168, -464, -1104, -336), low()),                                     # before the way down
-    ((-932, -192, -804, -128), low()),                                       # before the gallery
-    ((-960, -480, -832, -352), dict(ftex="AJ6XP", side="AJ6XP", floor=32)),  # a plinth
-    ((-720, -608, -592, -576), SEAT),
-], floor=0, ceil=256, light=175, **MUSEUM)
+    ((-592, -432, -528, -304), LOW6),                                        # inside its door
+    ((-1168, -464, -1104, -336), LOW6),                                      # before the way down
+    ((-932, -192, -804, -128), LOW6),                                        # before the gallery
+    ((-960, -480, -832, -352), six.CASE),                                    # a case
+    ((-720, -608, -592, -576), six.SEAT),
+], floor=0, ceil=384, light=190, **six.HALL)
+porch((-592, -432, -528, -304), HK, "NSW")
+porch((-1168, -464, -1104, -336), HK, "NSE")
+porch((-932, -192, -804, -128), HK, "SEW")
+pieces(-128, (-1088,), "x", T6("H", "1"))                                    # its two big pictures
+pieces(-640, (-896,), "x", T6("H", "2"))
 ajarmap.roomdoor(m, (-512, -400), (-512, -336), (-1, 0), 0, keys="1", line_id=301)
-# the cellar: you drop in with what you carry, and leave by a hole no door fits through
+if LOOK:
+    m.line((-512, -400), (-512, -336), upper="AJQMD1")                       # its face on the square
+if six.LOOK:
+    gfx_museum.FACES["P"] = ("A", 16, "1")                                   # ... and inside, under the hall's porch
+    m.line((-528, -400), (-528, -336), upper=T6("D") + "P")
+# the cellar: you drop in with what you carry, and leave by a hole no door fits
+# through. 128 high, as MAP06's, but for the bay you drop into
+CELL = dict(floor=-128, ceil=0, light=140, wall=six.CELLW, ftex="AJPIT")
 ajarmap.fitted(m, (-1600, -560, -1184, -112), [
-    ((-1440, -400, -1344, -304), dict(ftex="AJWOOD", side="AJWOOD", floor=-128 + 48)),   # crates
-    ((-1280, -208, -1216, -144), dict(ftex="AJWOOD", side="AJWOOD", floor=-128 + 48)),
-], floor=-128, ceil=128, light=140, **CELLAR)
+    ((-1440, -400, -1344, -304), dict(six.CRATE, floor=-128 + 48)),          # crates
+    ((-1280, -208, -1216, -144), dict(six.CRATE, floor=-128 + 48)),
+    ((-1248, -464, -1184, -336), dict(ceil=128, wall=six.STAIR["wall"], ctex=six.STAIR.get("ctex", "AJBOARD"))),   # under the hole
+], **CELL)
 ajarmap.opening(m, (-1168, -432), (-1168, -368), (-1, 0), 0)
+over((-1168, -432), (-1168, -368), six.LOWW)
 recess((-1600, -368), (-1600, -304), (-1, 0), -128, 114, 201)                # the cellar's frame
-ajarmap.stairs(m, (-1560, -112), (-1496, -112), (0, 1), -128, 128, ceil=128, light=140, **CELLAR)
-m.sector(rect(-1560, 144, -1496, 208), floor=0, ceil=128, light=150, **CELLAR)
+ajarmap.stairs(m, (-1560, -112), (-1496, -112), (0, 1), -128, 128, ceil=128, light=140, **six.STAIR)
+m.sector(rect(-1560, 144, -1496, 208), floor=0, ceil=128, light=150, **six.LANDING)
 ajarmap.squeeze(m, (-1496, 152), (-1496, 200), (1, 0), 0)
+over((-1496, 152), (-1496, 200), six.CELLW if six.LOOK else None)
+over((-1480, 152), (-1480, 200), six.WA.get("wall"))
 # the gallery
 ajarmap.fitted(m, (-1480, -96, -720, 400), [
-    ((-1320, 64, -1192, 192), dict(ftex="AJ6VT2", side="AJ6V2", floor=40)),  # cases
-    ((-1000, 64, -872, 192), dict(ftex="AJ6VT2", side="AJ6V2", floor=40)),
-    ((-784, 256, -720, 384), SEAT),
-], floor=0, ceil=192, light=180, **GALLERY)
+    ((-1320, 64, -1192, 192), six.CASE),                                     # cases
+    ((-1000, 64, -872, 192), six.CASE),
+    ((-784, 256, -720, 384), six.SEAT),
+], floor=0, ceil=160, light=175, **six.WA)
+for i, (fixed, start) in enumerate(((400, -1408), (400, -960), (400, -832), (-96, -1344), (-96, -1152), (-96, -1024))):
+    pieces(fixed, (start,), "x", T6("WA", "123"[i % 3]))                     # its pictures
 ajarmap.opening(m, (-900, -128), (-836, -128), (0, 1), 0, thick=32)
+over((-900, -128), (-836, -128), six.LOWW)
+over((-900, -96), (-836, -96), six.WA.get("wall"))
 # PINK's store (secret), seen through bars: ring its bell. PINK leans in it
 m.sector(rect(-1320, 416, -1000, 480), ceil=112, light=150, color=ROSE, wall="AJSAFE")
 m.sector(rect(-1320, 480, -1000, 640), ceil=112, light=150, color=ROSE, wall="AJSAFE", special=1024)
 ajarmap.bolted(m, (-1260, 400), (-1196, 400), (0, 1), 0, STORE, line_id=306)
+if six.LOOK:
+    gfx_museum.BOLTS["G"] = ("WA", -1260 % 64)                               # its face in the gallery's wall
+    m.line((-1260, 400), (-1196, 400), upper=f"AJ6Z{six.LOOK}G")
 ajarmap.unbolt(m, (-1320, 480), (-1000, 480), STORE)
-bars((-1100, 400), (-1036, 400), (0, 1), 0)
+bars((-1100, 400), (-1036, 400), (0, 1), 0, near=six.WA.get("wall"), far="AJSAFE" if six.LOOK else None)
 m.cut((-1100, 640), (-1036, 640))
 m.line((-1100, 640), (-1036, 640), special=11, args=(STORE, 32), impact=True, mid="AJTARG", exact=True)
 
 # === the depot (YELLOW's far side), beyond the lane ================================
-BUSES = dict(ftex="AJSTEEL", side="AJBUS", floor=D + ajarmap.BUS_H)          # the ones that are only buses
+BUSES = dict(ftex="AJQRF" if LOOK else "AJSTEEL", side="AJBUS", floor=D + ajarmap.BUS_H)   # the ones that are only buses
 ajarmap.fitted(m, (-512, 192 + DY, 512, 640 + DY), [
     ((-448, 384 + DY, -128, 512 + DY), BUSES), ((128, 448 + DY, 448, 576 + DY), BUSES),
     ((-64, 576 + DY, 64, 640 + DY), dict(WOOD, floor=D + 48)),
     ((176, 576 + DY, 336, 640 + DY), low(D + 32)),                           # under the hole from PINK's room
     ((-64, 192 + DY, 64, 256 + DY), low(D)),                                 # over YELLOW's far side
-], floor=D, light=NIGHT, ftex="AJSTEEL", **OPEN)
+], floor=D, light=NIGHT, ftex="AJQOC" if LOOK else "AJSTEEL", **OPEN)
 recess((-32, 192 + DY), (32, 192 + DY), (0, -1), D, far_id(YELLOW), 101, far_colour=YELLOW)
 # the gate: out to the lane behind the bus, a step down, and never in. It takes
 # a door through: with a hole for empty hands only, whoever carried YELLOW in
@@ -264,27 +368,46 @@ m.sector(rect(224, 640 + DY, 288, 720 + DY), floor=PF, ceil=PF + 96, light=150, 
          ftex="AJTRIMF", ctex="AJTRIMF")
 
 # === the observatory (line 4 of the other bus) ======================================================
-ajarmap.fitted(m, (1600, 1000, 2112, 1384), [
-    ((1824, 1000, 1888, 1384), dict(ftex="AJ7P3")),
-    ((1632, 1160, 1760, 1224), dict(ftex="AJ7WD3", side="AJ7LB3", floor=96)),            # stacks
-    ((1952, 1160, 2080, 1224), dict(ftex="AJ7WD3", side="AJ7LB3", floor=96)),
-], floor=0, ceil=192, light=175, **LIBRARY)
+# This level's own rooms again, dressed and lit as MAP07's: the library 320
+# high and dim, a pool of light at each torch; the dome 448 high and dark, the
+# telescope on its pier; doors and frames under porches.
+LIB, DOME, LOW7 = seven.LIB, seven.DOME, seven.low()
+PASSAGE = dict(wall=seven.LOWW or LIB["wall"], ftex=LIB["ftex"], ctex=LOW7["ctex"])
+TORCHES = [(1616, 1100), (2096, 1100), (1616, 1290), (2096, 1290)]
+LBOX = (1600, 1000, 2112, 1384)
+ajarmap.shaped(m, LBOX, pools(TORCHES, seven.DARK) + [
+    ((1824, 1000, 1888, 1384), seven.RUN),
+    ((1632, 1160, 1760, 1224), dict(seven.BOOKS, floor=96)),                             # stacks
+    ((1952, 1160, 2080, 1224), dict(seven.BOOKS, floor=96)),
+    ((1792, 1000, 1920, 1064), LOW7),                                                    # before the bus's door
+    ((1792, 1320, 1920, 1384), LOW7),                                                    # before the dome's
+    ((1600, 1320, 1664, 1384), LOW7),                                                    # before the way round
+], floor=0, ceil=320, light=seven.DARK, **LIB)
+porch((1792, 1000, 1920, 1064), LIB["wall"] if seven.LOOK else None, "NEW")
+porch((1792, 1320, 1920, 1384), LIB["wall"] if seven.LOOK else None, "SEW")
+porch((1600, 1320, 1664, 1384), LIB["wall"] if seven.LOOK else None, "SE")
 ajarmap.doorway(m, 4, *north2[0], (0, -1), 0, (1824, 1000), (1888, 1000), (0, -1), 0)   # 4 of the other bus
 # the dome: its floor is sunk. The door lets onto a ledge; you drop in with what
 # you carry and leave by stairs and a hole no door fits through, as in the
 # museum's cellar. So BLUE leaves through another door, hung in the dome's frame
 PIT = -96
-ajarmap.fitted(m, (1664, 1400, 2048, 1784), [
-    ((1792, 1400, 1920, 1464), dict(floor=0, ftex="AJ7WD3", side="AJ7WD3")),             # the ledge inside the door
-    ((1808, 1544, 1904, 1640), dict(ftex="AJSTEEL", side="AJ7DP3", floor=PIT + 64)),     # the pier
-], floor=PIT, ceil=320, light=165, **DOME)
+LEDGE = (1792, 1400, 1920, 1464)
+ajarmap.shaped(m, (1664, 1400, 2048, 1784), pools([(1688, 1424), (2024, 1424)], seven.DARK) + [
+    (LEDGE, dict(LOW7, floor=0, **seven.WOOD)),                                          # the ledge inside the door
+    ((1808, 1544, 1904, 1640), dict(seven.PIER, floor=PIT + 64, light=min(255, seven.DARK + 85) if seven.DIM else seven.DARK)),   # the pier
+], floor=PIT, ceil=448, light=seven.DARK, **DOME)
+porch(LEDGE, DOME["wall"] if seven.LOOK else None, "NEW")
 ajarmap.roomdoor(m, (1824, 1384), (1888, 1384), (0, 1), 0, keys="2", line_id=302)
+if seven.LOOK:                                                               # its two faces, each under a porch
+    m.line((1824, 1384), (1888, 1384), upper=seven._face("D", "A", (1824, 1384), (0, 1), "2"))
+    m.line((1824, 1400), (1888, 1400), upper=seven._face("D", "A", (1824, 1384), (0, -1), "2"))
 recess((2048, 1560), (2048, 1624), (1, 0), PIT, 116, 201)                    # the dome's frame
 ajarmap.stairs(m, (1664, 1700), (1664, 1764), (-1, 0), PIT, 96, steps=6, ceil=160, light=150, **DOME)
-m.sector(rect(1408, 1700, 1472, 1764), floor=0, ceil=128, light=150, **LIBRARY)
+over((1664, 1700), (1664, 1764), DOME["wall"] if seven.LOOK else None)
+m.sector(rect(1408, 1700, 1472, 1764), floor=0, ceil=128, light=150, **PASSAGE)
 ajarmap.squeeze(m, (1416, 1700), (1464, 1700), (0, -1), 0)
-m.sector(rect(1408, 1320, 1472, 1684), floor=0, ceil=128, light=150, **LIBRARY)
-m.sector(rect(1472, 1320, 1584, 1384), floor=0, ceil=128, light=150, **LIBRARY)
+m.sector(rect(1408, 1320, 1472, 1684), floor=0, ceil=128, light=150, **PASSAGE)
+m.sector(rect(1472, 1320, 1584, 1384), floor=0, ceil=128, light=150, **PASSAGE)
 ajarmap.opening(m, (1600, 1320), (1600, 1384), (-1, 0), 0)
 
 # --- doors and keys ----------------------------------------------------------
@@ -400,6 +523,8 @@ things(ARACHNO, (1740, 1580), angle=270)
 things(MEDIKIT, (1760, 1750))
 things(CELLS, (2010, 1440))
 things(TECHLAMP, (1688, 1424), (2024, 1424))
+things(46, *TORCHES)                                                       # the library's torches, as MAP07's
+things(20021, (1856, 1592), angle=90)                                      # the telescope on its pier
 
 # --- ambushes: what a key or a door brings (ajarmap.ambush) -------------------
 # The square is where they come: an arena that fills from its own stop.

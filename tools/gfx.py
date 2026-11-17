@@ -62,6 +62,48 @@ class Img:
         return out + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
 
 
+def unpng(data):
+    """An Img from a PNG that Img.png() wrote."""
+    pos, w, h, idat = 8, 0, 0, b""
+    while pos < len(data):
+        n, tag = struct.unpack(">I4s", data[pos:pos + 8])
+        if tag == b"IHDR":
+            w, h = struct.unpack(">II", data[pos + 8:pos + 16])
+        elif tag == b"IDAT":
+            idat += data[pos + 8:pos + 8 + n]
+        pos += n + 12
+    raw = zlib.decompress(idat)
+    im = Img(w, h)
+    for y in range(h):
+        row = raw[y * (w * 4 + 1) + 1:(y + 1) * (w * 4 + 1)]
+        im.px[y * w:(y + 1) * w] = [list(row[x * 4:x * 4 + 4]) for x in range(w)]
+    return im
+
+
+def boarded(out, faces):
+    """ajarmap.boarded: each door texture of `faces` ({name: new name}) again,
+    with three boards nailed across its leaf (the lowest 96 rows): a door of
+    another level, where that level is not all there (ajarmap.excerpt)."""
+    for n, (face, name) in enumerate(sorted(faces.items())):
+        im = unpng(out[f"textures/{face}.png"])
+        rnd = random.Random(900 + n)
+        for k, y in enumerate((im.h - 84, im.h - 56, im.h - 26)):
+            wood = shade((150, 118, 78), rnd.uniform(0.82, 1.08))
+            tilt = rnd.choice((-3, -2, 2, 3))
+            for x in range(64):
+                top = y + round(tilt * (x - 32) / 32)
+                for yy in range(top, top + 13):
+                    edge = yy in (top, top + 12)
+                    grain = 0.9 if (yy - top) in (4, 8) and (x + k * 7) % 23 > 3 else 1
+                    im.set(x, yy, shade(wood, 0.6 if edge else grain))
+                im.set(x, top + 13, shade(tuple(im.px[min(im.h - 1, top + 13) * im.w + x][:3]), 0.6))   # its shadow
+            for nx in (5, 58):
+                ny = y + round(tilt * (nx - 32) / 32) + 6
+                im.disc(nx, ny - 3, 1, (58, 56, 60))
+                im.disc(nx, ny + 3, 1, (58, 56, 60))
+        out[f"textures/{name}.png"] = im.png()
+
+
 def shade(c, f):
     return tuple(max(0, min(255, int(v * f))) for v in c)
 
@@ -140,7 +182,8 @@ DIGITS.update({
     "B": ("11110", "10001", "11110", "10001", "11110"), "D": ("11110", "10001", "10001", "10001", "11110"),
     "F": ("11111", "10000", "11110", "10000", "10000"), "U": ("10001", "10001", "10001", "10001", "01110"),
     "L": ("10000", "10000", "10000", "10000", "11111"), "G": ("01111", "10000", "10011", "10001", "01111"),
-    "-": ("00000", "00000", "01110", "00000", "00000")})
+    "-": ("00000", "00000", "01110", "00000", "00000"),
+    "M": ("10001", "11011", "10101", "10001", "10001")})
 BRASS = (206, 180, 96)
 LOCKS = ("1", "2", "3", "4", "12", "23", "34")     # which keys a locked room door can ask for
 
@@ -797,6 +840,7 @@ def levers(out, name, wall, h=None):
 def make_all():
     """Returns {path inside pk3: png bytes}."""
     out = {}
+    import map_hinges10                       # it asks other levels' looks for door faces of its own: before they are drawn
 
     wall = Img(128, 128, (188, 184, 176))
     wall.noise(7, 11)
@@ -1195,4 +1239,9 @@ def make_all():
         out[f"flats/AJTF{c}.png"] = t.png()
     # a lever is a switch: it moves when it is used, and Doom gives it a sound
     out["animdefs.txt"] = "".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS)).encode()
+    import gfx_square                                            # MAP10's square, stops and depot
+    gfx_square.make(out)
+    import ajarmap
+    import map_hinges10                                          # the doors of other levels it shows nailed up
+    boarded(out, ajarmap.BOARDED)
     return out

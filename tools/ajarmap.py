@@ -322,19 +322,25 @@ def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, free=Fals
     y2 = y - face * deep
     m.sector(rect4(x, min(y, y2), x + 800, max(y, y2)), floor=floor, ceil=floor + BUS_H,
              **dict(dict(light=170, wall=f"AJ{livery}US", ctex="F_SKY1"), **ground))
-    mouths = []
-    for i, k in enumerate(slots):
-        a = (x + 48 + 128 * k, y)
+    mouths, slots = [], list(slots)
+    for k in range(11):                    # eleven pieces of 64 between the two ends: a door's place and a panel by turns
+        a = (x + 48 + 64 * k, y)
         b = (a[0] + 64, y)
         m.cut(a, b)
-        m.line(a, b, upper=f"AJ{livery}N{first + i}")
-        mouths.append((a, b))
-    m.cut((x + 48, y), (x + 752, y))
-    ends = [((x, y), (x + 48, y)), ((x + 752, y), (x + 800, y))]
+        if k % 2 == 0 and k // 2 in slots:
+            m.line(a, b, upper=f"AJ{livery}N{first + slots.index(k // 2)}")
+        else:                              # no two panels alike side by side (gfx_bus: AJ?US, AJ?US1..4)
+            v = (k * 3 + (2 if face < 0 else 0) + first) % 5
+            m.line(a, b, mid=f"AJ{livery}US{v or ''}")
+    for k in slots:
+        mouths.append(((x + 48 + 128 * k, y), (x + 112 + 128 * k, y)))
+    # an end's texture has the bus's corner on its left (Z) or its right (Y), as it is looked at
+    ends = [((x, y), (x + 48, y), "Z" if face > 0 else "Y"), ((x + 752, y), (x + 800, y), "Y" if face > 0 else "Z")]
+    for a, b, end in ends:
+        m.line(a, b, mid=f"AJ{livery}US{end}")
     if not free:
-        ends += [((x, y), (x, y2)), ((x + 800, y), (x + 800, y2))]
-    for a, b in ends:
-        m.line(a, b, mid=f"AJ{livery}USZ")
+        for a, b in (((x, y), (x, y2)), ((x + 800, y), (x + 800, y2))):
+            m.line(a, b, mid=f"AJ{livery}USZ")
     return mouths
 
 
@@ -736,7 +742,16 @@ def _on(key, a, b):
     return True
 
 
-def excerpt(m, src, at, dx, dy, *, things=True, small=100000):
+BOARDED = {}        # a door's face -> the same nailed up (gfx.boarded), wherever an excerpt() ends at a door
+SCENERY_T = {34, 35, 2028, 85, 86, 44, 45, 46, 55, 56, 57, 48, 70} | set(range(20021, 20030))   # what only stands there
+
+
+def boarded(face):
+    """The name of the door texture `face` with boards nailed across it."""
+    return BOARDED.setdefault(face, "AJNB%02d" % len(BOARDED))
+
+
+def excerpt(m, src, at, dx, dy, *, things=True, small=100000, without=()):
     """A piece of another level, as it stands there (Vadim, 2026-11-17: the
     places MAP10's bus goes to are the earlier levels, and should read so):
     everything of the Map `src` that can be walked to and back from the
@@ -747,6 +762,20 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000):
     What is left behind: every frame and far side (their recesses are plain
     wall again), locked and bolted doors, exits, keys, Ajar's own monsters,
     secrets, and whatever is only dropped into or come to through a door.
+    What comes along as scenery (Vadim, 2026-11-17: the pieces are to look
+    as they do in their levels): whatever is seen from there and stands
+    higher than anybody climbs (a balcony, a gallery, a stage, a bridge),
+    and on from it for as long as the floor does not go down (and one
+    small piece further where it does: a trap in a stage), with the lamps
+    and such that stand on it. Nobody gets there: every step from
+    the ground to a piece of scenery is more than 24. `without` is boxes
+    (x1, y1, x2, y2) of the new map that the caller builds in: scenery
+    that reaches into one stays behind.
+
+    Where the excerpt ends at a door that does not come along (locked,
+    bolted), the wall shows that door nailed up (boarded()); where it ends
+    at anything else, the room's own wall.
+
     Returns the places where a recess was, [(m1, m2, out, floor), ...] in
     the new map, in the order `src` made them: the caller may make recesses
     of its own in them (the far end of a doorway(), a stray_place())."""
@@ -780,12 +809,15 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000):
             doors.add(si)
     walk = {i: set() for i in range(len(S))}       # both ways on foot
     near = {i: set() for i in range(len(S))}       # sharing a line
+    see = {i: set() for i in range(len(S))}        # sharing a line with a gap over it
     for (a, b), si in edge.items():
         sj = edge.get((b, a))
         if sj is None or si in portal or sj in portal:
             continue
         near[si].add(sj)
         s, o = S[si], S[sj]
+        if min(s["ceil"], o["ceil"]) > max(s["floor"], o["floor"]):
+            see[si].add(sj)
         top = lambda x, i: x["floor"] + DOOR_H if i in doors else x["ceil"]
         if (not props(a, b).get("blocking") and abs(o["floor"] - s["floor"]) <= 24
                 and min(top(s, si), top(o, sj)) - max(s["floor"], o["floor"]) >= 56):
@@ -817,9 +849,53 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000):
     keep = spread(list(keep), near, fits)
 
     move = lambda v: (v[0] + dx, v[1] + dy)
+
+    def clear(j):                                  # of the caller's own building
+        xs, ys = [v[0] + dx for v in polys[j]], [v[1] + dy for v in polys[j]]
+        return not any(min(xs) < x2 and max(xs) > x1 and min(ys) < y2 and max(ys) > y1 for x1, y1, x2, y2 in without)
+
+    # scenery: seen from the ground and out of reach. A rectangle of it that
+    # reaches into a `without` box comes along with that box cut out of it.
+    scenery, part, todo = set(), set(), list(keep)
+    while todo:
+        i = todo.pop()
+        for j in see[i]:
+            if j in keep or j in scenery or j in portal:
+                continue
+            if not clear(j) and (len(src.polys[j]) != 4 or len({v[0] for v in src.polys[j]}) != 2):
+                continue
+            if S[j]["floor"] > S[i]["floor"] + 24 if i in keep else S[j]["floor"] >= S[i]["floor"]:
+                scenery.add(j)
+                todo.append(j)
+            elif i not in keep and area(polys[j]) < small:     # a hole in it (a trap in a stage): no further
+                scenery.add(j)
+    while True:                                    # ... and nowhere a step or a drop away from it
+        low = {j for j in scenery if any(g in ground and S[j]["floor"] <= S[g]["floor"] + 24 for g in near[j])}
+        if not low:
+            break
+        scenery -= low
+    part = {j for j in scenery if not clear(j)}
+    scenery -= part
+    keep |= scenery
+
     for i in sorted(keep):
         m.polys.append([move(v) for v in polys[i]])
         m.sectors.append(dict(S[i], id=0, special=0))
+    for j in sorted(part):
+        xs, ys = [v[0] + dx for v in src.polys[j]], [v[1] + dy for v in src.polys[j]]
+        rects = [(min(xs), min(ys), max(xs), max(ys))]
+        for x1, y1, x2, y2 in without:
+            cut = []
+            for a1, b1, a2, b2 in rects:
+                if not (a1 < x2 and a2 > x1 and b1 < y2 and b2 > y1):
+                    cut.append((a1, b1, a2, b2))
+                    continue
+                lo, hi = max(b1, y1), min(b2, y2)
+                cut += [(a1, b1, a2, lo), (a1, hi, a2, b2), (a1, lo, max(a1, x1), hi), (min(a2, x2), lo, a2, hi)]
+            rects = [r for r in cut if r[0] < r[2] and r[1] < r[3]]
+        for r in rects:
+            m.polys.append(rect4(*r))
+            m.sectors.append(dict(S[j], id=0, special=0))
     for key, val in src.lineprops.items():
         p = dict(val)
         p.pop("id", None)
@@ -831,11 +907,36 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000):
             m.lineprops[frozenset(move(v) for v in key)] = p
     m.cuts |= {move(v) for v in src.cuts}
     m.align |= src.align
+    # Where the excerpt ends. A door that stays behind is seen shut: nailed up
+    # where anybody can come to it, as it is where nobody can. Anywhere else
+    # the room's own wall, not what hung on the line (a railing).
+    shut = set()
+    for sj, P in enumerate(src.polys):
+        if sj in keep or sj in part or sj in portal or S[sj]["floor"] != S[sj]["ceil"]:
+            continue
+        for A, B in zip(P, P[1:] + P[:1]):
+            pieces = [(a, b) for a, b in zip(polys[sj], polys[sj][1:] + polys[sj][:1]) if _on(frozenset((A, B)), a, b)]
+            rooms = {edge.get((b, a)) for a, b in pieces}
+            if abs(A[0] - B[0]) + abs(A[1] - B[1]) != 64 or not rooms <= keep or any(S[k]["floor"] != S[sj]["floor"] for k in rooms):
+                continue
+            face = props(A, B).get("upper") or S[sj]["wall"]
+            m.cut(move(A), move(B))
+            m.lineprops[frozenset((move(A), move(B)))] = dict(mid=boarded(face) if rooms & ground else face,
+                                                              dontpegbottom=True, exact=True)
+            shut |= {(b, a) for a, b in pieces}
+    for i in sorted(keep):
+        for a, b in zip(polys[i], polys[i][1:] + polys[i][:1]):
+            sj = edge.get((b, a))
+            if sj is None or sj in keep or sj in part or (a, b) in shut:
+                continue
+            m.cut(move(a), move(b))
+            m.lineprops[frozenset((move(a), move(b)))] = {}
     if things:
         for t in src.things:
             if t["type"] in (1, 2, 3, 4, 11) or 20001 <= t["type"] <= 20014 or t["type"] == AMBUSH_T:
                 continue
-            if any(inside(t["x"], t["y"], polys[i]) for i in ground):
+            if any(inside(t["x"], t["y"], polys[i]) for i in ground) or (
+                    t["type"] in SCENERY_T and any(inside(t["x"], t["y"], polys[i]) for i in keep - ground)):
                 m.things.append(dict(t, x=t["x"] + dx, y=t["y"] + dy))
     places = []
     for si in order:                               # a recess: the sector on the room's side of a portal line

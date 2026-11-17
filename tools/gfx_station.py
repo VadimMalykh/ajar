@@ -13,7 +13,8 @@ Three looks for the whole station, numbered 1 to 3. For look n:
   AJ5A<n>   under canopies, in the vestibule and porches, 128
   AJ5W<n> waiting room   AJ5O<n> offices   AJ5R<n> station master (all 128)
   AJ5S<n>   engine shed, 192
-  AJ5N<n>   carriage side, 176     AJ5E<n> platform edge, 64     AJ5L<n> railing
+  AJ5N<n>   carriage side, 176 (AJ5NE<n> its end, 192 wide)
+  AJ5E<n>   platform edge, 64     AJ5L<n> railing
   AJ5D<n>, AJ5D<n>12, AJ5D<n>34  room doors
   flats: AJ5F<n> concourse floor, AJ5P<n> platforms and the way through,
          AJ5J<n> goods yard, AJ5I<n> room floor, AJ5T<n> the master's carpet,
@@ -401,6 +402,40 @@ def train(n):
     return tr
 
 
+def train_end(n):
+    """The end of the carriage, 192 wide: the side's paint, a door to the next
+    carriage with a window in it, a lamp each side, the buffers and the hook."""
+    side = train(n)
+    tr = Img(192, 176)
+    for y in range(176):
+        tr.px[y * 192:(y + 1) * 192] = [list(side.px[y * 64]) for _ in range(192)]      # the side's rows, no windows
+    body = tuple(side.px[100 * 64][:3])
+    metal = (120, 96, 50) if n != "2" else (120, 124, 132)
+    tr.rect(0, 6, 3, 140, shade(body, 0.6))                              # the corners
+    tr.rect(189, 6, 192, 140, shade(body, 0.6))
+    tr.rect(72, 16, 120, 140, shade(body, 0.8))                          # the door
+    tr.frame(72, 16, 120, 140, metal, 2)
+    tr.rect(82, 28, 110, 70, (30, 40, 56))
+    tr.frame(82, 28, 110, 70, metal, 2)
+    tr.rect(112, 84, 116, 92, metal)                                     # its handle
+    for x in (20, 136):                                                  # a window each side of it
+        tr.rect(x, 28, x + 36, 70, (30, 40, 56))
+        tr.frame(x, 28, x + 36, 70, metal, 2)
+    for cx in (22, 170):                                                 # tail lamps
+        tr.disc(cx, 108, 6, (40, 38, 40))
+        tr.disc(cx, 108, 4, (176, 44, 36))
+    tr.rect(0, 140, 192, 176, (26, 26, 28))                              # the frame under it
+    tr.rect(0, 140, 192, 146, (58, 58, 62))
+    for cx in (34, 158):                                                 # buffers
+        tr.rect(cx - 5, 150, cx + 5, 160, (70, 70, 74))
+        tr.disc(cx, 155, 11, (96, 96, 102))
+        tr.disc(cx, 155, 8, (58, 58, 62))
+    tr.rect(90, 150, 102, 166, (70, 70, 74))                             # the hook
+    tr.rect(93, 160, 99, 172, (40, 40, 44))
+    tr.noise(4, 860 + int(n))
+    return tr
+
+
 def flat(n, tag, seed):
     rnd = random.Random(seed)
     if tag == "F":                                                   # the concourse
@@ -554,6 +589,7 @@ def make(out, rd):
             out[f"textures/AJ5{tag}{n}.png"] = walls[tag].png()
         out[f"textures/AJ5S{n}.png"] = shed(n).png()
         out[f"textures/AJ5N{n}.png"] = train(n).png()
+        out[f"textures/AJ5NE{n}.png"] = train_end(n).png()
         e = Img(64, 64, {"1": BLUEB, "2": (120, 120, 118), "3": (120, 70, 54)}[n])   # the platform's edge
         e.noise(6, 870 + k)
         for y in range(8, 64, 8):

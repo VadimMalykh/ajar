@@ -2532,3 +2532,80 @@ Settled (Vadim, 2026-11-17): the square is empty until a key or a door brings
 company to it. Open: GREEN is in no shortest solution (the solver hangs
 YELLOW in the cellar and has a line from there to the depot); nothing of
 this level's fights has been played.
+
+## Look: MAP10, the film's bus forty years on (started 2026-11-17)
+
+Vadim, 2026-11-17: the bus is to be known for the film's by somebody who has
+seen "Гостья из будущего", not copied from it, and forty years older than it
+was there; and the parts of other levels are to be dressed as they are in
+those levels. Branch `look10`, not committed. **Not played by hand.** No
+board of three: the brief was the look.
+
+**The bus** (`tools/gfx_bus.py`, `ajarmap.bus`). The film's is a flat plywood
+bus painted red with a row of numbered doors. Ours: solid red gone chalky, a
+yellowed cream roof edge and waist stripe, windows in black rubber, painted-on
+wheels at its two ends, and over each door a white route plate with the
+number in black. Russian on the bus and nowhere else in the game: `АВТОБУС 10`
+on its front, and on the plates of the lines that always run where they go
+(`ГОСТИНИЦА`, `ВОКЗАЛ`, `ПЕРЕСАДКА`; on the 20: `ПЕРЕСАДКА`, `ТЕАТР`,
+`ТЕЛЕСКОП`). The door with no number has lost its plate: the red it kept the
+sun off, two screw holes. Forty years: rust from the gutter and from under
+the windows, paint gone in patches with the plywood's plies under it, a
+cracked window, one boarded with a sheet of ply, a dead headlamp, road dirt
+and moss along the foot. Five panels (`AJ?US`, `AJ?US1..4`) laid by turns so
+that no two alike stand side by side; the ends are `AJ?USZ`/`AJ?USY` (the
+corner on the left, on the right). The 20 is the same in faded amber. The
+depot's buses that are only buses wear the same side, and a roof (`AJQRF`).
+
+**The square** (`tools/gfx_square.py`, `AJAR_SQUARE=0` for the plain
+textures). One look. The fence is the cast-concrete panel with lozenges that
+every Soviet yard had (`AJQF`; with posters, with a corner knocked out); it
+is the right height for walls that may not be taller than the bus. Asphalt
+with patches and cracks, slabs under the stops, a sheet-steel shelter with
+the stop's yellow sign and what is left of a timetable, a blue sheet-steel
+kiosk, slatted benches. The museum's side of the square is terracotta and
+stone (MAP06's colours) and its door has a face of its own there. The depot
+is sand-lime brick and oiled concrete. Canopy edges say BUS STOP, PRESS,
+MUSEUM, DEPOT (English, as every sign of the town). The line, PINK's room
+and the two secret rooms are not touched.
+
+**The other levels' pieces, checked** (`tools/excerptcheck.py`: every line
+MAP10 has in common with MAP02, MAP05 and MAP03 compared, both sides'
+textures, offsets, flags, the sectors behind; `-v` lists each difference).
+What it found, and what was done in `ajarmap.excerpt`:
+- Where a level went on beyond the piece taken, the wall kept what hung on
+  the line: a railing's texture over the whole wall (the station's gallery,
+  the theatre's circle and gods), and the stage was a blank wall. Now what is
+  seen from the ground and out of reach comes along as **scenery**: the
+  station's gallery, bridge and carriages, the theatre's stage, curtain,
+  circle and gods, the hotel's upper hall. Nobody gets there: every step
+  from the ground to scenery is more than 24 (checked in the code), nothing
+  that can be dropped into is taken, monsters and pick-ups stay behind;
+  lamps and exhibits come.
+- Locked and bolted doors were plain wall. They are the same doors **nailed
+  up** (`ajarmap.boarded`, `gfx.boarded`: three boards across the leaf), so
+  that a lock plate with a 1 on it does not ask for this level's key 1.
+  Doors up in the scenery are shut and not boarded.
+- The theatre's north circle is where this level's stage-door pit is. It
+  comes along with the pit cut out of it (`without=`), 16 deep over the pit.
+- What still differs, on purpose: this level's own recesses where the
+  source had its own; frames and far sides are wall; the bell targets of the
+  sources' secrets are gone with the secrets.
+- The museum and the observatory are this level's own small rooms, not
+  excerpts. They now use MAP06's and MAP07's own dictionaries and rules
+  (imported, so a change of look there arrives here): the great hall 384
+  high with porches and the wall over them, the wing's gallery 160 with its
+  pictures, the cellar 128 with a tall bay under the hole; the library 320
+  and the dome 448, dim with pools of light at lamps and torches as MAP07
+  is, doors and frames under porches with faces made for their walls, the
+  telescope on the pier. Before, the walls hung from the wrong heights (a
+  384 wall on a 256 room) and nothing was laid by world position. The dome
+  is square, not eight-sided, and has no slit: MAP10's sky is not MAP07's.
+
+**MAP09: the switchroom's porches** (Vadim, playing, 2026-11-17: "wall
+texture near the door is broken"). Every indoor porch of MAP09 is in the
+switchroom, and wore the generic porch wall (`A`), whose dado is 8 lower
+than the switchroom's and which has no pilasters: the panelling stepped at
+each porch. They wear the switchroom's own wall now (`HP`: the lowest 128 of
+its ground floor's; `HQ`: of its gallery's), and the door faces there are
+made on it.
