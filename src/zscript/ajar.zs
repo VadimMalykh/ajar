@@ -1925,120 +1925,125 @@ class AjarHandler : EventHandler
 			if (th) th.DamageMobj(null, null, 10000, 'None');
 		}
 		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(305) && !RoomOpen(306));
-		// RED into the call office's frame: the roof, key 2, and down the hole onto the gallery: key 1
-		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 300, -432, 0, 0); }
-		Forward(mo, t, 40, 25);
-		if (t == 80) Check("onRoof", onRoof && have == "-");
-		if (t == 85) Pose(mo, -1280, 800, 320, 90);
-		Forward(mo, t, 90, 12);
-		if (t == 110) Check("haveKey2", Has(mo, 2));
+		// the start is on the roof: key 1 in its other corner, and down the hole onto the gallery
+		if (t == 30) Check("startsOnRoof", onRoof && have == "-");
+		if (t == 35) Pose(mo, -1290, 410, 320, 270);
+		Forward(mo, t, 40, 12);
+		if (t == 60) Check("haveKey1", Has(mo, 1));
 		if (t == 115) Pose(mo, -608, 330, 320, 270);
 		Forward(mo, t, 120, 14);
 		if (t == 153) Check("fromRoofOntoGallery", mo.pos.z < 320 && mo.pos.y > 96 && mo.pos.y < 224);
-		if (t == 155) Pose(mo, -650, 160, 160, 180);
-		Forward(mo, t, 160, 10);
-		if (t == 180) Check("haveKey1", Has(mo, 1));
 		if (t == 185) Pose(mo, -224, 130, 160, 270);
 		Forward(mo, t, 190, 9);
 		if (t == 200) mo.vel.xy = (0, 0);                              // straight down, not onto a switchboard
 		if (t == 222) Check("droppedIntoSwitchroom", mo.pos.z == 0 && mo.pos.y < 96);
-		// key 1 opens the west wing: key 3 in the cloakroom
-		if (t == 225) { Pose(mo, -730, 32, 0, 180); FindLine(301).Activate(mo, 0, SPAC_Use); }
-		if (t == 265) Check("westWingOpens", RoomOpen(301));
+		// the west wing is open; key 1 opens the cloakroom: key 2
+		if (t == 225) { Pose(mo, -1320, -96, 0, 180); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (t == 265) Check("cloakroomOpens", RoomOpen(301));
 		if (t == 270) Pose(mo, -1640, -190, 0, 270);
 		Forward(mo, t, 275, 10);
-		if (t == 295) Check("haveKey3", Has(mo, 3));
-		// key 2 opens the east wing: YELLOW, where the thief dropped it
-		if (t == 300) { Pose(mo, 730, -168, 0, 0); FindLine(302).Activate(mo, 0, SPAC_Use); }
-		if (t == 340) Check("eastWingOpens", RoomOpen(302));
-		if (t == 345) Take(mo, 4);
-		if (t == 348) Check("yellowFromTheThief", have == "YELLOW");
+		if (t == 295) Check("haveKey2", Has(mo, 2));
+		// key 3 is in the far corner of the battery room
+		if (t == 300) Pose(mo, 1428, 790, -128, 90);
+		Forward(mo, t, 305, 12);
+		if (t == 330) Check("haveKey3", Has(mo, 3));
+		// RED into the call office's frame, for later
+		if (t == 334) { Take(mo, 1); FindFrame(101).Activate(mo); }
+		if (t == 337) Check("redHung", have == "-");
+		// keys 2 and 3 open the east wing: YELLOW, where the thief dropped it
+		if (t == 340) { Pose(mo, 730, -168, 0, 0); FindLine(302).Activate(mo, 0, SPAC_Use); }
+		if (t == 380) Check("eastWingOpens", RoomOpen(302));
+		if (t == 385) Take(mo, 4);
+		if (t == 388) Check("yellowFromTheThief", have == "YELLOW");
 		// YELLOW through RED, down the hole, along the gallery into the cable loft, and down into the trunk room
-		if (t == 350) Pose(mo, 300, -432, 0, 0);
-		Forward(mo, t, 355, 25);
-		if (t == 390) Check("onRoofWithYellow", onRoof && have == "YELLOW");
-		if (t == 395) Pose(mo, -608, 330, 320, 270);
-		Forward(mo, t, 400, 14);
-		if (t == 430) Pose(mo, 224, 190, 160, 90);
-		Forward(mo, t, 435, 52);
-		if (t == 495) Check("inCableLoft", mo.pos.z == 160 && mo.pos.y > 576);
-		if (t == 500) Pose(mo, 592, 620, 160, 270);
-		Forward(mo, t, 505, 20);
-		if (t == 540) Check("inTrunkRoomWithYellow", inTrunk && have == "YELLOW");
+		if (t == 390) Pose(mo, 300, -432, 0, 0);
+		Forward(mo, t, 395, 25);
+		if (t == 430) Check("onRoofWithYellow", onRoof && have == "YELLOW");
+		if (t == 435) Pose(mo, -608, 330, 320, 270);
+		Forward(mo, t, 440, 14);
+		if (t == 470) Pose(mo, 224, 190, 160, 90);
+		Forward(mo, t, 475, 52);
+		if (t == 535) Check("inCableLoft", mo.pos.z == 160 && mo.pos.y > 576);
+		if (t == 540) Pose(mo, 592, 620, 160, 270);
+		Forward(mo, t, 545, 20);
+		if (t == 580) Check("inTrunkRoomWithYellow", inTrunk && have == "YELLOW");
 		// it does not leave by the hatch
-		if (t == 545) Pose(mo, 448, 400, 0, 270);
-		Forward(mo, t, 550, 25);
-		if (t == 580) Check("hatchRefusesADoor", mo.pos.y > 224 && have == "YELLOW");
-		if (t == 585) { Pose(mo, 500, 432, 0, 180); FindFrame(190).Activate(mo); }
-		if (t == 588) Check("yellowInABrassFrame", have == "-" && !wayOutBuilt);
-		// through it: the monitor's balcony, key 4, and down through the gap
+		if (t == 585) Pose(mo, 448, 400, 0, 270);
 		Forward(mo, t, 590, 25);
-		if (t == 625) Check("onBalcony", onBalcony);
-		if (t == 630) Pose(mo, -560, -200, 160, 270);
-		Forward(mo, t, 635, 8);
-		if (t == 655) Check("haveKey4", Has(mo, 4));
-		if (t == 660) Pose(mo, -560, -160, 160, 0);
-		Forward(mo, t, 665, 11);
-		if (t == 677) mo.vel.xy = (0, 0);
-		if (t == 697) Check("offTheBalcony", mo.pos.z == 0 && mo.pos.x > -512);
+		if (t == 620) Check("hatchRefusesADoor", mo.pos.y > 224 && have == "YELLOW");
+		// the lever at the trunk positions: the kiosk
+		if (t == 623) FindLine(307).Activate(mo, 0, SPAC_Use);
+		if (t == 625) { Pose(mo, 500, 432, 0, 180); FindFrame(190).Activate(mo); }
+		if (t == 628) Check("yellowInABrassFrame", have == "-" && !wayOutBuilt);
+		// through it: the monitor's balcony, key 4, and down through the gap
+		Forward(mo, t, 630, 25);
+		if (t == 663) Check("leverOpensKiosk", RoomOpen(305));
+		if (t == 665) Check("onBalcony", onBalcony);
+		if (t == 670) Pose(mo, -560, -200, 160, 270);
+		Forward(mo, t, 675, 8);
+		if (t == 695) Check("haveKey4", Has(mo, 4));
+		if (t == 700) Pose(mo, -560, -160, 160, 0);
+		Forward(mo, t, 705, 11);
+		if (t == 717) mo.vel.xy = (0, 0);
+		if (t == 737) Check("offTheBalcony", mo.pos.z == 0 && mo.pos.x > -512);
 		// the test room, by its hatch: VIOLET, which the hatch refuses; into the test room's frame
-		if (t == 700) Pose(mo, 1280, -240, 0, 270);
-		Forward(mo, t, 705, 16);
-		if (t == 735) Check("inTestRoom", inTest);
-		if (t == 740) Take(mo, 5);
-		if (t == 745) Pose(mo, 1280, -360, 0, 90);
-		Forward(mo, t, 750, 14);
-		if (t == 775) Check("testHatchRefusesADoor", mo.pos.y < -288 && have == "VIOLET");
-		if (t == 780) FindFrame(104).Activate(mo);
-		if (t == 783) Check("violetHungInTestRoom", have == "-");
+		if (t == 740) Pose(mo, 1280, -240, 0, 270);
+		Forward(mo, t, 745, 16);
+		if (t == 775) Check("inTestRoom", inTest);
+		if (t == 780) Take(mo, 5);
 		if (t == 785) Pose(mo, 1280, -360, 0, 90);
-		Forward(mo, t, 790, 18);
-		if (t == 820) Check("outByTheHatch", mo.pos.y > -288);
-		// keys 3 and 4 open the manager's office: BLUE
-		if (t == 825) { Pose(mo, -340, -432, 0, 180); FindLine(303).Activate(mo, 0, SPAC_Use); }
-		if (t == 865) Check("officeOpens", RoomOpen(303));
-		if (t == 870) Take(mo, 2);
+		Forward(mo, t, 790, 14);
+		if (t == 815) Check("testHatchRefusesADoor", mo.pos.y < -288 && have == "VIOLET");
+		if (t == 820) FindFrame(104).Activate(mo);
+		if (t == 823) Check("violetHungInTestRoom", have == "-");
+		if (t == 825) Pose(mo, 1280, -360, 0, 90);
+		Forward(mo, t, 830, 18);
+		if (t == 860) Check("outByTheHatch", mo.pos.y > -288);
+		// key 4 opens the manager's office: BLUE
+		if (t == 865) { Pose(mo, -340, -432, 0, 180); FindLine(303).Activate(mo, 0, SPAC_Use); }
+		if (t == 905) Check("officeOpens", RoomOpen(303));
+		if (t == 910) Take(mo, 2);
 		// BLUE through RED and down into the trunk room, swapped for YELLOW
-		if (t == 875) Pose(mo, 300, -432, 0, 0);
-		Forward(mo, t, 880, 25);
-		if (t == 915) Pose(mo, -608, 330, 320, 270);
-		Forward(mo, t, 920, 14);
-		if (t == 950) Pose(mo, 224, 190, 160, 90);
-		Forward(mo, t, 955, 52);
-		if (t == 1015) Pose(mo, 592, 620, 160, 270);
-		Forward(mo, t, 1020, 20);
-		if (t == 1055) Check("inTrunkRoomWithBlue", inTrunk && have == "BLUE");
-		if (t == 1060) { Pose(mo, 500, 432, 0, 180); FindFrame(190).Activate(mo); }
-		if (t == 1063) Check("blueSwappedForYellow", have == "YELLOW" && !wayOutBuilt);
+		if (t == 915) Pose(mo, 300, -432, 0, 0);
+		Forward(mo, t, 920, 25);
+		if (t == 955) Pose(mo, -608, 330, 320, 270);
+		Forward(mo, t, 960, 14);
+		if (t == 990) Pose(mo, 224, 190, 160, 90);
+		Forward(mo, t, 995, 52);
+		if (t == 1055) Pose(mo, 592, 620, 160, 270);
+		Forward(mo, t, 1060, 20);
+		if (t == 1095) Check("inTrunkRoomWithBlue", inTrunk && have == "BLUE");
+		if (t == 1100) { Pose(mo, 500, 432, 0, 180); FindFrame(190).Activate(mo); }
+		if (t == 1103) Check("blueSwappedForYellow", have == "YELLOW" && !wayOutBuilt);
 		// along the line with YELLOW: in by BLUE, out by VIOLET, into the test room
-		Forward(mo, t, 1065, 25);
-		if (t == 1100) Check("onTheLineWithYellow", onLine && have == "YELLOW");
-		Forward(mo, t, 1105, 45);
-		if (t == 1160) Check("alongTheLineIntoTestRoom", inTest && have == "YELLOW");
-		if (t == 1165) { Pose(mo, 1360, -480, 0, 270); FindFrame(104).Activate(mo); }
-		if (t == 1168) Check("violetSwappedOut", have == "VIOLET");
+		Forward(mo, t, 1105, 25);
+		if (t == 1140) Check("onTheLineWithYellow", onLine && have == "YELLOW");
+		Forward(mo, t, 1145, 45);
+		if (t == 1200) Check("alongTheLineIntoTestRoom", inTest && have == "YELLOW");
+		if (t == 1205) { Pose(mo, 1360, -480, 0, 270); FindFrame(104).Activate(mo); }
+		if (t == 1208) Check("violetSwappedOut", have == "VIOLET");
 		// VIOLET leaves through YELLOW: the balcony, and down
-		Forward(mo, t, 1170, 16);
-		if (t == 1200) Check("onBalconyWithViolet", onBalcony && have == "VIOLET");
-		if (t == 1205) Pose(mo, -560, -160, 160, 0);
-		Forward(mo, t, 1210, 11);
-		if (t == 1222) mo.vel.xy = (0, 0);
+		Forward(mo, t, 1210, 16);
+		if (t == 1240) Check("onBalconyWithViolet", onBalcony && have == "VIOLET");
+		if (t == 1245) Pose(mo, -560, -160, 160, 0);
+		Forward(mo, t, 1250, 11);
+		if (t == 1262) mo.vel.xy = (0, 0);
 		// VIOLET through RED and down into the trunk room, into the other brass frame
-		if (t == 1245) Pose(mo, 300, -432, 0, 0);
-		Forward(mo, t, 1250, 25);
-		if (t == 1285) Pose(mo, -608, 330, 320, 270);
-		Forward(mo, t, 1290, 14);
-		if (t == 1320) Pose(mo, 224, 190, 160, 90);
-		Forward(mo, t, 1325, 52);
-		if (t == 1385) Pose(mo, 592, 620, 160, 270);
-		Forward(mo, t, 1390, 20);
-		if (t == 1425) Check("inTrunkRoomWithViolet", inTrunk && have == "VIOLET");
-		if (t == 1430) { FindFrame(191).Activate(mo); Check("chainBuilt", wayOutBuilt && chainBuilt && !carried); }
+		if (t == 1285) Pose(mo, 300, -432, 0, 0);
+		Forward(mo, t, 1290, 25);
+		if (t == 1325) Pose(mo, -608, 330, 320, 270);
+		Forward(mo, t, 1330, 14);
+		if (t == 1360) Pose(mo, 224, 190, 160, 90);
+		Forward(mo, t, 1365, 52);
+		if (t == 1425) Pose(mo, 592, 620, 160, 270);
+		Forward(mo, t, 1430, 20);
+		if (t == 1465) Check("inTrunkRoomWithViolet", inTrunk && have == "VIOLET");
+		if (t == 1470) { FindFrame(191).Activate(mo); Check("chainBuilt", wayOutBuilt && chainBuilt && !carried); }
 		// the way out is walked: through VIOLET onto the line, along it, and out by BLUE
-		if (t == 1435) Pose(mo, 592, 432, 0, 0);
-		if (t == 1490) Check("stillHere", inTrunk && !onTheLine);
-		Forward(mo, t, 1495, 90);
-		if (t == 1545) Check("walkedOntoTheLine", onLine && onTheLine);
+		if (t == 1475) Pose(mo, 592, 432, 0, 0);
+		if (t == 1530) Check("stillHere", inTrunk && !onTheLine);
+		Forward(mo, t, 1535, 90);
+		if (t == 1585) Check("walkedOntoTheLine", onLine && onTheLine);
 	}
 
 	// MAP09 mode 3: the chain by itself. One of the two doors in a brass
@@ -2244,7 +2249,7 @@ class AjarHandler : EventHandler
 	void PuttingThroughViews1()
 	{
 		static const double v[] = {
-			0, -768, 0, 90, 0,             // from the start: the forecourt, the front door
+			0, -768, 0, 90, 0,             // the forecourt, the front door
 			600, -780, 0, 45, -20,         // the hole high in the wall: the line
 			-300, -720, 0, 180, 0,         // the kiosk behind its bars
 			0, -520, 0, 90, 0,             // the call office
@@ -2280,7 +2285,7 @@ class AjarHandler : EventHandler
 			-880, 32, 0, 180, 0,           // the canteen
 			-1400, -96, 0, 180, 0,         // the cloakroom
 			-1136, 140, 0, 120, 0,         // the rest room: GREEN, the frame
-			-928, 860, 320, 270, 0,        // the roof, from RED's far side
+			-1280, 860, 320, 315, 0,       // the roof, from the start
 			-700, 600, 320, 135, 0,        // RED's far side
 			-608, 340, 320, 270, 20,       // the hole onto the gallery
 			820, -168, 0, 0, 0,            // the apparatus room
@@ -2288,8 +2293,8 @@ class AjarHandler : EventHandler
 			1400, -168, 0, 0, 0,           // the relay room
 			1280, -330, 0, 250, 0,         // the test room: its frame
 			1400, -400, 0, 150, 0,         // VIOLET, the hatch
-			1880, -200, 0, 290, 0,         // the stationery store: PINK, a frame
-			1870, -32, 0, 0, 0,            // the strongroom: PINK's far side
+			-1736, -200, 0, 250, 0,        // the stationery store: PINK, a frame
+			-1726, -32, 0, 180, 0,         // the strongroom: PINK's far side
 			920, -432, 96, 180, 0,         // the line: BLUE's far side
 			920, -432, 96, 0, 0,           // VIOLET's
 			920, -360, 96, 270, 15         // the hole over the forecourt

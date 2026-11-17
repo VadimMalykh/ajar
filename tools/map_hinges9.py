@@ -30,31 +30,43 @@ puzzle is the one above; the building and the way into it are its own:
 
 - The switchroom is a long hall, east to west. The supervisor's gallery runs
   along its north wall, the monitor's balcony is its south-west corner.
-- The first door, RED, opens onto the roof, under the sky: key 2 is up there,
-  and a hole lets down onto the gallery and key 1. So both wings can be
-  opened after the first trip, in either order.
-- West wing (key 1): canteen, cloakroom (key 3), rest room (GREEN, a frame).
-- East wing (key 2): apparatus room, relay room, and off the apparatus
-  room the test room. The thief is back (not seen since MAP04): it
-  lives in the east wing with YELLOW on its back, and has no frame there to
-  hang it in: it is to be caught.
+- You start on the roof, under the sky, having come over the roofs: key 1
+  is in its other corner, and a hole lets down onto the gallery, over a
+  switchroom full of the night shift. There is no way back up but RED,
+  which leans in the call office and whose far side is on the roof.
+- West wing, open: canteen, rest room (GREEN, a frame), and the cloakroom
+  (key 1), where key 2 is.
+- East wing (keys 2 and 3): apparatus room, relay room, and off the
+  apparatus room the test room. The thief is back (not seen since MAP04):
+  it lives in the east wing with YELLOW on its back, and has no frame there
+  to hang it in: it is to be caught.
 - The repainter is new (enemies.zs): it goes about the switchroom, and any
   two doors left hanging or leaning where it can get at them change places.
 - North-east, under the trunk room's chute: the battery room, down stairs
-  from the cable passage; off the passage the generator room.
-- The line hangs over the east end of the forecourt, the kiosk is at its
-  west end.
+  from the cable passage, and key 3 in its far corner; off the passage the
+  generator room.
+- The forecourt is the last place you see, not the first: out by the front
+  door from the call office. The line hangs over its east end, the kiosk is
+  at its west end.
 
-Places. The forecourt (start), the call office, the switchroom, the cable
-passage and the battery room under it are one place to walk about in. The
-roof (RED's far side; key 2). The supervisor's gallery and the cable loft
-north of it (GREEN's; key 1). The monitor's balcony (YELLOW's; key 4). The
-manager's office (keys 3 and 4): BLUE.
+Shuffled 2026-11-17 (Vadim: still too like MAP08: the start outside the
+front door, a wing on key 1 and a wing on key 2, the office on 3 and 4, the
+same secrets in the same places, a cellar of demons). The puzzle and the
+rooms stayed; the start, the keys, the locks, the secrets and who is in the
+cellar moved.
 
-Secrets: the kiosk in the forecourt (shoot its bell through the bars, or a
-Stray door); the stationery store behind the relay room (a squeeze; PINK and
-a frame) and beyond its bars the strongroom (PINK's far side); an alcove off
-the battery room.
+Places. The roof (start; RED's far side; key 1). The supervisor's gallery
+and the cable loft north of it (GREEN's). The call office, the forecourt,
+the switchroom, the cable passage and the battery room under it (key 3) are
+one place to walk about in, and the west wing with them. The cloakroom
+(key 1): key 2. The monitor's balcony (YELLOW's; key 4). The manager's
+office (key 4): BLUE.
+
+Secrets: the kiosk in the forecourt (a lever at the trunk positions puts a
+call through and draws its bolt, or a Stray door); the stationery store
+behind the cloakroom's coats (a squeeze; PINK and a frame) and beyond its
+bars the strongroom (PINK's far side); an alcove behind the cable drums in
+the loft.
 """
 import os
 
@@ -276,7 +288,7 @@ def hall(box, cases, tag, east=False, **k):
 
 
 # === the forecourt, the line over its east end ===================================
-# start here: nobody about. The kiosk is behind bars at the west end; high in
+# out by the front door. The kiosk is behind bars at the west end; high in
 # the north wall, to the east, a hole shows a starry ceiling
 fit((-512, -832, 1100, -576), [
     ((-64, -832, 64, -576), WALK),
@@ -297,15 +309,14 @@ ajarmap.way_through(m, NX, NY, BLUE, VIOLET, floor=LINE)
 m.sector(rect(NX + 128, NY - 16, NX + 192, NY), floor=LINE, ceil=LINE + 96, light=150, wall=HOLE,
          ftex="AJTRIMF", ctex="AJTRIMF")
 over((NX + 128, NY - 16), (NX + 192, NY - 16), FRONT)
-# the kiosk (secret), seen through bars: shoot its bell. One of the places a
-# Stray door opens onto
+# the kiosk (secret), seen through bars: there is nothing to shoot. A lever at
+# the trunk positions puts a call through to it, and its bolt is drawn. One of
+# the places a Stray door opens onto
 m.sector(rect(-592, -816, -528, -624), ceil=112, light=170, color=ROSE, wall=KIOSKW)
 m.sector(rect(-784, -816, -592, -624), ceil=112, light=170, color=ROSE, wall=KIOSKW, special=1024)
 bolted((-512, -800), (-512, -736), (-1, 0), 0, KIOSK, "XT", "XN", line_id=305)
 ajarmap.unbolt(m, (-592, -816), (-592, -624), KIOSK)
 bars((-512, -704), (-512, -640), (-1, 0), 0, "XT", KIOSKW)
-m.cut((-784, -704), (-784, -640))
-m.line((-784, -704), (-784, -640), special=11, args=(KIOSK, 32), impact=True, mid=BELL, exact=True)
 ajarmap.stray_place(m, 1, (-720, -816), (-656, -816), (0, -1), 0, color=ROSE)
 
 # === the call office ==============================================================
@@ -325,12 +336,12 @@ recess((384, -464), (384, -400), (1, 0), 0, 101, 201)                        # t
 m.sector(rect(-96, -304, 96, -288), ceil=160, light=185, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
 over((-96, -304), (96, -304), "L")
 over((-96, -288), (96, -288), "H")
-# the manager's office: two locks. BLUE
+# the manager's office: one lock, the last key. BLUE
 fit((-720, -560, -400, -304), [
     ((-592, -464, -528, -400), CASE),                                        # the desk
     ((-720, -368, -656, -304), SEAT),
 ], floor=0, ceil=128, light=170, color=PLUM, **MANAGER)
-door((-384, -464), (-384, -400), (-1, 0), 0, "L", "MG", keys="34", line_id=303)
+door((-384, -464), (-384, -400), (-1, 0), 0, "L", "MG", keys="4", line_id=303)
 
 # === the switchroom: a long hall, its gallery along the north wall, its balcony
 # in the south-west corner ===========================================================
@@ -382,6 +393,9 @@ m.sector(rect(560, 560, 624, 576), floor=UP, ceil=UP + 96, light=150, wall="AJTR
          ctex="AJTRIMF")
 over((560, 576), (624, 576), LOFTW)
 over((560, 560), (624, 560), "TRH")
+# an alcove behind the drums (secret)
+m.sector(rect(616, 816, 744, 944), floor=UP, ceil=UP + 96, light=120, wall=ALCOVEW, ftex="AJBOARD", special=1024)
+squeeze((656, 800), (704, 800), (0, 1), UP, LOFTW, ALCOVEW)
 # the trunk room: two brass frames, and nothing else to hang a door in
 fit((336, 304, 848, 560), [
     ((336, 400, 848, 464), ajarmap.RUNNER),
@@ -393,6 +407,8 @@ if LOOK:
         m.line(a, b, upper="AJ9XH")                                          # the shaft's own sides
 ajarmap.brass_pair(m, (336, 400), (336, 464), (848, 400), (848, 464), 0, BLUE, VIOLET)
 squeeze((424, 224), (472, 224), (0, 1), 0, "HP", "TR", thick=80)              # the hatch, from the switchroom
+m.cut((560, 304), (624, 304))                                                # between the trunk positions: the kiosk's lever
+m.line((560, 304), (624, 304), special=11, args=(KIOSK, 32), playeruse=True, mid="AJLEVR", exact=True, id=307)
 m.sector(rect(848, 496, 864, 560), ceil=96, light=150, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")   # the chute
 over((848, 496), (848, 560), "TR")
 over((864, 496), (864, 560), BATTERY["wall"])
@@ -407,9 +423,6 @@ fit((864, 480, 1504, 928), [
 recess((1100, 928), (1164, 928), (0, 1), PIT, 105, 201)                      # the battery room's frame
 ajarmap.stairs(m, (1408, 224), (1472, 224), (0, 1), 0, -128, ceil=128, light=150, wall=BATTERY["wall"],
                ftex="AJBOARD")
-m.sector(rect(1520, 660, 1664, 788), floor=PIT, ceil=PIT + 96, light=120, wall=ALCOVEW, ftex="AJPIT",
-         special=1024)
-squeeze((1504, 700), (1504, 748), (1, 0), PIT, BATTERY["wall"], ALCOVEW)
 fit((784, 80, 1472, 224), [
     ((896, 80, 1024, 112), dict(WOOD, floor=48)),
     ((1216, 192, 1280, 224), dict(WOOD, floor=48)),
@@ -422,26 +435,38 @@ bolted((1072, 224), (1136, 224), (0, 1), 0, GENERATOR, "XP", "XG", line_id=306)
 ajarmap.unbolt(m, (944, 304), (1264, 304), GENERATOR)
 ajarmap.stray_place(m, 0, (1264, 352), (1264, 416), (1, 0), 0)
 
-# === the west wing: one lock. Canteen, cloakroom, rest room =======================
+# === the west wing: open. Canteen, rest room; the cloakroom has the lock ===========
 hall((-1360, -288, -848, 96), [((-1232, -160, -1104, -96), CASE), ((-1040, -32, -976, 32), CASE),
                                ((-1264, 32, -1136, 64), SEAT)], "CN", color=GOLD)                               # canteen
 hall((-1680, -288, -1376, 96), [((-1616, -224, -1552, -96), PEGS),
                                 ((-1488, -32, -1424, 32), PEGS)], "CK", color=LEAF)                              # cloakroom
 hall((-1360, 112, -912, 288), [((-1040, 224, -912, 288), SEAT),
                                ((-1232, 144, -1104, 176), dict(WOOD, floor=32))], "RR", color=PLUM)              # rest room
-door((-768, 0), (-768, 64), (-1, 0), 0, "HP", "CN", keys="1", line_id=301, thick=80)
-door((-1360, -128), (-1360, -64), (-1, 0), 0, "CN", "CK")
+door((-768, 0), (-768, 64), (-1, 0), 0, "HP", "CN", thick=80)
+door((-1360, -128), (-1360, -64), (-1, 0), 0, "CN", "CK", keys="1", line_id=301)
 door((-1168, 96), (-1104, 96), (0, 1), 0, "CN", "RR")
 recess((-1360, 168), (-1360, 232), (-1, 0), 0, 103, 201, color=PLUM)         # the rest room's frame
+# the stationery store (secret): a hole behind the coats that no door fits
+# through, PINK, and a frame. Beyond its bars the strongroom (secret): PINK's
+# far side. The strongroom's own door into the cloakroom is bolted inside
+m.sector(rect(-1904, -288, -1696, -112), ceil=112, light=150, color=ROSE, wall=STOREW, special=1024)
+squeeze((-1680, -216), (-1680, -168), (-1, 0), 0, "CK", STOREW)
+m.sector(rect(-1760, -96, -1696, 32), ceil=112, light=150, color=ROSE, wall="AJSAFE")
+m.sector(rect(-1920, -96, -1760, 32), ceil=112, light=150, color=ROSE, wall="AJSAFE", special=1024)
+bars((-1856, -112), (-1792, -112), (0, 1), 0, STOREW, None)
+recess((-1832, -288), (-1768, -288), (0, -1), 0, 109, 201, color=ROSE)
+recess((-1920, -64), (-1920, 0), (-1, 0), 0, far_id(PINK), 101, far_colour=PINK, color=ROSE)
+bolted((-1680, -64), (-1680, 0), (-1, 0), 0, STRONG, "CK", None)
+ajarmap.unbolt(m, (-1760, -96), (-1760, 32), STRONG)
 
-# === the east wing: one lock. Apparatus room, relay room; the test room ===========
+# === the east wing: two locks. Apparatus room, relay room; the test room ==========
 fit((784, -288, 1360, 64), [
     ((848, -224, 1168, -192), RACK), ((848, -96, 1168, -64), RACK),
     ((1232, -160, 1296, 0), RACK),
 ], floor=0, ceil=192, light=165, color=LEAF, **APPARATUS)
 hall((1376, -288, 1824, 32), [((1504, -96, 1568, -32), CASE), ((1696, -224, 1760, -160), CASE)], "RY", True,
      color=PLUM)                                                             # relay room
-door((768, -200), (768, -136), (1, 0), 0, "HP", "AP", keys="2", line_id=302)
+door((768, -200), (768, -136), (1, 0), 0, "HP", "AP", keys="23", line_id=302)
 door((1360, -200), (1360, -136), (1, 0), 0, "AP", "RY")
 # No frame in this wing: the thief has nowhere to hang what it carries, and a
 # door hung in here would be a way in past the lock (the solver found the
@@ -452,22 +477,10 @@ fit((1200, -560, 1520, -304), [
 ], floor=0, ceil=128, light=160, color=GOLD, **TEST)
 squeeze((1256, -288), (1304, -288), (0, -1), 0, "AP", "TS")
 recess((1328, -560), (1392, -560), (0, -1), 0, 104, 201, color=GOLD)         # the test room's frame
-# the stationery store (secret): a hole no door fits through, PINK, and a frame.
-# Beyond its bars the strongroom (secret): PINK's far side. The strongroom's own
-# door into the relay room is bolted inside
-m.sector(rect(1840, -288, 2048, -112), ceil=112, light=150, color=ROSE, wall=STOREW, special=1024)
-squeeze((1824, -216), (1824, -168), (1, 0), 0, "RY", STOREW)
-m.sector(rect(1840, -96, 1904, 32), ceil=112, light=150, color=ROSE, wall="AJSAFE")
-m.sector(rect(1904, -96, 2064, 32), ceil=112, light=150, color=ROSE, wall="AJSAFE", special=1024)
-bars((1936, -112), (2000, -112), (0, 1), 0, STOREW, None)
-recess((1912, -288), (1976, -288), (0, -1), 0, 109, 201, color=ROSE)
-recess((2064, -64), (2064, 0), (1, 0), 0, far_id(PINK), 101, far_colour=PINK, color=ROSE)
-bolted((1824, -64), (1824, 0), (1, 0), 0, STRONG, "RY", None)
-ajarmap.unbolt(m, (1904, -96), (1904, 32), STRONG)
 
 # --- doors and keys ----------------------------------------------------------
 THIEF, REPAINTER = 20003, 20007
-m.thing(0, -768, 1, angle=90)                                             # player start, in the forecourt
+m.thing(-1280, 860, 1, angle=315)                                         # player start: on the roof, in its far corner
 ajarmap.door(m, RED, -364, -324, angle=0)                                 # leaning in the call office
 ajarmap.door(m, GREEN, -932, 132, angle=180)                              # leaning in the rest room
 m.thing(1640, -100, THIEF, angle=180, args=(YELLOW, 1))                   # the thief: has YELLOW, stays in the east wing
@@ -475,15 +488,15 @@ ajarmap.door(m, YELLOW, 1640, -100, angle=180)                            # (on 
 m.thing(600, 150, REPAINTER, angle=180)                                   # the repainter, new here: about the switchroom
 ajarmap.door(m, VIOLET, 1220, -324, angle=0)                              # leaning in the test room
 ajarmap.door(m, BLUE, -700, -540, angle=0)                                # leaning in the manager's office
-ajarmap.door(m, PINK, 1860, -268, angle=0)                                # leaning in the stationery store
+ajarmap.door(m, PINK, -1716, -268, angle=180)                             # leaning in the stationery store
 ajarmap.stray(m, 748, 204, angle=180)                                     # Stray doors: in the switchroom
 ajarmap.stray(m, -1324, 908, angle=0)                                     # on the roof
 ajarmap.stray(m, -1340, 270, angle=0)                                     # in the rest room
 ajarmap.stray(m, 884, 908, angle=0)                                       # in the battery room
 ajarmap.stray(m, 212, 780, angle=0)                                       # in the cable loft
-ajarmap.key(m, 1, -720, 160)                                              # west end of the gallery
-ajarmap.key(m, 2, -1280, 860)                                             # the far corner of the roof
-ajarmap.key(m, 3, -1640, -250)                                            # the cloakroom
+ajarmap.key(m, 1, -1290, 350)                                             # the roof's other corner
+ajarmap.key(m, 2, -1640, -250)                                            # the cloakroom
+ajarmap.key(m, 3, 1420, 860)                                              # the far corner of the battery room
 ajarmap.key(m, 4, -560, -250)                                             # the monitor's balcony
 
 ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, LODGER = 3004, 9, 3001, 3002, 58, 20005
@@ -502,18 +515,24 @@ def things(kind, *spots, angle=0, **k):
         m.thing(x, y, kind, angle=angle, **k)
 
 
-# the forecourt: lamps and nobody
+# the forecourt: the way in was over the roofs, and here is who watches the door
+things(KNIGHT, (600, -700), angle=180)
+things(REVENANT, (-380, -690), angle=0)
+things(CACO, (900, -700), (-300, -640), angle=180, ambush=True)
+things(SOUL, (400, -650), (800, -720), angle=180)
+things(CHAINGUNNER, (1000, -640), angle=180)
+things(MEDIKIT, (480, -620))
 things(LAMP, (-96, -608), (96, -608), (-440, -600), (560, -800), (1060, -800))
 things(BONUS, (-256, -700), (-200, -700), (200, -700), (256, -700))
 # the kiosk
 things(PLASMA, (-690, -720))
 things(CELLS, (-740, -780), (-740, -740))
 things(MEGA, (-620, -660))
-# the line: nobody. It can be seen into from the forecourt, and the start is quiet
+# the line: nobody
 # the call office: the night staff. Guns at the far end, behind the counter
 things(ZOMBIE, (-160, -470), (200, -400), (0, -340), angle=270)
 things(IMP, (-300, -330), (330, -340), angle=270)
-things(SHOTGUN, (0, -440))
+things(SUPER, (0, -440))
 things(SHELLS, (-40, -400), (40, -400))
 things(BACKPACK, (-256, -450))                                             # left at the counter
 things(STIM, (-350, -500), (350, -340))
@@ -540,8 +559,8 @@ things(SHELLBOX, (-430, -250), (690, 200))
 things(MEDIKIT, (560, -250), (-560, 60))
 things(SHELLS, (-200, 60), (200, 60))
 things(STIM, (40, -270), (740, -60))
-# the gallery: key 1, a chaingun, a rocket launcher for the crowd below, and
-# those who watch from above
+# the gallery, where the roof lets you down: a chaingun, a rocket launcher for
+# the crowd below, and those who watch from above
 things(LAUNCHER, (-680, 190))
 things(ROCKETBOX, (-740, 120), (340, 200))
 things(CHAINGUN, (-300, 180))
@@ -556,16 +575,12 @@ things(CELLS, (-680, -260), (-640, -260))
 things(MEDIKIT, (-740, -60))
 things(CHAINGUNNER, (-560, -80), angle=0)
 things(IMP, (-640, -160), angle=0)
-# the roof: where RED brings you first. Key 2 is in the far corner
-things(IMP, (-1300, 380), (-640, 400), (-980, 400), (-620, 760), angle=270)
-things(SERGEANT, (-1300, 620), (-720, 860), angle=270)
-things(CHAINGUNNER, (-1040, 340), angle=90)
-things(CACO, (-1180, 880), (-700, 680), angle=270, ambush=True)
-things(REVENANT, (-600, 560), angle=180)
-things(SOUL, (-1000, 800), (-760, 380), angle=270)
-things(KNIGHT, (-1300, 800), angle=0)
-things(SUPER, (-1000, 640))
-things(SHELLS, (-1000, 600), (-1000, 680))
+# the roof: start here, with a shotgun to hand. Key 1 is in the other corner
+things(SHOTGUN, (-1220, 800))
+things(SHELLS, (-1180, 860), (-1000, 600), (-1000, 680))
+things(IMP, (-1220, 380), (-640, 400), (-980, 400), (-620, 760), angle=90)
+things(ZOMBIE, (-1300, 600), (-760, 700), angle=90)
+things(SERGEANT, (-720, 860), angle=180)
 things(SHELLBOX, (-560, 330))
 things(MEDIKIT, (-1320, 330), (-560, 620))
 things(ARMOR, (-560, 900))
@@ -580,6 +595,9 @@ things(SHELLBOX, (810, 720))
 things(MEDIKIT, (480, 780))
 things(STIM, (224, 560))
 things(TECHLAMP, (520, 776))
+things(ARMOR, (680, 900))                                                  # its alcove
+things(CELLS, (640, 920), (720, 920))
+things(CANDLE, (632, 832), (728, 832))
 # the trunk room: somebody lives in the frames
 things(LODGER, (592, 330), args=(300,))
 things(DEMON, (420, 520), (750, 520), angle=270)
@@ -588,18 +606,16 @@ things(IMP, (370, 330), (816, 336), angle=270)
 things(TORCH_B, (360, 536), (824, 480))
 things(MEDIKIT, (360, 372))
 things(SHELLS, (820, 372))
-# the battery room and its alcove
-things(SPECTRE, (920, 620), (1140, 620), (1400, 620), (1380, 880), angle=180)
-things(DEMON, (1000, 890), (1240, 890), (1450, 800), angle=180)
+# the battery room: key 3 in its far corner, and what guards the cells
+things(KNIGHT, (920, 620), (1400, 620), angle=180)
+things(REVENANT, (1380, 800), angle=180)
+things(CACO, (1140, 620), angle=180)
 things(IMP, (1024, 768), (1248, 768), (1150, 544), angle=180)                 # on the cells
 things(SOUL, (900, 800), (1340, 540), angle=180)
 things(SERGEANT, (1440, 560), (900, 900), angle=180)
 things(TORCH_G, (1480, 904), (1480, 504))
 things(MEDIKIT, (1150, 640), (890, 700))
 things(SHELLBOX, (1340, 900))
-things(ARMOR, (1600, 724))
-things(CELLS, (1630, 690), (1630, 760))
-things(CANDLE, (1544, 684), (1544, 764))
 # the cable passage
 things(ZOMBIE, (860, 150), (1100, 120), (1300, 140), angle=180)
 things(IMP, (980, 180), (1400, 110), angle=180)
@@ -608,13 +624,14 @@ things(DEMON, (1040, 190), (1250, 120), angle=180)
 things(TECHLAMP, (808, 104), (1448, 104))
 things(STIM, (800, 200))
 things(CLIP, (850, 100), (850, 130))
-things(BERSERK, (1440, 200))                                               # at the head of the stairs: the battery room is full of teeth
+things(ROCKETS, (1440, 200), (1440, 170))                                  # at the head of the stairs
 # the generator room: do not open this door
 things(MANCUBUS, (1104, 400), angle=270)
 things(KNIGHT, (990, 350), (1210, 350), angle=270)
 things(SPHERE, (970, 270))
 things(ROCKETBOX, (1230, 270), (1190, 270))
 # the west wing. The canteen: things that eat
+things(BERSERK, (-730, 80))                                                # before its door
 things(ZOMBIE, (-900, -100), (-1040, -180), (-1300, -40), angle=0)
 things(IMP, (-1300, 40), (-930, -240), (-1200, -250), angle=0)
 things(SERGEANT, (-1090, 60), (-1330, -260), angle=0)
@@ -624,7 +641,8 @@ things(TECHLAMP, (-872, -264), (-1336, 0))                                 # not
 things(SHELLS, (-880, 70), (-1340, -130))
 things(MEDIKIT, (-1340, -270))
 things(STIM, (-870, -60))
-# the cloakroom: key 3, and the attendants
+# the cloakroom: key 2, and the attendants
+things(SPECTRE, (-1600, -40), angle=0)
 things(CHAINGUNNER, (-1640, 60), (-1440, -230), angle=0)
 things(REVENANT, (-1520, -160), angle=0)
 things(PAIN, (-1560, 40), angle=0)
@@ -667,35 +685,37 @@ things(IMP, (1260, -500), (1480, -340), angle=90)
 things(TECHLAMP, (1224, -536))
 things(STIM, (1500, -544))
 # the stationery store and the strongroom
-things(CANDLE, (1864, -136), (2024, -264))
-things(HELMET, (2020, -140))
-things(LAUNCHER, (1984, -32))
-things(ROCKETBOX, (1930, 10), (2040, 10))
-things(MEGA, (1930, -80))
-things(AMMOBOX, (2040, -80))
+things(CANDLE, (-1720, -136), (-1880, -264))
+things(HELMET, (-1876, -140))
+things(LAUNCHER, (-1840, -32))
+things(ROCKETBOX, (-1786, 10), (-1896, 10))
+things(MEGA, (-1786, -80))
+things(AMMOBOX, (-1896, -80))
 
 # --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
-# key 2, in the far corner of the roof: between you and the hole
-ajarmap.ambush(m, 2, CACO, (-960, 720), angle=180)
-ajarmap.ambush(m, 2, IMP, (-700, 480), (-700, 330), angle=180)
-# key 1, on the gallery: up from the switchroom, at a man with a rocket launcher
-ajarmap.ambush(m, 1, CACO, (-200, -250), (200, -250), angle=90)
-# key 3, in the cloakroom: the canteen you have to go back through
-ajarmap.ambush(m, 3, REVENANT, (-1100, -250), angle=180)
-ajarmap.ambush(m, 3, IMP, (-950, -200), (-1250, 70), angle=180)
+# key 1, in a corner of the roof: between you and the hole
+ajarmap.ambush(m, 1, IMP, (-960, 720), (-700, 480), (-700, 330), angle=180)
+# key 2, in the cloakroom: the canteen you have to go back through
+ajarmap.ambush(m, 2, REVENANT, (-1100, -250), angle=180)
+ajarmap.ambush(m, 2, IMP, (-950, -200), (-1250, 70), angle=180)
+# key 3, in the battery room: the passage you have to go back by
+ajarmap.ambush(m, 3, REVENANT, (1300, 150), angle=180)
+ajarmap.ambush(m, 3, IMP, (1000, 150), (1150, 120), angle=180)
 # key 4, on the balcony: the floor below
 ajarmap.ambush(m, 4, KNIGHT, (0, -150), angle=180)
 ajarmap.ambush(m, 4, IMP, (-300, 60), (300, 60), angle=180)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
-# "main" is the forecourt, the call office, the switchroom, the cable passage
+# "main" is the call office, the forecourt, the switchroom, the cable passage
 # and the battery room, and also the kiosk and the generator room, which open
-# from inside. "gallery" is the supervisor's gallery and the cable loft;
-# "balcony" the monitor's; "east" the apparatus and relay rooms, where the
-# thief lives; "night" is the line. The stationery store, the strongroom and
-# PINK are left out: PINK never leaves, and nothing else needs it.
+# from inside. "roof" is where the level starts. "gallery" is the supervisor's
+# gallery and the cable loft; "balcony" the monitor's; "west" the canteen and
+# the rest room, open from the start; "cloak" the cloakroom; "east" the
+# apparatus and relay rooms, where the thief lives; "night" is the line. The
+# stationery store, the strongroom and PINK are left out: PINK never leaves,
+# and nothing else needs it.
 PUZZLE = dict(
-    start="main", goal="exit", names=ajarmap.NAMES, complete=True,
+    start="roof", goal="exit", names=ajarmap.NAMES, complete=True,
     home_chain=dict(frames=[ajarmap.HOME, ajarmap.HOME2], doors=[BLUE, VIOLET]),
     walk=[("gallery", "main"), ("gallery", "trunk"), ("roof", "gallery"),
           ("main", "trunk", "", "squeeze"), ("trunk", "main", "", "squeeze"),             # the hatch
@@ -703,10 +723,11 @@ PUZZLE = dict(
           ("balcony", "main"),
           ("east", "test", "", "squeeze"), ("test", "east", "", "squeeze"),               # the test room's hatch
           ("night", "main"),                                                              # the hole over the forecourt
-          ("main", "west", "1"), ("west", "main", "1"),
-          ("main", "east", "2"), ("east", "main", "2"),
-          ("main", "office", "34"), ("office", "main", "34")],
-    keys={"1": "gallery", "2": "roof", "3": "west", "4": "balcony"},
+          ("main", "west"), ("west", "main"),
+          ("west", "cloak", "1"), ("cloak", "west", "1"),
+          ("main", "east", "23"), ("east", "main", "23"),
+          ("main", "office", "4"), ("office", "main", "4")],
+    keys={"1": "roof", "2": "cloak", "3": "main", "4": "balcony"},
     frames={101: "main", 102: "main", 105: "main", 103: "west", 104: "test",
             ajarmap.HOME: "trunk", ajarmap.HOME2: "trunk"},
     doors={
@@ -717,7 +738,7 @@ PUZZLE = dict(
         VIOLET: dict(home="night", lean="test"),
     },
     thief=dict(zone="east", sees=()),
-    repainter=dict(zone=["main", "west"]),      # it wanders: the west wing too, once that is open
+    repainter=dict(zone=["main", "west"]),      # it wanders: the west wing too
     pool=["main"],                         # the generator room; the kiosk
 )
 

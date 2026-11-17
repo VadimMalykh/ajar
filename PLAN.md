@@ -2616,3 +2616,30 @@ than the switchroom's and which has no pilasters: the panelling stepped at
 each porch. They wear the switchroom's own wall now (`HP`: the lowest 128 of
 its ground floor's; `HQ`: of its gallery's), and the door faces there are
 made on it.
+
+## MAP09 shuffled (2026-11-17)
+
+Vadim, playing through: MAP09 was still too like MAP08 (the start outside
+the front door, a wing on key 1 and a wing on key 2, the office on keys 3
+and 4, the same secrets in the same places, a cellar of demons). The puzzle
+(the chain, the test room's catch, the trunk room from above, the thief, the
+repainter) and the rooms stayed. What moved:
+
+- **Start**: on the roof, a shotgun to hand and a few imps. The hole lets
+  down onto the gallery, over the switchroom and its night shift, with the
+  rocket launcher there. RED (call office) is the only way back up. The
+  forecourt is come to last, by the front door: what was on the roof
+  (cacodemons, a revenant, a hell knight) is there now.
+- **Keys and locks**: key 1 on the roof; the west wing is open, and key 1
+  opens the cloakroom in it, where key 2 is; key 3 is in the far corner of
+  the battery room; keys 2 and 3 open the east wing; key 4 (the balcony,
+  YELLOW's far side) alone opens the manager's office.
+- **Secrets**: the kiosk has no bell: a lever between the trunk positions
+  draws its bolt (line 307). The stationery store and the strongroom are
+  behind the cloakroom's coats, not behind the relay room. The alcove is
+  behind the cable drums in the loft, not off the battery room.
+- **The battery room**: hell knights, a revenant and a cacodemon for the
+  demons and spectres; the berserk lies before the canteen's door.
+- Kept on purpose: the seat across the rest room's doorway (Vadim).
+- Solver: 10 door actions, 1304192 states, 0 stuck, nothing losable.
+  `MAP=MAP09 ./tools/smoke.sh`: 35 checks. Not played by hand.
