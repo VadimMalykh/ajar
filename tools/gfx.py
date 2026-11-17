@@ -1253,6 +1253,8 @@ def make_all():
     out["animdefs.txt"] = "".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS)).encode()
     import gfx_square                                            # MAP10's square, stops and depot
     gfx_square.make(out)
+    import gfx_time                                              # the time door (ajartime)
+    gfx_time.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)
