@@ -164,6 +164,9 @@ class AjarWorker : AjarEnemy
 // job that can close a way behind someone's back. Picking up a leaning
 // door, hanging one in an empty frame and walking through doors it does
 // unwatched.
+//
+// With a door on its back and no job open to it, it runs from you for as
+// long as it can see you: it is to be caught.
 class AjarThief : AjarWorker
 {
 	const PATIENCE = 150;      // walk steps before it gives a job up
@@ -177,7 +180,7 @@ class AjarThief : AjarWorker
 	bool crossing, lined;
 	AjarFrame lastFrame;       // where it worked last (left alone for a while)
 	Actor avoid;               // a job it gave up on
-	int lastTime, lastThrough;
+	int lastTime, lastThrough, lastFled;
 	int steps;
 	int testMode;              // smoke tests: 1 = nearest job, never through; 2 = always through
 
@@ -329,7 +332,19 @@ class AjarThief : AjarWorker
 		else if (testMode == 2) through = ways.Size() > 0;
 		else through = ways.Size() > 0 && level.time - lastThrough > (work ? 250 : 100)
 			&& (!work || random[AjarThief](0, 99) < 35);
-		if (!through && !work) return;
+		if (!through && !work)
+		{
+			// Nothing to do with what it carries (MAP09: no frame in its wing):
+			// it does not stand and wait to be shot, it keeps out of your way.
+			if (loot && seen)
+			{
+				if (level.time - lastFled > 175) A_StartSound(SeeSound, CHAN_VOICE);
+				lastFled = level.time;
+				bFrightened = true;
+				GoRest();
+			}
+			return;
+		}
 
 		if (through)
 		{
