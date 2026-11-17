@@ -246,7 +246,7 @@ class AjarThief : AjarWorker
 	// faces you, as the lodger's do.
 	void Dress()
 	{
-		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7' };
+		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7', 'AJD8', 'AJD9' };
 		if (!pack) pack = Spawn("AjarThiefPack", pos);
 		if (!eyes) { eyes = Spawn("AjarLodgerEyes", pos); eyes.scale = (0.7, 0.7); }
 		let cam = players[consoleplayer].camera;
@@ -784,7 +784,7 @@ class AjarRepainter : AjarWorker
 
 	bool Paintable(AjarDoor d)
 	{
-		return d && !d.carried && !d.nailer && !d.IsStray() && !(d.frame && d.frame.args[1]) && done.Find(d) == done.Size();
+		return d && !d.carried && !d.nailer && !d.IsStray() && !d.IsPair() && !(d.frame && d.frame.args[1]) && done.Find(d) == done.Size();
 	}
 
 	// where it stands to paint d

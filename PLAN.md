@@ -2693,10 +2693,13 @@ How Claude thinks it should work (proposed, each point open):
 - **Two leaves, one colour**, carried one at a time like any door. Both hung:
   each frame opens onto the other. One hung, the other leaning, carried or
   stolen: the hung one is a shut door.
-- **The inchworm** is its basic move. Go through, take down the leaf you came
-  out of, hang it further on: the link now runs from the first frame to the
-  new one. A plain door cannot do this; it is how a Pair crosses a gap or
-  climbs.
+- **The rope** is its basic move (corrected 2026-11-17: a leaf can only be
+  hung where the player stands, so a Pair never reaches a place for them; it
+  keeps a place they have been). Hang one leaf, carry the other down a drop,
+  through a plain door or past a timed shutter, hang it there: the way back
+  is open and stays. Go through, take down the leaf you came out of, hang it
+  further on: the same rope paid out. It also sets a plain door free: go up
+  by RED, hang a leaf, and RED is not needed for that place any more.
 - **Both leaves in one room** make the sights: opposite walls, the endless
   corridor; walls at a right angle, the pinwheel; side by side, the U-turn.
   So the Pair is also the player's tool for every effect listed below.
@@ -2708,18 +2711,32 @@ How Claude thinks it should work (proposed, each point open):
   both ways). To check in the code: that a frame's recess can be the arriving
   side as a far side's stub is. Solver: a second free end in the state.
 
-Questions for Vadim:
-1. One leaf hung alone: a shut door (proposed), or a view of wherever the
-   twin leans?
-2. One hand as now (proposed: fetching the twin is the puzzle), or are the
-   two leaves carried together as one load?
-3. More than one Pair in a level, a colour each?
-4. Do brass frames (the ones that want a certain door) take a Pair leaf?
+Vadim's answers (2026-11-17): one leaf at a time; several Pairs in a level,
+certainly; what a leaf hung alone shows, to be seen both ways in the demo.
+Still open: whether a brass frame takes a Pair leaf (brass frames are the
+ones that take only certain doors: MAP07's way out, MAP09's trunk room).
 
-**Demo (proposed):** a `MAP=TEST` box, "the lab": one Pair, one plain door,
-frames on opposite walls, on a corner, side by side, on a ledge and across a
-gap. It shows the endless corridor, the pinwheel, the U-turn, the inchworm
-and one chain.
+**Built: the lab** (`tools/map_lab.py`, branch `pair-demo`, not merged;
+`MAP=LAB ./run.sh`). Both TEAL leaves and a plain RED door in a hall with
+frames 111 west and 112 east (opposite: the endless corridor), 113 south
+(round the corner from 112: the room repeats turned), 114 and 115 south
+(side by side: each turns you round) and 117 (a spare). A gallery too high
+to climb has RED's far side, frame 116, both ORANGE leaves and the way out:
+the rope. A lever on the west wall changes what a leaf hung alone shows: a
+shut door, or a picture of what its twin looks out on from where it leans
+(a camera texture; nobody walks through it; shut while the twin is carried).
+- How it is made: a leaf is an `AjarDoor` with `args[4]` the pair's number
+  and colour 8 (TEAL) or 9 (ORANGE). Its `args[0]` is 0 until both hang and
+  then the line of the twin's frame, so `Hang` and `Unhang` link frame to
+  frame with the code plain doors use, and whatever asks where a hung door
+  leads is told the truth. A frame's recess does serve as the arriving side.
+  `ajarmap.pair`, `ajarmap.pair_switch`; `AjarHandler.PairTick`.
+- Left out of Stray doors' and the repainter's reckoning. **Not tried with a
+  thief, a nailer or a lodger**, and the solver does not know Pairs.
+- `MAP=LAB tools/smoke.sh`: 15 checks (`LabScript`), all pass, and TEST modes
+  1 and 13 and MAP09's chain still do. Run on the host's GZDoom with SDL's
+  offscreen video driver, because docker had lost its images that evening;
+  not run in the `ajar-tools` image, and not played by hand.
 
 Supporting types from the table, for the same levels: One-way (loops that
 run one way round) and Small (a hatch: shots and sight, no walking).

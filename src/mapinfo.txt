@@ -13,6 +13,7 @@ DoomEdNums
 	20005 = AjarLodger
 	20006 = AjarLine
 	20007 = AjarRepainter
+	20008 = AjarPairSwitch
 	20030 = AjarAmbush
 	20011 = AjarKey1
 	20012 = AjarKey2
@@ -175,6 +176,16 @@ map MAP10 "All Change"
 	next = "MAP10"
 	secretnext = "MAP10"
 	sky1 = "SKY1", 0
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The Pair door's demo (tools/map_lab.py): MAP=LAB ./run.sh
+map LAB "Ajar: the lab"
+{
+	next = "LAB"
 	nointermission
 	nojump
 	nocrouch

@@ -24,6 +24,14 @@
 //    of it again ends the level. Until then both can be taken down again.
 //    AjarLine args[2], args[3]: a third frame and a third door's far side,
 //    for a longer loop and a secret way out (ajarmap.way_longer; LoopLen).
+//  * A Pair (ajarmap.pair): two AjarDoor things with the same args[4] (the
+//    pair's number) and the same colour, 8 or 9. A leaf has no far side of
+//    its own: args[0] is 0 until both hang, and then it is the line of the
+//    frame the twin hangs in (set in Hang, cleared in Unhang), so that
+//    whatever asks where a hung door leads is told the truth. One leaf hung
+//    alone is a shut door (PairTick).
+//  * AjarPairSwitch (ajarmap.pair_switch): a lever that changes what a leaf
+//    hung alone shows (AjarHandler.pairView).
 //  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
 //    (ajarmap.route_board; BoardTick).
 
@@ -46,6 +54,27 @@ class AjarFrame : Actor
 	{
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (h) h.UseFrame(self, activator);
+	}
+}
+
+// The lab's lever (ajarmap.pair_switch): see AjarHandler.PairSwitch.
+class AjarPairSwitch : Actor
+{
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+
+	override void Activate(Actor activator)
+	{
+		let h = AjarHandler(EventHandler.Find("AjarHandler"));
+		if (h) h.PairSwitch();
 	}
 }
 
@@ -119,6 +148,12 @@ class AjarDoor : Actor
 	Colour7:
 		AJD7 A -1;
 		Stop;
+	Colour8:
+		AJD8 A -1;
+		Stop;
+	Colour9:
+		AJD9 A -1;
+		Stop;
 	Nailed:            // only so that these sprites are loaded
 		AJN1 A -1;
 		AJN2 A -1;
@@ -127,15 +162,29 @@ class AjarDoor : Actor
 		AJN5 A -1;
 		AJN6 A -1;
 		AJN7 A -1;
+		AJN8 A -1;
+		AJN9 A -1;
 		Stop;
 	}
 
-	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF };
-	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK", "STRAY" };
+	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF, 0x30D0C0, 0xFF8A30 };
+	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK", "STRAY", "TEAL", "ORANGE" };
 	const STRAY = 7;
 
-	int Colour() { return clamp(args[1], 1, 7); }
+	int Colour() { return clamp(args[1], 1, 9); }
 	bool IsStray() { return args[1] == STRAY; }
+	bool IsPair() { return args[4] != 0; }
+	// The other leaf of a Pair.
+	AjarDoor Twin()
+	{
+		if (!IsPair()) return null;
+		let it = ThinkerIterator.Create("AjarDoor");
+		AjarDoor o;
+		while (o = AjarDoor(it.Next())) if (o != self && o.args[4] == args[4]) return o;
+		return null;
+	}
+	// A Pair leaf that hangs while its twin does not: a shut door, flat in its frame.
+	bool Shut() { return IsPair() && frame && !args[0]; }
 	// Nobody can take it out of its frame: nailed, a fixed doorway, or a Stray door once open.
 	bool Stuck() { return nailer || (IsStray() && frame); }
 	string BackTex() { return String.Format("AJDR%d", Colour()); }
@@ -143,9 +192,9 @@ class AjarDoor : Actor
 
 	void Show()
 	{
-		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7' };
-		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5', 'AJN6', 'AJN7' };
-		if (nailer == self) { Hide(); return; }      // a fixed doorway has no leaf
+		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7', 'AJD8', 'AJD9' };
+		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5', 'AJN6', 'AJN7', 'AJN8', 'AJN9' };
+		if (nailer == self || Shut()) { Hide(); return; }      // a fixed doorway has no leaf; a shut one is drawn on its line
 		int c = Colour();
 		sprite = GetSpriteIndex(nailer ? nailedSpr[c] : spr[c]);
 		bInvisible = false;
@@ -183,6 +232,7 @@ class AjarHandler : EventHandler
 	// --- portal plumbing -------------------------------------------------
 	void Link(int fromLine, int toLine, string blankTex)
 	{
+		if (!fromLine) return;        // a Pair leaf whose twin hangs nowhere has no far side
 		level.ExecuteSpecial(107 /* Line_SetPortalTarget */, null, null, false, fromLine, toLine);
 		// With no target the line is a blank wall again: make it solid.
 		Line l = FindLine(fromLine);
@@ -200,6 +250,7 @@ class AjarHandler : EventHandler
 
 	Line FindLine(int id)
 	{
+		if (!id) return null;
 		let it = level.CreateLineIdIterator(id);
 		int i = it.Next();
 		if (i < 0) return null;
@@ -243,7 +294,7 @@ class AjarHandler : EventHandler
 		AjarDoor d;
 		while (d = AjarDoor(di.Next()))
 		{
-			if (d.IsStray() || !FindLine(d.args[0]) || ids.Find(d.args[0]) < ids.Size()) continue;
+			if (d.IsStray() || d.IsPair() || !FindLine(d.args[0]) || ids.Find(d.args[0]) < ids.Size()) continue;
 			int at = places;
 			while (at < ids.Size() && ids[at] < d.args[0]) at++;
 			ids.Insert(at, d.args[0]);
@@ -422,7 +473,7 @@ class AjarHandler : EventHandler
 		AjarDoor d;
 		while (d = AjarDoor(di.Next()))
 		{
-			if (d.carried || d.IsStray() || d.nailer || (d.frame && d.frame.args[1])) continue;
+			if (d.carried || d.IsStray() || d.IsPair() || d.nailer || (d.frame && d.frame.args[1])) continue;
 			if (a.Distance2D(d.frame ? Actor(d.frame) : Actor(d)) < WORK_NEAR) return true;
 		}
 		return false;
@@ -641,11 +692,20 @@ class AjarHandler : EventHandler
 			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
 			if (!f.args[3] && f.args[4] != 2 && f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
 		}
-		Link(f.args[0], d.args[0], FRAME_TEX);
+		// A Pair leaf leads to the frame its twin hangs in, if it hangs; and
+		// then the twin leads here.
+		AjarDoor tw = d.Twin();
+		if (d.IsPair())
+		{
+			d.args[0] = tw && tw.frame ? tw.frame.args[0] : 0;
+			if (d.args[0]) tw.args[0] = f.args[0];
+		}
+		Link(f.args[0], d.args[0], d.IsPair() ? d.BackTex() : FRAME_TEX);
 		Link(d.args[0], f.args[0], d.BackTex());
 		d.frame = f;
 		d.carried = false;
 		f.door = d;
+		if (tw && tw.frame) tw.Show();
 
 		// stand the leaf open at the hinge side of the frame
 		Line l = FindLine(f.args[0]);
@@ -666,11 +726,17 @@ class AjarHandler : EventHandler
 	{
 		AjarDoor d = f.door;
 		Link(f.args[0], 0, FRAME_TEX);
-		Link(d.args[0], 0, d.BackTex());
+		Link(d.args[0], 0, d.BackTex());       // a Pair: the twin's frame, which shows a shut door now
 		f.door = null;
 		d.frame = null;
 		d.carried = true;
 		d.Hide();
+		if (d.IsPair())
+		{
+			AjarDoor tw = d.Twin();
+			d.args[0] = 0;
+			if (tw) { tw.args[0] = 0; if (tw.frame) tw.Show(); }
+		}
 		ChainUpdate();
 		return d;
 	}
@@ -765,7 +831,11 @@ class AjarHandler : EventHandler
 	// What hanging the carried door in f has to say.
 	void SayHung(AjarDoor d, AjarDoor old)
 	{
-		if (d.IsStray())
+		if (d.IsPair() && d.args[0])
+			Say("Both leaves of the " .. d.Label() .. " pair hang:\neach frame opens onto the other.");
+		else if (d.IsPair())
+			Say("One leaf of the " .. d.Label() .. " pair. It stays shut\nuntil its twin hangs in a frame somewhere.");
+		else if (d.IsStray())
 			Say((old ? "You swap the " .. old.Label() .. " door for the STRAY one.\n" : "") ..
 				"The STRAY door opens onto somewhere. It will not stay.");
 		else if (chainLen == 3 && InChain(d))
@@ -810,7 +880,8 @@ class AjarHandler : EventHandler
 		{
 			carried = Unhang(f);
 			user.A_StartSound("doors/dr1_clos", CHAN_AUTO);
-			Say("You unhinge the " .. carried.Label() .. " door.");
+			if (carried.IsPair()) Say("You unhinge a leaf of the " .. carried.Label() .. " pair.");
+			else Say("You unhinge the " .. carried.Label() .. " door.");
 		}
 		else if (!f.door && carried)
 		{
@@ -845,7 +916,41 @@ class AjarHandler : EventHandler
 		carried = d;
 		user.A_StartSound("doors/dr1_clos", CHAN_AUTO);
 		if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for a few seconds.");
+		else if (d.IsPair()) Say("A leaf of the " .. d.Label() .. " pair: it opens onto its twin,\nwherever that hangs.");
 		else Say("You pick up the " .. d.Label() .. " door.");
+	}
+
+	// --- the Pair door ------------------------------------------------------
+	// A leaf hung alone is a shut door: its own face on the frame's line. Or,
+	// to try (Vadim, 2026-11-17: build both and see), a picture of what the
+	// twin looks out on from where it leans; nobody walks through a picture.
+	// pairView chooses: 0 the shut door, 1 the picture. A twin that is being
+	// carried shows the shut door either way.
+	int pairView;
+	void PairTick()
+	{
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next()))
+		{
+			if (!d.Shut()) continue;
+			Line l = FindLine(d.frame.args[0]);
+			if (!l) continue;
+			AjarDoor tw = d.Twin();
+			bool picture = pairView && tw && !tw.carried && !tw.frame;
+			string want = picture ? String.Format("AJCAM%d", d.Colour()) : d.BackTex();
+			Side sd = l.sidedef[0];
+			if (TexMan.GetName(sd.GetTexture(Side.mid)) ~== want) continue;
+			sd.SetTexture(Side.mid, TexMan.CheckForTexture(want, TexMan.Type_Any));
+			if (picture) TexMan.SetCameraToTexture(tw, want, 90);
+		}
+	}
+
+	void PairSwitch()
+	{
+		pairView = !pairView;
+		Say(pairView ? "A leaf hung alone now shows\nwhat its twin looks out on, where it leans."
+			: "A leaf hung alone is now a shut door.");
 	}
 
 	// --- events ----------------------------------------------------------
@@ -1077,6 +1182,7 @@ class AjarHandler : EventHandler
 	override void WorldTick()
 	{
 		SelfShots();
+		PairTick();
 		StrayTick();
 		ShutterTick();
 		let mo = players[consoleplayer].mo;
@@ -1090,7 +1196,8 @@ class AjarHandler : EventHandler
 		int t = testTic++;
 		if (t % 35 == 0)
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
-		if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
+		if (level.mapname ~== "LAB") LabScript(mo, t);
+		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
@@ -3444,6 +3551,58 @@ class AjarHandler : EventHandler
 		if (t == 180) Pose(mo, 4120, 2064, 0, 0);          // shot 3: east, built
 		if (t == 240) Pose(mo, 4250, 2100, 0, 170);        // shot 4: off the axis
 		Forward(mo, t, 300, 40);
+	}
+
+	// The lab (map LAB, tools/map_lab.py; MAP=LAB tools/smoke.sh): the Pair
+	// door. Frames 111 west and 112 east face each other, 113 is round the
+	// corner from 112, 114 and 115 are side by side, 116 is on the gallery.
+	AjarDoor LabLeaf(int colour, int n)
+	{
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next())) if (d.args[1] == colour && !n--) return d;
+		return null;
+	}
+
+	void LabScript(Actor mo, int t)
+	{
+		AjarDoor a = LabLeaf(8, 0), b = LabLeaf(8, 1);
+		AjarFrame w = FindFrame(111), e = FindFrame(112), c = FindFrame(113), s1 = FindFrame(114), s2 = FindFrame(115), g = FindFrame(116);
+		// 1: one leaf alone is shut; its picture; both hung, the endless corridor
+		if (t == 20) { Pose(mo, 120, 128, 0, 180); a.Used(mo); }
+		if (t == 22) { w.Activate(mo); Check("aloneShut", a.frame == w && a.Shut() && a.bInvisible && !carried && (FindLine(111).flags & Line.ML_BLOCKING)); }
+		if (t == 30) Pose(mo, 200, 128, 0, 180);                       // shot: the shut leaf
+		if (t == 75) { PairSwitch(); Check("picture", pairView == 1); }
+		if (t == 80) Check("pictureTex", TexMan.GetName(FindLine(111).sidedef[0].GetTexture(Side.mid)) ~== "AJCAM8");
+		if (t == 145) { PairSwitch(); b.Used(mo); Check("tookTwin", carried == b); }
+		if (t == 147) Check("shutAgain", TexMan.GetName(FindLine(111).sidedef[0].GetTexture(Side.mid)) ~== "AJDR8");
+		if (t == 150) { Pose(mo, 700, 128, 0, 0); e.Activate(mo); Check("linked", a.args[0] == 112 && b.args[0] == 111 && !a.bInvisible && !b.bInvisible && !(FindLine(111).flags & Line.ML_BLOCKING)); }
+		if (t == 155) Pose(mo, 384, 128, 0, 0);                        // shot: the corridor
+		if (t == 215) { Pose(mo, 500, 128, 0, 0); }
+		if (t > 215 && t < 265) mo.vel.xy = Actor.AngleToVector(mo.angle, 10);
+		if (t == 265) { Check("wentRound", mo.pos.x < 500 && mo.pos.x > 0 && abs(mo.pos.y - 128) < 8); mo.vel.xy = (0, 0); }
+		// 2: the corner: take the west leaf to 113
+		if (t == 270) { Pose(mo, 120, 128, 0, 180); w.Activate(mo); Check("cut", carried == a && b.Shut() && b.bInvisible && (FindLine(112).flags & Line.ML_BLOCKING)); }
+		if (t == 275) { Pose(mo, 640, 80, 0, 270); c.Activate(mo); Check("corner", a.args[0] == 112 && b.args[0] == 113); }
+		if (t == 280) Pose(mo, 500, 200, 0, 315);                      // shot: the pinwheel
+		if (t == 340) Pose(mo, 640, 120, 0, 270);
+		if (t > 340 && t < 380) mo.vel.xy = Actor.AngleToVector(mo.angle, 10);
+		if (t == 380) { Check("turned", mo.pos.x > 300 && mo.pos.x < 784 && mo.pos.y > 96 && mo.pos.y < 160 && abs(Actor.DeltaAngle(mo.angle, 180)) < 1); mo.vel.xy = (0, 0); }
+		// 3: side by side: the U-turn
+		if (t == 385) { Pose(mo, 700, 128, 0, 0); e.Activate(mo); Pose(mo, 192, 80, 0, 270); s1.Activate(mo); }
+		if (t == 390) { Pose(mo, 640, 80, 0, 270); c.Activate(mo); Pose(mo, 320, 80, 0, 270); s2.Activate(mo); Check("sideBySide", a.frame && b.frame && a.args[0] && b.args[0] && !carried); }
+		if (t == 395) Pose(mo, 256, 260, 0, 270);                      // shot: the two mouths
+		if (t == 455) Pose(mo, 192, 120, 0, 270);
+		if (t > 455 && t < 495) mo.vel.xy = Actor.AngleToVector(mo.angle, 10);
+		if (t == 495) { Check("uTurn", abs(mo.pos.x - 320) < 8 && mo.pos.y > 0 && abs(Actor.DeltaAngle(mo.angle, 90)) < 1); mo.vel.xy = (0, 0); }
+		// 4: the gallery: up by RED, a leaf hung there, down, and the hall is joined to it
+		if (t == 500) { Pose(mo, 192, 80, 0, 270); s1.Activate(mo); Pose(mo, 128, 600, 128, 90); g.Activate(mo); Check("leafUp", !carried && g.door && g.door.args[0] == 115); }
+		if (t == 506) { Pose(mo, 320, 80, 0, 270); s2.Activate(mo); Pose(mo, 120, 128, 0, 180); w.Activate(mo); Check("joined", w.door && g.door && w.door.args[0] == 116 && g.door.args[0] == 111); }
+		if (t == 510) Pose(mo, 300, 128, 0, 180);                      // shot: the gallery through the west frame
+		if (t == 570) Pose(mo, 120, 128, 0, 180);
+		if (t > 570 && t < 596) mo.vel.xy = Actor.AngleToVector(mo.angle, 10);
+		if (t == 600) { Check("onGallery", mo.pos.y > 512 && mo.pos.z > 100 && abs(mo.pos.x - 128) < 8); mo.vel.xy = (0, 0); }
+		if (t == 605) Pose(mo, 400, 560, 128, 200);                    // shot: the gallery, looking back at 116
 	}
 
 	void TestLevelScript(Actor mo, int t, int mode)

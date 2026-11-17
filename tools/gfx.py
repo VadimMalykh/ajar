@@ -112,6 +112,9 @@ DOOR_COLOURS = {1: (200, 60, 50), 2: (60, 110, 220), 3: (60, 170, 80),
                 4: (215, 170, 40), 5: (150, 80, 200), 6: (240, 120, 180)}
 
 
+PAIR_COLOURS = {8: (40, 170, 160), 9: (230, 120, 40)}      # TEAL and ORANGE: the leaves of a Pair (ajarmap.pair)
+
+
 STRAY = 7           # the Stray door: every colour at once, and no far side of its own
 STRAY_GREY = (120, 120, 130)
 
@@ -140,7 +143,7 @@ def door(colour):
     """64x96 door leaf: two panels, a knob and a glyph that names the far side."""
     if colour == STRAY:
         return stray_door()
-    base = DOOR_COLOURS[colour]
+    base = DOOR_COLOURS.get(colour) or PAIR_COLOURS[colour]
     im = Img(64, 96, base)
     im.frame(0, 0, 64, 96, shade(base, 0.45), 3)
     for y1, y2 in ((8, 44), (52, 88)):
@@ -149,7 +152,14 @@ def door(colour):
     im.noise(6, colour)
     im.disc(53, 49, 3, (235, 215, 140))
     white = (245, 245, 235)
-    if colour == 1:
+    if colour in PAIR_COLOURS:                    # two rings, linked: it opens onto its twin
+        for cx in (26, 38):
+            im.disc(cx, 26, 8, white)
+        for cx in (26, 38):
+            im.disc(cx, 26, 5, shade(base, 0.8))
+        im.rect(31, 20, 33, 23, white)
+        im.rect(31, 29, 33, 32, white)
+    elif colour == 1:
         im.disc(32, 26, 9, white)
     elif colour == 2:
         im.tri(32, 26, 10, white)
@@ -1213,7 +1223,7 @@ def make_all():
     levers(out, "AJLEVR", wall)                                      # on the plain wall (MAP08)
     levers(out, "AJLEVB", brick, 160)                                # and on brick: the caretaker's office
 
-    for c in list(DOOR_COLOURS) + [STRAY]:
+    for c in list(DOOR_COLOURS) + [STRAY] + list(PAIR_COLOURS):
         d = door(c)
         out[f"textures/AJDR{c}.png"] = d.png()
         out[f"sprites/AJD{c}A0.png"] = d.png(grab=(32, 96))
@@ -1227,6 +1237,8 @@ def make_all():
             for x in (5, 58):
                 d.disc(x, y0 + x // 6 + 3, 1, (220, 220, 225))
         out[f"sprites/AJN{c}A0.png"] = d.png(grab=(32, 96))
+        if c in PAIR_COLOURS:                      # no far side, so no surround of its own
+            continue
         rgb = DOOR_COLOURS.get(c, STRAY_GREY)
         t = Img(64, 64, shade(rgb, 0.7))
         t.noise(5, 20 + c)
@@ -1239,6 +1251,8 @@ def make_all():
         out[f"flats/AJTF{c}.png"] = t.png()
     # a lever is a switch: it moves when it is used, and Doom gives it a sound
     out["animdefs.txt"] = "".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS)).encode()
+    # what a Pair leaf hung alone may show: the view from its twin (AjarHandler.PairTick)
+    out["animdefs.txt"] += "".join(f"cameratexture AJCAM{c} 256 384 fit 64 96\n" for c in PAIR_COLOURS).encode()
     import gfx_square                                            # MAP10's square, stops and depot
     gfx_square.make(out)
     import ajarmap
