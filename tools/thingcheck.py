@@ -42,6 +42,18 @@ for name in sys.argv[1:]:
             if b["type"] in R and b["type"] not in MON and b["type"] != 1 and \
                max(abs(d["x"] - b["x"]), abs(d["y"] - b["y"])) < 20 + R[b["type"]] + 12:
                 print(name, "IN A DOOR", b["type"], (b["x"], b["y"]), "door at", (d["x"], d["y"])); bad += 1
+    # a room door is walked through: nothing solid may stand in its mouth, on either side
+    for key, pr in m.lineprops.items():
+        if pr.get("special") not in (12, 13): continue
+        (ax, ay), (bx, by) = tuple(key)
+        ln = math.hypot(bx - ax, by - ay)
+        ux, uy = (bx - ax) / ln, (by - ay) / ln
+        for b in m.things:
+            if b["type"] not in R or b["type"] in MON or b["type"] == 1: continue
+            t = (b["x"] - ax) * ux + (b["y"] - ay) * uy
+            off = abs((b["x"] - ax) * uy - (b["y"] - ay) * ux)
+            if off < 48 + R[b["type"]] and min(t + R[b["type"]], ln) - max(t - R[b["type"]], 0) > 8:
+                print(name, "IN A DOORWAY", b["type"], (b["x"], b["y"]), "door", (ax, ay), (bx, by)); bad += 1
     seen = {}
     for t in m.things:
         k = (t["x"], t["y"])
