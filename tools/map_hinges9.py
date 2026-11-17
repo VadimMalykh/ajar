@@ -515,7 +515,11 @@ def things(kind, *spots, angle=0, **k):
         m.thing(x, y, kind, angle=angle, **k)
 
 
-# the forecourt: lamps and nobody
+# the forecourt: lamps and nobody. A shotgun on the path (Vadim: the kiosk's
+# bell went with the shuffle, and a pistol does not get through the night staff)
+things(SHOTGUN, (0, -690))
+things(SHELLS, (-40, -660), (40, -660))
+things(CLIP, (-150, -620), (150, -620))
 things(LAMP, (-96, -608), (96, -608), (-440, -600), (560, -800), (1060, -800))
 things(BONUS, (-256, -700), (-200, -700), (200, -700), (256, -700))
 # the kiosk
@@ -526,8 +530,10 @@ things(MEGA, (-620, -660))
 # the call office: the night staff. Guns at the far end, behind the counter
 things(ZOMBIE, (-160, -470), (200, -400), (0, -340), angle=270)
 things(IMP, (-300, -330), (330, -340), angle=270)
-things(SHOTGUN, (0, -440))
+things(CHAINGUN, (0, -440))
 things(SHELLS, (-40, -400), (40, -400))
+things(SHELLBOX, (-290, -470))
+things(AMMOBOX, (-220, -470))
 things(BACKPACK, (-256, -450))                                             # left at the counter
 things(STIM, (-350, -500), (350, -340))
 things(TECHLAMP, (-360, -536), (104, -536))                                 # not where RED leans (it stood in the door)
@@ -552,6 +558,8 @@ things(TECHLAMP, (-488, 72), (360, 72))
 things(SHELLBOX, (-430, -250), (690, 200))
 things(MEDIKIT, (560, -250), (-560, 60))
 things(SHELLS, (-200, 60), (200, 60))
+things(SHELLBOX, (-60, -270))                                              # at the way in
+things(AMMOBOX, (110, -270))
 things(STIM, (40, -270), (740, -60))
 # the gallery, where the roof lets you down: a chaingun, a rocket launcher for
 # the crowd below, and those who watch from above
