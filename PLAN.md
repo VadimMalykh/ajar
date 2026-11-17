@@ -2690,7 +2690,7 @@ to each other: **the player joins any two frames.** Core rule 1 still holds:
 what a Pair leaf remembers is its twin.
 
 How Claude thinks it should work (proposed, each point open):
-- **Two leaves, one colour**, carried one at a time like any door. Both hung:
+- **Two leaves, one colour**, carried one at a time like any door (decided). Both hung:
   each frame opens onto the other. One hung, the other leaning, carried or
   stolen: the hung one is a shut door.
 - **The rope** is its basic move (corrected 2026-11-17: a leaf can only be
@@ -2718,7 +2718,10 @@ ones that take only certain doors: MAP07's way out, MAP09's trunk room).
 
 **Built: the lab** (`tools/map_lab.py`; `MAP=LAB ./run.sh`). Vadim played it
 (2026-11-17): "all looks great", and the Pair goes into the levels to come.
-He has not said which of the lever's two he prefers; both stay for now. Both TEAL leaves and a plain RED door in a hall with
+**A leaf hung alone is a shut door** (Vadim, 2026-11-17, having tried both:
+"shut door was ok"). The picture is not for the levels; the lab's lever
+and `PairTick`'s camera texture are still there and can go when the lab is
+next touched. Both TEAL leaves and a plain RED door in a hall with
 frames 111 west and 112 east (opposite: the endless corridor), 113 south
 (round the corner from 112: the room repeats turned), 114 and 115 south
 (side by side: each turns you round) and 117 (a spare). A gallery too high
