@@ -2129,6 +2129,22 @@ class AjarHandler : EventHandler
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}
 
+	void ClosingTimeViews4()
+	{
+		static const double v[] = {
+			520, -576, 0, 0, 0,            // the arcade's gate, the street beyond
+			-400, -600, 0, 20, -30,        // its roof of iron and glass
+			-300, 300, 0, 45, -40,         // the atrium's lantern
+			-1100, 700, 320, 135, 0,       // the roof's edge: the town
+			-1380, 700, 320, 180, 20,      // over the parapet
+			-700, 100, 0, 50, 0,           // toys: the rocking horse
+			1200, 120, 0, 50, 0,           // carpets, rolled
+			-900, 176, 0, 180, 0,          // toys: the door to the haberdashery
+			40, -200, 0, 300, 0            // the enquiry desk and its till
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
 	// MAP07's tour, in three parts (see PartyWallViews).
 	void SmallHoursViews1()
 	{
@@ -2543,7 +2559,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP05") { LostPropertyViews1(); LostPropertyViews2(); }
 			else if (level.mapname ~== "MAP06") { AfterHoursViews1(); AfterHoursViews2(); AfterHoursViews3(); }
 			else if (level.mapname ~== "MAP07") { SmallHoursViews1(); SmallHoursViews2(); SmallHoursViews3(); }
-			else if (level.mapname ~== "MAP08") { ClosingTimeViews1(); ClosingTimeViews2(); ClosingTimeViews3(); }
+			else if (level.mapname ~== "MAP08") { ClosingTimeViews1(); ClosingTimeViews2(); ClosingTimeViews3(); ClosingTimeViews4(); }
 			else if (level.mapname ~== "MAP09") { PuttingThroughViews1(); PuttingThroughViews2(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
@@ -3344,6 +3360,32 @@ class AjarOrrery : AjarExhibit
 class AjarGlobe : AjarExhibit
 {
 	States { Spawn: AJGB A -1; Stop; }
+}
+
+// And in MAP08's: what a department store has standing about.
+class AjarMannequin : AjarExhibit
+{
+	States { Spawn: AJMQ A -1; Stop; }
+}
+
+class AjarGentleman : AjarExhibit
+{
+	States { Spawn: AJMG A -1; Stop; }
+}
+
+class AjarRockingHorse : AjarExhibit
+{
+	States { Spawn: AJRH A -1; Stop; }
+}
+
+class AjarTill : AjarExhibit
+{
+	States { Spawn: AJTL A -1; Stop; }
+}
+
+class AjarCarpets : AjarExhibit
+{
+	States { Spawn: AJCR A -1; Stop; }
 }
 
 class AjarStatusBar : BaseStatusBar

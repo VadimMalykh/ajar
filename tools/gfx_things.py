@@ -1,6 +1,7 @@
 """What stands in MAP07's rooms as sprites: the telescope on its pier (AJTE,
 sixteen sides), the planetarium's projector (AJPJ), an orrery (AJOY) and a
-globe (AJGB), eight sides each.
+globe (AJGB), eight sides each. And in MAP08's: two shop's dummies (AJMQ,
+AJMG), a rocking horse (AJRH), a till (AJTL) and rolled carpets (AJCR).
 
 Each is a model of a few solids (tubes, balls, rings), drawn once from every
 side: its surfaces are scattered with points, and each point is shaded and
@@ -235,7 +236,141 @@ def globe():
     return m
 
 
+# --- MAP08: what a department store has standing about ----------------------------
+SKIN, CORAL, TURQ, CHAR, GREY = (226, 200, 170), (226, 112, 92), (60, 164, 164), (50, 52, 58), (170, 174, 180)
+
+
+def _stand(m):
+    m.tube((0, 0, 0), (0, 0, 2), 11, GREY, r1=10)
+
+
+def mannequin():
+    """A shop's dummy in a dress, on its stand."""
+    m = Model()
+    _stand(m)
+    m.tube((0, 0, 2), (0, 0, 16), 1.5, GREY, caps=(False, False))
+
+    def hem(t, c):
+        return (236, 234, 226) if t < 2.5 else c
+    m.tube((0, 0, 14), (0, 0, 48), 15, CORAL, r1=5.5, paint=hem, caps=((120, 56, 46), False))     # the skirt
+    m.tube((0, 0, 47), (0, 0, 50), 5.8, CHAR, caps=(False, False))                                # a belt
+    m.tube((0, 0, 50), (0, 0, 62), 5.5, CORAL, r1=8.5, caps=(False, False))
+    m.tube((0, 0, 62), (0, 0, 68), 8.5, CORAL, r1=6.5, caps=(False, True))
+    m.tube((0, 0, 68), (0, 0, 74), 2.6, SKIN, caps=(False, False))
+    m.ball((0, 0, 79), 5.6, SKIN, shine=0.8)
+    for side in (-1, 1):                                                                         # arms, a little out
+        m.ball((0, 8.6 * side, 65), 2.6, CORAL)
+        m.tube((0, 8.8 * side, 65), (2, 12.5 * side, 50), 2.2, SKIN, r1=1.9, caps=(False, False))
+        m.tube((2, 12.5 * side, 50), (6, 13.5 * side, 38), 1.9, SKIN, r1=1.5)
+    return m
+
+
+def gentleman():
+    """And one in a suit."""
+    m = Model()
+    _stand(m)
+    for side in (-1, 1):
+        m.tube((0, 4 * side, 2), (0, 4.4 * side, 42), 3.4, CHAR, r1=4.2, caps=((20, 20, 24), False))
+        m.ball((0, 9.4 * side, 65), 3, CHAR)
+        m.tube((0, 9.6 * side, 65), (1, 11.5 * side, 50), 2.8, CHAR, r1=2.5, caps=(False, False))
+        m.tube((1, 11.5 * side, 50), (3, 11.5 * side, 38), 2.5, CHAR, r1=2.2, caps=(False, SKIN))
+        m.ball((3.4, 11.5 * side, 36.5), 2, SKIN)
+
+    def shirt(t, c):
+        return c
+    m.tube((0, 0, 40), (0, 0, 54), 8.6, CHAR, r1=8, caps=(True, False))                           # the jacket
+    m.tube((0, 0, 54), (0, 0, 68), 8, CHAR, r1=9.4, caps=(False, True))
+    for z in (46, 52):
+        m.ball((8.2, 0, z), 0.9, GREY)                                                           # buttons
+    m.tube((7, 0, 58), (8.4, 0, 67), 1.6, (236, 234, 226), r1=2.6, caps=(False, False))           # shirt front
+    m.tube((8.2, 0, 58), (9, 0, 66), 0.8, CORAL, caps=(True, False))                              # a tie
+    m.tube((0, 0, 68), (0, 0, 74), 2.8, SKIN, caps=(False, False))
+    m.ball((0, 0, 79), 5.8, SKIN, shine=0.8)
+    m.tube((0, 0, 82.5), (0, 0, 83.5), 8.5, CHAR)                                                 # a hat
+    m.tube((0, 0, 83.5), (0, 0, 89), 5.6, CHAR, r1=5)
+    return m
+
+
+def rocking_horse():
+    """A dapple grey on red rockers."""
+    m = Model()
+    r = random.Random(1403)
+    spots = [_unit((r.gauss(0, 1), r.gauss(0, 1), r.gauss(0, 1))) for _ in range(14)]
+    grey, red, dark = (214, 212, 206), (190, 50, 44), (60, 50, 48)
+
+    def body(t, c):
+        return red if 9 < t < 17 else c
+    m.tube((-13, 0, 28), (12, 0, 28), 7, grey, paint=body)
+    m.tube((9, 0, 31), (17, 0, 45), 4.6, grey, r1=3.6, caps=(False, False))                       # the neck
+    m.tube((14, 0, 46), (26, 0, 40), 4, grey, r1=2.6)                                             # the head
+    for side in (-1, 1):
+        m.tube((15, 2 * side, 48), (14, 2.4 * side, 53), 1.2, grey, r1=0.4)                       # ears
+        m.ball((21, 3 * side, 44), 0.9, dark)
+        for x0, x1 in ((9, 15), (-10, -16)):                                                     # legs
+            m.tube((x0, 4.5 * side, 24), (x1, 6 * side, 5), 2, grey, r1=1.5, caps=(False, dark))
+        pts = [(38 * math.sin(math.radians(a)), 6 * side, 41 - 38 * math.cos(math.radians(a))) for a in range(-36, 37, 6)]
+        for a, b in zip(pts, pts[1:]):                                                           # a rocker
+            m.tube(a, b, 1.5, red, step=0.5)
+    for x in (-16, 16):
+        m.tube((x, -6, 5.5), (x, 6, 5.5), 1.2, red, step=0.5)
+    m.tube((10, 0, 35), (16, 0, 48), 1.4, dark, caps=(False, False))                              # the mane
+    m.tube((-13, 0, 30), (-21, 0, 17), 2.2, dark, r1=0.8)                                         # the tail
+    m.tube((-2, -7.4, 30), (-2, 7.4, 30), 1.2, dark)                                              # the saddle's girth
+    return m
+
+
+def till():
+    """A cash register: enamel, a row of keys, the price in its window."""
+    m = Model()
+    cream, key = (226, 214, 184), (30, 30, 34)
+
+    def box(lo, hi, c, shine=0.5, step=0.5):
+        for axis in range(3):
+            u, v = [k for k in range(3) if k != axis]
+            for sign, at in ((-1, lo[axis]), (1, hi[axis])):
+                a = lo[u]
+                while a <= hi[u]:
+                    b = lo[v]
+                    while b <= hi[v]:
+                        p, n = [0, 0, 0], [0, 0, 0]
+                        p[axis], p[u], p[v], n[axis] = at, a, b, sign
+                        m.pts.append((p[0], p[1], p[2], n[0], n[1], n[2], c, shine))
+                        b += step
+                    a += step
+    box((-9, -9, 0), (10, 9, 8), TURQ)                                                           # the drawer
+    box((-9, -9, 8), (1, 9, 22), TURQ)
+    box((1, -9, 8), (10, 9, 11), cream)
+    for i, x in enumerate((3, 5.5, 8)):                                                          # keys, in three rows
+        for y in range(-7, 8, 2):
+            m.ball((x, y, 12.2 - 0.4 * i), 0.8, key if (y + i) % 3 else (190, 50, 44), step=0.4)
+    box((-8, -7, 22), (-1, 7, 28), cream)                                                        # the window
+    box((-0.8, -5.5, 23.5), (-0.6, 5.5, 26.5), (26, 30, 40))
+    m.tube((-4, 9, 14), (-4, 12, 14), 1, GREY)                                                    # the handle
+    m.tube((-4, 12, 14), (-4, 12, 21), 0.9, GREY)
+    m.ball((-4, 12, 22), 1.6, key)
+    return m
+
+
+def carpets():
+    """Rolled carpets stood on end."""
+    m = Model()
+    rolls = ((0, 0, 9, 84, (150, 50, 60), (220, 190, 120)), (15, 6, 7.5, 70, (50, 80, 120), (210, 200, 180)),
+             (-8, 14, 8, 92, (190, 150, 80), (120, 50, 40)), (-14, -7, 7, 64, (60, 120, 100), (226, 214, 184)),
+             (8, -13, 8, 76, (110, 60, 110), (220, 180, 90)))
+    for x, y, rad, h, c, band in rolls:
+        def woven(t, col, band=band, h=h):
+            return band if t % 14 < 2.5 else shade(col, 0.8) if t > h - 3 else col
+        m.tube((x, y, 0), (x, y, h), rad, c, paint=woven, caps=(False, shade(c, 0.55)))
+        m.tube((x, y, h - 0.4), (x, y, h), rad * 0.45, (226, 214, 184), caps=(False, (200, 190, 160)))   # its felt back, rolled in
+    return m
+
+
 def make(out):
+    mannequin().sprites(out, "AJMQ", 8)
+    gentleman().sprites(out, "AJMG", 8)
+    rocking_horse().sprites(out, "AJRH", 8)
+    till().sprites(out, "AJTL", 8)
+    carpets().sprites(out, "AJCR", 8)
     telescope().sprites(out, "AJTE", 16)
     projector().sprites(out, "AJPJ", 8)
     orrery().sprites(out, "AJOY", 8)

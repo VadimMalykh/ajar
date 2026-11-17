@@ -160,8 +160,15 @@ class Map:
             if a and whole:                    # a piece of one picture: see props_for
                 o = min(whole, key=lambda q: (q[0] - a[0]) * (b[0] - a[0]) + (q[1] - a[1]) * (b[1] - a[1]))
                 u = ((a[0] - o[0]) ** 2 + (a[1] - o[1]) ** 2) ** 0.5
+                laid = tex.get("texturetop") in self.align       # the wall over a hung sign stays in its place
                 if u:                          # (a door's face is the wall over its sunk leaf)
-                    d["offsetx_mid"] = d["offsetx_top"] = float(u)
+                    d["offsetx_mid"] = float(u)
+                    if not laid:
+                        d["offsetx_top"] = float(u)
+                if laid and (a[0] == b[0] or a[1] == b[1]):
+                    w = (a[0] if b[0] > a[0] else -a[0]) if a[1] == b[1] else (a[1] if b[1] > a[1] else -a[1])
+                    if w % 64:
+                        d["offsetx_top"] = float(w % 64)
             elif a and fit:
                 (ox, oy), scale = fit
                 u = (((a[0] - ox) ** 2 + (a[1] - oy) ** 2) ** 0.5 * scale) % 64
