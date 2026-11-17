@@ -2556,7 +2556,7 @@ wheels at its two ends, and over each door a white route plate with the
 number in black. Russian on the bus and nowhere else in the game: `АВТОБУС 10`
 on its front, and on the plates of the lines that always run where they go
 (`ГОСТИНИЦА`, `ВОКЗАЛ`, `ПЕРЕСАДКА`; on the 20: `ПЕРЕСАДКА`, `ТЕАТР`,
-`ТЕЛЕСКОП`). The door with no number has lost its plate: the red it kept the
+`ПЛАНЕТАРИЙ`). The door with no number has lost its plate: the red it kept the
 sun off, two screw holes. Forty years: rust from the gutter and from under
 the windows, paint gone in patches with the plywood's plies under it, a
 cracked window, one boarded with a sheet of ply, a dead headlamp, road dirt

@@ -41,7 +41,7 @@ H = 144
 # a livery: the letter in its textures' names (AJ?US...), its paint, its number,
 # and where its lines that always run go, by door
 LIVERIES = (("B", RED, "10", {1: "ГОСТИНИЦА", 5: "ВОКЗАЛ", 8: "ПЕРЕСАДКА"}),
-            ("C", AMBER, "20", {1: "ПЕРЕСАДКА", 2: "ТЕАТР", 4: "ТЕЛЕСКОП"}))
+            ("C", AMBER, "20", {1: "ПЕРЕСАДКА", 2: "ТЕАТР", 4: "ПЛАНЕТАРИЙ"}))
 VARIANTS = 5        # AJ?US and AJ?US1..4
 
 CYR = {
@@ -53,6 +53,7 @@ CYR = {
     "Н": ("10001", "10001", "11111", "10001", "10001"), "О": ("01110", "10001", "10001", "10001", "01110"),
     "П": ("11111", "10001", "10001", "10001", "10001"), "Р": ("11110", "10001", "11110", "10000", "10000"),
     "С": ("01111", "10000", "10000", "10000", "01111"), "Т": ("11111", "00100", "00100", "00100", "00100"),
+    "Й": ("10001", "10011", "10101", "11001", "10001"),      # and its mark over it: see cyr()
     "У": ("10001", "10001", "01111", "00001", "01110"), "Ц": ("10010", "10010", "10010", "11111", "00001"),
 }
 
@@ -61,6 +62,8 @@ def cyr(im, s, x, y, c, scale=1, worn=None):
     """Russian capitals, 5 by 5, top left at x, y. `worn` is a random.Random:
     some of the paint of the letters has gone."""
     for n, ch in enumerate(s):
+        if ch == "Й":
+            im.rect(x + (n * 6 + 1) * scale, y - 2 * scale, x + (n * 6 + 4) * scale, y - scale, c)
         for j, row in enumerate(CYR[ch]):
             for i, bit in enumerate(row):
                 if bit == "1" and not (worn and worn.random() < 0.05):
@@ -284,12 +287,13 @@ def make(out):
             top.rect(0, 9, 64, 11, shade(faded(CREAM), 0.55))
             rnd = random.Random(seed + 70 + n)
             if n:
-                plate(top, 3, 15, 61, 45)
                 name = goes.get(n, "")
+                wide = 2 if len(name) > 9 else 0                             # ten letters want the whole width
+                plate(top, 3 - wide, 15, 61 + wide, 45)
                 digit(top, str(n), 27, 18 if name else 21, INK, 3 if name else 4)
                 if name:
-                    cyr(top, name, 32 - (len(name) * 6 - 1) // 2, 37, (150, 30, 26), 1, rnd)
-                weather(top, seed + 80 + n, old, top=11, foot=200, chips=1, streaks=2, glass=[(3, 15, 61, 45)])
+                    cyr(top, name, 32 - len(name) * 3, 37, (150, 30, 26), 1, rnd)
+                weather(top, seed + 80 + n, old, top=11, foot=200, chips=1, streaks=2, glass=[(3 - wide, 15, 61 + wide, 45)])
                 for _ in range(40):                                          # the plate has had its weather too
                     blend(top, rnd.randrange(4, 60), rnd.randrange(16, 44), (120, 96, 70), 0.3)
             else:
