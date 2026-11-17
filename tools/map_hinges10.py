@@ -9,20 +9,29 @@ turns to the stop, 1 to 6, and two in its back, 7 and 8 (ajarmap.bus). The
 square's walls are no taller than the bus: the engine draws sky over a solid
 block, whatever stands behind it.
 
-  1  the hotel (MAP02): a line that always runs
+  1  the hotel (MAP02): a line that always runs. You come in where MAP02
+     began, and it is MAP02's ground floor as it stands (ajarmap.excerpt)
   2  a frame: whatever you hang there is a line of your own
   3  GREEN's far side: GREEN is a ticket back to the stop from anywhere
   4  no number: one of the places a Stray door opens onto
-  5  the station (MAP05): a line that always runs
+  5  the station (MAP05), the same way: concourse, platforms, tracks
   6  a brass frame, and facing it across the pavement, in the shelter, the
      other one: the way out
   7  a second frame
-  8  the observatory (MAP07): a line that always runs
+  8  the other stop: a line that always runs
+
+The other stop (Vadim, 2026-11-17) is another square with another bus, the
+20, amber where the 10 is red, and other doors: 1 back to the first stop,
+2 the pit under the theatre's stage door, a door with no number (Stray
+doors), and in its back 4, the observatory (MAP07).
 
 The depot is a yard beyond the lane behind the bus. Nothing on the bus goes
 there: YELLOW's far side is in its wall, and YELLOW is the ticket.
 
-RED opens onto the theatre (MAP03). The museum (MAP06) stands on the square,
+RED opens onto the theatre: MAP03's foyer, house and the rooms behind, as
+they stand. The districts have doors of their own, and they lead to each
+other or to the stop: RED leans in the hotel, YELLOW on the station's far
+platform, GREEN in the theatre. The museum (MAP06) stands on the square,
 locked. A route board in the shelter has a lamp for each door of the bus and
 shows what runs (ajarmap.route_board).
 
@@ -47,9 +56,10 @@ key, and the dome is such a place too: a ledge, a drop, stairs up to a
 hole. Two doors have to be spared for the two of them while a third keeps a
 line running.
 
-Places. "main" is the square, the hotel and the station (the lines that
-always run). The theatre (RED's far side): GREEN, key 1; its stage door
-lets you out onto the square, and never in. The museum (key 1):
+Places. "main" is the two stops, the hotel, the station and the
+observatory's library (the lines that always run). The theatre (RED's far
+side): GREEN, key 1; its stage door is a ledge over a pit, and from the pit
+a line runs to the other stop: out, and never in. The museum (key 1):
 hall and gallery; the cellar; PINK's store (secret: ring its bell). The depot
 (YELLOW's far side): key 2. The dome, off the observatory's library (key 2):
 BLUE. The depot's gate lets you out to the lane behind the bus, a step down,
@@ -119,7 +129,6 @@ def bars(a, b, out, floor, thick=16):
 ajarmap.fitted(m, (-512, -640, 224, -48), [
     ((-448, -640, -256, -576), low()),                                       # before the kiosk
     ((-512, -432, -448, -304), low()),                                       # before the museum's door
-    ((0, -640, 96, -592), low()),                                            # under the stage door
     ((-192, -400, -64, -368), SEAT), ((64, -400, 192, -368), SEAT),
 ], floor=0, light=NIGHT, **PAVE, **SQUARE)
 # the shelter: the second brass frame, facing door 6 across the pavement; the
@@ -161,69 +170,45 @@ m.cut((-320, -848), (-256, -848))
 m.line((-320, -848), (-256, -848), special=11, args=(KIOSK, 32), impact=True, mid="AJTARG", exact=True)
 ajarmap.stray_place(m, 1, (-464, -816), (-464, -752), (-1, 0), 0, color=ROSE)
 
-# === the hotel (line 1) ============================================================
-ajarmap.fitted(m, (-3200, -400, -2688, -16), [
-    ((-2976, -400, -2912, -16), ajarmap.RUNNER),
-    ((-3168, -112, -3040, -48), CASE),                                       # the desk
-    ((-2816, -80, -2720, -48), SEAT),
-], rug="AJ2R1", floor=0, ceil=192, light=185, **HOTEL)
-ajarmap.doorway(m, 1, *south[0], (0, 1), 0, (-2976, -400), (-2912, -400), (0, -1), 0)
-ajarmap.fitted(m, (-2672, -336, -2352, -80), [
-    ((-2480, -336, -2384, -208), dict(ftex="AJ2Q1", side="AJ2E1", floor=24)),            # a bed
-], floor=0, ceil=128, light=175, **HROOM)
-ajarmap.fitted(m, (-3536, -336, -3216, -80), [
-    ((-3504, -336, -3408, -208), dict(ftex="AJ2Q1", side="AJ2E1", floor=24)),
-    ((-3312, -144, -3248, -80), SEAT),
-], floor=0, ceil=128, light=175, **HROOM)
-ajarmap.roomdoor(m, (-2688, -240), (-2688, -176), (1, 0), 0, look="1")
-ajarmap.roomdoor(m, (-3200, -240), (-3200, -176), (-1, 0), 0, look="1")
+# === the places the lines go: the earlier levels, as they stand ====================
+# (Vadim, 2026-11-17: "bigger parts of other maps". ajarmap.excerpt lifts out of
+# a level all that can be walked without a door that is carried; where that
+# level had a frame or a far side there is a place for one of this level's.)
+import map_hinges2, map_hinges3, map_hinges5
+HX, SX, TY = -6400, 3200, -4480                       # where the hotel, the station and the theatre are put
+hotel = ajarmap.excerpt(m, map_hinges2.m, (256, 96), HX, 0)          # MAP02's ground floor
+station = ajarmap.excerpt(m, map_hinges5.m, (256, 64), SX, 0)        # MAP05: concourse, platforms, tracks
+theatre = ajarmap.excerpt(m, map_hinges3.m, (-200, 1352), 0, TY)     # MAP03: foyer, house, the rooms behind
+m.things = [t for t in m.things if (t["x"], t["y"]) != (HX - 16, 272)]     # a candle whose niche stayed behind
+# line 1 comes in where MAP02 began, line 5 where MAP05 did
+ajarmap.doorway(m, 1, *south[0], (0, 1), 0, *hotel[0])
+ajarmap.doorway(m, 2, *south[4], (0, 1), 0, *station[0])
+ajarmap.stray_place(m, 2, *station[2][:3], station[2][3])                    # on a platform
+ajarmap.stray_place(m, 4, *hotel[1][:3], hotel[1][3])                        # in the hotel's far hall
+# the theatre: RED's far side is in its foyer. Its stage door is a ledge over
+# a pit behind the house: down there is a line that always runs, to the other
+# stop; nobody climbs back. (A place a Stray door may open onto needs a way
+# out on foot; so does one the repainter can shut.)
+recess(*theatre[0][:3], theatre[0][3], far_id(RED), 101, far_colour=RED)
+ajarmap.opening(m, (224, 896 + TY), (288, 896 + TY), (0, 1), 0)
+ajarmap.fitted(m, (224, 912 + TY, 608, 1008 + TY), [
+    ((224, 912 + TY, 288, 1008 + TY), dict(floor=0, ftex="AJBOARD", side="AJWOOD")),     # the ledge
+], floor=-48, ceil=128, light=160, **BACKSTAGE)
 
-# === the station (line 5) ==========================================================
-ajarmap.fitted(m, (1600, -400, 2240, -16), [
-    ((1888, -400, 1952, -16), dict(ftex="AJ5P1")),
-    ((1664, -112, 1792, -80), SEAT), ((2048, -112, 2176, -80), SEAT),
-    ((2112, -336, 2176, -208), CASE),                                        # the enquiry desk
-], floor=0, ceil=256, light=180, **STATION)
-ajarmap.doorway(m, 2, *south[4], (0, 1), 0, (1888, -400), (1952, -400), (0, -1), 0)
-ajarmap.fitted(m, (1728, 0, 2112, 256), [
-    ((1792, 192, 1920, 224), SEAT), ((1984, 64, 2048, 128), CASE),
-], floor=0, ceil=160, light=175, **WAITING)
-ajarmap.roomdoor(m, (1888, -16), (1952, -16), (0, 1), 0)
-# a platform, under the sky: one of the places a Stray door opens onto
-ajarmap.fitted(m, (1152, -400, 1584, -16), [
-    ((1520, -272, 1584, -144), low()),
-    ((1152, -272, 1216, -144), low()),
-    ((1280, -400, 1456, -336), dict(ftex="AJSTEEL", side="AJ5N1", floor=112)),           # a carriage
-], floor=0, light=NIGHT, **PLATFORM)
-ajarmap.opening(m, (1600, -240), (1600, -176), (-1, 0), 0)
-ajarmap.stray_place(m, 2, (1152, -240), (1152, -176), (-1, 0), 0)
-
-# === the theatre (RED's far side) ==================================================
-# It stands on the square's south side, a step up, and you would not know: the
-# stage door lets you out onto the square and never in. (A place a Stray door
-# may open onto needs a way out on foot; so does one the repainter can shut.)
-T = 48
-TSEAT = dict(SEAT, floor=T + 16)
-ajarmap.fitted(m, (-176, -976, 336, -656), [
-    ((48, -976, 112, -656), ajarmap.RUNNER),
-    ((-144, -720, -48, -688), TSEAT), ((208, -720, 304, -688), TSEAT),
-], rug="AJ3R1", lite="AJ3L1", lift=0, floor=T, ceil=T + 176, light=180, **FOYER)
-recess((-176, -944), (-176, -880), (-1, 0), T, far_id(RED), 101, far_colour=RED)
-ajarmap.opening(m, (16, -656), (80, -656), (0, 1), T)                        # the stage door: a drop into the square
-ajarmap.opening(m, (48, -976), (112, -976), (0, -1), T)
-# the house: stalls, and the stage at the far end
-STAGE = dict(floor=T + 48, ftex="AJBOARD", side="AJWOOD")
-ajarmap.fitted(m, (-304, -1504, 464, -992), [
-    ((16, -1056, 144, -992), dict(ceil=T + 128, ctex="AJ3E1")),              # under the circle, coming in
-    ((-240, -1152, -48, -1120), TSEAT), ((208, -1152, 400, -1120), TSEAT),   # rows
-    ((-240, -1248, -48, -1216), TSEAT), ((208, -1248, 400, -1216), TSEAT),
-    ((16, -1344, 144, -1312), dict(STAGE, floor=T + 24)),                    # steps up
-    ((-304, -1504, 464, -1344), STAGE),
-], floor=T, ceil=T + 336, light=170, **STALLS)
-ajarmap.fitted(m, (-112, -1776, 272, -1520), [
-    ((80, -1744, 208, -1712), dict(WOOD, floor=T + 48 + 32)),                # a dressing table
-], floor=T + 48, ceil=T + 48 + 128, light=165, **BACKSTAGE)
-ajarmap.opening(m, (48, -1504), (112, -1504), (0, -1), T + 48)
+# === the other stop: another bus, other doors ======================================
+# (Vadim, 2026-11-17.) Door 8 of the first bus is door 1 of this one.
+BY = 3168                                             # this bus's south face
+for box, feats in (((-640, BY - 288, 640, BY - 48), [((-192, BY - 208, -64, BY - 176), SEAT), ((64, BY - 208, 192, BY - 176), SEAT)]),
+                   ((-640, BY - 48, -400, BY + 192), []), ((400, BY - 48, 640, BY + 192), []),
+                   ((-640, BY + 192, 640, BY + 432), [])):
+    ajarmap.fitted(m, box, feats, floor=0, light=NIGHT, ftex="AJ5P1", **SQUARE)
+south2 = ajarmap.bus(m, -400, BY, face=1, first=1, slots=(0, 2, 4), free=True, livery="C", light=NIGHT + 20, ftex="AJ5P1")
+north2 = ajarmap.bus(m, -400, BY + 144, face=-1, first=4, slots=(3,), free=True, livery="C", light=NIGHT + 20, ftex="AJ5P1")
+ajarmap.bus_ends(m, -400, BY, livery="C")
+ajarmap.doorway(m, 3, *north[1], (0, -1), 0, *south2[0], (0, 1), 0)          # 8 of the first bus: 1 of this one
+ajarmap.doorway(m, 5, *south2[1], (0, 1), 0, (608, 928 + TY), (608, 992 + TY), (1, 0), -48)   # 2: under the stage door
+ajarmap.stray_place(m, 3, *south2[2], (0, 1), 0)                             # 3: no number
+m.line(*south2[2], upper="AJCN0")
 
 # === the museum, on the square: one lock ===========================================
 ajarmap.fitted(m, (-1168, -640, -528, -128), [
@@ -278,13 +263,13 @@ ajarmap.way_longer(m, 96, 720 + DY, PINK, BLUE, VIOLET, floor=PF)
 m.sector(rect(224, 640 + DY, 288, 720 + DY), floor=PF, ceil=PF + 96, light=150, wall="AJBRICK",
          ftex="AJTRIMF", ctex="AJTRIMF")
 
-# === the observatory (line 8) ======================================================
+# === the observatory (line 4 of the other bus) ======================================================
 ajarmap.fitted(m, (1600, 1000, 2112, 1384), [
     ((1824, 1000, 1888, 1384), dict(ftex="AJ7P3")),
     ((1632, 1160, 1760, 1224), dict(ftex="AJ7WD3", side="AJ7LB3", floor=96)),            # stacks
     ((1952, 1160, 2080, 1224), dict(ftex="AJ7WD3", side="AJ7LB3", floor=96)),
 ], floor=0, ceil=192, light=175, **LIBRARY)
-ajarmap.doorway(m, 3, *north[1], (0, -1), 0, (1824, 1000), (1888, 1000), (0, -1), 0)
+ajarmap.doorway(m, 4, *north2[0], (0, -1), 0, (1824, 1000), (1888, 1000), (0, -1), 0)   # 4 of the other bus
 # the dome: its floor is sunk. The door lets onto a ledge; you drop in with what
 # you carry and leave by stairs and a hole no door fits through, as in the
 # museum's cellar. So BLUE leaves through another door, hung in the dome's frame
@@ -305,18 +290,18 @@ ajarmap.opening(m, (1600, 1320), (1600, 1384), (-1, 0), 0)
 # --- doors and keys ----------------------------------------------------------
 REPAINTER = 20007
 m.thing(-64, -592, 1, angle=90)                                           # player start, in the square
-ajarmap.door(m, RED, -2380, -100, angle=180)                              # leaning in a hotel room
-ajarmap.door(m, YELLOW, 1750, 230, angle=0)                               # in the station's waiting room
-ajarmap.door(m, GREEN, 424, -1466, angle=180)                            # on the stage
+ajarmap.door(m, RED, HX - 300, 330, angle=0)                              # leaning in a hotel room
+ajarmap.door(m, YELLOW, SX + 1700, 1250, angle=180)                       # on the station's far platform
+ajarmap.door(m, GREEN, 600, 1450 + TY, angle=180)                        # in the rooms behind the theatre's foyer
 ajarmap.door(m, VIOLET, -1210, -536, angle=180)                           # in the museum's cellar
 ajarmap.door(m, BLUE, 2020, 1756, angle=180)                              # under the dome
 ajarmap.door(m, PINK, -1300, 616, angle=0)                                # in its store
 m.thing(100, -150, REPAINTER, angle=180)                                   # the repainter: about the stop
 ajarmap.stray(m, -492, -68, angle=0)                                      # Stray doors: by the bus
-ajarmap.stray(m, -156, -956, angle=0)                                     # in the theatre's foyer
+ajarmap.stray(m, -300, 1200 + TY, angle=0)                                # in the theatre's foyer
 ajarmap.stray(m, -740, -80, angle=180)                                    # in the museum's gallery
 ajarmap.stray(m, 492, 620 + DY, angle=180)                                     # in the depot
-ajarmap.key(m, 1, -76, -1656)                                              # behind the stage
+ajarmap.key(m, 1, 1104, 520 + TY)                                          # down by the stage
 ajarmap.key(m, 2, -470, 600 + DY)                                              # the far corner of the depot
 
 ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, LODGER = 3004, 9, 3001, 3002, 58, 20005
@@ -345,66 +330,17 @@ things(PLASMA, (-352, -790))
 things(CELLS, (-420, -810), (-420, -770))
 things(MEGA, (-280, -690))
 # the line: nobody
-# the hotel: the night staff, and guests
-things(ZOMBIE, (-3100, -200), (-2800, -300), (-2760, -150), (-2944, -80), angle=270)
-things(SERGEANT, (-3130, -330), (-2760, -340), angle=270)
-things(IMP, (-3000, -40), (-2840, -100), angle=270)
-things(BACKPACK, (-3130, -150))
-things(SHELLS, (-2880, -360), (-3010, -360))
-things(STIM, (-2720, -360), (-3170, -40))
-things(TECHLAMP, (-3176, -376), (-2712, -376))
-things(IMP, (-2500, -120), (-2620, -300), angle=180)
-things(CHAINGUNNER, (-2400, -160), angle=180)
-things(CHAINGUN, (-2620, -110))
-things(AMMOBOX, (-2580, -110))
-things(DEMON, (-3300, -300), (-3400, -120), angle=0)
-things(SERGEANT, (-3500, -110), angle=0)
-things(ARMOR, (-3500, -180))
-things(MEDIKIT, (-3250, -310))
-# the station: the concourse
-things(SERGEANT, (1700, -200), (2000, -250), (2180, -60), angle=270)
-things(IMP, (1660, -340), (1840, -160), (2040, -340), (1760, -40), angle=270)
-things(CHAINGUNNER, (2000, -330), (1640, -50), angle=270)
-things(KNIGHT, (1920, -120), angle=270)
-things(SHELLBOX, (2200, -150))
-things(MEDIKIT, (1640, -150))
-things(STIM, (2000, -60))
-things(TECHLAMP, (1624, -376), (2216, -376))
-# its waiting room: YELLOW
-things(REVENANT, (1920, 130), angle=270)
-things(IMP, (1800, 60), (2070, 200), angle=270)
-things(SHELLS, (2080, 30))
-things(MEDIKIT, (1760, 30))
-# its platform
-things(MANCUBUS, (1360, -120), angle=0)
-things(CACO, (1240, -80), (1480, -60), angle=0, ambush=True)
-things(SOUL, (1300, -280), (1440, -260), angle=0)
-things(LAUNCHER, (1200, -360))
-things(ROCKETBOX, (1200, -50), (1250, -50))
-things(SPHERE, (1500, -360))
-things(LAMP, (1560, -40), (1176, -376))
-# the theatre: the foyer
-things(IMP, (-106, -856), (264, -856), (80, -916), angle=90)
-things(SERGEANT, (-26, -756), (194, -756), angle=90)
-things(DEMON, (-76, -946), (244, -946), angle=90)
-things(SHELLBOX, (304, -946))
-things(STIM, (-146, -756))
-# the house and the stage
-things(SUPER, (80, -1176))
-things(SHELLS, (40, -1176), (120, -1176))
-things(IMP, (-266, -1076), (424, -1076), (-266, -1286), (424, -1286), angle=90)
-things(KNIGHT, (-16, -1276), (174, -1276), angle=90)
-things(SPECTRE, (-176, -1186), (324, -1186), angle=90)
-things(CHAINGUNNER, (-176, -1416), (324, -1416), angle=90)
-things(CACO, (80, -1416), angle=90, ambush=True)
-things(MEDIKIT, (-276, -1466), (434, -1036))
-things(BERSERK, (-276, -1036))
-things(ROCKETS, (-76, -1466), (-36, -1466))
-# behind the stage: key 1
-things(BARON, (174, -1636), angle=0)
-things(IMP, (240, -1600), angle=0)
-things(MEDIKIT, (244, -1556))
-things(SHELLBOX, (-76, -1556))
+# the other stop: whoever waits for the 20
+things(LAMP, (-616, BY - 264), (616, BY - 264), (-616, BY + 408), (616, BY + 408))
+things(REVENANT, (-300, BY - 150), (300, BY - 150), angle=270)
+things(KNIGHT, (0, BY - 240), angle=90)
+things(IMP, (-520, BY + 60), (520, BY + 60), (-200, BY + 320), (200, BY + 320), angle=270)
+things(CACO, (0, BY + 360), angle=270, ambush=True)
+things(SHELLBOX, (-600, BY - 100))
+things(MEDIKIT, (600, BY - 100), (0, BY + 400))
+things(ROCKETBOX, (600, BY + 300))
+# under the stage door
+things(STIM, (500, 960 + TY))
 # the museum's hall
 things(KNIGHT, (-700, -250), (-1050, -560), angle=0)
 things(REVENANT, (-1100, -330), (-640, -520), angle=0)
@@ -467,10 +403,10 @@ things(TECHLAMP, (1688, 1424), (2024, 1424))
 
 # --- ambushes: what a key or a door brings (ajarmap.ambush) -------------------
 # The square is where they come: an arena that fills from its own stop.
-# GREEN, taken from the stage: the house
-ajarmap.ambush(m, 10 + GREEN, REVENANT, (80, -1106), angle=270)
-ajarmap.ambush(m, 10 + GREEN, IMP, (-126, -1076), (284, -1076), angle=270)
-# key 1, behind the stage: the square you go back to
+# GREEN, taken: the house you go back through
+ajarmap.ambush(m, 10 + GREEN, REVENANT, (520, 448 + TY), angle=90)
+ajarmap.ambush(m, 10 + GREEN, IMP, (200, 448 + TY), (960, 400 + TY), angle=90)
+# key 1, by the stage: the square you go back to
 ajarmap.ambush(m, 1, KNIGHT, (-300, -250), (100, -250), angle=270)
 ajarmap.ambush(m, 1, IMP, (-420, -500), (160, -500), (-100, -120), angle=90)
 # VIOLET, taken in the cellar
@@ -483,8 +419,8 @@ ajarmap.ambush(m, 2, IMP, (-540, 320), (540, 320), angle=270)             # and 
 ajarmap.ambush(m, 10 + BLUE, REVENANT, (1730, 1100), (1980, 1100), angle=90)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
-# "main" is the square all round the bus, the hotel, the station, the
-# observatory's library (lines 1, 5 and 8 always run) and the kiosk; "museum"
+# "main" is the two stops, the hotel, the station, the observatory's
+# library, the pit under the stage door (the lines that always run) and the kiosk; "museum"
 # its hall, gallery and PINK's store; "night" is the line, "pink" PINK's room.
 PUZZLE = dict(
     start="main", goal="exit", names=ajarmap.NAMES, complete=True,
@@ -493,7 +429,7 @@ PUZZLE = dict(
           ("museum", "cellar"), ("cellar", "museum", "", "squeeze"),      # down the hole; up the stairs and out
           ("depot", "main"),                                              # the gate, a step down
           ("main", "dome", "2"), ("dome", "main", "", "squeeze"),         # down off the ledge; up the stairs and out
-          ("theatre", "main"),                                            # the stage door
+          ("theatre", "main"),                                            # the stage door: a drop
           ("night", "main"),                                              # the hole over the shelter
           ("pink", "depot")],                                             # the hole over the depot
     keys={"1": "theatre", "2": "depot"},
@@ -509,7 +445,7 @@ PUZZLE = dict(
     },
     only={HOME3: (BLUE, VIOLET)},
     repainter=dict(zone=["main"]),
-    pool=["main"],                         # door 4 of the bus; the kiosk; the platform
+    pool=["main"],                         # the doors with no number; the kiosk; a platform; the hotel's far hall
 )
 
 if __name__ == "__main__":

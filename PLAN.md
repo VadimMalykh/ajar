@@ -2417,7 +2417,7 @@ hand, and no walkthrough test of the whole level yet.** `tools/map_hinges10.py`:
 a town square at night and a bus at its stop. Six doors, all in the puzzle,
 two keys, seven frames (three of them brass), four Stray doors, 9 door actions
 (the secret way out: 11), 1920764 states, none stuck, nothing losable, the
-secret way out included. 102 monsters and 15 that come by ambush, 4 secrets.
+secret way out included. 143 monsters and 17 that come by ambush, 4 secrets.
 `MAP=MAP10 ./run.sh`; MAP09's exit leads here.
 
 Vadim's brief (2026-11-17): the bus; a secret exit in the same place as the
@@ -2446,6 +2446,28 @@ levels", 1; the engine questions there are answered.
   64). A bus with taller houses behind it would want 3D floors; not tried.
   The faces are 144 apart, the recesses back to back. Six portals in one view
   draw without trouble (GLES, headless).
+- **The places are the earlier levels as they stand** (Vadim, 2026-11-17:
+  door 1 was "just a room"; "bigger parts of other maps"; and let them have
+  doors of their own that lead to other levels or to the stop).
+  `ajarmap.excerpt(m, src, at, dx, dy)` lifts out of another level's Map all
+  that can be walked to and back from a point without a carried door, with
+  its furniture, windows, ordinary doors, monsters and pick-ups; frames, far
+  sides, locked and bolted doors, keys, exits and secrets stay behind, and it
+  returns the places where recesses were, for this level's own. So: line 1
+  arrives where MAP02 began (its whole ground floor, 12 monsters), line 5
+  where MAP05 did (concourse, platforms, tracks, 52), RED's far side is in
+  MAP03's foyer (foyer, house, rooms behind). RED leans in a hotel room,
+  YELLOW on the station's far platform, GREEN behind the theatre's foyer.
+  The museum, the depot and the observatory are still my own small rooms:
+  MAP06 and MAP07 lift out as well (MAP07: 646 sectors, 84 monsters), not
+  done. More frames in the districts are possible but each multiplies the
+  solver's states (seven frames: 1.9 million).
+- **The other stop** (Vadim, 2026-11-17: a door to another part of the level
+  with a similar bus and other doors). Door 8 of the 10 is door 1 of the 20,
+  an amber bus (`gfx_bus.LIVERIES`, `bus(livery=)`) in a square of its own:
+  2 the pit under the theatre's stage door (the theatre's way out on foot),
+  a door with no number, and in its back 4 the observatory. All of it is
+  "main" in the PUZZLE, which did not change.
 - The route board in the shelter (`ajarmap.route_board`,
   `AjarHandler.BoardTick`): a lamp for each door of the bus, in the colour of
   what hangs there or, for a far side, lit while that door hangs anywhere.

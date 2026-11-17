@@ -20,9 +20,11 @@ BODY = (38, 40, 50)
 GLASS = (92, 112, 132)
 CREAM = (232, 224, 200)
 H = 144
+# a livery: the letter in its textures' names (AJ?US...), its line, its number
+LIVERIES = (("B", RED, "10"), ("C", (236, 180, 48), "20"))
 
 
-def _outline(im, w, left=False, right=False):
+def _outline(im, w, RED, left=False, right=False):
     """The red line round the bus: along its roof and its skirt, and down an end."""
     im.rect(0, 0, w, 4, RED)
     im.rect(0, H - 22, w, H - 19, RED)
@@ -33,69 +35,70 @@ def _outline(im, w, left=False, right=False):
 
 
 def make(out):
-    body = Img(64, H, BODY)
-    body.rect(6, 54, 58, 96, GLASS)                               # a window
-    body.frame(6, 54, 58, 96, RED, 2)
-    body.rect(6, 62, 58, 63, shade(GLASS, 1.25))
-    body.rect(0, H - 19, 64, H, (20, 20, 24))                     # under the skirt
-    _outline(body, 64)
-    body.noise(4, 101)
-    out["textures/AJBUS.png"] = body.png()
+    for L, line, num in LIVERIES:
+        body = Img(64, H, BODY)
+        body.rect(6, 54, 58, 96, GLASS)                               # a window
+        body.frame(6, 54, 58, 96, line, 2)
+        body.rect(6, 62, 58, 63, shade(GLASS, 1.25))
+        body.rect(0, H - 19, 64, H, (20, 20, 24))                     # under the skirt
+        _outline(body, 64, line)
+        body.noise(4, 101)
+        out[f"textures/AJ{L}US.png"] = body.png()
 
-    end = Img(48, H, BODY)
-    end.rect(0, H - 19, 48, H, (20, 20, 24))
-    end.disc(24, H - 18, 17, (16, 16, 18))                        # a wheel
-    end.disc(24, H - 18, 8, (120, 120, 126))
-    end.rect(10, 54, 38, 96, GLASS)
-    end.frame(10, 54, 38, 96, RED, 2)
-    _outline(end, 48, left=True, right=True)
-    end.noise(4, 102)
-    out["textures/AJBUSZ.png"] = end.png()
+        end = Img(48, H, BODY)
+        end.rect(0, H - 19, 48, H, (20, 20, 24))
+        end.disc(24, H - 18, 17, (16, 16, 18))                        # a wheel
+        end.disc(24, H - 18, 8, (120, 120, 126))
+        end.rect(10, 54, 38, 96, GLASS)
+        end.frame(10, 54, 38, 96, line, 2)
+        _outline(end, 48, line, left=True, right=True)
+        end.noise(4, 102)
+        out[f"textures/AJ{L}USZ.png"] = end.png()
 
-    front = Img(144, H, BODY)
-    front.rect(0, H - 19, 144, H, (20, 20, 24))
-    front.rect(12, 34, 132, 88, GLASS)                            # the windscreen
-    front.frame(12, 34, 132, 88, RED, 2)
-    front.rect(71, 34, 73, 88, RED)
-    front.rect(12, 44, 132, 45, shade(GLASS, 1.25))
-    front.rect(48, 10, 96, 28, (12, 12, 14))                      # the number
-    front.frame(48, 10, 96, 28, RED, 2)
-    digit(front, "1", 60, 13, CREAM, 2)
-    digit(front, "0", 74, 13, CREAM, 2)
-    for cx in (24, 120):                                          # lamps
-        front.disc(cx, 106, 9, CREAM)
-        front.disc(cx - 2, 104, 4, (255, 250, 230))
-    front.rect(44, 98, 100, 116, (24, 24, 28))                    # the grille
-    for gy in range(101, 116, 4):
-        front.rect(46, gy, 98, gy + 1, (70, 70, 76))
-    _outline(front, 144, left=True, right=True)
-    front.noise(4, 103)
-    out["textures/AJBUSF.png"] = front.png()
+        front = Img(144, H, BODY)
+        front.rect(0, H - 19, 144, H, (20, 20, 24))
+        front.rect(12, 34, 132, 88, GLASS)                            # the windscreen
+        front.frame(12, 34, 132, 88, line, 2)
+        front.rect(71, 34, 73, 88, line)
+        front.rect(12, 44, 132, 45, shade(GLASS, 1.25))
+        front.rect(48, 10, 96, 28, (12, 12, 14))                      # the number
+        front.frame(48, 10, 96, 28, line, 2)
+        digit(front, num[0], 60, 13, CREAM, 2)
+        digit(front, num[1], 74, 13, CREAM, 2)
+        for cx in (24, 120):                                          # lamps
+            front.disc(cx, 106, 9, CREAM)
+            front.disc(cx - 2, 104, 4, (255, 250, 230))
+        front.rect(44, 98, 100, 116, (24, 24, 28))                    # the grille
+        for gy in range(101, 116, 4):
+            front.rect(46, gy, 98, gy + 1, (70, 70, 76))
+        _outline(front, 144, line, left=True, right=True)
+        front.noise(4, 103)
+        out[f"textures/AJ{L}USF.png"] = front.png()
 
-    back = Img(144, H, BODY)
-    back.rect(0, H - 19, 144, H, (20, 20, 24))
-    back.rect(28, 40, 116, 78, GLASS)                             # the back window
-    back.frame(28, 40, 116, 78, RED, 2)
-    for cx in (16, 128):                                          # tail lamps
-        back.rect(cx - 5, 96, cx + 5, 116, (200, 30, 26))
-        back.rect(cx - 5, 96, cx + 5, 101, (240, 150, 40))
-    back.rect(40, 92, 104, 118, (24, 24, 28))                     # the engine's cover
-    back.frame(40, 92, 104, 118, (70, 70, 76), 1)
-    for gx in range(46, 100, 6):
-        back.rect(gx, 96, gx + 2, 114, (60, 60, 66))
-    _outline(back, 144, left=True, right=True)
-    back.noise(4, 104)
-    out["textures/AJBUSR.png"] = back.png()
+        back = Img(144, H, BODY)
+        back.rect(0, H - 19, 144, H, (20, 20, 24))
+        back.rect(28, 40, 116, 78, GLASS)                             # the back window
+        back.frame(28, 40, 116, 78, line, 2)
+        for cx in (16, 128):                                          # tail lamps
+            back.rect(cx - 5, 96, cx + 5, 116, (200, 30, 26))
+            back.rect(cx - 5, 96, cx + 5, 101, (240, 150, 40))
+        back.rect(40, 92, 104, 118, (24, 24, 28))                     # the engine's cover
+        back.frame(40, 92, 104, 118, (70, 70, 76), 1)
+        for gx in range(46, 100, 6):
+            back.rect(gx, 96, gx + 2, 114, (60, 60, 66))
+        _outline(back, 144, line, left=True, right=True)
+        back.noise(4, 104)
+        out[f"textures/AJ{L}USR.png"] = back.png()
 
-    for n in range(10):                                           # 0: a door with no number
-        top = Img(64, 48, BODY)
-        top.rect(0, 0, 64, 4, RED)
-        top.rect(10, 12, 54, 40, (12, 12, 14))                    # the destination board
-        top.frame(10, 12, 54, 40, RED, 2)
-        if n:
-            digit(top, str(n), 26, 16, CREAM, 4)
-        top.noise(4, 110 + n)
-        out[f"textures/AJBN{n}.png"] = top.png()
+        for n in range(10):                                           # 0: a door with no number
+            top = Img(64, 48, BODY)
+            top.rect(0, 0, 64, 4, line)
+            top.rect(10, 12, 54, 40, (12, 12, 14))                    # the destination board
+            top.frame(10, 12, 54, 40, line, 2)
+            if n:
+                digit(top, str(n), 26, 16, CREAM, 4)
+            top.noise(4, 110 + n)
+            out[f"textures/AJ{L}N{n}.png"] = top.png()
 
     for n in range(10):
         for c in range(8):

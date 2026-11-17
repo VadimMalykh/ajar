@@ -2121,15 +2121,15 @@ class AjarHandler : EventHandler
 			430, -70, 0, 250, -25,         // over the shelter: the hole, the line
 			-288, -560, 0, 270, 0,         // the kiosk behind its bars
 			-250, -368, 0, 180, 0,         // the museum's door: one lock
-			48, -500, 0, 270, -10,         // the stage door, a step up
-			-2944, -380, 0, 90, 0,         // line 1: the hotel's lobby
+			-7850, 800, 0, 200, 0,         // the hotel's far hall
+			-6144, 40, 0, 90, 0,           // line 1: the hotel, where MAP02 began
 			620, 420, 0, 215, 0,           // round the back of the bus, from the lane's corner
-			-2640, -208, 0, 0, 0,          // a room: RED
-			-3250, -208, 0, 180, 0,        // the other room
-			1920, -380, 0, 90, 0,          // line 5: the station's concourse
-			1640, -40, 0, 315, 0,          // the concourse from a corner
-			1750, 40, 0, 45, 0,            // the waiting room: YELLOW
-			1560, -208, 0, 180, 0,         // the platform
+			-6420, 290, 0, 180, 0,         // its corridor
+			-6740, 320, 0, 45, 0,          // a room: RED
+			3584, 40, 0, 110, 0,           // line 5: the station, where MAP05 began
+			3350, 500, 0, 90, 0,           // the concourse
+			3520, 1250, 0, 0, 0,           // the far platform: YELLOW
+			3520, 290, 0, 20, 0,           // the near platform, the tracks
 			320, -432, 64, 0, 0            // the line
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
@@ -2138,13 +2138,13 @@ class AjarHandler : EventHandler
 	void AllChangeViews2()
 	{
 		static const double v[] = {
-			-150, -912, 48, 0, 0,          // the theatre: the foyer from RED's far side
-			300, -700, 48, 200, 0,         // the foyer: the stage door, the way in
-			80, -1020, 48, 270, 0,         // the house, the stage
-			400, -1400, 96, 150, 0,        // from the stage
-			240, -1540, 96, 200, 0,        // behind the stage: key 1
+			-224, -3400, 0, 60, 0,         // the theatre: the foyer from RED's far side
+			256, -3530, 0, 20, 0,          // the stage door: a ledge, a pit, the line to the other stop
+			40, -3700, 0, 315, 0,          // the house
+			1100, -4030, -48, 170, 0,      // from the stage
+			300, -3080, 0, 20, 0,          // the rooms behind the foyer: GREEN
 			-560, -368, 0, 180, 0,         // the museum's hall
-			-1130, -160, 0, 315, 0,        // the hall from its far corner: the way down
+			0, 2920, 0, 90, 0,             // the other stop: the 20
 			-1220, -400, -128, 180, 0,     // the cellar: its frame
 			-1560, -150, -128, 300, 0,     // the cellar: VIOLET, the stairs
 			-760, 360, 0, 200, 0,          // the gallery
@@ -2152,7 +2152,7 @@ class AjarHandler : EventHandler
 			-1020, 620, 0, 200, 0,         // PINK's store
 			0, 620, 48, 90, 0,             // the depot from YELLOW's far side
 			0, 420, 0, 270, 0,             // the bus from behind: doors 7 and 8
-			480, 972, 48, 215, 0,          // the depot from its far corner
+			-600, 3560, 0, 330, 0,         // the 20 from behind
 			250, 852, 48, 90, -30,         // the hole from PINK's room
 			120, 1200, 144, 0, 0,          // PINK's room: its brass frame
 			400, 1112, 144, 160, 0,        // PINK's room: PINK's far side
