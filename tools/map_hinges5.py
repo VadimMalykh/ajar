@@ -172,7 +172,8 @@ for box, sides in (((0, 0, 512, 128), "N"), ((160, 1536, 352, 1600), "SEW"), ((4
     low(box, HALLW, sides)
 over((512, 256), (512, 320), HALLW)                                          # the end of platform 1's canopy
 if LOOK:                                                                     # the concourse's mouth onto the platforms
-    m.line((512, 320), (512, 1024), upper=FRONT, dontpegtop=True, lower=f"AJ5E{LOOK}")
+    for a, b in (((512, 320), (512, 896)), ((512, 896), (512, 1024))):       # (its last stretch is railed: the turnstile)
+        m.line(a, b, upper=FRONT, dontpegtop=True, lower=f"AJ5E{LOOK}")
 recess((352, 0), (416, 0), (0, -1), 0, 101, 201)                             # frame in the vestibule
 
 ajarmap.fitted(m, (512, 256, 2048, 512), [
@@ -251,6 +252,10 @@ ajarmap.fitted(m, (528, 1024, 2048, 1280), [
 over((528, 1216), (2048, 1216), f"AJ5K{LOOK}")
 windows("AJ5K", 1216, range(576, 2048, 128), upper=True)
 ajarmap.squeeze(m, (512, 1128), (512, 1176), (1, 0), 0)                      # the turnstile
+# The turnstile is the only way round: the concourse and the platform meet at
+# a corner over the tracks, and a run across it (five tics in the air) would
+# carry a door past. A rail each side of the corner makes it 190 units.
+rail(((512, 896), (512, 1024)), ((528, 1024), (656, 1024)))
 over((512, 1128), (512, 1176), HALLW)
 over((528, 1128), (528, 1176), FRONT)
 bars((512, 1048), (512, 1112), (1, 0), 0, HALLW, FRONT)
