@@ -241,12 +241,15 @@ def way_through(m, x, y, a, b, *, floor=0, longer=None):
     With both doors hung in those, either way round, the two rooms open onto
     each other without end; the player walks through into this one, and
     leaving it again, by either door, ends the level (AjarHandler.ChainTick).
+    Leaving it by the way out on foot (below) ends nothing.
 
     Nothing else leads here, so until then it is a dead end with two door
     backs in it; and with the two doors hung in any two frames it is a way
     between them, for whatever is carried. A Stray door may open onto either
     far side, so the room needs a way out on foot: the caller's job (its
-    north and south walls are free; a drop, so that it stays a way out only).
+    north and south walls are free; a drop, so that it stays a way out only;
+    and not within 64 of the middle of an end wall, where ChainTick takes a
+    leaving for one by a door).
     In a PUZZLE graph: both doors' home, and `home_chain`."""
     room(m, [x, x + 320], [y, y + 96, y + 160, y + 256], lambda i, j: j == 1, floor=floor,
          ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")

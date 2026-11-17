@@ -539,7 +539,9 @@ class AjarHandler : EventHandler
 	// Nothing is fixed by that (Vadim, 2026-11-17): a brass frame is a frame
 	// like any other, and either door can be taken down again. Only when the
 	// player walks onto the line through the closed loop do its doors stay,
-	// and leaving the line again ends the level (ChainTick).
+	// and leaving the line again by one of its two doors ends the level
+	// (ChainTick). Leaving it by its way out on foot (the drop) ends nothing
+	// (Vadim, 2026-11-17): the doors stay, and the line can be walked again.
 	//
 	// The longer loop (MAP10): the AjarLine's args[2] is a third frame, in a
 	// room that has the far side args[3] of a third door. That door and one of
@@ -547,6 +549,7 @@ class AjarHandler : EventHandler
 	// loop of three rooms. Closing it is a secret, and leaving the line by it
 	// is the secret way out.
 	bool chainBuilt, onTheLine, longFound;
+	Vector2 lineAt;        // where on the line the player last was, from its middle
 	int chainLen;          // 0, or how many rooms the closed loop has: 2 or 3
 
 	AjarFrame BrassFrame()
@@ -611,6 +614,8 @@ class AjarHandler : EventHandler
 		if (!chainLen) return;
 		Vector2 d = mo.pos.xy - room.pos.xy;
 		// the mouths are 16 deep: 24 past a wall is through a door, or out by the drop
+		bool gone = abs(d.x) > room.args[0] + 24 || abs(d.y) > room.args[1] + 24;
+		if (onTheLine && !gone) lineAt = d;
 		if (abs(d.x) < room.args[0] && abs(d.y) < room.args[1])
 		{
 			if (onTheLine) return;
@@ -620,9 +625,17 @@ class AjarHandler : EventHandler
 			AjarDoor o;
 			while (o = AjarDoor(di.Next())) if (InChain(o)) { o.nailer = o; o.Show(); }
 		}
-		else if (onTheLine && (abs(d.x) > room.args[0] + 24 || abs(d.y) > room.args[1] + 24))
+		else if (onTheLine && gone)
 		{
 			onTheLine = false;
+			// The doors are in the middle of its two ends, 64 wide; the way out on
+			// foot is in a side wall. Left from anywhere but a door's mouth: not
+			// by the line, and nothing ends
+			if (abs(lineAt.y) >= 64)
+			{
+				if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST leftTheLine=onFoot");
+				return;
+			}
 			if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST wayOut=%s", chainLen == 3 ? "secret" : "plain");
 			level.ExecuteSpecial(chainLen == 3 ? 244 /* Exit_Secret */ : 243 /* Exit_Normal */, mo, null, false, 0);
 		}
@@ -2100,7 +2113,7 @@ class AjarHandler : EventHandler
 
 	// MAP09 mode 3: the chain by itself. One of the two doors in a brass
 	// frame is a door like any other; both, and they stay; nothing ends
-	// until the player has been onto the line and left it again.
+	// until the player has been onto the line and left it again by a door.
 	void ChainScript(Actor mo, int t)
 	{
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
@@ -2134,7 +2147,16 @@ class AjarHandler : EventHandler
 		if (t == 310) mo.vel.xy = (0, 0);
 		if (t == 315) Check("walkedOntoTheLine", onLine && onTheLine);
 		if (t == 316) Check("nowTheyStay", FindFrame(190).door.nailer && FindFrame(191).door.nailer);
-		Forward(mo, t, 360, 60);                         // out by VIOLET's end
+		// out by the hole: the doors stay, and nothing ends
+		if (t == 330) Pose(mo, 920, -500, 96, 270);
+		Forward(mo, t, 335, 14);
+		if (t == 365) Check("theHoleEndsNothing", mo.pos.z == 0 && mo.pos.y < -576 && !onTheLine && chainBuilt);
+		// round again, along the line and out by VIOLET's end: that ends it
+		if (t == 370) Pose(mo, 592, 432, 0, 0);
+		Forward(mo, t, 375, 44);
+		if (t == 420) mo.vel.xy = (0, 0);
+		if (t == 425) Check("backOnTheLine", onLine && onTheLine);
+		Forward(mo, t, 430, 60);
 	}
 
 	// MAP10 mode 3: the two ways out. BLUE in door 6 of the bus and VIOLET in

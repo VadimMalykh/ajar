@@ -2837,3 +2837,20 @@ the cellar).
   chaingun, with a box of shells and a box of bullets by the counter; a
   box of each at the way into the switchroom. Thingcheck 0 problems, smoke
   36 checks. Not played by hand.
+
+## The line ends the level only by its doors (2026-11-17)
+
+Vadim, playing MAP09: walking onto the line through the closed loop does not
+end the level, and that is right; but leaving it by its third way out (the
+drop, MAP09's hole over the forecourt) did. Now only leaving by one of the
+line's two doors ends the level. Out by the drop, nothing ends: the loop's
+doors stay hung (they were fixed when the line was walked onto), and the
+line can be walked again.
+
+- `ChainTick` keeps where on the line the player last was (`lineAt`); a
+  leaving from anywhere but the middle 128 of an end wall is on foot. So a
+  way out on foot must not be there (ajarmap.way_through says so).
+- MAP10's line is the same room: its secret way out is still by a door.
+- `MAP=MAP09 MODE=3`: `theHoleEndsNothing`, `backOnTheLine`, then out by
+  VIOLET's end (18 checks). MAP09 mode 1: 36; MAP10 mode 3: 18, the secret
+  way out. Not played by hand.
