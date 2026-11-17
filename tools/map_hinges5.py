@@ -526,12 +526,16 @@ things(TECHLAMP, (280, 2440), (616, 2232))
 things(MEDIKIT, (280, 2232))
 
 # --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
-# key 1, in the signal box: the bridge outside its door
-ajarmap.ambush(m, 1, REVENANT, (2140, 1030), angle=0)
-ajarmap.ambush(m, 1, IMP, (2120, 820), (2120, 1230), angle=0)
-# key 3, in the lost property office: between you and the door
-ajarmap.ambush(m, 3, DEMON, (1340, 200), (1200, 200), angle=180)
-ajarmap.ambush(m, 3, CHAINGUNNER, (1130, 90), angle=270)
+# No two alike (Vadim, 2026-11-17: they were all two imps and somebody).
+# key 1, in the signal box: in the box with you; and then the bridge outside
+# its door
+ajarmap.ambush(m, 1, DEMON, (2403, 1063), (2460, 1000), angle=0)
+ajarmap.ambush(m, 1, REVENANT, (2140, 1030), angle=0, after=4)
+ajarmap.ambush(m, 1, IMP, (2120, 820), (2120, 1230), angle=0, after=4)
+# key 3, in the lost property office: between you and the door, and not to be
+# seen; then one who can be
+ajarmap.ambush(m, 3, SPECTRE, (1340, 200), (1200, 200), angle=180)
+ajarmap.ambush(m, 3, CHAINGUNNER, (1130, 90), angle=270, after=3)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "hall" is the concourse, platform 1, the tracks and the waiting room, and

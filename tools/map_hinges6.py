@@ -662,9 +662,12 @@ things(SHELLBOX, (1160, 2180))
 things(MEDIKIT, (1240, 2180))
 
 # --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
-# key 1, at the north end of the upper gallery: the whole gallery, behind you
-ajarmap.ambush(m, 1, REVENANT, (-160, 1250), angle=90)
-ajarmap.ambush(m, 1, IMP, (-200, 1420), (-120, 1560), angle=90)
+# No two alike (Vadim, 2026-11-17: they were all two imps and somebody).
+# key 1, at the north end of the upper gallery: lost souls round you where
+# you stand; and then the whole gallery, behind you
+ajarmap.ambush(m, 1, SOUL, (-217, 2143), (-103, 2143), (-160, 2080), angle=90)
+ajarmap.ambush(m, 1, REVENANT, (-160, 1250), angle=90, after=4)
+ajarmap.ambush(m, 1, IMP, (-200, 1420), (-120, 1560), angle=90, after=4)
 # key 2, in the cellar: out of the dark
 ajarmap.ambush(m, 2, SPECTRE, (1650, -360), (1500, -340), (1760, -130), angle=0)
 # key 4, on the mezzanine: up from the great hall

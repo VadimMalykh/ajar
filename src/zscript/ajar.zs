@@ -468,7 +468,7 @@ class AjarHandler : EventHandler
 			{
 				if (g == WORK ? !WorkNear(a) : g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
 				a.armed = true;
-				a.wait = 20 + 5 * random(0, 5);
+				a.wait = 20 + 5 * random(0, 5) + 35 * a.args[2];    // args[2]: seconds a later wave holds back
 			}
 			if (a.wait > 0) { a.wait -= 5; continue; }
 			class<Actor> cls = AmbushClass(a.args[1]);

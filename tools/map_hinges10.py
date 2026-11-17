@@ -532,16 +532,21 @@ things(20021, (1856, 1592), angle=90)                                      # the
 # --- ambushes: what a key or a door brings (ajarmap.ambush) -------------------
 # The square is where they come: an arena that fills from its own stop.
 # GREEN, taken: the house you go back through
-ajarmap.ambush(m, 10 + GREEN, REVENANT, (520, 448 + TY), angle=90)
+# (No two alike: Vadim, 2026-11-17.) The imps at once, and when they are
+# down, the revenant
+ajarmap.ambush(m, 10 + GREEN, REVENANT, (520, 448 + TY), angle=90, after=5)
 ajarmap.ambush(m, 10 + GREEN, IMP, (200, 448 + TY), (960, 400 + TY), angle=90)
-# key 1, by the stage: the square you go back to
+# key 1, by the stage: either side of you, and not to be seen; and the square
+# you go back to
+ajarmap.ambush(m, 1, SPECTRE, (1104, 640 + TY), (1104, 440 + TY), angle=90)
 ajarmap.ambush(m, 1, KNIGHT, (-300, -250), (100, -250), angle=270)
-ajarmap.ambush(m, 1, IMP, (-420, -500), (160, -500), (-100, -120), angle=90)
+ajarmap.ambush(m, 1, IMP, (-420, -500), (160, -500), angle=90)
 # VIOLET, taken in the cellar
 ajarmap.ambush(m, 10 + VIOLET, SPECTRE, (-1300, -200), (-1500, -420), angle=0)
-# key 2, in the depot: the square again
+# key 2, in the depot: between you and the way out of its corner; and the
+# square again
+ajarmap.ambush(m, 2, DEMON, (-390, 600 + DY), (-300, 600 + DY), angle=180)
 ajarmap.ambush(m, 2, CACO, (-200, -300), (0, -450), angle=90)
-ajarmap.ambush(m, 2, REVENANT, (-380, -150), angle=0)
 ajarmap.ambush(m, 2, IMP, (-540, 320), (540, 320), angle=270)             # and the lane behind the bus
 # BLUE, taken under the dome: the library you go back through
 ajarmap.ambush(m, 10 + BLUE, REVENANT, (1730, 1100), (1980, 1100), angle=90)

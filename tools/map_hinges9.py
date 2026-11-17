@@ -699,18 +699,23 @@ things(MEGA, (-1786, -80))
 things(AMMOBOX, (-1896, -80))
 
 # --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
-# key 1, in a corner of the roof: between you and the hole
-ajarmap.ambush(m, 1, CACO, (-960, 720), angle=180)
-ajarmap.ambush(m, 1, IMP, (-700, 480), (-700, 330), angle=180)
-# key 2, in the cloakroom: the canteen you have to go back through
-ajarmap.ambush(m, 2, REVENANT, (-1100, -250), angle=180)
-ajarmap.ambush(m, 2, IMP, (-950, -200), (-1250, 70), angle=180)
-# key 3, in the battery room: the passage you have to go back by
-ajarmap.ambush(m, 3, REVENANT, (1300, 150), angle=180)
-ajarmap.ambush(m, 3, IMP, (1000, 150), (1150, 120), angle=180)
-# key 4, on the balcony: the floor below
-ajarmap.ambush(m, 4, KNIGHT, (0, -150), angle=180)
-ajarmap.ambush(m, 4, IMP, (-300, 60), (300, 60), angle=180)
+# No two alike (Vadim: they were all two imps and somebody).
+# key 1, in a corner of the roof: lost souls all round you, out of the night;
+# and when they are dealt with, a cacodemon between you and the hole
+ajarmap.ambush(m, 1, SOUL, (-1190, 360), (-1250, 430), (-1310, 470), (-1120, 380), angle=180)
+ajarmap.ambush(m, 1, CACO, (-960, 720), angle=180, after=4)
+# key 2, in the cloakroom: what hung among the coats, in the room with you and
+# one in the door; then the canteen you have to go back through
+ajarmap.ambush(m, 2, SPECTRE, (-1420, -100), (-1500, -240), (-1640, 0), angle=180)
+ajarmap.ambush(m, 2, CHAINGUNNER, (-1100, -250), (-950, -200), angle=180, after=6)
+# key 3, in the battery room: nothing, until you are on the stairs. Then the
+# passage at their head is full of one mancubus, and the cellar comes up behind
+ajarmap.ambush(m, 3, MANCUBUS, (1100, 150), angle=0, after=3)
+ajarmap.ambush(m, 3, DEMON, (1420, 560), (1340, 600), angle=90, after=6)
+# key 4, on the balcony: not the floor below but the gallery across the hall,
+# level with you; and then the floor below
+ajarmap.ambush(m, 4, REVENANT, (-420, 160), (-60, 160), angle=270)
+ajarmap.ambush(m, 4, KNIGHT, (0, -150), angle=180, after=5)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "main" is the forecourt, the call office, the switchroom, the cable passage
