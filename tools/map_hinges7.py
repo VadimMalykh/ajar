@@ -77,7 +77,7 @@ TECHLAMP, CANDELABRA, TORCH_R = 86, 35, 46
 LAMPS = {                                             # what lights the rooms, and where
     TECHLAMP: [(-232, 552), (232, 888),                                              # the hall
                (-232, 1080), (232, 1080), (-176, 1456), (176, 1456),                 # the dome's floor
-               (-424, 2984), (-88, 2984),                                            # the transit house
+               (-424, 2984), (-88, 3080),                                            # the transit house
                (-1608, 664), (-1208, 1000), (-1608, 1064), (-1208, 1400), (-1608, 600), (-1208, 264),   # west wing
                (360, 552), (760, 824), (824, 1016), (1224, 1352)],                   # east wing
     CANDELABRA: [(872, 600), (1176, 600), (872, 904), (1176, 904),                   # the planetarium
@@ -655,7 +655,7 @@ def things(kind, *spots, angle=0, **k):
 
 
 # the road, the passage, the forecourt, the hall, the yard: lamps and nobody
-things(LAMP, (-96, -352), (280, -352), (-96, -32), (96, -32), (-96, 480), (96, 480), (-500, 416), (-1136, 416))
+things(LAMP, (-96, -352), (280, -416), (-96, -32), (96, -32), (-96, 480), (96, 480), (-500, 416), (-1136, 416))
 for kind, spots in LAMPS.items():                                         # indoors: every lamp, and its pool of light
     things(kind, *spots)
 things(20024, (192, 848), angle=200)                                      # the hall's globe

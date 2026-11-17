@@ -2417,13 +2417,20 @@ hand, and no walkthrough test of the whole level yet.** `tools/map_hinges10.py`:
 a town square at night and a bus at its stop. Six doors, all in the puzzle,
 two keys, seven frames (three of them brass), four Stray doors, 9 door actions
 (the secret way out: 11), 1920764 states, none stuck, nothing losable, the
-secret way out included. 143 monsters and 17 that come by ambush, 4 secrets.
+secret way out included. 142 monsters and 17 that come by ambush, 4 secrets.
 `MAP=MAP10 ./run.sh`; MAP09's exit leads here.
 
 Vadim's brief (2026-11-17): the bus; a secret exit in the same place as the
 plain one, built of other colours, PINK one of them, and counted as a secret;
 districts that are the earlier levels; a route board; the square as an arena;
 ambushes; the repainter; lodgers in the bus.
+
+**The repainter comes when it has work** (Vadim, 2026-11-17: standing in the
+square at the start with nothing to paint, it was shot before it did
+anything). It is an ambusher now, cause 20 (`AjarHandler.WorkNear`): it comes
+in a flash once a door it may paint hangs or leans within 700 of its place at
+the stop, and goes to it. Not built: another that comes after the first is
+killed.
 
 **The bus** (`ajarmap.bus`, `tools/gfx_bus.py`). See "Ideas for the next
 levels", 1; the engine questions there are answered.

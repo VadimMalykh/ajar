@@ -283,7 +283,7 @@ things(TORCH_R, (548, 272), (668, 272))
 things(CLIP, (900, 176))
 things(STIM, (1700, 176))
 # 201: an imp in the corner; key 4 is in the bathroom
-things(IMP, R201(216, 216), angle=225)
+things(IMP, R201(180, 180), angle=225)
 things(LAMP, R201(236, 236))
 # 202: the chaingun, and two who were arguing over it
 things(CHAINGUN, R202(128, 184))

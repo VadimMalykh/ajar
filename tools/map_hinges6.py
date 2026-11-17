@@ -531,7 +531,7 @@ things(ZOMBIE, (960, 540), (1300, 560), angle=180)
 things(SERGEANT, (1120, 900), (1300, 800), angle=180)
 things(IMP, (1120, 560), (1280, 640), angle=180)
 things(DEMON, (1100, 740), angle=180)
-things(TORCH_G, (1336, 840), (1336, 936))
+things(TORCH_G, (1336, 840), (1208, 936))
 things(CHAINGUN, (980, 920))
 things(AMMOBOX, (1020, 920))
 things(BERSERK, (1280, 900))                                               # by GREEN: for what is in the cellar

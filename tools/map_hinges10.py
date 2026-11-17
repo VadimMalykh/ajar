@@ -65,7 +65,8 @@ hall and gallery; the cellar; PINK's store (secret: ring its bell). The depot
 BLUE. The depot's gate lets you out to the lane behind the bus, a step down,
 and never in.
 
-Company: a repainter at the stop (it changes where the lines go), lodgers in
+Company: a repainter at the stop (it changes where the lines go; it comes
+only once a door hangs or leans there for it to paint), lodgers in
 the bus's empty frames. What a key or a door brings arrives at the square.
 """
 import os
@@ -419,7 +420,9 @@ ajarmap.door(m, GREEN, 600, 1450 + TY, angle=180)                        # in th
 ajarmap.door(m, VIOLET, -1210, -536, angle=180)                           # in the museum's cellar
 ajarmap.door(m, BLUE, 2020, 1756, angle=180)                              # under the dome
 ajarmap.door(m, PINK, -1300, 616, angle=0)                                # in its store
-m.thing(100, -150, REPAINTER, angle=180)                                   # the repainter: about the stop
+# the repainter is not there at first: it comes in a flash once a door it may
+# paint hangs or leans at the stop (AjarHandler.WorkNear), and goes to it
+m.thing(100, -150, ajarmap.AMBUSH_T, angle=180, args=(20, REPAINTER))
 ajarmap.stray(m, -492, -68, angle=0)                                      # Stray doors: by the bus
 ajarmap.stray(m, -300, 1200 + TY, angle=0)                                # in the theatre's foyer
 ajarmap.stray(m, -740, -80, angle=180)                                    # in the museum's gallery
@@ -442,7 +445,7 @@ def things(kind, *spots, angle=0, **k):
 
 
 # the square: lamps, and those who live in the bus's empty frames
-things(LAMP, (-480, -80), (192, -80), (-480, -608), (192, -608), (480, -80), (-616, 424), (616, 424))
+things(LAMP, (-480, -176), (192, -80), (-480, -608), (192, -608), (480, -80), (-616, 424), (616, 424))
 things(LODGER, (-192, -24), (320, -100), args=(300,))
 things(BONUS, (-128, -200), (-64, -200), (0, -200), (64, -200))
 things(SHOTGUN, (-64, -480))
