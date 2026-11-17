@@ -2810,3 +2810,9 @@ the cellar).
   `MAP=MAP09 ./tools/smoke.sh`: 36 checks. Not played by hand. (Built late:
   docker's store on /data was lost with the failing disk, and docker now
   keeps its data in /var/lib/docker.)
+- **More to shoot with at the start** (Vadim: the kiosk's bell went with the
+  shuffle, and with it the plasma rifle you could have at once): a shotgun,
+  shells and clips on the forecourt's path; the call office's gun is a
+  chaingun, with a box of shells and a box of bullets by the counter; a
+  box of each at the way into the switchroom. Thingcheck 0 problems, smoke
+  36 checks. Not played by hand.
