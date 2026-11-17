@@ -1925,11 +1925,15 @@ class AjarHandler : EventHandler
 			if (th) th.DamageMobj(null, null, 10000, 'None');
 		}
 		if (t == 34) Check("lockedAndBolted", !RoomOpen(301) && !RoomOpen(302) && !RoomOpen(303) && !RoomOpen(305) && !RoomOpen(306));
-		// the start is on the roof: key 1 in its other corner, and down the hole onto the gallery
-		if (t == 30) Check("startsOnRoof", onRoof && have == "-");
-		if (t == 35) Pose(mo, -1290, 410, 320, 270);
-		Forward(mo, t, 40, 12);
-		if (t == 60) Check("haveKey1", Has(mo, 1));
+		// the start is in the forecourt. RED into the call office's frame: the roof,
+		// key 1 in its far corner, and down the hole onto the gallery
+		if (t == 30) Check("startsInForecourt", mo.pos.z == 0 && mo.pos.y < -576 && have == "-");
+		if (t == 35) { Take(mo, 1); FindFrame(101).Activate(mo); Pose(mo, 300, -432, 0, 0); }
+		Forward(mo, t, 40, 25);
+		if (t == 80) Check("onRoof", onRoof && have == "-");
+		if (t == 85) Pose(mo, -1290, 410, 320, 270);
+		Forward(mo, t, 90, 12);
+		if (t == 110) Check("haveKey1", Has(mo, 1));
 		if (t == 115) Pose(mo, -608, 330, 320, 270);
 		Forward(mo, t, 120, 14);
 		if (t == 153) Check("fromRoofOntoGallery", mo.pos.z < 320 && mo.pos.y > 96 && mo.pos.y < 224);
@@ -1947,9 +1951,6 @@ class AjarHandler : EventHandler
 		if (t == 300) Pose(mo, 1428, 790, -128, 90);
 		Forward(mo, t, 305, 12);
 		if (t == 330) Check("haveKey3", Has(mo, 3));
-		// RED into the call office's frame, for later
-		if (t == 334) { Take(mo, 1); FindFrame(101).Activate(mo); }
-		if (t == 337) Check("redHung", have == "-");
 		// keys 2 and 3 open the east wing: YELLOW, where the thief dropped it
 		if (t == 340) { Pose(mo, 730, -168, 0, 0); FindLine(302).Activate(mo, 0, SPAC_Use); }
 		if (t == 380) Check("eastWingOpens", RoomOpen(302));
@@ -2249,7 +2250,7 @@ class AjarHandler : EventHandler
 	void PuttingThroughViews1()
 	{
 		static const double v[] = {
-			0, -768, 0, 90, 0,             // the forecourt, the front door
+			0, -768, 0, 90, 0,             // from the start: the forecourt, the front door
 			600, -780, 0, 45, -20,         // the hole high in the wall: the line
 			-300, -720, 0, 180, 0,         // the kiosk behind its bars
 			0, -520, 0, 90, 0,             // the call office
@@ -2285,7 +2286,7 @@ class AjarHandler : EventHandler
 			-880, 32, 0, 180, 0,           // the canteen
 			-1400, -96, 0, 180, 0,         // the cloakroom
 			-1136, 140, 0, 120, 0,         // the rest room: GREEN, the frame
-			-1280, 860, 320, 315, 0,       // the roof, from the start
+			-928, 860, 320, 270, 0,        // the roof, from RED's far side
 			-700, 600, 320, 135, 0,        // RED's far side
 			-608, 340, 320, 270, 20,       // the hole onto the gallery
 			820, -168, 0, 0, 0,            // the apparatus room
