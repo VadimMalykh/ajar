@@ -159,7 +159,21 @@ map MAP08 "Closing Time"
 // Act 1, level 9 (tools/map_hinges9.py)
 map MAP09 "Putting You Through"
 {
-	next = "MAP09"
+	next = "MAP10"
+	sky1 = "SKY1", 0
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 1, level 10 (tools/map_hinges10.py). Its secret way out (the loop of
+// three doors, PINK one of them) leads to a secret level that is not made
+// yet: until it is, both ways out start this level again.
+map MAP10 "All Change"
+{
+	next = "MAP10"
+	secretnext = "MAP10"
 	sky1 = "SKY1", 0
 	nointermission
 	nojump

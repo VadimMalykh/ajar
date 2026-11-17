@@ -30,12 +30,18 @@ A puzzle is a dict:
                 the search then goes on past that, with the door fixed)
   home_chain    optional dict(frames=[two frame ids], doors=[two colours])
                 (ajarmap.way_through): the level is won when those two doors
-                hang in those two frames, either way round
+                hang in those two frames, either way round. With
+                secret=dict(frame=id, door=colour) (ajarmap.way_longer) there
+                is a longer loop as well, and a secret way out: that door
+                and one of the two in the two frames, the other of the two
+                in the frame `secret` names. It is won too, and lost() says
+                if it can ever be put out of reach
   pool          optional [regions] of the level's stray places, which only a
                 Stray door opens onto (it may also open onto the far side
                 of a coloured door). The Stray doors themselves are not
                 listed: see below
-  only          optional {frame id: colour}: no other door hangs in that frame
+  only          optional {frame id: colour, or a tuple of colours}: no other
+                door hangs in that frame
   dash          optional dict(at=region, to=region, limit=units, legs={(a, b):
                 units}): a way that a lever in `at` opens for a few seconds
                 (ajarmap.shutter). Whatever is carried gets from `at` to `to`
@@ -131,8 +137,9 @@ def _moves(p, state, nailed=False):
         c = hung.get(f)
         if c is not None and f == p.get("home_frame") and c == p.get("home_door"):
             continue                                 # the way out, built: it stays
-        if carried is not None and p.get("only", {}).get(f, carried) != carried:
-            continue                                 # a frame that takes one door only
+        takes = p.get("only", {}).get(f, carried)
+        if carried is not None and carried not in (takes if isinstance(takes, tuple) else (takes,)):
+            continue                                 # a frame that takes one door only, or two
         if c is None and carried is not None:
             yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", f)})
         elif c is not None and bool(nails and region in _zone(p["nailer"], keys)) != nailed:
@@ -169,13 +176,30 @@ def _zone(who, keys):
     return tuple(r if isinstance(r, str) else r[0] for r in z if isinstance(r, str) or r[1] in keys)
 
 
+def _chain(p, s):
+    """0, or the length of the loop of doors that runs through the night
+    room: 2 (the way out) or 3 (the secret one). See home_chain."""
+    chain = p.get("home_chain")
+    if not chain:
+        return 0
+    where = dict(zip(sorted(p["doors"]), s[2]))
+    brass = {("frame", f) for f in chain["frames"]}
+    a, b = chain["doors"]
+    if {where[a], where[b]} == brass:
+        return 2
+    more = chain.get("secret")
+    if more and where[more["door"]] in brass:
+        for x, y in ((a, b), (b, a)):
+            if where[x] in brass and where[y] == ("frame", more["frame"]):
+                return 3
+    return 0
+
+
 def _won(p, s):
     if s[0] == p["goal"]:
         return True
-    chain = p.get("home_chain")
-    if chain:
-        where = dict(zip(sorted(p["doors"]), s[2]))
-        return {where[c] for c in chain["doors"]} == {("frame", f) for f in chain["frames"]}
+    if p.get("home_chain"):
+        return _chain(p, s) > 0
     f = p.get("home_frame")
     if f is None:
         return False
@@ -222,6 +246,7 @@ def _repaint(p, state):
         return
     zone = set(p["repainter"]["zone"])
     brass = {p.get("home_frame")} | set(p.get("home_chain", {}).get("frames", ()))
+    brass.add(p.get("home_chain", {}).get("secret", {}).get("frame"))
     ok = [i for i, loc in enumerate(locs)
           if (loc[0] == "lean" and loc[1] in zone)
           or (loc[0] == "frame" and loc[1] not in brass and p["frames"][loc[1]] in zone)]
@@ -298,6 +323,7 @@ def solve(p):
     # the solution: the thief and the nailer do nothing in it, and no Stray door is used
     dist, prev, back = _search(p, start, False)
     wins = [s for s in dist if _won(p, s)]
+    solve.plain = dist, prev                       # for secret()
     if not wins:
         return None, [], len(dist), []
     best = min(wins, key=dist.get)
@@ -321,6 +347,22 @@ def solve(p):
     return actions, steps, len(dist), stuck
 
 
+def secret(p):
+    """After solve(p): (actions, steps) of the shortest way to the secret way
+    out of a `home_chain` that has one, by the player's moves alone; or
+    (None, [])."""
+    dist, prev = solve.plain
+    ends = [s for s in dist if _chain(p, s) == 3]
+    if not ends:
+        return None, []
+    s = min(ends, key=dist.get)
+    actions, steps = dist[s], []
+    while s in prev:
+        s, what = prev[s]
+        steps.append(what)
+    return actions, steps[::-1]
+
+
 def lost(p):
     """After solve(p): the places and keys that can be lost for good, as
     [(what, a state it cannot be reached from)]. A level where this is empty
@@ -339,6 +381,8 @@ def lost(p):
         regions.add(p["thief"]["zone"])
     tests = [(r, lambda s, r=r: s[0] == r) for r in sorted(regions - {p["goal"]})]
     tests += [(f"key {k}", lambda s, k=k: k in s[3]) for k in sorted(p.get("keys", {}))]
+    if p.get("home_chain", {}).get("secret"):
+        tests.append(("the secret way out", lambda s: _chain(p, s) == 3))
     out = []
     for what, there in tests:
         ok = {s for s in dist if there(s)}
