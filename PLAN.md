@@ -2806,6 +2806,7 @@ the cellar).
   forecourt's watchers are gone.
 - Solver graph: `start="main"`. The autotest takes RED to the call office's
   frame first (`startsInForecourt`, `onRoof`), and `redHung` is gone.
-- **Not built, not solved, not smoke-tested**: docker lost its images at
-  the reboot of 20:13 and no image can be pulled or built (`failed to
-  register layer ... file exists` under /data/docker/image/overlay2/layerdb).
+- Solver: 10 door actions, 1304192 states, 0 stuck, nothing losable.
+  `MAP=MAP09 ./tools/smoke.sh`: 36 checks. Not played by hand. (Built late:
+  docker's store on /data was lost with the failing disk, and docker now
+  keeps its data in /var/lib/docker.)
