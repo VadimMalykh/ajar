@@ -2806,3 +2806,23 @@ second copy, and the eye has no outside to hold on to. The same family:
 3. The inside-out room: how deep the engine draws four doors that see each
    other.
 4. The Pair demo above.
+
+## MAP09: the start is back on the street (2026-11-17)
+
+Vadim, the same day: the roof is not a place to start, and it is very hard
+at once. The rest of the shuffle stays (the keys, the locks, the secrets,
+the cellar).
+
+- **Start**: the forecourt again, at the front door, with nobody about. The
+  call office is the first room and has the shotgun; RED leans there and
+  its far side is on the roof, as before the shuffle.
+- **The roof**: key 1 stays in its corner (the far one from the hole). Who
+  was there before the shuffle is back (imps, sergeants, a chaingunner, two
+  cacodemons, a revenant, a hell knight, lost souls) with the super
+  shotgun, and taking key 1 brings a cacodemon and two imps again. The
+  forecourt's watchers are gone.
+- Solver graph: `start="main"`. The autotest takes RED to the call office's
+  frame first (`startsInForecourt`, `onRoof`), and `redHung` is gone.
+- **Not built, not solved, not smoke-tested**: docker lost its images at
+  the reboot of 20:13 and no image can be pulled or built (`failed to
+  register layer ... file exists` under /data/docker/image/overlay2/layerdb).
