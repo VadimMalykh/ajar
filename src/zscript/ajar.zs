@@ -11,14 +11,21 @@
 //    Hung, it opens onto one of the level's stray places (lines 270..289)
 //    or the far side of a coloured door that hangs nowhere just then,
 //    stays open for 2 to 5 seconds (StrayTics) and is then gone.
-//  * AjarFrame args[4]: 1 if no door but that of args[1] hangs in it.
+//  * AjarFrame args[4]: 1 if no door but that of args[1] hangs in it; 2 if
+//    none but those of args[1] and args[2] (the third frame of a longer
+//    chain, ajarmap.way_longer: it is not a way out by itself).
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
 //    With args[3] the frame is one end of a chain (ajarmap.brass_pair):
 //    args[3] is the other brass frame, args[1] and args[2] the far-side
 //    lines of the two doors that belong in the pair, either way round. Their
 //    far sides are the two ends of the room an AjarLine thing stands in
-//    (ajarmap.way_through); with both hung, leaving that room ends the level.
+//    (ajarmap.way_through); with both hung, walking into that room and out
+//    of it again ends the level. Until then both can be taken down again.
+//    AjarLine args[2], args[3]: a third frame and a third door's far side,
+//    for a longer loop and a secret way out (ajarmap.way_longer; LoopLen).
+//  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
+//    (ajarmap.route_board; BoardTick).
 
 class AjarFrame : Actor
 {
@@ -480,38 +487,130 @@ class AjarHandler : EventHandler
 	}
 
 	// The way out as a chain (Vadim, 2026-11-16): two brass frames in one
-	// room, and two doors whose far sides are the two ends of another. With
-	// both hung, either way round, the two rooms open onto each other
-	// without end; both doors stay, and the level ends when the player,
-	// having walked into that other room, leaves it again (ChainTick).
-	bool chainBuilt, onTheLine;
+	// place, and two doors whose far sides are the two ends of another room
+	// (the line, where an AjarLine thing stands). With both hung, either way
+	// round, the two open onto each other without end.
+	//
+	// Nothing is fixed by that (Vadim, 2026-11-17): a brass frame is a frame
+	// like any other, and either door can be taken down again. Only when the
+	// player walks onto the line through the closed loop do its doors stay,
+	// and leaving the line again ends the level (ChainTick).
+	//
+	// The longer loop (MAP10): the AjarLine's args[2] is a third frame, in a
+	// room that has the far side args[3] of a third door. That door and one of
+	// the two in the brass frames, the other of the two in the third frame: a
+	// loop of three rooms. Closing it is a secret, and leaving the line by it
+	// is the secret way out.
+	bool chainBuilt, onTheLine, longFound;
+	int chainLen;          // 0, or how many rooms the closed loop has: 2 or 3
 
-	bool ChainDoor(AjarFrame f, AjarDoor d) { return d && (d.args[0] == f.args[1] || d.args[0] == f.args[2]); }
-
-	void Chain(AjarDoor d, AjarFrame f)
+	AjarFrame BrassFrame()
 	{
-		AjarFrame o = FindFrame(f.args[3]);
-		if (!o || !o.door || o.door == d || !ChainDoor(f, d) || !ChainDoor(f, o.door)) return;
-		o.door.nailer = o.door;
-		o.door.Show();
-		ComeHome(d);
-		chainBuilt = true;
+		let it = ThinkerIterator.Create("AjarFrame");
+		AjarFrame f;
+		while (f = AjarFrame(it.Next())) if (f.args[3]) return f;
+		return null;
+	}
+
+	int LoopLen(Actor room)
+	{
+		AjarFrame f = BrassFrame();
+		AjarFrame o = f ? FindFrame(f.args[3]) : null;
+		if (!o || !f.door || !o.door || f.door.IsStray() || o.door.IsStray()) return 0;
+		int a = f.args[1], b = f.args[2], x = f.door.args[0], y = o.door.args[0];
+		if ((x == a && y == b) || (x == b && y == a)) return 2;
+		int c = room.args[3];
+		AjarFrame t = room.args[2] ? FindFrame(room.args[2]) : null;
+		if (!t || !t.door || t.door.IsStray() || (x != c && y != c)) return 0;
+		int other = x == c ? y : x, z = t.door.args[0];
+		return (other == a && z == b) || (other == b && z == a) ? 3 : 0;
+	}
+
+	Actor ChainRoom()
+	{
+		let it = ThinkerIterator.Create("AjarLine");
+		return Actor(it.Next());
+	}
+
+	// Is the loop closed, and which? Called when a door is hung (so that what
+	// is said about it is right) and every tic (a repainter can change it).
+	void ChainUpdate()
+	{
+		Actor room = ChainRoom();
+		if (!room || onTheLine) return;
+		chainLen = LoopLen(room);
+		chainBuilt = wayOutBuilt = chainLen > 0;
+		let mo = players[consoleplayer].mo;
+		if (chainLen == 3 && !longFound && mo)
+		{
+			longFound = true;
+			mo.GiveSecret(false, true);
+			if (CVar.GetCVar("ajar_autotest").GetInt())
+				Console.Printf("AJARTEST longLoop secrets=%d/%d", level.found_secrets, level.total_secrets);
+		}
+	}
+
+	// Is d one of the doors of the loop that is closed now?
+	bool InChain(AjarDoor d)
+	{
+		Actor room = ChainRoom();
+		if (!room || !chainLen || !d || !d.frame) return false;
+		return d.frame.args[3] || (chainLen == 3 && d.frame.args[0] == room.args[2]);
 	}
 
 	void ChainTick(Actor mo)
 	{
-		if (!chainBuilt) return;
-		let it = ThinkerIterator.Create("AjarLine");
-		Actor room = Actor(it.Next());
+		Actor room = ChainRoom();
 		if (!room) return;
+		ChainUpdate();
+		if (!chainLen) return;
 		Vector2 d = mo.pos.xy - room.pos.xy;
 		// the mouths are 16 deep: 24 past a wall is through a door, or out by the drop
-		if (abs(d.x) < room.args[0] && abs(d.y) < room.args[1]) onTheLine = true;
+		if (abs(d.x) < room.args[0] && abs(d.y) < room.args[1])
+		{
+			if (onTheLine) return;
+			// on the line, through the loop: now its doors stay
+			onTheLine = true;
+			let di = ThinkerIterator.Create("AjarDoor");
+			AjarDoor o;
+			while (o = AjarDoor(di.Next())) if (InChain(o)) { o.nailer = o; o.Show(); }
+		}
 		else if (onTheLine && (abs(d.x) > room.args[0] + 24 || abs(d.y) > room.args[1] + 24))
 		{
 			onTheLine = false;
-			level.ExecuteSpecial(243 /* Exit_Normal */, mo, null, false, 0);
+			if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST wayOut=%s", chainLen == 3 ? "secret" : "plain");
+			level.ExecuteSpecial(chainLen == 3 ? 244 /* Exit_Secret */ : 243 /* Exit_Normal */, mo, null, false, 0);
 		}
+	}
+
+	// --- the route board of a bus stop (ajarmap.route_board) ------------------
+	// A lamp is a piece of wall with a line id: 600 + a frame's id (it shows
+	// the colour of the door that hangs in that frame, white for a Stray one)
+	// or 800 + a colour (lit while that door hangs anywhere: its far side is a
+	// door of the bus). Its texture is AJR, the door's number, the colour.
+	void Lamp(int id, int c)
+	{
+		let it = level.CreateLineIdIterator(id);
+		int i;
+		while ((i = it.Next()) >= 0)
+		{
+			Side sd = level.lines[i].sidedef[0];
+			string n = TexMan.GetName(sd.GetTexture(Side.mid));
+			if (n.Length() != 5 || n.Left(3) != "AJR") continue;
+			string want = String.Format("%s%d", n.Left(4), c);
+			if (want != n) sd.SetTexture(Side.mid, TexMan.CheckForTexture(want, TexMan.Type_Any));
+		}
+	}
+
+	void BoardTick()
+	{
+		if (level.maptime % 8) return;
+		let fi = ThinkerIterator.Create("AjarFrame");
+		AjarFrame f;
+		while (f = AjarFrame(fi.Next())) Lamp(600 + f.args[0], f.door && f.door.args[1] ? f.door.Colour() : 0);
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next())) if (d.args[1] >= 1 && d.args[1] <= 6) Lamp(800 + d.args[1], d.frame ? d.args[1] : 0);
 	}
 
 	void Hang(AjarDoor d, AjarFrame f)
@@ -523,8 +622,7 @@ class AjarHandler : EventHandler
 			let si = ThinkerIterator.Create("AjarDoor");
 			AjarDoor o;
 			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
-			if (f.args[3]) Chain(d, f);
-			else if (f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
+			if (!f.args[3] && f.args[4] != 2 && f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
 		}
 		Link(f.args[0], d.args[0], FRAME_TEX);
 		Link(d.args[0], f.args[0], d.BackTex());
@@ -544,6 +642,7 @@ class AjarHandler : EventHandler
 			d.angle = VectorAngle(u.x, u.y) + 90;
 		}
 		d.Show();
+		ChainUpdate();
 	}
 
 	AjarDoor Unhang(AjarFrame f)
@@ -555,6 +654,7 @@ class AjarHandler : EventHandler
 		d.frame = null;
 		d.carried = true;
 		d.Hide();
+		ChainUpdate();
 		return d;
 	}
 
@@ -651,7 +751,9 @@ class AjarHandler : EventHandler
 		if (d.IsStray())
 			Say((old ? "You swap the " .. old.Label() .. " door for the STRAY one.\n" : "") ..
 				"The STRAY door opens onto somewhere. It will not stay.");
-		else if (d.nailer == d && chainBuilt)
+		else if (chainLen == 3 && InChain(d))
+			Say("Three doors, three frames: the long way round.\nA secret way out runs through it!");
+		else if (chainLen == 2 && InChain(d))
 			Say("Two doors, two frames, one room at the other end of both.\nThe way out runs through it.");
 		else if (d.nailer == d)
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is the way out.");
@@ -677,7 +779,12 @@ class AjarHandler : EventHandler
 			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
 			return;
 		}
-		if (carried && f.args[4] && carried.args[0] != f.args[1])
+		if (carried && f.args[4] == 2 && carried.args[0] != f.args[1] && carried.args[0] != f.args[2])
+		{
+			Say("This brass frame takes one of two doors only:\nthose that open onto the room with the stars.");
+			return;
+		}
+		if (carried && f.args[4] == 1 && carried.args[0] != f.args[1])
 		{
 			Say("The brass frame takes one door only:\nthe one that opens onto this room.");
 			return;
@@ -729,6 +836,9 @@ class AjarHandler : EventHandler
 	{
 		if (e.IsSaveGame) return;
 		shutterLeft = -1;
+		// the longer loop of a chain (see LoopLen) is one of the level's secrets
+		Actor line = ChainRoom();
+		if (line && line.args[2]) level.total_secrets++;
 
 		// "+set ajar_only N" leaves one kind of Ajar's own monsters in a map.
 		int only = CVar.GetCVar("ajar_only").GetInt();
@@ -954,6 +1064,7 @@ class AjarHandler : EventHandler
 		ShutterTick();
 		let mo = players[consoleplayer].mo;
 		if (mo) ChainTick(mo);
+		BoardTick();
 		if (mo && mo.health > 0) AmbushTick(mo);
 		if (mo) Squeeze(mo);
 		if (mo && mo.health > 0) Followers(mo);
@@ -966,6 +1077,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
+		else if (level.mapname ~== "MAP10" && mode == 3) LongWayScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 4) RepaintScript(mo, t);
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);
@@ -1937,7 +2049,8 @@ class AjarHandler : EventHandler
 		if (t == 125) Check("outByTheHole", mo.pos.z == 0 && mo.pos.y < -576);
 		if (t == 130) { Take(mo, 2); Pose(mo, 700, 432, 0, 0); }
 		if (t == 135) { FindFrame(191).Activate(mo); Check("chainBuilt", wayOutBuilt && chainBuilt && !carried); }
-		if (t == 137) { FindFrame(191).Activate(mo); FindFrame(190).Activate(mo); Check("bothStay", !carried && FindFrame(190).door && FindFrame(191).door); }
+		if (t == 136) { FindFrame(191).Activate(mo); Check("stillOnlyADoor", carried && carried.Label() == "BLUE" && !chainBuilt); }
+		if (t == 137) { FindFrame(191).Activate(mo); Check("chainBuiltAgain", chainBuilt && !carried); }
 		if (t == 140) Pose(mo, 592, 432, 0, 0);          // shot: east down the chain
 		if (t == 200) Pose(mo, 692, 432, 0, 180);        // shot: west
 		if (t == 260) Check("nothingEndsInTheTrunkRoom", !onTheLine);
@@ -1945,7 +2058,107 @@ class AjarHandler : EventHandler
 		Forward(mo, t, 265, 44);                         // through BLUE: onto the line at its west end, and along it
 		if (t == 310) mo.vel.xy = (0, 0);
 		if (t == 315) Check("walkedOntoTheLine", onLine && onTheLine);
+		if (t == 316) Check("nowTheyStay", FindFrame(190).door.nailer && FindFrame(191).door.nailer);
 		Forward(mo, t, 360, 60);                         // out by VIOLET's end
+	}
+
+	// MAP10 mode 3: the two ways out. BLUE in door 6 of the bus and VIOLET in
+	// the shelter: the plain loop, and either can be taken down again. Then
+	// PINK in door 2, VIOLET carried through it into PINK's room and hung
+	// there, PINK brought round to the shelter: the loop of three, a secret.
+	// Onto the line through BLUE and out at its far end: the secret way out.
+	void LongWayScript(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		string have = carried ? carried.Label() : "-";
+		bool onLine = mo.pos.z == 96 && mo.pos.x > 304 && mo.pos.x < 624 && mo.pos.y > -560 && mo.pos.y < -304;
+		bool inPink = mo.pos.z == 144 && mo.pos.x > 96 && mo.pos.x < 416 && mo.pos.y > 720 && mo.pos.y < 976;
+		if (t == 5)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster) a.Destroy();
+			Check("oneSecretMoreThanSectors", level.total_secrets == 4);
+		}
+		if (t == 35) { Take(mo, 2); FindFrame(190).Activate(mo); Check("oneDoorIsOnlyADoor", !carried && !chainLen); }
+		if (t == 40) { Take(mo, 5); FindFrame(191).Activate(mo); Check("plainLoop", !carried && chainLen == 2 && !longFound); }
+		if (t == 45) Pose(mo, 320, -150, 0, 90);         // shot: into door 6, down the chain
+		if (t == 100) { FindFrame(191).Activate(mo); Check("stillOnlyADoor", have == "-" && carried && carried.Label() == "VIOLET" && !chainLen); }
+		if (t == 105) { Pose(mo, -100, -300, 0, 90); DropDoor(carried, mo); carried = null; }
+		if (t == 107) { Take(mo, 6); FindFrame(101).Activate(mo); Check("pinkInDoorTwo", !carried && FindFrame(101).door); }
+		if (t == 110) { Take(mo, 5); Pose(mo, -192, -40, 0, 90); }
+		Forward(mo, t, 112, 16);                         // through PINK, with VIOLET
+		if (t == 135) { mo.vel.xy = (0, 0); Check("inPinksRoomWithViolet", inPink && have == "VIOLET"); }
+		if (t == 136) Check("pinksRoomIsASecret", level.found_secrets == 1);
+		if (t == 140) { FindFrame(192).Activate(mo); Check("violetInPinksRoom", !carried && !chainLen); }
+		if (t == 145) Pose(mo, 200, 848, 144, 180);
+		Forward(mo, t, 146, 20);                         // back out through PINK
+		if (t == 175) { mo.vel.xy = (0, 0); Check("backAtTheStop", mo.pos.z == 0 && mo.pos.y < 0 && mo.pos.y > -640); }
+		if (t == 180) { FindFrame(101).Activate(mo); FindFrame(191).Activate(mo); }
+		if (t == 182) Check("longLoop", !carried && chainLen == 3 && longFound && level.found_secrets == 2);
+		if (t == 185) Pose(mo, 320, -150, 0, 90);        // shot: into door 6, the long way round
+		if (t == 240) Pose(mo, 320, -60, 0, 270);        // shot: into the shelter
+		if (t == 300) { Check("nothingEndsAtTheStop", !onTheLine); Pose(mo, 320, -60, 0, 90); }
+		Forward(mo, t, 302, 20);                         // through BLUE: onto the line
+		if (t == 330) { mo.vel.xy = (0, 0); Check("walkedOntoTheLine", onLine && onTheLine); }
+		if (t == 331) Check("nowTheyStay", FindFrame(190).door.nailer && FindFrame(191).door.nailer && FindFrame(192).door.nailer);
+		Forward(mo, t, 335, 60);                         // and out at its far end: wayOut=secret
+	}
+
+	// MAP10's tour (see PartyWallViews).
+	void AllChangeViews1()
+	{
+		static const double v[] = {
+			-64, -592, 0, 90, 0,           // from the start: the square, the bus
+			-64, -300, 0, 90, 0,           // the bus, nearer
+			-360, -160, 0, 20, 0,          // along the bus from its west end
+			200, -200, 0, 135, 0,          // and from the shelter's corner
+			320, -180, 0, 90, 0,           // from the shelter: door 6, the brass frame
+			320, -40, 0, 270, 0,           // from door 6: the shelter's brass frame
+			300, -128, 0, 0, 0,            // the route board
+			420, -128, 0, 0, 0,            // the route board, close
+			430, -70, 0, 250, -25,         // over the shelter: the hole, the line
+			-288, -560, 0, 270, 0,         // the kiosk behind its bars
+			-250, -368, 0, 180, 0,         // the museum's door: one lock
+			48, -500, 0, 270, -10,         // the stage door, a step up
+			-2944, -380, 0, 90, 0,         // line 1: the hotel's lobby
+			-2700, -40, 0, 225, 0,         // the lobby from its far corner
+			-2640, -208, 0, 0, 0,          // a room: RED
+			-3250, -208, 0, 180, 0,        // the other room
+			1920, -380, 0, 90, 0,          // line 5: the station's concourse
+			1640, -40, 0, 315, 0,          // the concourse from a corner
+			1750, 40, 0, 45, 0,            // the waiting room: YELLOW
+			1560, -208, 0, 180, 0,         // the platform
+			320, -432, 96, 0, 0            // the line
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
+	void AllChangeViews2()
+	{
+		static const double v[] = {
+			-150, -912, 48, 0, 0,          // the theatre: the foyer from RED's far side
+			300, -700, 48, 200, 0,         // the foyer: the stage door, the way in
+			80, -1020, 48, 270, 0,         // the house, the stage
+			400, -1400, 96, 150, 0,        // from the stage
+			240, -1540, 96, 200, 0,        // behind the stage: key 1
+			-560, -368, 0, 180, 0,         // the museum's hall
+			-1130, -160, 0, 315, 0,        // the hall from its far corner: the way down
+			-1220, -400, -128, 180, 0,     // the cellar: its frame
+			-1560, -150, -128, 300, 0,     // the cellar: VIOLET, the stairs
+			-760, 360, 0, 200, 0,          // the gallery
+			-1068, 370, 0, 90, 0,          // PINK's store through its bars
+			-1020, 620, 0, 200, 0,         // PINK's store
+			-320, 230, 48, 90, 0,          // the depot from YELLOW's far side
+			0, 600, 48, 270, 0,            // the bus from behind: doors 7 to 9
+			480, 620, 48, 215, 0,          // the depot from its far corner
+			250, 500, 48, 90, -30,         // the hole from PINK's room
+			120, 848, 144, 0, 0,           // PINK's room: its brass frame
+			400, 760, 144, 160, 0,         // PINK's room: PINK's far side
+			1856, 1020, 0, 90, 0,          // line 9: the observatory's library
+			1700, 1440, 0, 45, -10         // the dome: BLUE
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}
 
 	// MAP09 mode 4: the repainter by itself. GREEN hangs in the switchroom's
@@ -2561,6 +2774,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP07") { SmallHoursViews1(); SmallHoursViews2(); SmallHoursViews3(); }
 			else if (level.mapname ~== "MAP08") { ClosingTimeViews1(); ClosingTimeViews2(); ClosingTimeViews3(); ClosingTimeViews4(); }
 			else if (level.mapname ~== "MAP09") { PuttingThroughViews1(); PuttingThroughViews2(); }
+			else if (level.mapname ~== "MAP10") { AllChangeViews1(); AllChangeViews2(); }
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}

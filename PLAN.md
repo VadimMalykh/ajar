@@ -265,6 +265,25 @@ The first two combine: the door shows the generated warning until you die,
 then shows what really happened to you. The contract needs the most tuning
 and can come later.
 
+### Step out of the fight (Vadim, 2026-11-17: saved, nothing checked)
+
+An idea for the portal into the past, perhaps for the secret level (MAP10's
+secret way out leads to one that is not made yet).
+
+- The player starts a battle. At some point they may leave it through the
+  portal.
+- Outside they mend (health, whatever else is there), go back, and see that
+  same battle from the side, their earlier self in it.
+- At the moment the earlier self left, a new portal opens: through it the
+  player is in the battle again and carries on.
+- It can be done several times. With health low again, out again, and the
+  battle is watched from the start with two earlier selves in it, then
+  three; each time the player comes in where the last one went out.
+
+Not looked at yet: how it sits with "No real rewind" above (it reads as the
+recording played to its end and then handed over, never branched), and what
+a trip costs.
+
 ### Questions to settle
 
 1. Act 5 of Ajar, or its own game (idea 7 in `../IDEAS.md`)? It leans on
@@ -2337,3 +2356,84 @@ irreversible, not built"); Vadim asked for it in MAP09. `AjarRepainter`
   whether it should be seen at work before it may swap, as the thief must be
   seen to take a door down. In MAP09 it only bites when two doors are left
   about the switchroom at once (a second door hung in 102 as a shortcut).
+
+## MAP10 "All Change" (2026-11-17)
+
+Built, solver-proven, its two ways out walked headlessly. **Not played by
+hand, and no walkthrough test of the whole level yet.** `tools/map_hinges10.py`:
+a town square at night and a bus at its stop. Six doors, all in the puzzle,
+two keys, six frames (three of them brass), four Stray doors, 8 door actions
+(the secret way out: 9), 881474 states, none stuck, nothing losable, the
+secret way out included. 102 monsters and 15 that come by ambush, 4 secrets.
+`MAP=MAP10 ./run.sh`; MAP09's exit leads here.
+
+Vadim's brief (2026-11-17): the bus; a secret exit in the same place as the
+plain one, built of other colours, PINK one of them, and counted as a secret;
+districts that are the earlier levels; a route board; the square as an arena;
+ambushes; the repainter; lodgers in the bus.
+
+**The bus** (`ajarmap.bus`, `tools/gfx_bus.py`). See "Ideas for the next
+levels", 1; the engine questions there are answered.
+- It stands in the gateway of the depot and has two faces: doors 1 to 6 from
+  the square, 7 to 9 from the depot. 1 the hotel and 5 the station (lines that
+  always run: fixed doorways), 2 a frame, 3 GREEN's far side, 4 no number (a
+  place Stray doors open onto), 6 a brass frame; 7 YELLOW's far side, 8 a
+  frame, 9 the observatory (always runs).
+- How it is drawn: the bus is no room and no block. Its face is a wall 144
+  high in a strip of pavement whose sky is 144 up, so the engine draws no
+  wall over the doors and the sky shows over the roof; nothing flies over.
+  The faces are 144 apart, the recesses back to back. Six portals in one view
+  draw without trouble (GLES, headless).
+- The route board in the shelter (`ajarmap.route_board`,
+  `AjarHandler.BoardTick`): a lamp for each door of the bus, in the colour of
+  what hangs there or, for a far side, lit while that door hangs anywhere.
+- Districts wear the looks chosen for their levels: hotel (MAP02), station
+  (MAP05), theatre (MAP03), museum (MAP06), observatory (MAP07). The square,
+  the depot and the bus are provisional: a look board is still to come.
+
+**The two ways out.**
+- Plain: MAP09's chain. The brass frames are door 6 of the bus and the one in
+  the shelter facing it; the line hangs over the shelter (BLUE, VIOLET).
+- Secret (`ajarmap.way_longer`, `AjarHandler.LoopLen`): PINK opens onto a room
+  with a brass frame of its own. PINK and one of BLUE and VIOLET at the stop,
+  the other of them in PINK's room: a loop of three rooms. Closing it gives a
+  secret at once (the level counts one more than it has secret sectors), and
+  leaving the line by it is `Exit_Secret`. `secretnext` is MAP10 itself until
+  there is a secret level.
+- PINK's store (ring its bell from the museum's gallery) and PINK's room are
+  secrets as before, so finding the long way round is the level's fourth.
+- **Nothing is fixed when a chain closes** (Vadim, 2026-11-17; MAP09 too). A
+  brass frame is a frame like any other. The loop's doors stay only once the
+  player has walked onto the line through it; leaving the line ends the level.
+- PINK's room's frame takes BLUE and VIOLET only (AjarFrame `args[4]` = 2, in
+  a PUZZLE `only={HOME3: (BLUE, VIOLET)}`). The third exception to "a frame
+  takes any door", after MAP08's.
+- `MAP=MAP10 MODE=3 ./tools/smoke.sh`: 18 checks, both loops, out by the
+  secret one. `MODE=2`: tour, 41 views (`TIMEOUT=400`).
+
+**The level.** "main" is the square, the hotel and the station. RED (hotel)
+opens onto the theatre: GREEN, key 1. YELLOW (station) onto the depot: key 2,
+and line 9 to the observatory, BLUE under its dome (key 2). The museum is on
+the square (key 1): VIOLET in its cellar, which you drop into with what you
+carry and leave by a hole no door fits, so VIOLET leaves through another
+door hung in the cellar's frame; PINK in its store.
+
+Found on the way (the solver):
+- The theatre had no way out but RED. The repainter, or a Stray door, shut
+  the player in. It now stands on the square's south side, a step up, and its
+  stage door lets out and never in.
+- A Stray door can open onto PINK's room with any door in hand. RED or YELLOW
+  hung in that room's frame was gone for good, and the level with it: hence
+  the frame that takes two doors only.
+- The depot's way out was a hole for empty hands. Whoever carried YELLOW in
+  (through PINK's room) had shut the depot, BLUE inside. It is a gate now, a
+  step down, and takes a door through.
+- With six doors the first draft (seven frames, three keys, a locked office)
+  took the solver past ten minutes and 2.5 GB. This one takes two minutes.
+  `tools/build.py` now keeps each level's proof (`build/proofs.json`) until
+  its puzzle or the solver changes.
+
+Open, Vadim's call: 8 door actions is short beside MAP08 and MAP09 (12, 10);
+door 2 is the only plain frame on the square (a second one roughly doubles
+the solver's work); the square is empty until a key or a door brings company
+to it; nothing of this level's fights has been played.
