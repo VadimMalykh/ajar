@@ -3041,6 +3041,6 @@ posters, the halls' light, whether the time door wants a darker surround in
 look 2. Put to Vadim at the foot of the board, none built: seats, lights
 down, a picture on the screen.
 
-Found while shooting, not changed: the closet (6432 to 6560) and the great
-hall's way in (from 6528) overlap by 32 on the map, as they did before the
-looks.
+Found while shooting: the closet and the great hall's way in overlapped by
+32 on the map. The arrow's block and the closet behind the wall it points at
+are now 64 further west (the block at 384 to 448 of the hall).

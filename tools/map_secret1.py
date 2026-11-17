@@ -226,7 +226,7 @@ h2.stock(3, 2012, 2012, 2049, 2046, 2011, 2048)
 # === the great hall: the arrow, the wall that opens, a room key ==============
 h3 = Hall(3, 6016, 0, 1280, 1024, [((256, 256, 320, 384), PLAIN), ((960, 256, 1024, 384), PLAIN),
                                    ((256, 640, 320, 768), PLAIN), ((960, 640, 1024, 768), PLAIN),
-                                   ((448, 448, 512, 512), ARROW), ((768, 448, 832, 576), PLAIN)],
+                                   ((384, 448, 448, 512), ARROW), ((768, 448, 832, 576), PLAIN)],
           ceil=288, last=True)
 ajarmap.doorway(m, 2, h2.on[0], h2.on[1], (0, 1), 0,
                 (h3.cx - 32, -320), (h3.cx + 32, -320), (0, -1), UP)
@@ -238,7 +238,7 @@ spots(2012, (h3.cx + 60, -150))
 spots(2019, (h3.cx, -150))
 # the wall the arrow points at: straight south of its block. It opens with
 # USE, from the hall only; behind it the level's one secret.
-sx = h3.x + 448
+sx = h3.x + 384
 a, b = (sx, 0), (sx + 64, 0)
 c, d = (sx, -16), (sx + 64, -16)
 m.sector([a, b, d, c], floor=0, ceil=0, light=160, ftex="AJTRIMF", ctex="AJTRIMF", id=3399)
@@ -259,7 +259,7 @@ spots(3005, *h3.at((400, 320), (880, 320), (640, 400), (640, 240)))
 spots(69, *h3.at((520, 820), (760, 820), (640, 540)))
 spots(67, *h3.at((160, 700), (1120, 700)))
 ajartime.cue(m, 3, 1, 5, 68, *h3.at((150, 150), (1130, 150)))
-ajartime.cue(m, 3, 1, 5, 69, *h3.at((400, 512), (880, 512), (640, 760)))
+ajartime.cue(m, 3, 1, 5, 69, *h3.at((340, 570), (880, 512), (640, 760)))
 ajartime.cue(m, 3, 1, 5, 58, *h3.at((560, 160), (720, 160), (560, 880), (720, 880), (640, 320)))
 ajartime.cue(m, 3, 2, 4, 3003, *h3.at((400, 400), (880, 400), (640, 860)))
 ajartime.cue(m, 3, 2, 4, 64, *h3.at((640, 620)))

@@ -2230,7 +2230,7 @@ class AjarHandler : EventHandler
 			7340, 548, 64, 180, 12,        // from its east box: the arrow on a block
 			6200, 150, 0, 45, -6,          // the great hall from its floor
 			6656, 900, 0, 270, -8,         // the great hall: the screen
-			6516, -30, 0, 215, 0,          // the secret closet
+			6452, -30, 0, 215, 0,          // the secret closet
 			7070, 1070, 0, 50, 0           // the last lobby: the way out
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
