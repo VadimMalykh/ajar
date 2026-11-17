@@ -125,7 +125,10 @@ def door(colour):
 
 
 DIGITS = {"1": ("010", "110", "010", "010", "111"), "2": ("111", "001", "111", "100", "111"),
-          "3": ("111", "001", "111", "001", "111"), "4": ("101", "101", "111", "001", "001")}
+          "3": ("111", "001", "111", "001", "111"), "4": ("101", "101", "111", "001", "001"),
+          "5": ("111", "100", "111", "001", "111"), "6": ("111", "100", "111", "101", "111"),
+          "7": ("111", "001", "010", "010", "010"), "8": ("111", "101", "111", "101", "111"),
+          "9": ("111", "101", "111", "001", "111"), "0": ("111", "101", "101", "101", "111")}
 DIGITS.update({
     "N": ("10001", "11001", "10101", "10011", "10001"), "O": ("01110", "10001", "10001", "10001", "01110"),
     "V": ("10001", "10001", "10001", "01010", "00100"), "A": ("01110", "10001", "11111", "10001", "10001"),
@@ -847,7 +850,9 @@ def make_all():
     import gfx_exchange                                          # MAP09's candidate looks
     import map_hinges9
     gfx_exchange.make(out, rd, map_hinges9.FACES)
-    import gfx_things                                            # ... and what stands in MAP08's rooms
+    import gfx_bus                                               # MAP10's bus and route board
+    gfx_bus.make(out)
+    import gfx_things                                            # ... and what stands in its rooms
     gfx_things.make(out)
 
     # the same door, locked (ajarmap.roomdoor with keys): one brass lock plate

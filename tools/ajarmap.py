@@ -37,7 +37,9 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     `home` (frames only) is the far-side line id of the door that makes this
     frame a way out: see way_home(). `chain` (frames only) is (the far-side
     line id of the pair's other door, the line id of the other brass frame):
-    see brass_pair(). `only` (frames with `home`): no other door hangs in it.
+    see brass_pair(). `only` (frames with `home`): no other door hangs in it;
+    2: none but the two of `home` and `chain`, and it is no way out by itself
+    (way_longer).
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
     b2 = (m2[0] + out[0] * DEPTH, m2[1] + out[1] * DEPTH)
@@ -216,7 +218,11 @@ LINE_T = 20006      # AjarLine: the middle of the room a chain runs through
 HOME2 = 191         # the second brass frame of a chain
 
 
-def way_through(m, x, y, a, b, *, floor=0):
+HOME3 = 192         # the third frame of a longer chain (way_longer)
+ROSE = 0xFFC0DC     # the tint of PINK's places
+
+
+def way_through(m, x, y, a, b, *, floor=0, longer=None):
     """The way out as a chain (Vadim, 2026-11-16; MAP09 on): this is the room
     at its far end. The night room, 320 by 256 with its south-west corner at
     x, y, and nothing in it but the far sides of two doors: `a` in its west
@@ -236,20 +242,128 @@ def way_through(m, x, y, a, b, *, floor=0):
          ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
     recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far_id(a), HOME, far_colour=a)
     recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, far_id(b), HOME, far_colour=b)
-    m.thing(x + 160, y + 128, LINE_T, args=(160, 128))
+    m.thing(x + 160, y + 128, LINE_T, args=(160, 128) + ((HOME3, far_id(longer)) if longer else ()))
     for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
         m.thing(x + cx, y + cy, 35)                               # candelabra
 
 
-def brass_pair(m, w1, w2, e1, e2, floor, a, b):
+def way_longer(m, x, y, c, a, b, *, floor=0, **base):
+    """The third room of a longer chain, and a secret way out (Vadim,
+    2026-11-17; MAP10). A room 320 by 256 with its south-west corner at x, y:
+    the far side of the door `c` in its west end, an empty brass frame (line
+    id HOME3) in its east end, facing each other down the room. It is the
+    room `c` has always opened onto: a secret (the sector is one), with
+    whatever the caller puts in it. Nothing else leads here.
+
+    The plain way out is way_through()'s loop of two rooms. Hang `c` in one
+    of the brass_pair() frames instead, one of the pair's own doors in the
+    other, and the pair's second door in this room's frame: now three rooms
+    open onto each other without end, this one between the other two.
+    Closing that loop is a secret of its own, and leaving the line by it is
+    the secret way out (AjarHandler.LoopLen). A door comes in here only
+    through `c`, hung somewhere else at the time.
+
+    The frame takes no door but `a` and `b`, the pair's own (AjarFrame
+    args[4] = 2). Any other hung here would be out of reach as soon as `c`
+    is: a Stray door can bring you here with anything in hand, and the
+    solver found levels lost that way. In a PUZZLE graph: only={HOME3: (a, b)}.
+
+    A Stray door may open onto `c`'s far side, so the room needs a way out
+    on foot: the caller's job, as in way_through(). In a PUZZLE graph: `c`'s
+    home, frame HOME3, and home_chain's `secret`."""
+    look = dict(dict(ceil=floor + 160, light=160, wall="AJXW2", ftex="AJXG2", ctex="AJXC2", color=ROSE), **base)
+    for y1, y2, strip in ((y, y + 96, {}), (y + 160, y + 256, {}),
+                          (y + 96, y + 160, dict(ftex="AJXR2", special=1024))):   # one secret: the carpet you arrive on
+        m.sector(rect4(x, y1, x + 320, y2), floor=floor, **dict(look, **strip))
+    recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far_id(c), HOME, far_colour=c, color=ROSE)
+    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, HOME3, far_id(c), trim=("AJXA", "AJXAF"),
+           color=ROSE, home=far_id(a), chain=(far_id(b), 0), only=2)
+
+
+def brass_pair(m, w1, w2, e1, e2, floor, a, b, *, outs=((-1, 0), (1, 0))):
     """The two brass frames of a chain (see way_through), line ids HOME and
     HOME2: w1-w2 is the mouth of the one in a west wall, e1-e2 of the one in
-    an east wall, facing each other across the caller's room. The doors `a`
-    and `b` belong in them, either way round. Until both hang there each can
-    be taken down again like any door."""
+    an east wall, facing each other across the caller's room (`outs`: the
+    two walls' directions, if they are others). The doors `a` and `b` belong
+    in them, either way round; they are frames like any other, and whatever
+    hangs in them can be taken down again."""
     brass = ("AJXA", "AJXAF")
-    recess(m, w1, w2, (-1, 0), floor, HOME, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME2))
-    recess(m, e1, e2, (1, 0), floor, HOME2, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME))
+    recess(m, w1, w2, outs[0], floor, HOME, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME2))
+    recess(m, e1, e2, outs[1], floor, HOME2, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME))
+
+
+BUS_H = 144         # how tall the bus stands
+
+
+def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, free=False, **ground):
+    """One face of the bus (Vadim's idea, 2026-11-16; MAP10): the flat red
+    outline of a bus standing at its stop, 800 long, with room for six
+    openings: one in each of `slots` (0..5, west to east), numbered from
+    `first`. x, y is the west end of the face,
+    which looks south (face=1) or north (-1). Returns the doors' mouths,
+    [(m1, m2), ...]: the caller makes a recess() of each, going into the bus
+    (0, face): a frame, a far side, an end of a doorway(). The bus is 64 deep
+    behind a face, so two faces back to back want 144 between them.
+
+    The bus is not a room and has no roof to stand on: it is a block
+    BUS_H high, with the sky over it. In front of the
+    face is a strip of pavement `deep` wide whose sky is BUS_H up too (that
+    is what keeps the wall over each door from being drawn, and anything
+    from flying over). `ground` is the strip's floor (ftex=, light=...).
+
+    `free` (Vadim, 2026-11-17: a bus you can walk round, as in the film):
+    the strip's ends are open, the caller's ground goes on past them and
+    round the bus, and bus_ends() gives the bus its front and its back.
+    The engine draws sky over a solid block as far up as the sky goes, so
+    nothing that can be seen behind a free bus may stand taller than it:
+    the walls of the place it stands in are BUS_H high (sky at BUS_H)."""
+    y2 = y - face * deep
+    m.sector(rect4(x, min(y, y2), x + 800, max(y, y2)), floor=floor, ceil=floor + BUS_H,
+             **dict(dict(light=170, wall="AJBUS", ctex="F_SKY1"), **ground))
+    mouths = []
+    for i, k in enumerate(slots):
+        a = (x + 48 + 128 * k, y)
+        b = (a[0] + 64, y)
+        m.cut(a, b)
+        m.line(a, b, upper=f"AJBN{first + i}")
+        mouths.append((a, b))
+    m.cut((x + 48, y), (x + 752, y))
+    ends = [((x, y), (x + 48, y)), ((x + 752, y), (x + 800, y))]
+    if not free:
+        ends += [((x, y), (x, y2)), ((x + 800, y), (x + 800, y2))]
+    for a, b in ends:
+        m.line(a, b, mid="AJBUSZ")
+    return mouths
+
+
+def bus_ends(m, x, y):
+    """The front (west) and the back (east) of a free-standing bus whose two
+    faces are bus(x, y, face=1) and bus(x, y + BUS_H, face=-1): 144 wide."""
+    for xx, tex in ((x, "AJBUSF"), (x + 800, "AJBUSR")):
+        m.cut((xx, y), (xx, y + 144))
+        m.line((xx, y), (xx, y + 144), mid=tex)
+
+
+def rect4(x1, y1, x2, y2):
+    return [(x1, y1), (x1, y2), (x2, y2), (x2, y1)]
+
+
+def route_board(m, a, lamps, *, step=(0, 16)):
+    """The route board of a bus stop (MAP10): a row of lamps on a wall, one
+    for each door of the bus, starting at `a` and going on by `step` (16
+    along the wall) for each. A lamp is (number, what): what is a frame's
+    line id (the lamp shows the colour of the door that hangs there), a
+    colour whose far side is that door of the bus (lit while that door
+    hangs somewhere), or None for a line that always runs. The wall must be
+    128 high there (a porch). AjarHandler.BoardTick lights them."""
+    for i, (n, what) in enumerate(lamps):
+        p = (a[0] + step[0] * i, a[1] + step[1] * i)
+        q = (p[0] + step[0], p[1] + step[1])
+        m.cut(p, q)
+        if what is None:
+            m.line(p, q, mid=f"AJR{n}7")
+        else:
+            m.line(p, q, mid=f"AJR{n}0", id=600 + what if what >= 100 else 800 + what)
 
 
 STRAY_ID = 270      # line ids 270..289: the places Stray doors may open onto

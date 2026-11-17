@@ -1,4 +1,6 @@
 """Builds build/ajar.pk3 from src/ plus generated textures and maps."""
+import hashlib
+import json
 import os
 import sys
 import zipfile
@@ -14,29 +16,62 @@ import map_hinges6
 import map_hinges7
 import map_hinges8
 import map_hinges9
+import map_hinges10
 import map_test
 import solve
 
-MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "TEST": map_test}
-
-for name, mod in MAPS.items():
-    if not hasattr(mod, "PUZZLE") or os.environ.get("AJAR_QUICK"):     # AJAR_QUICK=1 ./build.sh: no solver
-        continue
-    actions, steps, seen, stuck = solve.solve(mod.PUZZLE)
-    if actions is None:
-        sys.exit(f"{name}: no solution")
-    print(f"{name}: solvable in {actions} door actions, {seen} states, {len(stuck)} stuck")
-    for s in steps:
-        print("   ", s)
-    if stuck:
-        sys.exit(f"{name}: the player can get stuck, e.g. {stuck[0]}")
-    gone = solve.lost(mod.PUZZLE)
-    print(f"    can be lost for good: {', '.join(w for w, _ in gone) or 'nothing'}")
-    if gone and mod.PUZZLE.get("complete"):
-        sys.exit(f"{name}: {gone[0][0]} can be lost, e.g. from {gone[0][1]}")
+MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "MAP10": map_hinges10, "TEST": map_test}
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
+
+
+def proof(name, puzzle):
+    """What the solver has to say about a level, as lines to print; a level
+    that fails stops the build."""
+    out = []
+    actions, steps, seen, stuck = solve.solve(puzzle)
+    if actions is None:
+        sys.exit(f"{name}: no solution")
+    out.append(f"{name}: solvable in {actions} door actions, {seen} states, {len(stuck)} stuck")
+    out += ["    " + s for s in steps]
+    if puzzle.get("home_chain", {}).get("secret"):
+        n, more = solve.secret(puzzle)
+        if n is None:
+            sys.exit(f"{name}: no way to the secret way out")
+        out.append(f"    the secret way out: {n} door actions")
+        out += ["        " + s for s in more]
+    if stuck:
+        print("\n".join(out))
+        sys.exit(f"{name}: the player can get stuck, e.g. {stuck[0]}")
+    gone = solve.lost(puzzle)
+    out.append(f"    can be lost for good: {', '.join(w for w, _ in gone) or 'nothing'}")
+    if gone and puzzle.get("complete"):
+        print("\n".join(out))
+        sys.exit(f"{name}: {gone[0][0]} can be lost, e.g. from {gone[0][1]}")
+    return out
+
+
+# A proof is kept (build/proofs.json) for as long as neither the level's
+# puzzle nor the solver changes: the later levels take minutes each.
+kept_at = os.path.join(root, "build", "proofs.json")
+try:
+    with open(kept_at) as f:
+        kept = json.load(f)
+except (OSError, ValueError):
+    kept = {}
+with open(solve.__file__, "rb") as f:
+    solver = f.read()
+for name, mod in MAPS.items():
+    if not hasattr(mod, "PUZZLE") or os.environ.get("AJAR_QUICK"):     # AJAR_QUICK=1 ./build.sh: no solver
+        continue
+    key = hashlib.sha1(solver + repr(mod.PUZZLE).encode()).hexdigest()
+    if kept.get(name, {}).get("key") != key:
+        kept[name] = dict(key=key, lines=proof(name, mod.PUZZLE))
+        with open(kept_at, "w") as f:
+            json.dump(kept, f)
+    print("\n".join(kept[name]["lines"]))
+
 out = os.path.join(root, "build", "ajar.pk3")
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
     src = os.path.join(root, "src")
