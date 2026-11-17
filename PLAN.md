@@ -2734,9 +2734,10 @@ shut door, or a picture of what its twin looks out on from where it leans
 - Left out of Stray doors' and the repainter's reckoning. **Not tried with a
   thief, a nailer or a lodger**, and the solver does not know Pairs.
 - `MAP=LAB tools/smoke.sh`: 15 checks (`LabScript`), all pass, and TEST modes
-  1 and 13 and MAP09's chain still do. Run on the host's GZDoom with SDL's
-  offscreen video driver, because docker had lost its images that evening;
-  not run in the `ajar-tools` image, and not played by hand.
+  1 and 13 and MAP09's chain still do (those three on the host's GZDoom
+  with SDL's offscreen video driver, while docker was down; the lab's 15
+  in the `ajar-tools` image as well). Built with `AJAR_QUICK=1`: the solver
+  was not run on this branch. Not played by hand.
 
 Supporting types from the table, for the same levels: One-way (loops that
 run one way round) and Small (a hatch: shots and sight, no walking).
