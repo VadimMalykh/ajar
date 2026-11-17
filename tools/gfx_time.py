@@ -17,6 +17,10 @@ def time_door():
     dark = (40, 36, 30)
     im.disc(32, 26, 12, dark)
     im.disc(32, 26, 10, (250, 248, 240))
+    for hx, hy in ((32, 17), (41, 26), (32, 35), (23, 26)):          # the quarters
+        im.rect(hx - 1, hy - 1, hx + 1, hy + 1, dark)
+    for hx, hy in ((36, 18), (40, 22), (40, 30), (36, 34), (27, 34), (23, 30), (23, 22), (27, 18)):
+        im.set(hx, hy, shade(IVORY, 0.5))
     im.rect(31, 18, 33, 27, dark)             # the long hand, at twelve
     im.rect(24, 25, 33, 27, dark)             # the short hand, at nine
     return im
@@ -43,6 +47,9 @@ def make(out):
             c.rect(19, 3, 21, 53, shade(steel, 0.5))          # two leaves
             c.rect(15, 26, 18, 32, (235, 215, 140))
             c.rect(22, 26, 25, 32, (235, 215, 140))
+            for x in (6, 24):                                 # louvres at the head of each leaf
+                for y in (8, 11, 14):
+                    c.rect(x, y, x + 10, y + 1, shade(steel, 0.6))
             c.noise(5, 31)
         out[f"sprites/AJLK{fr}0.png"] = c.png(grab=(20, 56))
     # the top of a tall block with an arrow on it, pointing south (a flat's top is north)

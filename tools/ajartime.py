@@ -31,14 +31,15 @@ def box_door(m, k, n, a, b, out, floor, **look):
     ajarmap.recess(m, a, b, out, floor, box_line(k, n), hall_line(k, 1), far_colour=TIME, **look)
 
 
-def glass(m, a, b, out, floor, *, sill=8, top=120, thick=16, color=None):
+def glass(m, a, b, out, floor, *, sill=8, top=120, thick=16, color=None, trim=("AJTRIM", "AJTRIMF")):
     """A box's window: a-b is its edge on the hall's wall, `out` points from
     the hall into the box, whose floor is `floor`. Nothing passes it: no
-    walker, no shot, no monster's sight."""
+    walker, no shot, no monster's sight. `trim` is (texture, flat) for its
+    sill, head and sides."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    m.sector([a, b, d, c], floor=floor + sill, ceil=floor + top, light=200, wall="AJTRIM",
-             ftex="AJTRIMF", ctex="AJTRIMF", color=color)
+    m.sector([a, b, d, c], floor=floor + sill, ceil=floor + top, light=200, wall=trim[0],
+             ftex=trim[1], ctex=trim[1], color=color)
     m.line(a, b, blocking=True, blockeverything=True, blocksight=True, blocksound=True)
     m.line(c, d, blocking=True, blocksound=True)
 

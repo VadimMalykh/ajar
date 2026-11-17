@@ -2202,6 +2202,40 @@ class AjarHandler : EventHandler
 		Forward(mo, t, 335, 60);                         // and out at its far end: wayOut=secret
 	}
 
+	// MAP31's tour (see PartyWallViews): the cinema's foyer, its three halls
+	// from the floor and from their boxes, a lobby, the closet.
+	void SecretOneViews()
+	{
+		static const double v[] = {
+			384, -700, 32, 90, 0,          // the foyer from the street doors: the way in, HALL 1
+			420, -592, 32, 180, 0,         // the box office
+			470, -540, 32, 70, 0,          // posters on the north wall
+			300, -400, 32, 315, 0,         // the bench, posters on the east wall
+			384, -420, 32, 270, 0,         // the street doors
+			384, -300, 32, 90, 0,          // the way into hall 1
+			384, -30, 32, 90, 0,           // hall 1 from the step down
+			384, 620, 0, 270, -8,          // hall 1: back at the way in, the screen over it
+			170, 128, 0, 180, 0,           // a time door, close up
+			520, 352, 0, 180, -8,          // hall 1: the west box's glass, a tall block
+			384, 250, 0, 90, -6,           // hall 1's north wall: time door, glass, steel door
+			-40, 388, 64, 0, 12,           // from hall 1's west box, through the glass
+			-40, 430, 64, 200, 0,          // in that box: its door
+			540, 750, 0, 50, 0,            // the lobby behind hall 1's steel door: HALL 2
+			3520, -290, 32, 90, 0,         // the way into hall 2
+			3520, -30, 32, 90, 0,          // hall 2 from the step down
+			3900, 800, 0, 222, -6,         // hall 2 from its far corner
+			3556, 980, 64, 270, 12,        // from hall 2's north box
+			2810, 520, 64, 315, 0,         // in hall 2's west box: the cupboard, the glass
+			6656, -30, 32, 90, 0,          // the great hall from the step down
+			7340, 548, 64, 180, 12,        // from its east box: the arrow on a block
+			6200, 150, 0, 45, -6,          // the great hall from its floor
+			6656, 900, 0, 270, -8,         // the great hall: the screen
+			6516, -30, 0, 215, 0,          // the secret closet
+			7070, 1070, 0, 50, 0           // the last lobby: the way out
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
+
 	// MAP10's tour (see PartyWallViews).
 	void AllChangeViews1()
 	{
@@ -2910,6 +2944,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP08") { ClosingTimeViews1(); ClosingTimeViews2(); ClosingTimeViews3(); ClosingTimeViews4(); }
 			else if (level.mapname ~== "MAP09") { PuttingThroughViews1(); PuttingThroughViews2(); PuttingThroughViews3(); }
 			else if (level.mapname ~== "MAP10") { AllChangeViews1(); AllChangeViews2(); }
+			else if (level.mapname ~== "MAP31") SecretOneViews();
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}

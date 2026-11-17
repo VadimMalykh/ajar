@@ -1255,6 +1255,8 @@ def make_all():
     gfx_square.make(out)
     import gfx_time                                              # the time door (ajartime)
     gfx_time.make(out)
+    import gfx_cinema                                            # MAP31's cinema: three looks
+    gfx_cinema.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)

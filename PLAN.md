@@ -2969,3 +2969,78 @@ handed over, come back to, won; both cupboards), and `MAP=TIME MODE=4
 TIMEOUT=60 tools/smoke.sh` (3 checks: a demon on the player's heels comes
 out into the box and stays out of the fight). Not tested: a save and load
 in the middle of a fight, dying in a box.
+
+## Look: MAP31 (started 2026-11-17)
+
+Board: not published yet (source `design/secret1-board.html`, images in
+`build/board31/`: `<look>/view_NN.jpg`, `tex/` swatches, `sheet_<look>.jpg`
+contact sheets). **Vadim has not chosen.** Look 1 is what the game wears
+meanwhile, so that the level is dressed when it is played. Branch `look31`,
+not merged. Not played by hand.
+
+`AJAR_CINEMA` picks the cinema's look (`tools/gfx_cinema.py`, names
+`AJY<part><look>`); unset is 1, and 0 is the plain level (whose map is byte
+for byte what it was before the looks, checked). Three periods of one town
+cinema:
+1. **Palace** (1930s): halls in burgundy damask between fluted gilt
+   pilasters with a gilt sunburst to a bay, walnut below, a carpet of gold
+   scales, cream coffers with round lamps; the foyer cream over black marble
+   on black and cream marble; curtains in the ways in; buttoned velvet in the
+   boxes; the tall blocks are plinths of black marble; brass round the glass.
+2. **Kino** (1960s): halls in white perforated panels over ash slats under a
+   blue band, boards in red-brown floor paint, a flat white ceiling with
+   square lamps; the foyer whitewash over small blue mosaic on terrazzo, a
+   red runner with green edges; veneer in the ways in; pegboard over ash in
+   the boxes; whitewash over green oil paint in the lobbies; the tall blocks
+   are loudspeaker cabinets; white frames.
+3. **Fleapit** (1980s, run down): halls in hessian gone orange over scuffed
+   brown gloss with water marks, a swirl carpet with gum on it, stained
+   ceiling tiles, strip lights; the foyer yellowed woodchip over
+   wood-effect boards on lino squares, a rubber mat; three stripes in the
+   ways in; cork tiles in the boxes; painted blockwork in the lobbies; the
+   tall blocks are banks of orange plastic seats; brown frames, one pane
+   cracked and taped.
+
+The same in all three, drawn per look: the screen, which hangs over the way
+into each hall (the north box is where a projection box would be) and is
+blank, as the fights are not films; six posters in the foyer of the town's
+other places as films (All Change, Small Hours, Lost Property, After Hours,
+Putting You Through, Party Wall); the box office on the foyer's west wall,
+shut; the street doors behind the start; HALL 1 over the way in and HALL 2,
+HALL 3 over the arches in the lobbies; shelves of film cans in the closet;
+the steel doors let into the wall of each side. The arches keep their stone,
+the way out its sign.
+
+How it is built (`map_secret1.py`): `dress()` gives a sector the look's
+textures, `over()` carries a wall on over an opening. A look changes
+textures, flats and the halls' light (180, 200, 176; it was 190). The foyer
+becomes a `fitted` room with a runner, four lamps, a counter (40 high) and a
+bench (16): the only new shapes, both outside every fight. **Nothing is
+added to a hall or a box and nothing there moves.** The glass has a middle
+texture on its box side (`GL`: a frame, clear inside it; the line's flags are
+as they were) and its own trim (`ajartime.glass(trim=)`). The wall over a
+time door and over and under the glass is the room's own. The piece of the
+great hall's wall that opens wears the wall itself, as before. Hall
+ceilings and look 3's carpet are 128-square flats. The capitals K, W and X
+were added to the lettering.
+
+Touched for every look and for the time box too (`gfx_time.py`): the
+quarters and hours on the time door's clock, louvres on the cupboard. The
+door's ivory, its trim and the arrow flat are as they were; in the looks the
+arrow is on that look's block top (`BA`).
+
+The tour (`SecretOneViews`, `MAP=MAP31 MODE=2`, `smoke_MAP31_2.cfg`) has 25
+views: the foyer, each hall from its floor and from a box, a box, a time
+door, two lobbies, the closet. `tools/board31_shots.sh` builds and shoots
+all four (about 15 minutes), look 1 last, so the pk3 is left as the game is.
+With monsters off the later waves still come (a hall that starts empty has
+already let them in), so some pictures have monsters in them.
+
+Provisional, all of it: what the tall blocks are, the blank screen, the
+posters, the halls' light, whether the time door wants a darker surround in
+look 2. Put to Vadim at the foot of the board, none built: seats, lights
+down, a picture on the screen.
+
+Found while shooting, not changed: the closet (6432 to 6560) and the great
+hall's way in (from 6528) overlap by 32 on the map, as they did before the
+looks.
