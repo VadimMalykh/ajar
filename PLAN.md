@@ -2960,7 +2960,7 @@ said, and no room is built twice:
 doorways: 768 x 704 (10 monsters and 9 in two waves), 1024 x 896 (17 and 15
 in two waves, an arch-vile in the second; the super shotgun before it),
 1280 x 1024 (25 and 27 in three waves, a cyberdemon the last; the plasma
-rifle before it). One secret. Plain walls: its look is still to come.
+rifle before it). One secret. Its look: see "Look: MAP31".
 
 Tests: `MAP=TIME MODE=3 tools/smoke.sh` (the time box, `tools/map_time.py`:
 14 checks, two trips, two earlier selves at once) and `MAP=MAP31 MODE=3
@@ -2972,7 +2972,7 @@ in the middle of a fight, dying in a box.
 
 ## Look: MAP31 (started 2026-11-17)
 
-Board: not published yet (source `design/secret1-board.html`, images in
+Board: https://claude.ai/artifact/MMbK5GrCDRL7CgunkFz8M1 (source `design/secret1-board.html`, images in
 `build/board31/`: `<look>/view_NN.jpg`, `tex/` swatches, `sheet_<look>.jpg`
 contact sheets). **Vadim has not chosen.** Look 1 is what the game wears
 meanwhile, so that the level is dressed when it is played. Branch `look31`,
