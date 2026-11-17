@@ -546,7 +546,8 @@ class AjarTimeHandler : EventHandler
 		}
 		playerWas = mo.pos;
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
-		if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
+		if (mode == 4 && level.mapname ~== "TIME") FollowScript(PlayerPawn(mo));
+		else if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 	}
 
@@ -617,6 +618,38 @@ class AjarTimeHandler : EventHandler
 		if (t == 900) Check("won", phase == IDLE && won.Size() == 1);
 	}
 	double testSum;
+
+	// MAP=TIME MODE=4: the demon is on the player's heels at the east door,
+	// and comes out into the box with them.
+	Actor testDemon;
+	void FollowScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		if (t > 10 && t < 40) mo.vel.xy = (0, 8);
+		if (t == 45)
+		{
+			Go(mo, 700, 320, 0, 0);
+			let it = ThinkerIterator.Create("Demon");
+			testDemon = Actor(it.Next());
+			testDemon.SetOrigin((640, 320, 0), false);
+			testDemon.target = mo;
+		}
+		if (t > 45 && t < 70) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 71) { Check("followed", phase == REPLAY && pending.Size() == 1 && pending[0] == testDemon); Go(mo, -44, 320, 64, 0); }
+		if (t == 110)
+		{
+			int k, b;
+			[k, b] = Where(testDemon.pos.xy);
+			Check("inTheBox", !pending.Size() && b == 1 && !testDemon.bInvisible && testDemon.tics != -1 && fz.Find(testDemon) == fz.Size());
+		}
+		if (t == 170)
+		{
+			int k, b;
+			[k, b] = Where(testDemon.pos.xy);
+			Check("stayedOut", phase == LIVE && b == 1 && testDemon.health > 0);
+		}
+	}
 
 	// MAP31 (tools/map_secret1.py; MAP=MAP31 MODE=3 TIMEOUT=250 tools/smoke.sh):
 	// each hall in turn: in, out by the west door, the fight watched from box

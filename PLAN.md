@@ -2965,6 +2965,7 @@ rifle before it). One secret. Plain walls: its look is still to come.
 Tests: `MAP=TIME MODE=3 tools/smoke.sh` (the time box, `tools/map_time.py`:
 14 checks, two trips, two earlier selves at once) and `MAP=MAP31 MODE=3
 TIMEOUT=250 tools/smoke.sh` (21 checks: each hall begun, left, watched,
-handed over, come back to, won; both cupboards). Not tested: a monster
-following the player out (none was near enough in the scripted runs), a
-save and load in the middle of a fight, dying in a box.
+handed over, come back to, won; both cupboards), and `MAP=TIME MODE=4
+TIMEOUT=60 tools/smoke.sh` (3 checks: a demon on the player's heels comes
+out into the box and stays out of the fight). Not tested: a save and load
+in the middle of a fight, dying in a box.
