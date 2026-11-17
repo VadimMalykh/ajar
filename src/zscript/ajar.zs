@@ -2071,8 +2071,8 @@ class AjarHandler : EventHandler
 	{
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 		string have = carried ? carried.Label() : "-";
-		bool onLine = mo.pos.z == 96 && mo.pos.x > 304 && mo.pos.x < 624 && mo.pos.y > -560 && mo.pos.y < -304;
-		bool inPink = mo.pos.z == 144 && mo.pos.x > 96 && mo.pos.x < 416 && mo.pos.y > 720 && mo.pos.y < 976;
+		bool onLine = mo.pos.z == 64 && mo.pos.x > 304 && mo.pos.x < 624 && mo.pos.y > -560 && mo.pos.y < -304;
+		bool inPink = mo.pos.z == 144 && mo.pos.x > 96 && mo.pos.x < 416 && mo.pos.y > 1072 && mo.pos.y < 1328;
 		if (t == 5)
 		{
 			let it = ThinkerIterator.Create("Actor");
@@ -2091,7 +2091,7 @@ class AjarHandler : EventHandler
 		if (t == 135) { mo.vel.xy = (0, 0); Check("inPinksRoomWithViolet", inPink && have == "VIOLET"); }
 		if (t == 136) Check("pinksRoomIsASecret", level.found_secrets == 1);
 		if (t == 140) { FindFrame(192).Activate(mo); Check("violetInPinksRoom", !carried && !chainLen); }
-		if (t == 145) Pose(mo, 200, 848, 144, 180);
+		if (t == 145) Pose(mo, 200, 1200, 144, 180);
 		Forward(mo, t, 146, 20);                         // back out through PINK
 		if (t == 175) { mo.vel.xy = (0, 0); Check("backAtTheStop", mo.pos.z == 0 && mo.pos.y < 0 && mo.pos.y > -640); }
 		if (t == 180) { FindFrame(101).Activate(mo); FindFrame(191).Activate(mo); }
@@ -2116,20 +2116,20 @@ class AjarHandler : EventHandler
 			320, -180, 0, 90, 0,           // from the shelter: door 6, the brass frame
 			320, -40, 0, 270, 0,           // from door 6: the shelter's brass frame
 			300, -128, 0, 0, 0,            // the route board
-			420, -128, 0, 0, 0,            // the route board, close
+			-620, 72, 0, 0, 0,             // the bus from in front
 			430, -70, 0, 250, -25,         // over the shelter: the hole, the line
 			-288, -560, 0, 270, 0,         // the kiosk behind its bars
 			-250, -368, 0, 180, 0,         // the museum's door: one lock
 			48, -500, 0, 270, -10,         // the stage door, a step up
 			-2944, -380, 0, 90, 0,         // line 1: the hotel's lobby
-			-2700, -40, 0, 225, 0,         // the lobby from its far corner
+			620, 420, 0, 215, 0,           // round the back of the bus, from the lane's corner
 			-2640, -208, 0, 0, 0,          // a room: RED
 			-3250, -208, 0, 180, 0,        // the other room
 			1920, -380, 0, 90, 0,          // line 5: the station's concourse
 			1640, -40, 0, 315, 0,          // the concourse from a corner
 			1750, 40, 0, 45, 0,            // the waiting room: YELLOW
 			1560, -208, 0, 180, 0,         // the platform
-			320, -432, 96, 0, 0            // the line
+			320, -432, 64, 0, 0            // the line
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}
@@ -2149,12 +2149,12 @@ class AjarHandler : EventHandler
 			-760, 360, 0, 200, 0,          // the gallery
 			-1068, 370, 0, 90, 0,          // PINK's store through its bars
 			-1020, 620, 0, 200, 0,         // PINK's store
-			-320, 230, 48, 90, 0,          // the depot from YELLOW's far side
-			0, 600, 48, 270, 0,            // the bus from behind: doors 7 and 8
-			480, 620, 48, 215, 0,          // the depot from its far corner
-			250, 500, 48, 90, -30,         // the hole from PINK's room
-			120, 848, 144, 0, 0,           // PINK's room: its brass frame
-			400, 760, 144, 160, 0,         // PINK's room: PINK's far side
+			0, 620, 48, 90, 0,             // the depot from YELLOW's far side
+			0, 420, 0, 270, 0,             // the bus from behind: doors 7 and 8
+			480, 972, 48, 215, 0,          // the depot from its far corner
+			250, 852, 48, 90, -30,         // the hole from PINK's room
+			120, 1200, 144, 0, 0,          // PINK's room: its brass frame
+			400, 1112, 144, 160, 0,        // PINK's room: PINK's far side
 			1856, 1020, 0, 90, 0,          // line 8: the observatory's library
 			1856, 1440, 0, 90, 20,         // the dome from its ledge: BLUE, the frame
 			1700, 1500, -96, 30, -10       // down in the dome

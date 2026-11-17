@@ -5,6 +5,8 @@ before its board: a dark body, a red outline, a number over each door.
 
 AJBUS    64x144  the body between two doors: a window, the red outline
 AJBUSZ   48x144  an end of the body
+AJBUSF  144x144  its front: the windscreen, the lamps, the number
+AJBUSR  144x144  its back
 AJBNn    64x48   what is over door n (1..9): the number on a destination board
                  (0: a board with nothing on it)
 AJRnc    16x128  the route board's lamp for door n (0..9; 0 is the shelter):
@@ -49,6 +51,41 @@ def make(out):
     _outline(end, 48, left=True, right=True)
     end.noise(4, 102)
     out["textures/AJBUSZ.png"] = end.png()
+
+    front = Img(144, H, BODY)
+    front.rect(0, H - 19, 144, H, (20, 20, 24))
+    front.rect(12, 34, 132, 88, GLASS)                            # the windscreen
+    front.frame(12, 34, 132, 88, RED, 2)
+    front.rect(71, 34, 73, 88, RED)
+    front.rect(12, 44, 132, 45, shade(GLASS, 1.25))
+    front.rect(48, 10, 96, 28, (12, 12, 14))                      # the number
+    front.frame(48, 10, 96, 28, RED, 2)
+    digit(front, "1", 60, 13, CREAM, 2)
+    digit(front, "0", 74, 13, CREAM, 2)
+    for cx in (24, 120):                                          # lamps
+        front.disc(cx, 106, 9, CREAM)
+        front.disc(cx - 2, 104, 4, (255, 250, 230))
+    front.rect(44, 98, 100, 116, (24, 24, 28))                    # the grille
+    for gy in range(101, 116, 4):
+        front.rect(46, gy, 98, gy + 1, (70, 70, 76))
+    _outline(front, 144, left=True, right=True)
+    front.noise(4, 103)
+    out["textures/AJBUSF.png"] = front.png()
+
+    back = Img(144, H, BODY)
+    back.rect(0, H - 19, 144, H, (20, 20, 24))
+    back.rect(28, 40, 116, 78, GLASS)                             # the back window
+    back.frame(28, 40, 116, 78, RED, 2)
+    for cx in (16, 128):                                          # tail lamps
+        back.rect(cx - 5, 96, cx + 5, 116, (200, 30, 26))
+        back.rect(cx - 5, 96, cx + 5, 101, (240, 150, 40))
+    back.rect(40, 92, 104, 118, (24, 24, 28))                     # the engine's cover
+    back.frame(40, 92, 104, 118, (70, 70, 76), 1)
+    for gx in range(46, 100, 6):
+        back.rect(gx, 96, gx + 2, 114, (60, 60, 66))
+    _outline(back, 144, left=True, right=True)
+    back.noise(4, 104)
+    out["textures/AJBUSR.png"] = back.png()
 
     for n in range(10):                                           # 0: a door with no number
         top = Img(64, 48, BODY)

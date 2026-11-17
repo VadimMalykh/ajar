@@ -295,7 +295,7 @@ def brass_pair(m, w1, w2, e1, e2, floor, a, b, *, outs=((-1, 0), (1, 0))):
 BUS_H = 144         # how tall the bus stands
 
 
-def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, **ground):
+def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, free=False, **ground):
     """One face of the bus (Vadim's idea, 2026-11-16; MAP10): the flat red
     outline of a bus standing at its stop, 800 long, with room for six
     openings: one in each of `slots` (0..5, west to east), numbered from
@@ -305,11 +305,18 @@ def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, **ground)
     (0, face): a frame, a far side, an end of a doorway(). The bus is 64 deep
     behind a face, so two faces back to back want 144 between them.
 
-    The bus is not a room and has no roof to stand on: it is a gap in the
-    wall it stands in, BUS_H high, with the sky over it. In front of the
+    The bus is not a room and has no roof to stand on: it is a block
+    BUS_H high, with the sky over it. In front of the
     face is a strip of pavement `deep` wide whose sky is BUS_H up too (that
     is what keeps the wall over each door from being drawn, and anything
-    from flying over). `ground` is the strip's floor (ftex=, light=...)."""
+    from flying over). `ground` is the strip's floor (ftex=, light=...).
+
+    `free` (Vadim, 2026-11-17: a bus you can walk round, as in the film):
+    the strip's ends are open, the caller's ground goes on past them and
+    round the bus, and bus_ends() gives the bus its front and its back.
+    The engine draws sky over a solid block as far up as the sky goes, so
+    nothing that can be seen behind a free bus may stand taller than it:
+    the walls of the place it stands in are BUS_H high (sky at BUS_H)."""
     y2 = y - face * deep
     m.sector(rect4(x, min(y, y2), x + 800, max(y, y2)), floor=floor, ceil=floor + BUS_H,
              **dict(dict(light=170, wall="AJBUS", ctex="F_SKY1"), **ground))
@@ -321,9 +328,20 @@ def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, **ground)
         m.line(a, b, upper=f"AJBN{first + i}")
         mouths.append((a, b))
     m.cut((x + 48, y), (x + 752, y))
-    for a, b in (((x, y), (x + 48, y)), ((x + 752, y), (x + 800, y)), ((x, y), (x, y2)), ((x + 800, y), (x + 800, y2))):
+    ends = [((x, y), (x + 48, y)), ((x + 752, y), (x + 800, y))]
+    if not free:
+        ends += [((x, y), (x, y2)), ((x + 800, y), (x + 800, y2))]
+    for a, b in ends:
         m.line(a, b, mid="AJBUSZ")
     return mouths
+
+
+def bus_ends(m, x, y):
+    """The front (west) and the back (east) of a free-standing bus whose two
+    faces are bus(x, y, face=1) and bus(x, y + BUS_H, face=-1): 144 wide."""
+    for xx, tex in ((x, "AJBUSF"), (x + 800, "AJBUSR")):
+        m.cut((xx, y), (xx, y + 144))
+        m.line((xx, y), (xx, y + 144), mid=tex)
 
 
 def rect4(x1, y1, x2, y2):
