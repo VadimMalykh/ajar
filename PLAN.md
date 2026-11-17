@@ -2643,3 +2643,148 @@ repainter) and the rooms stayed. What moved:
 - Kept on purpose: the seat across the rest room's doorway (Vadim).
 - Solver: 10 door actions, 1304192 states, 0 stuck, nothing losable.
   `MAP=MAP09 ./tools/smoke.sh`: 35 checks. Not played by hand.
+
+## Levels 11 to 30: the institute (2026-11-17, to discuss)
+
+Vadim and Claude, brainstorming while MAP01 to MAP10 are polished. **Nothing
+here is built and nothing has been tried in the engine**; every engine claim
+below is an expectation. Vadim's answers so far: the institute for 11 to 20,
+yes; 21 to 30 carry it on to the reveal; the Pair door to be discussed and
+shown in a demo; all the effects, geometries and time ideas below go on the
+list.
+
+### The place
+
+Not fantasy and not clean science fiction: in a wizard's tower or on a
+starship a portal is expected, and the paradoxes of 1 to 10 work because the
+places are ordinary. So: **a research institute that studies the doors**, in
+the line of the film's Institute of Time (MAP10's bus already points there)
+and of Soviet "institute of magic" fiction. Ordinary corridors, a canteen, a
+pass office, a cloakroom; and labs where the geometry was bent on purpose.
+It gives a reason for machinery (lifts, conveyors, pumps, clocks) and for
+the time doors. Original place and people: nothing lifted from the film or
+the books but the kind of building.
+
+**11 to 20: the institute as it was left.** The player goes through the
+departments, each one a lab for one idea below. What they see is the
+apparatus, not yet the cause.
+
+**21 to 30: how it happened** (Vadim: the paradoxes, the monsters and the
+rest were scientific experiments that went wrong). Claude's suggestions for
+how the reveal can be played and not told, to argue over:
+- The time doors are how the player sees it: a Stale door onto a lab on the
+  day of the experiment, the staff still there.
+- The monsters are what was on the far side of the first door that was ever
+  hung (the plan's Squatters, at the scale of a world).
+- The doors of 1 to 10 (the hotel's, the theatre's, the station's) are found
+  here as specimens, with the frames they were cut from: the town was the
+  field trial.
+- The last levels are the experiment itself, the first frame and the first
+  door, and the player's choice is what hangs in it.
+
+### The Pair door
+
+In the type table since the first day, not built. A plain door has one fixed
+end, so the player chooses half of every link. A Pair is two leaves that lead
+to each other: **the player joins any two frames.** Core rule 1 still holds:
+what a Pair leaf remembers is its twin.
+
+How Claude thinks it should work (proposed, each point open):
+- **Two leaves, one colour**, carried one at a time like any door. Both hung:
+  each frame opens onto the other. One hung, the other leaning, carried or
+  stolen: the hung one is a shut door.
+- **The inchworm** is its basic move. Go through, take down the leaf you came
+  out of, hang it further on: the link now runs from the first frame to the
+  new one. A plain door cannot do this; it is how a Pair crosses a gap or
+  climbs.
+- **Both leaves in one room** make the sights: opposite walls, the endless
+  corridor; walls at a right angle, the pinwheel; side by side, the U-turn.
+  So the Pair is also the player's tool for every effect listed below.
+- **With plain doors** it makes chains whose middle link the player moves.
+- **Company**: a thief with one leaf shuts the link from anywhere; a lodger
+  comes out of either end.
+- Frames only: a leaf does not go in a far side's recess.
+- Engine: the two frame lines target each other (`Line_SetPortalTarget`
+  both ways). To check in the code: that a frame's recess can be the arriving
+  side as a far side's stub is. Solver: a second free end in the state.
+
+Questions for Vadim:
+1. One leaf hung alone: a shut door (proposed), or a view of wherever the
+   twin leans?
+2. One hand as now (proposed: fetching the twin is the puzzle), or are the
+   two leaves carried together as one load?
+3. More than one Pair in a level, a colour each?
+4. Do brass frames (the ones that want a certain door) take a Pair leaf?
+
+**Demo (proposed):** a `MAP=TEST` box, "the lab": one Pair, one plain door,
+frames on opposite walls, on a corner, side by side, on a ledge and across a
+gap. It shows the endless corridor, the pinwheel, the U-turn, the inchworm
+and one chain.
+
+Supporting types from the table, for the same levels: One-way (loops that
+run one way round) and Small (a hatch: shots and sight, no walking).
+
+### Effects (what doors that see their own room can show)
+
+MAP09's way out is hard to read although it is simple, because every opening
+shows the room you are in from another side and the eye has no outside to
+hold on to. The same family:
+- **Inside-out room.** A thin booth in a square, a far side in each of its
+  four faces; the four frames on the four walls of a hall. From the hall you
+  see the square looking north, east, south and west from one point: the
+  hall has no size. The bus is half of this already.
+- **Pinwheel.** A door on the wall at a right angle to its own far side: the
+  room repeats turned, and you see yourself from the side.
+- **Jigsaw wall.** Six far sides side by side in one place, six frames in a
+  row elsewhere. In order, the wall is one wide window; out of order, a
+  scrambled picture. The order can be the lock. To test: whether something
+  wider than one door can pass two neighbouring openings.
+- **Honeycomb and triangle rooms**, and mirrors: in "Ideas for the next
+  levels", 3; still waiting for the slanted-recess and `Line_Mirror` tests.
+- **The model room** (weakest, kept as a note): the generator builds a room
+  a second time at four times the size; a door into it makes you small.
+
+### Geometries the player builds
+
+- **Moving room.** A far side inside a lift car: the door opens onto the car
+  wherever the car is, so the same door leads to another floor after a ride.
+  The other way, a frame in the car carries a far side from floor to floor.
+  To test: a portal line on a sector whose floor moves, and which height
+  alignment `Line_SetPortal` wants for it.
+- **Sight lines.** A switch that can only be shot through a chain of doors
+  the player lines up (shots already cross). The same for monsters: let two
+  groups see each other and they fight.
+- **Bottle.** Lead followers into a loop, step out sideways, take the door:
+  they are shut in a pocket.
+- **Conveyors.** A belt (Doom's scrolling floor) that ends at a frame
+  delivers what it carries, barrels or a weight for a plate, to wherever
+  that door's far side is.
+- **Canal lock.** The door to the reservoir floods the room it is hung in
+  (scripted water level, not real flow); the player floats up to a high
+  frame, and chooses which room.
+- **Train of rooms.** Modules with a far side at one end and a frame at the
+  other: the order of hanging is the order of the rooms along the corridor.
+- **Roundabout.** An ordinary teleporter is a fixed one-way line; with doors
+  for the way back the player closes a circuit that runs one way only.
+- **The arrangement is the map**: in "Ideas for the next levels", 3.
+
+### Time
+
+- **Relay run.** MAP08's 8 seconds, but the way out is too far to run: lay
+  the track of doors first, then pull the lever and run it. Several layouts
+  work, none is the right one.
+- **Metronome.** A fireball going round a closed loop strikes a shoot-switch
+  every lap and holds a timed shutter up; the length of the loop is the
+  beat. To test: a projectile that keeps going round.
+- **Timetable.** Frames behind shutters that open by the clock: a link
+  exists for part of the time, and a route is a set of connections to make.
+- **Step out of the fight**: under "Time doors"; the late or the secret
+  level (MAP10's secret way out still leads to a level that is not made).
+
+### First tests (test box, before any level counts on them)
+
+1. A portal line on a lift's sector.
+2. A projectile circulating in a closed loop.
+3. The inside-out room: how deep the engine draws four doors that see each
+   other.
+4. The Pair demo above.
