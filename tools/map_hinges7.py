@@ -827,9 +827,12 @@ things(CANDLE, (1416, 1784), (1416, 1864))
 # key 3, in the cellar: out of the dark
 ajarmap.ambush(m, 3, SPECTRE, (1000, 1700), (880, 1770), angle=0)
 ajarmap.ambush(m, 3, DEMON, (1060, 1930), angle=0)
-# key 4, in the clock room: the clocks strike
-ajarmap.ambush(m, 4, IMP, (-1300, 300), (-1340, 590), (-1500, 560), angle=180)
-ajarmap.ambush(m, 4, REVENANT, (-1250, 430), angle=180)
+# key 4, in the clock room: the clocks strike, one after another, and each
+# brings somebody worse (Vadim, 2026-11-17: no two ambushes alike)
+ajarmap.ambush(m, 4, IMP, (-1300, 300), angle=180)
+ajarmap.ambush(m, 4, SERGEANT, (-1340, 590), angle=180, after=2)
+ajarmap.ambush(m, 4, CHAINGUNNER, (-1500, 560), angle=180, after=4)
+ajarmap.ambush(m, 4, REVENANT, (-1250, 430), angle=180, after=6)
 
 # The same level as a graph, for tools/solve.py. Keep in step with the above.
 # "grounds" is the gate passage, the forecourt, the hall, the library, the

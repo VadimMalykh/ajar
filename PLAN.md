@@ -2854,3 +2854,31 @@ line can be walked again.
 - `MAP=MAP09 MODE=3`: `theHoleEndsNothing`, `backOnTheLine`, then out by
   VIOLET's end (18 checks). MAP09 mode 1: 36; MAP10 mode 3: 18, the secret
   way out. Not played by hand.
+
+## Ambushes: no two alike (2026-11-17)
+
+Vadim: every ambush was two imps and somebody, on the way back. MAP05 to
+MAP10 are changed; MAP03 and MAP04, the first that have any, are left.
+
+- `ajarmap.ambush(..., after=N)`: a wave that holds back N seconds after the
+  thing is taken (AjarAmbush args[2]), for when the first looked like all.
+- Some now come in the room with you, round the key, not on the way back.
+- **MAP05**: key 1, demons in the signal box with you, then the bridge
+  (revenant, imps) 4 s later; key 3, spectres for the demons, the
+  chaingunner late.
+- **MAP06**: key 1, lost souls round you, then the gallery behind 4 s later.
+- **MAP07**: key 4, the clocks strike in turn: an imp, a sergeant at 2 s, a
+  chaingunner at 4, a revenant at 6.
+- **MAP08**: key 3, lost souls from under the linen, then the way back.
+- **MAP09**: key 1, four lost souls round you on the roof, a cacodemon at
+  4 s; key 2, three spectres among the coats, one in the door, then
+  chaingunners in the canteen at 6 s; key 3, nothing until the stairs: a
+  mancubus fills the passage at 3 s, demons come up behind at 6; key 4,
+  revenants on the gallery across the hall, the hell knight below at 5 s.
+- **MAP10**: GREEN, the revenant 5 s after the imps; key 1, spectres either
+  side of you (an imp fewer in the square); key 2, demons in the depot's
+  corner for the square's revenant.
+- Every ambusher was seen to come in the game: the walkthroughs of MAP05 to
+  MAP09 (8, 11, 7, 11, 16), and for MAP10 a new `MAP=MAP10 MODE=1`, which
+  only hands over both keys (12). Thingcheck: 0 problems. How hard they
+  are now is not tested: not played by hand.

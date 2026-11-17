@@ -210,7 +210,7 @@ def way_round(m, x, y, colour, *, frame=HOME, n=WAY_OUT, floor=0):
 AMBUSH_T = 20030    # AjarAmbush: a monster that is not there yet
 
 
-def ambush(m, cause, kind, *spots, angle=0):
+def ambush(m, cause, kind, *spots, angle=0, after=0):
     """Monsters of Doom editor number `kind` that come in a flash at `spots`
     when the player takes something: `cause` is a room key's number (1..4),
     or 10 plus the colour of a door, taken for the first time. Doom's oldest
@@ -218,10 +218,12 @@ def ambush(m, cause, kind, *spots, angle=0):
     the easier difficulties as placed monsters are (udmf.Map._skills): of a
     level's ambushers, in the order given, every second one stays on 1 and
     three in four on 2. Keep the spots clear of walls and of each other;
-    one whose place is taken waits until it is free."""
+    one whose place is taken waits until it is free. `after`: seconds they
+    hold back once the thing is taken: a second wave, when the first looked
+    like all of it."""
     for x, y in spots:
         i = m.ambushers = getattr(m, "ambushers", -1) + 1
-        m.thing(x, y, AMBUSH_T, angle=angle, args=(cause, kind), skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
+        m.thing(x, y, AMBUSH_T, angle=angle, args=(cause, kind, after), skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
 
 
 LINE_T = 20006      # AjarLine: the middle of the room a chain runs through

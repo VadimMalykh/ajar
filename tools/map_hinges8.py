@@ -797,9 +797,11 @@ things(AMMOBOX, (1410, -30))
 # --- ambushes: what taking a key brings (ajarmap.ambush) ----------------------
 # key 1, on the gallery: up from the atrium, at a man with a rocket launcher
 ajarmap.ambush(m, 1, CACO, (-250, 300), (-250, 640), angle=180)
-# key 3, among the linen
-ajarmap.ambush(m, 3, REVENANT, (560, 740), angle=0)
-ajarmap.ambush(m, 3, IMP, (700, 400), (820, 400), angle=90)
+# key 3, among the linen: what was under the sheets, round you (Vadim,
+# 2026-11-17: no two ambushes alike); and then the way back
+ajarmap.ambush(m, 3, SOUL, (887, 759), (944, 936), (1064, 936), angle=0)
+ajarmap.ambush(m, 3, REVENANT, (560, 740), angle=0, after=4)
+ajarmap.ambush(m, 3, IMP, (700, 400), (820, 400), angle=90, after=4)
 # key 4, in the office: the showroom you are about to jump into
 ajarmap.ambush(m, 4, DEMON, (-100, 1340), (-300, 1340), (-380, 1130), angle=0)
 
