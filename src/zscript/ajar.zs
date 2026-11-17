@@ -29,9 +29,7 @@
 //    its own: args[0] is 0 until both hang, and then it is the line of the
 //    frame the twin hangs in (set in Hang, cleared in Unhang), so that
 //    whatever asks where a hung door leads is told the truth. One leaf hung
-//    alone is a shut door (PairTick).
-//  * AjarPairSwitch (ajarmap.pair_switch): a lever that changes what a leaf
-//    hung alone shows (AjarHandler.pairView).
+//    alone is a shut door: its own face on the frame's line.
 //  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
 //    (ajarmap.route_board; BoardTick).
 
@@ -54,27 +52,6 @@ class AjarFrame : Actor
 	{
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (h) h.UseFrame(self, activator);
-	}
-}
-
-// The lab's lever (ajarmap.pair_switch): see AjarHandler.PairSwitch.
-class AjarPairSwitch : Actor
-{
-	Default
-	{
-		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
-	}
-	States
-	{
-	Spawn:
-		TNT1 A -1;
-		Stop;
-	}
-
-	override void Activate(Actor activator)
-	{
-		let h = AjarHandler(EventHandler.Find("AjarHandler"));
-		if (h) h.PairSwitch();
 	}
 }
 
@@ -920,38 +897,6 @@ class AjarHandler : EventHandler
 		else Say("You pick up the " .. d.Label() .. " door.");
 	}
 
-	// --- the Pair door ------------------------------------------------------
-	// A leaf hung alone is a shut door: its own face on the frame's line. Or,
-	// to try (Vadim, 2026-11-17: build both and see), a picture of what the
-	// twin looks out on from where it leans; nobody walks through a picture.
-	// pairView chooses: 0 the shut door, 1 the picture. A twin that is being
-	// carried shows the shut door either way.
-	int pairView;
-	void PairTick()
-	{
-		let di = ThinkerIterator.Create("AjarDoor");
-		AjarDoor d;
-		while (d = AjarDoor(di.Next()))
-		{
-			if (!d.Shut()) continue;
-			Line l = FindLine(d.frame.args[0]);
-			if (!l) continue;
-			AjarDoor tw = d.Twin();
-			bool picture = pairView && tw && !tw.carried && !tw.frame;
-			string want = picture ? String.Format("AJCAM%d", d.Colour()) : d.BackTex();
-			Side sd = l.sidedef[0];
-			if (TexMan.GetName(sd.GetTexture(Side.mid)) ~== want) continue;
-			sd.SetTexture(Side.mid, TexMan.CheckForTexture(want, TexMan.Type_Any));
-			if (picture) TexMan.SetCameraToTexture(tw, want, 90);
-		}
-	}
-
-	void PairSwitch()
-	{
-		pairView = !pairView;
-		Say(pairView ? "A leaf hung alone now shows\nwhat its twin looks out on, where it leans."
-			: "A leaf hung alone is now a shut door.");
-	}
 
 	// --- events ----------------------------------------------------------
 	override void WorldLoaded(WorldEvent e)
@@ -1182,7 +1127,6 @@ class AjarHandler : EventHandler
 	override void WorldTick()
 	{
 		SelfShots();
-		PairTick();
 		StrayTick();
 		ShutterTick();
 		let mo = players[consoleplayer].mo;
@@ -3569,14 +3513,12 @@ class AjarHandler : EventHandler
 	{
 		AjarDoor a = LabLeaf(8, 0), b = LabLeaf(8, 1);
 		AjarFrame w = FindFrame(111), e = FindFrame(112), c = FindFrame(113), s1 = FindFrame(114), s2 = FindFrame(115), g = FindFrame(116);
-		// 1: one leaf alone is shut; its picture; both hung, the endless corridor
+		// 1: one leaf alone is shut; both hung, the endless corridor
 		if (t == 20) { Pose(mo, 120, 128, 0, 180); a.Used(mo); }
 		if (t == 22) { w.Activate(mo); Check("aloneShut", a.frame == w && a.Shut() && a.bInvisible && !carried && (FindLine(111).flags & Line.ML_BLOCKING)); }
 		if (t == 30) Pose(mo, 200, 128, 0, 180);                       // shot: the shut leaf
-		if (t == 75) { PairSwitch(); Check("picture", pairView == 1); }
-		if (t == 80) Check("pictureTex", TexMan.GetName(FindLine(111).sidedef[0].GetTexture(Side.mid)) ~== "AJCAM8");
-		if (t == 145) { PairSwitch(); b.Used(mo); Check("tookTwin", carried == b); }
-		if (t == 147) Check("shutAgain", TexMan.GetName(FindLine(111).sidedef[0].GetTexture(Side.mid)) ~== "AJDR8");
+		if (t == 145) { b.Used(mo); Check("tookTwin", carried == b); }
+		if (t == 147) Check("stillShut", TexMan.GetName(FindLine(111).sidedef[0].GetTexture(Side.mid)) ~== "AJDR8");
 		if (t == 150) { Pose(mo, 700, 128, 0, 0); e.Activate(mo); Check("linked", a.args[0] == 112 && b.args[0] == 111 && !a.bInvisible && !b.bInvisible && !(FindLine(111).flags & Line.ML_BLOCKING)); }
 		if (t == 155) Pose(mo, 384, 128, 0, 0);                        // shot: the corridor
 		if (t == 215) { Pose(mo, 500, 128, 0, 0); }

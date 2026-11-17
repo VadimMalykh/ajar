@@ -12,7 +12,6 @@ LOCK = {"1": 41, "2": 42, "3": 43, "4": 44, "12": 45, "23": 46, "34": 47}   # sr
 RED, BLUE, GREEN, YELLOW, VIOLET, PINK = 1, 2, 3, 4, 5, 6
 STRAY = 7           # the Stray door: no far side of its own (see stray_place)
 TEAL, ORANGE = 8, 9 # the colours of Pairs (see pair)
-PAIR_T = 20008      # AjarPairSwitch (see pair_switch)
 NAMES = {RED: "RED", BLUE: "BLUE", GREEN: "GREEN", YELLOW: "YELLOW", VIOLET: "VIOLET", PINK: "PINK"}
 DEPTH = 16          # recess depth
 DOOR_H = 96
@@ -81,15 +80,6 @@ def pair(m, colour, *leaves):
     assert len(leaves) == 2 and colour in (TEAL, ORANGE)
     for x, y, angle, *frame in leaves:
         m.thing(x, y, DOOR_T, angle=angle, args=(0, colour, frame[0] if frame else 0, 0, colour))
-
-
-def pair_switch(m, a, b):
-    """A lever on the 64-long wall piece a-b that changes what a Pair leaf
-    hung alone shows: a shut door, or what its twin looks out on. A trial
-    (Vadim, 2026-11-17), for the lab only."""
-    m.cut(a, b)
-    m.line(a, b, special=130, args=(900,), playeruse=True, repeatspecial=True, mid="AJLEVR", exact=True)
-    m.thing((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, PAIR_T, id=900, height=0)
 
 
 def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=None, b_color=None, trim=None):

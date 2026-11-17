@@ -2719,27 +2719,26 @@ ones that take only certain doors: MAP07's way out, MAP09's trunk room).
 **Built: the lab** (`tools/map_lab.py`; `MAP=LAB ./run.sh`). Vadim played it
 (2026-11-17): "all looks great", and the Pair goes into the levels to come.
 **A leaf hung alone is a shut door** (Vadim, 2026-11-17, having tried both:
-"shut door was ok"). The picture is not for the levels; the lab's lever
-and `PairTick`'s camera texture are still there and can go when the lab is
-next touched. Both TEAL leaves and a plain RED door in a hall with
+"shut door was ok"). The other thing tried was a picture of what the twin
+looks out on from where
+it leans (a camera texture, by a lever in the lab): taken out again, lever
+and all, the same day. Both TEAL leaves and a plain RED door in a hall with
 frames 111 west and 112 east (opposite: the endless corridor), 113 south
 (round the corner from 112: the room repeats turned), 114 and 115 south
 (side by side: each turns you round) and 117 (a spare). A gallery too high
 to climb has RED's far side, frame 116, both ORANGE leaves and the way out:
-the rope. A lever on the west wall changes what a leaf hung alone shows: a
-shut door, or a picture of what its twin looks out on from where it leans
-(a camera texture; nobody walks through it; shut while the twin is carried).
+the rope.
 - How it is made: a leaf is an `AjarDoor` with `args[4]` the pair's number
   and colour 8 (TEAL) or 9 (ORANGE). Its `args[0]` is 0 until both hang and
   then the line of the twin's frame, so `Hang` and `Unhang` link frame to
   frame with the code plain doors use, and whatever asks where a hung door
   leads is told the truth. A frame's recess does serve as the arriving side.
-  `ajarmap.pair`, `ajarmap.pair_switch`; `AjarHandler.PairTick`.
+  `ajarmap.pair`.
 - Left out of Stray doors' and the repainter's reckoning. **Not tried with a
   thief, a nailer or a lodger**, and the solver does not know Pairs.
-- `MAP=LAB tools/smoke.sh`: 15 checks (`LabScript`), all pass, and TEST modes
+- `MAP=LAB tools/smoke.sh`: 13 checks (`LabScript`), all pass, and TEST modes
   1 and 13 and MAP09's chain still do (those three on the host's GZDoom
-  with SDL's offscreen video driver, while docker was down; the lab's 15
+  with SDL's offscreen video driver, while docker was down; the lab's
   in the `ajar-tools` image as well). Built with `AJAR_QUICK=1`: the solver
   was not run on the branch.
 

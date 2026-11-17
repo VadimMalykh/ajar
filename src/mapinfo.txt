@@ -13,7 +13,6 @@ DoomEdNums
 	20005 = AjarLodger
 	20006 = AjarLine
 	20007 = AjarRepainter
-	20008 = AjarPairSwitch
 	20030 = AjarAmbush
 	20011 = AjarKey1
 	20012 = AjarKey2

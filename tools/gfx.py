@@ -1251,8 +1251,6 @@ def make_all():
         out[f"flats/AJTF{c}.png"] = t.png()
     # a lever is a switch: it moves when it is used, and Doom gives it a sound
     out["animdefs.txt"] = "".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS)).encode()
-    # what a Pair leaf hung alone may show: the view from its twin (AjarHandler.PairTick)
-    out["animdefs.txt"] += "".join(f"cameratexture AJCAM{c} 256 384 fit 64 96\n" for c in PAIR_COLOURS).encode()
     import gfx_square                                            # MAP10's square, stops and depot
     gfx_square.make(out)
     import ajarmap

@@ -9,8 +9,8 @@ both TEAL leaves, a plain RED door and seven frames:
 The gallery is too high to climb. RED's far side is up there, with frame 116,
 both ORANGE leaves and the way out. Go up by RED with a leaf, hang it in 116,
 drop back down and hang its twin: the hall and the gallery are joined, and
-RED is free again. The lever on the west wall changes what a leaf hung alone
-shows (AjarHandler.PairTick). No solver: nothing here can be lost.
+RED is free again. A leaf hung alone is a shut door. No solver: nothing here
+can be lost.
 """
 import ajarmap
 from ajarmap import RED, TEAL, ORANGE
@@ -39,7 +39,6 @@ frame((0, 320), (0, 384), (-1, 0), 117)
 frame((96, 704), (160, 704), (0, 1), 116, H, UP)
 ajarmap.recess(m, (480, 704), (544, 704), (0, 1), H, 201, 111, far_colour=RED, color=UP)
 m.line((768, 576), (768, 640), special=243, playeruse=True, mid="AJEXIT", exact=True)
-ajarmap.pair_switch(m, (0, 416), (0, 480))
 
 m.thing(384, 300, 1, angle=270)
 ajarmap.pair(m, TEAL, (300, 440, 270), (440, 440, 270))
