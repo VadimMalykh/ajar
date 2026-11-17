@@ -22,6 +22,11 @@ DoomEdNums
 	20022 = AjarProjector
 	20023 = AjarOrrery
 	20024 = AjarGlobe
+	20025 = AjarMannequin
+	20026 = AjarGentleman
+	20027 = AjarRockingHorse
+	20028 = AjarTill
+	20029 = AjarCarpets
 }
 
 clearepisodes

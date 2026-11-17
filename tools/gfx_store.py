@@ -39,7 +39,7 @@ position (Map.align). What stands free in a room repeats every 16.
 """
 import random
 
-from gfx import Img, shade, BRASS, bell, levers
+from gfx import Img, shade, BRASS, bell, levers, text
 import gfx_theatre as th
 import gfx_yard as gy
 import gfx_museum as mu
@@ -120,6 +120,7 @@ LOOKS = {
 ROOMS = {"TY": "ty", "HB": "hb", "FU": "fu", "CH": "ch", "LN": "ln", "CP": "cp"}
 ALIGNED = ("Y", "YA", "YB", "YP", "K", "KA", "L", "A", "H", "GV", "SH", "CO") + tuple(ROOMS)
 SAME = ("AJ8XS", "AJ8XSA", "AJ8XT", "AJ8XP", "AJ8XN", "AJ8XW", "AJ8XL", "AJ6XK", "AJ6XB", "AJ6XC")
+ALWAYS = {"AJ8XJ"}                      # laid by their place in the world in the plain level too
 
 
 def aligned(n):
@@ -918,9 +919,164 @@ def show_door():
     return im
 
 
-def make(out, rd, faces={}):
+IRON = (58, 62, 70)
+
+
+def glazing_bar():
+    """What a glass roof's bars are made of: painted iron."""
+    im = Img(64, 64, IRON)
+    im.noise(4, 1500)
+    for x in range(0, 64, 16):
+        im.rect(x, 0, x + 1, 64, shade(IRON, 1.5))
+        im.rect(x + 15, 0, x + 16, 64, shade(IRON, 0.6))
+    return im
+
+
+def lantern_side():
+    """48: the upright of the atrium's lantern: small panes with the night
+    behind them. It repeats every 16, so it meets itself at any corner."""
+    im = Img(64, 48, GLASS)
+    for y in range(6, 44):
+        for x in range(64):
+            im.set(x, y, shade((34, 42, 70), 0.75 + 0.5 * (44 - y) / 38))
+    r = random.Random(1501)
+    for _ in range(9):
+        im.set(r.randrange(64), r.randrange(8, 40), (190, 196, 220))
+    for x in range(0, 64, 16):
+        im.rect(x, 0, x + 2, 48, shade(IRON, 1.3))
+        im.rect(x + 14, 0, x + 16, 48, shade(IRON, 1.3))
+        im.rect(x + 2, 6, x + 3, 44, shade(IRON, 0.5))
+    im.rect(0, 0, 64, 6, IRON)
+    im.rect(0, 5, 64, 6, shade(IRON, 0.5))
+    im.rect(0, 24, 64, 26, shade(IRON, 1.2))
+    im.rect(0, 44, 64, 48, shade(IRON, 1.5))
+    im.rect(0, 47, 64, 48, shade(IRON, 0.5))
+    return im
+
+
+def gate():
+    """160: the arcade's gate, shut for the night: iron bars with spear heads."""
+    im = Img(64, 160, (0, 0, 0, 0))
+    c = (40, 42, 48)
+    for x in range(3, 64, 8):
+        im.rect(x, 12, x + 2, 160, c)
+        im.rect(x, 12, x + 1, 160, shade(c, 1.7))
+        for i in range(8):                                           # a spear head
+            im.rect(x - (i // 3), 4 + i, x + 2 + (i // 3), 5 + i, GILT if i < 6 else c)
+    for y in (22, 96, 150):
+        im.rect(0, y, 64, y + 4, c)
+        im.rect(0, y, 64, y + 1, shade(c, 1.7))
+    for x in range(7, 64, 16):                                       # scrolls between the rails
+        for dy in range(0, 14):
+            dx = int(3 * (1 - abs(dy - 7) / 7) ** 0.5)
+            im.set(x + dx, 100 + dy, c)
+            im.set(x + 7 - dx, 100 + dy, c)
+    im.rect(0, 0, 2, 160, c)
+    im.rect(62, 0, 64, 160, c)
+    im.rect(26, 84, 38, 96, (70, 72, 80))                            # the lock
+    im.disc(32, 90, 2, BRASS)
+    return im
+
+
+def road():
+    """The street outside the arcade: setts, wet."""
+    r = random.Random(1502)
+    c = (62, 62, 68)
+    im = Img(64, 64, shade(c, 0.6))
+    for j in range(8):
+        for i in range(-1, 6):
+            x = i * 12 + (6 if j % 2 else 0)
+            im.rect(x + 1, j * 8 + 1, x + 12, j * 8 + 8, shade(c, r.uniform(0.85, 1.15)))
+    im.noise(5, 1503)
+    return im
+
+
+def roofs():
+    """The roofs below the store's: slates, in courses."""
+    c = (60, 66, 80)
+    im = Img(64, 64, c)
+    for j in range(8):
+        im.rect(0, j * 8, 64, j * 8 + 1, shade(c, 0.6))
+        for x in range(4 if j % 2 else 0, 64, 8):
+            im.rect(x, j * 8, x + 1, j * 8 + 8, shade(c, 0.75))
+    im.noise(5, 1504)
+    return im
+
+
+def skyline():
+    """256 by 224: the town from the roof: roofs, gables and chimneys against
+    the sky (clear above them), a window lit here and there. Solid in its
+    lower 150 rows."""
+    r = random.Random(1505)
+    im = Img(256, 224, (0, 0, 0, 0))
+    dark = (30, 30, 40)
+    x = 0
+    while x < 256:
+        w = r.choice((24, 32, 40, 48))
+        w = min(w, 256 - x)
+        top = r.randrange(16, 70)
+        c = shade(dark, r.uniform(0.8, 1.25))
+        kind = r.choice(("flat", "gable", "gable", "hip"))
+        for i in range(w):
+            if kind == "gable":
+                lift = int((w / 2 - abs(i - w / 2)) * 0.8)
+            elif kind == "hip":
+                lift = min(i, w - i, 10)
+            else:
+                lift = 0
+            im.rect(x + i, top + 20 - lift, x + i + 1, 224, c)
+        if kind != "flat":
+            im.rect(x, top + 20, x + w, top + 22, shade(c, 1.5))     # the eaves
+        for _ in range(r.randrange(1, 3)):                           # chimneys, with pots
+            cx = x + r.randrange(3, max(4, w - 8))
+            im.rect(cx, top, cx + 6, top + 24, shade(c, 0.8))
+            im.rect(cx - 1, top, cx + 7, top + 2, shade(c, 1.4))
+            im.rect(cx + 1, top - 5, cx + 3, top, (70, 44, 36))
+            im.rect(cx + 4, top - 4, cx + 6, top, (70, 44, 36))
+        for wy in range(top + 34, 200, 26):                          # windows
+            for wx in range(x + 5, x + w - 8, 12):
+                lit = r.random() < 0.13
+                im.rect(wx, wy, wx + 6, wy + 10, LAMP if lit else (16, 18, 28))
+                if lit:
+                    im.rect(wx + 3, wy, wx + 4, wy + 10, shade(LAMP, 0.6))
+        x += w
+    return im
+
+
+SIGN = {"1": (IRONG, GILT, GILT), "2": (SEA, GILT, IVORY), "3": (CHAR, WHITE, CORAL)}     # board, letters, a line
+
+
+def sign(n, lines, w):
+    """A sign hung from a canopy, `w` wide: the first line large, the rest small."""
+    board, ink, rule = SIGN[n]
+    h = 13 + 7 * (len(lines) - 1) + (5 if len(lines) > 1 else 3)
+    im = Img(w, h, board)
+    im.frame(0, 0, w, h, shade(board, 1.6), 1)
+    text(im, lines[0], (w - (12 * len(lines[0]) - 2)) // 2, 3, ink, 2)
+    if len(lines) > 1:
+        im.rect(6, 15, w - 6, 16, rule)
+    for i, line in enumerate(lines[1:]):
+        text(im, line, (w - (6 * len(line) - 1)) // 2, 18 + 7 * i, ink, 1)
+    return im
+
+
+def plate(im, n, lines, bottom):
+    """A small plate on the wall `im`, its foot at row `bottom`: what the room beyond sells."""
+    board, ink, rule = SIGN[n]
+    w = max(6 * len(line) - 1 for line in lines) + 6
+    h = 7 * len(lines) + 4
+    x0, y0 = (64 - w) // 2, bottom - h
+    im.rect(x0, y0, x0 + w, y0 + h, board)
+    im.frame(x0, y0, x0 + w, y0 + h, rule, 1)
+    for i, line in enumerate(lines):
+        text(im, line, (64 - (6 * len(line) - 1)) // 2, y0 + 3 + 7 * i, ink, 1)
+
+
+def make(out, rd, faces={}, signs={}):
     """`rd` is the plain room door (leaf in its bottom 96 rows). `faces` is the
-    door faces the map needs: {(look, kind "D", "Z" or "S", wall tag, shift, keys): texture}."""
+    door faces the map needs: {(look, kind "D", "Z" or "S", wall tag, shift,
+    keys, plate): texture}; kind "O" is the wall over an open way, with its
+    plate. `signs` is its hanging signs: {(look, lines, width): texture}."""
     def both(name, im):
         out[f"textures/{name}.png"] = out[f"flats/{name}.png"] = im.png()
 
@@ -959,6 +1115,13 @@ def make(out, rd, faces={}):
     same["XW"] = tex("AJ8XW", backdrop())
     same["XL"] = tex("AJ8XL", lamps())
     tex("AJ8XD", show_door())
+    both("AJ8XI", glazing_bar())
+    tex("AJ8XJ", lantern_side())
+    tex("AJ8XG", gate())
+    both("AJ8XR", road())
+    both("AJ8XF", roofs())
+    tex("AJ8XH", skyline())
+    tex("AJ8XE", Img(64, 64, (24, 24, 32)))                          # what the town's roofs stand on, in the dark
     tex("AJTARG8", bell(same["XN"], 32, 60))
     for tag in ("XC", "XB", "XK"):                                   # the museum's, made before these
         same[tag] = mu.WALLS[tag]
@@ -993,11 +1156,21 @@ def make(out, rd, faces={}):
                 tex(name(tag, i), shelves(copy_field(walls[tag]), n, tag, i, 1370 + 10 * k + i + sum(map(ord, tag))))
 
         # doors
-        for (look, kind, tag, s, keys), texture in faces.items():
+        for (look, kind, tag, s, keys, lines), texture in faces.items():
             if look != n:
                 continue
+            if kind == "O":                                          # over an open way: the wall, and a plate
+                d = shifted(walls[tag], s)
+                plate(d, n, lines, d.h - 100)
+                tex(texture, d)
+                continue
             d = mu.face(walls[tag], s, leaves[kind], c["wood"] if kind == "D" else (70, 74, 82))
+            if lines:
+                plate(d, n, lines, 140)
             tex(texture, th.locked(d, keys) if keys else d)
+        for (look, lines, w), texture in signs.items():
+            if look == n:
+                tex(texture, sign(n, lines, w))
 
         # what stands in the rooms
         tex(name("RL"), railing(n))

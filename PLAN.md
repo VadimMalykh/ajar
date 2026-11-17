@@ -1796,9 +1796,10 @@ next section.
 
 Board: https://claude.ai/artifact/WMj8oWyQRb9cwQpwjaPf3N (source
 `design/map08-board.html`, images in `build/board8/`: `<look>/view_NN.jpg`
-cut from the tour shots, `tex/` swatches). **Nothing is chosen yet**: without
-`AJAR_STORE` the level is built as before (its map is byte for byte the one
-before this work), and that is the default.
+cut from the tour shots, `tex/` swatches). **Chosen 2026-11-17: 3, Festival,
+for the whole store**, and it is the default; `AJAR_STORE=1` or `2` are the
+other two, `AJAR_STORE=0` the plain textures. The board shows none of what is
+under "MAP08: after hours" below.
 
 `AJAR_STORE=1..3` dresses the whole store in one candidate look
 (`tools/gfx_store.py`): 1 Emporium (1880s: red brick over green cast iron, oak
@@ -1831,10 +1832,37 @@ To shoot again: build with `AJAR_QUICK=1 AJAR_STORE=n`, then `MAP=MAP08 MODE=2
 TIMEOUT=400 EXTRA=-nomonsters tools/smoke.sh <dir>`; the board's pictures were
 cut to 819 by 512 with the `dpokidov/imagemagick` image.
 
-Options that change shape, light or play are at the foot of the board, none
-built: a dim store with pools of light, a glazed lantern, signs over the
-departments, things on the floor (mannequins, a till), a parapet and sky at
-the roof's edge, the arcade as a real arcade or a street.
+## MAP08: after hours (2026-11-17)
+
+The options at the foot of the board, all asked for and all built; they are
+there in looks 0 to 2 as well (signs and plates only in a look). The walkthrough
+reaches the exit and the solver's answer is unchanged (10 door actions). Not
+played by hand.
+
+- **Lights out** (`AJAR_DIM`, on by default; `0` is evenly bright). As MAP07:
+  `LAMPS` is every indoor lamp, `fit()` is `ajarmap.shaped` with `pools()` and
+  `glowing()` (glass counters). The shop window, the kiosk and the caretaker's
+  office (`LIT`) are lit. Monsters on the gallery are harder to see.
+- **Glass roofs** (`glazed()`, features for `fit()`): panes are sectors with
+  the sky 16 above bars of iron (`AJ8XI`). The atrium's lantern stands 48 over
+  the ceiling on an upright of small panes (`AJ8XJ`, laid by world position in
+  every look: `gfx_store.ALWAYS`). The arcade is roofed in iron with two rows
+  of eight panes, kept clear of the porches.
+- **The arcade's east end** is a gate (`AJ8XG`, nothing passes) and beyond it
+  a street running north and south, darker with distance. Nobody gets there.
+- **Signs**: `hung()` hangs one under a porch's edge (the two wings and the
+  goods passage, from the atrium); `plates=` on `door()` and `opening()` puts a
+  small plate over an inner door, on either side. Letters are gfx.py's 5 by 5.
+  `udmf.py`: a wall laid by world position keeps its place over a line that
+  is one picture (`exact`); no other level's map changed by it.
+- **Things** (`gfx_things.py`, actors 20025 to 20029, `AjarExhibit`): two
+  shop's dummies, a rocking horse, a till, rolled carpets. They block nothing.
+  The cash office has a desk for its till (new, 64 by 48 at its north wall).
+- **The roof's edge**: west and north-west the wall is gone. `ajarmap.beyond`
+  lays a parapet 24 high (a blocking line: nothing walks or flies off), the
+  roofs next door 128 below, and the town as a cut-out (`AJ8XH`) against the
+  sky. South, east and the stair head are still wall.
+- The tour has nine more views (66 to 74) for these.
 
 ## MAP07: the dome, the dark, the hill (2026-11-16)
 
