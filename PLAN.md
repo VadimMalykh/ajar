@@ -2726,9 +2726,10 @@ run one way round) and Small (a hatch: shots and sight, no walking).
 
 ### Effects (what doors that see their own room can show)
 
-MAP09's way out is hard to read although it is simple, because every opening
-shows the room you are in from another side and the eye has no outside to
-hold on to. The same family:
+MAP07's way out (`ajarmap.way_round`: four mouths in one room, where every
+other level has two) is hard to read although it is simple, because every
+opening shows the room you are in from another side, with you in every
+second copy, and the eye has no outside to hold on to. The same family:
 - **Inside-out room.** A thin booth in a square, a far side in each of its
   four faces; the four frames on the four walls of a hall. From the hall you
   see the square looking north, east, south and west from one point: the
