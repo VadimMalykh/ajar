@@ -280,6 +280,8 @@ secret way out leads to one that is not made yet).
   battle is watched from the start with two earlier selves in it, then
   three; each time the player comes in where the last one went out.
 
+**Built: see "MAP31".** What follows was the question then.
+
 Not looked at yet: how it sits with "No real rewind" above (it reads as the
 recording played to its end and then handed over, never branched), and what
 a trip costs.
@@ -2489,8 +2491,7 @@ levels", 1; the engine questions there are answered.
   with a brass frame of its own. PINK and one of BLUE and VIOLET at the stop,
   the other of them in PINK's room: a loop of three rooms. Closing it gives a
   secret at once (the level counts one more than it has secret sectors), and
-  leaving the line by it is `Exit_Secret`. `secretnext` is MAP10 itself until
-  there is a secret level.
+  leaving the line by it is `Exit_Secret`, which leads to MAP31 (see "MAP31").
 - PINK's store (ring its bell from the museum's gallery) and PINK's room are
   secrets as before, so finding the long way round is the level's fourth.
 - **Nothing is fixed when a chain closes** (Vadim, 2026-11-17; MAP09 too). A
@@ -2882,3 +2883,88 @@ MAP10 are changed; MAP03 and MAP04, the first that have any, are left.
   MAP09 (8, 11, 7, 11, 16), and for MAP10 a new `MAP=MAP10 MODE=1`, which
   only hands over both keys (12). Thingcheck: 0 problems. How hard they
   are now is not tested: not played by hand.
+
+## MAP31 "This Is Where We Came In" (2026-11-17)
+
+The first secret level, from MAP10's secret way out. Built; its mechanic
+and a walk through all three halls pass headless. **Not played by hand: no
+fight has been fought, and the numbers of monsters and supplies are a first
+guess.** `tools/map_secret1.py`; `MAP=MAP31 ./run.sh`. Its own way out starts
+it again until there is a MAP11. No door to carry, no solver.
+
+Vadim's brief (2026-11-17): the secret level uses "Step out of the fight"
+(under "Time doors"); the Pair is kept for 11 to 20. Settled the same day:
+- A cinema, as a building only. **The fights are not films**: the player
+  really is back before the fight, and nothing is wound, sped up or tinted.
+  The earlier self looks as the player does.
+- The way out of a fight is a fixed door of the game's kind (a clock on it),
+  not one that is carried: two or three round a hall. A carried time door
+  can wait for 21 to 30.
+- Each trip lands in a box of its own, behind glass, with its own supplies:
+  the boxes are the limit (three to a hall), and no earlier self is ever met
+  in the same room. The shared buffet was dropped for that reason.
+- Watching runs at the fight's own speed. The price of the third trip is
+  watching the whole fight so far.
+- Three fights; a trip goes back to the beginning of the fight that is on.
+
+**What the player sees.** Through a time door: the next box, and through
+its glass this hall. Step through and it is before the fight: behind the
+glass the hall is as it was, the earlier self comes in and fights, and the
+earlier watchers stand in their boxes. Top of the screen: how far the fight
+has got and when it was left. At that moment the earlier self goes into the
+door, the box's door opens onto it, and the fight is real again whether the
+player comes or not (monsters that have lost them wander). Back in the hall
+the door shuts, and the hall's doors lead to the next box. After the last
+box they are shut.
+- Where you leave is where you return, with what was after you a step away.
+- What was right behind you (within 150 of the door, after you, small enough
+  for a door, two at most) comes out into the box with you, and is gone from
+  the fight from then on.
+- From a box the hall is seen from above: who comes in later and where, and
+  the tops of the tall blocks (80 high). In the great hall one has an arrow
+  on it, at a piece of the south wall that opens with USE: the secret (BFG).
+- A room key lies at the far end of halls 2 and 3; cupboards in their first
+  two boxes want it (rocket launcher; cells, soulsphere, armour). A box is
+  visited once: no key, no cupboard.
+
+**How it is made** (`src/zscript/time.zs`, `tools/ajartime.py`; the map
+contract is at the top of time.zs). Nothing is rewound, as "No real rewind"
+said, and no room is built twice:
+- While a fight is on, every thing in its zones is recorded each tic it
+  changes: place, angle, sprite, frame (`AjarTrack`).
+- When the player leaves, the real things in the hall are stopped where
+  they are (`tics` -1, no speed, held in place each tic) and hidden, and
+  puppets (`AjarEcho`) play the record from its first tic. At the last tic
+  the puppets stand where the real things do; they are removed and the real
+  ones go on. So the past cannot be changed and there is nothing to merge.
+- What happens in a box while it is watched from is recorded too, as that
+  box's own track from tic 0, and played in later trips: hence the earlier
+  watchers, and a monster that followed someone out.
+- The doors are portal lines as a door's far side is (`AjarHandler.Link`):
+  the hall's lead one way to the next box; after the replay the box's door
+  and the door that was used are joined both ways.
+- The glass stops walkers, shots and monsters' sight.
+- Later monsters are `AjarCue` things in waves: a wave comes when no more
+  than so many are left. The fight is won when no wave and no monster is
+  left; then sector 3090 + 100 x fight opens (a steel door).
+- **Everything that changes in a fight's zones must be a thing.** A door or
+  lift that moved would not be played back. Hence a hall is entered by a
+  step down (32) and its cupboards are things (`AjarLocker`). Known gaps:
+  the secret wall in the great hall is a real door and is seen open in a
+  replay from the start if it was opened; bullet marks on walls are there
+  from the start of a replay; a replay has no sound (the glass).
+- Monsters do not walk through an open time door by themselves (they know
+  only the doors of `AjarSense`); shots do.
+
+**The level.** A foyer (shotgun, chaingun) and three halls joined by fixed
+doorways: 768 x 704 (10 monsters and 9 in two waves), 1024 x 896 (17 and 15
+in two waves, an arch-vile in the second; the super shotgun before it),
+1280 x 1024 (25 and 27 in three waves, a cyberdemon the last; the plasma
+rifle before it). One secret. Plain walls: its look is still to come.
+
+Tests: `MAP=TIME MODE=3 tools/smoke.sh` (the time box, `tools/map_time.py`:
+14 checks, two trips, two earlier selves at once) and `MAP=MAP31 MODE=3
+TIMEOUT=250 tools/smoke.sh` (21 checks: each hall begun, left, watched,
+handed over, come back to, won; both cupboards). Not tested: a monster
+following the player out (none was near enough in the scripted runs), a
+save and load in the middle of a fight, dying in a box.

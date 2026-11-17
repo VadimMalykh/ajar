@@ -545,7 +545,9 @@ class AjarTimeHandler : EventHandler
 			if (++rt >= main.first.Size()) EndReplay();
 		}
 		playerWas = mo.pos;
-		if (CVar.GetCVar("ajar_autotest").GetInt() && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
+		int mode = CVar.GetCVar("ajar_autotest").GetInt();
+		if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 	}
 
 	// How far the fight that is being watched has got, and when the door opens.
@@ -615,4 +617,65 @@ class AjarTimeHandler : EventHandler
 		if (t == 900) Check("won", phase == IDLE && won.Size() == 1);
 	}
 	double testSum;
+
+	// MAP31 (tools/map_secret1.py; MAP=MAP31 MODE=3 TIMEOUT=250 tools/smoke.sh):
+	// each hall in turn: in, out by the west door, the fight watched from box
+	// 1, back in, and the fight won.
+	void SecretScript(PlayerPawn mo)
+	{
+		static const int hx[] = { 0, 3008, 6016 };
+		static const int hw[] = { 768, 1024, 1280 };
+		static const int hh[] = { 704, 896, 1024 };
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d fight=%d at=%d trips=%d rt=%d len=%d recs=%d puppets=%d frozen=%d left=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, phase, fight, at, trips, rt, main ? main.first.Size() : 0, main ? main.slot.Size() : 0, puppets.Size(), fz.Size(), Left());
+		int k = t / 480, u = t % 480;
+		if (k > 2)
+		{
+			if (t == 1440) Check("secrets", level.total_secrets == 1);
+			return;
+		}
+		double x = hx[k], cx = x + hw[k] / 2, cy = hh[k] / 2;
+		string n = String.Format("%d", k + 1);
+		if (u == 1) Go(mo, cx, -60, 32, 90);
+		if (u == 5) Check("begun" .. n, phase == LIVE && fight == k + 1);
+		if (u == 10) Go(mo, cx, 60, 0, 90);
+		if (u == 60 && k) mo.GiveInventoryType(k == 1 ? "AjarKey1" : "AjarKey2");
+		if (u == 80) Go(mo, x + 40, 128, 0, 180);
+		if (u > 80 && u < 100) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (u == 105)
+		{
+			Check("out" .. n, phase == REPLAY && at == 1 && mo.pos.z > 60);
+			Console.Printf("AJARTEST followers=%d", pending.Size());
+			Go(mo, x - 40, cy, 64, 0);          // at the glass
+		}
+		if (u == 150)
+		{
+			Check("watching" .. n, Selves() == 1 && puppets.Size() > 5);
+			let it = ThinkerIterator.Create("AjarLocker");
+			AjarLocker l;
+			while (l = AjarLocker(it.Next())) if (mo.Distance2D(l) < 200)
+			{
+				l.Used(mo);
+				Check("cupboard" .. n, l.frame == 1);
+			}
+		}
+		if (u == 240) { Check("handedOver" .. n, phase == LIVE && at == 1 && !puppets.Size()); Go(mo, x - 200, cy, 64, 180); }
+		if (u > 240 && u < 260) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (u == 265) Check("backIn" .. n, at == 0 && mo.pos.x > x && mo.pos.z < 8);
+		if (u == 266) Go(mo, cx, 40, 0, 90);        // out of the way of what comes in later
+		if (u >= 270 && u <= 430 && u % 20 == 10)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0 && a.Distance2D(mo) < 2000) a.DamageMobj(mo, mo, 100000, 'None');
+		}
+		if (u == 460)
+		{
+			let si = level.CreateSectorTagIterator(3190 + 100 * k);
+			int i = si.Next();
+			Check("won" .. n, phase == IDLE && won.Size() == k + 1 && i >= 0 && level.sectors[i].CenterCeiling() > level.sectors[i].CenterFloor() + 60);
+		}
+	}
 }

@@ -47,7 +47,8 @@ def cue(m, k, wave, when, kind, *spots, angle=0):
     """Monsters of Doom editor number `kind` that come into fight k at
     `spots`, as wave number `wave`, once no more than `when` are left."""
     for x, y in spots:
-        m.thing(x, y, CUE_T, angle=angle, args=(k, wave, when, kind))
+        i = m.cues = getattr(m, "cues", -1) + 1         # thinned on the easier difficulties, as ajarmap.ambush
+        m.thing(x, y, CUE_T, angle=angle, args=(k, wave, when, kind), skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
 
 
 LOCKER_T = 20042

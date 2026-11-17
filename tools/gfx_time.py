@@ -45,3 +45,12 @@ def make(out):
             c.rect(22, 26, 25, 32, (235, 215, 140))
             c.noise(5, 31)
         out[f"sprites/AJLK{fr}0.png"] = c.png(grab=(20, 56))
+    # the top of a tall block with an arrow on it, pointing south (a flat's top is north)
+    ar = Img(64, 64, (150, 146, 138))
+    ar.noise(6, 32)
+    ar.frame(0, 0, 64, 64, (110, 106, 100), 2)
+    red = (190, 40, 30)
+    ar.rect(28, 10, 36, 40, red)
+    for i in range(14):
+        ar.rect(32 - (14 - i), 40 + i, 32 + (14 - i), 41 + i, red)
+    out["flats/AJARROW.png"] = ar.png()
