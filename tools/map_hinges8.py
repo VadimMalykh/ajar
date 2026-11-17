@@ -77,7 +77,7 @@ DIM = (os.environ.get("AJAR_DIM") or "1") != "0"
 CANDLE, CANDELABRA, LAMP, TECHLAMP = 34, 35, 2028, 86
 TORCH_R, TORCH_G, TORCH_B = 46, 45, 55
 LAMPS = {                                             # what lights the rooms, and where
-    TECHLAMP: [(-232, -408), (232, -24),                                             # the lobby
+    TECHLAMP: [(-168, -408), (232, -24),                                             # the lobby
                (-296, -136), (-296, -408),                                           # the cash office
                (-360, 40), (360, 40), (-360, 1016), (488, 1016),                     # the atrium
                (360, 1080), (360, 1416),                                             # the office

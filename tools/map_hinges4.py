@@ -355,7 +355,7 @@ things(CANDELABRA, (4424, 24), (4424, 360))
 things(BARON, (1800, 300), (1700, 130), angle=180, ambush=True)
 things(TORCH_R, (1944, 88), (1944, 392))
 things(MEDIKIT, (1920, 380))
-things(TECHLAMP, (2216, 152), (2216, 328))
+things(TECHLAMP, (2120, 152), (2216, 328))
 # the closet behind the target
 things(SPHERE, (1344, -100))
 things(ROCKETBOX, (1300, -120), (1388, -120))

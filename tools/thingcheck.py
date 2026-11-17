@@ -34,6 +34,14 @@ for name in sys.argv[1:]:
                 sb = sec(b["x"], b["y"])
                 if sa and sb and abs(sa["floor"] - sb["floor"]) < 56:
                     print(name, "STUCK", a["type"], (a["x"], a["y"]), b["type"], (b["x"], b["y"])); bad += 1
+    # a leaning door is taken from in front: no lamp or column may stand in it
+    import ajarmap
+    for d in m.things:
+        if d["type"] != ajarmap.DOOR_T or d["args"][2]: continue
+        for b in m.things:
+            if b["type"] in R and b["type"] not in MON and b["type"] != 1 and \
+               max(abs(d["x"] - b["x"]), abs(d["y"] - b["y"])) < 20 + R[b["type"]] + 12:
+                print(name, "IN A DOOR", b["type"], (b["x"], b["y"]), "door at", (d["x"], d["y"])); bad += 1
     seen = {}
     for t in m.things:
         k = (t["x"], t["y"])

@@ -516,7 +516,7 @@ things(SHOTGUN, (0, -440))
 things(SHELLS, (-40, -400), (40, -400))
 things(BACKPACK, (-256, -450))                                             # left at the counter
 things(STIM, (-350, -500), (350, -340))
-things(TECHLAMP, (-360, -328), (104, -536))
+things(TECHLAMP, (-360, -536), (104, -536))                                 # not where RED leans (it stood in the door)
 # the manager's office: working late, and deaf to the call office
 things(BARON, (-500, -360), angle=0, ambush=True)
 things(KNIGHT, (-620, -520), angle=0, ambush=True)

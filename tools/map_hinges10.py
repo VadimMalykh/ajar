@@ -322,7 +322,7 @@ def things(kind, *spots, angle=0, **k):
 
 
 # the square: lamps, and those who live in the bus's empty frames
-things(LAMP, (-480, -80), (192, -80), (-480, -608), (192, -608), (480, -80), (-616, 424), (616, 424))
+things(LAMP, (-480, -176), (192, -80), (-480, -608), (192, -608), (480, -80), (-616, 424), (616, 424))
 things(LODGER, (-192, -24), (320, -100), args=(300,))
 things(BONUS, (-128, -200), (-64, -200), (0, -200), (64, -200))
 things(SHOTGUN, (-64, -480))
