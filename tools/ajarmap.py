@@ -295,7 +295,7 @@ def brass_pair(m, w1, w2, e1, e2, floor, a, b, *, outs=((-1, 0), (1, 0))):
 BUS_H = 144         # how tall the bus stands
 
 
-def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, free=False, **ground):
+def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, free=False, livery="B", **ground):
     """One face of the bus (Vadim's idea, 2026-11-16; MAP10): the flat red
     outline of a bus standing at its stop, 800 long, with room for six
     openings: one in each of `slots` (0..5, west to east), numbered from
@@ -311,6 +311,8 @@ def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, free=Fals
     is what keeps the wall over each door from being drawn, and anything
     from flying over). `ground` is the strip's floor (ftex=, light=...).
 
+    `livery` is the letter of another bus's textures (gfx_bus.LIVERIES).
+
     `free` (Vadim, 2026-11-17: a bus you can walk round, as in the film):
     the strip's ends are open, the caller's ground goes on past them and
     round the bus, and bus_ends() gives the bus its front and its back.
@@ -319,27 +321,27 @@ def bus(m, x, y, *, face=1, floor=0, first=1, slots=range(6), deep=48, free=Fals
     the walls of the place it stands in are BUS_H high (sky at BUS_H)."""
     y2 = y - face * deep
     m.sector(rect4(x, min(y, y2), x + 800, max(y, y2)), floor=floor, ceil=floor + BUS_H,
-             **dict(dict(light=170, wall="AJBUS", ctex="F_SKY1"), **ground))
+             **dict(dict(light=170, wall=f"AJ{livery}US", ctex="F_SKY1"), **ground))
     mouths = []
     for i, k in enumerate(slots):
         a = (x + 48 + 128 * k, y)
         b = (a[0] + 64, y)
         m.cut(a, b)
-        m.line(a, b, upper=f"AJBN{first + i}")
+        m.line(a, b, upper=f"AJ{livery}N{first + i}")
         mouths.append((a, b))
     m.cut((x + 48, y), (x + 752, y))
     ends = [((x, y), (x + 48, y)), ((x + 752, y), (x + 800, y))]
     if not free:
         ends += [((x, y), (x, y2)), ((x + 800, y), (x + 800, y2))]
     for a, b in ends:
-        m.line(a, b, mid="AJBUSZ")
+        m.line(a, b, mid=f"AJ{livery}USZ")
     return mouths
 
 
-def bus_ends(m, x, y):
+def bus_ends(m, x, y, livery="B"):
     """The front (west) and the back (east) of a free-standing bus whose two
     faces are bus(x, y, face=1) and bus(x, y + BUS_H, face=-1): 144 wide."""
-    for xx, tex in ((x, "AJBUSF"), (x + 800, "AJBUSR")):
+    for xx, tex in ((x, f"AJ{livery}USF"), (x + 800, f"AJ{livery}USR")):
         m.cut((xx, y), (xx, y + 144))
         m.line((xx, y), (xx, y + 144), mid=tex)
 
@@ -721,3 +723,128 @@ def beyond(m, path, steps, *, start=None, end=None):
         lines.append([(off(i, d1), off(i + 1, d1)) for i in range(n - 1)])
         d0 = d1
     return caps, lines
+
+
+def _on(key, a, b):
+    """Whether the edge a-b lies on the line `key` (a frozenset of two points)."""
+    p1, p2 = tuple(key)
+    dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+    for v in (a, b):
+        px, py = v[0] - p1[0], v[1] - p1[1]
+        if dx * py - dy * px != 0 or not 0 <= (px * dx + py * dy) / (dx * dx + dy * dy) <= 1:
+            return False
+    return True
+
+
+def excerpt(m, src, at, dx, dy, *, things=True, small=100000):
+    """A piece of another level, as it stands there (Vadim, 2026-11-17: the
+    places MAP10's bus goes to are the earlier levels, and should read so):
+    everything of the Map `src` that can be walked to and back from the
+    point `at` without a door that is carried, moved by dx, dy (multiples
+    of 64: wall textures are laid by where they are), with its furniture,
+    its windows, its ordinary doors, its monsters and what lies about.
+
+    What is left behind: every frame and far side (their recesses are plain
+    wall again), locked and bolted doors, exits, keys, Ajar's own monsters,
+    secrets, and whatever is only dropped into or come to through a door.
+    Returns the places where a recess was, [(m1, m2, out, floor), ...] in
+    the new map, in the order `src` made them: the caller may make recesses
+    of its own in them (the far end of a doorway(), a stray_place())."""
+    polys, S = src._split(), src.sectors
+
+    def props(a, b):
+        p = src.lineprops.get(frozenset((a, b)))
+        if p is None:
+            p = next((v for k, v in src.lineprops.items() if _on(k, a, b)), {})
+        return p
+
+    def area(p):
+        return abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(p, p[1:] + p[:1]))) / 2
+
+    def inside(x, y, p):
+        hit = False
+        for a, b in zip(p, p[1:] + p[:1]):
+            if (a[1] > y) != (b[1] > y) and x < a[0] + (y - a[1]) * (b[0] - a[0]) / (b[1] - a[1]):
+                hit = not hit
+        return hit
+
+    edge = {(a, b): si for si, p in enumerate(polys) for a, b in zip(p, p[1:] + p[:1])}
+    portal, doors, order = set(), set(), []
+    for (a, b), si in edge.items():
+        special = props(a, b).get("special")
+        if special == 156 and si not in portal:
+            order.append(si)
+        if special == 156:
+            portal |= {si, edge.get((b, a), si)}
+        if special == 12 and S[si]["floor"] == S[si]["ceil"]:
+            doors.add(si)
+    walk = {i: set() for i in range(len(S))}       # both ways on foot
+    near = {i: set() for i in range(len(S))}       # sharing a line
+    for (a, b), si in edge.items():
+        sj = edge.get((b, a))
+        if sj is None or si in portal or sj in portal:
+            continue
+        near[si].add(sj)
+        s, o = S[si], S[sj]
+        top = lambda x, i: x["floor"] + DOOR_H if i in doors else x["ceil"]
+        if (not props(a, b).get("blocking") and abs(o["floor"] - s["floor"]) <= 24
+                and min(top(s, si), top(o, sj)) - max(s["floor"], o["floor"]) >= 56):
+            walk[si].add(sj)
+
+    def spread(start, links, ok=lambda i: True):
+        seen, todo = set(start), list(start)
+        while todo:
+            for j in links[todo.pop()]:
+                if j not in seen and ok(j):
+                    seen.add(j)
+                    todo.append(j)
+        return seen
+
+    first = next(i for i, p in enumerate(polys) if i not in portal and inside(at[0], at[1], p))
+    ground = spread([first], walk)
+    # furniture, sills, what is seen through a window: whatever touches the
+    # ground and is not somewhere to fall into, or a room of its own
+    size = {}
+    def fits(j):
+        if j in portal or (S[j]["floor"] == S[j]["ceil"] and j not in doors):
+            return False
+        if j not in size:
+            whole = spread([j], walk)
+            size.update((k, sum(area(polys[k]) for k in whole)) for k in whole)
+        low = min(S[k]["floor"] for k in near[j] if k in keep) if any(k in keep for k in near[j]) else S[j]["floor"]
+        return size[j] < small and (S[j]["floor"] >= low or S[j]["ceil"] - S[j]["floor"] < 56)
+    keep = set(ground)
+    keep = spread(list(keep), near, fits)
+
+    move = lambda v: (v[0] + dx, v[1] + dy)
+    for i in sorted(keep):
+        m.polys.append([move(v) for v in polys[i]])
+        m.sectors.append(dict(S[i], id=0, special=0))
+    for key, val in src.lineprops.items():
+        p = dict(val)
+        p.pop("id", None)
+        if p.get("special") not in (None, 9, 12):
+            p = {k: p[k] for k in ("blocking", "mid", "midboth") if p.get("blocking") and k in p}
+        if "fit" in p:
+            p["fit"] = (move(p["fit"][0]), p["fit"][1])
+        if p:
+            m.lineprops[frozenset(move(v) for v in key)] = p
+    m.cuts |= {move(v) for v in src.cuts}
+    m.align |= src.align
+    if things:
+        for t in src.things:
+            if t["type"] in (1, 2, 3, 4, 11) or 20001 <= t["type"] <= 20014 or t["type"] == AMBUSH_T:
+                continue
+            if any(inside(t["x"], t["y"], polys[i]) for i in ground):
+                m.things.append(dict(t, x=t["x"] + dx, y=t["y"] + dy))
+    places = []
+    for si in order:                               # a recess: the sector on the room's side of a portal line
+        for a, b in zip(polys[si], polys[si][1:] + polys[si][:1]):
+            sj = edge.get((b, a))
+            if sj in ground:
+                mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+                cx = sum(v[0] for v in polys[si]) / len(polys[si])
+                cy = sum(v[1] for v in polys[si]) / len(polys[si])
+                out = ((cx > mx) - (cx < mx), (cy > my) - (cy < my))
+                places.append((move(a), move(b), out, S[si]["floor"]))
+    return places
