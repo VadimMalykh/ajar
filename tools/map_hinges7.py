@@ -377,7 +377,9 @@ fit((-1168, 448, -1008, 2000), [
     ((-1168, 1408, -1104, 1472), dict(CRATE, floor=48)),
 ], floor=0, light=NIGHT, ftex=PAVE, **BUILT)
 windows(-1168, (960, 1088, 1216, 1536), "y")                                 # the west wing
-# the boiler house: bolted inside, and one of the places a Stray door opens onto
+# the boiler house: bolted inside, and one of the places a Stray door opens onto.
+# A Stray door is luck (Vadim, 2026-11-18: all of the kills and items have to be
+# within reach): a lever in the cellar's alcove draws the bolt too
 m.sector(rect(-1168, -16, -848, 48), ceil=128, light=120, wall=BOILERW, ftex="AJPIT")
 m.sector(rect(-1168, -208, -848, -16), ceil=128, light=120, wall=BOILERW, ftex="AJPIT")
 bolted((-1040, 64), (-976, 64), (0, -1), 0, BOILER, "A", "XB", line_id=305)
@@ -619,6 +621,9 @@ ajarmap.fitted(m, (800, 1632, 1376, 1968), [
 m.sector(rect(1392, 1760, 1536, 1888), floor=CELLAR, ceil=CELLAR + 96, light=120, wall=CAVEW, ftex="AJPIT",
          special=1024)
 squeeze((1376, 1800), (1376, 1848), (1, 0), CELLAR, CELLW, CAVEW)
+m.cut((1424, 1888), (1488, 1888))                                            # in the alcove, beside the hole: the boiler house's lever
+m.line((1424, 1888), (1488, 1888), special=11, args=(BOILER, 32), playeruse=True, mid="AJ6LVG" if LOOK else "AJLEVR",
+       exact=True)
 
 # --- doors and keys ----------------------------------------------------------
 m.thing(0, -768, 1, angle=90)                                             # player start, on the road

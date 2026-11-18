@@ -43,7 +43,8 @@ furniture (GREEN, a frame). East wing (key 2): china (key 3), linen, carpets
 Secrets: the shop window (the cash office's lever, or a Stray door); the
 kiosk in the arcade (shoot its bell through the bars); the lamp store behind
 the carpets (a squeeze; PINK and a frame) and beyond its bars the strongroom
-(PINK's far side); an alcove off the stockroom.
+(PINK's far side); an alcove off the stockroom, with a lever in it that
+draws the boiler room's bolt (otherwise only a Stray door leads there).
 """
 import os
 
@@ -487,13 +488,18 @@ m.sector(rect(1056, 1120, 1120, 1264), ceil=128, light=150, **PASSAGE)
 m.sector(rect(1200, 1680, 1344, 1808), floor=PIT, ceil=PIT + 96, light=120, wall=ALCOVEW, ftex="AJPIT",
          special=1024)
 squeeze((1184, 1720), (1184, 1768), (1, 0), PIT, STOCK["wall"], ALCOVEW)
+m.cut((1232, 1808), (1296, 1808))                                            # in the alcove, beside the hole: the boiler room's lever
+m.line((1232, 1808), (1296, 1808), special=11, args=(BOILER, 32), playeruse=True, mid="AJ6LVC" if LOOK else "AJLEVR",
+       exact=True)
 fit((528, 896, 1184, 1104), [
     ((704, 896, 832, 944), dict(CRATE, floor=48)),
     ((960, 1040, 1024, 1104), dict(CRATE, floor=48)),
 ], floor=0, ceil=160, light=lux(165, 125), **PASSAGE)
 door((512, 912), (512, 976), (1, 0), 0, "A", "XP")
 door((1056, 1120), (1120, 1120), (0, -1), 0, "XP", "XP", line_id=307)
-# the boiler room: bolted inside, and one of the places a Stray door opens onto
+# the boiler room: bolted inside, and one of the places a Stray door opens onto.
+# A Stray door is luck (Vadim, 2026-11-18: all of the kills and items have to be
+# within reach): a lever in the stockroom's alcove draws the bolt too
 m.sector(rect(608, 1120, 928, 1184), ceil=128, light=120, wall=BOILERW, ftex="AJPIT")
 m.sector(rect(608, 1184, 928, 1408), ceil=128, light=120, wall=BOILERW, ftex="AJPIT")
 bolted((736, 1104), (800, 1104), (0, 1), 0, BOILER, "XP", "XB", line_id=306)
@@ -505,7 +511,7 @@ hall((-976, 16, -528, 336), [((-848, 144, -720, 208)), ((-656, 240, -592, 304))]
 hall((-1440, 16, -992, 336), [((-1376, 208, -1248, 272)), ((-1120, 208, -1056, 272))], "HB", color=LEAF) # haberdashery
 fit((-1440, -432, -992, 0), [                                                                            # furniture
     ((-1408, -368, -1344, -240), SEAT), ((-1088, -368, -1024, -240), SEAT),
-    ((-1280, -176, -1152, -112), dict(WOOD, floor=32)),
+    ((-1280, -176, -1152, -112), dict(WOOD, floor=24)),                                              # a table low enough to step onto: the rockets on it
 ], floor=0, ceil=160, light=lux(175, 125), color=PLUM, **FURN)
 shelves("TY", 16, (-896, -768, -640))
 shelves("TY", 336, (-896, -768, -640))

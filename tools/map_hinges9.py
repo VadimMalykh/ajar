@@ -66,7 +66,8 @@ Secrets: the kiosk in the forecourt (a lever at the trunk positions puts a
 call through and draws its bolt, or a Stray door); the stationery store
 behind the cloakroom's coats (a squeeze; PINK and a frame) and beyond its
 bars the strongroom (PINK's far side); an alcove behind the cable drums in
-the loft.
+the loft, with a lever in it that draws the generator room's bolt (otherwise
+only a Stray door leads there).
 """
 import os
 
@@ -396,6 +397,9 @@ over((560, 560), (624, 560), "TRH")
 # an alcove behind the drums (secret)
 m.sector(rect(616, 816, 744, 944), floor=UP, ceil=UP + 96, light=120, wall=ALCOVEW, ftex="AJBOARD", special=1024)
 squeeze((656, 800), (704, 800), (0, 1), UP, LOFTW, ALCOVEW)
+m.cut((744, 848), (744, 912))                                                # in the alcove, beside the hole: the generator room's lever
+m.line((744, 848), (744, 912), special=11, args=(GENERATOR, 32), playeruse=True, mid="AJ6LVC" if LOOK else "AJLEVR",
+       exact=True)
 # the trunk room: two brass frames, and nothing else to hang a door in
 fit((336, 304, 848, 560), [
     ((336, 400, 848, 464), ajarmap.RUNNER),
@@ -428,7 +432,9 @@ fit((784, 80, 1472, 224), [
     ((1216, 192, 1280, 224), dict(WOOD, floor=48)),
 ], floor=0, ceil=160, light=165, **PASSAGE)
 door((768, 112), (768, 176), (1, 0), 0, "HP", "XP")
-# the generator room: bolted inside, and one of the places a Stray door opens onto
+# the generator room: bolted inside, and one of the places a Stray door opens onto.
+# A Stray door is luck (Vadim, 2026-11-18: all of the kills and items have to be
+# within reach): a lever in the loft's alcove draws the bolt too
 m.sector(rect(944, 240, 1264, 304), ceil=128, light=120, wall=GENW, ftex="AJPIT")
 m.sector(rect(944, 304, 1264, 464), ceil=128, light=120, wall=GENW, ftex="AJPIT")
 bolted((1072, 224), (1136, 224), (0, 1), 0, GENERATOR, "XP", "XG", line_id=306)

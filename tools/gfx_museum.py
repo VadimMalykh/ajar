@@ -1073,6 +1073,8 @@ def make(out, rd):
     same["XK"] = stock
     for tag, im in same.items():
         both("AJ6" + tag, gy.mirror(im))
+    levers(out, "AJ6LVC", gy.mirror(same["XC"]), 96)                 # a lever in an alcove 96 high: on the cellar's wall
+    levers(out, "AJ6LVG", gy.mirror(same["XG"]), 96)                 # and on the grotto's (MAP07's alcove)
     WALLS.update(same)                                               # MAP07 wears some of these too
     stone = Img(64, 64, (190, 184, 168))                             # steps, the fountain's rim, garden seats
     stone.noise(7, 950)
