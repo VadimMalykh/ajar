@@ -3426,3 +3426,37 @@ Not done:
 - No check plays the refusal of PINK in its own room, or taking the plain
   loop apart and building the long one after the hole (MAP10 has no such
   script; MAP09's only checks that the doors are free).
+
+## MAP31: the great hall is an open fight too (2026-11-18)
+
+Vadim: the third battle by the second's rule. `open=True` on hall 3's zone;
+nothing else in the map changed. Only hall 1 is still watched from its box.
+**Not played by hand.**
+
+The walk (`MAP=MAP31 MODE=3 TIMEOUT=250`, 52 checks): being killed in a box
+while watching (`killedInABox`) is now done in hall 1, the only hall where
+one watches; hall 3 is left by its west door (the first time an open fight
+is left by a door in a test): `begunAgain3`, `besideMyself3`,
+`itLeftWhenIDid`. The spare box is therefore hall 1's third.
+
+## MAP31: killed beside an earlier self, the player goes on as it (2026-11-18)
+
+Vadim asked what should happen when a later go is killed sooner than an
+earlier one (a long first go, then two deaths at the very start: three boxes
+gone). He chose this of four. **Not played by hand.**
+
+- Killed in an open fight's hall while an earlier self is still fighting,
+  the player is not in a box: they go on as that self, from where it stands,
+  facing as it faced, health 50 (`GoOnAs`; the self with the most time left).
+  **No box is spent**; the price is that helper.
+- The rest of what that self did is dropped for good: in a later go it is
+  there only up to that moment, and is gone where the player took over.
+- Their shape goes to light where they stood, and the death is in the reel,
+  as any death in a hall.
+- With no earlier self in the fight (none yet, or its time is up), and for a
+  death in a box, it is as before: a box.
+- Known: the earlier self could not be hurt and the player can, so they may
+  take over in a bad place.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (53 checks; hall 3: `onAsMyEarlierSelf`;
+the reel now has three deaths), `MAP=TIME MODE=3` (14).

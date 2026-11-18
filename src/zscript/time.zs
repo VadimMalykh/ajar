@@ -379,7 +379,7 @@ class AjarTimeHandler : EventHandler
 	}
 
 	// --- the open fight ---------------------------------------------------------
-	// A fight whose box is open from the start (MAP31's second hall). A trip
+	// A fight whose box is open from the start (MAP31's second and third halls). A trip
 	// does not show the fight again: it begins it again. The hall is cleared,
 	// the show runs, the same monsters come; the box's door is open at once
 	// onto the door the player left by, and every earlier go at the fight is
@@ -1022,6 +1022,38 @@ class AjarTimeHandler : EventHandler
 	bool comeBack;                // the fight begins again when the player comes back to its hall
 	int over;                   // tics until the level ends, once nothing is left
 
+	// Killed in an open fight's hall while an earlier self is still fighting:
+	// the player goes on as that self, from where it stands (the one with the
+	// most time left). No box is spent; the rest of what that self did is
+	// dropped, so in a later go it is there only up to this moment.
+	bool GoOnAs(PlayerPawn mo)
+	{
+		if (!open || phase != LIVE || at != 0) return false;
+		int best = -1;
+		for (int i = 0; i < takes.Size() - 1 && i < ghosts.Size(); i++)
+			if (ghosts[i] && ot < takes[i].x.Size() && (best < 0 || takes[i].x.Size() > takes[best].x.Size())) best = i;
+		if (best < 0) return false;
+		AjarTake t = takes[best];
+		AjarGhost g = ghosts[best];
+		KeepClip(mo);
+		Actor c = Actor.Spawn("AjarSnatch", mo.pos);
+		if (c) { c.angle = mo.angle; c.translation = mo.translation; c.sprite = mo.sprite; c.frame = mo.frame; c.vel.z = 1; }
+		Actor.Spawn("TeleportFog", mo.pos, ALLOW_REPLACE);
+		Vector3 p = g.pos;
+		mo.angle = g.angle;
+		mo.pitch = g.pitch;
+		g.Destroy();
+		t.x.Resize(ot);             // PlayGhosts goes by its length
+		t.died = false;
+		mo.SetOrigin(p, false);
+		mo.vel = (0, 0, 0);
+		mo.health = mo.player.health = RESCUE_HEALTH;
+		mo.A_SetBlend("ff2010", 1.0, 40);
+		mo.A_StartSound("misc/teleport", CHAN_AUTO);
+		Say("You were killed. You go on as your earlier self,\nfrom where it stood.");
+		return true;
+	}
+
 	bool Rescue(PlayerPawn mo)
 	{
 		if (over)
@@ -1042,6 +1074,7 @@ class AjarTimeHandler : EventHandler
 		bool can = phase != IDLE && (at > 0 || phase == LIVE);
 		mo.bBuddha = can;
 		if (!can || mo.health > 1) return false;
+		if (GoOnAs(mo)) return true;
 		let h = Doors();
 		bool own = trips < BoxCount(fight);
 		if (!own && !spare.Size())
@@ -1502,8 +1535,9 @@ class AjarTimeHandler : EventHandler
 
 	// MAP31 (tools/map_secret1.py; MAP=MAP31 MODE=3 TIMEOUT=250 tools/smoke.sh):
 	// each hall in turn: in while it is empty and lit, the count, out by the
-	// west door, the same beginning and the fight watched from box 1, back
-	// in, and the fight won.
+	// west door (hall 2: by being killed), into box 1, back in, and the fight
+	// won. Hall 1 is watched again from the box, and the player is killed
+	// there while watching; halls 2 and 3 are open fights, begun again.
 	bool ShowLight(int k, bool up)       // is the hall's light as it should be?
 	{
 		for (int i = 0; i < showSec.Size(); i++)
@@ -1529,7 +1563,7 @@ class AjarTimeHandler : EventHandler
 			// the reel: by the last way out to the seat in hall 1; two deaths in halls were kept
 			if (v == 6) Go(mo, 384, 420, 0, 270);
 			if (v == 10) Check("bigDeathsKept", kills.Size() == 3 && kills[0].big >= BIG && kills[0].stills.Size() > 10 && kills[0].what != "");
-			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 2 && mo.bInvisible && ShowLight(1, false));
+			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 3 && mo.bInvisible && ShowLight(1, false));
 			if (v == 150)
 			{
 				let si = level.CreateSectorTagIterator(REEL_TAG);
@@ -1537,10 +1571,10 @@ class AjarTimeHandler : EventHandler
 				Check("theScreenIsDown", sec.CenterCeiling() == 32 && reel == 2 && cam && puppets.Size() > 3);
 				int ck, cb;
 				[ck, cb] = Where(cam.pos.xy);
-				Check("aDeathInHall2", ck == 2 && clips[0].fight == 2 && clips[1].fight == 3);
+				Check("aDeathInHall2", ck == 2 && clips[0].fight == 2 && clips[1].fight == 3 && clips[2].fight == 3);
 			}
 			if (v == 420) Check("goneToLightOnScreen", reel == 2 && reelClip == 0 && fallen && !fallen.bInvisible && fallen.alpha < 1);
-			if (v == 440 || v == 460) { reelTic = 100000; }      // the rest, quickly
+			if (v == 440 || v == 450 || v == 460) { reelTic = 100000; }      // the rest, quickly
 			if (v == 470) Check("theEnd", reel == 3);
 			return;
 		}
@@ -1579,14 +1613,25 @@ class AjarTimeHandler : EventHandler
 		}
 		if (u == 105)
 		{
-			Check("out" .. n, phase == (k == 1 ? LIVE : REPLAY) && at == 1 && mo.pos.z > 60);
+			Check("out" .. n, phase == (k ? LIVE : REPLAY) && at == 1 && mo.pos.z > 60);
 			Console.Printf("AJARTEST followers=%d", pending.Size());
 			Go(mo, x - 40, cy, 64, 0);          // at the glass
 		}
-		if (k == 2)                         // in the great hall: killed in the first box while watching
+		if (k == 0)                         // in the small hall: killed in the first box while watching
 		{
 			if (u == 110) mo.health = mo.player.health = 1;
 			if (u == 112) Check("killedInABox", phase == REPLAY && at == 2 && trips == 2 && rt < 5 && mo.health == RESCUE_HEALTH && mo.pos.y > hh[k]);
+		}
+		if (k == 2)                         // the great hall is an open fight too, left here by a door
+		{
+			if (u == 107) Check("begunAgain3", open && ot < 30 && !Left() && takes.Size() == 2 && !takes[0].died && takes[0].door == HallLine(3, 1));
+			// killed in the hall while the earlier self is still there: on as it, and no box spent
+			// (the walk teleports: it says itself that the player is in the hall, and puts them back in the box after)
+			if (u == 130) { at = 0; Go(mo, cx, 300, 0, 90); mo.health = mo.player.health = 1; }
+			if (u == 132) Check("onAsMyEarlierSelf", at == 0 && trips == 1 && phase == LIVE && mo.health == RESCUE_HEALTH && ghosts.Size() == 1 && !ghosts[0]
+				&& takes.Size() == 2 && takes[0].x.Size() < 60 && abs(mo.pos.x - takes[0].x[takes[0].x.Size() - 1]) < 20 && (mo.pos.xy - (cx, 300)).Length() > 50);
+			if (u == 133) { at = 1; Go(mo, x - 40, cy, 64, 0); }
+			if (u == 125) Check("besideMyself3", ghosts.Size() == 1 && ghosts[0] && ghosts[0].pos.z < 40 && ShowLight(3, true));
 		}
 		if (u == 150)
 		{
@@ -1602,20 +1647,21 @@ class AjarTimeHandler : EventHandler
 		u -= D;
 		if (u == 240)
 		{
-			Check("handedOver" .. n, phase == LIVE && at == (k == 2 ? 2 : 1) && !puppets.Size());
-			if (k == 2) Go(mo, cx, hh[k] + 196, 64, 90);        // the north box
+			Check("handedOver" .. n, phase == LIVE && at == (k == 0 ? 2 : 1) && !puppets.Size());
+			if (k == 0) Go(mo, cx, hh[k] + 196, 64, 90);        // the north box
 			else Go(mo, x - 200, cy, 64, 180);
 		}
 		if (u > 240 && u < 260) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
 		if (k == 1 && u == 262) Check("itWentToADoor", ghosts.Size() == 1 && !ghosts[0]);
+		if (k == 2 && u == 262) Check("itLeftWhenIDid", ghosts.Size() == 1 && !ghosts[0]);
 		if (u == 265) Check("backIn" .. n, at == 0 && mo.pos.x > x && mo.pos.z < 30);     // it may stand on a row of seats
 		if (u == 266) Go(mo, cx, 40, 0, 90);        // out of the way of what comes in later
 		if (k == 2)     // the great hall: no box of its own left, killed: into a box hall 1 did not use, and the fight begins again
 		{
 			if (u == 266) { trips = BoxCount(fight); HallDoors(0); mo.health = mo.player.health = 1; }
 			if (u == 268) { let ci = ThinkerIterator.Create("AjarSnatch"); Actor c = Actor(ci.Next()); Check("goneToLight", c && abs(c.pos.x - cx) < 2 && abs(c.pos.y - 40) < 2 && c.alpha < 1); }
-			if (u == 268) Check("killedIntoASpareBox", phase == IDLE && comeBack && spare.Size() == 3 && spareOut == 12 && !Left()
-				&& mo.pos.x < 1200 && mo.pos.y > hh[0] && mo.health == RESCUE_HEALTH);
+			if (u == 268) Check("killedIntoASpareBox", phase == IDLE && comeBack && spare.Size() == 2 && spareOut == 13 && !Left()
+				&& mo.pos.x > 960 && mo.pos.x < 1300 && mo.pos.y < hh[0] && mo.health == RESCUE_HEALTH);
 			if (u == 269) Go(mo, cx, 40, 0, 90);
 			if (u == 275) Check("begunOver", phase == LIVE && !comeBack && FightTic() < 12 && !Left() && ShowLight(3, true));
 		}

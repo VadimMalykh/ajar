@@ -6,8 +6,10 @@ too much for one go. In its walls are time doors (a clock on them): through
 one, the player is in a box behind glass, before the fight began, and watches
 it from its start with their earlier self in it. When it comes to the moment
 they left, the box's door opens onto the door they left by, and they go on
-from there. Three boxes to a hall, each used once; what is in a box is all
-that a trip gives. See src/zscript/time.zs and tools/ajartime.py.
+from there. That is the first hall. In the second and third the box's door
+is open at once: the fight begins again, and they fight it beside their
+earlier selves (time.zs, "the open fight"). Three boxes to a hall, each used
+once; what is in a box is all that a trip gives. See src/zscript/time.zs and tools/ajartime.py.
 
 - Where you leave is where you come back, with whatever was after you a step
   away; and what was right behind you comes into the box with you.
@@ -327,7 +329,7 @@ h2.stock(3, 2012, 2012, 2049, 2046, 2011, 17)
 # === the great hall: the arrow, the wall that opens, a room key ==============
 h3 = Hall(3, 5696, 0, 1920, 1472, pillar(448, 352) + pillar(1408, 352) + pillar(1216, 704) +
           platform(384, 992) + platform(1344, 992) + platform(320, 576, arrow=True),
-          ceil=288, last=True)
+          ceil=288, last=True, open=True)       # an open fight, as hall 2 is
 ajarmap.doorway(m, 2, h2.on[0], h2.on[1], (0, 1), 0,
                 (h3.cx - 32, -320), (h3.cx + 32, -320), (0, -1), UP)
 spots(2004, (h3.cx, -200))                  # plasma rifle
