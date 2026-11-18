@@ -15,6 +15,10 @@ A puzzle is a dict:
   names         optional {colour: name} for the printed solution
   doors         {colour: dict(home=region, frame=id) or dict(home=region, lean=region)
                 or dict(home=region, thief=True): the thief starts with it}
+                A leaf of a Pair (ajarmap.pair) has no home: dict(pair=the
+                other leaf's key, lean=region or frame=id). The two leaves
+                have keys of their own (ajarmap.LEAVES), not their colour.
+                Hung both, each frame leads to the other; one alone is shut
   thief         optional dict(zone=region, sees=[regions]): one thief, which
                 stays in `zone` and can see the player there and in `sees`
   repainter     optional dict(zone=[regions]): one repainter. While it lives,
@@ -124,7 +128,13 @@ def _moves(p, state, nailed=False):
     if dash and here == dash["at"] and _run(dash, hung) <= dash["limit"]:
         yield 0, f"pull the lever and run to {dash['to']}", out(region=dash["to"])
     for f, c in hung.items():
-        ends = (p["frames"][f], p["doors"][c]["home"])
+        twin = p["doors"][c].get("pair")
+        if twin is not None:                         # a Pair: to the frame its twin hangs in, if it hangs
+            if where[twin][0] != "frame" or twin < c:
+                continue
+            ends = (p["frames"][f], p["frames"][where[twin][1]])
+        else:
+            ends = (p["frames"][f], p["doors"][c]["home"])
         for a, b in (ends, ends[::-1]):
             if a == here and b != here:
                 yield 0, f"through {nm(c)} to {b}", out(region=b)
@@ -164,8 +174,11 @@ def _run(dash, hung):
     while todo:
         a = todo.pop()
         steps = [(y, d) for (x, y), d in dash["legs"].items() if x == a]
-        steps += [(200 + c, DOOR_STEP) for f, c in hung.items() if f == a]
-        steps += [(f, DOOR_STEP) for f, c in hung.items() if 200 + c == a]
+        steps += [(200 + c, DOOR_STEP) for f, c in hung.items() if f == a and c not in dash.get("pairs", {})]
+        steps += [(f, DOOR_STEP) for f, c in hung.items() if 200 + c == a and c not in dash.get("pairs", {})]
+        twins = {c: f for f, c in hung.items()}      # a Pair, both leaves hung: frame to frame
+        steps += [(twins[dash["pairs"][c]], DOOR_STEP) for f, c in hung.items()
+                  if f == a and dash.get("pairs", {}).get(c) in twins]
         for b, d in steps:
             if best[a] + d < best.get(b, 1e9):
                 best[b] = best[a] + d
@@ -239,7 +252,7 @@ def _luck(p, state):
             # door that hangs nowhere
             # (but not the room of a longer chain's third door: ajarmap.way_longer)
             shut = p.get("home_chain", {}).get("secret", {}).get("door")
-            for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame" and k != shut}):
+            for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame" and k != shut and "home" in p["doors"][k]}):
                 yield (place, c, tuple(w[k] for k in colours), keys, thief, nails)
 
 

@@ -2891,7 +2891,7 @@ names.
 - **From "Time doors", not used by MAP31**: two places at once (the earlier
   self holds the plate), the future as a warning, the future as a contract.
 
-### MAP11 (2026-11-18, agreed in outline, not built)
+### MAP11 (2026-11-18, agreed in outline; built: see the first build, below)
 
 Vadim: no heap of ideas; 11 brings in the Pair, beside plain coloured doors,
 and lets the player get used to it before the puzzles begin.
@@ -2920,6 +2920,45 @@ Claude's outline, to argue over:
   (the U-turn) or round a corner (the pinwheel) in the cloakroom.
 - **Before it can be built**: the solver has to know Pairs (a second free
   end in the state), since every level is proved by it.
+
+### MAP11 "By Appointment": first build (2026-11-18)
+
+`tools/map_institute1.py`; `MAP=MAP11 ./run.sh`. Plain walls and tints: no
+look yet. **Not played by hand.** The name is Claude's, to be changed freely.
+MAP10's plain way out and MAP31's lead here; its own starts it again.
+
+What it is, and where it left the outline above:
+- **Places**: the lobby and the corridor (one place; three frames, two of
+  them facing each other across the lobby; both TEAL leaves and RED lean in
+  the lobby); the gallery over the corridor (RED's far side, key 1, a drop
+  into the corridor and one into the archive); the archive (VIOLET, two
+  frames; from the corridor a hole that only empty hands pass); behind a
+  door with one lock (no key needed from inside) the vestibule and the
+  night room, whose brass frame takes VIOLET only.
+- **The rope is into the archive**, not past a turnstile: the game's
+  turnstile is a squeeze, which a leaf does not pass either. A leaf in the
+  lobby, its twin up by RED and down the drop, hung in the archive: VIOLET
+  comes out through them. 8 door actions. The gallery step of the outline
+  is part of this now (RED is the way up, with the leaf in hand).
+- **The Pair is not the only way** (found by the solver, 7 actions): hang
+  VIOLET in the archive, walk into the night room with RED, come back
+  through VIOLET with it, swap, and carry VIOLET out by RED over the
+  gallery. Left in: it takes more wit than the rope, and what 1 to 10
+  taught still works. **To decide (Vadim):** keep both, or shut the second
+  (the archive's frames taking no plain door but VIOLET would do it).
+- **Company**: two zombies, three imps, a sergeant; a shotgun in the lobby.
+- **The secret** is a nook off the gallery for now. A better one, by a sight,
+  comes with the look.
+
+The solver knows Pairs (`solve.py`: a leaf is `dict(pair=its twin's key,
+lean= or frame=)`, `ajarmap.leaves`): both hung, each frame leads to the
+other; one alone leads nowhere. A third frame in the corridor is there
+because of it: with two, hands could not always be emptied (20 stuck
+states). Now 4716 states, 0 stuck, nothing can be lost. Not in the solver:
+a Pair with a thief, a nailer, a repainter or a Stray door.
+
+`MAP=MAP11 tools/smoke.sh`: 13 checks (`ByAppointmentScript` in
+`src/zscript/map11.zs`, the Pair's way), all pass, out by the way out.
 
 ## MAP09: the start is back on the street (2026-11-17)
 

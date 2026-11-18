@@ -174,10 +174,10 @@ map MAP09 "Putting You Through"
 
 // Act 1, level 10 (tools/map_hinges10.py). Its secret way out (the loop of
 // three doors, PINK one of them) leads to MAP31; the plain one starts this
-// level again until there is a MAP11.
+// level.
 map MAP10 "All Change"
 {
-	next = "MAP10"
+	next = "MAP11"
 	secretnext = "MAP31"
 	sky1 = "SKY1", 0
 	nointermission
@@ -186,11 +186,22 @@ map MAP10 "All Change"
 	music = ""
 }
 
+// Act 2, level 1 (tools/map_institute1.py). Its way out starts it again
+// until there is a MAP12.
+map MAP11 "By Appointment"
+{
+	next = "MAP11"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
 // The first secret level (tools/map_secret1.py), from MAP10's secret way out.
-// Its way out starts it again until there is a MAP11.
+// Its way out leads on to MAP11, as MAP10's plain one does.
 map MAP31 "This Is Where We Came In"
 {
-	next = "MAP31"
+	next = "MAP11"
 	nointermission
 	nojump
 	nocrouch
