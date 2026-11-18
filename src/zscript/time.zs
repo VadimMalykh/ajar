@@ -437,13 +437,11 @@ class AjarTimeHandler : EventHandler
 	//    DEMO (AjarRail): put each tic where it was then, looking as it did,
 	//    dying (and being raised) when it did; what it shot then flies again,
 	//    really. Flames, puffs and blood of then are shown (AjarEcho).
-	// The box's door is open at once. While the player is in the box that is
-	// all there is: the last go, exactly. When they step into the hall, a
-	// share of the monsters alive just then WAKES, picked at random: one in
-	// two for the second go, one in three for the third; they are real from
-	// where they stand, with the health they had, and after the player. One
-	// that comes later has the same chance. The rest stay on the demo until
-	//  * the player hurts one: it wakes (only the player can hurt it);
+	// The box's door is open at once, and the player steps in when they
+	// choose. Nothing of the demo knows them: a monster stays on the demo until
+	//  * the player hurts it: it wakes (only the player can hurt it), real
+	//    from where it stands, with the health it had, and after the player;
+	//  * the player walks into it: it wakes;
 	//  * the demo is over, at the tic the last go ended: all wake.
 	// A monster on the demo is not solid (it walks through what stands in its
 	// way), so it wakes once it stands free; after a second, anyway.
@@ -462,7 +460,6 @@ class AjarTimeHandler : EventHandler
 	const RAIL_HEALTH = 1000000;
 	const WAKE_WAIT = 35;
 	AjarDemo demo, rec;         // the last go, being played; this go, being recorded
-	bool stepped;               // the player has been in the hall in this go
 	Array<Actor> mshots;        // the monsters' missiles that are already written down
 	Array<Actor> bornA;         // what came by a cue in this go,
 	Array<AjarCue> bornC;       // and the cue
@@ -629,26 +626,6 @@ class AjarTimeHandler : EventHandler
 		r.mode = 2;
 	}
 
-	// The player is in the hall: their share of the monsters wakes.
-	void StepIn()
-	{
-		stepped = true;
-		if (!Demoing()) return;
-		int n = max(2, takes.Size());
-		Array<AjarRole> c;
-		for (int i = 0; i < demo.roles.Size(); i++)
-		{
-			AjarRole r = demo.roles[i];
-			if (r.mode == 1 && !r.dead && !r.wakeDue && r.actor) c.Push(r);
-		}
-		for (int k = (c.Size() + n / 2) / n; k > 0; k--)
-		{
-			int pick = random[AjarDemo](0, c.Size() - 1);
-			c[pick].wakeDue = true;
-			c.Delete(pick);
-		}
-	}
-
 	void PlayDemo(Actor mo)
 	{
 		if (!demo) return;
@@ -682,7 +659,7 @@ class AjarTimeHandler : EventHandler
 				r.actor = n;
 				r.mode = 1;
 				r.dead = r.hidden = false;
-				r.wakeDue = stepped && random[AjarDemo](1, max(2, takes.Size())) == 1;
+				r.wakeDue = false;
 			}
 			Actor a = r.actor;
 			let rail = a ? AjarRail(a.FindInventory("AjarRail")) : null;
@@ -690,6 +667,9 @@ class AjarTimeHandler : EventHandler
 			// a body that something has really raised is real
 			if (r.dead && a.health > 0) { a.bSolid = GetDefaultByType(a.GetClass()).bSolid; Release(r, rail); continue; }
 			if (rail.hit) r.wakeDue = true;
+			// the player walks into it: it wakes (once they are out of it)
+			if (!r.dead && !r.hidden && !r.wakeDue && at == 0 && a.Distance2D(mo) < a.radius + mo.radius
+				&& mo.pos.z < a.pos.z + a.height && a.pos.z < mo.pos.z + mo.height) r.wakeDue = true;
 			bool has = i < r.x.Size();
 			if (!has)
 			{
@@ -902,7 +882,7 @@ class AjarTimeHandler : EventHandler
 		rec.fx = new("AjarTrack");
 		rec.fx.fx = true;
 		mshots.Clear(); bornA.Clear(); bornC.Clear();
-		stepped = false;
+
 	}
 
 	// The player has gone out of an open fight (or been killed in it): it
@@ -1321,7 +1301,7 @@ class AjarTimeHandler : EventHandler
 		DropGhosts();
 		demo = null;
 		slotCls.Clear();
-		if (open) { NewTake(players[consoleplayer].mo); stepped = true; }
+		if (open) NewTake(players[consoleplayer].mo);
 		trips = 0;
 		at = 0;
 		main = new("AjarTrack");
@@ -1494,7 +1474,14 @@ class AjarTimeHandler : EventHandler
 		if (!open || phase != LIVE || at != 0) return false;
 		int best = -1;
 		for (int i = 0; i < takes.Size() - 1 && i < ghosts.Size(); i++)
-			if (ghosts[i] && ot < takes[i].x.Size() && (best < 0 || takes[i].x.Size() > takes[best].x.Size())) best = i;
+		{
+			if (!ghosts[i] || ot >= takes[i].x.Size()) continue;
+			// not one that is still in its box: that box is shut now
+			int gk, gb;
+			[gk, gb] = Where(ghosts[i].pos.xy);
+			if (gk != fight || gb != 0) continue;
+			if (best < 0 || takes[i].x.Size() > takes[best].x.Size()) best = i;
+		}
 		if (best < 0) return false;
 		AjarTake t = takes[best];
 		AjarGhost g = ghosts[best];
@@ -1647,7 +1634,7 @@ class AjarTimeHandler : EventHandler
 		comeBack = false;
 		phase = LIVE;
 		at = 0;
-		if (open) { NewTake(mo); StepIn(); }
+		if (open) NewTake(mo);
 		else
 		{
 			main = new("AjarTrack");
@@ -1759,7 +1746,6 @@ class AjarTimeHandler : EventHandler
 		h.Link(BoxLine(fight, at), 0, TIME_TEX);
 		at = 0;
 		StepClear(players[consoleplayer].mo, used);
-		if (open) StepIn();
 		HallDoors(trips + 1);
 		players[consoleplayer].mo.A_SetBlend("white", 0.6, 18);
 	}
@@ -2016,7 +2002,7 @@ class AjarTimeHandler : EventHandler
 	// won. Hall 1 is watched again from the box, and the player is killed
 	// there while watching; halls 2 and 3 are open fights, begun again.
 	int testN;
-	Actor testRail;
+	Actor testRail, testBump;
 	int Rails(bool on)      // monsters of the fight alive, on the demo or awake
 	{
 		int n = 0;
@@ -2115,6 +2101,10 @@ class AjarTimeHandler : EventHandler
 		if (k == 0)                         // in the small hall: killed in the first box while watching
 		{
 			if (u == 110) mo.health = mo.player.health = 1;
+			// the armour in the box they are now in is real, and is taken
+			if (u == 113) Go(mo, cx, hh[k] + 156, 64, 0);       // (a thing is taken by walking onto it)
+			if (u > 113 && u < 120) mo.vel.xy = (8, 0);
+			if (u == 122) Check("armourInTheBox", phase == REPLAY && mo.CountInv("BasicArmor") == 100);
 			if (u == 112) Check("killedInABox", phase == REPLAY && at == 2 && trips == 2 && rt < 5 && mo.health == RESCUE_HEALTH && mo.pos.y > hh[k]);
 		}
 		if (k == 2)                         // the great hall is an open fight too, left here by a door
@@ -2126,22 +2116,25 @@ class AjarTimeHandler : EventHandler
 			if (u == 132) Check("onAsMyEarlierSelf", at == 0 && trips == 1 && phase == LIVE && mo.health == RESCUE_HEALTH && ghosts.Size() == 1 && !ghosts[0]
 				&& takes.Size() == 2 && takes[0].x.Size() < 60 && abs(mo.pos.x - takes[0].x[takes[0].x.Size() - 1]) < 20 && (mo.pos.xy - (cx, 300)).Length() > 50);
 			if (u == 133) { at = 1; Go(mo, x - 40, cy, 64, 0); }
-			// into the hall while the last go is still playing: half of them wake
+			// into the hall while the last go is still playing: nothing wakes for that
 			if (u == 299) testN = Rails(true);
 			if (u == 300) { Back(); Go(mo, cx, 300, 0, 90); }
-			if (u == 304)
-			{
-				// (one that was picked may still be waiting to stand free)
-				int due = 0;
-				for (int i = 0; i < demo.roles.Size(); i++) if (demo.roles[i].mode == 1 && demo.roles[i].wakeDue) due++;
-				Check("halfOfThemWake", testN > 5 && Rails(false) + due == (testN + 1) / 2 && Rails(true) - due == testN - (testN + 1) / 2);
-			}
+			if (u == 304) Check("noneWakesAsIStepIn", testN > 5 && !Rails(false) && Rails(true) == testN);
 			if (u == 305)
 			{
 				for (int i = 0; i < demo.roles.Size() && !testRail; i++)
 					if (demo.roles[i].mode == 1 && !demo.roles[i].dead && !demo.roles[i].wakeDue) testRail = demo.roles[i].actor;
 				if (testRail) testRail.DamageMobj(mo, mo, 5, 'None');
 			}
+			// walking into one wakes it
+			if (u == 310)
+			{
+				for (int i = 0; i < demo.roles.Size() && !testBump; i++)
+					if (demo.roles[i].mode == 1 && !demo.roles[i].dead && !demo.roles[i].wakeDue) testBump = demo.roles[i].actor;
+				if (testBump) Go(mo, testBump.pos.x, testBump.pos.y, testBump.pos.z, 90);
+			}
+			if (u == 312) Go(mo, cx, 300, 0, 90);
+			if (u == 350) Check("wokenByATouch", testBump && !OnDemo(testBump) && testBump.tics != -1 && testBump.health > 0 && Rails(true) <= testN - 2);
 			if (u == 345) Check("wokenByAShot", testRail && !OnDemo(testRail) && testRail.tics != -1 && testRail.health > 0
 				&& testRail.health <= testRail.SpawnHealth() - 5);
 			if (u == 410) Check("allAwakeAtItsEnd3", !Demoing() && !Rails(true) && Rails(false) > 3);

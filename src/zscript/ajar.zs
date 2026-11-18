@@ -3863,6 +3863,10 @@ class AjarStatusBar : BaseStatusBar
 		BeginHUD();
 		// health bottom left, ammo of the weapon in hand next to it
 		DrawString(big, FormatNumber(CPlayer.health, 3), (12, -24), DI_SCREEN_LEFT_BOTTOM, Font.CR_RED);
+		// armour over it, when there is any: green, or blue for the better kind
+		let arm = BasicArmor(CPlayer.mo.FindInventory("BasicArmor"));
+		if (arm && arm.Amount > 0) DrawString(big, FormatNumber(arm.Amount, 3), (12, -44), DI_SCREEN_LEFT_BOTTOM,
+			arm.SavePercent > 0.4 ? Font.CR_BLUE : Font.CR_GREEN);
 		Ammo a1, a2;
 		[a1, a2] = GetCurrentAmmo();
 		if (a1) DrawString(big, FormatNumber(a1.Amount, 3), (76, -24), DI_SCREEN_LEFT_BOTTOM, Font.CR_GOLD);
