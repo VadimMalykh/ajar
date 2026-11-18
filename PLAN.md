@@ -3546,11 +3546,11 @@ Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (58; hall 2: `theyPlayAsTheyWent`,
 `MAP=TIME MODE=3` (14). Not in any test: a death and a raise on the demo, a
 lost soul, a third go.
 
-## MAP31: ammunition in the boxes (2026-11-18)
+## MAP31: armour in the boxes (2026-11-18)
 
-Vadim: he left the boxes too weak. Every box has more now, on the floor in
-its middle (`Hall.ammo`), beside what it had: hall 1: shells and bullets
-(two of bullets in box 1; a box of rockets and a cell pack in boxes 2 and
-3); hall 2, each box: two of shells, bullets, rockets, a cell pack; hall 3,
-each box: the same and a second cell pack. A box's things are taken once.
-Not played by hand; the walk passes.
+Vadim: he left the boxes too weak. (First read as ammunition, built and
+taken out again: the ammunition was right as it was, enough to win and not
+easy; only a few more cells.) Every box has green armour now, on the floor
+in its middle (`Hall.more`), and a cell pack beside it in all but hall 1's
+first box. A box's things are taken once. Not played by hand; the walk
+passes.

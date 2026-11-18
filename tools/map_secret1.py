@@ -233,9 +233,8 @@ class Hall:
         for kind, (u, v) in zip(kinds, ((70, -85), (70, 85), (20, -90), (-30, -90), (-75, -90), (-75, 90))):
             m.thing(*self.spot(n, u, v), kind)
 
-    def ammo(self, n, *kinds):
-        """More for box n, on the floor in its middle: ammunition for a
-        player who came out of the fight with little left."""
+    def more(self, n, *kinds):
+        """More for box n, on the floor in its middle."""
         for kind, (u, v) in zip(kinds, ((20, -40), (20, 0), (20, 40), (-30, -40), (-30, 0), (-30, 40))):
             m.thing(*self.spot(n, u, v), kind)
 
@@ -296,11 +295,12 @@ ajartime.cue(m, 1, 3, 6, 3005, *h1.at((576, 500), (400, 400), (752, 400)))
 h1.stock(1, 2003, 2046, 2046, 2012, 2049, 2048)
 h1.stock(2, 2006, 17, 2012, 2012, 2046, 2049)
 h1.stock(3, 2012, 2012, 2046, 17, 2049, 2011)
-# ammunition in every box (Vadim: he came out of the fights too weak):
-# shells, bullets, and rockets and cells for what the boxes gave
-h1.ammo(1, 2049, 2048, 2048)
-h1.ammo(2, 2049, 2048, 2046, 17)
-h1.ammo(3, 2049, 2048, 2046, 17)
+# armour in every box (Vadim: he came out of the boxes too weak; the
+# ammunition was right, but for a few more cells): green armour, and a cell
+# pack from where the BFG is
+h1.more(1, 2018)
+h1.more(2, 2018, 17)
+h1.more(3, 2018, 17)
 
 # === the second hall: a room key, and a cupboard in the first two boxes ======
 h2 = Hall(2, 2752, 0, 1536, 1216, pillar(384, 352) + pillar(1088, 352) + platform(320, 736) + platform(1024, 736),
@@ -337,7 +337,7 @@ h2.stock(2, 2012, 2012, 2049, 2046, 2011)
 h2.locker(2, 1, 17, 2013)
 h2.stock(3, 2012, 2012, 2049, 2046, 2011, 17)
 for n in (1, 2, 3):
-    h2.ammo(n, 2049, 2049, 2048, 2046, 17)
+    h2.more(n, 2018, 17)
 
 # === the great hall: the arrow, the wall that opens, a room key ==============
 h3 = Hall(3, 5696, 0, 1920, 1472, pillar(448, 352) + pillar(1408, 352) + pillar(1216, 704) +
@@ -391,7 +391,7 @@ h3.stock(2, 2012, 2012, 17, 2046, 2049, 2011)
 h3.locker(2, 2, 2019, 17)
 h3.stock(3, 2012, 2012, 17, 2046, 2049, 2011)
 for n in (1, 2, 3):
-    h3.ammo(n, 2049, 2049, 2048, 2046, 17, 17)
+    h3.more(n, 2018, 17)
 
 if __name__ == "__main__":
     import sys
