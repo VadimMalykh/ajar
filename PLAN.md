@@ -3497,6 +3497,51 @@ every monster was after him and came to his side of the hall.
 Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (54; hall 2: `afterMyEarlierSelfNotMe`).
 **Not played by hand.**
 
-Asked next by Vadim, not built: could the monsters be played too, moving as
-they did the first time, not only the earlier self (which fires where the
-monsters were then, at nothing now).
+## MAP31: an open fight's last go is played, monsters and all (2026-11-18)
+
+Vadim: the earlier self only fires where the monsters were, at nothing. He
+asked for the monsters to be played too, and to mix the two: when he steps
+in as the second of him, half the monsters still play the demo and half are
+on him; as the third, two thirds and one third, at random. And what
+arch-viles and pain elementals did is played as well. Built for both open
+fights (halls 2 and 3). **Not played by hand; seen in two pictures of the
+walk** (`build/smoke_MAP31_3`: from hall 2's box, and in hall 3 after
+stepping in).
+
+- **Each go is recorded whole** (`AjarDemo`, `AjarRole`): every monster in
+  the hall, each tic: place, angle, picture, health; and every missile a
+  monster shot. It is the next go's demo. A third go plays the second,
+  which has the first self and the monsters as they then really moved.
+- **In the box the last go plays exactly.** Its monsters are real monsters
+  ON THE DEMO (they carry `AjarRail`): put each tic where they were, dying
+  when they died, raised when they were raised; their missiles fly again,
+  really (they can hit the player; bullets, bites and an arch-vile's blast
+  do nothing). A lost soul comes again when it was spat, if its pain
+  elemental is still on the demo. Flames, puffs, blood and fog of then are
+  shown as pictures (`RecordFx`).
+- **Stepping into the hall wakes a share of those alive just then**, picked
+  at random: 1/2 in the second go, 1/3 in the third (`StepIn`). They are
+  real from where they stand, with the health they had, and after the
+  player. One that comes later has the same chance.
+- **The player's shot wakes the one it hits**, with that damage. Nothing
+  else can hurt a monster on the demo.
+- **When the demo is over** (the tic the last go ended) all wake.
+- A wave that came in the last go comes when it came then; a wave that did
+  not comes by the usual rule, even while the demo plays.
+- A monster on the demo is not solid: it walks through the player and the
+  monsters that are awake. So it wakes when it stands free; after a second
+  it steps aside or wakes where it is.
+- This replaces "the fight begins again from nothing". `Hunt` (monsters
+  after the earlier selves while the player is in the box) now only matters
+  once the demo is over. Going on as an earlier self is as it was.
+- Known: a monster that wakes begins its move again; a raise does not
+  happen if the monster that was raised is awake this time; the flame of an
+  arch-vile that is awake this time is still shown where it was; a monster
+  awake may spend its fire on one on the demo, which it cannot hurt; the
+  kill count rises with each go.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (58; hall 2: `theyPlayAsTheyWent`,
+`allAwakeAtItsEnd`; hall 3, stepped into at once by the test:
+`halfOfThemWake`, `wokenByAShot`, `allAwakeAtItsEnd3`), `MAP=MAP31 MODE=5`,
+`MAP=TIME MODE=3` (14). Not in any test: a death and a raise on the demo, a
+lost soul, a third go.

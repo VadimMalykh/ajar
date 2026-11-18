@@ -180,12 +180,61 @@ class AjarTake play
 	int door;                   // the hall's door it ended by (its line)
 }
 
+// A monster in one go at an open fight: where it was, how it looked and its
+// health, tic by tic from the tic it came (sf < 0: it was out of the hall).
+class AjarRole play
+{
+	class<Actor> cls;
+	int born;
+	AjarCue cue;                // the cue it came by, if any
+	AjarRole maker;             // a lost soul's pain elemental
+	Array<double> x, y, z, ang;
+	Array<int> sf, hp;
+	// while it is recorded
+	Actor src;
+	bool seen;
+	// while it is played: mode 0 not yet come, 1 on the demo, 2 no longer
+	Actor actor;
+	int mode;
+	bool dead, wakeDue, hidden;
+	int waited;                 // tics it has been due to wake and did not stand free
+}
+
+// One go at an open fight, as it went: its monsters, and what they shot.
+class AjarDemo play
+{
+	Array<AjarRole> roles;
+	int len;
+	Array<int> evTic;
+	Array<class<Actor> > evCls;
+	Array<AjarRole> evBy;
+	Array<double> ex, ey, ez, evx, evy, evz;
+	int next;
+	AjarTrack fx;               // what was seen besides: flames, puffs, blood, fog
+}
+
+// Carried by a monster that is on the demo. Only the player hurts it, and
+// that wakes it; its real health is what the demo says (hp) less that (dmg).
+class AjarRail : Inventory
+{
+	int hp, dmg;
+	bool hit;
+	Default { Inventory.MaxAmount 1; +INVENTORY.UNDROPPABLE }
+	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
+	{
+		if (!passive) return;
+		if (source && source.player) { dmg += damage; hit = true; newdamage = damage; }
+		else newdamage = 0;
+	}
+}
+
 // What was seen in one place over one stretch of time, from the fight's
 // first tic. Only changes are kept: a record says how one thing (its slot)
 // looked from that tic on, or that it was gone (sf < 0).
 class AjarTrack play
 {
 	int box;                    // 0: the hall, and each box from the moment its door opened
+	bool fx;                    // an open fight's: only what is seen besides its monsters and shots
 	Array<int> first;           // first[i]: the first record of tic i
 	Array<int> slot, sf;        // sf: sprite * 256 + 128 if bright + frame
 	Array<double> x, y, z, ang;
@@ -379,14 +428,29 @@ class AjarTimeHandler : EventHandler
 	}
 
 	// --- the open fight ---------------------------------------------------------
-	// A fight whose box is open from the start (MAP31's second and third halls). A trip
-	// does not show the fight again: it begins it again. The hall is cleared,
-	// the show runs, the same monsters come; the box's door is open at once
-	// onto the door the player left by, and every earlier go at the fight is
-	// there as an AjarGhost that walks where the player walked and fires
-	// what they fired, for as long as that go lasted. So the past is changed:
-	// the player fights beside themselves, and the fight goes on from where
-	// they are when the ghosts are gone. Nothing is recorded but the player.
+	// A fight whose box is open from the start (MAP31's second and third
+	// halls). A trip begins the fight again, and it is played as it went the
+	// last time: the hall is cleared, the show runs, and
+	//  * every earlier go of the player is there as an AjarGhost that walks
+	//    where they walked and fires what they fired, really;
+	//  * every monster of the last go is there again, a real monster ON THE
+	//    DEMO (AjarRail): put each tic where it was then, looking as it did,
+	//    dying (and being raised) when it did; what it shot then flies again,
+	//    really. Flames, puffs and blood of then are shown (AjarEcho).
+	// The box's door is open at once. While the player is in the box that is
+	// all there is: the last go, exactly. When they step into the hall, a
+	// share of the monsters alive just then WAKES, picked at random: one in
+	// two for the second go, one in three for the third; they are real from
+	// where they stand, with the health they had, and after the player. One
+	// that comes later has the same chance. The rest stay on the demo until
+	//  * the player hurts one: it wakes (only the player can hurt it);
+	//  * the demo is over, at the tic the last go ended: all wake.
+	// A monster on the demo is not solid (it walks through what stands in its
+	// way), so it wakes once it stands free; after a second, anyway.
+	// A wave that came in the last go comes when it came then; one that did
+	// not comes by the usual rule (few enough left).
+	// Each go is recorded whole, demo monsters and all, and is the next
+	// go's demo. So the past is changed, from the moment the player steps in.
 	const GHOST_RUN = 16;       // an earlier self's speed on its way out
 	Array<int> openFights;
 	bool open;                  // the fight that is on is one
@@ -395,6 +459,301 @@ class AjarTimeHandler : EventHandler
 	Array<AjarGhost> ghosts;    // ghosts[i]: of takes[i], while it lasts
 	Array<Actor> shots;         // the player's missiles that are already written down
 	int hadClip, hadShell;
+	const RAIL_HEALTH = 1000000;
+	const WAKE_WAIT = 35;
+	AjarDemo demo, rec;         // the last go, being played; this go, being recorded
+	bool stepped;               // the player has been in the hall in this go
+	Array<Actor> mshots;        // the monsters' missiles that are already written down
+	Array<Actor> bornA;         // what came by a cue in this go,
+	Array<AjarCue> bornC;       // and the cue
+
+	bool Demoing() { return demo && ot < demo.len; }
+	bool OnDemo(Actor a) { return a.FindInventory("AjarRail") != null; }
+
+	AjarRole RoleOf(Actor a)
+	{
+		for (int i = 0; i < rec.roles.Size(); i++) if (rec.roles[i].src == a) return rec.roles[i];
+		return null;
+	}
+
+	void RecordDemo()
+	{
+		for (int i = 0; i < rec.roles.Size(); i++) rec.roles[i].seen = false;
+		for (int i = mshots.Size() - 1; i >= 0; i--) if (!mshots[i]) mshots.Delete(i);
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster && !(a.bMissile && a.target && a.target.bIsMonster)) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight || b != 0) continue;
+			if (a.bMissile)
+			{
+				if (mshots.Find(a) < mshots.Size()) continue;
+				mshots.Push(a);
+				rec.evTic.Push(ot); rec.evCls.Push(a.GetClass()); rec.evBy.Push(RoleOf(a.target));
+				rec.ex.Push(a.pos.x); rec.ey.Push(a.pos.y); rec.ez.Push(a.pos.z);
+				rec.evx.Push(a.vel.x); rec.evy.Push(a.vel.y); rec.evz.Push(a.vel.z);
+				continue;
+			}
+			AjarRole r = RoleOf(a);
+			if (!r)
+			{
+				r = new("AjarRole");
+				r.cls = a.GetClass();
+				r.born = ot;
+				r.src = a;
+				int c = bornA.Find(a);
+				if (c < bornA.Size()) r.cue = bornC[c];
+				else if (a is "LostSoul")
+				{
+					// whose it is: the pain elemental beside it
+					double best = 160;
+					for (int i = 0; i < rec.roles.Size(); i++)
+					{
+						Actor m = rec.roles[i].src;
+						if (!m || !(m is "PainElemental") || m.Distance2D(a) >= best) continue;
+						best = m.Distance2D(a);
+						r.maker = rec.roles[i];
+					}
+				}
+				rec.roles.Push(r);
+			}
+			r.seen = true;
+			let rail = AjarRail(a.FindInventory("AjarRail"));
+			r.x.Push(a.pos.x); r.y.Push(a.pos.y); r.z.Push(a.pos.z); r.ang.Push(a.angle);
+			r.sf.Push((int(a.sprite) << 8) | (a.frame & 127) | ((a.bBright || (!rail && a.CurState && a.CurState.bFullbright)) ? 128 : 0));
+			r.hp.Push(rail ? rail.hp : max(0, a.health));
+		}
+		for (int i = 0; i < rec.roles.Size(); i++)
+		{
+			AjarRole r = rec.roles[i];
+			if (r.seen || !r.src) continue;      // (gone for good: its record ends here)
+			r.x.Push(0); r.y.Push(0); r.z.Push(0); r.ang.Push(0); r.sf.Push(-1); r.hp.Push(1);
+		}
+	}
+
+	// What is seen in the hall besides: things of no substance. A puppet that
+	// shows one of the last go is written down as what it shows.
+	void RecordFx(AjarTrack tr)
+	{
+		tr.first.Push(tr.slot.Size());
+		for (int i = 0; i < tr.live.Size(); i++) tr.liveSeen[i] = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (a.bInvisible) continue;
+			class<Actor> cls = a.GetClass();
+			if (a is "AjarEcho")
+			{
+				int pi = puppets.Find(AjarEcho(a));
+				if (pi == puppets.Size()) continue;
+				cls = slotCls[puppetSlot[pi]];
+			}
+			else if (!a.bNoBlockmap || a.bIsMonster || a.bMissile || a.player || a is "AjarZone" || a is "AjarCue" || a is "AjarCam"
+				|| a is "Inventory" || GetDefaultByType(cls).bMissile) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight || b != 0) continue;
+			int f = (int(a.sprite) << 8) | (a.frame & 127) | ((a.bBright || (a.CurState && a.CurState.bFullbright)) ? 128 : 0);
+			int i = tr.live.Find(a);
+			if (i == tr.live.Size())
+			{
+				slotCls.Push(cls);
+				tr.live.Push(a); tr.liveSlot.Push(slotCls.Size() - 1); tr.liveSf.Push(-1); tr.liveSeen.Push(1);
+				tr.lx.Push(0); tr.ly.Push(0); tr.lz.Push(0); tr.la.Push(0);
+			}
+			tr.liveSeen[i] = 1;
+			if (tr.liveSf[i] == f && tr.lx[i] == a.pos.x && tr.ly[i] == a.pos.y && tr.lz[i] == a.pos.z && tr.la[i] == a.angle) continue;
+			tr.liveSf[i] = f; tr.lx[i] = a.pos.x; tr.ly[i] = a.pos.y; tr.lz[i] = a.pos.z; tr.la[i] = a.angle;
+			tr.Put(tr.liveSlot[i], f, a.pos, a.angle);
+		}
+		for (int i = tr.live.Size() - 1; i >= 0; i--)
+		{
+			if (tr.liveSeen[i]) continue;
+			tr.Put(tr.liveSlot[i], -1, (0, 0, 0), 0);
+			tr.live.Delete(i); tr.liveSlot.Delete(i); tr.liveSf.Delete(i); tr.liveSeen.Delete(i);
+			tr.lx.Delete(i); tr.ly.Delete(i); tr.lz.Delete(i); tr.la.Delete(i);
+		}
+	}
+
+	// This go is over: it is the next one's demo.
+	void EndGo()
+	{
+		if (!rec) return;
+		rec.len = ot;
+		demo = rec;
+		rec = null;
+	}
+
+	// The monster is real again, where it stands, if it stands free.
+	bool Wake(AjarRole r, AjarRail rail, Actor mo)
+	{
+		Actor a = r.actor;
+		let d = GetDefaultByType(a.GetClass());
+		a.bSolid = d.bSolid;
+		if (!a.TestMobjLocation())
+		{
+			// Something stands in it. It waits a second for that to move on;
+			// then it steps aside, or wakes where it is (it must not be left
+			// for good where it cannot be hurt).
+			if (++r.waited < WAKE_WAIT) { a.bSolid = false; return false; }
+			Vector3 was = a.pos;
+			bool ok = false;
+			for (int i = 0; i < 16 && !ok; i++)
+			{
+				Vector2 p = was.xy + Actor.AngleToVector(i * 45, (a.radius + 8) * (1 + i / 8));
+				if (!level.IsPointInLevel((p, was.z))) continue;
+				a.SetOrigin((p, was.z), false);
+				ok = a.TestMobjLocation();
+			}
+			if (!ok) a.SetOrigin(was, false);
+		}
+		int hp = rail.hp - rail.dmg;
+		a.RemoveInventory(rail);
+		rail.Destroy();
+		r.mode = 2;
+		a.bBright = d.bBright;
+		a.health = max(1, hp);
+		a.target = mo;
+		a.SetState(a.SeeState ? a.SeeState : a.SpawnState);
+		if (hp <= 0) a.DamageMobj(mo, mo, RAIL_HEALTH, 'None');
+		return true;
+	}
+
+	void Release(AjarRole r, AjarRail rail)
+	{
+		if (rail) { r.actor.RemoveInventory(rail); rail.Destroy(); }
+		r.mode = 2;
+	}
+
+	// The player is in the hall: their share of the monsters wakes.
+	void StepIn()
+	{
+		stepped = true;
+		if (!Demoing()) return;
+		int n = max(2, takes.Size());
+		Array<AjarRole> c;
+		for (int i = 0; i < demo.roles.Size(); i++)
+		{
+			AjarRole r = demo.roles[i];
+			if (r.mode == 1 && !r.dead && !r.wakeDue && r.actor) c.Push(r);
+		}
+		for (int k = (c.Size() + n / 2) / n; k > 0; k--)
+		{
+			int pick = random[AjarDemo](0, c.Size() - 1);
+			c[pick].wakeDue = true;
+			c.Delete(pick);
+		}
+	}
+
+	void PlayDemo(Actor mo)
+	{
+		if (!demo) return;
+		bool ended = ot >= demo.len;
+		if (demo.fx)
+		{
+			if (ot < demo.fx.first.Size()) PlayBack(demo.fx, ot);
+			else if (ot == demo.fx.first.Size()) DropPuppets(-1);
+		}
+		for (int ri = 0; ri < demo.roles.Size(); ri++)
+		{
+			AjarRole r = demo.roles[ri];
+			if (r.mode == 2) continue;
+			int i = ot - r.born;
+			if (r.mode == 0)
+			{
+				if (i != 0) { if (ended) r.mode = 2; continue; }
+				// not if its cue has brought it already, or its pain elemental is awake
+				if ((r.cue && r.cue.special1) || (r.maker && r.maker.mode != 1) || r.sf[0] < 0) { r.mode = 2; continue; }
+				Actor n = Actor.Spawn(r.cls, (r.x[0], r.y[0], r.z[0]));
+				if (!n) { r.mode = 2; continue; }
+				n.GiveInventoryType("AjarRail");
+				n.bSolid = false;
+				if (r.cue)
+				{
+					r.cue.special1 = 1;
+					bornA.Push(n); bornC.Push(r.cue);
+					Actor.Spawn("TeleportFog", n.pos, ALLOW_REPLACE);
+					n.A_StartSound(n.SeeSound, CHAN_VOICE);
+				}
+				r.actor = n;
+				r.mode = 1;
+				r.dead = r.hidden = false;
+				r.wakeDue = stepped && random[AjarDemo](1, max(2, takes.Size())) == 1;
+			}
+			Actor a = r.actor;
+			let rail = a ? AjarRail(a.FindInventory("AjarRail")) : null;
+			if (!rail) { r.mode = 2; continue; }
+			// a body that something has really raised is real
+			if (r.dead && a.health > 0) { a.bSolid = GetDefaultByType(a.GetClass()).bSolid; Release(r, rail); continue; }
+			if (rail.hit) r.wakeDue = true;
+			bool has = i < r.x.Size();
+			if (!has)
+			{
+				if (r.born + r.x.Size() < demo.len)     // it was gone then (a lost soul that burst)
+				{
+					if (!r.dead) a.ClearCounters();
+					a.Destroy();
+					r.mode = 2;
+					continue;
+				}
+				if (r.dead) { Release(r, rail); continue; }       // the demo is over: a body
+				if (r.hidden) { r.hidden = false; a.bInvisible = false; a.bShootable = true; }
+				r.wakeDue = true;
+			}
+			if (r.wakeDue && !r.dead && !r.hidden && Wake(r, rail, mo)) continue;
+			a.vel = (0, 0, 0);
+			a.target = null;
+			a.tics = -1;
+			if (!has) continue;
+			int f = r.sf[i];
+			if (f < 0)      // it was out of the hall then
+			{
+				if (!r.hidden) { r.hidden = true; a.bInvisible = true; a.bShootable = false; }
+				continue;
+			}
+			if (r.hidden) { r.hidden = false; a.bInvisible = false; a.bShootable = !r.dead; }
+			int hp = r.hp[i];
+			if (hp <= 0 && !r.dead)
+			{
+				r.dead = true;
+				a.health = 0;
+				a.Die(null, null);
+				a.A_NoBlocking();
+				a.A_StartSound(a.DeathSound, CHAN_VOICE);
+			}
+			else if (hp > 0 && r.dead)
+			{
+				r.dead = false;
+				a.Revive();
+				a.bSolid = false;
+			}
+			rail.hp = r.dead ? 0 : hp;
+			if (!r.dead) a.health = RAIL_HEALTH;
+			a.SetOrigin((r.x[i], r.y[i], r.z[i]), true);
+			a.angle = r.ang[i];
+			a.sprite = f >> 8;
+			a.frame = f & 127;
+			a.bBright = (f & 128) != 0;
+			a.tics = -1;
+		}
+		// what they shot then flies again
+		for (; demo.next < demo.evTic.Size() && demo.evTic[demo.next] <= ot; demo.next++)
+		{
+			int e = demo.next;
+			AjarRole by = demo.evBy[e];
+			if (!by || by.mode != 1 || by.dead || by.hidden || !by.actor || !demo.evCls[e]) continue;
+			Actor m = Actor.Spawn(demo.evCls[e], (demo.ex[e], demo.ey[e], demo.ez[e]));
+			if (!m) continue;
+			m.target = by.actor;
+			m.vel = (demo.evx[e], demo.evy[e], demo.evz[e]);
+			m.angle = VectorAngle(m.vel.x, m.vel.y);
+			m.A_StartSound(m.SeeSound, CHAN_VOICE);
+		}
+	}
 
 	void RecordTake(PlayerPawn mo)
 	{
@@ -507,7 +866,8 @@ class AjarTimeHandler : EventHandler
 			if (!(a.bIsMonster || a.bMissile || a.bCorpse || (inv && !inv.owner && inv.bDropped))) continue;
 			int k, b;
 			[k, b] = Where(a.pos.xy);
-			if (k == fight && b == 0) gone.Push(a);
+			// (an open fight's monster that is in a box goes too: it comes again)
+			if (k == fight && (b == 0 || (open && b > 0 && a.bIsMonster))) gone.Push(a);
 		}
 		for (int i = 0; i < gone.Size(); i++)
 		{
@@ -520,6 +880,17 @@ class AjarTimeHandler : EventHandler
 		DropGhosts();
 		for (int i = 0; i < takes.Size(); i++) takes[i].next = 0;
 		shots.Clear();
+		DropPuppets(-1);
+		if (demo)
+		{
+			demo.next = 0;
+			for (int i = 0; i < demo.roles.Size(); i++)
+			{
+				AjarRole r = demo.roles[i];
+				r.actor = null; r.src = null; r.mode = 0; r.waited = 0;
+				r.dead = r.wakeDue = r.hidden = false;
+			}
+		}
 	}
 
 	void NewTake(Actor mo)
@@ -527,6 +898,11 @@ class AjarTimeHandler : EventHandler
 		takes.Push(new("AjarTake"));
 		ot = 0;
 		hadClip = mo.CountInv("Clip"); hadShell = mo.CountInv("Shell");
+		rec = new("AjarDemo");
+		rec.fx = new("AjarTrack");
+		rec.fx.fx = true;
+		mshots.Clear(); bornA.Clear(); bornC.Clear();
+		stepped = false;
 	}
 
 	// The player has gone out of an open fight (or been killed in it): it
@@ -546,6 +922,7 @@ class AjarTimeHandler : EventHandler
 		trips++;
 		at = trips;
 		StepClear(mo, BoxLine(fight, trips));
+		EndGo();
 		ClearHall();
 		NewTake(mo);
 		HallDoors(0);
@@ -554,7 +931,7 @@ class AjarTimeHandler : EventHandler
 		mo.A_SetBlend(rescued ? "ff2010" : "white", 1.0, 40);
 		if (!rescued) mo.A_StartSound("misc/teleport", CHAN_AUTO);
 		string last = trips == BoxCount(fight) ? "\nThe last box: after this the doors stay shut, and death is death." : "";
-		Say((rescued ? "You were killed. " : "") .. "It is before the fight, and this door is open:\ngo back in and fight beside yourself." .. last);
+		Say((rescued ? "You were killed. " : "") .. "It is before the fight, and it plays as it went.\nThis door is open: step in when you choose." .. last);
 		rescued = false;
 	}
 
@@ -942,12 +1319,13 @@ class AjarTimeHandler : EventHandler
 		open = openFights.Find(k) < openFights.Size();
 		takes.Clear();
 		DropGhosts();
-		if (open) NewTake(players[consoleplayer].mo);
+		demo = null;
+		slotCls.Clear();
+		if (open) { NewTake(players[consoleplayer].mo); stepped = true; }
 		trips = 0;
 		at = 0;
 		main = new("AjarTrack");
 		boxes.Clear();
-		slotCls.Clear();
 		phase = LIVE;
 		HallDoors(1);
 		if (!(said & 1)) Say("A door with a clock on it leads out of the fight,\nand back into it where you left.");
@@ -1015,7 +1393,7 @@ class AjarTimeHandler : EventHandler
 			if (!a.bIsMonster || a.health <= 0) continue;
 			int k, b;
 			[k, b] = Where(a.pos.xy);
-			if (k != fight || b != 0) continue;
+			if (k != fight || b != 0 || OnDemo(a)) continue;
 			if (a.target && (a.target != mo || at == 0)) continue;
 			Actor to = null;
 			if (at > 0)
@@ -1044,6 +1422,14 @@ class AjarTimeHandler : EventHandler
 		return n;
 	}
 
+	// Is this cue's monster still to come in the demo that is playing?
+	bool WillCome(AjarCue c)
+	{
+		if (!open || !Demoing()) return false;
+		for (int i = 0; i < demo.roles.Size(); i++) if (demo.roles[i].cue == c && demo.roles[i].mode == 0) return true;
+		return false;
+	}
+
 	// The next wave, if it is due. Returns whether any is still to come.
 	bool Cues(Actor mo, int left)
 	{
@@ -1056,6 +1442,7 @@ class AjarTimeHandler : EventHandler
 		while (c = AjarCue(it.Next()))
 		{
 			if (c.args[0] != fight || c.special1 || c.args[1] != wave || left > c.args[2]) continue;
+			if (WillCome(c)) continue;      // as it came the last time, and when
 			class<Actor> cls = AjarHandler.AmbushClass(c.args[3]);
 			if (c.args[3] == 64) cls = "Archvile";
 			if (c.args[3] == 16) cls = "Cyberdemon";
@@ -1067,6 +1454,7 @@ class AjarTimeHandler : EventHandler
 			m.angle = c.angle;
 			Actor.Spawn("TeleportFog", c.pos, ALLOW_REPLACE);
 			m.target = mo;
+			bornA.Push(m); bornC.Push(c);
 			if (m.SeeState) m.SetState(m.SeeState);
 			m.A_StartSound(m.SeeSound, CHAN_VOICE);
 			c.special1 = 1;         // spent (not destroyed: an open fight begins again)
@@ -1209,6 +1597,7 @@ class AjarTimeHandler : EventHandler
 					double far = (playerWas.xy - (d.v1.p + d.v2.p) / 2).Length();
 					if (far < best) { best = far; t.door = HallLine(fight, j); }
 				}
+				EndGo();
 			}
 			ClearHall();
 			HallDoors(0);
@@ -1258,7 +1647,7 @@ class AjarTimeHandler : EventHandler
 		comeBack = false;
 		phase = LIVE;
 		at = 0;
-		if (open) NewTake(mo);
+		if (open) { NewTake(mo); StepIn(); }
 		else
 		{
 			main = new("AjarTrack");
@@ -1370,6 +1759,7 @@ class AjarTimeHandler : EventHandler
 		h.Link(BoxLine(fight, at), 0, TIME_TEX);
 		at = 0;
 		StepClear(players[consoleplayer].mo, used);
+		if (open) StepIn();
 		HallDoors(trips + 1);
 		players[consoleplayer].mo.A_SetBlend("white", 0.6, 18);
 	}
@@ -1382,6 +1772,8 @@ class AjarTimeHandler : EventHandler
 		phase = IDLE;
 		DropGhosts();
 		takes.Clear();
+		DropPuppets(-1);
+		demo = rec = null;
 		open = false;
 		HouseLights(fight, 1);
 		main = null;
@@ -1427,7 +1819,7 @@ class AjarTimeHandler : EventHandler
 				Show(fight, ft, mo);
 				if (at == 0) Snap(mo);
 				KeepKills();
-				if (open) { RecordTake(PlayerPawn(mo)); PlayGhosts(mo); ot++; }
+				if (open) { RecordTake(PlayerPawn(mo)); PlayGhosts(mo); PlayDemo(mo); RecordDemo(); RecordFx(rec.fx); ot++; }
 				else Record(main);
 				// a hall with a show is empty until the count is over
 				int go = HasShow(fight) ? SHOW_GO : 0;
@@ -1623,6 +2015,16 @@ class AjarTimeHandler : EventHandler
 	// west door (hall 2: by being killed), into box 1, back in, and the fight
 	// won. Hall 1 is watched again from the box, and the player is killed
 	// there while watching; halls 2 and 3 are open fights, begun again.
+	int testN;
+	Actor testRail;
+	int Rails(bool on)      // monsters of the fight alive, on the demo or awake
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0 && OnDemo(a) == on) n++;
+		return n;
+	}
 	bool ShowLight(int k, bool up)       // is the hall's light as it should be?
 	{
 		for (int i = 0; i < showSec.Size(); i++)
@@ -1689,14 +2091,14 @@ class AjarTimeHandler : EventHandler
 			if (u == 84) Check("begunAgain", ot < 6 && !Left() && takes.Size() == 2 && takes[0].evTic.Size() == 2 && takes[0].died);
 			if (u == 100) Check("besideMyself", ghosts.Size() == 1 && ghosts[0] && ghosts[0].pos.z < 40 && ShowLight(2, true));
 			if (u == 82 + 215) Check("itFiresAgain", takes[0].next == 2);
-			if (u == 82 + 240)
+			if (u == 82 + 225)
 			{
-				int onIt = 0, onMe = 0;
-				let it = ThinkerIterator.Create("Actor");
-				Actor a;
-				while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0) { if (a.target == mo) onMe++; else if (a.target == ghosts[0]) onIt++; }
-				Check("afterMyEarlierSelfNotMe", at == 1 && onIt > 5 && !onMe);
+				// in the box: the last go as it went. Every monster is on the demo, where it was then
+				AjarRole r = demo.roles[0];
+				Check("theyPlayAsTheyWent", at == 1 && Demoing() && Rails(true) > 5 && !Rails(false) && r.actor
+					&& r.actor.pos.x == r.x[ot - 1 - r.born] && r.actor.pos.y == r.y[ot - 1 - r.born]);
 			}
+			if (u == 82 + 300) Check("allAwakeAtItsEnd", !Demoing() && !Rails(true) && Rails(false) > 5 && !puppets.Size());
 			if (u == 82 + 230) Check("theyComeAgain", Left() > 5 && ghosts.Size() == 1 && ghosts[0]);
 		}
 		else
@@ -1724,6 +2126,25 @@ class AjarTimeHandler : EventHandler
 			if (u == 132) Check("onAsMyEarlierSelf", at == 0 && trips == 1 && phase == LIVE && mo.health == RESCUE_HEALTH && ghosts.Size() == 1 && !ghosts[0]
 				&& takes.Size() == 2 && takes[0].x.Size() < 60 && abs(mo.pos.x - takes[0].x[takes[0].x.Size() - 1]) < 20 && (mo.pos.xy - (cx, 300)).Length() > 50);
 			if (u == 133) { at = 1; Go(mo, x - 40, cy, 64, 0); }
+			// into the hall while the last go is still playing: half of them wake
+			if (u == 299) testN = Rails(true);
+			if (u == 300) { Back(); Go(mo, cx, 300, 0, 90); }
+			if (u == 304)
+			{
+				// (one that was picked may still be waiting to stand free)
+				int due = 0;
+				for (int i = 0; i < demo.roles.Size(); i++) if (demo.roles[i].mode == 1 && demo.roles[i].wakeDue) due++;
+				Check("halfOfThemWake", testN > 5 && Rails(false) + due == (testN + 1) / 2 && Rails(true) - due == testN - (testN + 1) / 2);
+			}
+			if (u == 305)
+			{
+				for (int i = 0; i < demo.roles.Size() && !testRail; i++)
+					if (demo.roles[i].mode == 1 && !demo.roles[i].dead && !demo.roles[i].wakeDue) testRail = demo.roles[i].actor;
+				if (testRail) testRail.DamageMobj(mo, mo, 5, 'None');
+			}
+			if (u == 345) Check("wokenByAShot", testRail && !OnDemo(testRail) && testRail.tics != -1 && testRail.health > 0
+				&& testRail.health <= testRail.SpawnHealth() - 5);
+			if (u == 410) Check("allAwakeAtItsEnd3", !Demoing() && !Rails(true) && Rails(false) > 3);
 			if (u == 125) Check("besideMyself3", ghosts.Size() == 1 && ghosts[0] && ghosts[0].pos.z < 40 && ShowLight(3, true));
 		}
 		if (u == 150)
@@ -1740,11 +2161,11 @@ class AjarTimeHandler : EventHandler
 		u -= D;
 		if (u == 240)
 		{
-			Check("handedOver" .. n, phase == LIVE && at == (k == 0 ? 2 : 1) && !puppets.Size());
+			if (k != 2) Check("handedOver" .. n, phase == LIVE && at == (k == 0 ? 2 : 1) && !puppets.Size());
 			if (k == 0) Go(mo, cx, hh[k] + 196, 64, 90);        // the north box
-			else Go(mo, x - 200, cy, 64, 180);
+			else if (k == 1) Go(mo, x - 200, cy, 64, 180);
 		}
-		if (u > 240 && u < 260) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (k != 2 && u > 240 && u < 260) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
 		if (k == 1 && u == 262) Check("itWentToADoor", ghosts.Size() == 1 && !ghosts[0]);
 		if (k == 2 && u == 262) Check("itLeftWhenIDid", ghosts.Size() == 1 && !ghosts[0]);
 		if (u == 265) Check("backIn" .. n, at == 0 && mo.pos.x > x && mo.pos.z < 30);     // it may stand on a row of seats
