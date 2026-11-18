@@ -178,6 +178,12 @@ class AjarTake play
 	int next;                   // the next of them to be fired again
 	bool died;                  // it ended with the player killed, not at a time door
 	int door;                   // the hall's door it ended by (its line)
+	// what they carried (ammunition and armour): each kind's amount now, and
+	// every change of it (at tic carTic, kind carKind had carAmt; pct: an armour's)
+	Array<class<Inventory> > kinds;
+	Array<int> kindAmt;
+	Array<int> carTic, carKind, carAmt;
+	Array<double> carPct;
 }
 
 // A monster in one go at an open fight: where it was, how it looked and its
@@ -326,7 +332,7 @@ class AjarTimeHandler : EventHandler
 	{
 		if (e.IsSaveGame) return;
 		// never begun frozen (a level left by "the show is over" was, once)
-		if (players[consoleplayer].mo) players[consoleplayer].cheats &= ~CF_TOTALLYFROZEN;
+		if (players[consoleplayer].mo) players[consoleplayer].cheats &= ~(CF_TOTALLYFROZEN | CF_FROZEN);
 		let it = ThinkerIterator.Create("AjarZone");
 		Actor a;
 		while (a = Actor(it.Next()))
@@ -639,6 +645,32 @@ class AjarTimeHandler : EventHandler
 		r.mode = 2;
 	}
 
+	// The state of its death that has the picture a body shows (its state has
+	// not run on the demo, only its picture was set), or none.
+	State PictureState(Actor a)
+	{
+		static const statelabel from[] = { "Death", "XDeath" };
+		for (int j = -1; j < 2; j++)
+		{
+			State st = j < 0 ? a.CurState : a.FindState(from[j]);
+			for (int n = 0; st && n < 60; n++)
+			{
+				if (st.sprite == a.sprite && st.Frame == (a.frame & 127)) return st;
+				if (st.tics == -1) break;
+				st = st.NextState;
+			}
+		}
+		return null;
+	}
+
+	// A body the demo has let go of. The go that is played may have ended
+	// while it was still falling: it falls on from the picture it shows.
+	void FallOn(Actor a)
+	{
+		State st = PictureState(a);
+		if (st) a.SetState(st, true);
+	}
+
 	void PlayDemo(Actor mo)
 	{
 		if (!demo) return;
@@ -694,7 +726,7 @@ class AjarTimeHandler : EventHandler
 					r.mode = 2;
 					continue;
 				}
-				if (r.dead) { Release(r, rail); continue; }       // the demo is over: a body
+				if (r.dead) { Release(r, rail); FallOn(a); continue; }       // the demo is over: a body
 				if (r.hidden) { r.hidden = false; a.bInvisible = false; a.bShootable = true; }
 				r.wakeDue = true;
 			}
@@ -754,6 +786,16 @@ class AjarTimeHandler : EventHandler
 		AjarTake t = takes[takes.Size() - 1];
 		t.x.Push(mo.pos.x); t.y.Push(mo.pos.y); t.z.Push(mo.pos.z); t.ang.Push(mo.angle); t.pit.Push(mo.pitch);
 		t.sf.Push((int(mo.sprite) << 8) | (mo.frame & 127));
+		for (Inventory it = mo.Inv; it; it = it.Inv)
+		{
+			if (!(it is "Ammo") && !(it is "BasicArmor")) continue;
+			int ki = t.kinds.Find(it.GetClass());
+			if (ki == t.kinds.Size()) { t.kinds.Push(it.GetClass()); t.kindAmt.Push(-1); }
+			if (t.kindAmt[ki] == it.Amount) continue;
+			t.kindAmt[ki] = it.Amount;
+			let arm = BasicArmor(it);
+			t.carTic.Push(t.x.Size() - 1); t.carKind.Push(ki); t.carAmt.Push(it.Amount); t.carPct.Push(arm ? arm.SavePercent : 0);
+		}
 		int clip = mo.CountInv("Clip"), shell = mo.CountInv("Shell");
 		for (int i = clip; i < hadClip; i++) Fired(t, 1, null, mo.pos, (0, 0, 0));
 		if (shell < hadShell) Fired(t, hadShell - shell >= 2 ? 3 : 2, null, mo.pos, (0, 0, 0));
@@ -1466,6 +1508,8 @@ class AjarTimeHandler : EventHandler
 	const RESCUE_HEALTH = 50;
 	const REWIND = 35;          // tics the clock takes to run back
 	bool rescued;               // the trip that is on began with a death
+	const STAND_TICS = 35;
+	int stand;                  // tics the player still cannot walk, just killed into a box
 
 	// Boxes that were not used in a fight that is won are kept (fight * 10 +
 	// box). Killed in a later fight with none of its own boxes left, the
@@ -1482,7 +1526,29 @@ class AjarTimeHandler : EventHandler
 	// Killed in an open fight's hall while an earlier self is still fighting:
 	// the player goes on as that self, from where it stands (the one with the
 	// most time left). No box is spent; the rest of what that self did is
-	// dropped, so in a later go it is there only up to this moment.
+	// dropped, so in a later go it is there only up to this moment. What that
+	// self carried at this moment is the player's: of each kind of ammunition,
+	// and of armour, they have its amount where it is more than their own
+	// (never less: what a box gave since is not lost).
+	void Carry(PlayerPawn mo, AjarTake t)
+	{
+		Array<int> amt;
+		Array<double> pct;
+		for (int i = 0; i < t.kinds.Size(); i++) { amt.Push(0); pct.Push(0); }
+		for (int e = 0; e < t.carTic.Size() && t.carTic[e] <= ot; e++) { amt[t.carKind[e]] = t.carAmt[e]; pct[t.carKind[e]] = t.carPct[e]; }
+		for (int i = 0; i < t.kinds.Size(); i++)
+		{
+			if (amt[i] <= mo.CountInv(t.kinds[i])) continue;
+			Inventory it = mo.FindInventory(t.kinds[i]);
+			if (!it) { mo.GiveInventory(t.kinds[i], 1); it = mo.FindInventory(t.kinds[i]); }
+			if (!it) continue;
+			it.Amount = amt[i];
+			let arm = BasicArmor(it);
+			if (arm && pct[i] > 0) arm.SavePercent = pct[i];
+		}
+		hadClip = mo.CountInv("Clip"); hadShell = mo.CountInv("Shell");      // (not shots)
+	}
+
 	bool GoOnAs(PlayerPawn mo)
 	{
 		if (!open || phase != LIVE || at != 0) return false;
@@ -1507,6 +1573,7 @@ class AjarTimeHandler : EventHandler
 		mo.angle = g.angle;
 		mo.pitch = g.pitch;
 		g.Destroy();
+		Carry(mo, t);
 		t.x.Resize(ot);             // PlayGhosts goes by its length
 		t.died = false;
 		mo.SetOrigin(p, false);
@@ -1514,12 +1581,13 @@ class AjarTimeHandler : EventHandler
 		mo.health = mo.player.health = RESCUE_HEALTH;
 		mo.A_SetBlend("ff2010", 1.0, 40);
 		mo.A_StartSound("misc/teleport", CHAN_AUTO);
-		Say("You were killed. You go on as your earlier self,\nfrom where it stood.");
+		Say("You were killed. You go on as your earlier self,\nfrom where it stood, with what it carried.");
 		return true;
 	}
 
 	bool Rescue(PlayerPawn mo)
 	{
+		if (stand && --stand == 0) mo.player.cheats &= ~CF_FROZEN;
 		if (over)
 		{
 			mo.bBuddha = true;
@@ -1628,17 +1696,22 @@ class AjarTimeHandler : EventHandler
 		mo.bBuddha = false;
 		mo.A_StartSound("misc/teleport", CHAN_AUTO);
 		rescued = own;
+		// they stand where they were put for a second (they can look about):
+		// keys still held from the fight must not walk them out of the box
+		stand = STAND_TICS;
+		mo.player.cheats |= CF_FROZEN;
 		return true;
 	}
 
-	// Out of a spare box and in its hall: its door shuts behind the player.
+	// A spare box's door stays open while the player is in the box or in its
+	// hall (they can go back in for what lies there); it shuts once they have
+	// left that hall.
 	void SpareTick(Actor mo, int k, int b)
 	{
-		if (!spareOut || k != spareOut / 10 || b != 0) return;
+		if (!spareOut || k == spareOut / 10) return;
 		let h = Doors();
 		h.Link(BoxLine(spareOut / 10, spareOut % 10), 0, TIME_TEX);
-		StepClear(mo, HallLine(k, 1));
-		h.Link(HallLine(k, 1), 0, TIME_TEX);
+		h.Link(HallLine(spareOut / 10, 1), 0, TIME_TEX);
 		spareOut = 0;
 	}
 
@@ -1798,11 +1871,11 @@ class AjarTimeHandler : EventHandler
 			Tests(mo);
 			return;
 		}
+		SpareTick(mo, k, b);
 		if (phase == IDLE)
 		{
 			// a big monster's death that won the fight is still being kept
 			if (dueTic.Size()) { Snap(mo); KeepKills(); }
-			SpareTick(mo, k, b);
 			if (comeBack && k == fight && b == 0) Resume(mo);
 			else if (!comeBack && k && b == 0 && won.Find(k) == won.Size() && mo.health > 0) Begin(k);
 		}
@@ -1857,6 +1930,7 @@ class AjarTimeHandler : EventHandler
 		else if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
+		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
 	}
 
 	// How far the fight that is being watched has got, and when the door opens.
@@ -2011,6 +2085,108 @@ class AjarTimeHandler : EventHandler
 	}
 
 	// MAP31 (tools/map_secret1.py; MAP=MAP31 MODE=3 TIMEOUT=250 tools/smoke.sh):
+	// MAP31 MODE=6: hall 2 three times over. The third go's demo is a go that
+	// had demo monsters in it itself; when it is over every monster left must
+	// be awake.
+	int Stopped(bool say)       // monsters of the fight alive whose state does not run
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0 || a.tics != -1) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight) continue;
+			n++;
+			if (!say) continue;
+			string why = "no role";
+			for (int i = 0; demo && i < demo.roles.Size(); i++)
+			{
+				AjarRole r = demo.roles[i];
+				if (r.actor != a) continue;
+				why = String.Format("role %d mode=%d born=%d size=%d lag=%d dead=%d hidden=%d wakeDue=%d waited=%d lasthp=%d", i, r.mode, r.born, r.x.Size(), r.lag,
+					r.dead, r.hidden, r.wakeDue, r.waited, r.hp.Size() ? r.hp[r.hp.Size() - 1] : -1);
+			}
+			Console.Printf("AJARTEST stopped %s onDemo=%d health=%d box=%d ot=%d len=%d: %s", a.GetClassName(), OnDemo(a), a.health, b, ot, demo ? demo.len : -1, why);
+		}
+		return n;
+	}
+	int MidFall()       // bodies in the fight that stopped in the middle of falling
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health > 0 || a.tics != -1 || !a.CurState) continue;
+			State st = PictureState(a);
+			if (!st || st.tics == -1) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight) continue;
+			n++;
+			Console.Printf("AJARTEST midFall %s frame=%d onDemo=%d", a.GetClassName(), a.frame, OnDemo(a));
+		}
+		return n;
+	}
+	void Hurt(Actor mo, int n, int dmg)
+	{
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (n > 0 && (a = Actor(it.Next())))
+		{
+			if (!a.bIsMonster || a.health <= 0) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight || b != 0) continue;
+			a.DamageMobj(mo, mo, dmg, 'None');
+			n--;
+		}
+	}
+	int goStart;
+	void ThirdGoScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		double cx = 2752 + 768;
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d phase=%d at=%d trips=%d ot=%d len=%d takes=%d onDemo=%d awake=%d stopped=%d",
+			t, phase, at, trips, ot, demo ? demo.len : -1, takes.Size(), Rails(true), Rails(false), Stopped(false));
+		if (t == 1) Go(mo, cx, 60, 0, 90);
+		// the first go: enough are killed for both later waves to come, then the player is
+		if (t == 260) Hurt(mo, 30, 100000);
+		if (t == 300) Hurt(mo, 6, 20);
+		if (t == 340) Hurt(mo, 16, 100000);
+		if (t == 520) mo.health = mo.player.health = 1;
+		if (t == 524) { Check("go2", open && at == 1 && takes.Size() == 2); goStart = t - ot; }
+		// the second: into the hall while the first plays; more killed; on past its end
+		int u = t - goStart;
+		if (takes.Size() == 2)
+		{
+			if (u == 250) { Back(); Go(mo, cx, 300, 0, 90); }
+			if (u == 300) Hurt(mo, 10, 100000);
+			if (u == 640) Check("awakeAfterGo1", !Demoing() && !Rails(true) && Stopped(true) == 0);
+			if (u == 715) Hurt(mo, 4, 100000);         // these are still falling when the go ends
+			if (u == 720) mo.health = mo.player.health = 1;
+		}
+		if (takes.Size() == 3)
+		{
+			if (ot == 4) Check("go3", at == 2 && demo && demo.len > 500);
+			// into the hall, and killed there: on as an earlier self
+			if (ot == 300) { Back(); Go(mo, cx, 300, 0, 90); }
+			// (with nothing left: the earlier self has its bullets and shells still, and no armour to give)
+			if (ot == 340) { mo.TakeInventory("Clip", 1000); mo.TakeInventory("Shell", 1000); mo.GiveInventory("Cell", 7); mo.GiveInventoryType("GreenArmor"); }
+			if (ot == 350) mo.health = mo.player.health = 1;
+			if (ot == 354) Check("onAsAnEarlierSelf", at == 0 && trips == 2 && takes.Size() == 3);
+			if (ot == 354) Check("withWhatItCarried", mo.CountInv("Clip") >= 50 && mo.CountInv("Cell") == 7 && mo.CountInv("BasicArmor") == 100);
+			if (ot == 400) Check("onTheDemo3", Demoing() && Rails(true) > 5);
+			if (ot == demo.len + 60) Check("awakeAfterGo2", !Demoing() && !Rails(true) && Rails(false) > 5 && Stopped(true) == 0);
+			if (ot == demo.len + 200) Check("stillAwake", Stopped(true) == 0);
+			if (ot == demo.len + 100) Check("noneStoppedInItsFall", MidFall() == 0);
+		}
+	}
+
 	// each hall in turn: in while it is empty and lit, the count, out by the
 	// west door (hall 2: by being killed), into box 1, back in, and the fight
 	// won. Hall 1 is watched again from the box, and the player is killed

@@ -3702,6 +3702,28 @@ three times in the last.
 Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (60), `MAP=MAP31 MODE=5`, `MAP=TIME
 MODE=3` (14). **Not played by hand.**
 
+## MAP31: what Vadim found on the third go (2026-11-18)
+
+- **Bodies stopped in their fall.** A monster that was still falling dead
+  when a go ended was left, at the end of that go's demo, on the picture it
+  had reached (the first ones look like a standing monster): a stopped
+  figure that nothing woke. Now it falls on from that picture (`FallOn`,
+  `PictureState`; a gibbed body keeps its own).
+- **Going on as an earlier self gives what it carried**: of each kind of
+  ammunition, and of armour, its amount at that moment where that is more
+  than the player's own (`Carry`; a go writes down every change, in
+  `AjarTake`). Never less, so that what a box gave since is not lost.
+- **Killed into a box, the player stands for a second** (`stand`,
+  `CF_FROZEN`: they can look about). Keys still held from the fight walked
+  them out of the door, which shut behind them. And **a spare box's door
+  stays open** while they are in the box or its hall; it shuts when they
+  have left that hall (`SpareTick`). Neither is run by a test.
+- `MAP=MAP31 MODE=6 TIMEOUT=160 ./tools/smoke.sh`: hall 2 three times over,
+  both later waves, a third go, on as an earlier self (8 checks).
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=200` (62), `MAP=MAP31 MODE=6` (8). **Not
+played by hand.**
+
 ## MAP31: where it stands (handed on, 2026-11-18)
 
 - Hall 1 is watched from its box (a replay, nothing changes). Halls 2 and 3
@@ -3711,7 +3733,7 @@ MODE=3` (14). **Not played by hand.**
 - Open with Vadim: why green armour was refused in a box (the HUD shows
   armour now; he was to look at the number); whether ammunition is enough
   for the new numbers; whether the green armour in the boxes stays.
-- Never run by a test: a third go; a death, a raise or a lost soul on the
-  demo; going on as an earlier self when one is still in its box.
+- Never run by a test: going on as an earlier self when one is still in
+  its box; the second's stand in a box; a spare box's door.
   `MAP=TIME MODE=4` fails on `followed` and did before today.
 - Everything is on `origin/main`.
