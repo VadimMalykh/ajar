@@ -17,8 +17,6 @@ once; what is in a box is all that a trip gives. See src/zscript/time.zs and too
   where. For cover a hall has pillars and banks of raked seats (sheer at the
   back and sides). In the great hall one bank has an arrow on its top, at a
   piece of wall that opens: the level's secret.
-- A room key lies in the second and third halls; cupboards in their boxes
-  want it.
 - Each fight has something to remember it by, that is seen again from the
   box: hall 1 an arch-vile and then two more (the answers are in its boxes:
   rocket launcher, BFG), hall 2 a cyberdemon early.
@@ -87,10 +85,60 @@ def rows(k, x, y, w, h):
     return out
 
 
+# How many times over a hall's monsters are (Vadim, once the open fights were
+# a pure demo: twice in the second hall, three times in the last). Each spot
+# below is one monster; the others of it stand beside it, clear of walls,
+# pillars, banks and each other (flush()), and a wave comes when that many
+# times as many are left.
+TIMES = {1: 1, 2: 2, 3: 3}
+RADIUS = {3001: 20, 9: 20, 65: 20, 3002: 30, 58: 30, 3005: 31, 71: 31, 69: 24, 3003: 24, 66: 20, 64: 20,
+          67: 48, 68: 64, 16: 40}
+HALLS = {}
+asked = []
+
+
+def cue(k, wave, when, kind, *spots, **look):
+    asked.append((k, wave, when, kind, spots, look))
+
+
+def flush():
+    """Place what cue() was asked for."""
+    import math
+    taken = {}
+    for k, wave, when, kind, spots, look in asked:
+        taken.setdefault((k, wave), []).extend((x, y, RADIUS[kind]) for x, y in spots)
+    for k, wave, when, kind, spots, look in asked:
+        hall, r, there = HALLS[k], RADIUS[kind], taken[(k, wave)]
+
+        def free(x, y):
+            if not (hall.x + r + 24 <= x <= hall.x + hall.w - r - 24 and hall.y + 140 + r <= y <= hall.y + hall.h - r - 24):
+                return False
+            if any(a - r - 8 < x < c + r + 8 and b - r - 8 < y < d + r + 8 for a, b, c, d in hall.solid):
+                return False
+            # (things are square: clear along x or along y)
+            return all(max(abs(x - ox), abs(y - oy)) >= r + orr + 8 for ox, oy, orr in there)
+
+        out = list(spots)
+        for x, y in spots:
+            for _ in range(TIMES[k] - 1):
+                step = 2 * r + 24
+                for ring in range(1, 12):
+                    got = next(((x + round(math.cos(math.radians(a)) * step * ring), y + round(math.sin(math.radians(a)) * step * ring))
+                                for a in range(0, 360, 45)
+                                if free(x + round(math.cos(math.radians(a)) * step * ring),
+                                        y + round(math.sin(math.radians(a)) * step * ring))), None)
+                    if got:
+                        break
+                assert got, (k, wave, kind, x, y)
+                there.append((*got, r))
+                out.append(got)
+        ajartime.cue(m, k, wave, when * TIMES[k], kind, *out, **look)
+
+
 def first(k, kind, *at):
     """The monsters hall k's fight begins with. The hall is empty until the
     screen has counted down; then they come in, facing the way in."""
-    ajartime.cue(m, k, 1, 0, kind, *at, angle=270)
+    cue(k, 1, 0, kind, *at, angle=270)
 
 
 ARROW = dress(side="BS", ftex="BA") if LOOK else dict(ftex="AJARROW")
@@ -131,6 +179,8 @@ def spots(kind, *at):
 class Hall:
     def __init__(self, k, x, y, w, h, blocks, *, ceil=256, light=190, last=False, open=False):
         self.k, self.x, self.y, self.w, self.h = k, x, y, w, h
+        HALLS[k] = self
+        self.solid = [(x + a, y + b, x + c, y + d) for (a, b, c, d), _ in blocks]      # pillars and banks
         cx, cy = self.cx, self.cy = x + w // 2, y + h // 2
         W = "G" if ceil > 256 else "H"                  # the hall's wall is as tall as the hall
         seats = []
@@ -238,11 +288,6 @@ class Hall:
         for kind, (u, v) in zip(kinds, ((20, -40), (20, 0), (20, 40), (-30, -40), (-30, 0), (-30, 40))):
             m.thing(*self.spot(n, u, v), kind)
 
-    def locker(self, n, key, *what):
-        bx, by, du, dv = self.box[n]
-        ang = {(1, 0): 180, (-1, 0): 0, (0, 1): 270, (0, -1): 90}[dv]         # facing into the box
-        ajartime.locker(m, *self.spot(n, -10, 90), key, *what, angle=ang)
-
 
 # === the foyer and the small hall ==========================================
 # The halls are big, and a fight is short and thick: its monsters come in
@@ -286,12 +331,12 @@ first(1, 3005, *h1.at((576, 700), (576, 300)))
 # box. With it come hell knights down the west side and revenants down the
 # east, across the hall from each other. Then two more arch-viles: the BFG is
 # in the second box.
-ajartime.cue(m, 1, 2, 10, 64, *h1.at((576, 860)), angle=270, always=True)
-ajartime.cue(m, 1, 2, 10, 69, *h1.at((120, 300), (120, 400), (120, 600)))
-ajartime.cue(m, 1, 2, 10, 66, *h1.at((1032, 300), (1032, 400), (1032, 600)), angle=180)
-ajartime.cue(m, 1, 3, 6, 64, *h1.at((200, 200), (952, 200)), always=True)
-ajartime.cue(m, 1, 3, 6, 67, *h1.at((400, 860), (752, 860)), angle=270)
-ajartime.cue(m, 1, 3, 6, 3005, *h1.at((576, 500), (400, 400), (752, 400)))
+cue(1, 2, 10, 64, *h1.at((576, 860)), angle=270, always=True)
+cue(1, 2, 10, 69, *h1.at((120, 300), (120, 400), (120, 600)))
+cue(1, 2, 10, 66, *h1.at((1032, 300), (1032, 400), (1032, 600)), angle=180)
+cue(1, 3, 6, 64, *h1.at((200, 200), (952, 200)), always=True)
+cue(1, 3, 6, 67, *h1.at((400, 860), (752, 860)), angle=270)
+cue(1, 3, 6, 3005, *h1.at((576, 500), (400, 400), (752, 400)))
 h1.stock(1, 2003, 2046, 2046, 2012, 2049, 2048)
 h1.stock(2, 2006, 17, 2012, 2012, 2046, 2049)
 h1.stock(3, 2012, 2012, 2046, 17, 2049, 2011)
@@ -302,7 +347,7 @@ h1.more(1, 2018)
 h1.more(2, 2018, 17)
 h1.more(3, 2018, 17)
 
-# === the second hall: a room key, and a cupboard in the first two boxes ======
+# === the second hall ========================================================
 h2 = Hall(2, 2752, 0, 1536, 1216, pillar(384, 352) + pillar(1088, 352) + platform(320, 736) + platform(1024, 736),
           open=True)        # the box's door is open from the start: the fight is fought again, beside oneself
 ajarmap.doorway(m, 1, h1.on[0], h1.on[1], (0, 1), 0,
@@ -316,7 +361,6 @@ spots(2012, (h2.cx + 60, -150))
 spots(83, (h2.cx, -100))
 spots(2046, (h2.cx - 60, -100))
 spots(17, (h2.cx + 60, -100))
-ajarmap.key(m, 1, *h2.at((768, 1140))[0])
 first(2, 3001, *h2.at(*[(200 + 160 * i, 1080) for i in range(8)]))                                  # imps along the far wall
 first(2, 65, *h2.at((120, 608), (1416, 608), (120, 300), (1416, 300)))                              # chaingunners down the sides
 first(2, 69, *h2.at((600, 900), (936, 900), (600, 760), (936, 760)))                                # hell knights, the middle
@@ -324,22 +368,22 @@ first(2, 66, *h2.at((200, 800), (200, 900), (300, 800), (300, 900)))            
 first(2, 3005, *h2.at((768, 500), (600, 400), (936, 400), (768, 300)))
 first(2, 3002, *h2.at((500, 250), (1036, 250), (650, 250), (886, 250)))
 # remembered by: a cyberdemon in the middle of the hall, in the thick of them
-ajartime.cue(m, 2, 2, 14, 16, *h2.at((768, 608)), angle=270, always=True)
-ajartime.cue(m, 2, 2, 14, 67, *h2.at((1300, 800), (1300, 950), (1300, 500)), angle=180)             # mancubi, the east
-ajartime.cue(m, 2, 2, 14, 68, *h2.at((220, 200), (1316, 200)), angle=90)
-ajartime.cue(m, 2, 3, 8, 64, *h2.at((768, 1080)), angle=270, always=True)
-ajartime.cue(m, 2, 3, 8, 3003, *h2.at((500, 608), (1036, 608), (768, 900)), angle=270)
-ajartime.cue(m, 2, 3, 8, 71, *h2.at((768, 300)))
-ajartime.cue(m, 2, 3, 8, 66, *h2.at((1300, 1000), (1300, 1100), (1200, 1100)), angle=180)
+cue(2, 2, 14, 16, *h2.at((768, 608)), angle=270, always=True)
+cue(2, 2, 14, 67, *h2.at((1300, 800), (1300, 950), (1300, 500)), angle=180)             # mancubi, the east
+cue(2, 2, 14, 68, *h2.at((220, 200), (1316, 200)), angle=90)
+cue(2, 3, 8, 64, *h2.at((768, 1080)), angle=270, always=True)
+cue(2, 3, 8, 3003, *h2.at((500, 608), (1036, 608), (768, 900)), angle=270)
+cue(2, 3, 8, 71, *h2.at((768, 300)))
+cue(2, 3, 8, 66, *h2.at((1300, 1000), (1300, 1100), (1200, 1100)), angle=180)
 h2.stock(1, 2012, 2012, 2049, 2046, 2046)
-h2.locker(1, 1, 2046, 17)
 h2.stock(2, 2012, 2012, 2049, 2046, 2011)
-h2.locker(2, 1, 17, 2013)
 h2.stock(3, 2012, 2012, 2049, 2046, 2011, 17)
-for n in (1, 2, 3):
-    h2.more(n, 2018, 17)
+# (what was in the boxes' cupboards lies on the floor now: the room keys are gone)
+h2.more(1, 2018, 17, 2046, 17)
+h2.more(2, 2018, 17, 17, 2013)
+h2.more(3, 2018, 17)
 
-# === the great hall: the arrow, the wall that opens, a room key ==============
+# === the great hall: the arrow, the wall that opens ==========================
 h3 = Hall(3, 5696, 0, 1920, 1472, pillar(448, 352) + pillar(1408, 352) + pillar(1216, 704) +
           platform(384, 992) + platform(1344, 992) + platform(320, 576, arrow=True),
           ceil=288, last=True, open=True)       # an open fight, as hall 2 is
@@ -368,30 +412,29 @@ if LOOK:                                    # shut, it is the wall of each side
     m.line(c, d, upper=tx("C"))
 spots(83, (sx + 32, -80))                   # megasphere (the BFG is in hall 1's second box now)
 spots(17, (sx, -110), (sx + 64, -110))
-ajarmap.key(m, 2, *h3.at((960, 1420))[0])
 first(3, 3001, *h3.at(*[(160 + 170 * i, 1360) for i in range(10)]))                                 # imps along the far wall
 first(3, 65, *h3.at((120, 736), (1800, 736), (120, 400), (1800, 400), (120, 1100), (1800, 1100)))   # chaingunners down the sides
 first(3, 66, *h3.at((700, 1000), (1220, 1000), (700, 900), (1220, 900)))
 first(3, 3005, *h3.at((960, 600), (760, 500), (1160, 500), (860, 350), (1060, 350)))
 first(3, 69, *h3.at((800, 1200), (1120, 1200), (800, 1100), (1120, 1100)))
 first(3, 67, *h3.at((300, 900), (1620, 900)))
-ajartime.cue(m, 3, 2, 16, 68, *h3.at((250, 250), (1670, 250), (960, 250)), angle=90)
-ajartime.cue(m, 3, 2, 16, 69, *h3.at((250, 1250), (350, 1250), (250, 1150)))
-ajartime.cue(m, 3, 2, 16, 58, *h3.at((860, 160), (1060, 160), (860, 1300), (1060, 1300), (960, 480)))
-ajartime.cue(m, 3, 2, 16, 71, *h3.at((960, 900)))
-ajartime.cue(m, 3, 3, 10, 3003, *h3.at((600, 600), (1320, 600), (960, 1250), (960, 400)), angle=270)
-ajartime.cue(m, 3, 3, 10, 64, *h3.at((200, 736), (1720, 736)), always=True)
-ajartime.cue(m, 3, 3, 10, 66, *h3.at((1620, 1250), (1720, 1250), (1620, 1150)), angle=180)
+cue(3, 2, 16, 68, *h3.at((250, 250), (1670, 250), (960, 250)), angle=90)
+cue(3, 2, 16, 69, *h3.at((250, 1250), (350, 1250), (250, 1150)))
+cue(3, 2, 16, 58, *h3.at((860, 160), (1060, 160), (860, 1300), (1060, 1300), (960, 480)))
+cue(3, 2, 16, 71, *h3.at((960, 900)))
+cue(3, 3, 10, 3003, *h3.at((600, 600), (1320, 600), (960, 1250), (960, 400)), angle=270)
+cue(3, 3, 10, 64, *h3.at((200, 736), (1720, 736)), always=True)
+cue(3, 3, 10, 66, *h3.at((1620, 1250), (1720, 1250), (1620, 1150)), angle=180)
 # remembered by: two cyberdemons at once, with whatever is left around them
-ajartime.cue(m, 3, 4, 6, 16, *h3.at((760, 736), (1100, 736)), angle=270, always=True)
-ajartime.cue(m, 3, 4, 6, 3001, *h3.at((200, 1300), (1720, 1300), (200, 160), (1720, 160)))
+cue(3, 4, 6, 16, *h3.at((760, 736), (1100, 736)), angle=270, always=True)
+cue(3, 4, 6, 3001, *h3.at((200, 1300), (1720, 1300), (200, 160), (1720, 160)))
 h3.stock(1, 2012, 2012, 17, 2046, 2011)
-h3.locker(1, 2, 17, 2013)
 h3.stock(2, 2012, 2012, 17, 2046, 2049, 2011)
-h3.locker(2, 2, 2019, 17)
 h3.stock(3, 2012, 2012, 17, 2046, 2049, 2011)
-for n in (1, 2, 3):
-    h3.more(n, 2018, 17)
+h3.more(1, 2018, 17, 17, 2013)
+h3.more(2, 2018, 17, 2019, 17)
+h3.more(3, 2018, 17)
+flush()
 
 if __name__ == "__main__":
     import sys

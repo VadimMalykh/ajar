@@ -193,6 +193,7 @@ class AjarRole play
 	// while it is recorded
 	Actor src;
 	bool seen;
+	int lag;                    // tics it has lain dead and still, not written down (it is as it was last)
 	// while it is played: mode 0 not yet come, 1 on the demo, 2 no longer
 	Actor actor;
 	int mode;
@@ -519,6 +520,18 @@ class AjarTimeHandler : EventHandler
 			}
 			r.seen = true;
 			let rail = AjarRail(a.FindInventory("AjarRail"));
+			int n = r.x.Size();
+			if (n)
+			{
+				// a body lying still: nothing to write
+				if (a.health <= 0 && a.tics == -1 && r.hp[n - 1] <= 0 && r.sf[n - 1] >= 0 && r.x[n - 1] == a.pos.x && r.y[n - 1] == a.pos.y
+					&& r.z[n - 1] == a.pos.z && (r.sf[n - 1] >> 8) == int(a.sprite) && (r.sf[n - 1] & 127) == (a.frame & 127)) { r.lag++; continue; }
+				for (; r.lag > 0; r.lag--)
+				{
+					r.x.Push(r.x[n - 1]); r.y.Push(r.y[n - 1]); r.z.Push(r.z[n - 1]); r.ang.Push(r.ang[n - 1]);
+					r.sf.Push(r.sf[n - 1]); r.hp.Push(r.hp[n - 1]);
+				}
+			}
 			r.x.Push(a.pos.x); r.y.Push(a.pos.y); r.z.Push(a.pos.z); r.ang.Push(a.angle);
 			r.sf.Push((int(a.sprite) << 8) | (a.frame & 127) | ((a.bBright || (!rail && a.CurState && a.CurState.bFullbright)) ? 128 : 0));
 			r.hp.Push(rail ? rail.hp : max(0, a.health));
@@ -673,7 +686,8 @@ class AjarTimeHandler : EventHandler
 			bool has = i < r.x.Size();
 			if (!has)
 			{
-				if (r.born + r.x.Size() < demo.len)     // it was gone then (a lost soul that burst)
+				if (r.lag > 0 && !ended) continue;          // a body that lay still from then on
+				if (r.born + r.x.Size() + r.lag < demo.len)     // it was gone then (a lost soul that burst)
 				{
 					if (!r.dead) a.ClearCounters();
 					a.Destroy();
@@ -2066,7 +2080,6 @@ class AjarTimeHandler : EventHandler
 		// shots for the ghost to fire again: a rocket, and a bullet gone from the clip
 		if (k == 1 && u == 200) mo.SpawnPlayerMissile("Rocket");
 		if (k == 1 && u == 210) mo.TakeInventory("Clip", 1);
-		if (u == 60 && k) mo.GiveInventoryType(k == 1 ? "AjarKey1" : "AjarKey2");
 		if (u < 80 + D) return;
 		u -= D;
 		if (k == 1)                         // the second hall is left by being killed, in its middle
@@ -2139,16 +2152,6 @@ class AjarTimeHandler : EventHandler
 				&& testRail.health <= testRail.SpawnHealth() - 5);
 			if (u == 410) Check("allAwakeAtItsEnd3", !Demoing() && !Rails(true) && Rails(false) > 3);
 			if (u == 125) Check("besideMyself3", ghosts.Size() == 1 && ghosts[0] && ghosts[0].pos.z < 40 && ShowLight(3, true));
-		}
-		if (u == 150)
-		{
-			let it = ThinkerIterator.Create("AjarLocker");
-			AjarLocker l;
-			while (l = AjarLocker(it.Next())) if (mo.Distance2D(l) < 200)
-			{
-				l.Used(mo);
-				Check("cupboard" .. n, l.frame == 1);
-			}
 		}
 		if (u < 240 + D) return;
 		u -= D;

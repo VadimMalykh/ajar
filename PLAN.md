@@ -3678,3 +3678,40 @@ Vadim played the open fights. Three things.
 Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (60; hall 3: `noneWakesAsIStepIn`,
 `wokenByAShot`, `wokenByATouch`, `allAwakeAtItsEnd3`), `MAP=TIME MODE=3`
 (14). **Not played by hand.**
+
+## MAP31: no keys, and more monsters (2026-11-18)
+
+Vadim, after playing the pure demo ("much better"): the room keys are of no
+use, and the fights are easy now: twice the monsters in the second hall,
+three times in the last.
+
+- **The room keys and the boxes' cupboards are gone** from MAP31. What the
+  cupboards held lies on the floor of the same boxes (`Hall.more`). The
+  `AjarLocker` class and `ajartime.locker` are still there, unused here.
+- **Hall 2 has twice its monsters, hall 3 three times** (`TIMES` in
+  `map_secret1.py`; on the hardest difficulty 84 and 174, fewer on the
+  easier ones as before). Every kind, the cyberdemons and arch-viles too
+  (hall 2: 2 and 2; hall 3: 6 and 6). The spots in the script are as they
+  were; `flush()` puts the others beside each, clear of walls, pillars,
+  banks and each other. A wave comes when that many times as many are left.
+- **Ammunition is as it was.** Not looked at; it was right for a third of
+  these.
+- A body that lies still is no longer written down tic by tic (`lag`): a
+  demo of the great hall would have been tens of megabytes.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (60), `MAP=MAP31 MODE=5`, `MAP=TIME
+MODE=3` (14). **Not played by hand.**
+
+## MAP31: where it stands (handed on, 2026-11-18)
+
+- Hall 1 is watched from its box (a replay, nothing changes). Halls 2 and 3
+  are open fights: the last go is a pure demo; see the four sections above
+  for the rules as they now are (the 1/2, 1/3 share and `Hunt`'s part
+  before the demo's end are history).
+- Open with Vadim: why green armour was refused in a box (the HUD shows
+  armour now; he was to look at the number); whether ammunition is enough
+  for the new numbers; whether the green armour in the boxes stays.
+- Never run by a test: a third go; a death, a raise or a lost soul on the
+  demo; going on as an earlier self when one is still in its box.
+  `MAP=TIME MODE=4` fails on `followed` and did before today.
+- Everything is on `origin/main`.
