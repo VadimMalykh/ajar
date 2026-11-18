@@ -13,6 +13,18 @@ RED, BLUE, GREEN, YELLOW, VIOLET, PINK = 1, 2, 3, 4, 5, 6
 STRAY = 7           # the Stray door: no far side of its own (see stray_place)
 TEAL, ORANGE = 8, 9 # the colours of Pairs (see pair)
 NAMES = {RED: "RED", BLUE: "BLUE", GREEN: "GREEN", YELLOW: "YELLOW", VIOLET: "VIOLET", PINK: "PINK"}
+# A Pair's two leaves in a PUZZLE graph (solve.py): keys of their own, since
+# both are one colour. doors={**ajarmap.leaves(TEAL, "hall", "hall"), ...}
+LEAVES = {TEAL: (81, 82), ORANGE: (91, 92)}
+NAMES.update({81: "a TEAL leaf", 82: "the other TEAL leaf", 91: "an ORANGE leaf", 92: "the other ORANGE leaf"})
+
+
+def leaves(colour, *where):
+    """The PUZZLE entries of a Pair's two leaves: each of `where` is the
+    region a leaf leans in, or the line id of the frame it starts hung in."""
+    a, b = LEAVES[colour]
+    return {k: dict(pair=o, **({"lean": w} if isinstance(w, str) else {"frame": w}))
+            for k, o, w in ((a, b, where[0]), (b, a, where[1]))}
 DEPTH = 16          # recess depth
 DOOR_H = 96
 # Space behind each portal line (engine requirement). A thing crosses when its

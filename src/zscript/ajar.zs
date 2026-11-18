@@ -1173,6 +1173,7 @@ class AjarHandler : EventHandler
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
 		if (level.mapname ~== "LAB") LabScript(mo, t);
+		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);

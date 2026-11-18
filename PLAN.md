@@ -2891,7 +2891,7 @@ names.
 - **From "Time doors", not used by MAP31**: two places at once (the earlier
   self holds the plate), the future as a warning, the future as a contract.
 
-### MAP11 (2026-11-18, agreed in outline, not built)
+### MAP11 (2026-11-18, agreed in outline; built: see the first build, below)
 
 Vadim: no heap of ideas; 11 brings in the Pair, beside plain coloured doors,
 and lets the player get used to it before the puzzles begin.
@@ -2920,6 +2920,72 @@ Claude's outline, to argue over:
   (the U-turn) or round a corner (the pinwheel) in the cloakroom.
 - **Before it can be built**: the solver has to know Pairs (a second free
   end in the state), since every level is proved by it.
+
+### MAP11 "By Appointment" (2026-11-18, built twice)
+
+`tools/map_institute1.py`; `MAP=MAP11 ./run.sh`. Plain walls and tints: no
+look yet. **Not played by hand.** The name is Claude's, to be changed freely.
+MAP10's plain way out and MAP31's lead here; its own starts it again.
+
+The first build was six rooms and six monsters. Vadim: far too simple for an
+eleventh level; not more puzzle, more action. Rebuilt the same day at the
+size of MAP08 to MAP10's fights, the puzzle kept light.
+
+- **Places.** One place to walk about in: the lobby (start; both TEAL
+  leaves, RED; two frames facing each other; the reception desk), the
+  cloakroom (backpack, chaingun), the corridor north (a frame), the optics
+  lab west (super shotgun; a frame) and the canteen east (GREEN, berserk).
+  Over the canteen's north side the gallery (RED's far side, key 1, rocket
+  launcher), with a balcony down the canteen's east side; from it a drop
+  into the canteen and one into the archive. The archive (VIOLET; three
+  frames; stacks) is entered from the corridor only by a hole for empty
+  hands. The pump room (GREEN's far side, key 2, plasma rifle; dark) has a
+  hatch out into the corridor, a hole too and a step too high to climb back:
+  the way in is GREEN. At the corridor's end a door with locks 1 and 2 (no
+  key needed from inside): the experiment hall, and beyond it the night
+  room, whose brass frame takes VIOLET only.
+- **The puzzle.** GREEN for key 2, RED for key 1, and VIOLET out of the
+  archive in hand, which the hole will not have: a leaf in the hall, its
+  twin up by RED and down the drop. 10 door actions that way. The turnstile
+  of the outline is this hole (the game's turnstile is a squeeze, which a
+  leaf does not pass either).
+- **The Pair is still not the only way** (the solver's shortest, 8 actions):
+  hang VIOLET in the archive, walk into the night room with RED, come back
+  through VIOLET with it, swap, and carry VIOLET out by RED over the
+  gallery. It needs both keys and the experiment hall fought first. **To
+  decide (Vadim):** keep both, or shut it (the archive's frames taking no
+  plain door but VIOLET would do it). GREEN gave a shorter one still, until
+  the pump room's way out became a hatch.
+- **The fights**: 86 monsters on "Resident" (47 on "Just visiting"), 15030
+  health of them, ammunition worth 2.26 times that, 520 health, 300 armour.
+  Lobby: zombies, sergeants behind the desk, imps. Corridor: imps, two
+  chaingunners at its far end. Lab: demons, imps on the crates, a revenant.
+  Canteen: imps, sergeants, two knights; an imp and a chaingunner over it on
+  the gallery. Pump room: spectres and demons in the dark, a knight by the
+  hatch. Archive: imps, knights, lost souls among the stacks. Experiment
+  hall: two mancubi, three knights, revenants and imps on platforms, two
+  cacodemons, a baron before the way to the night room.
+- **Ambushes**, none like another: a leaf taken, sergeants behind you in the
+  lobby and imps 3 s later; key 1, cacodemons up from the canteen, demons
+  along the gallery at 3 s; key 2, revenants by the pump room's hatch, imps
+  in the corridor at 3 s; VIOLET taken, spectres round you in the archive,
+  revenants between the stacks at 4 s.
+- **The secret**: the south end of the balcony (a soul sphere), seen from
+  the canteen's floor, reached along the balcony from the gallery.
+
+The solver knows Pairs (`solve.py`: a leaf is `dict(pair=its twin's key,
+lean= or frame=)`, `ajarmap.leaves`): both hung, each frame leads to the
+other; one alone leads nowhere. Two frames are there because of it: a fourth
+in the hall (the lab) and a third in the archive, so that hands can always
+be emptied (640 stuck states without them). Now 191657 states, 0 stuck,
+nothing can be lost. Not in the solver: a Pair with a thief, a nailer, a
+repainter or a Stray door.
+
+`MAP=MAP11 tools/smoke.sh`: 17 checks (`ByAppointmentScript` in
+`src/zscript/map11.zs`, the Pair's way), all pass, out by the way out; every
+ambusher was seen to come but key 2's imps, which are due after the walk has
+left. `mapcheck` and `thingcheck`: 0 problems. Not known: how hard any of
+it is.
 
 ## MAP09: the start is back on the street (2026-11-17)
 
