@@ -14,6 +14,8 @@ DoomEdNums
 	20006 = AjarLine
 	20007 = AjarRepainter
 	20030 = AjarAmbush
+	20090 = EngButton
+	20091 = EngGhost
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -203,6 +205,17 @@ map LAB "Ajar: the lab"
 	nojump
 	nocrouch
 	music = ""
+}
+
+// The engine tests for levels 11 to 20 (tools/map_eng.py): MAP=ENG ./run.sh
+map ENG "Ajar: engine tests"
+{
+	next = "ENG"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "EngTest"
 }
 
 // Stepping out of a fight, in one bare hall (tools/map_time.py): MAP=TIME ./run.sh

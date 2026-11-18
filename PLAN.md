@@ -2824,6 +2824,103 @@ second copy, and the eye has no outside to hold on to. The same family:
    other.
 4. The Pair demo above.
 
+### The first tests, run (2026-11-18)
+
+Map ENG (`tools/map_eng.py`, `src/zscript/engtest.zs`; `MAP=ENG ./run.sh`,
+`MAP=ENG MODE=1..5 tools/smoke.sh`): five bays off one corridor, portals
+joined at load, no carried doors. Run headless only (docker, software GL);
+**not played by hand, and no frame rate was measured.**
+
+1. **A portal in a lift car: works.** The car, the recess and its stub share
+   a tag and move by `FloorAndCeiling_RaiseByValue`. Walking through either
+   way puts you on the floor of the far side wherever the car is (down, up,
+   and half-way down while it moves); a fireball goes through the same way;
+   the view is level from both sides during the ride; the same after the
+   link is cut and made again with `Line_SetPortalTarget`. Not tried: a
+   monster through it, a carried door hung in the car.
+2. **A missile going round: works.** An imp's fireball, a plasma ball and a
+   rocket each kept going round a corridor 544 long for as long as they were
+   watched (10, 13 and 10 laps); a lap is the length over the speed (54 or
+   55 tics for the fireball). A line with `missilecross` is set off every
+   lap. `Door_Raise` on it does not hold a shutter up: a crossing while the
+   shutter is still moving or waiting is ignored (the plasma ball raised it
+   5 times in 13 laps), so the metronome needs a few lines of script.
+3. **The inside-out room: works.** Four frames in a hall's four walls, each
+   out of the same face of a booth 192 square (a recess and stub from each
+   face do not fit in less). Walking out of each lands where it should,
+   facing the same way; from the square the booth's faces show the hall and
+   the square again beyond it.
+4. **Mirrors: work**, with `Line_Mirror` on a one-sided wall: a mirror shows
+   a portal and what is behind it, a portal shows a mirror, and a mirror
+   facing a portal repeats. `+ONLYVISIBLEINMIRRORS` does what the lodger's
+   eyes need: the thing is not drawn seen directly or through a plain door,
+   and is drawn in a mirror, also in a mirror seen through a door.
+5. **Slanted recesses: work.** A six-sided room, each wall onto the one
+   opposite, is a honeycomb, and walking on through a wall is a straight
+   line; joined to its neighbour instead, a wall turns you 60 degrees. A
+   three-sided room with two doors a wall, each onto its neighbour round the
+   corner, tiles into triangles. The corners are off the grid (coordinates
+   to three decimals), which the engine takes; `udmf.py` does not split a
+   slanting wall at such points, so the room's outline names every corner
+   itself (`many_sided`). `ajarmap.recess` is still for straight walls.
+
+### Where 11 to 20 stand (2026-11-18)
+
+A summary made while Vadim tested MAP31; the details are in the sections it
+names.
+
+- **Decided**: the institute, 11 to 20 as it was left and 21 to 30 the
+  reveal ("The place"). The Pair door goes into these levels ("The Pair
+  door"). Not every idea on the lists has to be used (Vadim, 2026-11-18).
+- **Built and ready**: the Pair (lab only: not tried with a thief, a nailer
+  or a lodger, and the solver does not know it; open: whether a brass frame
+  takes a leaf); the time door (MAP31); everything of 1 to 10 (Stray door,
+  thief, lodger, nailer, repainter, the bus, the chain and its longer loop,
+  the timed exit).
+- **Designed, not built**: the Flip door ("Flip door"); One-way and Small
+  doors (the type table); set-up-and-swap one step deeper ("Idea for later
+  levels").
+- **On the list, the engine allows them** ("The first tests, run"): the
+  inside-out room, the pinwheel, honeycomb and triangle rooms, the round
+  room, mirrors and things only a mirror shows, the moving room, the
+  metronome (with a script for its shutter), sight lines, the bottle,
+  conveyors, the canal lock, the train of rooms, the roundabout, the
+  arrangement as the map, the relay run, the timetable. Still to test: the
+  jigsaw wall (something wider than one door through two openings). The
+  model room is the weakest and only a note.
+- **From "Time doors", not used by MAP31**: two places at once (the earlier
+  self holds the plate), the future as a warning, the future as a contract.
+
+### MAP11 (2026-11-18, agreed in outline, not built)
+
+Vadim: no heap of ideas; 11 brings in the Pair, beside plain coloured doors,
+and lets the player get used to it before the puzzles begin.
+
+Claude's outline, to argue over:
+- **The place**: the way into the institute: the lobby, the pass office and
+  its turnstile, the cloakroom, the first corridor of labs. Where MAP10's
+  bus let the player off.
+- **Three steps, each a thing to do and not a riddle.**
+  1. Both leaves lean by two frames that face each other across the lobby.
+     One hung: a shut door. Both: the endless corridor. Nothing depends on
+     it; it shows what a Pair is.
+  2. The rope. The turnstile lets you in and not out (MAP05's). Hang a leaf
+     in the lobby, carry the twin through, hang it inside: the way back is
+     open and stays.
+  3. With a plain door. RED's far side is up on a gallery, as in the lab.
+     Go up by RED with a leaf, hang it there, come down and hang its twin:
+     the gallery is joined to the floor, and RED is free for the errand the
+     way out needs.
+- **The way out** is built by the player as since MAP05, with the plain
+  door, so that the brass frame question can wait.
+- **Company**: Doom's own monsters, few. No thief, nailer, lodger or
+  repainter: none has been tried with a Pair, and the level is for learning
+  one thing.
+- **One secret**, found by a sight and not a puzzle: two frames side by side
+  (the U-turn) or round a corner (the pinwheel) in the cloakroom.
+- **Before it can be built**: the solver has to know Pairs (a second free
+  end in the state), since every level is proved by it.
+
 ## MAP09: the start is back on the street (2026-11-17)
 
 Vadim, the same day: the roof is not a place to start, and it is very hard
