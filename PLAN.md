@@ -3545,3 +3545,12 @@ Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (58; hall 2: `theyPlayAsTheyWent`,
 `halfOfThemWake`, `wokenByAShot`, `allAwakeAtItsEnd3`), `MAP=MAP31 MODE=5`,
 `MAP=TIME MODE=3` (14). Not in any test: a death and a raise on the demo, a
 lost soul, a third go.
+
+## MAP31: ammunition in the boxes (2026-11-18)
+
+Vadim: he left the boxes too weak. Every box has more now, on the floor in
+its middle (`Hall.ammo`), beside what it had: hall 1: shells and bullets
+(two of bullets in box 1; a box of rockets and a cell pack in boxes 2 and
+3); hall 2, each box: two of shells, bullets, rockets, a cell pack; hall 3,
+each box: the same and a second cell pack. A box's things are taken once.
+Not played by hand; the walk passes.
