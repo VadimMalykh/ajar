@@ -1142,6 +1142,21 @@ def make_all():
         xa.rect(0, y + 2, 64, y + 4, shade(BRASSY, 1.25))
     out["textures/AJXA.png"] = xa.png()
     out["flats/AJXAF.png"] = xa.png()
+    # ... and the brass of a frame that takes one door only (MAP08's;
+    # ajarmap.way_home(only=True)): inlaid with that door's colour, so that it
+    # can be told from a brass frame that takes any (Vadim, 2026-11-18)
+    for c, col in DOOR_COLOURS.items():
+        xo = Img(64, 64, BRASSY)
+        xo.noise(5, 68)
+        for y in range(0, 64, 32):
+            xo.rect(0, y, 64, y + 2, shade(BRASSY, 0.55))
+            xo.rect(0, y + 2, 64, y + 4, shade(BRASSY, 1.25))
+            xo.rect(0, y + 9, 64, y + 10, shade(BRASSY, 0.55))
+            xo.rect(0, y + 10, 64, y + 26, col)
+            xo.rect(0, y + 10, 64, y + 12, shade(col, 1.3))
+            xo.rect(0, y + 26, 64, y + 27, shade(BRASSY, 0.55))
+        out[f"textures/AJXA{c}.png"] = xo.png()
+        out[f"flats/AJXF{c}.png"] = xo.png()
 
     # thief: a small hooded figure. A/B walking, C picking a hinge, D dead,
     # E/F walking with a door on its back.

@@ -265,6 +265,7 @@ class AjarHandler : EventHandler
 	void StrayPool(out Array<int> ids)
 	{
 		ids.Clear();
+		Actor line = ChainRoom();
 		for (int id = STRAY_ID; id < STRAY_ID + STRAY_PLACES; id++) if (FindLine(id)) ids.Push(id);
 		int places = ids.Size();
 		let di = ThinkerIterator.Create("AjarDoor");
@@ -272,6 +273,11 @@ class AjarHandler : EventHandler
 		while (d = AjarDoor(di.Next()))
 		{
 			if (d.IsStray() || d.IsPair() || !FindLine(d.args[0]) || ids.Find(d.args[0]) < ids.Size()) continue;
+			// not the room of a longer chain's third door (Vadim, 2026-11-18): a
+			// door comes there only through that door, hung somewhere, so one
+			// hung in its frame can always be fetched again, and the frame
+			// takes any door
+			if (line && d.args[0] == line.args[3]) continue;
 			int at = places;
 			while (at < ids.Size() && ids[at] < d.args[0]) at++;
 			ids.Insert(at, d.args[0]);
@@ -437,6 +443,7 @@ class AjarHandler : EventHandler
 		case 67: return "Fatso";
 		case 68: return "Arachnotron";
 		case 71: return "PainElemental";
+		case 64: return "Archvile";
 		case 20007: return "AjarRepainter";
 		}
 		return null;
@@ -541,7 +548,7 @@ class AjarHandler : EventHandler
 	// player walks onto the line through the closed loop do its doors stay,
 	// and leaving the line again by one of its two doors ends the level
 	// (ChainTick). Leaving it by its way out on foot (the drop) ends nothing
-	// (Vadim, 2026-11-17): the doors stay, and the line can be walked again.
+	// (Vadim, 2026-11-17), and frees its doors again (2026-11-18).
 	//
 	// The longer loop (MAP10): the AjarLine's args[2] is a third frame, in a
 	// room that has the far side args[3] of a third door. That door and one of
@@ -633,6 +640,11 @@ class AjarHandler : EventHandler
 			// by the line, and nothing ends
 			if (abs(lineAt.y) >= 64)
 			{
+				// ... and its doors are doors again (Vadim, 2026-11-18): the plain
+				// loop can be taken apart and the longer one built
+				let di = ThinkerIterator.Create("AjarDoor");
+				AjarDoor o;
+				while (o = AjarDoor(di.Next())) if (o.nailer == o && InChain(o)) o.nailer = null;
 				if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST leftTheLine=onFoot");
 				return;
 			}
@@ -856,9 +868,13 @@ class AjarHandler : EventHandler
 			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
 			return;
 		}
-		if (carried && f.args[4] == 2 && carried.args[0] != f.args[1] && carried.args[0] != f.args[2])
+		Actor line = ChainRoom();
+		if (carried && f.args[4] == 2 && line && carried.args[0] == line.args[3])
 		{
-			Say("This brass frame takes one of two doors only:\nthose that open onto the room with the stars.");
+			// the third door of a longer chain, in its own room's frame: the
+			// room would open onto itself, and once left by its way out on
+			// foot nothing would open onto it again
+			Say("The " .. carried.Label() .. " door opens onto this very room.\nHung here it would lead nowhere.");
 			return;
 		}
 		if (carried && f.args[4] == 1 && carried.args[0] != f.args[1])
@@ -2151,6 +2167,7 @@ class AjarHandler : EventHandler
 		if (t == 330) Pose(mo, 920, -500, 96, 270);
 		Forward(mo, t, 335, 14);
 		if (t == 365) Check("theHoleEndsNothing", mo.pos.z == 0 && mo.pos.y < -576 && !onTheLine && chainBuilt);
+		if (t == 366) Check("itsDoorsAreDoorsAgain", !FindFrame(190).door.nailer && !FindFrame(191).door.nailer);
 		// round again, along the line and out by VIOLET's end: that ends it
 		if (t == 370) Pose(mo, 592, 432, 0, 0);
 		Forward(mo, t, 375, 44);
@@ -2188,6 +2205,10 @@ class AjarHandler : EventHandler
 		if (t == 135) { mo.vel.xy = (0, 0); Check("inPinksRoomWithViolet", inPink && have == "VIOLET"); }
 		if (t == 136) Check("pinksRoomIsASecret", level.found_secrets == 1);
 		if (t == 140) { FindFrame(192).Activate(mo); Check("violetInPinksRoom", !carried && !chainLen); }
+		// the frame takes any door: RED for VIOLET, and back
+		if (t == 141) { Take(mo, 1); FindFrame(192).Activate(mo); Check("anyDoorInPinksRoom", carried && carried.Label() == "VIOLET" && FindFrame(192).door.Label() == "RED"); }
+		if (t == 142) { FindFrame(192).Activate(mo); Check("violetBackInPinksRoom", carried && carried.Label() == "RED" && !chainLen); }
+		if (t == 143) { DropDoor(carried, mo); carried = null; }
 		if (t == 145) Pose(mo, 200, 1200, 144, 180);
 		Forward(mo, t, 146, 20);                         // back out through PINK
 		if (t == 175) { mo.vel.xy = (0, 0); Check("backAtTheStop", mo.pos.z == 0 && mo.pos.y < 0 && mo.pos.y > -640); }

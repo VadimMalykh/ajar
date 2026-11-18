@@ -151,7 +151,8 @@ def way_home(m, x, y, colour, *, grille=False, only=False):
     regions and `home_door` names the door.
 
     With `only` (MAP08 since 2026-11-16, instead of the grille) the brass
-    frame takes no door but `colour`. Then no other door hung there makes a
+    frame takes no door but `colour` (and its brass is inlaid with that
+    colour, to be told by). Then no other door hung there makes a
     way in for it, and it comes in on foot or not at all. In a PUZZLE graph:
     `only={HOME: colour}`."""
     room(m, [x, x + 160, x + 320] if grille else [x, x + 320], [y, y + 96, y + 160, y + 256],
@@ -165,8 +166,10 @@ def way_home(m, x, y, colour, *, grille=False, only=False):
     # the far side keeps the surround of its colour, so that whoever gets here
     # by another way (a Stray door) can tell which door belongs in the frame
     recess(m, (x, y + 96), (x, y + 160), (-1, 0), 0, far_id(colour), HOME, far_colour=colour)
-    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0, HOME, far_id(colour), trim=brass,
-           home=far_id(colour), only=only)
+    # ... and a frame that takes that door only says so: its brass is inlaid
+    # with the door's colour
+    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0, HOME, far_id(colour),
+           trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=far_id(colour), only=only)
     for xx in (x, x + 320):
         m.line((xx, y + 96), (xx, y + 160), id=HOME_MOUTH)
     for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
@@ -278,14 +281,18 @@ def way_longer(m, x, y, c, a, b, *, floor=0, **base):
     the secret way out (AjarHandler.LoopLen). A door comes in here only
     through `c`, hung somewhere else at the time.
 
-    The frame takes no door but `a` and `b`, the pair's own (AjarFrame
-    args[4] = 2). Any other hung here would be out of reach as soon as `c`
-    is: a Stray door can bring you here with anything in hand, and the
-    solver found levels lost that way. In a PUZZLE graph: only={HOME3: (a, b)}.
+    The frame takes any door (Vadim, 2026-11-18; AjarFrame args[4] = 2 only
+    marks it as the third frame). What makes that safe: no Stray door opens
+    onto `c`'s far side (AjarHandler.StrayPool, and the solver), so whoever
+    hangs a door here came through `c`, which hangs somewhere they can walk
+    to, and the door can be fetched again. (With a Stray door bringing them
+    here with anything in hand, the solver found levels lost.) Only `c`
+    itself does not hang here: the room would open onto itself, and left by
+    its way out on foot it would be shut for good.
 
-    A Stray door may open onto `c`'s far side, so the room needs a way out
-    on foot: the caller's job, as in way_through(). In a PUZZLE graph: `c`'s
-    home, frame HOME3, and home_chain's `secret`."""
+    The room wants a way out on foot all the same, as in way_through(): the
+    caller's job. In a PUZZLE graph: `c`'s home, frame HOME3, and
+    home_chain's `secret`."""
     look = dict(dict(ceil=floor + 160, light=160, wall="AJXW2", ftex="AJXG2", ctex="AJXC2", color=ROSE), **base)
     for y1, y2, strip in ((y, y + 96, {}), (y + 160, y + 256, {}),
                           (y + 96, y + 160, dict(ftex="AJXR2", special=1024))):   # one secret: the carpet you arrive on

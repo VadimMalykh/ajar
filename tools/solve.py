@@ -138,6 +138,9 @@ def _moves(p, state, nailed=False):
         if c is not None and f == p.get("home_frame") and c == p.get("home_door"):
             continue                                 # the way out, built: it stays
         takes = p.get("only", {}).get(f, carried)
+        sec = p.get("home_chain", {}).get("secret", {})
+        if carried is not None and f == sec.get("frame") and carried == sec.get("door"):
+            continue                                 # a longer chain's third door, in its own room: it would open onto itself
         if carried is not None and carried not in (takes if isinstance(takes, tuple) else (takes,)):
             continue                                 # a frame that takes one door only, or two
         if c is None and carried is not None:
@@ -234,7 +237,9 @@ def _luck(p, state):
                 w[c] = ("carried",)
             # the pool: the level's stray places, and the far side of every
             # door that hangs nowhere
-            for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame"}):
+            # (but not the room of a longer chain's third door: ajarmap.way_longer)
+            shut = p.get("home_chain", {}).get("secret", {}).get("door")
+            for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame" and k != shut}):
                 yield (place, c, tuple(w[k] for k in colours), keys, thief, nails)
 
 

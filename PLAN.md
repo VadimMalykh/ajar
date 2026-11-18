@@ -2497,9 +2497,21 @@ levels", 1; the engine questions there are answered.
 - **Nothing is fixed when a chain closes** (Vadim, 2026-11-17; MAP09 too). A
   brass frame is a frame like any other. The loop's doors stay only once the
   player has walked onto the line through it; leaving the line ends the level.
-- PINK's room's frame takes BLUE and VIOLET only (AjarFrame `args[4]` = 2, in
-  a PUZZLE `only={HOME3: (BLUE, VIOLET)}`). The third exception to "a frame
-  takes any door", after MAP08's.
+- PINK's room's frame took BLUE and VIOLET only at first. **It takes any door
+  now** (Vadim, 2026-11-18, after playing: why not any door?). What was lost
+  without the rule was one thing: RED, before key 1, brought there by a Stray
+  door and hung. So no Stray door opens onto PINK's room (`StrayPool`, and
+  the solver): a door comes there only through PINK, hung where the player
+  can walk to, and can be fetched again. Only PINK itself is refused there
+  (the room would open onto itself and, left by the hole, be shut for good).
+  Solver: 0 stuck, nothing lost. AjarFrame `args[4]` = 2 only marks the frame.
+- MAP08's brass frame, which still takes BLUE only (it keeps the shutter the
+  only way in for BLUE), is marked: its brass is inlaid with blue enamel
+  (`AJXA2`/`AJXF2`; `way_home(only=True)` picks the door's colour).
+- **Leaving the line on foot frees the loop's doors** (Vadim, 2026-11-18): he
+  built the plain loop, walked onto the line, left by the hole, and could not
+  take BLUE or VIOLET down to build the secret one. They are nailed while he
+  is on the line, and again each time he walks onto it.
 - `MAP=MAP10 MODE=3 ./tools/smoke.sh`: 18 checks, both loops, out by the
   secret one. `MODE=2`: tour, 42 views (`TIMEOUT=400`).
 
@@ -2844,9 +2856,9 @@ the cellar).
 Vadim, playing MAP09: walking onto the line through the closed loop does not
 end the level, and that is right; but leaving it by its third way out (the
 drop, MAP09's hole over the forecourt) did. Now only leaving by one of the
-line's two doors ends the level. Out by the drop, nothing ends: the loop's
-doors stay hung (they were fixed when the line was walked onto), and the
-line can be walked again.
+line's two doors ends the level. Out by the drop, nothing ends, and the line can be walked again. (The loop's
+doors, fixed when the line was walked onto, stayed fixed at first; since
+2026-11-18 they are free again once he is out: see MAP10, "The two ways out".)
 
 - `ChainTick` keeps where on the line the player last was (`lineAt`); a
   leaving from anywhere but the middle 128 of an end wall is on foot. So a
@@ -2878,7 +2890,9 @@ MAP10 are changed; MAP03 and MAP04, the first that have any, are left.
   revenants on the gallery across the hall, the hell knight below at 5 s.
 - **MAP10**: GREEN, the revenant 5 s after the imps; key 1, spectres either
   side of you (an imp fewer in the square); key 2, demons in the depot's
-  corner for the square's revenant.
+  corner for the square's revenant; VIOLET (2026-11-18, Vadim), a spectre,
+  and 3 s later an arch-vile at the foot of the cellar's stairs, which raises
+  the demons killed there (not on the easiest skill).
 - Every ambusher was seen to come in the game: the walkthroughs of MAP05 to
   MAP09 (8, 11, 7, 11, 16), and for MAP10 a new `MAP=MAP10 MODE=1`, which
   only hands over both keys (12). Thingcheck: 0 problems. How hard they
@@ -3088,3 +3102,40 @@ run: the tour in looks 1 and 2 (their maps build), `MAP=TIME MODE=4`.
 Left as they were: what the tall blocks are (in look 3 a bank of seats on a
 riser, among rows of seats now), the posters, the signs. Not tried: seats
 with backs high enough to hide behind (they would be walls to monsters).
+
+## Handoff (2026-11-18): MAP10 after Vadim played it
+
+Four changes, all from his play of MAP10. Details are under "MAP10", "The two
+ways out", and under "Ambushes: no two alike".
+
+- **VIOLET's ambush**: a spectre at once, an arch-vile 3 s later at the foot
+  of the cellar's stairs (it raises what was killed there). Not on skill 1.
+  `AmbushClass` knows editor number 64 now.
+- **PINK's room's frame takes any door** but PINK. No Stray door opens onto
+  PINK's room (`StrayPool`; `solve.py` leaves the secret door's home out of a
+  draw and refuses that door in the secret frame; no PUZZLE key needed, both
+  read `home_chain["secret"]`).
+- **Out of the line by the hole, the loop's doors are doors again**
+  (`ChainTick`), so a plain loop can be rebuilt as the long one. MAP09 too.
+- **MAP08's brass frame**, which still takes BLUE only, is inlaid with blue
+  (`AJXA2`, `AJXF2`). What a brass frame is otherwise: the place where a loop
+  counts, facing its twin, left alone by the repainter. Vadim asked whether
+  the way out could do without brass frames; left as it is, not decided.
+
+Run: the full build (every level re-proved with the changed solver: 0 stuck;
+MAP10 9 door actions, 11 to the secret way out, nothing lost), `MAP=MAP10
+MODE=3` (20 checks, `anyDoorInPinksRoom`, the arch-vile comes, out by the
+secret way) and `MODE=1`, `MAP=MAP09 MODE=3` (19, `itsDoorsAreDoorsAgain`),
+`MAP=MAP08 MODE=1` (41).
+
+Not done:
+- Nothing here is played by hand. The arch-vile's fight in a cellar 416 by
+  448 with two low crates for cover may be too hard: ask.
+- The blue inlay was seen only at the edge of a walkthrough's shot. Look at
+  it in the game (MAP08's night room, the east frame).
+- MAP10's other walkthrough (`MODE=2`, the tour) and MAP01 to MAP07's were
+  not rerun; their maps did not change. MAP08's and MAP09's Stray draws are
+  as before (they have no longer chain).
+- No check plays the refusal of PINK in its own room, or taking the plain
+  loop apart and building the long one after the hole (MAP10 has no such
+  script; MAP09's only checks that the doors are free).

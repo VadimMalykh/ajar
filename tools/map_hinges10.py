@@ -431,7 +431,7 @@ ajarmap.key(m, 1, 1104, 520 + TY)                                          # dow
 ajarmap.key(m, 2, -470, 600 + DY)                                              # the far corner of the depot
 
 ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, LODGER = 3004, 9, 3001, 3002, 58, 20005
-CHAINGUNNER, KNIGHT, BARON, REVENANT, SOUL, CACO, MANCUBUS, ARACHNO, PAIN = 65, 69, 3003, 66, 3006, 3005, 67, 68, 71
+CHAINGUNNER, KNIGHT, BARON, REVENANT, SOUL, CACO, MANCUBUS, ARACHNO, PAIN, VILE = 65, 69, 3003, 66, 3006, 3005, 67, 68, 71, 64
 SHOTGUN, SUPER, CHAINGUN, LAUNCHER, PLASMA, SHELLS, SHELLBOX, CLIP, AMMOBOX, ROCKETS, ROCKETBOX, CELLS = (
     2001, 82, 2002, 2003, 2004, 2008, 2049, 2007, 2048, 2010, 2046, 17)
 STIM, MEDIKIT, BONUS, HELMET, ARMOR, MEGA, SPHERE, BERSERK = 2011, 2012, 2014, 2015, 2018, 2019, 2013, 2023
@@ -541,8 +541,12 @@ ajarmap.ambush(m, 10 + GREEN, IMP, (200, 448 + TY), (960, 400 + TY), angle=90)
 ajarmap.ambush(m, 1, SPECTRE, (1104, 640 + TY), (1104, 440 + TY), angle=90)
 ajarmap.ambush(m, 1, KNIGHT, (-300, -250), (100, -250), angle=270)
 ajarmap.ambush(m, 1, IMP, (-420, -500), (160, -500), angle=90)
-# VIOLET, taken in the cellar
-ajarmap.ambush(m, 10 + VIOLET, SPECTRE, (-1300, -200), (-1500, -420), angle=0)
+# VIOLET, taken in the cellar: a spectre at once, and 3 s later an arch-vile at
+# the foot of the stairs, the way out, to raise the teeth you put down (Vadim,
+# 2026-11-18). In a spectre's place in the order, so nothing else is thinned
+# differently: it is not there on the easiest skill
+ajarmap.ambush(m, 10 + VIOLET, VILE, (-1528, -190), angle=315, after=3)
+ajarmap.ambush(m, 10 + VIOLET, SPECTRE, (-1500, -420), angle=0)
 # key 2, in the depot: between you and the way out of its corner; and the
 # square again
 ajarmap.ambush(m, 2, DEMON, (-390, 600 + DY), (-300, 600 + DY), angle=180)
@@ -576,7 +580,6 @@ PUZZLE = dict(
         BLUE: dict(home="night", lean="dome"),
         PINK: dict(home="pink", lean="museum"),
     },
-    only={HOME3: (BLUE, VIOLET)},
     repainter=dict(zone=["main"]),
     pool=["main"],                         # the doors with no number; the kiosk; a platform; the hotel's far hall
 )
