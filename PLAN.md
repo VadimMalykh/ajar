@@ -3480,3 +3480,23 @@ He likes that monsters can come into a box; the fight must still end.
 Run: `MAP=TIME MODE=4` (`notShutInTheBox`; its `followed` check still fails
 as before: not looked into), `MAP=TIME MODE=3` (14), `MAP=MAP31 MODE=3
 TIMEOUT=250` (53). **Not played by hand.**
+
+## MAP31: waiting in the box of an open fight (2026-11-18)
+
+Vadim: he tried to stay in the box for a while, and it did not work at all:
+every monster was after him and came to his side of the hall.
+
+- `Hunt`: in an open fight, while the player is in a box, each monster of
+  the hall is after the nearest earlier self, not after the player (a
+  monster is set on the player when it comes in; that is taken back). An
+  earlier self cannot be hurt, so it holds them.
+- When no earlier self is left, or the player is in the hall, a monster
+  that is after no one is after the player. One that is on an earlier self
+  stays on it until that self is gone or something else hurts it.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (54; hall 2: `afterMyEarlierSelfNotMe`).
+**Not played by hand.**
+
+Asked next by Vadim, not built: could the monsters be played too, moving as
+they did the first time, not only the earlier self (which fires where the
+monsters were then, at nothing now).

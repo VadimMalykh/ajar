@@ -999,6 +999,36 @@ class AjarTimeHandler : EventHandler
 		}
 	}
 
+	// An open fight, and who its monsters are after. While the player is in
+	// a box they are not in the fight yet: the monsters are after their
+	// earlier selves (each after the nearest), not at the glass after them,
+	// so that the player can wait and watch. When no earlier self is left,
+	// or the player is in the hall, a monster that is after no one is after
+	// the player; one that is on an earlier self stays on it until that self
+	// is gone or something else hurts it.
+	void Hunt(Actor mo)
+	{
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight || b != 0) continue;
+			if (a.target && (a.target != mo || at == 0)) continue;
+			Actor to = null;
+			if (at > 0)
+				for (int i = 0; i < ghosts.Size(); i++)
+					if (ghosts[i] && (!to || a.Distance2D(ghosts[i]) < a.Distance2D(to))) to = ghosts[i];
+			if (!to) to = mo;
+			if (a.target == to) continue;
+			a.target = to;
+			a.lastheard = null;
+			if (a.InStateSequence(a.CurState, a.SpawnState) && a.SeeState) a.SetState(a.SeeState);
+		}
+	}
+
 	int Left()      // monsters of this fight still alive, wherever in it they are
 	{
 		int n = 0;
@@ -1406,6 +1436,7 @@ class AjarTimeHandler : EventHandler
 					if (at == 0) BackToTheHall(mo);
 					int left = Left();
 					if (!Cues(mo, left) && !left && at == 0) Win();
+					if (open && phase == LIVE) Hunt(mo);
 				}
 			}
 		}
@@ -1658,6 +1689,14 @@ class AjarTimeHandler : EventHandler
 			if (u == 84) Check("begunAgain", ot < 6 && !Left() && takes.Size() == 2 && takes[0].evTic.Size() == 2 && takes[0].died);
 			if (u == 100) Check("besideMyself", ghosts.Size() == 1 && ghosts[0] && ghosts[0].pos.z < 40 && ShowLight(2, true));
 			if (u == 82 + 215) Check("itFiresAgain", takes[0].next == 2);
+			if (u == 82 + 240)
+			{
+				int onIt = 0, onMe = 0;
+				let it = ThinkerIterator.Create("Actor");
+				Actor a;
+				while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0) { if (a.target == mo) onMe++; else if (a.target == ghosts[0]) onIt++; }
+				Check("afterMyEarlierSelfNotMe", at == 1 && onIt > 5 && !onMe);
+			}
 			if (u == 82 + 230) Check("theyComeAgain", Left() > 5 && ghosts.Size() == 1 && ghosts[0]);
 		}
 		else
