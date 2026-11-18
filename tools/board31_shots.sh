@@ -1,20 +1,20 @@
 #!/bin/bash
 # MAP31's look board (design/secret1-board.html): builds the game once per
-# look (AJAR_CINEMA 2, 3, 0 the plain level, then 1) and photographs the tour
+# look (AJAR_CINEMA 1, 2, 0 the plain level, then 3) and photographs the tour
 # (25 views, monsters off) into build/board31/<look>/view_NN.jpg, 819 by 512,
 # with a contact sheet build/board31/sheet_<look>.jpg. The swatches go to
-# build/board31/tex/. The pk3 is left in the last look built: end with 1,
+# build/board31/tex/. The pk3 is left in the last look built: end with 3,
 # the look the game wears.
 #   tools/board31_shots.sh          all four
-#   tools/board31_shots.sh 2 1      look 2 again, then the game's own
-#   SHOOT=1 tools/board31_shots.sh 1    photograph the pk3 as it is, as look 1
+#   tools/board31_shots.sh 2 3      look 2 again, then the game's own
+#   SHOOT=1 tools/board31_shots.sh 3    photograph the pk3 as it is, as look 3
 set -e -o pipefail
 cd "$(dirname "$0")/.."
 B="$PWD/build/board31"
 mkdir -p "$B/tex"
 U="$(id -u):$(id -g)"
 [ -n "$SHOOT" ] || docker run --rm -u "$U" -v "$PWD":/work -w /work ajar-tools python3 tools/gfx_cinema.py build/board31/tex
-[ $# -gt 0 ] || set -- 2 3 0 1
+[ $# -gt 0 ] || set -- 1 2 0 3
 for v in "$@"; do
   out="$B/raw_$v"
   rm -rf "$out" "$B/$v"; mkdir -p "$out" "$B/$v"

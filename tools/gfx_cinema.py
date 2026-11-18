@@ -18,7 +18,13 @@ ALIGNED):
   BS 80  the side of a tall block          SP 32  the step down into a hall
   CS 40  the front of the box office's counter
 Pictures (one to a wall piece, not aligned):
-  SC 256x96, SG 256x128  the screen, over the way in (the great hall's)
+  S1, S2 256x96, S3 256x128  the screen of each hall, over the way in: a
+                film leader's frame on it, counting down (3, 2, 1) from hall to
+                hall; its sweep is at a quarter to, as the time door's clock
+  TH, TG        the hall's wall over a time door: a dark lintel in it
+                (aligned); TT (and flat) the door's dark surround
+  SS 12, SB 24  a row of seats from the side: the seats' edge, their backs
+                (aligned; two seats to 64)
   DH, DG, DL    the steel door let into a hall's, the great hall's, a lobby's wall
   GL 160x112    the frame of a box's glass: clear but for the frame; GT (and
                 flat) its sill, head and sides
@@ -30,11 +36,13 @@ Flats:
   RG a runner 64 wide (its edges are in the middle of the flat: it lies from
      32 to 32)   BF, BC a box   LF, LC a lobby and the closet
   BT, BA the top of a tall block, and with the arrow   CT the counter   BE a bench
+  SF a row of seats from above, two rows to the flat: the back is the north
+     12 of every 32, so a row starts at a multiple of 32
 """
 import math
 import random
 
-from gfx import DIGITS, Img, shade, text, unpng
+from gfx import DIGITS, Img, digit, shade, text, unpng
 from gfx_bus import blend, mix
 
 DIGITS.update({"K": ("10010", "10100", "11000", "10100", "10010"),
@@ -42,9 +50,10 @@ DIGITS.update({"K": ("10010", "10100", "11000", "10100", "10010"),
                "X": ("10001", "01010", "00100", "01010", "10001")})
 
 LOOKS = (1, 2, 3)
-WALLS = ("H", "G", "F", "W", "B", "L", "C", "BS", "SP", "CS")
+WALLS = ("H", "G", "F", "W", "B", "L", "C", "BS", "SP", "CS", "TH", "TG", "SS", "SB")
 ALIGNED = {f"AJY{p}{n}" for p in WALLS for n in LOOKS}
-LIGHT = {1: 180, 2: 200, 3: 176}                # a hall's light
+LIGHT = {1: 148, 2: 160, 3: 144}                # a hall's light: the lights are down (they were 180, 200, 176)
+SURROUND = {1: (34, 28, 30), 2: (58, 66, 76), 3: (44, 30, 24)}   # round a time door
 
 GOLD, BRASS = (212, 172, 84), (196, 160, 80)
 BURG, CREAM, WALNUT, MARBLE = (112, 26, 34), (228, 214, 180), (78, 48, 30), (30, 28, 32)
@@ -630,12 +639,83 @@ def box_floor(n):
 
 
 # === pictures ================================================================
-def screen(n, h):
-    """The screen over the way in: 256 wide, as high as the wall over it."""
+def leader(im, x1, y1, x2, y2, d):
+    """A film leader's frame thrown on the screen x1..x2, y1..y2: the number
+    d in two rings on a cross. The sweep has a quarter to go, from nine to
+    twelve: the time door's clock."""
+    field, swept, line = (214, 210, 196), (164, 160, 148), (52, 50, 48)
+    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+    r = (y2 - y1) // 2 - 5
+    for y in range(y1, y2):
+        for x in range(x1, x2):
+            dx, dy = x - cx + 0.5, y - cy + 0.5
+            dist = (dx * dx + dy * dy) ** 0.5
+            c = field
+            if dist < r and math.atan2(dx, -dy) % (2 * math.pi) < 1.5 * math.pi:
+                c = swept
+            if abs(dist - r) < 1.2 or abs(dist - r + 6) < 0.9 or abs(dx) < 1 or abs(dy) < 1:
+                c = line
+            blend(im, x, y, c, 0.9)
+    sc = max(2, int(r * 1.1) // 5)
+    w = len(DIGITS[d][0]) * sc
+    for ox, oy, c in ((1, 1, field), (0, 0, line)):              # the number, with a light edge to stand off the cross
+        digit(im, d, cx - w // 2 + ox, cy - 5 * sc // 2 + oy, c, sc)
+
+
+def lintel(n, part):
+    """A hall's wall with a dark lintel where a time door's head is."""
+    im = wall(n, part)
+    y = im.h - 96
+    im.rect(0, y - 9, 64, y, SURROUND[n])
+    im.rect(0, y - 10, 64, y - 9, shade(SURROUND[n], 1.8))
+    return im
+
+
+def seats(n):
+    """A row of seats: from above (a flat, two rows), the seats' front edge
+    (64 by 12) and their backs (64 by 24). Two seats to 64, each symmetric."""
+    cloth, back, frame = {1: (shade(BURG, 1.15), BURG, GOLD), 2: ((96, 116, 132), ASH, (60, 62, 66)),
+                          3: (ORANGE, shade(ORANGE, 1.1), (44, 42, 44))}[n]
+    rnd = random.Random(440 + n)
+    top = Img(64, 64, shade(frame, 0.8))
+    for y0 in (0, 32):
+        for x0 in (0, 32):
+            f = rnd.choice((1.0, 1.0, 0.9, 0.82)) if n == 3 else 1.0         # some have faded
+            top.rect(x0 + 1, y0, x0 + 31, y0 + 12, shade(back, f))          # the back, to the north
+            top.rect(x0 + 1, y0, x0 + 31, y0 + 3, shade(back, 1.2 * f))
+            top.rect(x0 + 2, y0 + 13, x0 + 30, y0 + 31, shade(cloth, f))
+            top.frame(x0 + 2, y0 + 13, x0 + 30, y0 + 31, shade(cloth, 0.7 * f), 1)
+            if n == 1:
+                top.disc(x0 + 16, y0 + 22, 1.5, shade(BURG, 0.6))            # a button
+            elif n == 3:
+                top.rect(x0 + 11, y0 + 5, x0 + 21, y0 + 8, shade(back, 0.5)) # the hand hole
+    top.noise(4, 441 + n)
+    edge = Img(64, 12, (22, 20, 20))
+    rear = Img(64, 24, (22, 20, 20))
+    for x0 in (0, 32):
+        edge.rect(x0 + 2, 0, x0 + 30, 5, shade(cloth, 0.85))
+        edge.rect(x0 + 2, 0, x0 + 30, 1, shade(cloth, 1.15))
+        edge.rect(x0 + 14, 5, x0 + 18, 12, frame)
+        rear.rect(x0 + 1, 0, x0 + 31, 18, shade(back, 0.9))
+        rear.rect(x0 + 1, 0, x0 + 31, 2, shade(back, 1.2))
+        if n == 3:
+            rear.rect(x0 + 11, 4, x0 + 21, 7, shade(back, 0.5))
+        elif n == 1:
+            rear.frame(x0 + 4, 3, x0 + 28, 15, shade(GOLD, 0.7), 1)
+        rear.rect(x0 + 14, 18, x0 + 18, 24, frame)
+    edge.noise(3, 442 + n)
+    rear.noise(3, 443 + n)
+    return top, edge, rear
+
+
+def screen(n, h, d):
+    """The screen over the way in: 256 wide, as high as the wall over it,
+    with the leader's frame `d` on it."""
     rnd = random.Random(400 + n)
     if n == 1:
         im = Img(256, h, MARBLE)
         im.rect(30, 14, 226, h - 6, (232, 232, 226))
+        leader(im, 30, 14, 226, h - 6, d)
         for x in range(30, 226, 2):                              # the sheen of a silver screen
             for y in range(14, h - 6):
                 blend(im, x, y, (255, 255, 255), 0.25)
@@ -650,6 +730,7 @@ def screen(n, h):
         im = tiled(wall(2, "H"), 256, h)                         # the wall's top, and a plain white screen on it
         im.rect(14, 6, 242, h - 6, (40, 40, 44))
         im.rect(18, 10, 238, h - 10, (240, 240, 234))
+        leader(im, 18, 10, 238, h - 10, d)
         im.frame(12, 4, 244, h - 4, (170, 174, 176), 2)
         folds(im, 18, 34, 10, h - 10, (120, 140, 156), 8)
         folds(im, 222, 238, 10, h - 10, (120, 140, 156), 8)
@@ -660,6 +741,7 @@ def screen(n, h):
             for k in range(rnd.randrange(2, 9)):
                 blend(im, x + k, y, (96, 86, 78), 0.4)
         im.rect(22, 8, 234, h - 8, (214, 204, 170))
+        leader(im, 22, 8, 234, h - 8, d)
         blot(im, 180, 20, 30, STAIN, 0.3)                        # damp
         blot(im, 70, h - 30, 18, STAIN, 0.2)
         x, y = 120, 26                                           # a tear, stitched
@@ -959,8 +1041,18 @@ def make(out, looks=LOOKS):
         be = bench(n)
         put("textures", name("BE", n), be)
         put("flats", name("BE", n), be)
-        put("textures", name("SC", n), screen(n, 96))
-        put("textures", name("SG", n), screen(n, 128))
+        put("textures", name("S1", n), screen(n, 96, "3"))
+        put("textures", name("S2", n), screen(n, 96, "2"))
+        put("textures", name("S3", n), screen(n, 128, "1"))
+        put("textures", name("TH", n), lintel(n, "H"))
+        put("textures", name("TG", n), lintel(n, "G"))
+        tt = plain_flat(SURROUND[n], 450 + n)
+        put("textures", name("TT", n), tt)
+        put("flats", name("TT", n), tt)
+        top, edge, rear = seats(n)
+        put("flats", name("SF", n), top)
+        put("textures", name("SS", n), edge)
+        put("textures", name("SB", n), rear)
         put("textures", name("DH", n), steel_door(walls["H"], bolt))
         put("textures", name("DG", n), steel_door(walls["G"], bolt))
         put("textures", name("DL", n), steel_door(walls["L"], bolt))

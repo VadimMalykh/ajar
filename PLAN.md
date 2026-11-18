@@ -2974,12 +2974,15 @@ in the middle of a fight, dying in a box.
 
 Board: https://claude.ai/artifact/MMbK5GrCDRL7CgunkFz8M1 (source `design/secret1-board.html`, images in
 `build/board31/`: `<look>/view_NN.jpg`, `tex/` swatches, `sheet_<look>.jpg`
-contact sheets). **Vadim has not chosen.** Look 1 is what the game wears
-meanwhile, so that the level is dressed when it is played. Branch `look31`,
-not merged. Not played by hand.
+contact sheets). **Vadim chose 3, Fleapit, for the whole cinema
+(2026-11-18)**, and it is the default; `AJAR_CINEMA=1` or `2` are the other
+two. He also said yes to four of the options at the board's foot: see "MAP31:
+seats, lights down, the leader" below, which changed all three looks. The
+board shows the choice as open and none of that; this session could not open
+its link (the account's artifact list does not have it). Not played by hand.
 
 `AJAR_CINEMA` picks the cinema's look (`tools/gfx_cinema.py`, names
-`AJY<part><look>`); unset is 1, and 0 is the plain level (whose map is byte
+`AJY<part><look>`); unset is 3, and 0 is the plain level (whose map is byte
 for byte what it was before the looks, checked). Three periods of one town
 cinema:
 1. **Palace** (1930s): halls in burgundy damask between fluted gilt
@@ -3044,3 +3047,44 @@ down, a picture on the screen.
 Found while shooting: the closet and the great hall's way in overlapped by
 32 on the map. The arrow's block and the closet behind the wall it points at
 are now 64 further west (the block at 384 to 448 of the hall).
+
+## MAP31: seats, lights down, the leader (2026-11-18)
+
+Vadim chose Fleapit and, of the board's options, seats, lights down, a
+picture on the screen and a darker surround for the time doors. Built for
+every look (1 and 2 still build); the plain level (`AJAR_CINEMA=0`) is byte
+for byte what it was, checked. **Not played by hand: no fight has been fought
+over the seats or in this light.**
+
+- **Seats** (`map_secret1.rows`): rows facing the screen, two banks either
+  side of a middle aisle 128 wide, 96 from the side walls, the first row 192
+  from the screen, one every 96 (5, 7 and 8 rows). A row is two low steps: 20
+  of seat (12 high) and 12 of back (24 high), so nothing is more than a step
+  and the player, every monster and every shot goes over them; they are not
+  things and do not move, so the replay is not touched. The tall blocks stand
+  among the rows. In look 3 some seats are gone (the same ones every build).
+  One flat for a row from above (`SF`: the back is the north 12 of every 32,
+  so a row starts at a multiple of 32), `SS` and `SB` for its sides.
+- **Lights down**: the halls are 144 (looks 1 and 2: 148, 160; they were 176,
+  180, 200); the 96 before the screen are 40 brighter and the next 96 are 20,
+  as if the screen threw it. 120 was tried: walls across the view went black.
+  Boxes (210), ways in, lobbies and the time doors' recesses are as they were,
+  so the glass and the doors show from across a hall.
+- **The screen** has a film leader's frame on it and is lit whatever the hall
+  is (`lit=` on a line, new in `udmf.py`: the side's own light). The number
+  counts down from hall to hall, 3, 2, 1 (textures `S1`..`S3`): fights left,
+  this one included. The sweep has a quarter to go, as the time door's clock
+  is at a quarter to. Provisional: the count could be read against HALL 1 to
+  3; the hall's own number is a one-line change in `gfx_cinema.make`.
+- **The time doors**: the recess round the ivory door is dark in every look
+  (`TT`; `ajartime.hall_door(trim=)`), the boxes' doors too, and in the halls
+  the wall over the door has a dark lintel (`TH`, `TG`).
+
+Run in look 3: the tour (25 views, no engine warnings; `build/board31/3`,
+`sheet_3.jpg`), `MAP=MAP31 MODE=3` (21 checks), `MAP=TIME MODE=3` (14). Not
+run: the tour in looks 1 and 2 (their maps build), `MAP=TIME MODE=4`.
+`tools/board31_shots.sh` now ends with look 3.
+
+Left as they were: what the tall blocks are (in look 3 a bank of seats on a
+riser, among rows of seats now), the posters, the signs. Not tried: seats
+with backs high enough to hide behind (they would be walls to monsters).

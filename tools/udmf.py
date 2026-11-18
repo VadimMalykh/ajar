@@ -201,6 +201,7 @@ class Map:
             midraise = p.pop("midraise", 0)        # the middle texture stands this much higher
             mid = p.pop("mid", None)
             midboth = p.pop("midboth", False)
+            lit = p.pop("lit", None)               # the wall's own light, whatever the room's (a lit screen)
             lower = p.pop("lower", None)           # texture of the step, both sides
             upper = p.pop("upper", None)           # texture above the opening, both sides
             # floorpeg: on a line that is lower-unpegged for the sake of what
@@ -232,6 +233,10 @@ class Map:
                     for sd in (sides[ld["sidefront"]], sides[ld["sideback"]]):
                         sd["offsety_mid"] = float(midraise)
                 ld["twosided"] = True
+            if lit is not None:
+                for k in ("sidefront", "sideback"):
+                    if k in ld:
+                        sides[ld[k]].update(light=lit, lightabsolute=True)
             args = p.pop("args", ())
             for i, v in enumerate(args):
                 if v:

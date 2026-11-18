@@ -28,9 +28,10 @@ from udmf import Map, rect
 m = Map()
 # The cinema's look (gfx_cinema.py): 1 Palace (the 1930s), 2 Kino (the 1960s),
 # 3 Fleapit (the 1980s); AJAR_CINEMA=0 is the level in the plain textures it
-# was built in. A look changes textures, flats and light, and furnishes the
-# foyer; nothing in a hall or a box is added, and nothing there moves.
-LOOK = int(os.environ.get("AJAR_CINEMA") or "1")
+# was built in. Vadim chose 3 (2026-11-18). A look changes textures, flats and
+# light, furnishes the foyer and puts rows of seats in the halls (low steps
+# that everything walks over); nothing in a hall or a box moves.
+LOOK = int(os.environ.get("AJAR_CINEMA") or "3")
 
 
 def tx(part):
@@ -55,6 +56,30 @@ if LOOK:
 BOXF = 64                   # a box's floor above its hall's
 UP = 32                     # the way into a hall, above its floor
 BLOCK = 80                  # the tall blocks: too high to see over from the floor
+SEAT, BACK = 12, 24         # a row of seats: its seats and their backs. Nothing is more than a step (24)
+ROW, PITCH = 32, 96         # a row is 32 deep (20 of seat, 12 of back), one every 96
+
+
+def rows(k, x, y, w, h):
+    """The seats of hall k, facing the screen (south): two banks either side
+    of a middle aisle 128 wide, 96 from the walls, the first row 192 from the
+    screen. In look 3 some seats are gone. As fitted()'s features."""
+    import random
+    rnd = random.Random(31 + k)
+    out = []
+    for ry in range(192, h - 96 - ROW + 1, PITCH):
+        for x1, x2 in ((96, w // 2 - 64), (w // 2 + 64, w - 96)):
+            gone = set()
+            if LOOK == 3 and rnd.random() < 0.45:
+                at = rnd.randrange(x1, x2, 32)
+                gone = {at + 32 * i for i in range(rnd.randrange(1, 4))}
+            for sx in range(x1, x2, 32):
+                if sx not in gone:
+                    out.append(((x + sx, y + ry, x + sx + 32, y + ry + 20),
+                                dict(floor=SEAT, **dress(ftex="SF", side="SS"))))
+                    out.append(((x + sx, y + ry + 20, x + sx + 32, y + ry + ROW),
+                                dict(floor=BACK, **dress(ftex="SF", side="SB"))))
+    return out
 
 
 def spots(kind, *at):
@@ -67,25 +92,33 @@ class Hall:
         self.k, self.x, self.y, self.w, self.h = k, x, y, w, h
         cx, cy = self.cx, self.cy = x + w // 2, y + h // 2
         W = "G" if ceil > 256 else "H"                  # the hall's wall is as tall as the hall
+        seats = []
         if LOOK:
+            # the lights are down: the hall is dark but for what the screen
+            # throws on the floor before it; then the seats
             light = gfx_cinema.LIGHT[LOOK]
-        ajarmap.fitted(m, (x, y, x + w, y + h),
+            seats = [((x, y, x + w, y + 96), dict(light=light + 40)),
+                     ((x, y + 96, x + w, y + 192), dict(light=light + 20))] + rows(k, x, y, w, h)
+        ajarmap.fitted(m, (x, y, x + w, y + h), seats +
                        [((x + a, y + b, x + c, y + d), dict(floor=BLOCK, **look)) for (a, b, c, d), look in blocks],
                        ceil=ceil, light=light, **dress(wall=W, ftex="HF", ctex="HC"))
         ajartime.zone(m, k, 0, x, y, x + w, y + h, grow=72)
         # the way in: a step down
         m.sector(rect(cx - 128, y - 320, cx + 128, y), floor=UP, ceil=160, light=170,
                  **dress(wall="W", side="SP", ftex="FF", ctex="FC"))
-        if LOOK:                                        # over the way in: the screen
-            m.line((cx - 128, y), (cx + 128, y), upper=tx("SG" if W == "G" else "SC"), exact=True)
+        if LOOK:                                        # over the way in: the screen, lit
+            m.line((cx - 128, y), (cx + 128, y), upper=tx(f"S{k}"), exact=True, lit=255)
         ajartime.zone(m, k, 0, cx - 128, y - 128, cx + 128, y)
         # the time doors
-        ajartime.hall_door(m, k, 1, (x, y + 96), (x, y + 160), (-1, 0), 0)
-        ajartime.hall_door(m, k, 2, (x + w, y + h - 160), (x + w, y + h - 96), (1, 0), 0)
-        ajartime.hall_door(m, k, 3, (x + 96, y + h), (x + 160, y + h), (0, 1), 0)
-        over((x, y + 96), (x, y + 160), W)
-        over((x + w, y + h - 160), (x + w, y + h - 96), W)
-        over((x + 96, y + h), (x + 160, y + h), W)
+        # the time doors: in a look their surround is dark, and so is a
+        # lintel in the wall over them
+        dark = dict(trim=(tx("TT"), tx("TT"))) if LOOK else {}
+        ajartime.hall_door(m, k, 1, (x, y + 96), (x, y + 160), (-1, 0), 0, **dark)
+        ajartime.hall_door(m, k, 2, (x + w, y + h - 160), (x + w, y + h - 96), (1, 0), 0, **dark)
+        ajartime.hall_door(m, k, 3, (x + 96, y + h), (x + 160, y + h), (0, 1), 0, **dark)
+        over((x, y + 96), (x, y + 160), "T" + W)
+        over((x + w, y + h - 160), (x + w, y + h - 96), "T" + W)
+        over((x + 96, y + h), (x + 160, y + h), "T" + W)
         # the boxes: west, north, east. Each is (its middle, the way from the
         # hall to its back, the way along its glass)
         self.box = {}
@@ -100,7 +133,7 @@ class Hall:
             ajartime.glass(m, ga, gb, u, BOXF, **(dict(trim=(tx("GT"), tx("GT"))) if LOOK else {}))
             d = (bx + u[0] * 120, by + u[1] * 120)
             da, db = (d[0] - v[0] * 32, d[1] - v[1] * 32), (d[0] + v[0] * 32, d[1] + v[1] * 32)
-            ajartime.box_door(m, k, n, da, db, u, BOXF)
+            ajartime.box_door(m, k, n, da, db, u, BOXF, **dark)
             if LOOK:
                 # the wall under and over the glass is the hall's on the
                 # hall's side and the box's on the box's; the glass has a
