@@ -3554,3 +3554,30 @@ easy; only a few more cells.) Every box has green armour now, on the floor
 in its middle (`Hall.more`), and a cell pack beside it in all but hall 1's
 first box. A box's things are taken once. Not played by hand; the walk
 passes.
+
+## MAP31: a pure demo, and what Vadim found playing (2026-11-18)
+
+Vadim played the open fights. Three things.
+
+- **Pure demo (his choice, instead of the share that woke).** By chance he
+  had a go in which nothing noticed him, and liked it better than 1/2 and
+  1/3. Now stepping into the hall wakes nothing. A monster stays on the demo
+  until the player hurts it, **or walks into it** (it wakes once they are
+  out of it, or after a second), or the demo is over. `StepIn` is gone.
+  Why nothing woke in his go was not found; it no longer matters.
+- **Shut in a box: fixed.** After coming back from a spare box he was
+  suddenly in hall 3's third box, its door shut. Cause: killed, he went on
+  as an earlier self (`GoOnAs`), and that self was at that tic still
+  standing in its box, where a go begins. Now only an earlier self that is
+  in the hall is taken; with none there, a death is a box as usual.
+  **Not tested** (it needs a third go).
+- **The green armour could not be taken.** Not explained. The game refuses
+  it only at 100 armour or more. The walk now takes the armour of the box
+  it is in during a replay (`armourInTheBox`), so the thing is real there.
+  The HUD had no armour number: it has one now, over the health, green, or
+  blue for blue armour and megaspheres (`AjarStatusBar`), so that he can
+  see what he has when it is refused.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (60; hall 3: `noneWakesAsIStepIn`,
+`wokenByAShot`, `wokenByATouch`, `allAwakeAtItsEnd3`), `MAP=TIME MODE=3`
+(14). **Not played by hand.**
