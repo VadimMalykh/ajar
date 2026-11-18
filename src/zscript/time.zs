@@ -113,21 +113,49 @@ class AjarEcho : Actor
 	States { Spawn: TNT1 A -1; Stop; }
 }
 
-// Where the player was killed in a hall, and came to in a box: what is left
-// of that self. A thing of the hall like any other, so a replay shows it
-// fall at that moment.
-class AjarCorpse : Actor
+// The player is never killed in a fight: at the last moment they are taken
+// out of it, to before it began. What is seen of that where they stood: their
+// own shape gone to light, rising and fading, in a teleport's flash. A thing
+// of the hall like any other, so a replay shows it at that moment.
+class AjarSnatch : Actor
 {
-	Default { Radius 16; Height 16; +NOBLOCKMAP +MOVEWITHSECTOR }
+	Default { +NOBLOCKMAP +NOGRAVITY RenderStyle "Add"; }
 	States
 	{
 	Spawn:
-		PLAY H 10;
-		PLAY I 10 A_StartSound("*death", CHAN_VOICE);
-		PLAY JKLM 10;
-		PLAY N -1;
-		Stop;
+		TNT1 A 0;
+	Fade:
+		#### # 1 Bright A_FadeOut(0.03);
+		Loop;
 	}
+}
+
+// The reel's camera.
+class AjarCam : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+}
+
+// One tic of a hall, for the reel: everything in it.
+class AjarStill play
+{
+	Array<class<Actor> > cls;
+	Array<double> x, y, z, ang;
+	Array<int> sf;
+	int me;                     // which of them is the player (-1: none)
+}
+
+// The last seconds before the player was killed in a hall.
+class AjarClip play
+{
+	int fight;
+	Vector3 at;
+	double ang;
+	Array<AjarStill> stills;
+	// not the player's death but a big monster's: how big, and what
+	int big;
+	string what;
 }
 
 // An earlier self in an open fight: it goes where the player went and its
@@ -530,6 +558,244 @@ class AjarTimeHandler : EventHandler
 		rescued = false;
 	}
 
+	// --- the reel -----------------------------------------------------------------
+	// When every fight is won the last way out leads back to the first hall,
+	// to a seat. The lights go down, a big screen comes down before the way
+	// in, and on it is every time the player was killed in a hall: its last
+	// two seconds, close, at a third of the speed, and their going to light. Then the
+	// level ends. (USE: the next one.)
+	// How: while a fight is lived the last REEL_LEN tics of its hall are kept
+	// (stills: every thing's place and picture). A death keeps a copy. For
+	// the reel each is played with puppets in the hall where it happened,
+	// now empty, before a camera whose view is the screen's texture (AJREEL,
+	// animdefs.txt). The player is unseen meanwhile, so that a clip of the
+	// hall they sit in does not have them in it.
+	const REEL_LEN = 70;
+	const REEL_SLOW = 3;
+	const REEL_FALL = 12;       // tics to a frame of the fall (7 frames)
+	const REEL_TAG = 3070;
+	Array<AjarStill> recent;
+	Array<AjarClip> clips;
+	int reel;                   // 0 not yet, 1 the screen comes down, 2 clips, 3 the end, 4 over
+	int reelTic, reelClip;
+	bool reelUse;
+	AjarCam cam;
+	AjarEcho fallen;
+	string caption;
+
+	void Snap(Actor mo)
+	{
+		let st = new("AjarStill");
+		st.me = -1;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarCam" || a.bInvisible) continue;
+			let inv = Inventory(a);
+			if (inv && inv.owner) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight || b != 0) continue;
+			if (a == mo) st.me = st.cls.Size();
+			st.cls.Push(a.GetClass());
+			st.x.Push(a.pos.x); st.y.Push(a.pos.y); st.z.Push(a.pos.z); st.ang.Push(a.angle);
+			st.sf.Push((int(a.sprite) << 8) | (a.frame & 127) | ((a.bBright || (a.CurState && a.CurState.bFullbright)) ? 128 : 0));
+		}
+		recent.Push(st);
+		if (recent.Size() > REEL_LEN) recent.Delete(0);
+	}
+
+	// If the player was never killed in a hall, the reel has the deaths of
+	// the three biggest monsters instead (600 health and up: arch-viles,
+	// mancubi, barons, cyberdemons), kept a little after each died so that
+	// its fall is in it.
+	const BIG = 600;
+	const BIG_AFTER = 45;
+	Array<AjarClip> kills, dueKills;
+	Array<int> dueTic;
+
+	override void WorldThingDied(WorldEvent e)
+	{
+		Actor t = e.thing;
+		if (!t || !t.bIsMonster || phase != LIVE || t.SpawnHealth() < BIG) return;
+		int k, b;
+		[k, b] = Where(t.pos.xy);
+		if (k != fight || b != 0) return;
+		let c = new("AjarClip");
+		c.fight = fight;
+		c.at = t.pos;
+		c.ang = t.angle;
+		c.big = t.SpawnHealth();
+		c.what = t.GetTag();
+		dueKills.Push(c); dueTic.Push(level.maptime + BIG_AFTER);
+	}
+
+	void KeepKills()
+	{
+		while (dueTic.Size() && dueTic[0] <= level.maptime)
+		{
+			AjarClip c = dueKills[0];
+			dueKills.Delete(0); dueTic.Delete(0);
+			if (!recent.Size()) continue;
+			c.stills.Copy(recent);
+			kills.Push(c);
+			if (kills.Size() <= 3) continue;
+			int least = 0;
+			for (int i = 1; i < kills.Size(); i++) if (kills[i].big < kills[least].big) least = i;
+			kills.Delete(least);
+		}
+	}
+
+	void KeepClip(Actor mo)
+	{
+		if (!recent.Size()) return;
+		let c = new("AjarClip");
+		c.fight = fight;
+		c.at = mo.pos;
+		c.ang = mo.angle;
+		c.stills.Copy(recent);
+		clips.Push(c);
+		recent.Clear();
+	}
+
+	int Fights()
+	{
+		int n = 0;
+		for (int i = 0; i < zf.Size(); i++) if (zf[i] > n) n = zf[i];
+		return n;
+	}
+
+	void StartReel(PlayerPawn mo)
+	{
+		reel = 1;
+		reelTic = 0;
+		mo.player.cheats |= CF_TOTALLYFROZEN;
+		mo.bInvisible = true;
+		mo.vel = (0, 0, 0);
+		mo.pitch = -8;
+		HouseLights(1, 0);
+		level.ExecuteSpecial(40 /* Ceiling_LowerByValue */, null, null, false, REEL_TAG, 16, 224);
+		cam = AjarCam(Actor.Spawn("AjarCam", mo.pos + (0, 0, 40)));
+		cam.angle = mo.angle + 180;
+		TexMan.SetCameraToTexture(cam, "AJREEL", 55);
+		if (!clips.Size()) clips.Copy(kills);
+		caption = clips.Size() ? "" : "Not once were you killed in a hall.";
+	}
+
+	// The camera: near where they fell, on them, from where they can be seen.
+	void Aim(AjarClip c)
+	{
+		static const int tryAt[] = { 0, 40, -40, 80, -80, 130, -130, 180 };
+		let mark = Actor.Spawn("AjarCam", c.at + (0, 0, 32));
+		for (int i = 0; i < 8; i++)
+		{
+			Vector2 p = c.at.xy + Actor.AngleToVector(c.ang + tryAt[i], c.big ? 230 : 120);
+			Sector sec = level.PointInSector(p);
+			if (!level.IsPointInLevel((p, c.at.z + 44)) || sec.ceilingplane.ZAtPoint(p) - sec.floorplane.ZAtPoint(p) < 64) continue;
+			cam.SetOrigin((p, max(c.at.z, sec.floorplane.ZAtPoint(p)) + 44), false);
+			cam.angle = VectorAngle(c.at.x - p.x, c.at.y - p.y);
+			cam.pitch = 6;
+			if (cam.CheckSight(mark)) break;
+		}
+		mark.Destroy();
+	}
+
+	void Stage(AjarStill st, bool withMe)
+	{
+		int n = st.cls.Size();
+		while (puppets.Size() < n)
+		{
+			puppets.Push(AjarEcho(Actor.Spawn("AjarEcho", (st.x[0], st.y[0], st.z[0]))));
+			puppetSlot.Push(0); puppetTrack.Push(0);
+		}
+		for (int i = 0; i < puppets.Size(); i++)
+		{
+			AjarEcho e = puppets[i];
+			if (!e) continue;
+			if (i >= n || (i == st.me && !withMe)) { e.bInvisible = true; continue; }
+			let d = GetDefaultByType(st.cls[i]);
+			e.bInvisible = false;
+			e.SetOrigin((st.x[i], st.y[i], st.z[i]), false);
+			e.scale = d.scale;
+			e.A_SetRenderStyle(d.alpha, d.GetRenderStyle());
+			e.translation = d.translation;
+			e.angle = st.ang[i];
+			e.sprite = st.sf[i] >> 8;
+			e.frame = st.sf[i] & 127;
+			e.bBright = (st.sf[i] & 128) != 0;
+		}
+	}
+
+	void ReelTick(PlayerPawn mo)
+	{
+		mo.vel = (0, 0, 0);
+		bool use = (mo.player.original_cmd.buttons & BT_USE) != 0;
+		bool skip = use && !reelUse;
+		reelUse = use;
+		int t = reelTic++;
+		if (reel == 1)
+		{
+			if (t < 130) return;
+			reel = clips.Size() ? 2 : 3;
+			reelTic = 0; reelClip = 0;
+			return;
+		}
+		if (reel == 2)
+		{
+			AjarClip c = clips[reelClip];
+			int n = c.stills.Size(), shown = t / REEL_SLOW, fall = t - n * REEL_SLOW;
+			if (t == 0)
+			{
+				Aim(c);
+				caption = c.big ? String.Format("HALL %d   -   %s", c.fight, c.what) : String.Format("HALL %d   -   %d of %d", c.fight, reelClip + 1, clips.Size());
+			}
+			if (shown < n) Stage(c.stills[shown], true);
+			else if (c.big) fall += 7 * REEL_FALL;     // its fall is in the clip: only the pause
+			else
+			{
+				// taken out: everything else as it was at the last, and the
+				// player's shape gone to light, rising and fading
+				AjarStill last = c.stills[n - 1];
+				Stage(last, false);
+				if (!fallen) fallen = AjarEcho(Actor.Spawn("AjarEcho", c.at));
+				double gone = min(1., fall / (7. * REEL_FALL));
+				fallen.SetOrigin(c.at + (0, 0, 24 * gone), false);
+				fallen.angle = c.ang;
+				fallen.sprite = last.me >= 0 ? last.sf[last.me] >> 8 : Actor.GetSpriteIndex("PLAY");
+				fallen.frame = last.me >= 0 ? last.sf[last.me] & 127 : 0;
+				fallen.bBright = true;
+				fallen.A_SetRenderStyle(1 - gone, STYLE_Add);
+				fallen.scale = (1 + 0.3 * gone, 1 + 0.3 * gone);
+				fallen.bInvisible = false;
+			}
+			if (skip || fall > 7 * REEL_FALL + 35)
+			{
+				if (fallen) fallen.bInvisible = true;
+				for (int i = 0; i < puppets.Size(); i++) if (puppets[i]) puppets[i].bInvisible = true;
+				reelTic = 0;
+				if (++reelClip >= clips.Size()) reel = 3;
+			}
+			return;
+		}
+		if (reel == 3)
+		{
+			if (t == 0)
+			{
+				if (clips.Size()) caption = "THE END";
+				mo.A_SetBlend("black", 1.0, 200);
+			}
+			if (t < 105 && !skip) return;
+			reel = 4;
+			DropPuppets(-1);
+			if (fallen) fallen.Destroy();
+			if (cam) cam.Destroy();
+			mo.player.cheats &= ~CF_TOTALLYFROZEN;
+			mo.bInvisible = false;
+			level.ExitLevel(0, false);
+		}
+	}
+
 	// --- recording ------------------------------------------------------------
 	// Is this thing part of what is recorded just now? `box` 0: the hall and
 	// every box whose door has opened; else that box alone.
@@ -671,6 +937,8 @@ class AjarTimeHandler : EventHandler
 	void Begin(int k)
 	{
 		fight = k;
+		recent.Clear();
+		dueKills.Clear(); dueTic.Clear();
 		open = openFights.Find(k) < openFights.Size();
 		takes.Clear();
 		DropGhosts();
@@ -790,9 +1058,10 @@ class AjarTimeHandler : EventHandler
 		Line l = h.FindLine(BoxLine(sk, sn));
 		if (!l) return false;
 		playerWas = mo.pos;                 // Leave() takes the door nearest to it
-		// Killed in the hall, they leave a body there. Not in an open fight
+		// Taken out of the hall, their shape is left there for a moment, in light. Not in an open fight
 		// that begins again at once: its hall is put back to before the fight
 		// (there the earlier self runs for a door instead).
+		if (at == 0) KeepClip(mo);
 		bool body = at == 0 && !(open && own);
 		Vector3 fell = mo.pos;
 		double faced = mo.angle;
@@ -849,8 +1118,9 @@ class AjarTimeHandler : EventHandler
 		}
 		if (body)
 		{
-			Actor c = Actor.Spawn("AjarCorpse", fell);
-			if (c) { c.angle = faced; c.translation = mo.translation; }
+			Actor c = Actor.Spawn("AjarSnatch", fell);
+			if (c) { c.angle = faced; c.translation = mo.translation; c.sprite = mo.sprite; c.frame = mo.frame; c.vel.z = 1; }
+			Actor.Spawn("TeleportFog", fell, ALLOW_REPLACE);
 		}
 		Vector2 p = (l.v1.p + l.v2.p) / 2 + (l.delta.y, -l.delta.x).Unit() * 40;
 		mo.SetOrigin((p, l.frontsector.floorplane.ZAtPoint(p)), false);
@@ -1017,11 +1287,21 @@ class AjarTimeHandler : EventHandler
 		if (!zf.Size()) return;
 		let mo = players[consoleplayer].mo;
 		if (!mo) return;
+		if (reel && reel < 4) { ReelTick(PlayerPawn(mo)); Tests(mo); return; }
 		Rescue(PlayerPawn(mo));
 		int k, b;
 		[k, b] = Where(mo.pos.xy);
+		if (!reel && phase == IDLE && !comeBack && k == 1 && b == 0 && won.Size() >= Fights() && Fights() > 1
+			&& level.CreateSectorTagIterator(REEL_TAG).Next() >= 0)
+		{
+			StartReel(PlayerPawn(mo));
+			Tests(mo);
+			return;
+		}
 		if (phase == IDLE)
 		{
+			// a big monster's death that won the fight is still being kept
+			if (dueTic.Size()) { Snap(mo); KeepKills(); }
 			SpareTick(mo, k, b);
 			if (comeBack && k == fight && b == 0) Resume(mo);
 			else if (!comeBack && k && b == 0 && won.Find(k) == won.Size() && mo.health > 0) Begin(k);
@@ -1037,6 +1317,8 @@ class AjarTimeHandler : EventHandler
 			{
 				int ft = FightTic();
 				Show(fight, ft, mo);
+				if (at == 0) Snap(mo);
+				KeepKills();
 				if (open) { RecordTake(PlayerPawn(mo)); PlayGhosts(mo); ot++; }
 				else Record(main);
 				// a hall with a show is empty until the count is over
@@ -1063,6 +1345,11 @@ class AjarTimeHandler : EventHandler
 			if (++rt >= main.first.Size()) EndReplay();
 		}
 		playerWas = mo.pos;
+		Tests(mo);
+	}
+
+	void Tests(Actor mo)
+	{
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (mode == 4 && level.mapname ~== "TIME") FollowScript(PlayerPawn(mo));
 		else if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
@@ -1073,6 +1360,12 @@ class AjarTimeHandler : EventHandler
 	// How far the fight that is being watched has got, and when the door opens.
 	override void RenderOverlay(RenderEvent e)
 	{
+		if (reel && reel < 4)
+		{
+			if (caption != "") Screen.DrawText(BigFont, Font.CR_GOLD, 320 - BigFont.StringWidth(caption) / 2, 360, caption, DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
+			if (reel == 2) Screen.DrawText(SmallFont, Font.CR_GRAY, 320 - SmallFont.StringWidth("USE: the next") / 2, 384, "USE: the next", DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
+			return;
+		}
 		if (open && phase == LIVE && takes.Size() > 1)
 		{
 			int len = takes[takes.Size() - 2].x.Size();
@@ -1222,6 +1515,7 @@ class AjarTimeHandler : EventHandler
 		static const int hx[] = { -192, 2752, 5696 };
 		static const int hw[] = { 1152, 1536, 1920 };
 		static const int hh[] = { 960, 1216, 1472 };
+		if (level.totaltime > level.maptime + 10) return;       // the level again, after the reel
 		int t = testTic++;
 		mo.player.cheats |= CF_GODMODE;
 		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d fight=%d at=%d trips=%d rt=%d len=%d recs=%d puppets=%d frozen=%d left=%d digit=%d",
@@ -1230,7 +1524,24 @@ class AjarTimeHandler : EventHandler
 		int k = t / (540 + 2 * D), u = t % (540 + 2 * D);
 		if (k > 2)
 		{
-			if (t == 3 * (540 + 2 * D)) Check("secrets", level.total_secrets == 1);
+			int v = t - 3 * (540 + 2 * D);
+			if (v == 0) Check("secrets", level.total_secrets == 1);
+			// the reel: by the last way out to the seat in hall 1; two deaths in halls were kept
+			if (v == 6) Go(mo, 384, 420, 0, 270);
+			if (v == 10) Check("bigDeathsKept", kills.Size() == 3 && kills[0].big >= BIG && kills[0].stills.Size() > 10 && kills[0].what != "");
+			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 2 && mo.bInvisible && ShowLight(1, false));
+			if (v == 150)
+			{
+				let si = level.CreateSectorTagIterator(REEL_TAG);
+				Sector sec = level.sectors[si.Next()];
+				Check("theScreenIsDown", sec.CenterCeiling() == 32 && reel == 2 && cam && puppets.Size() > 3);
+				int ck, cb;
+				[ck, cb] = Where(cam.pos.xy);
+				Check("aDeathInHall2", ck == 2 && clips[0].fight == 2 && clips[1].fight == 3);
+			}
+			if (v == 420) Check("goneToLightOnScreen", reel == 2 && reelClip == 0 && fallen && !fallen.bInvisible && fallen.alpha < 1);
+			if (v == 440 || v == 460) { reelTic = 100000; }      // the rest, quickly
+			if (v == 470) Check("theEnd", reel == 3);
 			return;
 		}
 		double x = hx[k], cx = x + hw[k] / 2, cy = hh[k] / 2;
@@ -1302,7 +1613,7 @@ class AjarTimeHandler : EventHandler
 		if (k == 2)     // the great hall: no box of its own left, killed: into a box hall 1 did not use, and the fight begins again
 		{
 			if (u == 266) { trips = BoxCount(fight); HallDoors(0); mo.health = mo.player.health = 1; }
-			if (u == 268) { let ci = ThinkerIterator.Create("AjarCorpse"); Actor c = Actor(ci.Next()); Check("aBodyIsLeft", c && abs(c.pos.x - cx) < 2 && abs(c.pos.y - 40) < 2); }
+			if (u == 268) { let ci = ThinkerIterator.Create("AjarSnatch"); Actor c = Actor(ci.Next()); Check("goneToLight", c && abs(c.pos.x - cx) < 2 && abs(c.pos.y - 40) < 2 && c.alpha < 1); }
 			if (u == 268) Check("killedIntoASpareBox", phase == IDLE && comeBack && spare.Size() == 3 && spareOut == 12 && !Left()
 				&& mo.pos.x < 1200 && mo.pos.y > hh[0] && mo.health == RESCUE_HEALTH);
 			if (u == 269) Go(mo, cx, 40, 0, 90);

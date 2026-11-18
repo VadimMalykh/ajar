@@ -6,6 +6,9 @@ CUE_T = 20041
 TIME = 10           # the time door's colour number: textures AJDR10, AJTR10, AJTF10
 
 
+REEL_TAG = 3070     # the big screen's sector, and the tid of the seat before it
+
+
 def hall_line(k, j):
     return 3000 + 100 * k + j
 

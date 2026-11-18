@@ -3342,6 +3342,54 @@ Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (hall 3 now also: `killedIntoASpareBox`,
 Not tested: walking out of the spare box and back to the fight (the walk
 teleports).
 
+## MAP31: the reel (2026-11-18)
+
+Vadim's idea: after all the fights, back in the first hall, a screen comes
+down and on it are all his deaths, close up and slowed down. Built. **Seen
+only in the headless walk's pictures (`build/smoke31`, the last three); not
+played by hand.**
+
+- **The last way out leads to a seat in hall 1** (a teleport, tid 3070; it
+  was the level's exit). The player is held there, unseen, the lights go
+  down, and **a big screen comes down before the way in** (512 by 224: a
+  slice of the hall whose ceiling is lowered, sector tag 3070).
+- **On it, every time the player was killed in a hall**: the last two
+  seconds (`REEL_LEN` 70 tics) at a third of the speed, then the fall. A
+  caption says which hall and which of how many; USE goes to the next.
+  Then "THE END", black, and the level ends (its next is MAP31).
+- **Never killed in a hall: the deaths of the three biggest monsters
+  instead** (Vadim; 600 health and up, kept 45 tics after each died, so its
+  fall is in the clip; the caption names it). Killed in a box only: the
+  same. None of either: one line, and the end.
+- How (`time.zs`, "the reel"): while a fight is lived, the hall's last 70
+  tics are kept as stills (every thing's place and picture). A death, or a
+  big monster's, keeps a copy. For the reel a clip is played with puppets
+  in the hall where it happened, now empty, before a camera 120 from where
+  the player fell (230 for a monster), put where it can see the spot; its
+  view is the texture `AJREEL` (`cameratexture`, in `gfx.py`'s animdefs)
+  on the screen's face.
+- Known: no sound; 12 pictures a second (a still is shown three tics); a
+  clip of hall 1 is played round the seated player, who is unseen so as not
+  to be in it; clips are not kept in the fight a death with no box left
+  ends, since the level ends there.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (after the halls: `bigDeathsKept`,
+`theReelBegins`, `theScreenIsDown`, `aDeathInHall2`, `theFall`, `theEnd`,
+`levelExited`; 14 pictures). Not run: a reel of monsters' deaths, a reel
+with nothing in it, USE to skip.
+
+## MAP31: not killed but taken out (2026-11-18)
+
+Vadim changed his mind about the body: the player is not dead, they were
+saved at the last moment and sent back to the past, so no death animation
+and no corpse. **This replaces every "body" and "fall" above** (`AjarCorpse`
+is gone). Instead (`AjarSnatch`): where they stood, their own shape gone to
+light (additive, bright), rising and fading in a second, in a teleport's
+flash with its sound. In halls 1 and 3 it happens when the replay hands
+over, and later replays show it; in the reel a clip ends with it, slowed.
+Hall 2 is as it was (the earlier self runs for a door). Not seen in a
+picture; checks `goneToLight`, `goneToLightOnScreen`.
+
 ## Handoff (2026-11-18): MAP10 after Vadim played it
 
 Four changes, all from his play of MAP10. Details are under "MAP10", "The two

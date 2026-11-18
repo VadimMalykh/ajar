@@ -138,6 +138,13 @@ class Hall:
             light = gfx_cinema.LIGHT[LOOK]
             seats = [((x, y, x + w, y + 96), dict(light=light + 40)),
                      ((x, y + 96, x + w, y + 192), dict(light=light + 20))] + rows(k, x, y, w, h)
+        if k == 1:
+            # the big screen, for the reel when all is over (time.zs): a slice
+            # of the hall before the way in whose ceiling comes down, 512 wide;
+            # what a camera sees is on its face. Until then it is not there.
+            seats = seats + [((cx - 256, y, cx + 256, y + 8), dict(id=ajartime.REEL_TAG))]
+            m.line((cx - 256, y + 8), (cx + 256, y + 8), upper="AJREEL", exact=True, lit=255)
+            m.thing(cx, y + 420, 14, angle=270, id=ajartime.REEL_TAG)        # where the last way out leads: a seat for it
         ajarmap.fitted(m, (x, y, x + w, y + h), seats +
                        [((x + a, y + b, x + c, y + d), dict(floor=ceil, **dress(side=W)) if look.get("pillar") else look)
                         for (a, b, c, d), look in blocks],
@@ -208,7 +215,8 @@ class Hall:
             over((cx - 32, y - 320), (cx + 32, y - 320), "W")
         if last:
             m.cut(*self.on)
-            m.line(*self.on, special=243, playeruse=True, mid="AJEXIT", exact=True)
+            # the way out leads back to the first hall, for the reel; the level ends after it
+            m.line(*self.on, special=70, args=(ajartime.REEL_TAG,), playeruse=True, repeatspecial=True, mid="AJEXIT", exact=True)
 
     def at(self, *pts):
         return [(self.x + a, self.y + b) for a, b in pts]

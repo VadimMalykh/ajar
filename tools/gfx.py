@@ -1265,7 +1265,9 @@ def make_all():
         out[f"textures/AJTR{c}.png"] = t.png()
         out[f"flats/AJTF{c}.png"] = t.png()
     # a lever is a switch: it moves when it is used, and Doom gives it a sound
-    out["animdefs.txt"] = "".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS)).encode()
+    # and the big screen of MAP31's reel: what a camera in the level sees (time.zs, "the reel")
+    out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
+                           + "cameratexture AJREEL 512 224\n").encode()
     import gfx_square                                            # MAP10's square, stops and depot
     gfx_square.make(out)
     import gfx_time                                              # the time door (ajartime)
