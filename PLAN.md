@@ -3460,3 +3460,23 @@ gone). He chose this of four. **Not played by hand.**
 
 Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (53 checks; hall 3: `onAsMyEarlierSelf`;
 the reel now has three deaths), `MAP=TIME MODE=3` (14).
+
+## MAP31: a monster shut in a box comes back to the hall (2026-11-18)
+
+Vadim, playing hall 1: two revenants came into the box after him and killed
+him there; he was in the next box, then won the rest of the fight, but those
+two stood in the first box behind its glass, out of reach, and the fight
+could not be won (its count is of every monster of the fight, in a box too).
+He likes that monsters can come into a box; the fight must still end.
+
+- `BackToTheHall`: while the fight is live and the player is in the hall
+  (so every box is shut), a living monster that stands in a box of the fight
+  is put in the hall, by the time door farthest from the player, in a
+  teleport's fog, and is after the player. If there is no room there it
+  comes when there is. Every fight, open or not. So it also covers a
+  follower that was simply left behind in a box when the player went back.
+- While the player is in a box with it, nothing changes: it fights there.
+
+Run: `MAP=TIME MODE=4` (`notShutInTheBox`; its `followed` check still fails
+as before: not looked into), `MAP=TIME MODE=3` (14), `MAP=MAP31 MODE=3
+TIMEOUT=250` (53). **Not played by hand.**

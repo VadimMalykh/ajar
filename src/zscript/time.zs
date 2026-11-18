@@ -954,6 +954,51 @@ class AjarTimeHandler : EventHandler
 		said |= 1;
 	}
 
+	// A monster that came into a box after the player, and is still alive
+	// there when the player is back in the hall, is shut in where nothing can
+	// reach it, and the fight could not be won. It comes out into the hall by
+	// the time door farthest from the player (when there is room there).
+	void BackToTheHall(Actor mo)
+	{
+		let h = Doors();
+		Vector2 mid;
+		double far = -1;
+		for (int j = 1; h.FindLine(HallLine(fight, j)); j++)
+		{
+			Line l = h.FindLine(HallLine(fight, j));
+			Vector2 c = (l.v1.p + l.v2.p) / 2;
+			double d = (mo.pos.xy - c).Length();
+			if (d > far) { far = d; mid = c; }
+		}
+		if (far < 0) return;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != fight || b <= 0) continue;
+			Vector3 was = a.pos;
+			bool ok = false;
+			for (int i = 0; i < 24 && !ok; i++)
+			{
+				Vector2 p = mid + Actor.AngleToVector(i * 45, 64 + a.radius + 48 * (i / 8));
+				[k, b] = Where(p);
+				if (k != fight || b != 0 || !level.IsPointInLevel((p, 0))) continue;
+				Sector sec = level.PointInSector(p);
+				// in the hall itself, not a door's recess or the way in
+				if (sec.ceilingplane.ZAtPoint(p) - sec.floorplane.ZAtPoint(p) < 160) continue;
+				a.SetOrigin((p, sec.floorplane.ZAtPoint(p)), false);
+				ok = a.TestMobjLocation();
+			}
+			if (!ok) { a.SetOrigin(was, false); continue; }
+			a.vel = (0, 0, 0);
+			a.target = mo;
+			Actor.Spawn("TeleportFog", a.pos, ALLOW_REPLACE);
+		}
+	}
+
 	int Left()      // monsters of this fight still alive, wherever in it they are
 	{
 		int n = 0;
@@ -1358,6 +1403,7 @@ class AjarTimeHandler : EventHandler
 				int go = HasShow(fight) ? SHOW_GO : 0;
 				if (ft == go || (ft > go && level.maptime % 5 == 0))
 				{
+					if (at == 0) BackToTheHall(mo);
 					int left = Left();
 					if (!Cues(mo, left) && !left && at == 0) Win();
 				}
@@ -1509,6 +1555,14 @@ class AjarTimeHandler : EventHandler
 			int k, b;
 			[k, b] = Where(testDemon.pos.xy);
 			Check("stayedOut", phase == LIVE && b == 1 && testDemon.health > 0);
+			Go(mo, -128, 380, 64, 90);          // back in by the box's door, leaving it there
+		}
+		if (t > 170 && t < 195) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 205)
+		{
+			int k, b;
+			[k, b] = Where(testDemon.pos.xy);
+			Check("notShutInTheBox", at == 0 && b == 0 && testDemon.pos.z < 8 && testDemon.Distance2D(mo) > 200);
 		}
 	}
 
