@@ -3326,6 +3326,17 @@ Vadim asked for both. Built; **not played by hand.**
   as he asked before, and the hall is put back. Not for a death in a box.
   Checked only as "it is there" (`aBodyIsLeft`); not seen in a picture.
 
+- **The end of the show, after Vadim played it: fixed.** The level began
+  again with the player frozen, at 1 health and with all they carried
+  (`CF_TOTALLYFROZEN` and the rest go with the player to the next level).
+  Now the freeze is taken off, and the level is left by `level.ChangeLevel`
+  with health reset, and inventory too when the next level is this one.
+  `MAP=MAP31 MODE=5 TIMEOUT=60` (`smoke_MAP31_5.cfg`): `theShowIsOver`,
+  `beganAgain`, `andCanWalk`.
+- A level with no door to carry no longer opens with "USE a door to take it
+  with you" (`AjarHandler.PlayerSpawned`): MAP31 says "Three halls, three
+  fights. A door with a clock on it leads out of a fight: to before it began."
+
 Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (hall 3 now also: `killedIntoASpareBox`,
 `begunOver`; a hall's part of the walk is 900 tics), `MAP=TIME MODE=3` (14).
 Not tested: walking out of the spare box and back to the fight (the walk

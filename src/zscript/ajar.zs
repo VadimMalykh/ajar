@@ -1013,7 +1013,9 @@ class AjarHandler : EventHandler
 	{
 		let mo = players[e.PlayerNumber].mo;
 		if (!mo) return;
-		Say("USE a door to take it with you.\nUSE an empty frame to hang it there.\nA door always opens onto its own far side.");
+		// a level with no door to carry (MAP31) says what it has instead
+		if (ThinkerIterator.Create("AjarDoor").Next()) Say("USE a door to take it with you.\nUSE an empty frame to hang it there.\nA door always opens onto its own far side.");
+		else if (ThinkerIterator.Create("AjarZone").Next()) Say("Three halls, three fights.\nA door with a clock on it leads out of a fight: to before it began.");
 	}
 
 	override void WorldThingSpawned(WorldEvent e)

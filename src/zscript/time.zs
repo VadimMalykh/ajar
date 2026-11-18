@@ -247,6 +247,8 @@ class AjarTimeHandler : EventHandler
 	override void WorldLoaded(WorldEvent e)
 	{
 		if (e.IsSaveGame) return;
+		// never begun frozen (a level left by "the show is over" was, once)
+		if (players[consoleplayer].mo) players[consoleplayer].cheats &= ~CF_TOTALLYFROZEN;
 		let it = ThinkerIterator.Create("AjarZone");
 		Actor a;
 		while (a = Actor(it.Next()))
@@ -758,7 +760,15 @@ class AjarTimeHandler : EventHandler
 		{
 			mo.bBuddha = true;
 			mo.vel = (0, 0, 0);
-			if (--over == 0) level.ExitLevel(0, false);
+			if (--over == 0)
+			{
+				// The level is left, on their feet: not frozen, in full health;
+				// and if what comes next is this level again, as they first came.
+				mo.player.cheats &= ~CF_TOTALLYFROZEN;
+				mo.bBuddha = false;
+				string next = level.nextmap != "" ? level.nextmap : level.mapname;
+				level.ChangeLevel(next, 0, CHANGELEVEL_RESETHEALTH | (next ~== level.mapname ? CHANGELEVEL_RESETINVENTORY : 0));
+			}
 			return false;
 		}
 		bool can = phase != IDLE && (at > 0 || phase == LIVE);
@@ -1057,6 +1067,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 4 && level.mapname ~== "TIME") FollowScript(PlayerPawn(mo));
 		else if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
+		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 	}
 
 	// How far the fight that is being watched has got, and when the door opens.
@@ -1173,6 +1184,27 @@ class AjarTimeHandler : EventHandler
 			[k, b] = Where(testDemon.pos.xy);
 			Check("stayedOut", phase == LIVE && b == 1 && testDemon.health > 0);
 		}
+	}
+
+	// MAP=MAP31 MODE=5 TIMEOUT=60: killed in hall 1 with no box left: the
+	// level ends and begins again, the player on their feet and as they first
+	// came. (The handler is new in the new level: it tells by the health.)
+	void OverScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		if (level.totaltime > level.maptime + 10)       // the level again
+		{
+			if (t == 30) Check("beganAgain", phase == IDLE && !over && mo.health == 100 && !mo.FindInventory("BFG9000")
+				&& !(mo.player.cheats & CF_TOTALLYFROZEN) && mo.pos.y < -500);
+			if (t == 31) Go(mo, 384, -500, 32, 90);
+			if (t > 31 && t < 40) mo.vel.xy = (0, 8);
+			if (t == 45) Check("andCanWalk", mo.pos.y > -470);
+			return;
+		}
+		if (t == 2) Go(mo, 384, -60, 32, 90);
+		if (t == 10) { Go(mo, 384, 60, 0, 90); mo.GiveInventoryType("BFG9000"); }
+		if (t == 20 && phase == LIVE) { trips = BoxCount(fight); mo.health = mo.player.health = 1; }
+		if (t == 24) Check("theShowIsOver", over > 0 && (mo.player.cheats & CF_TOTALLYFROZEN));
 	}
 
 	// MAP31 (tools/map_secret1.py; MAP=MAP31 MODE=3 TIMEOUT=250 tools/smoke.sh):
