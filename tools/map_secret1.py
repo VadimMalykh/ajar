@@ -12,10 +12,14 @@ that a trip gives. See src/zscript/time.zs and tools/ajartime.py.
 - Where you leave is where you come back, with whatever was after you a step
   away; and what was right behind you comes into the box with you.
 - From a box the whole hall is seen from above: what comes in later and
-  where, and the tops of the tall blocks. In the great hall one of them has
-  an arrow on it, at a piece of wall that opens: the level's secret.
+  where. For cover a hall has pillars and banks of raked seats (sheer at the
+  back and sides). In the great hall one bank has an arrow on its top, at a
+  piece of wall that opens: the level's secret.
 - A room key lies in the second and third halls; cupboards in their boxes
   want it.
+- Each fight has something to remember it by, that is seen again from the
+  box: hall 1 an arch-vile and then two more (the answers are in its boxes:
+  rocket launcher, BFG), hall 2 a cyberdemon early.
 - A hall is entered by a step down that cannot be climbed, and left by a
   steel door that opens when nothing in it is left alive.
 """
@@ -55,7 +59,6 @@ if LOOK:
     m.align |= gfx_cinema.ALIGNED
 BOXF = 64                   # a box's floor above its hall's
 UP = 32                     # the way into a hall, above its floor
-BLOCK = 80                  # the tall blocks: too high to see over from the floor
 SEAT, BACK = 12, 24         # a row of seats: its seats and their backs. Nothing is more than a step (24)
 ROW, PITCH = 32, 96         # a row is 32 deep (20 of seat, 12 of back), one every 96
 
@@ -82,13 +85,49 @@ def rows(k, x, y, w, h):
     return out
 
 
+def first(k, kind, *at):
+    """The monsters hall k's fight begins with. The hall is empty until the
+    screen has counted down; then they come in, facing the way in."""
+    ajartime.cue(m, k, 1, 0, kind, *at, angle=270)
+
+
+ARROW = dress(side="BS", ftex="BA") if LOOK else dict(ftex="AJARROW")
+
+
+def pillar(x, y):
+    """A square pillar to the ceiling, 64 by 64, in the hall's wall (Hall()
+    makes it so): cover, and plainly part of the building."""
+    return [((x, y, x + 64, y + 64), dict(pillar=True))]
+
+
+def platform(x, y, arrow=False):
+    """A bank of raked seats, 192 square, rising away from the screen: three
+    rows, each 24 higher than the one before, with a walk behind each, and a
+    plain rim either side. Every step is 12, so everything walks up it from
+    the front; its back and sides are sheer (72 at the back): cover. From a
+    box its top is seen. `arrow`: the middle of the top row is a bare patch
+    with the arrow on it."""
+    out = []
+    for i in range(3):
+        base, ya = 24 * i, y + 64 * i
+        out.append(((x, ya, x + 192, ya + 64), dict(floor=base + 24, **dress(side="BS"))))        # the rim, the walk
+        for sx in range(x + 32, x + 160, 32):
+            if arrow and i == 2 and x + 64 <= sx < x + 128:
+                continue
+            out.append(((sx, ya, sx + 32, ya + 20), dict(floor=base + SEAT, **dress(ftex="SF", side="SS"))))
+            out.append(((sx, ya + 20, sx + 32, ya + ROW), dict(floor=base + BACK, **dress(ftex="SF", side="SB"))))
+    if arrow:
+        out.append(((x + 64, y + 128, x + 128, y + 192), dict(floor=72, **ARROW)))
+    return out
+
+
 def spots(kind, *at):
     for x, y in at:
         m.thing(x, y, kind)
 
 
 class Hall:
-    def __init__(self, k, x, y, w, h, blocks, *, ceil=256, light=190, last=False):
+    def __init__(self, k, x, y, w, h, blocks, *, ceil=256, light=190, last=False, open=False):
         self.k, self.x, self.y, self.w, self.h = k, x, y, w, h
         cx, cy = self.cx, self.cy = x + w // 2, y + h // 2
         W = "G" if ceil > 256 else "H"                  # the hall's wall is as tall as the hall
@@ -100,14 +139,16 @@ class Hall:
             seats = [((x, y, x + w, y + 96), dict(light=light + 40)),
                      ((x, y + 96, x + w, y + 192), dict(light=light + 20))] + rows(k, x, y, w, h)
         ajarmap.fitted(m, (x, y, x + w, y + h), seats +
-                       [((x + a, y + b, x + c, y + d), dict(floor=BLOCK, **look)) for (a, b, c, d), look in blocks],
-                       ceil=ceil, light=light, **dress(wall=W, ftex="HF", ctex="HC"))
-        ajartime.zone(m, k, 0, x, y, x + w, y + h, grow=72)
+                       [((x + a, y + b, x + c, y + d), dict(floor=ceil, **dress(side=W)) if look.get("pillar") else look)
+                        for (a, b, c, d), look in blocks],
+                       ceil=ceil, light=light, id=ajartime.show_tag(k), **dress(wall=W, ftex="HF", ctex="HC"))
+        ajartime.zone(m, k, 0, x, y, x + w, y + h, grow=72, open=open)
         # the way in: a step down
         m.sector(rect(cx - 128, y - 320, cx + 128, y), floor=UP, ceil=160, light=170,
                  **dress(wall="W", side="SP", ftex="FF", ctex="FC"))
-        if LOOK:                                        # over the way in: the screen, lit
-            m.line((cx - 128, y), (cx + 128, y), upper=tx(f"S{k}"), exact=True, lit=255)
+        if LOOK:                                        # over the way in: the screen, lit; time.zs counts down on it
+            m.line((cx - 128, y), (cx + 128, y), upper=tx("R0" if ceil > 256 else "Q0"), exact=True, lit=255,
+                   id=ajartime.show_tag(k))
         ajartime.zone(m, k, 0, cx - 128, y - 128, cx + 128, y)
         # the time doors
         # the time doors: in a look their surround is dark, and so is a
@@ -188,11 +229,12 @@ class Hall:
         ajartime.locker(m, *self.spot(n, -10, 90), key, *what, angle=ang)
 
 
-PLAIN = dress(side="BS", ftex="BT")
-ARROW = dress(side="BS", ftex="BA") if LOOK else dict(ftex="AJARROW")
-
 # === the foyer and the small hall ==========================================
-h1 = Hall(1, 0, 0, 768, 704, [((192, 288, 256, 416), PLAIN), ((512, 288, 576, 416), PLAIN)])
+# The halls are big, and a fight is short and thick: its monsters come in
+# kinds, each kind in its own part of the hall, and the next wave comes while
+# half of the last is still alive, so that they are in each other's fire and
+# fight each other. (A fight that is long is long to watch again from a box.)
+h1 = Hall(1, -192, 0, 1152, 960, pillar(256, 352) + pillar(832, 352) + platform(192, 576) + platform(768, 576))
 if LOOK:
     # the foyer: a runner from the street doors to the way in, lamps, the box
     # office (shut) on the west wall, a bench on the east, posters of the
@@ -218,48 +260,65 @@ spots(2002, (468, -480))                    # chaingun
 spots(2049, (300, -430), (340, -430))       # boxes of shells
 spots(2048, (468, -430), (428, -430))       # boxes of bullets
 spots(2018, (384, -400))                    # armour
-spots(3001, *h1.at((128, 560), (384, 610), (640, 560), (260, 500), (500, 500)))
-spots(9, *h1.at((384, 440), (100, 330), (668, 330)))
-spots(3002, *h1.at((320, 250), (448, 250)))
-ajartime.cue(m, 1, 1, 3, 3002, *h1.at((150, 200), (618, 200), (384, 560)))
-ajartime.cue(m, 1, 1, 3, 3005, *h1.at((384, 352)))
-ajartime.cue(m, 1, 2, 2, 69, *h1.at((384, 620), (384, 120)))
-ajartime.cue(m, 1, 2, 2, 3005, *h1.at((120, 352), (648, 352)))
-h1.stock(1, 2012, 2012, 2049, 2048)
-h1.stock(2, 2012, 2012, 2049, 2048, 2011)
-h1.stock(3, 2012, 2012, 2049, 2048, 2011, 2011)
+first(1, 3001, *h1.at((112, 860), (184, 860), (256, 860), (112, 790), (184, 790), (256, 790)))       # imps, north-west
+first(1, 9, *h1.at((1040, 860), (968, 860), (896, 860), (1040, 790)))                               # shotgun guys, north-east
+first(1, 3002, *h1.at((480, 560), (672, 560), (480, 460), (672, 460)))                              # demons, the middle
+first(1, 65, *h1.at((100, 480), (1052, 480)))                                                       # a chaingunner at each side
+first(1, 3005, *h1.at((576, 700), (576, 300)))
+# What the fight is remembered by, and seen again from a box: an arch-vile
+# comes while the first monsters are still about (it raises them), and there
+# is nothing in the player's hands for it: the rocket launcher is in the first
+# box. With it come hell knights down the west side and revenants down the
+# east, across the hall from each other. Then two more arch-viles: the BFG is
+# in the second box.
+ajartime.cue(m, 1, 2, 10, 64, *h1.at((576, 860)), angle=270, always=True)
+ajartime.cue(m, 1, 2, 10, 69, *h1.at((120, 300), (120, 400), (120, 600)))
+ajartime.cue(m, 1, 2, 10, 66, *h1.at((1032, 300), (1032, 400), (1032, 600)), angle=180)
+ajartime.cue(m, 1, 3, 6, 64, *h1.at((200, 200), (952, 200)), always=True)
+ajartime.cue(m, 1, 3, 6, 67, *h1.at((400, 860), (752, 860)), angle=270)
+ajartime.cue(m, 1, 3, 6, 3005, *h1.at((576, 500), (400, 400), (752, 400)))
+h1.stock(1, 2003, 2046, 2046, 2012, 2049, 2048)
+h1.stock(2, 2006, 17, 2012, 2012, 2046, 2049)
+h1.stock(3, 2012, 2012, 2046, 17, 2049, 2011)
 
 # === the second hall: a room key, and a cupboard in the first two boxes ======
-h2 = Hall(2, 3008, 0, 1024, 896, [((256, 256, 320, 384), PLAIN), ((704, 256, 768, 384), PLAIN),
-                                  ((256, 512, 320, 640), PLAIN), ((704, 512, 768, 640), PLAIN)])
+h2 = Hall(2, 2752, 0, 1536, 1216, pillar(384, 352) + pillar(1088, 352) + platform(320, 736) + platform(1024, 736),
+          open=True)        # the box's door is open from the start: the fight is fought again, beside oneself
 ajarmap.doorway(m, 1, h1.on[0], h1.on[1], (0, 1), 0,
                 (h2.cx - 32, -320), (h2.cx + 32, -320), (0, -1), UP)
 spots(82, (h2.cx, -200))                    # super shotgun
 spots(2049, (h2.cx - 60, -200), (h2.cx + 60, -200))
 spots(2048, (h2.cx - 60, -150))
 spots(2012, (h2.cx + 60, -150))
-ajarmap.key(m, 1, *h2.at((512, 800))[0])
-spots(3001, *h2.at((128, 700), (896, 700), (400, 760), (624, 760), (128, 448), (896, 448)))
-spots(65, *h2.at((512, 700), (180, 820), (844, 820), (512, 448)))
-spots(69, *h2.at((400, 560), (624, 560)))
-spots(66, *h2.at((288, 448), (736, 448)))
-spots(3002, *h2.at((400, 300), (624, 300), (512, 200)))
-ajartime.cue(m, 2, 1, 4, 67, *h2.at((200, 448), (824, 448)))
-ajartime.cue(m, 2, 1, 4, 3002, *h2.at((400, 150), (624, 150), (400, 700), (624, 700)))
-ajartime.cue(m, 2, 1, 4, 3005, *h2.at((512, 320), (512, 576)))
-ajartime.cue(m, 2, 2, 3, 3003, *h2.at((400, 448), (624, 448)))
-ajartime.cue(m, 2, 2, 3, 66, *h2.at((128, 200), (896, 200)))
-ajartime.cue(m, 2, 2, 3, 64, *h2.at((512, 820)))
-h2.stock(1, 2012, 2012, 2049, 2048)
-h2.locker(1, 1, 2003, 2046)
+# for having come through a fight: a megasphere, and something for the
+# rocket launcher and the BFG that hall 1's boxes gave
+spots(83, (h2.cx, -100))
+spots(2046, (h2.cx - 60, -100))
+spots(17, (h2.cx + 60, -100))
+ajarmap.key(m, 1, *h2.at((768, 1140))[0])
+first(2, 3001, *h2.at(*[(200 + 160 * i, 1080) for i in range(8)]))                                  # imps along the far wall
+first(2, 65, *h2.at((120, 608), (1416, 608), (120, 300), (1416, 300)))                              # chaingunners down the sides
+first(2, 69, *h2.at((600, 900), (936, 900), (600, 760), (936, 760)))                                # hell knights, the middle
+first(2, 66, *h2.at((200, 800), (200, 900), (300, 800), (300, 900)))                                # revenants, the west
+first(2, 3005, *h2.at((768, 500), (600, 400), (936, 400), (768, 300)))
+first(2, 3002, *h2.at((500, 250), (1036, 250), (650, 250), (886, 250)))
+# remembered by: a cyberdemon in the middle of the hall, in the thick of them
+ajartime.cue(m, 2, 2, 14, 16, *h2.at((768, 608)), angle=270, always=True)
+ajartime.cue(m, 2, 2, 14, 67, *h2.at((1300, 800), (1300, 950), (1300, 500)), angle=180)             # mancubi, the east
+ajartime.cue(m, 2, 2, 14, 68, *h2.at((220, 200), (1316, 200)), angle=90)
+ajartime.cue(m, 2, 3, 8, 64, *h2.at((768, 1080)), angle=270, always=True)
+ajartime.cue(m, 2, 3, 8, 3003, *h2.at((500, 608), (1036, 608), (768, 900)), angle=270)
+ajartime.cue(m, 2, 3, 8, 71, *h2.at((768, 300)))
+ajartime.cue(m, 2, 3, 8, 66, *h2.at((1300, 1000), (1300, 1100), (1200, 1100)), angle=180)
+h2.stock(1, 2012, 2012, 2049, 2046, 2046)
+h2.locker(1, 1, 2046, 17)
 h2.stock(2, 2012, 2012, 2049, 2046, 2011)
-h2.locker(2, 1, 2003, 2046)
-h2.stock(3, 2012, 2012, 2049, 2046, 2011, 2048)
+h2.locker(2, 1, 17, 2013)
+h2.stock(3, 2012, 2012, 2049, 2046, 2011, 17)
 
 # === the great hall: the arrow, the wall that opens, a room key ==============
-h3 = Hall(3, 6016, 0, 1280, 1024, [((256, 256, 320, 384), PLAIN), ((960, 256, 1024, 384), PLAIN),
-                                   ((256, 640, 320, 768), PLAIN), ((960, 640, 1024, 768), PLAIN),
-                                   ((384, 448, 448, 512), ARROW), ((768, 448, 832, 576), PLAIN)],
+h3 = Hall(3, 5696, 0, 1920, 1472, pillar(448, 352) + pillar(1408, 352) + pillar(1216, 704) +
+          platform(384, 992) + platform(1344, 992) + platform(320, 576, arrow=True),
           ceil=288, last=True)
 ajarmap.doorway(m, 2, h2.on[0], h2.on[1], (0, 1), 0,
                 (h3.cx - 32, -320), (h3.cx + 32, -320), (0, -1), UP)
@@ -268,7 +327,9 @@ spots(17, (h3.cx - 60, -200))
 spots(2046, (h3.cx + 60, -200))
 spots(2049, (h3.cx - 60, -150))
 spots(2012, (h3.cx + 60, -150))
-spots(2019, (h3.cx, -150))
+spots(83, (h3.cx, -150))                    # megasphere (it was blue armour)
+spots(2046, (h3.cx - 60, -100))
+spots(17, (h3.cx + 60, -100))
 # the wall the arrow points at: straight south of its block. It opens with
 # USE, from the hall only; behind it the level's one secret.
 sx = h3.x + 384
@@ -282,24 +343,25 @@ m.sector(rect(sx - 32, -144, sx + 96, -16), ceil=128, light=220, special=1024, *
 if LOOK:                                    # shut, it is the wall of each side
     m.line(a, b, upper=tx("G"))
     m.line(c, d, upper=tx("C"))
-spots(2006, (sx + 32, -80))
+spots(83, (sx + 32, -80))                   # megasphere (the BFG is in hall 1's second box now)
 spots(17, (sx, -110), (sx + 64, -110))
-ajarmap.key(m, 2, *h3.at((640, 930))[0])
-spots(3001, *h3.at((128, 860), (1152, 860), (400, 900), (880, 900), (128, 512), (1152, 512), (540, 700), (740, 700)))
-spots(65, *h3.at((640, 820), (200, 960), (1080, 960), (400, 600), (880, 600)))
-spots(66, *h3.at((288, 512), (992, 512), (640, 640)))
-spots(3005, *h3.at((400, 320), (880, 320), (640, 400), (640, 240)))
-spots(69, *h3.at((520, 820), (760, 820), (640, 540)))
-spots(67, *h3.at((160, 700), (1120, 700)))
-ajartime.cue(m, 3, 1, 5, 68, *h3.at((150, 150), (1130, 150)))
-ajartime.cue(m, 3, 1, 5, 69, *h3.at((340, 570), (880, 512), (640, 760)))
-ajartime.cue(m, 3, 1, 5, 58, *h3.at((560, 160), (720, 160), (560, 880), (720, 880), (640, 320)))
-ajartime.cue(m, 3, 2, 4, 3003, *h3.at((400, 400), (880, 400), (640, 860)))
-ajartime.cue(m, 3, 2, 4, 64, *h3.at((640, 620)))
-ajartime.cue(m, 3, 2, 4, 71, *h3.at((640, 200)))
-ajartime.cue(m, 3, 2, 4, 66, *h3.at((128, 320), (1152, 320), (128, 900)))
-ajartime.cue(m, 3, 3, 2, 16, *h3.at((640, 512)))
-ajartime.cue(m, 3, 3, 2, 3001, *h3.at((200, 860), (1080, 860), (200, 160), (1080, 160)))
+ajarmap.key(m, 2, *h3.at((960, 1420))[0])
+first(3, 3001, *h3.at(*[(160 + 170 * i, 1360) for i in range(10)]))                                 # imps along the far wall
+first(3, 65, *h3.at((120, 736), (1800, 736), (120, 400), (1800, 400), (120, 1100), (1800, 1100)))   # chaingunners down the sides
+first(3, 66, *h3.at((700, 1000), (1220, 1000), (700, 900), (1220, 900)))
+first(3, 3005, *h3.at((960, 600), (760, 500), (1160, 500), (860, 350), (1060, 350)))
+first(3, 69, *h3.at((800, 1200), (1120, 1200), (800, 1100), (1120, 1100)))
+first(3, 67, *h3.at((300, 900), (1620, 900)))
+ajartime.cue(m, 3, 2, 16, 68, *h3.at((250, 250), (1670, 250), (960, 250)), angle=90)
+ajartime.cue(m, 3, 2, 16, 69, *h3.at((250, 1250), (350, 1250), (250, 1150)))
+ajartime.cue(m, 3, 2, 16, 58, *h3.at((860, 160), (1060, 160), (860, 1300), (1060, 1300), (960, 480)))
+ajartime.cue(m, 3, 2, 16, 71, *h3.at((960, 900)))
+ajartime.cue(m, 3, 3, 10, 3003, *h3.at((600, 600), (1320, 600), (960, 1250), (960, 400)), angle=270)
+ajartime.cue(m, 3, 3, 10, 64, *h3.at((200, 736), (1720, 736)), always=True)
+ajartime.cue(m, 3, 3, 10, 66, *h3.at((1620, 1250), (1720, 1250), (1620, 1150)), angle=180)
+# remembered by: two cyberdemons at once, with whatever is left around them
+ajartime.cue(m, 3, 4, 6, 16, *h3.at((760, 736), (1100, 736)), angle=270, always=True)
+ajartime.cue(m, 3, 4, 6, 3001, *h3.at((200, 1300), (1720, 1300), (200, 160), (1720, 160)))
 h3.stock(1, 2012, 2012, 17, 2046, 2011)
 h3.locker(1, 2, 17, 2013)
 h3.stock(2, 2012, 2012, 17, 2046, 2049, 2011)

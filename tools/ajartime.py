@@ -14,11 +14,12 @@ def box_line(k, n):
     return 3050 + 100 * k + n
 
 
-def zone(m, k, n, x1, y1, x2, y2, *, grow=0):
+def zone(m, k, n, x1, y1, x2, y2, *, grow=0, open=False):
     """Part of fight k: of its hall and the way into it (n 0), or of its box n.
-    `grow` widens it, to take in recesses and the stubs behind doors."""
+    `grow` widens it, to take in recesses and the stubs behind doors. `open`
+    (on a hall's zone): the fight is an open one (time.zs)."""
     m.thing((x1 + x2) / 2, (y1 + y2) / 2, ZONE_T,
-            args=(k, n, (x2 - x1) // 2 + grow, (y2 - y1) // 2 + grow))
+            args=(k, n, (x2 - x1) // 2 + grow, (y2 - y1) // 2 + grow, int(open)))
 
 
 def hall_door(m, k, j, a, b, out, floor, **look):
@@ -44,12 +45,21 @@ def glass(m, a, b, out, floor, *, sill=8, top=120, thick=16, color=None, trim=("
     m.line(c, d, blocking=True, blocksound=True)
 
 
-def cue(m, k, wave, when, kind, *spots, angle=0):
+def show_tag(k):
+    """The tag of hall k's sectors, and the id of its screen's line: with
+    them the hall has a show (time.zs)."""
+    return 3080 + 100 * k
+
+
+def cue(m, k, wave, when, kind, *spots, angle=0, always=False):
     """Monsters of Doom editor number `kind` that come into fight k at
-    `spots`, as wave number `wave`, once no more than `when` are left."""
+    `spots`, as wave number `wave`, once no more than `when` are left. A
+    hall with a show starts empty: its first monsters are wave 1, when 0.
+    `always`: on every difficulty (what a fight is remembered by)."""
     for x, y in spots:
         i = m.cues = getattr(m, "cues", -1) + 1         # thinned on the easier difficulties, as ajarmap.ambush
-        m.thing(x, y, CUE_T, angle=angle, args=(k, wave, when, kind), skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
+        m.thing(x, y, CUE_T, angle=angle, args=(k, wave, when, kind),
+                skill=1 if always or i % 2 == 0 else 3 if i % 4 == 3 else 2)
 
 
 LOCKER_T = 20042

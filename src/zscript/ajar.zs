@@ -2235,24 +2235,24 @@ class AjarHandler : EventHandler
 			384, -420, 32, 270, 0,         // the street doors
 			384, -300, 32, 90, 0,          // the way into hall 1
 			384, -30, 32, 90, 0,           // hall 1 from the step down
-			384, 620, 0, 270, -8,          // hall 1: back at the way in, the screen over it
-			170, 128, 0, 180, 0,           // a time door, close up
-			520, 352, 0, 180, -8,          // hall 1: the west box's glass, a tall block
-			384, 250, 0, 90, -6,           // hall 1's north wall: time door, glass, steel door
-			-40, 388, 64, 0, 12,           // from hall 1's west box, through the glass
-			-40, 430, 64, 200, 0,          // in that box: its door
-			540, 750, 0, 50, 0,            // the lobby behind hall 1's steel door: HALL 2
+			384, 800, 0, 270, -8,          // hall 1: back at the way in, the screen over it
+			-22, 128, 0, 180, 0,           // a time door, close up
+			300, 480, 0, 180, -8,          // hall 1: the west box's glass, a tall block
+			384, 500, 0, 90, -6,           // hall 1's north wall: time door, glass, steel door
+			-232, 516, 64, 0, 12,           // from hall 1's west box, through the glass
+			-232, 558, 64, 200, 0,          // in that box: its door
+			732, 1006, 0, 50, 0,            // the lobby behind hall 1's steel door: HALL 2
 			3520, -290, 32, 90, 0,         // the way into hall 2
 			3520, -30, 32, 90, 0,          // hall 2 from the step down
-			3900, 800, 0, 222, -6,         // hall 2 from its far corner
-			3556, 980, 64, 270, 12,        // from hall 2's north box
-			2810, 520, 64, 315, 0,         // in hall 2's west box: the cupboard, the glass
+			4188, 1116, 0, 222, -6,         // hall 2 from its far corner
+			3556, 1300, 64, 270, 12,        // from hall 2's north box
+			2554, 680, 64, 315, 0,         // in hall 2's west box: the cupboard, the glass
 			6656, -30, 32, 90, 0,          // the great hall from the step down
-			7340, 548, 64, 180, 12,        // from its east box: the arrow on a block
-			6200, 150, 0, 45, -6,          // the great hall from its floor
-			6656, 900, 0, 270, -8,         // the great hall: the screen
-			6452, -30, 0, 215, 0,          // the secret closet
-			7070, 1070, 0, 50, 0           // the last lobby: the way out
+			7660, 772, 64, 180, 12,        // from its east box: the arrow on a block
+			5880, 150, 0, 45, -6,          // the great hall from its floor
+			6656, 1300, 0, 270, -8,         // the great hall: the screen
+			6132, -30, 0, 215, 0,          // the secret closet
+			7390, 1518, 0, 50, 0           // the last lobby: the way out
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}

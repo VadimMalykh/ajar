@@ -2936,7 +2936,8 @@ box they are shut.
   the fight from then on.
 - From a box the hall is seen from above: who comes in later and where, and
   the tops of the tall blocks (80 high). In the great hall one has an arrow
-  on it, at a piece of the south wall that opens with USE: the secret (BFG).
+  on it, at a piece of the south wall that opens with USE: the secret (a
+  megasphere; it was the BFG).
 - A room key lies at the far end of halls 2 and 3; cupboards in their first
   two boxes want it (rocket launcher; cells, soulsphere, armour). A box is
   visited once: no key, no cupboard.
@@ -2970,7 +2971,8 @@ said, and no room is built twice:
 - Monsters do not walk through an open time door by themselves (they know
   only the doors of `AjarSense`); shots do.
 
-**The level.** A foyer (shotgun, chaingun) and three halls joined by fixed
+**The level.** (Since "MAP31: the show" a hall starts empty and its first
+monsters come after a count.) A foyer (shotgun, chaingun) and three halls joined by fixed
 doorways: 768 x 704 (10 monsters and 9 in two waves), 1024 x 896 (17 and 15
 in two waves, an arch-vile in the second; the super shotgun before it),
 1280 x 1024 (25 and 27 in three waves, a cyberdemon the last; the plasma
@@ -3102,6 +3104,232 @@ run: the tour in looks 1 and 2 (their maps build), `MAP=TIME MODE=4`.
 Left as they were: what the tall blocks are (in look 3 a bank of seats on a
 riser, among rows of seats now), the posters, the signs. Not tried: seats
 with backs high enough to hide behind (they would be walls to monsters).
+
+## MAP31: the show, so that a replay is known at once (2026-11-18)
+
+Vadim played MAP31: it did not read as going back in time at all. He asked
+for something noticeable at the beginning of a fight, to be remembered and
+then seen again from the box. Built; **he has not seen it yet.**
+
+Every fight in a hall now begins the same way ("the show", `time.zs`):
+- The hall is **empty and its house lights are up** (232) when the player
+  comes in. After 50 tics the lights go down (to what the hall had), the
+  screen counts **3, 2, 1** (tics 70, 105, 140; a click to each), and at 175
+  the hall flashes and **the first monsters all come in at once** in
+  teleport fog. Five seconds.
+- From a box the same is the first thing seen: the hall lit and empty again,
+  the earlier self walking in, lights down, the count, the monsters. The
+  clicks are heard there too, quieter.
+- After a fight is won its lights come up again.
+- How: lights and the screen are not things, so they are not recorded; they
+  are set from the fight's tic, the lived one or the shown one
+  (`AjarTimeHandler.Show`). Map contract: sector tag and line id 3080 + 100 x
+  fight (`ajartime.show_tag`). A hall without them (the TIME box) has no show
+  and is as before. The monsters a hall used to start with are cues of wave
+  1 that come at 0 left (`map_secret1.first`); the later waves are 2 to 4.
+  They are thinned by difficulty as cues are, not as placed monsters were.
+- The screen is blank but during the count (textures `Q0`..`Q3`, 96 high,
+  and `R0`..`R3` for the great hall). The count from hall to hall (fights
+  left) is gone.
+
+Known: the screen is over the way in, so on coming in the player has their
+back to the count and sees only the lights and the arrival (and hears the
+clicks); from every box the screen is in view. If that is not enough: a
+second count on the north wall, or the screen moved there.
+
+Run in look 3: `MAP=MAP31 MODE=3 TIMEOUT=250` (39 checks, with `emptyAndLit`,
+`count`, `theyCome` and the same three again from the box, per hall; its
+pictures in `build/smoke31`), `MAP=TIME MODE=3` (14). **`MAP=TIME MODE=4`
+fails (followed=0), and did before this change**: not looked into. Not run:
+the tour, looks 0 to 2 (the plain level has the lights and the empty start
+too, and no screen).
+
+## MAP31: something to flee from, and its answer in the box (2026-11-18)
+
+Vadim, after playing the show: better, but a fight needs something more
+memorable, that sends him out of it and is seen again from the box. His
+example, built as he gave it. **Not played by hand; the numbers are a guess.**
+
+- **Hall 1.** With 4 of the first monsters left an arch-vile comes at the
+  far end (and two demons); it raises what was killed, and the player has a
+  shotgun and a chaingun. **Box 1 has the rocket launcher** and two boxes of
+  rockets. With 2 left, two more arch-viles come (and two hell knights, a
+  cacodemon): **box 2 has the BFG** and a cell pack. Box 3: rockets, cells,
+  health. These lie in the open; hall 1 has no cupboards.
+- **Hall 2.** A cyberdemon comes to the middle of the hall with the second
+  wave (4 left). Its cupboards, which had the rocket launcher, now hold
+  rockets and cells, and cells and a soulsphere.
+- **Hall 3** is as it was (its cyberdemon is the last wave), but its secret
+  is a megasphere now, the BFG being in hall 1.
+- The arch-viles and the cyberdemon come on every difficulty
+  (`ajartime.cue(always=True)`); the rest of a wave is thinned as before.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (39 checks; each hall is won only when
+every wave has come, so the new arrivals do come). No check looks at them
+by name.
+
+## MAP31: bigger halls, thick short fights (2026-11-18)
+
+Vadim, after the arch-viles: better, still something missing. Bigger halls,
+a bunch of monsters appearing in different places that can be set on each
+other, more epic, and not long, so that watching it again is not a bore.
+Built. **Not played by hand: sizes, numbers and thresholds are all guesses.**
+
+- **Halls are half as big again**: 1152 x 960, 1536 x 1216, 1920 x 1472
+  (they were 768 x 704, 1024 x 896, 1280 x 1024), four, four and six tall
+  blocks. Their ways in are where they were (halls at x -192, 2752, 5696),
+  so the foyer and the doorways did not move. Rows of seats fill them.
+- **Monsters come in kinds, each kind in its own part of the hall** (imps
+  along the far wall, chaingunners down the sides, knights opposite
+  revenants, and so on), so they are in each other's fire.
+- **The next wave comes while about half the last is alive** (thresholds
+  10 and 6; 14 and 8; 16, 10 and 6; they were 2 to 5): thicker and shorter.
+- Hall 1: 18, then the arch-vile with 3 hell knights and 3 revenants, then
+  two arch-viles with 2 mancubi and 3 cacodemons (rocket launcher and BFG
+  in boxes 1 and 2, as before). Hall 2: 28, then the cyberdemon with 3
+  mancubi and 2 arachnotrons, then an arch-vile, 3 barons, a pain elemental,
+  3 revenants. Hall 3: 31, then 12, then 9 with two arch-viles, then **two
+  cyberdemons** and 4 imps.
+- Nothing sets monsters on each other by script: it is left to where they
+  stand and to the player. If they do not fight enough: give a wave's
+  monsters a target of another kind when they come (one line in `Cues`).
+- A replay still runs at the fight's speed. If it is still long to watch:
+  run it faster after the count (the box's own track would have to be
+  recorded per shown tic; not built).
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (39 checks; coordinates moved in
+`SecretScript`). The tour's views in the halls were moved by hand
+(`SecretOneViews`) and **not run**; the board's pictures are of the old
+halls. Supplies were not raised for the bigger fights.
+
+## MAP31: killed into a box, and a door that is felt (2026-11-18)
+
+Vadim asked for both. Built; **not played by hand.**
+
+- **Killed in a hall with a box still unused, the player is not dead** but
+  in the next box, before the fight, health 50 (`RESCUE_HEALTH`), as if they
+  had left at that moment by the time door nearest to where they fell; that
+  is the door they come back in by. It uses up the box like any trip.
+  Nothing follows them. With no box left, or in a box, death is death.
+  How: `bBuddha` on the player while it can happen (health stops at 1),
+  and `AjarTimeHandler.Rescue` at health 1. Damage that would have left
+  exactly 1 health counts as a death too.
+- **Going through a time door is felt**: a white flash (red after a death),
+  the teleport sound, and for a second the clock runs back to 0:00, large,
+  in the middle of the screen. A lighter flash on coming back into the hall.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (40 checks; hall 2 is now left by being
+killed in its middle: `killedIntoTheBox`), `MAP=TIME MODE=3` (14). The flash
+and the clock were not looked at in a picture.
+
+**The tall blocks are gone** (Vadim found them odd; he chose pillars and
+stepped seating, not loudspeakers). In their places (`map_secret1.pillar`,
+`platform`):
+- **Pillars**, 64 square, to the ceiling, in the hall's own wall: the pair
+  nearer the screen in each hall, and a third in the great hall.
+- **Banks of raked seats**, 192 square, the pair further from the screen:
+  three rows rising away from it, 24 a row, a walk behind each and a plain
+  rim either side. Every step is 12, so everything walks up from the front;
+  the back (72) and sides are sheer, which is the cover. Not things, so a
+  replay is not touched.
+- The great hall's arrow is on a bare patch in the top row of a third bank,
+  straight north of the wall that opens, as before.
+Seen in the tour (25 views, `build/tour31`, look 3; its moved cameras all
+stand in the open). Not seen: looks 1 and 2. Not played: whether a bank is
+cover enough, being 72 where a block was 80, and walkable.
+
+**After a fight** (Vadim: the way into hall 2 offered too little): a
+megasphere, a box of rockets and a cell pack in the way into hall 2 and
+into hall 3 (hall 3's blue armour became the megasphere). Not played.
+
+**Killed in a box** (Vadim: the game "kind of hangs" there; he asked for the
+same as in the hall). With a box still unused the player is in the next one,
+health 50, and watches from the start again; what they were watching is
+dropped (`Rescue`: puppets away, the fight as it was left, the old box's door
+shut), and they come back in by the door they first left by. What was in the
+old box stays there. With no box left death is ordinary death, in hall or
+box. `killedInABox` in MAP31's walk (the great hall). **The hang itself was
+not found or reproduced**: if a death with no box left still hangs, that is
+it, and it is open.
+
+**Stuck at a door (Vadim, playing, "very often"): fixed.** A door that shuts
+behind the player is a solid line, and whoever overlaps it cannot move at
+all: in the box just after going out, and in the hall after the last trip.
+`StepClear` now puts the player 26 clear of the line they came out of
+(`Leave`, `Back`). Not played by hand. The headless walks never caught it:
+they go through at speed 8, and two checks (`backIn` in MAP31, `backIn2` in
+TIME) had the stuck position written into them; both now allow the player
+to have walked on.
+
+## MAP31: the second hall is an open fight (2026-11-18)
+
+Vadim: in the second battle the box is open when the fight starts, so that
+he can join his past self and help. Built for hall 2 only. **Not played by
+hand, and never seen in a picture.** This is the first place in the game
+where the past is changed; "No real rewind" still holds, differently:
+
+- **A trip begins the fight again; it does not show it.** The hall is
+  cleared (monsters, shots, corpses, what monsters dropped), the show runs
+  and the same monsters come. The box's door is open at once, onto the door
+  the player left by. Three boxes, by stepping out or by being killed, as
+  in the other halls.
+- **Every earlier go is there as an earlier self** (`AjarGhost`): it walks
+  where the player walked, from the start of that go (the second one starts
+  in its box), and fires what they fired, really. It cannot be hurt; what
+  it hits turns on it. When that go's time is up it is gone: at the time
+  door if the player left by one; if they were killed, **it runs to the
+  nearest time door and goes in** (Vadim's rule: there is never more than
+  one of the player left in a fight, even if what killed them is dead this
+  time). It runs straight, through seats and pillars.
+- The clock at the top shows how far the last go ran.
+- What is kept of a go (`AjarTake`): place, angle, pitch, sprite each tic;
+  missiles (anything flying whose shooter is the player: class, place,
+  speed); bullets and shells by the ammunition that went (a bullet, 7
+  pellets for a shell, 20 for two). **Fist and chainsaw are not kept, and
+  the BFG's rays come from where the ghost stands.**
+- Map contract: `ajartime.zone(open=True)` on the hall's zone (args[4]).
+  Cues are now spent (`special1`), not destroyed, in every fight, so that
+  one can begin again.
+- Known: what the player took from the hall (the room key) stays taken;
+  the kill count rises with each go; monsters do not see a ghost until it
+  hurts them.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (hall 2: `killedIntoTheBox`,
+`begunAgain`, `besideMyself`, `itFiresAgain`, `theyComeAgain`,
+`itWentToADoor`; the test hands the ghost a rocket and a missing bullet
+rather than firing a weapon), `MAP=TIME MODE=3` (14).
+
+## MAP31: boxes left over, and the end of the show (2026-11-18)
+
+Vadim asked for both. Built; **not played by hand.**
+
+- **Boxes not used in a fight that is won are kept** (`spare`). Killed in a
+  later fight with none of its own boxes left (its own go first), the
+  player is in the oldest spare box, health 50. That fight is over, so the
+  box's door is open at once onto its hall's first time door; the way back
+  is the way they came (steel door, lobby, arch). The fight they fell in is
+  cleared and its lights are up; **it begins again when they walk into its
+  hall** (`comeBack`, `Resume`): an open fight with their earlier selves,
+  the others simply from the start, with no replay.
+- **With no box of any kind left, being killed ends the level**: the player
+  cannot die in a fight at all now (`bBuddha` throughout); the screen goes
+  black, "The show is over", and the level is left two seconds later
+  (`level.ExitLevel`; MAP31's next is MAP31, so it starts again). Vadim had
+  found that the last death left the level hanging. **This path is not run
+  by any test.**
+
+- **A body is left where the player was killed in a hall** (`AjarCorpse`;
+  Vadim: the past self just disappeared). It falls when the replay hands
+  over (it is a thing of the hall, held and hidden like the rest until
+  then), and later replays show it fall at that moment. Not in hall 2 when
+  the fight begins again at once: there the earlier self runs for a door,
+  as he asked before, and the hall is put back. Not for a death in a box.
+  Checked only as "it is there" (`aBodyIsLeft`); not seen in a picture.
+
+Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (hall 3 now also: `killedIntoASpareBox`,
+`begunOver`; a hall's part of the walk is 900 tics), `MAP=TIME MODE=3` (14).
+Not tested: walking out of the spare box and back to the fight (the walk
+teleports).
 
 ## Handoff (2026-11-18): MAP10 after Vadim played it
 

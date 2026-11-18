@@ -18,9 +18,10 @@ ALIGNED):
   BS 80  the side of a tall block          SP 32  the step down into a hall
   CS 40  the front of the box office's counter
 Pictures (one to a wall piece, not aligned):
-  S1, S2 256x96, S3 256x128  the screen of each hall, over the way in: a
-                film leader's frame on it, counting down (3, 2, 1) from hall to
-                hall; its sweep is at a quarter to, as the time door's clock
+  Q0..Q3 256x96, R0..R3 256x128 (the great hall)  the screen over the way
+                into a hall: 0 is blank; 3, 2, 1 have a film leader's frame
+                on them, the count before a fight (time.zs, "the show"); the
+                sweep is at a quarter to, as the time door's clock
   TH, TG        the hall's wall over a time door: a dark lintel in it
                 (aligned); TT (and flat) the door's dark surround
   SS 12, SB 24  a row of seats from the side: the seats' edge, their backs
@@ -710,12 +711,13 @@ def seats(n):
 
 def screen(n, h, d):
     """The screen over the way in: 256 wide, as high as the wall over it,
-    with the leader's frame `d` on it."""
+    with the leader's frame `d` on it ("0": blank)."""
     rnd = random.Random(400 + n)
     if n == 1:
         im = Img(256, h, MARBLE)
         im.rect(30, 14, 226, h - 6, (232, 232, 226))
-        leader(im, 30, 14, 226, h - 6, d)
+        if d != "0":
+            leader(im, 30, 14, 226, h - 6, d)
         for x in range(30, 226, 2):                              # the sheen of a silver screen
             for y in range(14, h - 6):
                 blend(im, x, y, (255, 255, 255), 0.25)
@@ -730,7 +732,8 @@ def screen(n, h, d):
         im = tiled(wall(2, "H"), 256, h)                         # the wall's top, and a plain white screen on it
         im.rect(14, 6, 242, h - 6, (40, 40, 44))
         im.rect(18, 10, 238, h - 10, (240, 240, 234))
-        leader(im, 18, 10, 238, h - 10, d)
+        if d != "0":
+            leader(im, 18, 10, 238, h - 10, d)
         im.frame(12, 4, 244, h - 4, (170, 174, 176), 2)
         folds(im, 18, 34, 10, h - 10, (120, 140, 156), 8)
         folds(im, 222, 238, 10, h - 10, (120, 140, 156), 8)
@@ -741,7 +744,8 @@ def screen(n, h, d):
             for k in range(rnd.randrange(2, 9)):
                 blend(im, x + k, y, (96, 86, 78), 0.4)
         im.rect(22, 8, 234, h - 8, (214, 204, 170))
-        leader(im, 22, 8, 234, h - 8, d)
+        if d != "0":
+            leader(im, 22, 8, 234, h - 8, d)
         blot(im, 180, 20, 30, STAIN, 0.3)                        # damp
         blot(im, 70, h - 30, 18, STAIN, 0.2)
         x, y = 120, 26                                           # a tear, stitched
@@ -1041,9 +1045,9 @@ def make(out, looks=LOOKS):
         be = bench(n)
         put("textures", name("BE", n), be)
         put("flats", name("BE", n), be)
-        put("textures", name("S1", n), screen(n, 96, "3"))
-        put("textures", name("S2", n), screen(n, 96, "2"))
-        put("textures", name("S3", n), screen(n, 128, "1"))
+        for d in "0123":
+            put("textures", name("Q" + d, n), screen(n, 96, d))
+            put("textures", name("R" + d, n), screen(n, 128, d))
         put("textures", name("TH", n), lintel(n, "H"))
         put("textures", name("TG", n), lintel(n, "G"))
         tt = plain_flat(SURROUND[n], 450 + n)
