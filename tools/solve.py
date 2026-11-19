@@ -21,10 +21,6 @@ A puzzle is a dict:
                 Hung both, each frame leads to the other; one alone is shut
   thief         optional dict(zone=region, sees=[regions]): one thief, which
                 stays in `zone` and can see the player there and in `sees`
-  repainter     optional dict(zone=[regions]): one repainter. While it lives,
-                any two doors that hang or lean in those regions (the brass
-                frames apart) may change places at any time; the player,
-                in its zone, can kill it. Disorder, like the thief
   nailer        optional dict(zone=region or [regions]): one nailer, which can
                 walk to the frames in those regions. (region, key) in the
                 list: only once the player has that key (a gate that opens)
@@ -54,6 +50,13 @@ A puzzle is a dict:
                 hand, one way; its ends are "lever", "shutter", a frame's
                 line id or a far side's (200 + colour). A hung door joins
                 its frame and its far side
+  lift          optional dict(car=region, floors=[the region of each landing,
+                from the bottom], buttons={region: (the floors a button
+                there sends the car to)}, at=the floor it starts on, 0 if
+                not given) (ajarmap.lift_button): one lift. The car is a
+                region like any other, with frames and far sides of its
+                own, and is joined on foot to the landing it stands at.
+                Sending it costs nothing, and a door rides in it
 
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
@@ -90,19 +93,19 @@ def _moves(p, state, nailed=False):
     """Yields (cost, description, next state): what the player can be sure
     of doing. With `nailed`, instead, only what they can do if the nailer
     has not got there first."""
-    here, carried, locs, keys, thief, nails = state
+    here, carried, locs, keys, thief, nails, car = state
     colours = sorted(p["doors"])
     where = dict(zip(colours, locs))
     nm = lambda c: p.get("names", {}).get(c, c)
 
-    def out(region=here, carry=carried, **change):
+    def out(region=here, carry=carried, at=car, **change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (region, carry, tuple(w[c] for c in colours), keys, thief, nails)
+        return (region, carry, tuple(w[c] for c in colours), keys, thief, nails, at)
 
     for k, region in p.get("keys", {}).items():
         if region == here and k not in keys:
-            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails)
+            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car)
             if k in p.get("auto", ()):
                 return                               # it happens by itself, before anything else
     for a, b, *more in p["walk"]:
@@ -118,11 +121,19 @@ def _moves(p, state, nailed=False):
         for c in loot:
             w[c] = ("lean", here)
         yield 0, "kill the thief" + (f" (it drops {nm(loot[0])})" if loot else ""), (
-            here, carried, tuple(w[c] for c in colours), keys, thief & 2, nails)
-    if thief & 2 and here in p["repainter"]["zone"]:
-        yield 0, "kill the repainter", (here, carried, locs, keys, thief & 1, nails)
+            here, carried, tuple(w[c] for c in colours), keys, 0, nails, car)
     if nails and here in _zone(p["nailer"], keys):
-        yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0)
+        yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0, car)
+    lift = p.get("lift")
+    if lift:
+        stops = lift["floors"]
+        if here == lift["car"]:
+            yield 0, f"out of the lift to {stops[car]}", out(region=stops[car])
+        elif here == stops[car]:
+            yield 0, "into the lift", out(region=lift["car"])
+        for n in lift["buttons"].get(here, ()):
+            if n != car:
+                yield 0, f"send the lift to {stops[n]}", out(at=n)
     hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
     dash = p.get("dash")
     if dash and here == dash["at"] and _run(dash, hung) <= dash["limit"]:
@@ -227,7 +238,7 @@ def _won(p, s):
 def _luck(p, state):
     """Yields the states that the nailer being slow, or the draw of a Stray
     door, can turn `state` into."""
-    here, carried, locs, keys, thief, nails = state
+    here, carried, locs, keys, thief, nails, car = state
     if nails:
         for _, _, n in _moves(p, state, True):
             yield n
@@ -253,31 +264,12 @@ def _luck(p, state):
             # (but not the room of a longer chain's third door: ajarmap.way_longer)
             shut = p.get("home_chain", {}).get("secret", {}).get("door")
             for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame" and k != shut and "home" in p["doors"][k]}):
-                yield (place, c, tuple(w[k] for k in colours), keys, thief, nails)
-
-
-def _repaint(p, state):
-    """Yields the states the repainter can turn `state` into: any two doors
-    that hang or lean in its zone change places. Not the brass frames."""
-    here, carried, locs, keys, thief, nails = state
-    if not thief & 2:
-        return
-    zone = set(p["repainter"]["zone"])
-    brass = {p.get("home_frame")} | set(p.get("home_chain", {}).get("frames", ()))
-    brass.add(p.get("home_chain", {}).get("secret", {}).get("frame"))
-    ok = [i for i, loc in enumerate(locs)
-          if (loc[0] == "lean" and loc[1] in zone)
-          or (loc[0] == "frame" and loc[1] not in brass and p["frames"][loc[1]] in zone)]
-    for n, i in enumerate(ok):
-        for j in ok[n + 1:]:
-            w = list(locs)
-            w[i], w[j] = w[j], w[i]
-            yield (here, carried, tuple(w), keys, thief, nails)
+                yield (place, c, tuple(w[k] for k in colours), keys, thief, nails, car)
 
 
 def _thief(p, state):
     """Yields the states the thief can turn `state` into."""
-    here, carried, locs, keys, thief, nails = state
+    here, carried, locs, keys, thief, nails, car = state
     if not thief & 1:
         return
     t = p["thief"]
@@ -288,7 +280,7 @@ def _thief(p, state):
     def out(**change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (here, carried, tuple(w[c] for c in colours), keys, thief, nails)
+        return (here, carried, tuple(w[c] for c in colours), keys, thief, nails, car)
 
     loot = next((c for c, loc in where.items() if loc == ("thief",)), None)
     if loot is None:
@@ -322,7 +314,7 @@ def _search(p, start, with_luck):
                 prev[n] = (s, what)
                 (queue.append if cost else queue.appendleft)(n)
         if with_luck:
-            for n in list(_thief(p, s)) + list(_repaint(p, s)) + list(_luck(p, s)):
+            for n in list(_thief(p, s)) + list(_luck(p, s)):
                 if n not in dist:                  # not in `back`: not the player's doing
                     dist[n] = dist[s]
                     queue.appendleft(n)
@@ -336,8 +328,8 @@ def solve(p):
     colours = sorted(p["doors"])
     start = (p["start"], None, tuple(
         ("frame", d["frame"]) if "frame" in d else ("thief",) if d.get("thief") else ("lean", d["lean"])
-        for d in (p["doors"][c] for c in colours)), (), (1 if p.get("thief") else 0) + (2 if p.get("repainter") else 0),
-        0)
+        for d in (p["doors"][c] for c in colours)), (), 1 if p.get("thief") else 0,
+        0, p.get("lift", {}).get("at", 0))
     # the solution: the thief and the nailer do nothing in it, and no Stray door is used
     dist, prev, back = _search(p, start, False)
     wins = [s for s in dist if _won(p, s)]
@@ -351,8 +343,8 @@ def solve(p):
         s, what = prev[s]
         steps.append(what)
     steps.reverse()
-    if p.get("thief") or p.get("repainter") or p.get("nailer") or p.get("pool") or p.get("dash"):
-        dist, prev, back = _search(p, start[:5] + (1 if p.get("nailer") else 0,), True)
+    if p.get("thief") or p.get("nailer") or p.get("pool") or p.get("dash"):
+        dist, prev, back = _search(p, start[:5] + (1 if p.get("nailer") else 0,) + start[6:], True)
         wins = [s for s in dist if _won(p, s)]
     alive, todo = set(wins), list(wins)
     while todo:

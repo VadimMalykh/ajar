@@ -4,9 +4,9 @@ Ammunition is counted as the damage it does; secrets are counted too."""
 import importlib, sys
 sys.path.insert(0, "tools")
 HP = {3004: 20, 9: 30, 3001: 60, 3002: 150, 58: 150, 65: 70, 69: 500, 3003: 1000, 66: 300, 3006: 100,
-      3005: 400, 67: 600, 68: 500, 71: 400, 64: 700, 20003: 40, 20004: 80, 20005: 60, 20007: 70}
+      3005: 400, 67: 600, 68: 500, 71: 400, 64: 700, 20003: 40, 20004: 80, 20005: 60}
 NAME = {3004: "zom", 9: "sgt", 3001: "imp", 3002: "pink", 58: "spec", 65: "cg", 69: "hk", 3003: "baron", 66: "rev",
-        3006: "soul", 3005: "caco", 67: "manc", 68: "arach", 71: "PE", 20003: "thief", 20004: "nailer", 20005: "lodger", 20007: "repainter"}
+        3006: "soul", 3005: "caco", 67: "manc", 68: "arach", 71: "PE", 20003: "thief", 20004: "nailer", 20005: "lodger"}
 # damage a pickup is worth: shells 70 each, bullets 10, rockets 100, cells 22
 AMMO = {2001: ("sh", 8), 82: ("sh", 8), 2008: ("sh", 4), 2049: ("sh", 20), 2002: ("bu", 20), 2007: ("bu", 10),
         2048: ("bu", 50), 2003: ("ro", 2), 2010: ("ro", 1), 2046: ("ro", 5), 2004: ("ce", 40), 17: ("ce", 100),

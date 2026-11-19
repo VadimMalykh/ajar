@@ -12,8 +12,8 @@ DoomEdNums
 	20004 = AjarNailer
 	20005 = AjarLodger
 	20006 = AjarLine
-	20007 = AjarRepainter
 	20030 = AjarAmbush
+	20050 = AjarLiftButton
 	20090 = EngButton
 	20091 = EngGhost
 	20040 = AjarZone
@@ -213,6 +213,16 @@ map MAP31 "This Is Where We Came In"
 map LAB "Ajar: the lab"
 {
 	next = "LAB"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The lift (tools/map_lift.py): MAP=LIFT ./run.sh
+map LIFT "Ajar: the lift"
+{
+	next = "LIFT"
 	nointermission
 	nojump
 	nocrouch

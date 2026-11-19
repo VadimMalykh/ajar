@@ -39,7 +39,7 @@ def far_id(colour):
 
 
 def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=None, arch=None, trim=None,
-           home=0, chain=None, only=False):
+           home=0, chain=None, only=False, tag=0):
     """A 64-wide door recess whose mouth is m1-m2 and which goes `out` of the room.
 
     Frames (far_colour None) get an AjarFrame thing and a usable mouth line.
@@ -52,7 +52,8 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     line id of the pair's other door, the line id of the other brass frame):
     see brass_pair(). `only` (frames with `home`): no other door hangs in it;
     2: none but the two of `home` and `chain`, and it is no way out by itself
-    (way_longer).
+    (way_longer). `tag` is a sector tag for the recess and its stub: that of
+    the lift car it is in, so that it rides with the car (see lift_button).
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
     b2 = (m2[0] + out[0] * DEPTH, m2[1] + out[1] * DEPTH)
@@ -65,18 +66,36 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     if trim:
         wall, flat = trim
     m.sector([m1, m2, b2, b1], floor=floor, ceil=floor + DOOR_H, light=176,
-             wall=wall, ftex=flat, ctex=flat, color=color)
+             wall=wall, ftex=flat, ctex=flat, color=color, id=tag)
     # GZDoom only lets things walk through a portal line that has real space
     # behind it, so every portal line gets a small dark stub sector at its back.
     m.sector([b1, b2, (b2[0] + out[0] * STUB, b2[1] + out[1] * STUB),
               (b1[0] + out[0] * STUB, b1[1] + out[1] * STUB)],
-             floor=floor, ceil=floor + DOOR_H, light=96, wall=wall, ftex=flat, ctex=flat)
+             floor=floor, ceil=floor + DOOR_H, light=96, wall=wall, ftex=flat, ctex=flat, id=tag)
     # Line_SetPortal: target id, this line, type 1 (teleporter), align to floor
     m.line(b1, b2, id=line_id, special=156, args=(target, 0, 1, 1), mid=mid)
     if arch == "frame" or not (arch or far_colour):
         m.line(m1, m2, special=130, args=(line_id,), playeruse=True, repeatspecial=True)
         m.thing((b1[0] + b2[0]) / 2 - out[0] * 8, (b1[1] + b2[1]) / 2 - out[1] * 8,
                 FRAME_T, id=line_id, height=0, args=(line_id, home) + tuple(chain or (0, 0)) + (int(only),))
+
+
+LIFT = 700          # sector tag of a level's lift car, and of the recesses in it
+LIFT_T = 20050      # AjarLiftButton
+
+
+def lift_button(m, a, b, z, tid, at, *, tag=LIFT, tex="AJEXIT"):
+    """A button on the wall a-b that sends the lift car (every sector with
+    `tag`: the car, and the recesses in it, made with recess(tag=)) to the
+    floor height z. The car's floor and ceiling move together, so a landing
+    is a sector beside it whose floor is at a stop's height and whose
+    ceiling is lower than the car's floor at the next stop up: at any other
+    stop it is a wall. `tid` is a thing id of its own for each button, `at` any
+    spot in the room for the thing that stands for it.
+    A frame or a far side in the car rides with it (src/zscript/lift.zs)."""
+    m.cut(a, b)
+    m.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=tex, exact=True)
+    m.thing(at[0], at[1], LIFT_T, id=tid, args=(tag, z))
 
 
 def door(m, colour, x, y, *, angle=0, frame=0):

@@ -40,8 +40,6 @@ puzzle is the one above; the building and the way into it are its own:
   apparatus room the test room. The thief is back (not seen since MAP04):
   it lives in the east wing with YELLOW on its back, and has no frame there
   to hang it in: it is to be caught.
-- The repainter is new (enemies.zs): it goes about the switchroom, and any
-  two doors left hanging or leaning where it can get at them change places.
 - North-east, under the trunk room's chute: the battery room, down stairs
   from the cable passage, and key 3 in its far corner; off the passage the
   generator room.
@@ -485,13 +483,12 @@ squeeze((1256, -288), (1304, -288), (0, -1), 0, "AP", "TS")
 recess((1328, -560), (1392, -560), (0, -1), 0, 104, 201, color=GOLD)         # the test room's frame
 
 # --- doors and keys ----------------------------------------------------------
-THIEF, REPAINTER = 20003, 20007
+THIEF = 20003
 m.thing(0, -768, 1, angle=90)                                             # player start, in the forecourt
 ajarmap.door(m, RED, -364, -324, angle=0)                                 # leaning in the call office
 ajarmap.door(m, GREEN, -932, 132, angle=180)                              # leaning in the rest room
 m.thing(1640, -100, THIEF, angle=180, args=(YELLOW, 1))                   # the thief: has YELLOW, stays in the east wing
 ajarmap.door(m, YELLOW, 1640, -100, angle=180)                            # (on the thief's back)
-m.thing(600, 150, REPAINTER, angle=180)                                   # the repainter, new here: about the switchroom
 ajarmap.door(m, VIOLET, 1220, -324, angle=0)                              # leaning in the test room
 ajarmap.door(m, BLUE, -700, -540, angle=0)                                # leaning in the manager's office
 ajarmap.door(m, PINK, -1716, -268, angle=180)                             # leaning in the stationery store
@@ -756,7 +753,6 @@ PUZZLE = dict(
         VIOLET: dict(home="night", lean="test"),
     },
     thief=dict(zone="east", sees=()),
-    repainter=dict(zone=["main", "west"]),      # it wanders: the west wing too
     pool=["main"],                         # the generator room; the kiosk
 )
 

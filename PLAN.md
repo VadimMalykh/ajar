@@ -2333,6 +2333,14 @@ rebuilt.
 
 ## The repainter (built 2026-11-16)
 
+**Retired 2026-11-19 (Vadim): not useful after all, especially once there
+are Pair doors.** Taken out of MAP09 and MAP10, the only levels that had
+one, and out of the code: the `AjarRepainter` class, `AjarHandler.Repaint`,
+the ambush cause 20 (`WorkNear`), the solver's `repainter=`, MAP09's test
+modes 4 and 5, editor number 20007. What follows, and every later mention
+of it in this plan, is history. Its look is still on
+`design/map09-board.html`.
+
 In the plan since 2026-11-14 as one line ("swaps where two doors lead,
 irreversible, not built"); Vadim asked for it in MAP09. `AjarRepainter`
 (`src/zscript/enemies.zs`, editor number 20007, 70 health, does not fight):
@@ -2986,6 +2994,91 @@ repainter or a Stray door.
 ambusher was seen to come but key 2's imps, which are due after the walk has
 left. `mapcheck` and `thingcheck`: 0 problems. Not known: how hard any of
 it is.
+
+### MAP12 "Going Up" (2026-11-19, outline; not built)
+
+Claude's proposal, to which Vadim said "let's go"; his answers to the three
+questions at the end are still owed. The name is Claude's, to be changed
+freely.
+
+- **One idea: the moving room.** The goods wing: three floors round one
+  lift shaft, the stairs sealed. Ground the loading hall, first the
+  workshops, top the winding room with the way out.
+- **Three steps, as in MAP11.**
+  1. See it. A plain door has its far side in the car. Hung in the loading
+     hall it opens onto the car; press the button and the same door opens
+     onto another floor.
+  2. Use it. The top landing has no working button and the car's own panel
+     does not reach it: the car gets there only when sent from below. Send
+     it, and go through the door.
+  3. With the Pair. The car has a frame: a leaf there, its twin anywhere,
+     and that place rides with the lift. That brings the way-out door down
+     from the top.
+- **The puzzle** about 10 to 12 door actions, the Pair needed this time
+  (MAP11's shortest way does without it).
+- **The fights** MAP11's size or a little over, 90 to 100 monsters on
+  "Resident", one fight a floor, cacodemons and lost souls up the shaft, the
+  big one in the winding room. **The ambush only this level can have**: the
+  car arrives with monsters in it, and they come out of the hung door
+  wherever it is.
+- **Company**: Doom's monsters only. A thief, nailer or lodger with a Pair
+  is still untried; one of them back in MAP13.
+- **MAP13**, as proposed: the optics department (switches shot through a
+  line of doors, monsters set on each other through them, mirrors).
+- **Asked, not answered**: lift for 12 and optics for 13, or the other way
+  round; whether the Pair is to be the only way in 12 (and MAP11's 8-action
+  way round shut); whether MAP11's size is right (it has not been played).
+
+### The lift, built and tested (2026-11-19)
+
+`tools/map_lift.py`, `src/zscript/lift.zs`; `MAP=LIFT ./run.sh`,
+`MAP=LIFT MODE=1 tools/smoke.sh` (the doors), `MODE=2` (company). On the
+branch `map12` (worktree `../ajar-map12`). Run headless only: **not played
+by hand.**
+
+- **How it is made.** The car is every sector with tag 700
+  (`ajarmap.LIFT`): the car itself and the door recesses in its walls
+  (`ajarmap.recess(tag=)`), moved together by
+  `FloorAndCeiling_RaiseByValue`, 4 units a tic. A landing is a sector
+  beside the car with its floor at a stop's height and a low lintel: at any
+  other stop it is a wall, with no script. `ajarmap.lift_button(m, a, b, z,
+  tid, at)` is a button that sends the car to height z (an `AjarLiftButton`
+  thing, 20050; `AjarHandler.LiftSend`). A press while it moves is refused
+  ("The lift is on its way."). Frames and doors have no gravity and are
+  kept on the car's floor by `LiftTick`.
+- **The test map**: a hall, a first floor 192 up and a top 384 up round one
+  car. In the car frame 110, RED's far side and both ORANGE leaves; RED and
+  both TEAL leaves in the hall. Buttons: in the car for the ground and the
+  first floor; in the hall to call it and to send it to the top; on the
+  first floor to call it; none at the top, where the way out is.
+- **The solver** (`solve.py`, `lift=`): the car's floor is in the state.
+  The car is a region joined on foot to the landing it stands at; sending
+  it costs nothing; a door rides in it. The test map's proof: 2 door
+  actions (send the lift to the top, take RED, hang it, through it, out),
+  12067 states, 0 stuck, nothing lost.
+- **The four tests.**
+  1. A monster through the car's door: works both ways. A demon in the
+     hall came up through RED to the player in the car at the top; a demon
+     in the car at the top came down through RED to the player in the hall
+     (the door sense of 1 to 10, unchanged). A zombie in the car rides.
+  2. A carried door hung in the car: works. The frame, a leaf hung alone, a
+     leaf hung open and leaning leaves all ride; with the twin on the first
+     floor, that frame leads to the car wherever it is, and stepping
+     through while the car is on its way down lands in the car; taken down
+     and hung again at the top, it stands on the car's floor.
+  3. What is in the car's way. Nothing can be under the car: with the car
+     elsewhere its opening is a wall. What stands in the opening when the
+     car is sent holds it (the player at the top: the car stopped 72 down,
+     its ceiling on their head, and went on when they left). A body holds
+     nothing and stays on the landing. Not seen: a live monster standing
+     there (the test's demon would not stand still: it walked into the
+     car); the engine makes no difference between it and the player.
+  4. The solver: above.
+- **Not done**: a look for the car and its buttons (the button is the way
+  out's sign for now); a sound while it moves; anything on the HUD; a
+  thief, nailer, lodger or Stray door with a lift (the solver's
+  thief does not ride or press); more than one lift in a level (the tag is
+  an argument everywhere but in the test's script).
 
 ## Look: MAP11 (started 2026-11-19)
 
