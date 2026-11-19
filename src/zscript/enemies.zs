@@ -318,6 +318,7 @@ class AjarThief : AjarWorker
 				if (!loot && d != avoid && CanReach(d.pos.xy)) leaning.Push(d);
 				continue;
 			}
+			if (d.Shut()) continue;                      // a Pair leaf hung alone is a wall
 			// a hung door can be walked through from either end
 			for (int i = 0; i < 2; i++)
 			{
@@ -384,7 +385,7 @@ class AjarThief : AjarWorker
 
 	bool JobStillThere()
 	{
-		if (jobLine) return jobLineDoor && jobLineDoor.frame;
+		if (jobLine) return jobLineDoor && jobLineDoor.frame && !jobLineDoor.Shut();
 		if (jobDoor) return !jobDoor.frame && !jobDoor.carried;
 		return jobFrame && (loot || jobFrame.door);
 	}
