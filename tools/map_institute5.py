@@ -145,7 +145,9 @@ hang((-448, 256), (-320, 256), "SL")
 # Its north wall is mirrors from x = -256 to the east wall.
 GAL = (-448, 816, 704, 1264)
 ajarmap.fitted(m, GAL, [
-    ((-192, 976, -128, 1040), I1.pillar("PI")), ((128, 976, 192, 1040), I1.pillar("PI")),
+    # each before a strip of wall between two panes, not before a pane: from
+    # the way in the pane 0..192 is clear (Vadim, 2026-11-19)
+    ((-64, 976, 0, 1040), I1.pillar("PI")), ((192, 976, 256, 1040), I1.pillar("PI")),
     ((448, 976, 512, 1040), I1.pillar("PI")),
 ], floor=0, ceil=H, light=200, color=tint(PALE), **dress(wall="LB", ftex="FL", ctex="KL"))
 passage((96, 656, 160, 816), "LA", "LB", "GALLERY", ((96, 640), (160, 640)), (0, 1))
@@ -266,7 +268,7 @@ things(2046, (-640, -40))
 
 # --- the gallery: what only the glass shows ---------------------------------------------------
 things(IMP, (-300, 900), (-60, 1100), (60, 900), (260, 1150), (400, 900), (560, 1100), (640, 950), (-380, 1180), angle=270)
-things(DEMON, (-160, 1180), (0, 1000), (320, 1000), (560, 900), (-300, 1050), angle=270)
+things(DEMON, (-160, 1180), (40, 1000), (320, 1000), (560, 900), (-300, 1050), angle=270)
 things(KNIGHT, (240, 900), (-60, 880), angle=270)
 things(IMP, (-200, 900), (160, 1100), (520, 1200), angle=270)
 things(CACO, (60, 1180), (420, 1160), angle=270)
@@ -340,7 +342,7 @@ ajarmap.ambush(m, 10 + TEAL, IMP, (300, 60), (470, 60), (384, 200), angle=90)
 ajarmap.ambush(m, 10 + TEAL, DEMON, (150, 240), (620, 260), angle=0)
 ajarmap.ambush(m, 10 + TEAL, REVENANT, (60, 100), (700, 240), angle=0, after=4)
 # RED, taken: the gallery again, and they too are seen only in the glass while there
-ajarmap.ambush(m, 10 + RED, IMP, (-300, 880), (-60, 1150), (200, 1000), (400, 1100), angle=180)
+ajarmap.ambush(m, 10 + RED, IMP, (-300, 880), (-60, 1150), (220, 1110), (400, 1100), angle=180)
 ajarmap.ambush(m, 10 + RED, SPECTRE, (-250, 1150), (60, 950), angle=180)
 ajarmap.ambush(m, 10 + RED, KNIGHT, (560, 1000), (300, 880), angle=180, after=3)
 # key 1, in the first cell: round you, and then the lab outside

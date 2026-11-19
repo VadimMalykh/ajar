@@ -3603,6 +3603,10 @@ MAP16, and its secret one leads to MAP32.
 - **RED's ambush is unseen too** (2026-11-19): an ambusher that comes in
   an `AjarUnseen` box joins the unseen ones (`UnseenJoin`), unseen while
   alive and in the box, as those placed there. The flash is seen.
+- **The gallery's pillars stand before the strips of wall** between the
+  panes (2026-11-19, Vadim: the one at 128..192 stood straight before the
+  way in and hid the glass): x -64..0, 192..256 and 448..512. From the way
+  in the pane 0..192 is clear. A demon and a spot of RED's ambush moved.
 - Not known: how hard the gallery is (monsters that are not seen, knights
   and cacodemons among them); whether the target in the glass is found;
   whether the beam's way round the periscope room reads; the frame rate
