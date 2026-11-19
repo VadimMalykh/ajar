@@ -199,9 +199,13 @@ frame((976, 1760), (1040, 1760), (0, 1), 107, DIM)
 frame((704, 1760), (768, 1760), (0, 1), 108, DIM)                            # three: one more than the doors that can be shut in here
 
 # --- the pump room, west: GREEN's far side; a hatch from the corridor ---------------
+# In a look it has one lamp, over the gauges (Vadim, 2026-11-19), and its light
+# falls off in three steps; the rest of the room is as dark as it was.
+LAMP = [((96, 1488, 368, 1664), dict(light=136)), ((192, 1552, 320, 1664), dict(light=164)),
+        ((224, 1568, 288, 1632), dict(light=200, **dress(ctex="KQ")))] if LOOK else []
 ajarmap.fitted(m, (-256, 1296, 368, 1664), [
     ((-128, 1392, -32, 1488), pillar("TK")), ((96, 1392, 192, 1488), pillar("TK")), ((-16, 1552, 80, 1616), pillar("TK")),       # the tanks
-], floor=SUMP, ceil=SUMP + 192, light=110, color=tint(COLD), **dress(wall="PU", ftex="FP", ctex="KP"))
+] + LAMP, floor=SUMP, ceil=SUMP + 192, light=110, color=tint(COLD), **dress(wall="PU", ftex="FP", ctex="KP"))
 hang((192, 1664), (320, 1664), "GA")                                         # gauges and valves
 ajarmap.recess(m, (-256, 1456), (-256, 1520), (-1, 0), SUMP, far_id(GREEN), 101, far_colour=GREEN, color=tint(COLD))
 squeeze((384, 1448), (384, 1496), (-1, 0), SUMP, "CO", "PU", "PUMPS", oh=96)   # its hatch: empty hands only, and a step too high from the corridor
@@ -285,7 +289,7 @@ things(2012, (1300, 1290))
 m.thing(40, 1340, 2004)
 things(17, (220, 1630), (330, 1630))
 things(2049, (-220, 1400))
-things(SPECTRE, (-180, 1340), (-100, 1570), (40, 1500), (260, 1340), (260, 1620), angle=0)
+things(SPECTRE, (-180, 1340), (-100, 1570), (40, 1500), (260, 1340), (-200, 1600) if LOOK else (260, 1620), angle=0)   # not under the lamp
 things(DEMON, (150, 1570), (-60, 1340), angle=0)
 m.thing(300, 1472, KNIGHT, angle=180)
 things(2012, (-220, 1320), (330, 1320))

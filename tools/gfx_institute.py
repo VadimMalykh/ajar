@@ -32,6 +32,7 @@ Pictures (one to a wall piece, on the room's wall, not aligned):
 Flats:
   FL FC FA FN FR FP FE  floors: lobby, corridor and cloakroom, lab, canteen,
                         archive, pump room, hall
+  KQ                    the pump room's ceiling where its lamp is
   KL KC KA KP KE        ceilings: lobby, corridor and canteen, lab and
                         archive, pump room, hall
   DT UT BT TT PT GT     tops: desk, counter, bench, table, platform; the
@@ -732,6 +733,24 @@ def lined(c, seed, stripe, cracks=0):
     return im
 
 
+def pump_lamp(n):
+    """The pump room's ceiling with its one lamp. The lamp is drawn round the
+    flat's corners, so that a square 32 off the grid shows it whole."""
+    im = ceiling(n, "P")
+    cage = {1: (60, 62, 60), 2: AL, 3: (70, 74, 56)}[n]
+    glass = {1: (255, 244, 200), 2: (244, 250, 255), 3: (255, 232, 170)}[n]
+    for cx in (0, 64):
+        for cy in (0, 64):
+            im.disc(cx - 0.5, cy - 0.5, 13, cage)
+            im.disc(cx - 0.5, cy - 0.5, 10, glass)
+    for k in (0, 5, 58, 63):                                     # the cage's bars
+        d = 11 if k in (0, 63) else 9
+        for t in range(d):
+            for a, b in ((k, t), (k, 63 - t), (t, k), (63 - t, k)):
+                im.set(a, b, cage)
+    return im
+
+
 def ceiling(n, part):
     rnd = random.Random(1500 + n * 7 + ord(part))
     if n == 1:
@@ -1279,6 +1298,7 @@ def make(out, signs={}, faces={}, looks=LOOKS):
             put("flats", name(tag, n), im)
         for part in "LCAPE":
             put("flats", name("K" + part, n), ceiling(n, part))
+        put("flats", name("KQ", n), pump_lamp(n))
     for (n, part, s, shift, w, oh), nm in signs.items():
         put("textures", nm, sign(int(n), part, s, shift, w, oh))
     for (n, part, shift, keys, s), nm in faces.items():
