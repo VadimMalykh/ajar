@@ -23,7 +23,8 @@
 //  * Sector tag 3090 + 100 * fight: opened (Door_Open) when the fight is won.
 //  * AjarCue thing: a monster that comes into the fight later. args[0] fight,
 //    args[1] its wave (from 1), args[2] the wave comes when no more than
-//    that many monsters are left, args[3] the monster's Doom editor number.
+//    that many monsters are left, or 25 seconds after the wave before it
+//    was due (Cues), args[3] the monster's Doom editor number.
 //
 //  * Sector tag and line id 3080 + 100 * fight: the hall's sectors and its
 //    screen (the upper texture of that line, a name whose fifth letter is a
@@ -1710,7 +1711,14 @@ class AjarTimeHandler : EventHandler
 	}
 
 	// The next wave, if it is due. Returns whether any is still to come.
-	bool Cues(Actor mo, int left)
+	// A wave is due when no more than its number of monsters are left, or
+	// when its time has come: WAVE_TICS after the first for the second, twice
+	// that for the third, whoever has or has not been shot by then (Vadim,
+	// 2026-11-19: the fights are for setting them on each other, and a wave
+	// must not wait for the player's kills). `since` is the fight's tic less
+	// the tic its first monsters came.
+	const WAVE_TICS = 25 * 35;
+	bool Cues(Actor mo, int left, int since)
 	{
 		int wave = 0;
 		let it = ThinkerIterator.Create("AjarCue");
@@ -1720,7 +1728,8 @@ class AjarTimeHandler : EventHandler
 		it = ThinkerIterator.Create("AjarCue");
 		while (c = AjarCue(it.Next()))
 		{
-			if (c.args[0] != fight || c.special1 || c.args[1] != wave || left > c.args[2]) continue;
+			if (c.args[0] != fight || c.special1 || c.args[1] != wave) continue;
+			if (left > c.args[2] && since < WAVE_TICS * (wave - 1)) continue;
 			if (WillCome(c)) continue;      // as it came the last time, and when
 			class<Actor> cls = AjarHandler.AmbushClass(c.args[3]);
 			if (c.args[3] == 64) cls = "Archvile";
@@ -2142,7 +2151,7 @@ class AjarTimeHandler : EventHandler
 				{
 					if (at == 0) BackToTheHall(mo);
 					int left = Left();
-					if (!Cues(mo, left) && !left && at == 0) Win();
+					if (!Cues(mo, left, ft - go) && !left && at == 0) Win();
 					if (open && phase == LIVE) Hunt(mo);
 				}
 			}
