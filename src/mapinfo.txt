@@ -25,6 +25,8 @@ DoomEdNums
 	20041 = AjarCue
 	20042 = AjarLocker
 	20043 = AjarWind
+	20044 = AjarPlate
+	20045 = AjarAnew
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
@@ -342,6 +344,16 @@ map TIME "Ajar: the time box"
 map TDOOR "Ajar: the time box, with doors"
 {
 	next = "TDOOR"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The sprung frame and the room of goes (tools/map_plate.py): MAP=PLATE ./run.sh
+map PLATE "Ajar: the plate lab"
+{
+	next = "PLATE"
 	nointermission
 	nojump
 	nocrouch

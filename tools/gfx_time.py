@@ -64,6 +64,29 @@ def make(out):
                 w.rect(x0 + i, 9 - d, x0 + i + 1, 10 + d, lit)
         gfx.text(w, "30", 6, 16, lit)
         out[f"sprites/AJWD{fr}0.png"] = w.png(grab=(15, 30))
+    # a plate on the wall of a room of goes' box that forgets every go (AjarAnew):
+    # the wind plate's face with a ring that runs back to its start
+    a = Img(30, 30, (34, 36, 42))
+    a.frame(0, 0, 30, 30, (150, 200, 230), 2)
+    lit = (230, 244, 250)
+    a.disc(15, 15, 9, lit)
+    a.disc(15, 15, 6, (34, 36, 42))
+    a.rect(15, 4, 25, 15, (34, 36, 42))                       # the ring's open quarter
+    for i in range(6):                                        # its arrowhead, at twelve, pointing right
+        a.rect(15 + i, 3 + i // 2, 16 + i, 10 - i // 2, lit)
+    out["sprites/AJANA0.png"] = a.png(grab=(15, 30))
+    # a plate on the floor that holds a sprung frame's door open while it is
+    # stood on (AjarPlate): up, and pressed
+    brass = (176, 146, 70)
+    for fr, down in (("A", False), ("B", True)):
+        p = Img(56, 56, shade(brass, 0.45))
+        p.rect(4, 4, 52, 52, shade(brass, 0.7 if down else 1.0))
+        p.frame(4, 4, 52, 52, shade(brass, 0.55 if down else 1.25), 2)
+        p.rect(12, 12, 44, 44, (250, 220, 120) if down else shade(brass, 0.85))
+        for cx, cy in ((9, 9), (47, 9), (9, 47), (47, 47)):   # rivets
+            p.disc(cx, cy, 1, shade(brass, 0.4))
+        p.noise(4, 33)
+        out[f"sprites/AJPL{fr}0.png"] = p.png(grab=(28, 28))
     # the top of a tall block with an arrow on it, pointing south (a flat's top is north)
     ar = Img(64, 64, (150, 146, 138))
     ar.noise(6, 32)

@@ -17,12 +17,13 @@ def box_line(k, n):
     return 3050 + 100 * k + n
 
 
-def zone(m, k, n, x1, y1, x2, y2, *, grow=0, open=False):
+def zone(m, k, n, x1, y1, x2, y2, *, grow=0, open=False, goes=False):
     """Part of fight k: of its hall and the way into it (n 0), or of its box n.
     `grow` widens it, to take in recesses and the stubs behind doors. `open`
-    (on a hall's zone): the fight is an open one (time.zs)."""
+    (on a hall's zone): the fight is an open one (time.zs). `goes` (on a
+    hall's zone): it is a room of goes (plate.zs), with one box, number 1."""
     m.thing((x1 + x2) / 2, (y1 + y2) / 2, ZONE_T,
-            args=(k, n, (x2 - x1) // 2 + grow, (y2 - y1) // 2 + grow, int(open)))
+            args=(k, n, (x2 - x1) // 2 + grow, (y2 - y1) // 2 + grow, 2 if goes else int(open)))
 
 
 def hall_door(m, k, j, a, b, out, floor, **look):
@@ -83,3 +84,21 @@ def wind(m, x, y, angle, on, z=30):
     played (from its boxes, and its hall), or a fight that is being watched
     from the box the plate is in (time.zs, AjarTimeHandler.Wind)."""
     m.thing(x, y, WIND_T, angle=angle, height=float(z), args=(int(on),))
+
+
+PLATE_T = 20044
+ANEW_T = 20045
+
+
+def plate(m, x, y, frame):
+    """A plate on the floor at x, y that springs the frame `frame` (its line
+    id): a door hung there is open only while the player or an earlier self
+    stands on the plate (plate.zs, AjarPlate). Put it far enough from the
+    frame's mouth (256 or more) that it cannot be stepped off and the door run."""
+    m.thing(x, y, PLATE_T, args=(frame,))
+
+
+def anew(m, x, y, angle, z=30):
+    """A plate on a wall of a room of goes' box, facing `angle`: USE forgets
+    every go (plate.zs, AjarAnew)."""
+    m.thing(x, y, ANEW_T, angle=angle, height=float(z))

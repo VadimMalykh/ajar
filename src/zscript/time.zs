@@ -17,6 +17,9 @@
 //    it) or the number of a box, args[2] and args[3] half its size along x
 //    and y. A place may have several. A box is looked for before a hall, so
 //    a hall's zone may be drawn generously.
+//    args[4] on a hall's zone: 1 an OPEN fight (below), 2 a ROOM OF GOES
+//    (plate.zs: no monsters, one box, any number of goes; it is over when
+//    the player leaves its zones by a way that is not a time door).
 //  * Lines 3000 + 100 * fight + j: the hall's time doors, j from 1.
 //    Lines 3050 + 100 * fight + n: the door of box n. All are portal lines
 //    as a door's far side is (ajarmap.recess).
@@ -32,8 +35,11 @@
 //    see "the show" below. Such a hall should start empty, its first
 //    monsters being AjarCues of wave 1 that come at 0 left.
 //
-//  * An AjarZone of the hall with args[4] set makes the fight an OPEN one:
+//  * An AjarZone of the hall with args[4] 1 makes the fight an OPEN one:
 //    see "the open fight" below. Its first monsters must all be AjarCues.
+//    With args[4] 2 it is a room of goes (plate.zs), and only its box 1 is
+//    used: every time door of the hall leads into it, and it back out by
+//    the hall's time door 1.
 //
 //  * AjarLocker thing: a cupboard. args[0] the room key that opens it,
 //    args[1] and args[2] the Doom editor numbers of what is in it.
@@ -373,7 +379,8 @@ class AjarTimeHandler : EventHandler
 		Actor a;
 		while (a = Actor(it.Next()))
 		{
-			if (a.args[4]) openFights.Push(a.args[0]);
+			if (a.args[4] == 2) goesFights.Push(a.args[0]);       // plate.zs
+			else if (a.args[4]) openFights.Push(a.args[0]);
 			zf.Push(a.args[0]); zb.Push(a.args[1]);
 			zx.Push(a.pos.x); zy.Push(a.pos.y); zw.Push(a.args[2]); zh.Push(a.args[3]);
 		}
@@ -1688,6 +1695,7 @@ class AjarTimeHandler : EventHandler
 	// --- the fight ------------------------------------------------------------
 	void Begin(int k)
 	{
+		if (goesFights.Find(k) < goesFights.Size()) { BeginGoes(k); return; }      // plate.zs
 		fight = k;
 		recent.Clear();
 		dueKills.Clear(); dueTic.Clear();
@@ -2210,6 +2218,7 @@ class AjarTimeHandler : EventHandler
 		let mo = players[consoleplayer].mo;
 		if (!mo) return;
 		if (reel && reel < 4) { ReelTick(PlayerPawn(mo)); Tests(mo); return; }
+		if (goes) { GoesTick(PlayerPawn(mo)); playerWas = mo.pos; Tests(mo); return; }      // a room of goes (plate.zs)
 		Rescue(PlayerPawn(mo));
 		int k, b;
 		[k, b] = Where(mo.pos.xy);
@@ -2289,6 +2298,8 @@ class AjarTimeHandler : EventHandler
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
 		if (mode == 7 && level.mapname ~== "MAP31") WindScript(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "PLATE") PlateScript(PlayerPawn(mo));
+		if (mode == 4 && level.mapname ~== "PLATE") GoesScript(PlayerPawn(mo));
 	}
 
 	// How far the fight that is being watched has got, and when the door opens.
@@ -2300,6 +2311,7 @@ class AjarTimeHandler : EventHandler
 			if (reel == 2) Screen.DrawText(SmallFont, Font.CR_GRAY, 320 - SmallFont.StringWidth("USE: the next") / 2, 384, "USE: the next", DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
 			return;
 		}
+		if (goes && GoesClock()) return;      // plate.zs
 		if (open && phase == LIVE && takes.Size() > 1)
 		{
 			int len = takes[takes.Size() - 2].x.Size();
