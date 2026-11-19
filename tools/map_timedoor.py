@@ -1,15 +1,20 @@
 """The time box with doors (map TDOOR): a Pair hung by two selves.
-MAP=TDOOR ./run.sh; the test is MAP=TDOOR MODE=3 tools/smoke.sh.
+MAP=TDOOR ./run.sh; the tests are MAP=TDOOR MODE=3, 4 and 5 tools/smoke.sh.
 
 The time box (map_time.py) with a frame in the hall (121) and one in the
 west box (122), and a TEAL leaf in each. Hang the hall's leaf, step out by a
 time door, hang the twin in the box: when the earlier self hangs its leaf
 the two are joined, and the way is open when the fight is where it was left.
-See src/zscript/timedoor.zs.
+
+A chain too (MODE=4): a brass frame in the hall and one in the west box, RED
+in the hall and BLUE in the box, and the night room their far sides are in.
+Each self hangs one door; the loop is closed when the earlier self hangs
+its own. MODE=5: a demon comes out of the fight into the box and is led
+through BLUE into the night room. See src/zscript/timedoor.zs.
 """
 import ajarmap
 import ajartime
-from ajarmap import TEAL
+from ajarmap import TEAL, RED, BLUE, HOME, HOME2, far_id
 from udmf import Map, rect
 
 m = Map()
@@ -33,6 +38,16 @@ ajartime.glass(m, (0, 256), (0, 384), (-1, 0), 64)
 ajartime.box_door(m, 1, 1, (-160, 416), (-96, 416), (0, 1), 64, color=BOX)
 ajarmap.recess(m, (-160, 224), (-96, 224), (0, -1), 64, 122, 121, color=BOX)
 ajartime.zone(m, 1, 1, -240, 224, -16, 416, grow=72)
+
+# the chain: its brass frames (the hall's south wall, the box's west wall) and its far end
+BRASS = ("AJXA", "AJXAF")
+ajarmap.recess(m, (560, 0), (624, 0), (0, -1), 0, HOME, far_id(RED), trim=BRASS, home=far_id(RED),
+               chain=(far_id(BLUE), HOME2), color=HALL)
+ajarmap.recess(m, (-240, 288), (-240, 352), (-1, 0), 64, HOME2, far_id(RED), trim=BRASS, home=far_id(RED),
+               chain=(far_id(BLUE), HOME), color=BOX)
+ajarmap.way_through(m, 2000, 0, RED, BLUE)
+ajarmap.door(m, RED, 500, 500, angle=270)
+ajarmap.door(m, BLUE, -40, 400, angle=270)
 
 # box 2, north: its door in its east wall
 m.sector(rect(288, 656, 512, 848), floor=64, ceil=192, light=210, color=BOX)

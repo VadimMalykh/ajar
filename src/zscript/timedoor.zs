@@ -148,26 +148,33 @@ extend class AjarTimeHandler
 	void DoorHold(bool on)
 	{
 		let h = Doors();
-		let it = ThinkerIterator.Create("AjarFrame");
-		AjarFrame f;
-		while (f = AjarFrame(it.Next()))
+		// a closed loop (the way out as a chain) is held whole if any of it is
+		bool loop;
+		for (int pass = 0; pass < 2; pass++)
 		{
-			if (!f.door || !f.door.args[0]) continue;
-			Line a = h.FindLine(f.args[0]), b = h.FindLine(f.door.args[0]);
-			if (!a || !b) continue;
-			int k1, b1, k2, b2;
-			[k1, b1] = Where(f.pos.xy);
-			[k2, b2] = Where((b.v1.p + b.v2.p) / 2);
-			if (!((k1 == fight && b1 == 0) || (k2 == fight && b2 == 0))) continue;
-			if (on) { a.flags |= HELD; b.flags |= HELD; }
-			else { a.flags &= ~HELD; b.flags &= ~HELD; }
+			let it = ThinkerIterator.Create("AjarFrame");
+			AjarFrame f;
+			while (f = AjarFrame(it.Next()))
+			{
+				if (!f.door || !f.door.args[0]) continue;
+				Line a = h.FindLine(f.args[0]), b = h.FindLine(f.door.args[0]);
+				if (!a || !b) continue;
+				int k1, b1, k2, b2;
+				[k1, b1] = Where(f.pos.xy);
+				[k2, b2] = Where((b.v1.p + b.v2.p) / 2);
+				bool inHall = (k1 == fight && b1 == 0) || (k2 == fight && b2 == 0);
+				if (!pass) { if (inHall && h.InChain(f.door)) loop = true; continue; }
+				if (!inHall && !(loop && h.InChain(f.door))) continue;
+				if (on) { a.flags |= HELD; b.flags |= HELD; }
+				else { a.flags &= ~HELD; b.flags &= ~HELD; }
+			}
 		}
 	}
 
 	// --- the test (map TDOOR, mode 3) -------------------------------------------
 	AjarDoor TestLeaf(bool inHall)
 	{
-		for (int i = 0; i < dDoor.Size(); i++) if (dDoor[i] && (d0x[i] > 0) == inHall) return dDoor[i];
+		for (int i = 0; i < dDoor.Size(); i++) if (dDoor[i] && dDoor[i].IsPair() && (d0x[i] > 0) == inHall) return dDoor[i];
 		return null;
 	}
 	bool Near(Actor a, double x, double y, double r = 1) { return (a.pos.xy - (x, y)).Length() <= r; }
@@ -238,5 +245,106 @@ extend class AjarTimeHandler
 			Check("handedOver2", phase == LIVE && at == 2);
 			Check("asLeft", !a.frame && !a.carried && !a.bInvisible && Near(a, 128, 40, 100) && b.frame == fb && b.Shut());
 		}
+	}
+
+	// --- MODE=4: the chain, a door hung by each of two selves ------------------
+	AjarDoor TestDoor(int colour)
+	{
+		for (int i = 0; i < dDoor.Size(); i++) if (dDoor[i] && !dDoor[i].IsPair() && dDoor[i].args[1] == colour) return dDoor[i];
+		return null;
+	}
+
+	void ChainScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		let h = Doors();
+		AjarDoor red = TestDoor(1), blue = TestDoor(2);
+		AjarFrame f1 = h.FindFrame(190), f2 = h.FindFrame(191);
+		Line l1 = h.FindLine(190), l2 = h.FindLine(191);
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d at=%d rt=%d len=%d events=%d chain=%d line=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, phase, at, rt, main ? main.first.Size() : 0, deTic.Size(), h.chainLen, h.onTheLine);
+		if (t > 10 && t < 40) mo.vel.xy = (0, 8);
+		// the first go: RED into the hall's brass frame
+		if (t == 50) { Go(mo, 500, 470, 0, 90); red.Used(mo); }
+		if (t == 60) { Go(mo, 592, 40, 0, 270); f1.Activate(mo); }
+		if (t == 62) Check("redHung", red.frame == f1 && !h.chainLen && !(l1.flags & Line.ML_BLOCKING));
+		if (t == 150) Go(mo, 700, 320, 0, 0);
+		if (t > 150 && t < 175) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 176) { Check("out", phase == REPLAY && at == 1 && !red.frame && !f1.door); Go(mo, -44, 320, 64, 0); }
+		// in the box: BLUE into its brass frame, before the earlier self has hung RED
+		if (t == 180) { Go(mo, -40, 370, 64, 90); blue.Used(mo); }
+		if (t == 184) { Go(mo, -200, 320, 64, 180); f2.Activate(mo); }
+		if (t == 186) Check("blueHung", blue.frame == f2 && !h.chainLen && !(l2.flags & Line.ML_BLOCKING));
+		if (t == 215)
+		{
+			Check("loopInReplay", red.frame == f1 && h.chainLen == 2);
+			Check("loopHeld", (l1.flags & Line.ML_BLOCKEVERYTHING) && (l2.flags & Line.ML_BLOCKEVERYTHING));
+			Go(mo, -200, 320, 64, 180);
+		}
+		if (t > 215 && t < 240) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 242) { Check("notThrough", mo.pos.x < 0 && mo.pos.x > -300 && !h.onTheLine); Go(mo, -44, 320, 64, 0); }
+		// the fight is where it was left: through BLUE onto the line, and out of it by RED
+		if (t == 330)
+		{
+			Check("handedOver", phase == LIVE && h.chainLen == 2 && !(l1.flags & Line.ML_BLOCKING) && !(l2.flags & Line.ML_BLOCKING));
+			Go(mo, -200, 320, 64, 180);
+		}
+		if (t > 330) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 350) Check("onTheLine", h.onTheLine && mo.pos.x > 1900);
+	}
+
+	// --- MODE=5: a fight handed across -----------------------------------------
+	void HandScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		let h = Doors();
+		AjarDoor blue = TestDoor(2);
+		AjarFrame f2 = h.FindFrame(191);
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d at=%d rt=%d left=%d pending=%d demon=(%d,%d,%d)",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, phase, at, rt, Left(), pending.Size(),
+			testDemon ? testDemon.pos.x : 0, testDemon ? testDemon.pos.y : 0, testDemon ? testDemon.pos.z : 0);
+		if (t > 10 && t < 40) mo.vel.xy = (0, 8);
+		// a demon on the player's heels at the east door
+		if (t == 45)
+		{
+			Go(mo, 700, 320, 0, 0);
+			testDemon = Actor.Spawn("Demon", (640, 320, 0));
+			testDemon.GiveInventoryType("AjarSense");
+			testDemon.target = mo;
+		}
+		if (t == 46) Check("inTheFight", Left() == 2);
+		if (t > 45 && t < 70) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 71)
+		{
+			// (it is in the box at once if there is room at its door)
+			int k, b;
+			[k, b] = Where(testDemon.pos.xy);
+			Check("followed", phase == REPLAY && (pending.Find(testDemon) < pending.Size() || b == 1) && fz.Find(testDemon) == fz.Size());
+			Go(mo, -44, 320, 64, 0);
+		}
+		// BLUE in the box's frame: it opens onto the night room
+		if (t == 75) { Go(mo, -40, 370, 64, 90); blue.Used(mo); }
+		if (t == 80) { Go(mo, -200, 320, 64, 180); f2.Activate(mo); }
+		if (t == 140)
+		{
+			int k, b;
+			[k, b] = Where(testDemon.pos.xy);
+			Check("inTheBox", !pending.Size() && b == 1 && !testDemon.bInvisible);
+			Go(mo, -200, 320, 64, 180);
+		}
+		// through it, the demon after: then back (the test teleports) and BLUE is taken down
+		if (t > 140 && t < 170) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 171) Check("ledOut", mo.pos.x > 1900);
+		if (t > 171 && t < 195) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 400)
+		{
+			Check("delivered", testDemon.health > 0 && testDemon.pos.x > 1900);
+			Go(mo, -200, 320, 64, 180);
+			f2.Activate(mo);
+		}
+		if (t == 402) Check("shutAway", h.carried == blue && testDemon.pos.x > 1900 && (h.FindLine(191).flags & Line.ML_BLOCKING));
+		if (t == 410) Check("outOfTheFight", phase == LIVE && Left() == 1);
 	}
 }

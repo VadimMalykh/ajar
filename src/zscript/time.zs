@@ -2185,6 +2185,8 @@ class AjarTimeHandler : EventHandler
 		if (mode == 4 && level.mapname ~== "TIME") FollowScript(PlayerPawn(mo));
 		else if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "TDOOR") DoorScript(PlayerPawn(mo));
+		if (mode == 4 && level.mapname ~== "TDOOR") ChainScript(PlayerPawn(mo));
+		if (mode == 5 && level.mapname ~== "TDOOR") HandScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
