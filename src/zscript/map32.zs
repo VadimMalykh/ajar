@@ -1,5 +1,6 @@
 // MAP32 "Double Shift" (tools/map_secret2.py): what it adds to stepping out
-// of a fight, and its walk-through (MAP=MAP32 MODE=3 tools/smoke.sh).
+// of a fight, and its walk-through (MAP=MAP32 MODE=3 tools/smoke.sh); winding
+// a fight that is watched (MODE=4).
 
 extend class AjarTimeHandler
 {
@@ -122,5 +123,120 @@ extend class AjarTimeHandler
 		if (t == 900) Check("loopHeld", red.frame == f1 && blue.frame == f2 && h.chainLen == 2 && (h.FindLine(191).flags & Line.ML_BLOCKEVERYTHING));
 		if (t == 1000) { Check("open3", phase == LIVE && h.chainLen == 2 && !(h.FindLine(191).flags & Line.ML_BLOCKING)); Go(mo, 5774, 352, 64, 180); }
 		if (t > 1000) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+	}
+
+	// --- winding a fight that is watched (MODE=4) ---------------------------------
+	// Shop 1, its first go made long: the leaf is carried about for ten
+	// seconds before it is hung, so that winding on from the wing goes past
+	// the moment the earlier self hangs it.
+	AjarWind Plate32(bool on)
+	{
+		let it = ThinkerIterator.Create("AjarWind");
+		AjarWind w;
+		while (w = AjarWind(it.Next()))
+		{
+			int k, b;
+			[k, b] = Where(w.pos.xy);
+			if (k == fight && b == at && (w.args[0] != 0) == on) return w;
+		}
+		return null;
+	}
+	int testHp, testArm, testLen;
+
+	void Wind32Script(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		let h = Doors();
+		if (t == 0) { testA = Leaf32(true); testB = Leaf32(false); }
+		AjarDoor a = testA, b = testB;
+		AjarFrame fa = h.FindFrame(111), fb = h.FindFrame(112);
+		Line la = h.FindLine(111), lb = h.FindLine(112);
+		Quiet(mo);
+		AjarTrack self = boxes.Size() ? boxes[boxes.Size() - 1] : null;
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d at=%d trips=%d rt=%d len=%d self=%d hp=%d arm=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, phase, at, trips, rt, main ? main.first.Size() : 0, self ? self.first.Size() : -1,
+			mo.health, mo.CountInv("BasicArmor"));
+
+		if (t == 1)
+		{
+			int n = 0;
+			let it = ThinkerIterator.Create("AjarWind");
+			while (it.Next()) n++;
+			Check("plates", n == 18);
+		}
+		// the first go: the leaf taken at once, hung ten seconds later, out
+		if (t == 10) Go(mo, 300, -120, 64, 270);
+		if (t == 12) { Check("begun", phase == LIVE && fight == 1); a.Used(mo); mo.GiveInventoryType("GreenArmor"); }
+		if (t == 400) { Go(mo, 192, -170, 64, 270); fa.Activate(mo); }
+		if (t == 402) Check("leafHung", a.frame == fa && a.Shut());
+		if (t == 480) Go(mo, 960, 640, 0, 0);
+		if (t > 480 && t < 510) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (t == 512) { Check("out", phase == REPLAY && at == 1 && main.first.Size() > 450); testLen = main.first.Size(); }
+		// in the wing: the twin hung; the earlier self still has the leaf in hand
+		if (t == 514) { Go(mo, -340, 450, 64, 90); b.Used(mo); }
+		if (t == 518) { Go(mo, -370, 352, 64, 180); fb.Activate(mo); }
+		if (t == 520) Check("twinHung", b.frame == fb && !a.frame && a.carried);
+		// on: to two seconds before the handover; the leaf hangs, the Pair is joined and held
+		if (t == 522)
+		{
+			Go(mo, -60, 256, 64, 0);
+			testHp = mo.health; testArm = mo.CountInv("BasicArmor");
+			let w = Plate32(true);
+			Check("platesInTheWing", w && Plate32(false));
+			if (w) w.Used(mo);
+			Check("woundOn", rt == testLen - 70 && self.first.Size() == rt && Selves() == 1);
+			Check("leafHangsAgain", a.frame == fa && b.frame == fb && a.args[0] == 112 && b.args[0] == 111
+				&& (la.flags & Line.ML_BLOCKEVERYTHING) && (lb.flags & Line.ML_BLOCKEVERYTHING));
+			Check("itCosts", mo.health == testHp - 10 && mo.CountInv("BasicArmor") == testArm - 5);
+			Console.Printf("AJARTEST rt=%d len=%d self=%d selves=%d hp=%d arm=%d", rt, testLen, self.first.Size(), Selves(), mo.health, mo.CountInv("BasicArmor"));
+		}
+		if (t == 530)
+		{
+			int was = rt;
+			Plate32(true).Used(mo);
+			Check("noFurtherOn", rt == was && mo.health == testHp - 10 && mo.CountInv("BasicArmor") == testArm - 5);
+		}
+		// back: to the start; the leaf leans where it did then, the twin still hangs
+		if (t == 540)
+		{
+			Go(mo, -60, 448, 64, 0);
+			Plate32(false).Used(mo);
+			Check("woundBack", rt == 0 && self.first.Size() == 0 && !self.slot.Size());
+			Check("leafAsAtTheStart", !a.frame && !a.carried && Near(a, 300, -150) && !a.bInvisible);
+			Check("myTwinStillHangs", b.frame == fb && h.carried != b);
+			Check("itCostsAgain", mo.health == testHp - 20 && mo.CountInv("BasicArmor") == testArm - 10);
+			Plate32(false).Used(mo);
+			Check("noFurtherBack", rt == 0 && mo.health == testHp - 20);
+		}
+		if (t == 545)
+		{
+			Check("myselfThroughTheGlass", Selves() == 1 && self.first.Size() == rt && rt == 5);
+			Console.Printf("AJARTEST rt=%d self=%d selves=%d", rt, self.first.Size(), Selves());
+		}
+		if (t == 550)
+		{
+			int was = rt;
+			mo.health = mo.player.health = 10;
+			Plate32(false).Used(mo);
+			Check("notWithoutTheHealth", rt == was && mo.health == 10);
+			mo.health = mo.player.health = 100;
+		}
+		// it plays on from the start: the earlier self takes the leaf and hangs it again
+		if (t > 550 && testStep == 0 && phase == REPLAY && rt == testLen - 40)
+		{
+			Check("joinedAgain", a.frame == fa && b.frame == fb && a.args[0] == 112 && (lb.flags & Line.ML_BLOCKEVERYTHING));
+			testStep = 1;
+		}
+		// the handover: open, and through to the gallery
+		if (t > 550 && testStep == 1 && phase == LIVE)
+		{
+			Check("open", at == 1 && a.args[0] == 112 && !(lb.flags & Line.ML_BLOCKING) && t >= 540 + testLen);
+			Go(mo, -370, 352, 64, 180);
+			testStep = 2;
+			testN = t;
+		}
+		if (testStep == 2 && t < testN + 22) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
+		if (testStep == 2 && t == testN + 26) { Check("onTheGallery", mo.pos.y < 0 && mo.pos.y > -192 && mo.pos.x > 100 && at == 0); testStep = 3; }
 	}
 }

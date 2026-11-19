@@ -78,6 +78,8 @@ WIND_T = 20043
 
 
 def wind(m, x, y, angle, on, z=30):
-    """A plate on a wall, facing `angle`, `z` above the floor: USE winds an
-    open fight that is being played half a minute back, or (`on`) on."""
+    """A plate on a wall, facing `angle`, `z` above the floor: USE winds the
+    fight half a minute back, or (`on`) on: an open fight that is being
+    played (from its boxes, and its hall), or a fight that is being watched
+    from the box the plate is in (time.zs, AjarTimeHandler.Wind)."""
     m.thing(x, y, WIND_T, angle=angle, height=float(z), args=(int(on),))

@@ -22,6 +22,7 @@ extend class AjarTimeHandler
 	Array<double> d0x, d0y, d0z, d0a, dx, dy, dz, da;
 	// what was done to them, in the order of the fight's tics
 	Array<int> deTic, deDoor, deCar;
+	Array<int> deTrip;          // who did it: 0 the fight itself, n the player in box n (in that trip)
 	Array<AjarFrame> deFrame;
 	Array<double> dex, dey, dez, dea;
 	int dNext;                  // REPLAY: the next of them to be done again
@@ -41,6 +42,7 @@ extend class AjarTimeHandler
 		dDoor.Clear(); d0Frame.Clear(); dFrame.Clear(); d0Car.Clear(); dCar.Clear(); dTouched.Clear();
 		d0x.Clear(); d0y.Clear(); d0z.Clear(); d0a.Clear(); dx.Clear(); dy.Clear(); dz.Clear(); da.Clear();
 		deTic.Clear(); deDoor.Clear(); deCar.Clear(); deFrame.Clear(); dex.Clear(); dey.Clear(); dez.Clear(); dea.Clear();
+		deTrip.Clear();
 		dNext = 0;
 		let it = ThinkerIterator.Create("AjarDoor");
 		AjarDoor d;
@@ -70,6 +72,7 @@ extend class AjarTimeHandler
 			while (at > 0 && deTic[at - 1] > t) at--;
 			deTic.Insert(at, t); deDoor.Insert(at, i); deCar.Insert(at, d.carried); deFrame.Insert(at, d.frame);
 			dex.Insert(at, d.pos.x); dey.Insert(at, d.pos.y); dez.Insert(at, d.pos.z); dea.Insert(at, d.angle);
+			deTrip.Insert(at, phase == REPLAY ? trips : 0);
 		}
 	}
 
@@ -132,6 +135,43 @@ extend class AjarTimeHandler
 		DoorWatch(t);
 		for (; dNext < deTic.Size() && deTic[dNext] <= t; dNext++)
 			DoorSet(deDoor[dNext], deFrame[dNext], deCar[dNext], (dex[dNext], dey[dNext], dez[dNext]), dea[dNext]);
+		DoorHold(true);
+	}
+
+	// The fight that is watched is wound to tic `to` (AjarTimeHandler.WindWatched).
+	// On: every change up to then is done, as if it had played. Back: every
+	// door is put as it was at the fight's first tic and the changes up to
+	// then are done again; but what the player has done in this trip stays
+	// done (they are not wound, only the fight is): those of their changes
+	// that are later than `to` are moved to `to`, in their order, and a door
+	// in their hands stays there.
+	void DoorWind(int to)
+	{
+		DoorWatch(rt);
+		if (to >= rt) { DoorPlay(to); return; }
+		int p = 0;
+		while (p < deTic.Size() && deTic[p] <= to) p++;
+		for (int i = p; i < deTic.Size(); i++)
+		{
+			if (deTrip[i] != trips) continue;
+			if (i > p)
+			{
+				int dr = deDoor[i], car = deCar[i], tr = deTrip[i];
+				AjarFrame f = deFrame[i];
+				double x = dex[i], y = dey[i], z = dez[i], a = dea[i];
+				deTic.Delete(i); deDoor.Delete(i); deCar.Delete(i); deFrame.Delete(i); deTrip.Delete(i);
+				dex.Delete(i); dey.Delete(i); dez.Delete(i); dea.Delete(i);
+				deTic.Insert(p, to); deDoor.Insert(p, dr); deCar.Insert(p, car); deFrame.Insert(p, f); deTrip.Insert(p, tr);
+				dex.Insert(p, x); dey.Insert(p, y); dez.Insert(p, z); dea.Insert(p, a);
+			}
+			deTic[p++] = to;
+		}
+		let h = Doors();
+		for (int i = 0; i < dDoor.Size(); i++)
+			if (dTouched[i] && dDoor[i] != h.carried) DoorSet(i, d0Frame[i], d0Car[i], (d0x[i], d0y[i], d0z[i]), d0a[i]);
+		for (dNext = 0; dNext < deTic.Size() && deTic[dNext] <= to; dNext++)
+			if (dDoor[deDoor[dNext]] != h.carried)
+				DoorSet(deDoor[dNext], deFrame[dNext], deCar[dNext], (dex[dNext], dey[dNext], dez[dNext]), dea[dNext]);
 		DoorHold(true);
 	}
 
