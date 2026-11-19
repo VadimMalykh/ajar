@@ -107,9 +107,9 @@ class AjarLocker : Actor
 	}
 }
 
-// A plate on a wall of an open fight's box, and of its hall beside the way
-// in: USE winds the fight as it is played half a minute back (args[0] 0) or
-// on (1). See AjarTimeHandler.Wind.
+// A plate on a wall of a box beside its glass, and of an open fight's hall
+// beside the way in: USE winds the fight that is played or watched half a
+// minute back (args[0] 0) or on (1). See AjarTimeHandler.Wind.
 class AjarWind : Actor
 {
 	Default { Radius 12; Height 24; +NOGRAVITY +WALLSPRITE +DONTTHRUST +NOTELEPORT }
@@ -1045,15 +1045,24 @@ class AjarTimeHandler : EventHandler
 	}
 
 	// --- winding ---------------------------------------------------------------------
-	// A plate on the wall (AjarWind) winds an open fight that is being played
-	// half a minute back or on: in its boxes, and in its hall beside the way
-	// in (for when the player comes back to it on foot, from a box left over
-	// from an earlier fight). The go begins over, at that moment of the last
-	// one: the hall is cleared and everything in it is as it was then; this
-	// go's record up to then is the last go's, with the player standing where
-	// they stand. From the hall it winds only while the fight is still as it
-	// went (nothing is awake); from a box, always. Each winding costs 10
-	// health and 5 armour, and is not to be had with 10 health or less.
+	// A plate on the wall (AjarWind) winds a fight half a minute back or on.
+	// Each winding costs 10 health and 5 armour, and is not to be had with 10
+	// health or less. On, it goes no further than two seconds before the end
+	// of what there is to play or watch.
+	//  * An open fight that is being played: in its boxes, and in its hall
+	//    beside the way in (for when the player comes back to it on foot, from
+	//    a box left over from an earlier fight). The go begins over, at that
+	//    moment of the last one: the hall is cleared and everything in it is
+	//    as it was then; this go's record up to then is the last go's, with
+	//    the player standing where they stand. From the hall it winds only
+	//    while the fight is still as it went (nothing is awake); from a box,
+	//    always.
+	//  * A fight that is being watched from a box (MAP32): from that box. What
+	//    is seen through the glass and the doors are as they were at that
+	//    moment of the fight (WindWatched); the player is not wound, and what
+	//    they have done in this trip stays done. The real fight stands still
+	//    as before, and the box's door still opens when the fight is where it
+	//    was left.
 	const WIND_TICS = 30 * 35;
 	const WIND_HEALTH = 10;
 	const WIND_ARMOUR = 5;
@@ -1077,20 +1086,105 @@ class AjarTimeHandler : EventHandler
 	{
 		int k, b;
 		[k, b] = Where(mo.pos.xy);
+		if (phase == REPLAY && main && at > 0 && k == fight && b == at) { WindWatch(mo, dir); return; }
 		if (!open || phase != LIVE || k != fight) { Say("Nothing is playing."); return; }
 		if (!demo) { Say("This is the fight's first time:\nthere is nothing to wind yet."); return; }
 		if (at == 0 && (!Demoing() || Awake())) { Say("The fight is yours now.\nIt winds from a box."); return; }
 		int now = min(ot, demo.len);
 		int to = clamp(now + dir * WIND_TICS, 0, max(0, demo.len - 70));
 		if (dir > 0 && to <= now) { Say("It ends here: there is no more of it to wind on to."); return; }
-		// it costs (Vadim): 10 health, and 5 armour of what there is
-		if (mo.health <= WIND_HEALTH) { Say("Winding takes it out of you:\nyou have not the health for it."); return; }
+		if (!WindPay(mo)) return;
+		WindTo(mo, to);
+		WindFelt(mo);
+	}
+
+	// it costs (Vadim): 10 health, and 5 armour of what there is
+	bool WindPay(PlayerPawn mo)
+	{
+		if (mo.health <= WIND_HEALTH) { Say("Winding takes it out of you:\nyou have not the health for it."); return false; }
 		mo.health = mo.player.health = mo.health - WIND_HEALTH;
 		let arm = mo.FindInventory("BasicArmor");
 		if (arm) arm.Amount = max(0, arm.Amount - WIND_ARMOUR);
-		WindTo(mo, to);
+		return true;
+	}
+
+	void WindFelt(PlayerPawn mo)
+	{
 		mo.A_SetBlend("white", 0.5, 14);
 		mo.A_StartSound("switches/normbutn", CHAN_AUTO);
+	}
+
+	// A fight that is watched, from its box.
+	void WindWatch(PlayerPawn mo, int dir)
+	{
+		int to = clamp(rt + dir * WIND_TICS, 0, max(0, main.first.Size() - 70));
+		if (dir > 0 && to <= rt) { Say("It ends here: there is no more of it to wind on to."); return; }
+		if (dir < 0 && to >= rt) { Say("It begins here: there is no more of it to wind back to."); return; }
+		if (!WindPay(mo)) return;
+		WindWatched(mo, to);
+		WindFelt(mo);
+	}
+
+	// The fight that is watched goes to tic `to` at once: the next tic shown
+	// is `to`, as if it had played (on) or played again from its start
+	// (back) up to there. Only what is shown and the doors move: the hall's
+	// real things stand still, and what has come out after the player into
+	// the box, or is still to come, is where it is.
+	void WindWatched(PlayerPawn mo, int to)
+	{
+		AjarTrack self = boxes[boxes.Size() - 1];
+		if (to < rt)
+		{
+			DropPuppets(-1);
+			PuppetsAt(0, to);
+			// what the player did in this box after then was not done: their
+			// track is cut there, and the next Record writes down afresh
+			// whatever is in the box (and as gone what was there then and is not now)
+			int r = to < self.first.Size() ? self.first[to] : self.slot.Size();
+			Array<int> seen;
+			for (int i = 0; i < slotCls.Size(); i++) seen.Push(0);
+			for (int i = 0; i < r; i++) seen[self.slot[i]] = self.sf[i] >= 0 ? 1 : 0;
+			self.first.Resize(to);
+			self.slot.Resize(r); self.sf.Resize(r); self.x.Resize(r); self.y.Resize(r); self.z.Resize(r); self.ang.Resize(r);
+			for (int i = 0; i < self.live.Size(); i++) { self.liveSf[i] = -2; seen[self.liveSlot[i]] = 0; }
+			for (int s = 0; s < seen.Size(); s++)
+			{
+				if (!seen[s]) continue;
+				self.live.Push(null); self.liveSlot.Push(s); self.liveSf.Push(-2); self.liveSeen.Push(0);
+				self.lx.Push(0); self.ly.Push(0); self.lz.Push(0); self.la.Push(0);
+			}
+		}
+		else
+		{
+			PuppetsAt(rt, to);
+			// nothing in the box moved meanwhile
+			while (self.first.Size() < to) self.first.Push(self.slot.Size());
+		}
+		DoorWind(to);
+		// the hall's lights and screen: Show changes nothing after the count
+		Show(fight, min(to, SHOW_GO + 8), null);
+		Hold();
+		rt = to;
+	}
+
+	// What tics from..to - 1 of the fight that is watched show: each slot as
+	// its last record says, and the earlier selves' tracks that have ended
+	// gone (as WorldTick plays them, tic by tic).
+	void PuppetsAt(int from, int to)
+	{
+		Array<int> last;
+		for (int n = -1; n < boxes.Size() - 1; n++)
+		{
+			AjarTrack tr = n < 0 ? main : boxes[n];
+			int s = tr.first.Size();
+			if (n >= 0 && s < to) { if (s >= from) DropPuppets(n + 1); continue; }
+			int a = from < s ? tr.first[from] : tr.slot.Size();
+			int b = to < s ? tr.first[to] : tr.slot.Size();
+			last.Clear();
+			for (int i = 0; i < slotCls.Size(); i++) last.Push(-1);
+			for (int r = a; r < b; r++) last[tr.slot[r]] = r;
+			for (int i = 0; i < last.Size(); i++) if (last[i] >= 0) Puppet(tr, last[i]);
+		}
 	}
 
 	void WindTo(PlayerPawn mo, int to)
@@ -2189,6 +2283,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 4 && level.mapname ~== "TDOOR") ChainScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "TDOOR") HandScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP32") Map32Script(PlayerPawn(mo));
+		if (mode == 4 && level.mapname ~== "MAP32") Wind32Script(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));

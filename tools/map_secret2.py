@@ -91,6 +91,11 @@ class Shop:
         ajartime.box_door(m, k, 1, (wx + 96, wy + bh), (wx + 160, wy + bh), (0, 1), GF, color=WING)
         ajartime.zone(m, k, 1, wx, wy, wx + bw, wy + bh)
         ajartime.zone(m, k, 1, wx + 96, wy + bh, wx + 160, wy + bh + 64)
+        # beside the glass, plates that wind the fight as it is watched: back
+        # on the left of one who looks out (north), on on the right
+        self.plates = {1: ((x - 18, gy + 96), (x - 18, gy - 96))}
+        for side, (px, py) in zip((-1, 1), self.plates[1]):
+            ajartime.wind(m, px, py, 180, side > 0)
         # the small offices
         self.box = {}
         for n, (bx, by, u) in ((2, (cx, y + h + 136, (0, 1))), (3, (x + w + 136, cy, (1, 0)))):
@@ -106,6 +111,11 @@ class Shop:
             lo = (bx - u[0] * 135 - abs(v[0]) * 112, by - u[1] * 135 - abs(v[1]) * 112)
             hi = (bx + u[0] * 190 + abs(v[0]) * 112, by + u[1] * 190 + abs(v[1]) * 112)
             ajartime.zone(m, k, n, min(lo[0], hi[0]), min(lo[1], hi[1]), max(lo[0], hi[0]), max(lo[1], hi[1]))
+            # the plates, as in MAP31's boxes
+            self.plates[n] = tuple((bx - u[0] * 118 + v[0] * 96 * side, by - u[1] * 118 + v[1] * 96 * side)
+                                   for side in (-1, 1))
+            for side, (px, py) in zip((-1, 1), self.plates[n]):
+                ajartime.wind(m, px, py, {(0, 1): 90, (1, 0): 0}[u], side > 0)
 
     def at(self, *pts):
         return [(self.x + a, self.y + b) for a, b in pts]
@@ -217,7 +227,7 @@ spots(2012, (ax - 90, ay + 240), (ax + 90, ay + 240))
 spots(2019, (ax, ay + 240))                 # blue armour
 # the wing: a frame, and GREEN, which opens onto the lock-up
 ajarmap.recess(m, (s2.wx, s2.wy + 128), (s2.wx, s2.wy + 192), (-1, 0), GF, FG, ANY, color=WING)
-ajarmap.door(m, GREEN, *s2.wing(260, 270), angle=180)
+ajarmap.door(m, GREEN, *s2.wing(200, 270), angle=180)      # clear of the plate behind it
 spots(2012, s2.wing(270, 50), s2.wing(230, 50))
 spots(2046, s2.wing(60, 50))
 # the lock-up: a room with a pillar to run round, and nothing else leads there
@@ -282,6 +292,18 @@ s3.stock(2, 2012, 2012, 17, 2046, 2018, 2046, 17)
 s3.stock(3, 2012, 2012, 17, 2046, 2018, 2011, 2046)
 
 assert not BAD, BAD
+# a plate is clear of what is in its box: a door, a frame's mark, a supply
+for s in (s1, s2, s3):
+    for n, plates in s.plates.items():
+        for px, py in plates:
+            near = [t for t in m.things if t["type"] not in (ajartime.WIND_T, ajartime.ZONE_T)
+                    and abs(t["x"] - px) < 40 and abs(t["y"] - py) < 40]
+            assert not near, (s.k, n, px, py, near)
+        # and a door that leans in the wing is not between a plate and the room
+        for px, py in plates:
+            for t in m.things:
+                if t["type"] == ajarmap.DOOR_T and abs(t["y"] - py) < 48 and 0 < px - t["x"] < 100:
+                    assert False, (s.k, n, px, py, t)
 
 if __name__ == "__main__":
     import sys

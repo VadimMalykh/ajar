@@ -4833,3 +4833,57 @@ the name, the layout and the numbers are Claude's, to be changed freely.
   rescue goes by `Leave`, so the doors should be put back the same way);
   the lock-up with real monsters after the player; the ways on foot after
   a fight is won in shops 1 and 3.
+
+## MAP32: winding the fight that is watched (2026-11-19)
+
+Vadim wanted MAP31's winding in MAP32 too, so that the wait in a box can be
+cut short. `src/zscript/time.zs` (`Wind`, `WindWatch`, `WindWatched`,
+`PuppetsAt`), `timedoor.zs` (`DoorWind`, `deTrip`), `tools/map_secret2.py`.
+`MAP=MAP32 MODE=4 TIMEOUT=120 tools/smoke.sh "$PWD/build/smoke32w"`: 21
+checks, all pass. **Not played by hand.**
+
+- **Plates in every office**, two beside the glass on the box's own wall,
+  back on the left of one who looks out and on on the right, as in MAP31:
+  in the wing on its east wall 96 either side of the glass's middle, in
+  the small offices by MAP31's formula. 18 in all. The generator refuses a
+  plate with a thing within 40 of it, or a leaning door just in front of it.
+  In shop 2 GREEN now leans 60 further from the wall (`wing(200, 270)`),
+  or it stood between the back plate and the room (Claude's choice).
+- **What a plate does**, from the box the player is in while the fight is
+  watched: the fight goes half a minute back or on at once. Same price and
+  refusals as MAP31: 10 health and 5 armour, not with 10 health or less. On
+  goes no further than two seconds before the box's door opens (the door
+  still opens only by the fight playing to that moment); back no further
+  than the fight's start. "It ends here" / "It begins here" cost nothing.
+- **What is seen** through the glass is the fight at that moment: every
+  puppet as its last record up to then says (`PuppetsAt`; the same as
+  playing it tic by tic, without the cost of a long fight in one tic). The
+  hall's lights and screen are put as the show has them then. The real
+  fight stands still as before; what came out after the player is where it
+  is, out or still to come.
+- **The doors**: on, every change up to then is done. Back, every door is
+  put as at the fight's first tic and the changes up to then are done again.
+- **What the player did in the box in this trip stays done** when the fight
+  is wound back (Claude's choice): they are not wound, only the fight is.
+  Every door change is written down with the trip it was made in; this
+  trip's changes later than the moment wound to are moved to it, in their
+  order. A door in the player's hands stays in their hands. The changes of
+  the fight itself and of earlier trips are done again when their moment
+  comes. So in shop 1 the twin hung in the wing still hangs after winding
+  back, and the earlier self hangs its leaf again later, and the Pair joins.
+- The player's own track in the box (what a later trip sees of them) stays
+  as long as the fight shown: winding on adds tics in which nothing moved,
+  winding back cuts it and writes down afresh what is in the box.
+- **The test** (MODE=4): shop 1, its first go made long (the leaf is
+  carried ten seconds before it is hung). Out, the twin hung in the wing;
+  on: two seconds before the end, the leaf hangs, the Pair is joined and
+  held, paid; on again: nothing; back: the start, the leaf leans where it
+  did, the twin still hangs, paid; back again: nothing; refused at 10
+  health; played on, the earlier self hangs the leaf again, the door opens
+  and the Pair leads to the gallery.
+- Still pass: `MAP=MAP32 MODE=3` (18, out by the line), `MAP=TDOOR` modes
+  3, 4, 5 (20, 8, 7), `MAP=TIME MODE=3` (14), `MAP=MAP31 MODE=7`.
+- **Not done**: winding while a door of the fight's own is in the player's
+  hands past a moment an earlier self takes it (on: the replay takes it, as
+  when played); the clock's "running back" for the first second after
+  winding back to the start (the overlay shows it as at a step-out).
