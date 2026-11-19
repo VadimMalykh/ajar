@@ -36,11 +36,11 @@ from udmf import Map
 m = Map()
 # The institute's look (gfx_institute.py): 1 Academy (the 1950s), 2 Thaw (the
 # 1960s), 3 Post Box (a closed establishment, some years on); AJAR_INSTITUTE=0
-# is the level in the plain walls and tints it was built in. None is chosen
-# yet (design/map11-board.html): look 1 is worn until one is. A look changes
+# is the level in the plain walls and tints it was built in. Vadim chose 3
+# for the whole level (2026-11-19, design/map11-board.html). A look changes
 # textures and hangs pictures on walls; no wall, floor or thing moves, and
 # rooms are not tinted in a look.
-LOOK = int(os.environ.get("AJAR_INSTITUTE") or "1")
+LOOK = int(os.environ.get("AJAR_INSTITUTE") or "3")
 SIGNS, FACES = {}, {}                       # the names over ways and the door faces this build needs: gfx_institute.make draws them
 if LOOK:
     import gfx_institute

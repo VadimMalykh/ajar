@@ -2991,11 +2991,12 @@ it is.
 
 Board: https://claude.ai/artifact/Au3vTbXEAfHzH9bbVMmALm (source `design/map11-board.html`, images in
 `build/board11/`: `<look>/view_NN.jpg`, `tex/` swatches, `sheet_<look>.jpg`
-contact sheets). **Nothing is chosen yet**; look 1 is worn until something
-is. Branch `look11`. Not played by hand.
+contact sheets). **Vadim chose 3, Post Box, for the whole level
+(2026-11-19)**, and it is the default; `AJAR_INSTITUTE=1` or `2` are the
+other two. The board shows the choice as open. Not played by hand.
 
 `AJAR_INSTITUTE` picks the institute's look (`tools/gfx_institute.py`, names
-`AJI<part><look>`); unset is 1, and 0 is the plain level (whose map is byte
+`AJI<part><look>`); unset is 3, and 0 is the plain level (whose map is byte
 for byte what it was before the looks, checked). Three institutes:
 1. **Academy** (1950s): cream plaster under a cornice, oak panelling, red
    marble pillars and chequered stone in the lobby; parquet and olive oil
@@ -3020,7 +3021,9 @@ outline within itself on each face), the desk it was run from and a warning
 in the hall. A plate over each way off the corridor (CLOAKROOM, OPTICS,
 CANTEEN, PUMPS, ARCHIVE; TEST HALL on the locked door). The trim over frames
 and far sides and the night room are not touched. All of it is Claude's
-invention and provisional, the machine most of all.
+invention; Vadim, 2026-11-19: "your inventions are all good" (the machine,
+the painting of the first door, the Pair on the blackboard, DO NOT OPEN
+ANYTHING among them), so they stand.
 
 How it is built (`map_institute1.py`): `dress()` gives a sector the look's
 textures, `tint()` drops the room tints, `box()` and `pillar()` name a piece
@@ -3035,10 +3038,10 @@ photographs.
 
 The tour (`ByAppointmentViews` in `map11.zs`, `MAP=MAP11 MODE=2`,
 `smoke_MAP11_2.cfg`) has 37 views. `tools/board11_shots.sh` builds and
-shoots all four (about 20 minutes), look 1 last, so the pk3 is left as the
+shoots all four (about 20 minutes), look 3 last, so the pk3 is left as the
 game is.
 
-Run: the tour in 0 to 3; `MAP=MAP11 tools/smoke.sh` in look 1. Not run: the
+Run: the tour in 0 to 3; `MAP=MAP11 tools/smoke.sh` in looks 1 and 3. Not run: the
 solver (the puzzle is untouched, and the builds were `AJAR_QUICK=1`).
 
 Put to Vadim at the foot of the board, none built: light (and a lamp in the
