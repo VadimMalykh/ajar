@@ -65,9 +65,7 @@ hall and gallery; the cellar; PINK's store (secret: ring its bell). The depot
 BLUE. The depot's gate lets you out to the lane behind the bus, a step down,
 and never in.
 
-Company: a repainter at the stop (it changes where the lines go; it comes
-only once a door hangs or leans there for it to paint), lodgers in
-the bus's empty frames. What a key or a door brings arrives at the square.
+Company: lodgers in the bus's empty frames. What a key or a door brings arrives at the square.
 """
 import os
 
@@ -259,7 +257,7 @@ ajarmap.stray_place(m, 4, *hotel[1][:3], hotel[1][3])                        # i
 # the theatre: RED's far side is in its foyer. Its stage door is a ledge over
 # a pit behind the house: down there is a line that always runs, to the other
 # stop; nobody climbs back. (A place a Stray door may open onto needs a way
-# out on foot; so does one the repainter can shut.)
+# out on foot.)
 recess(*theatre[0][:3], theatre[0][3], far_id(RED), 101, far_colour=RED)
 ajarmap.opening(m, (224, 896 + TY), (288, 896 + TY), (0, 1), 0)
 ajarmap.fitted(m, (224, 912 + TY, 608, 1008 + TY), [
@@ -412,7 +410,6 @@ m.sector(rect(1472, 1320, 1584, 1384), floor=0, ceil=128, light=150, **PASSAGE)
 ajarmap.opening(m, (1600, 1320), (1600, 1384), (-1, 0), 0)
 
 # --- doors and keys ----------------------------------------------------------
-REPAINTER = 20007
 m.thing(-64, -592, 1, angle=90)                                           # player start, in the square
 ajarmap.door(m, RED, HX - 300, 330, angle=0)                              # leaning in a hotel room
 ajarmap.door(m, YELLOW, SX + 1700, 1250, angle=180)                       # on the station's far platform
@@ -420,9 +417,6 @@ ajarmap.door(m, GREEN, 600, 1450 + TY, angle=180)                        # in th
 ajarmap.door(m, VIOLET, -1210, -536, angle=180)                           # in the museum's cellar
 ajarmap.door(m, BLUE, 2020, 1756, angle=180)                              # under the dome
 ajarmap.door(m, PINK, -1300, 616, angle=0)                                # in its store
-# the repainter is not there at first: it comes in a flash once a door it may
-# paint hangs or leans at the stop (AjarHandler.WorkNear), and goes to it
-m.thing(100, -150, ajarmap.AMBUSH_T, angle=180, args=(20, REPAINTER))
 ajarmap.stray(m, -492, -68, angle=0)                                      # Stray doors: by the bus
 ajarmap.stray(m, -300, 1200 + TY, angle=0)                                # in the theatre's foyer
 ajarmap.stray(m, -740, -80, angle=180)                                    # in the museum's gallery
@@ -580,7 +574,6 @@ PUZZLE = dict(
         BLUE: dict(home="night", lean="dome"),
         PINK: dict(home="pink", lean="museum"),
     },
-    repainter=dict(zone=["main"]),
     pool=["main"],                         # the doors with no number; the kiosk; a platform; the hotel's far hall
 )
 

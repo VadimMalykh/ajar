@@ -419,9 +419,7 @@ class AjarHandler : EventHandler
 	// --- ambushes (ajarmap.ambush) ------------------------------------------
 	// An AjarAmbush thing is a monster that is not there yet. args[0] is what
 	// brings it: 1..4, taking that room key; 11..16, taking the door of that
-	// colour (less 10) for the first time; 20, work for a repainter: a door
-	// it may paint, hung or leaning, within WORK_NEAR of the thing (so it is
-	// not found standing idle and shot before it has done anything). args[1]
+	// colour (less 10) for the first time. args[1]
 	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
 	// after, facing the way the thing faces, and knows where the player is.
 	// If something stands in its place it waits until the place is free.
@@ -444,23 +442,8 @@ class AjarHandler : EventHandler
 		case 68: return "Arachnotron";
 		case 71: return "PainElemental";
 		case 64: return "Archvile";
-		case 20007: return "AjarRepainter";
 		}
 		return null;
-	}
-
-	const WORK = 20;
-	const WORK_NEAR = 700;
-	bool WorkNear(Actor a)
-	{
-		let di = ThinkerIterator.Create("AjarDoor");
-		AjarDoor d;
-		while (d = AjarDoor(di.Next()))
-		{
-			if (d.carried || d.IsStray() || d.IsPair() || d.nailer || (d.frame && d.frame.args[1])) continue;
-			if (a.Distance2D(d.frame ? Actor(d.frame) : Actor(d)) < WORK_NEAR) return true;
-		}
-		return false;
 	}
 
 	void AmbushTick(PlayerPawn mo)
@@ -473,7 +456,7 @@ class AjarHandler : EventHandler
 			int g = a.args[0];
 			if (!a.armed)
 			{
-				if (g == WORK ? !WorkNear(a) : g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
+				if (g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
 				a.armed = true;
 				a.wait = 20 + 5 * random(0, 5) + 35 * a.args[2];    // args[2]: seconds a later wave holds back
 			}
@@ -588,7 +571,7 @@ class AjarHandler : EventHandler
 	}
 
 	// Is the loop closed, and which? Called when a door is hung (so that what
-	// is said about it is right) and every tic (a repainter can change it).
+	// is said about it is right) and every tic.
 	void ChainUpdate()
 	{
 		Actor room = ChainRoom();
@@ -741,26 +724,6 @@ class AjarHandler : EventHandler
 		}
 		ChainUpdate();
 		return d;
-	}
-
-	// The repainter's work: two doors change places. A colour is a far side,
-	// so each takes the other's colour and far-side line and stays where it
-	// hangs or leans; what hangs is linked again to where it now leads.
-	void Repaint(AjarDoor a, AjarDoor b, Actor by)
-	{
-		if (!a || !b || a == b) return;
-		string was = a.Label(), now = b.Label();
-		if (a.frame) { Link(a.frame.args[0], 0, FRAME_TEX); Link(a.args[0], 0, a.BackTex()); }
-		if (b.frame) { Link(b.frame.args[0], 0, FRAME_TEX); Link(b.args[0], 0, b.BackTex()); }
-		int l = a.args[0], c = a.args[1];
-		a.args[0] = b.args[0]; a.args[1] = b.args[1];
-		b.args[0] = l; b.args[1] = c;
-		if (a.frame) { Link(a.frame.args[0], a.args[0], FRAME_TEX); Link(a.args[0], a.frame.args[0], a.BackTex()); }
-		if (b.frame) { Link(b.frame.args[0], b.args[0], FRAME_TEX); Link(b.args[0], b.frame.args[0], b.BackTex()); }
-		a.Show();
-		b.Show();
-		if (by) by.A_StartSound("misc/chat", CHAN_AUTO);
-		Say("Wet paint. The " .. was .. " door and the " .. now .. " door\nhave changed places: each opens where the other did.");
 	}
 
 	// The thief's door work, the same three moves the player has. Returns the
@@ -1166,6 +1129,7 @@ class AjarHandler : EventHandler
 		if (mo && mo.health > 0) AmbushTick(mo);
 		if (mo) Squeeze(mo);
 		if (mo && mo.health > 0) Followers(mo);
+		LiftTick();
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (!mode || !mo) return;
 		int t = testTic++;
@@ -1173,14 +1137,14 @@ class AjarHandler : EventHandler
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
 		if (level.mapname ~== "LAB") LabScript(mo, t);
+		else if (level.mapname ~== "LIFT" && mode == 2) LiftCompanyScript(mo, t);
+		else if (level.mapname ~== "LIFT") LiftScript(mo, t);
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
 		else if (level.mapname ~== "MAP10" && mode == 3) LongWayScript(mo, t);
-		else if (level.mapname ~== "MAP09" && mode == 4) RepaintScript(mo, t);
-		else if (level.mapname ~== "MAP09" && mode == 5) RepaintPortrait(mo, t);
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);
 		else if (level.mapname ~== "MAP05" && mode == 3) LostPropertyStrays(mo, t);
@@ -1998,12 +1962,8 @@ class AjarHandler : EventHandler
 		bool onLine = mo.pos.z == 96 && mo.pos.x > 760 && mo.pos.x < 1080 && mo.pos.y > -560 && mo.pos.y < -304;
 		if (t == 20) { FindLine(301).Activate(mo, 0, SPAC_Use); FindLine(302).Activate(mo, 0, SPAC_Use); FindLine(303).Activate(mo, 0, SPAC_Use); }
 		// the thief has YELLOW: it is caught first, so that the door lies where it fell.
-		// The repainter goes too: the solution is the player's alone
 		if (t == 22)
 		{
-			let ri = ThinkerIterator.Create("AjarRepainter");
-			Actor rp = Actor(ri.Next());
-			if (rp) rp.Destroy();
 			let ti = ThinkerIterator.Create("AjarThief");
 			Actor th = Actor(ti.Next());
 			if (th) th.DamageMobj(null, null, 10000, 'None');
@@ -2316,66 +2276,6 @@ class AjarHandler : EventHandler
 			1700, 1500, -96, 30, -10       // down in the dome
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
-	}
-
-	// MAP09 mode 4: the repainter by itself. GREEN hangs in the switchroom's
-	// frame, BLUE leans near it; the repainter is put between them and left to
-	// it. Afterwards the frame opens onto the line and the leaning door is GREEN.
-	void RepaintScript(Actor mo, int t)
-	{
-		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
-		if (t == 5)
-		{
-			let it = ThinkerIterator.Create("Actor");
-			Actor a;
-			while (a = Actor(it.Next())) if (a.bIsMonster && !(a is "AjarRepainter")) a.Destroy();
-		}
-		if (t == 10) { Take(mo, 3); FindFrame(102).Activate(mo); }
-		if (t == 12) { Take(mo, 2); Pose(mo, 440, -130, 0, 0); }
-		if (t == 14 && carried) { DropDoor(carried, mo); carried = null; }
-		if (t == 16)
-		{
-			let it = ThinkerIterator.Create("AjarRepainter");
-			Actor r = Actor(it.Next());
-			if (r) r.SetOrigin((360, -230, 0), false);
-			Pose(mo, -200, -250, 0, 0);
-			Check("setUp", r && FindFrame(102).door && FindFrame(102).door.Label() == "GREEN" && !carried);
-		}
-		if (t == 700)
-		{
-			AjarDoor d = FindFrame(102).door;
-			Check("doorsChangedPlaces", d && d.Label() == "BLUE");
-			AjarDoor g = DoorOf(3);
-			Check("greenLeansWhereBlueDid", g && !g.frame && !g.carried && abs(g.pos.x - 440) < 8 && abs(g.pos.y + 130) < 8);
-		}
-		// through the frame: the line, where BLUE leads
-		if (t == 705) Pose(mo, 480, -200, 0, 270);
-		Forward(mo, t, 710, 16);
-		if (t == 740) Check("frameOpensOntoTheLine", mo.pos.z == 96 && mo.pos.x > 760 && mo.pos.x < 1080);
-	}
-
-	// MAP09 mode 5: the repainter photographed at work. GREEN hangs in the
-	// switchroom's frame and BLUE leans beside it; the repainter is put before
-	// them and the camera stands in the hall and looks on.
-	void RepaintPortrait(Actor mo, int t)
-	{
-		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
-		if (t == 5)
-		{
-			let it = ThinkerIterator.Create("Actor");
-			Actor a;
-			while (a = Actor(it.Next())) if (a.bIsMonster && !(a is "AjarRepainter")) a.Destroy();
-		}
-		if (t == 10) { Take(mo, 3); FindFrame(102).Activate(mo); }
-		if (t == 12) { Take(mo, 2); Pose(mo, 404, -262, 0, 0); }
-		if (t == 14 && carried) { DropDoor(carried, mo); carried = null; }
-		if (t == 16)
-		{
-			let it = ThinkerIterator.Create("AjarRepainter");
-			Actor r = Actor(it.Next());
-			if (r) { r.SetOrigin((500, -190, 0), false); r.angle = 90; }
-		}
-		if (t > 14) { Pose(mo, 474, -104, 0, 270); mo.pitch = 0; }
 	}
 
 	// MAP09's tour (see PartyWallViews).
