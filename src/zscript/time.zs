@@ -1119,7 +1119,8 @@ class AjarTimeHandler : EventHandler
 	{
 		int to = clamp(rt + dir * WIND_TICS, 0, max(0, main.first.Size() - 70));
 		if (dir > 0 && to <= rt) { Say("It ends here: there is no more of it to wind on to."); return; }
-		if (dir < 0 && to >= rt) { Say("It begins here: there is no more of it to wind back to."); return; }
+		if (dir < 0 && rt < 70) {      // the first two seconds: nothing worth the price
+		 Say("It begins here: there is no more of it to wind back to."); return; }
 		if (!WindPay(mo)) return;
 		WindWatched(mo, to);
 		WindFelt(mo);
