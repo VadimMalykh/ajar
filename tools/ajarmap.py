@@ -123,13 +123,25 @@ def steel(m, a, b, out, floor, tag, *, thick=16):
         m.line(p, q, mid="AJTRIM", dontpegbottom=True)
 
 
-def target(m, x, y, tag, *, beam=False, z=32):
+def target(m, x, y, tag, *, beam=False, z=32, unseen=False):
     """Something to shoot, `z` above the floor at x, y (stand it 12 clear of
     its wall): set off, it opens every steel() door with `tag`. A plain one
     is set off by any shot of the player's, also through a hung door (the
     engine carries bullets through). With `beam` it is a sensor, and only an
-    emitter()'s beam sets it off. In a PUZZLE graph: `sights`."""
-    m.thing(x, y, TARGET_T, height=z, args=(tag, int(beam)))
+    emitter()'s beam sets it off. In a PUZZLE graph: `sights`. `unseen`:
+    until it is set off it is drawn only in mirrors."""
+    m.thing(x, y, TARGET_T, height=z, args=(tag, int(beam), int(unseen)))
+
+
+UNSEEN_T = 20093    # AjarUnseen
+
+
+def unseen(m, box):
+    """Every monster that stands in `box` (x1, y1, x2, y2) when the level
+    begins is drawn only in mirrors (a Line_Mirror wall) until it is dead.
+    Those that come later (an ambush) are seen as usual."""
+    x1, y1, x2, y2 = box
+    m.thing((x1 + x2) / 2, (y1 + y2) / 2, UNSEEN_T, args=((x2 - x1) // 2, (y2 - y1) // 2))
 
 
 def emitter(m, x, y, angle, tid, a, b, *, tex="AJEXIT", foot=False):
@@ -153,10 +165,11 @@ def watch(m, box, colour):
     m.thing((x1 + x2) / 2, (y1 + y2) / 2, WATCH_T, args=((x2 - x1) // 2, (y2 - y1) // 2, far_id(colour)))
 
 
-def door(m, colour, x, y, *, angle=0, frame=0):
+def door(m, colour, x, y, *, angle=0, frame=0, unseen=False):
     """A door thing. With `frame` it starts hung there (x, y only pick the sector);
-    otherwise it leans at x, y facing `angle`."""
-    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame))
+    otherwise it leans at x, y facing `angle`. `unseen`: until it is first
+    taken it is drawn only in mirrors (and has no glow)."""
+    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame, 2 if unseen else 0))
 
 
 def pair(m, colour, *leaves):

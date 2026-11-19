@@ -19,6 +19,8 @@ DoomEdNums
 	20062 = AjarWatch
 	20090 = EngButton
 	20091 = EngGhost
+	20092 = AjarUnseenImp
+	20093 = AjarUnseen
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -220,11 +222,23 @@ map MAP13 "Sight Unseen"
 	music = ""
 }
 
-// Act 2, level 4 (tools/map_institute4.py). Its way out starts it again
-// until there is a MAP15.
+// Act 2, level 4 (tools/map_institute4.py).
 map MAP14 "On the Level"
 {
-	next = "MAP14"
+	next = "MAP15"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 2, level 5 (tools/map_institute5.py). Its way out starts it again
+// until there is a MAP16, and so does its secret one (the door only the
+// glass shows) until there is a second secret level.
+map MAP15 "On Reflection"
+{
+	next = "MAP15"
+	secretnext = "MAP15"
 	nointermission
 	nojump
 	nocrouch
@@ -266,6 +280,16 @@ map LIFT "Ajar: the lift"
 map OPT "Ajar: sight lines"
 {
 	next = "OPT"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Mirrors (tools/map_mirror.py): MAP=MIR ./run.sh
+map MIR "Ajar: mirrors"
+{
+	next = "MIR"
 	nointermission
 	nojump
 	nocrouch
