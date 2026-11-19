@@ -10,7 +10,9 @@ extend class AjarHandler
 	{
 		AjarDoor a = LabLeaf(8, 0), b = LabLeaf(8, 1);
 		bool violet = carried && carried.args[1] == 5;
-		if (t == 20) { Take(mo, 1); Pose(mo, 60, 320, 0, 180); FindFrame(101).Activate(mo); Check("redHung", !carried && FindFrame(101).door != null); }
+		// the archive's frames are barred to RED
+		if (t == 10) { Take(mo, 1); Pose(mo, 1320, 1532, 0, 0); FindFrame(106).Activate(mo); Check("archiveBarredToRed", carried && carried.args[1] == 1 && FindFrame(106).door == null); }
+		if (t == 20) { Pose(mo, 60, 320, 0, 180); FindFrame(101).Activate(mo); Check("redHung", !carried && FindFrame(101).door != null); }
 		if (t == 23) { Take(mo, 3); Pose(mo, 960, 320, 0, 0); FindFrame(102).Activate(mo); Check("greenHung", !carried && FindFrame(102).door != null); }
 		if (t == 26) { a.Used(mo); Pose(mo, 440, 736, 0, 180); FindFrame(103).Activate(mo); Check("leafAloneShut", a.frame == FindFrame(103) && a.Shut()); }
 		if (t == 30) { b.Used(mo); Check("tookTwin", carried == b); Pose(mo, 100, 320, 0, 180); }

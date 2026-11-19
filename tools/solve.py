@@ -57,6 +57,15 @@ A puzzle is a dict:
                 region like any other, with frames and far sides of its
                 own, and is joined on foot to the landing it stands at.
                 Sending it costs nothing, and a door rides in it
+  sights        optional {key (a letter): what sets it off} (ajarmap.target):
+                something that is shot, and opens steel doors (walk links
+                that need that key) for good. dict(through=door): a target
+                in that door's home, shot from wherever the door hangs, so
+                the player has to be in that frame's region.
+                dict(at=region, lines=[{door: (frames it may hang in)}]): an
+                emitter's button in `at`, and the arrangements of doors,
+                any one of which puts its beam on the sensor
+A door with barred=True (a rail before its far side) is never walked through.
 
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
@@ -124,6 +133,17 @@ def _moves(p, state, nailed=False):
             here, carried, tuple(w[c] for c in colours), keys, 0, nails, car)
     if nails and here in _zone(p["nailer"], keys):
         yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0, car)
+    for k, sg in p.get("sights", {}).items():
+        if k in keys:
+            continue
+        if "through" in sg:
+            loc = where[sg["through"]]
+            ok = loc[0] == "frame" and p["frames"][loc[1]] == here
+        else:
+            ok = here == sg["at"] and any(all(where[c][0] == "frame" and where[c][1] in fs for c, fs in alt.items())
+                                          for alt in sg["lines"])
+        if ok:
+            yield 0, sg.get("say", f"set off {k}"), (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car)
     lift = p.get("lift")
     if lift:
         stops = lift["floors"]
@@ -144,6 +164,8 @@ def _moves(p, state, nailed=False):
             if where[twin][0] != "frame" or twin < c:
                 continue
             ends = (p["frames"][f], p["frames"][where[twin][1]])
+        elif p["doors"][c].get("barred"):
+            continue                                 # a rail before its far side: shots and sight, no walking
         else:
             ends = (p["frames"][f], p["doors"][c]["home"])
         for a, b in (ends, ends[::-1]):
@@ -390,7 +412,7 @@ def lost(p):
     if p.get("thief"):
         regions.add(p["thief"]["zone"])
     tests = [(r, lambda s, r=r: s[0] == r) for r in sorted(regions - {p["goal"]})]
-    tests += [(f"key {k}", lambda s, k=k: k in s[3]) for k in sorted(p.get("keys", {}))]
+    tests += [(f"key {k}", lambda s, k=k: k in s[3]) for k in sorted(set(p.get("keys", {})) | set(p.get("sights", {})))]
     if p.get("home_chain", {}).get("secret"):
         tests.append(("the secret way out", lambda s: _chain(p, s) == 3))
     out = []

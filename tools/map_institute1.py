@@ -12,7 +12,7 @@ corridor north (a third frame), the optics lab west of it and the canteen
 east (GREEN). Over the canteen's north side the gallery (RED's far side,
 key 1), too high to climb, with a balcony down the canteen's east side; from
 the gallery you drop into the canteen or, north, into the archive. The
-archive (VIOLET; two frames) has no door: a hole from the corridor lets
+archive (VIOLET; three frames, which take any door but RED) has no door: a hole from the corridor lets
 empty hands through. The pump room (GREEN's far side, key 2) is west of the
 corridor, and its hatch is such a hole too, with a step down into the
 corridor that is too high to climb: the way in is GREEN, and whatever goes
@@ -131,8 +131,8 @@ def things(kind, *spots, angle=0):
         m.thing(x, y, kind, angle=angle)
 
 
-def frame(a, b, out, n, color, floor=0):
-    ajarmap.recess(m, a, b, out, floor, n, far_id(RED), color=tint(color))
+def frame(a, b, out, n, color, floor=0, **more):
+    ajarmap.recess(m, a, b, out, floor, n, far_id(RED), color=tint(color), **more)
 
 
 # --- the lobby and its cloakroom ---------------------------------------------
@@ -194,9 +194,12 @@ ajarmap.fitted(m, (656, 1312, 1360, 1760), [
 hang((832, 1760), (960, 1760), "CI")                                         # the card index
 hang((1088, 1760), (1216, 1760), "CI")
 squeeze((640, 1500), (640, 1548), (1, 0), 0, "CO", "AR", "ARCHIVE")
-frame((1360, 1500), (1360, 1564), (1, 0), 106, DIM)
-frame((976, 1760), (1040, 1760), (0, 1), 107, DIM)
-frame((704, 1760), (768, 1760), (0, 1), 108, DIM)                            # three: one more than the doors that can be shut in here
+# They take any door but RED (Vadim, 2026-11-19): RED hung in here was the way
+# to carry VIOLET out over the gallery, without the Pair.
+NOT_RED = dict(home=RED, only=4)
+frame((1360, 1500), (1360, 1564), (1, 0), 106, DIM, **NOT_RED)
+frame((976, 1760), (1040, 1760), (0, 1), 107, DIM, **NOT_RED)
+frame((704, 1760), (768, 1760), (0, 1), 108, DIM, **NOT_RED)                            # three: one more than the doors that can be shut in here
 
 # --- the pump room, west: GREEN's far side; a hatch from the corridor ---------------
 # In a look it has one lamp, over the gauges (Vadim, 2026-11-19), and its light
@@ -338,7 +341,7 @@ PUZZLE = dict(
           ("hall", "night", "12"), ("night", "hall")],
     keys={"1": "gallery", "2": "pump"},
     frames={101: "hall", 102: "hall", 103: "hall", 104: "hall", 106: "archive", 107: "archive", 108: "archive", ajarmap.HOME: "night"},
-    only={ajarmap.HOME: VIOLET},
+    only={ajarmap.HOME: VIOLET, **{f: (GREEN, VIOLET) + ajarmap.LEAVES[TEAL] for f in (106, 107, 108)}},   # the archive's: not RED
     doors={
         RED: dict(home="gallery", lean="hall"),
         GREEN: dict(home="pump", lean="hall"),

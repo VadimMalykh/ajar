@@ -15,6 +15,7 @@
 //    none but those of args[1] and args[2] (the third frame of a longer
 //    chain, ajarmap.way_longer: it is not a way out by itself).
 //    3 if none but a leaf of the Pair whose colour is args[1] (MAP12).
+//    4 if any door but the one whose colour is args[1] (MAP11's archive).
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
 //    With args[3] the frame is one end of a chain (ajarmap.brass_pair):
@@ -848,6 +849,12 @@ class AjarHandler : EventHandler
 			Say("This frame takes a " .. (f.args[1] == 8 ? "TEAL" : "ORANGE") .. " leaf\nand no other door.");
 			return;
 		}
+		if (carried && f.args[4] == 4 && !carried.IsPair() && carried.args[1] == f.args[1])
+		{
+			// MAP11's archive: a frame that one door is kept out of
+			Say("This frame is barred to the " .. carried.Label() .. " door.\nAny other will hang in it.");
+			return;
+		}
 		if (carried && f.args[4] == 1 && carried.args[0] != f.args[1])
 		{
 			Say("The brass frame takes one door only:\nthe one that opens onto this room.");
@@ -1138,6 +1145,7 @@ class AjarHandler : EventHandler
 		if (mo) Squeeze(mo);
 		if (mo && mo.health > 0) Followers(mo);
 		LiftTick();
+		OpticsTick(mo);
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (!mode || !mo) return;
 		int t = testTic++;
@@ -1145,10 +1153,12 @@ class AjarHandler : EventHandler
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
 		if (level.mapname ~== "LAB") LabScript(mo, t);
+		else if (level.mapname ~== "OPT") OpticsScript(mo, t, mode);
 		else if (level.mapname ~== "LIFT" && mode == 2) LiftCompanyScript(mo, t);
 		else if (level.mapname ~== "LIFT") LiftScript(mo, t);
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "MAP12" && mode == 1) GoingUpScript(mo, t);
+		else if (level.mapname ~== "MAP13" && mode == 1) SightUnseenScript(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);

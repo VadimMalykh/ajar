@@ -1157,6 +1157,23 @@ def make_all():
             xo.rect(0, y + 26, 64, y + 27, shade(BRASSY, 0.55))
         out[f"textures/AJXA{c}.png"] = xo.png()
         out[f"flats/AJXF{c}.png"] = xo.png()
+        # ... and the trim of a plain frame that takes any door but that one
+        # (MAP11's archive; ajarmap.recess(only=4)): a plate of the door's
+        # colour, struck through
+        no = Img(64, 64, (70, 74, 82))
+        no.noise(5, 15)
+        for y in range(0, 64, 16):
+            no.rect(0, y, 64, y + 1, (40, 42, 48))
+            no.rect(0, y + 1, 64, y + 2, (104, 108, 118))
+        for y in range(0, 64, 32):
+            no.rect(0, y + 9, 64, y + 10, (40, 42, 48))
+            no.rect(0, y + 10, 64, y + 24, shade(col, 0.8))
+            no.rect(0, y + 24, 64, y + 25, (40, 42, 48))
+            for x in range(64):
+                for k in range(3):
+                    no.set((x + k) % 64, y + 10 + (x % 16) * 14 // 16, (24, 24, 28))
+        out[f"textures/AJNO{c}.png"] = no.png()
+        out[f"flats/AJNF{c}.png"] = no.png()
 
     # thief: a small hooded figure. A/B walking, C picking a hinge, D dead,
     # E/F walking with a door on its back.
@@ -1204,6 +1221,19 @@ def make_all():
         le.set(x + 1, 1, screw)
         le.set(x + 1, 5, screw)
     out["sprites/AJLEA0.png"] = le.png(grab=(5, 4))
+
+    # what is shot (AjarTarget in optics.zs): a target for bullets, A and lit B;
+    # a sensor for the emitter's beam, C and lit D
+    for fr, rim, face, eye in (("A", (60, 62, 70), (196, 196, 188), (170, 40, 36)), ("B", (60, 62, 70), (150, 240, 150), (255, 255, 220)),
+                               ("C", (36, 38, 46), (40, 60, 76), (70, 120, 150)), ("D", (36, 38, 46), (120, 220, 250), (255, 255, 255))):
+        tg = Img(26, 26, (0, 0, 0, 0))
+        tg.disc(13, 13, 12, rim)
+        tg.disc(13, 13, 10, face)
+        if fr in "AB":
+            tg.disc(13, 13, 7, rim)
+            tg.disc(13, 13, 5, face)
+        tg.disc(13, 13, 3, eye)
+        out[f"sprites/AJTG{fr}0.png"] = tg.png(grab=(13, 26))
 
     # AJAR_LODGER=1..7 adds the AJLG sprites of a look that lost, for the
     # board's photographs (gfx_lodger.py, design/lodger-board.html)
@@ -1277,6 +1307,7 @@ def make_all():
     import gfx_institute                                         # MAP11's institute: three looks
     import map_institute1                                        # ... and the names and door faces the map asks for
     import map_institute2                                        # MAP12 wears the same look: its names and faces join MAP11's
+    import map_institute3                                        # ... and MAP13's
     gfx_institute.make(out, map_institute1.SIGNS, map_institute1.FACES)
     import gfx_lift                                              # the lift's buttons (MAP12)
     gfx_lift.make(out)

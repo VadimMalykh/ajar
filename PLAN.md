@@ -2957,13 +2957,17 @@ size of MAP08 to MAP10's fights, the puzzle kept light.
   twin up by RED and down the drop. 10 door actions that way. The turnstile
   of the outline is this hole (the game's turnstile is a squeeze, which a
   leaf does not pass either).
-- **The Pair is still not the only way** (the solver's shortest, 8 actions):
-  hang VIOLET in the archive, walk into the night room with RED, come back
-  through VIOLET with it, swap, and carry VIOLET out by RED over the
-  gallery. It needs both keys and the experiment hall fought first. **To
-  decide (Vadim):** keep both, or shut it (the archive's frames taking no
-  plain door but VIOLET would do it). GREEN gave a shorter one still, until
-  the pump room's way out became a hatch.
+- **The Pair is the only way** (Vadim, 2026-11-19: otherwise the Pair is
+  not needed in the level at all). The archive's three frames take any door
+  but RED (`ajarmap.recess(only=4, home=RED)`, AjarFrame args[4] = 4; their
+  trim carries a red plate struck through, `AJNO1`; "This frame is barred to
+  the RED door. Any other will hang in it."). What it shuts was the solver's
+  shortest, 8 actions: VIOLET hung in the archive, into the night room with
+  RED, back through VIOLET with it, swap, and VIOLET out by RED over the
+  gallery. Tried in the solver first: frames for VIOLET only (the plan's
+  first thought) leave whoever drops in with GREEN stuck; frames for
+  anything but VIOLET leave whoever takes VIOLET stuck. Without the leaves
+  the level now has no solution.
 - **The fights**: 86 monsters on "Resident" (47 on "Just visiting"), 15030
   health of them, ammunition worth 2.26 times that, 520 health, 300 armour.
   Lobby: zombies, sergeants behind the desk, imps. Corridor: imps, two
@@ -2985,11 +2989,11 @@ The solver knows Pairs (`solve.py`: a leaf is `dict(pair=its twin's key,
 lean= or frame=)`, `ajarmap.leaves`): both hung, each frame leads to the
 other; one alone leads nowhere. Two frames are there because of it: a fourth
 in the hall (the lab) and a third in the archive, so that hands can always
-be emptied (640 stuck states without them). Now 191657 states, 0 stuck,
+be emptied (640 stuck states without them). Now 122867 states, 0 stuck,
 nothing can be lost. Not in the solver: a Pair with a thief, a nailer, a
 repainter or a Stray door.
 
-`MAP=MAP11 tools/smoke.sh`: 17 checks (`ByAppointmentScript` in
+`MAP=MAP11 tools/smoke.sh`: 18 checks (the first: RED is refused in the archive) (`ByAppointmentScript` in
 `src/zscript/map11.zs`, the Pair's way), all pass, out by the way out; every
 ambusher was seen to come but key 2's imps, which are due after the walk has
 left. `mapcheck` and `thingcheck`: 0 problems. Not known: how hard any of
@@ -3034,8 +3038,8 @@ freely.
 `tools/map_institute2.py`, `src/zscript/map12.zs`; `MAP=MAP12 ./run.sh`,
 `MAP=MAP12 MODE=1 EXTRA=-nomonsters tools/smoke.sh`. **Not played by hand.**
 Vadim's answers: the lift for MAP12 and optics later; a bit larger than
-MAP11. MAP11's way round the Pair stays (Vadim, 2026-11-19: "it's ok"):
-MAP12 cannot be finished without the Pair anyway. What differs from
+MAP11. MAP11's way round the Pair was to stay (Vadim, 2026-11-19: "it's
+ok"), and was shut the same day after he had played it: see MAP11. What differs from
 the outline above is Claude's choice, to be changed freely.
 
 - **The building.** Ground: the loading hall (start, RED, one frame). First
@@ -3070,8 +3074,148 @@ the outline above is Claude's choice, to be changed freely.
   the machine for its engine). New: the lift's buttons (`tools/gfx_lift.py`,
   AJLB0..2 and the torn-out AJLBX). Nothing else was drawn for it: no look
   board, no secret, no tour of views yet.
-- **MAP11 now leads to MAP12**; MAP12's way out starts it again until
-  there is a MAP13.
+- **MAP11 now leads to MAP12**, and MAP12 to MAP13.
+
+### MAP13 (2026-11-19, Claude's outline; Vadim: "go with map13 as proposed"; built: see below)
+
+Vadim asked for the planning to start once MAP12 was seen to be dressed
+(it wears MAP11's Post Box). Everything below is Claude's proposal.
+
+- **One idea: sight lines.** The optics department, as proposed with
+  MAP12: what a hung door lets through besides the player. Shots and sight
+  cross a door already; no level has asked for it yet.
+- **The place**: the optics wing, on from MAP11's optics lab: the long
+  range (a firing gallery for light, 1500 or so from end to end), the
+  darkroom, the lens store, and two test cells behind armoured glass.
+- **Three steps, each a thing to do, as in 11 and 12.**
+  1. See it. A switch on a ledge nobody can reach, across a pit, and too
+     far round a corner to be shot from the floor. A plain door's far side
+     looks straight at it: hang the door anywhere and shoot the switch
+     through it.
+  2. Line two up. A switch that no far side looks at. A leaf hung in the
+     cell that faces it, its twin where a plain door's far side looks at
+     that leaf: the shot goes through two openings. Here the player picks
+     the frames for the angle, and a wrong pair shows the wall beside it.
+  3. Set them on each other. The two test cells hold what was being
+     measured: barons in one, mancubi or cacodemons in the other, and the
+     way on leads through both. A door in the frame of one and a leaf
+     looking out of the other: they see each other and fight, and the
+     player comes in after. Skipping it is allowed, and costs the whole
+     fight.
+- **The puzzle** about 10 door actions; the Pair needed (step 2). The way
+  out by VIOLET into a night room, as in 11 and 12, unless it is time for
+  another.
+- **The fights** a little over MAP12: about 110 on "Resident". Snipers
+  down the range (chaingunners, revenants) who shoot through whatever door
+  faces them, so a door hung carelessly is a hole in the player's cover.
+  Step 3's cells are the big fight, or what is left of it.
+- **Mirrors: not here.** They work (the first tests, 4), and belong to the
+  same department, but Vadim's rule for 11 was one idea a level. MAP14.
+- **Company**: Doom's monsters only once more, since the level's own trick
+  is making them fight; a thief or a lodger with a Pair is still untried
+  and would want its test first.
+- **Before it can be built** (a test box, as the lift had):
+  1. A shoot switch set off through one door and through two (bullets,
+     and a rocket or plasma ball).
+  2. Two kinds of monster in sealed rooms joined only by a hung door: do
+     they wake, aim and hit through it, and does the fight start with no
+     help; the same through door and leaf together.
+  3. The solver: a gate that opens once a switch has been shot, with the
+     switch tied to the frames that give the line ("shot from region R
+     while door D hangs in one of these frames").
+- **Asked**: sight lines for 13 and mirrors for 14, or both in one; whether
+  step 3 may be skipped or the cells are sealed until the monsters have
+  thinned each other; the same way out again or something new; the name.
+
+### MAP13 "Sight Unseen", built (2026-11-19)
+
+`tools/map_institute3.py`, `src/zscript/map13.zs`, `src/zscript/optics.zs`;
+`MAP=MAP13 ./run.sh`, `MAP=MAP13 MODE=1 EXTRA=-nomonsters tools/smoke.sh`
+(25 checks, all pass, out by the way out). **Not played by hand.** The name
+and everything that differs from the outline are Claude's, to be changed
+freely. The four questions were answered by "as proposed": mirrors wait for
+14, step 3 may be skipped, the same way out, Doom's monsters only.
+
+- **What changed from the outline, and why.** Step 2 as written could not
+  be forced: a leaf is hung where the player stands, so a switch that a
+  line of two doors shows is also shown by one. So the shooter is fixed:
+  **an emitter** at the west end of the range fires a beam east into RED's
+  far side, and the beam comes out of whichever frame RED hangs in, square
+  to it. The player aims it by choosing frames. Bullets do nothing to the
+  sensor it is meant for.
+- **Places.** The optics hall (start; GREEN, both TEAL leaves; frames 101
+  west and 102 east, facing each other, 103 north, facing a wall). West,
+  the darkroom: frame 104, which takes a TEAL leaf only, and across from it
+  the sensor. North, behind a steel door, the range (1664 long; the
+  emitter and its button; RED, BLUE; frame 105; a pit, and beyond it RED's
+  far side and key 1, with a drop into the pit and steps out west). North
+  of the range two test cells behind steel doors: GREEN's far side (2
+  barons, 4 knights, key 2, a target on the far wall) and BLUE's (3
+  mancubi, 2 cacodemons; beyond it the lens store, VIOLET, the plasma
+  rifle). A grille stands before both far sides: shots and sight, no
+  walking, either way. Off the hall behind locks 1 and 2 the night room,
+  brass frame for VIOLET only.
+- **The puzzle**, 10 door actions, 41675 states, 0 stuck, nothing losable:
+  GREEN hung in the hall and the target shot through it (the range opens);
+  RED in 101 or 102, a leaf in the frame facing it, its twin in 104, the
+  emitter (the cells open); key 1 by RED, key 2 and VIOLET from the cells.
+  The Pair is needed: 104 takes nothing else, and without that RED hung in
+  104 put the beam on the sensor by itself. Frame 105 is there because
+  five doors and three hall frames left hands that could not be emptied
+  (2880 stuck states without it).
+- **Step 3, not needed**: GREEN and BLUE in 101 and 102 before the cells
+  are opened, and what lives in them fights through the two doors.
+- **The fights**: 106 monsters on "Resident" (57 on "Just visiting"), 21260
+  health of them, ammunition worth 2.34 times that, 645 health, 300
+  armour, every weapon up to the plasma rifle. Six ambushes (GREEN, a
+  leaf, RED, key 1, key 2, VIOLET). Chaingunners and imps beyond the pit
+  fire through RED at whoever stands before its frame.
+- **Its look** is MAP11's Post Box from MAP11's parts (hall: the lab;
+  darkroom: the pump room; range: the experiment hall; cells: the
+  cloakroom; store: the archive). **Nothing was drawn for it**: the
+  emitter is a button with the way out's sign and no lamp to see, the
+  targets are two plain discs (`AJTG`), the grille is the night room's. No
+  secret, no tour of views, no look board.
+- **MAP12 leads to MAP13**; MAP13's way out starts it again until there is
+  a MAP14.
+- Not known: how hard it is; whether the beam's line reads without a lamp
+  to see; whether monsters walking to their posts look right.
+
+### Sight lines, built and tested (2026-11-19)
+
+`tools/map_optics.py`, `src/zscript/optics.zs`; `MAP=OPT ./run.sh`,
+`MAP=OPT MODE=1..3 tools/smoke.sh`. Run headless only.
+
+- **A bullet through a door hits what is there** (the engine's doing).
+  `ajarmap.target(m, x, y, tag)` is a thing to shoot (`AjarTarget`, 20060)
+  that opens every `ajarmap.steel(..., tag)` door; with `beam=True` it is a
+  sensor and only a beam sets it off.
+- **The emitter** (`ajarmap.emitter`, `AjarEmitter`, 20061): its button
+  fires an `AjarBeam`, a missile (speed 25, it hurts what it hits). Through
+  RED in the frame facing a wall: nothing. Through RED in 101, across the
+  hall into a leaf in 102 and out of its twin: on the sensor (MODE=1).
+- **Monsters do not see or aim through a door** (the engine's sight stops
+  at one; `AjarSense` only makes them follow). `ajarmap.watch(m, box,
+  colour)` marks a room that is a door's far side (`AjarWatch`, 20062), and
+  `OpticsTick` does it for those in it: while that door hangs they fire at
+  the player before its frame, or, where its frame faces the frame of
+  another watched room's door, at what is in that room. A monster fires
+  its own attack at an `AjarAim` put where the victim would be if the door
+  were a hole in the wall (`PortalMap`, `AimThrough`: the straight line has
+  to pass each opening, with sight on each stretch). It only has that line
+  from where door and victim are in one line, so it walks there first
+  (`TakePost`, as to a patrol point). Not revenants (a homing missile turns
+  back), arch-viles, pain elementals or lost souls.
+  MODE=2: a baron behind GREEN hit the standing player three times in 15
+  seconds. MODE=3: a baron and a mancubus, GREEN in 101 and BLUE in 102,
+  hurt each other (4 volleys in 20 seconds: slow; in MAP13 there are 6 and
+  5 of them).
+- Found on the way: the engine all but hides an invisible thing from
+  `CheckSight` (it wants `SF_IGNOREVISIBILITY`).
+- **The solver** (`solve.py`): `sights={key: ...}`, a target shot through a
+  door or an emitter's button with the arrangements that put its beam on
+  the sensor, each giving a key that steel doors need; `barred=True` on a
+  door that is never walked through.
 
 ### The lift, built and tested (2026-11-19)
 
@@ -4009,6 +4153,16 @@ MODE=3` (14). **Not played by hand.**
 
 Run: `MAP=MAP31 MODE=3 TIMEOUT=200` (62), `MAP=MAP31 MODE=6` (8). **Not
 played by hand.**
+
+## MAP31: a wave comes on the clock too (2026-11-19)
+
+Vadim: in the third hall some monsters seemed to come only after he shot,
+which spoils setting them on each other. They did: a later wave came only
+when no more than its number of monsters were left, so only kills brought
+it. Now a wave also comes when its time has: 25 seconds after the first
+monsters for the second wave, 50 for the third, 75 for the fourth
+(`WAVE_TICS` in `Cues`, `time.zs`), whichever is first. In every hall, and
+in the TIME box. The 25 seconds are Claude's guess.
 
 ## MAP31: where it stands (handed on, 2026-11-18)
 

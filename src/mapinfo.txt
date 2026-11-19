@@ -14,6 +14,9 @@ DoomEdNums
 	20006 = AjarLine
 	20030 = AjarAmbush
 	20050 = AjarLiftButton
+	20060 = AjarTarget
+	20061 = AjarEmitter
+	20062 = AjarWatch
 	20090 = EngButton
 	20091 = EngGhost
 	20040 = AjarZone
@@ -197,11 +200,21 @@ map MAP11 "By Appointment"
 	music = ""
 }
 
-// Act 2, level 2 (tools/map_institute2.py). Its way out starts it again
-// until there is a MAP13.
+// Act 2, level 2 (tools/map_institute2.py).
 map MAP12 "Going Up"
 {
-	next = "MAP12"
+	next = "MAP13"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 2, level 3 (tools/map_institute3.py). Its way out starts it again
+// until there is a MAP14.
+map MAP13 "Sight Unseen"
+{
+	next = "MAP13"
 	nointermission
 	nojump
 	nocrouch
@@ -233,6 +246,16 @@ map LAB "Ajar: the lab"
 map LIFT "Ajar: the lift"
 {
 	next = "LIFT"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Sight lines (tools/map_optics.py): MAP=OPT ./run.sh
+map OPT "Ajar: sight lines"
+{
+	next = "OPT"
 	nointermission
 	nojump
 	nocrouch

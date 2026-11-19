@@ -54,7 +54,9 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     2: none but the two of `home` and `chain`, and it is no way out by itself
     (way_longer). `only=3` with `home` a Pair's colour (TEAL, ORANGE): the
     frame takes a leaf of that Pair and nothing else (MAP12's booth; in a
-    PUZZLE graph `only={frame: the two leaves' keys}`). `tag` is a sector tag for the recess and its stub: that of
+    PUZZLE graph `only={frame: the two leaves' keys}`). `only=4` with `home` a
+    plain colour: the frame takes any door but that one, and its trim says so
+    (MAP11's archive; in a PUZZLE graph `only={frame: every other door}`). `tag` is a sector tag for the recess and its stub: that of
     the lift car it is in, so that it rides with the car (see lift_button).
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
@@ -67,6 +69,8 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
         wall, flat, mid = "AJTRIM", "AJTRIMF", "AJFRAME"
     if trim:
         wall, flat = trim
+    elif only == 4:
+        wall, flat = f"AJNO{home}", f"AJNF{home}"
     m.sector([m1, m2, b2, b1], floor=floor, ceil=floor + DOOR_H, light=176,
              wall=wall, ftex=flat, ctex=flat, color=color, id=tag)
     # GZDoom only lets things walk through a portal line that has real space
@@ -100,6 +104,51 @@ def lift_button(m, a, b, z, tid, at, *, tag=LIFT, tex="AJEXIT", foot=False):
     m.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=tex, exact=True,
            **(dict(dontpegbottom=True) if foot else {}))
     m.thing(at[0], at[1], LIFT_T, id=tid, args=(tag, z))
+
+
+TARGET_T, EMITTER_T, WATCH_T = 20060, 20061, 20062     # AjarTarget, AjarEmitter, AjarWatch (src/zscript/optics.zs)
+
+
+def steel(m, a, b, out, floor, tag, *, thick=16):
+    """A steel door with no handle on either side, between two rooms `thick`
+    apart: a-b is its 64-wide mouth, `out` points to the other room. It opens
+    for good when the target() with its `tag` is set off. In a PUZZLE graph:
+    a walk link each way that needs a key (a letter) listed in `sights`."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF", id=tag)
+    for p, q in ((a, b), (c, d)):
+        m.line(p, q, exact=True)
+    for p, q in ((a, c), (b, d)):
+        m.line(p, q, mid="AJTRIM", dontpegbottom=True)
+
+
+def target(m, x, y, tag, *, beam=False, z=32):
+    """Something to shoot, `z` above the floor at x, y (stand it 12 clear of
+    its wall): set off, it opens every steel() door with `tag`. A plain one
+    is set off by any shot of the player's, also through a hung door (the
+    engine carries bullets through). With `beam` it is a sensor, and only an
+    emitter()'s beam sets it off. In a PUZZLE graph: `sights`."""
+    m.thing(x, y, TARGET_T, height=z, args=(tag, int(beam)))
+
+
+def emitter(m, x, y, angle, tid, a, b, *, tex="AJEXIT"):
+    """A fixed lamp at x, y that fires a beam along `angle` (40 above the
+    floor) when the button on the wall piece a-b is pressed. The beam is a
+    missile: it goes through a hung door and keeps its line, so it comes out
+    square to whatever frame the door of the far side it flew into hangs in."""
+    m.thing(x, y, EMITTER_T, angle=angle, id=tid)
+    m.cut(a, b)
+    m.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=tex, exact=True)
+
+
+def watch(m, box, colour):
+    """The room `box` (x1, y1, x2, y2) is the far side of the door `colour`,
+    and what lives there fires through that door wherever it hangs: at the
+    player before its frame, and at whatever is in another watched room
+    whose door hangs in the frame facing it (AjarHandler.OpticsTick)."""
+    x1, y1, x2, y2 = box
+    m.thing((x1 + x2) / 2, (y1 + y2) / 2, WATCH_T, args=((x2 - x1) // 2, (y2 - y1) // 2, far_id(colour)))
 
 
 def door(m, colour, x, y, *, angle=0, frame=0):
