@@ -1087,6 +1087,18 @@ class AjarTimeHandler : EventHandler
 		mo.bInvisible = true;
 		mo.vel = (0, 0, 0);
 		mo.pitch = -8;
+		// nothing lies between the seat and the screen (nor in a clip of this
+		// hall): the bodies of its fight and what they dropped are unseen
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			let inv = Inventory(a);
+			if (!(a.bCorpse || (a.bIsMonster && a.health <= 0) || (inv && !inv.owner))) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k == 1 && b == 0) a.bInvisible = true;
+		}
 		HouseLights(1, 0);
 		level.ExecuteSpecial(40 /* Ceiling_LowerByValue */, null, null, false, REEL_TAG, 16, 224);
 		cam = AjarCam(Actor.Spawn("AjarCam", mo.pos + (0, 0, 40)));
@@ -1594,12 +1606,11 @@ class AjarTimeHandler : EventHandler
 			mo.vel = (0, 0, 0);
 			if (--over == 0)
 			{
-				// The level is left, on their feet: not frozen, in full health;
-				// and if what comes next is this level again, as they first came.
+				// The level begins again (whatever its way out leads to), on
+				// their feet: not frozen, in full health, and as they first came.
 				mo.player.cheats &= ~CF_TOTALLYFROZEN;
 				mo.bBuddha = false;
-				string next = level.nextmap != "" ? level.nextmap : level.mapname;
-				level.ChangeLevel(next, 0, CHANGELEVEL_RESETHEALTH | (next ~== level.mapname ? CHANGELEVEL_RESETINVENTORY : 0));
+				level.ChangeLevel(level.mapname, 0, CHANGELEVEL_RESETHEALTH | CHANGELEVEL_RESETINVENTORY);
 			}
 			return false;
 		}

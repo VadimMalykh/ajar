@@ -52,7 +52,26 @@ DIGITS.update({"K": ("10010", "10100", "11000", "10100", "10010"),
 
 LOOKS = (1, 2, 3)
 WALLS = ("H", "G", "F", "W", "B", "L", "C", "BS", "SP", "CS", "TH", "TG", "SS", "SB")
+# A hall's own colour (Vadim, 2026-11-19: the three halls differed in size
+# only). The first hall is as its look made it; the second is blue, the last
+# red: the same textures with their warm colours turned (tinted()), under the
+# same name and a letter. Only the look the game wears (3) has them.
+HALL_LOOK = 3
+HALL_TINT = {2: ("B", 190, 1.0, 1.12), 3: ("R", -30, 1.2, 0.82)}    # letter, degrees of hue, saturation, brightness
+HALL_DIM = {3: 20}          # the last hall is darker than the others (Vadim: it adds to the battle)
+HALL_PARTS = ("H", "G", "W", "TH", "TG", "DH", "DG", "SS", "SB", "BS", "SP", "HF", "SF", "BT", "BA",
+              "Q0", "Q1", "Q2", "Q3", "R0", "R1", "R2", "R3")
+
+
+def hall_name(nm, k):
+    """The texture `nm` as hall k wears it."""
+    if k in HALL_TINT and nm[:3] == "AJY" and nm[-1] == str(HALL_LOOK) and nm[3:-1] in HALL_PARTS:
+        return nm + HALL_TINT[k][0]
+    return nm
+
+
 ALIGNED = {f"AJY{p}{n}" for p in WALLS for n in LOOKS}
+ALIGNED |= {hall_name(nm, k) for nm in set(ALIGNED) for k in HALL_TINT}
 LIGHT = {1: 148, 2: 160, 3: 144}                # a hall's light: the lights are down (they were 180, 200, 176)
 SURROUND = {1: (34, 28, 30), 2: (58, 66, 76), 3: (44, 30, 24)}   # round a time door
 
@@ -1026,6 +1045,22 @@ def steel_door(base, bolt):
     return im
 
 
+def tinted(im, turn, sat, lum):
+    """`im` with its warm colours (orange, brown, yellow, cream) turned by
+    `turn` degrees of hue. What is grey or nearly so (a screen, steel, the
+    leader) stays, and so does plain red (the arrow)."""
+    import colorsys
+    out = Img(im.w, im.h)
+    for i, (r, g, b, a) in enumerate(im.px):
+        h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        w = min(1.0, max(0.0, (s - 0.22) / 0.1)) if 10 <= h * 360 <= 62 else 0.0
+        if w:
+            r2, g2, b2 = colorsys.hsv_to_rgb((h + turn / 360) % 1, min(1.0, s * sat), min(1.0, v * lum))
+            r, g, b = (round(c + (255 * c2 - c) * w) for c, c2 in ((r, r2), (g, g2), (b, b2)))
+        out.px[i] = [r, g, b, a]
+    return out
+
+
 def make(out, looks=LOOKS):
     def put(kind, nm, im):
         key = f"{kind}/{nm}.png"
@@ -1085,6 +1120,13 @@ def make(out, looks=LOOKS):
         put("flats", name("LC", n), plain_flat({1: (206, 194, 164), 2: (220, 220, 212), 3: (160, 150, 128)}[n], 401 + n))
         put("flats", name("BT", n), block_top(n))
         put("flats", name("BA", n), block_top(n, arrow=True))
+    if HALL_LOOK in looks:                                       # the second and the last hall's colours
+        for letter, turn, sat, lum in HALL_TINT.values():
+            for p in HALL_PARTS:
+                for kind in ("textures", "flats"):
+                    key = f"{kind}/{name(p, HALL_LOOK)}.png"
+                    if key in out:
+                        put(kind, name(p, HALL_LOOK) + letter, tinted(unpng(out[key]), turn, sat, lum))
 
 
 if __name__ == "__main__":
