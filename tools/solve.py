@@ -45,6 +45,9 @@ A puzzle is a dict:
                 listed: see below
   only          optional {frame id: colour, or a tuple of colours}: no other
                 door hangs in that frame
+  stays         optional {frame id: colour}: that door, once hung in that
+                frame, stays there for good (a secret way out the player
+                builds, ajarmap.way_home(frame=SECRET_HOME): not the goal)
   dash          optional dict(at=region, to=region, limit=units, legs={(a, b):
                 units}): a way that a lever in `at` opens for a few seconds
                 (ajarmap.shutter). Whatever is carried gets from `at` to `to`
@@ -183,6 +186,8 @@ def _moves(p, state, nailed=False):
         c = hung.get(f)
         if c is not None and f == p.get("home_frame") and c == p.get("home_door"):
             continue                                 # the way out, built: it stays
+        if c is not None and p.get("stays", {}).get(f) == c:
+            continue                                 # so does a secret one
         takes = p.get("only", {}).get(f, carried)
         sec = p.get("home_chain", {}).get("secret", {})
         if carried is not None and f == sec.get("frame") and carried == sec.get("door"):
