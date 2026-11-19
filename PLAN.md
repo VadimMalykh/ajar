@@ -3460,6 +3460,185 @@ secret level reached from MAP30, the last, leads back to.
 - **The inside-out room and the honeycomb, the geometry department.** The
   strongest to look at, the thinnest puzzle ("the arrangement is the map").
 
+### MAP16, 17, 18 and MAP20's secret: the second round (2026-11-19, evening)
+
+Vadim and Claude, before MAP16 is begun. **Nothing here is built or tested.**
+Decided by Vadim: MAP16 stays what was agreed above (the thief with a Pair
+leaf, the rope guarded); the endless stair goes into it if a good use is
+found; the proposal for 17 and 18 and the secret for MAP20 are written down
+to come back to. Everything else is Claude's proposal.
+
+**The endless stair** (Vadim: "I like endless stair actually"). A Pair from
+the foot of a stair to its head: the stair only goes down and never ends.
+Doors hang in walls, so this is a stair or a run of drops that is walked,
+with a door at the foot; nothing falls freely through it (that would be the
+Tilted door, not built). Uses, Claude's, strongest first:
+- **The way up is down.** A stairwell whose flights are gone: each is a drop
+  too high to climb, with the floors off the landings. One leaf at the foot
+  and one at the head, and every floor is reached by going down. This Pair
+  is the rope of the agreed level: the thief that takes a leaf leaves the
+  player at the bottom of a well. Proposed as MAP16's spine.
+- **What follows you comes from above.** Monsters that chase go round too:
+  wait on a landing and they arrive one at a time down the flight above.
+  A rocket fired down the well comes out at the top: something above the
+  player is shot by aiming down.
+- **The thief in the well.** A thief that runs down the stair with a door
+  passes the same landing every lap. To check: how the thief chooses where
+  to run, and that it will take a door through a Pair at all.
+- Not proposed: a stair that is different each lap (a counter in a script,
+  a new rule and not a situation).
+
+**Other paradoxes listed the same evening**, not placed in any level:
+- Round the pillar: a stub of wall from a pillar to the room's edge, a frame
+  in each face. Clockwise you meet one door, anticlockwise the other: one
+  corner leads to two rooms.
+- A corridor of chosen length: two Pair leaves in a long corridor cut its
+  middle out or close it on itself. For a timed shutter, a charging monster,
+  a rocket to outrun.
+- The room that is its own neighbour: a Pair east to west and a plain door
+  north onto its own far side south. Shots come back, theirs as well.
+
+**MAP17 and MAP18: a kit of rooms and orders to fill** (Vadim's idea: from a
+set of places already joined by doorways, lifts, halls and fixed portals,
+the player makes maps of their own with the coloured doors and the Pairs,
+and different combinations give different geometries; Claude's development
+of it). It gives the geometry department, "the thinnest puzzle" above, its
+puzzle.
+- The difficulty: if only what can be reached counts, building a geometry is
+  routing again. So the shape has to be measured by something in the game:
+
+  | Property of the shape | What reads it |
+  |---|---|
+  | Straightness | the emitter's beam, shots, what monsters see |
+  | Length of a loop | a fireball's lap, the metronome's beat |
+  | Direction | drops, teleporters and belts: a circuit one way round |
+  | Order of rooms | a crate on a belt passes the stations in the order hung |
+  | Height | the frame in the lift car, drops |
+
+- **The kit**: six to eight modules, each with one fixed feature (a stair, a
+  lift, a belt, a window, a teleporter) and two or three frames or far
+  sides.
+- **The orders**: three or four briefs that each ask for a shape and not for
+  a place: a loop the fireball laps in a given time, a straight line from
+  emitter to sensor, a circuit that runs one way, a crate through the press
+  before the kiln. Each has several answers; no one arrangement fills two,
+  so the player builds again.
+- **The plan table**: a board in the hub with a lamp for each frame, showing
+  what leads where now. Without it the limit is the player's memory.
+- **The fight**: the arena is what was built before the lever was pulled (a
+  killing loop, a bottle, the room that is its own neighbour).
+- Two levels, split not decided. Claude: 17 the kit with the orders that
+  need no clock (beam, one-way circuit, order of rooms); 18 the ones that
+  do (the metronome, the relay run), since the solver needs time in its
+  state for them. The conveyor and timetable ideas kept above fold into
+  these as features of modules.
+- To test first: a scrolled thing crossing a hung door; the script that lets
+  the metronome hold a shutter; the solver with Pairs.
+
+**MAP20's secret way out: the left-handed copy** (Vadim: for MAP20's secret
+exit; it is the first of the three secrets not used in MAP15, "a mirror
+that is not one"). A room has a wall of glass that shows the room
+reflected, as MAP15's mirrors do, among real mirrors. One pane is not a
+mirror: it is an opening, hung or fixed, onto a room built as the mirror
+image of this one. The tell is that the player is not in it, nor their
+shots. Walk into the glass and you are in the copy, where one thing is not
+as it was on the right-handed side: the secret way out.
+- How Claude would make it: the generator builds the room a second time
+  reflected in the plane of the wall, so a plain opening onto it looks like
+  a mirror with no trick of the engine. Only things that stand still may be
+  in view (props are made twice; a monster would be missing from the
+  glass, which could be a second tell or a fault).
+- Open: whether the pane is a carried door (a leaf hung in a frame among
+  the mirrors) or fixed; what the level's own idea is (MAP20 is not
+  outlined).
+
+### Company with a Pair, tested (2026-11-19, before MAP16)
+
+The tests MAP16 was waiting for, in the lab: `MAP=LAB MODE=2 tools/smoke.sh`
+(`LabThiefScript`, 9 checks) and `MODE=3` (`LabNailerScript`, 8 checks). All
+pass, headless in docker; **not played by hand**. `PairOk` is checked every
+tic of both: both leaves hung, each leads to the other's frame and both
+frames are open; otherwise neither leads anywhere and a hung leaf is a wall.
+- **Thief.** It takes a hung leaf while watched: the link is cut and both
+  frames are walls. It hangs the leaf in another frame and the link is made
+  again from there. It walks through a Pair with both leaves hung and comes
+  out at the twin (hall to gallery).
+- **Fixed** (found by reading, `enemies.zs`): a leaf hung alone counted as a
+  door to walk through, and the thief would have walked at a wall until its
+  patience ran out. A shut leaf is no way now, and a way stops being one
+  when the twin is taken mid-walk. Not run without the fix.
+- **Nailer.** It nails a hung leaf: that leaf cannot be taken, by the player
+  or (by the thief's own rule for nailed doors) a thief. Its twin can be:
+  the nailed leaf is then a shut door, still nailed, and leads to wherever
+  the twin is hung next. So a nailer holds one end of the rope fast: it can
+  be the player's friend. Not drawn: nails on a leaf that is shut (a shut
+  leaf is a texture on its line, the nailed look is a sprite).
+- **Solver.** A thief, a Pair and a lift together run (a made-up well of
+  three floors, not kept). Its thief still stays in one zone: one that
+  walks through doors is not modelled, as before. What the well shows: a
+  drop taken with the rope not paid out is the end, so a level of drops
+  needs a fixed slow way back, or the solver calls nearly every state stuck.
+- Not tried: a lodger and a Pair beyond what MAP15 does (it takes a leaf
+  for a plug); a thief in a lift car.
+
+### MAP16 "Watch Your Step", built (2026-11-19)
+
+Vadim: "Yes go and build", to the outline of the stairwell with the thief
+and the nailer. `tools/map_institute6.py`, `src/zscript/map16.zs`; on the
+branch `map16` (worktree `../ajar-map16`). **Not played by hand**; how hard
+it is, is not known. It wears MAP11's look and has no props of its own.
+
+- **The well.** Four landings round a solid shaft, each 128 below the last
+  (top 384, second 256, first 128, the foot 0); the foot lies under the
+  head, a cliff of three floors. A room off each: the reading room (the
+  start), the labs, the canteen; the foot is open to the boiler room, with
+  the stores beyond.
+- **The endless stair, and what was changed from the outline.** The head's
+  TEAL leaf is part of the building (a door thing with `args[3]`, as a
+  fixed doorway has: nobody takes it, it has no leaf to show, and alone it
+  is a shut door). The player has the other leaf only. Reason: with both
+  leaves free, both can be carried down the drops, and then no door ever
+  comes up again; the solver called most of such a well stuck. Fixed at
+  the head, the leaf is always worth hanging wherever it is. In the PUZZLE
+  graph it is a plain door whose far side is the top.
+- **Nobody is left at the bottom.** A hole in the boiler room (empty hands)
+  leads to a cubby with a doorway of the building's up to the reading
+  room. No door goes up that way. The cubby is the secret (blue armour).
+- **The puzzle.** VIOLET leans in the stores and belongs in the brass frame
+  of the night room at the top, behind locks 1 and 2: it comes up by the
+  stair or not at all. RED (the canteen) opens onto the strongroom, key 1;
+  GREEN (the labs) onto the cold store, key 2. Frames: 103 top, 102
+  second, 101 first, 104 the foot, 105 the stores. Solver: 8 door actions,
+  104358 states, none stuck, nothing can be lost for good.
+- **The thief** stays at the base and starts in sight of the foot's frame.
+  It has nothing to carry off down there but what the player brings: RED
+  was in the boiler room in the first build, and the thief picked it up,
+  ran into the stores and stood behind the shelves for good, since it only
+  goes for what it can see and walk straight to. In the graph it sees the
+  player on every landing (the well is open).
+- **The nailer** comes to the foot when VIOLET is first taken (the level's
+  first ambusher, so there on every difficulty; `AmbushClass` knows 20004
+  now). It nails the leaf at the foot, and a thief leaves a nailed leaf
+  alone: the player's friend until they kill it.
+- **Dropped from the outline**: the ORANGE Pair (six doors made the search
+  too big), the second thief (the solver knows one), and the goods lift
+  (the hole and the cubby do its work, and a lift that carries doors would
+  have made the stair unnecessary).
+- 103 monsters on "Resident" (55 on "Just visiting"), ammunition 1.5 times
+  their health (`budget.py`). `mapcheck`, `thingcheck`, `itemcheck`: 0
+  problems.
+- Tests, headless: `MAP=MAP16 tools/smoke.sh`, the walkthrough, 19 checks
+  to the way out; `MODE=2` with `EXTRA=-nomonsters`, a tour of 13 views;
+  `MODE=3`, the company where it lives, 5 checks: the level's thief has
+  the leaf out of the foot's frame and stays at the base, the nailer nails
+  it, a second thief leaves it alone.
+- MAP15 and MAP32 lead on to it; its own way out starts it again until
+  there is a MAP17.
+- Not done: monsters that chase do not come down the drops (Doom's do not
+  step off a high ledge), so "what follows you comes from above" is only
+  the cacodemons that rise up the well when the leaf is taken. No nails
+  are drawn on the fixed head. No look board.
+
 ### Mirrors, built and tested (2026-11-19)
 
 `tools/map_mirror.py`, `src/zscript/mirror.zs`; `MAP=MIR ./run.sh`,
