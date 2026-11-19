@@ -3033,8 +3033,13 @@ a plate over a way (the map lists what it needs in `SIGNS`, and the locked
 door's two faces in `FACES`; `gfx.make_all` hands both to
 `gfx_institute.make`), `hang()` puts a picture on a piece of wall. The
 canteen's wall is two storeys of 128, so the gallery and the balcony stand
-in the upper one. Light is as it was: the pump room is nearly black in the
-photographs.
+in the upper one. Light is as it was, but for the pump room's lamp
+(Vadim, 2026-11-19: "add a lamp in the pump room"): in a look a caged lamp
+is on its ceiling over the gauges (`KQ`, drawn round the flat's corners,
+since its square is 32 off the grid), and its light falls off in three
+steps (200, 164, 136) to the room's 110, which is as it was. The spectre
+that stood under it stands in the dark south-west corner instead. The
+board's photographs are from before the lamp.
 
 The tour (`ByAppointmentViews` in `map11.zs`, `MAP=MAP11 MODE=2`,
 `smoke_MAP11_2.cfg`) has 37 views. `tools/board11_shots.sh` builds and
@@ -3045,7 +3050,7 @@ Run: the tour in 0 to 3; `MAP=MAP11 tools/smoke.sh` in looks 1 and 3. Not run: t
 solver (the puzzle is untouched, and the builds were `AJAR_QUICK=1`).
 
 Put to Vadim at the foot of the board, none built: light (and a lamp in the
-pump room), windows, things on the floor, the machine as a free-standing
+pump room, since built), windows, things on the floor, the machine as a free-standing
 frame, whether the staff left in a hurry or long ago, room numbers on the
 plates, a railing with gaps at the drops.
 
