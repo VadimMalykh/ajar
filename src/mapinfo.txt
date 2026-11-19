@@ -210,11 +210,21 @@ map MAP12 "Going Up"
 	music = ""
 }
 
-// Act 2, level 3 (tools/map_institute3.py). Its way out starts it again
-// until there is a MAP14.
+// Act 2, level 3 (tools/map_institute3.py).
 map MAP13 "Sight Unseen"
 {
-	next = "MAP13"
+	next = "MAP14"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 2, level 4 (tools/map_institute4.py). Its way out starts it again
+// until there is a MAP15.
+map MAP14 "On the Level"
+{
+	next = "MAP14"
 	nointermission
 	nojump
 	nocrouch

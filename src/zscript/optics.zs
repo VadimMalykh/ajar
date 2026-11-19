@@ -50,12 +50,12 @@ class AjarEmitter : Actor
 	int ready;
 	Default
 	{
-		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
+		+NOBLOCKMAP +NOGRAVITY
 	}
 	States
 	{
 	Spawn:
-		TNT1 A -1;
+		AJEM A -1;       // a lamp on a stand (gfx_institute2.emitter_lamp): its lens is where the beam starts
 		Stop;
 	}
 

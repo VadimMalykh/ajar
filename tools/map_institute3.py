@@ -39,7 +39,8 @@ m = Map()
 _theirs, I1.m = I1.m, m
 if LOOK:
     import gfx_institute
-    m.align |= gfx_institute.ALIGNED
+    import gfx_institute2                       # this level's own props and pictures
+    m.align |= gfx_institute.ALIGNED | gfx_institute2.ALIGNED
 H = 256
 PALE, RUST, COLD, STEEL, DIM, PAPER = 0xDCE8DC, 0xE8C8B0, 0xA8C0D8, 0xC8D0E0, 0xB0B8C8, 0xF0E4C8
 PIT = -128
@@ -71,14 +72,14 @@ def locked(a, b, out, floor, keys, line_id, near, far, words, **k):
 # --- the optics hall ----------------------------------------------------------------
 # Nothing stands on the line between frames 101 and 102: the beam flies there.
 ajarmap.fitted(m, (0, 0, 768, 640), [
-    ((160, 448, 288, 512), I1.box(48)), ((480, 448, 608, 512), I1.box(64)), ((576, 176, 640, 240), I1.box(96)),
+    ((160, 448, 288, 512), I1.box(48, "OT", "OS")), ((480, 448, 608, 512), I1.box(64)), ((576, 176, 640, 240), I1.box(96)),
 ], floor=0, ceil=H, light=180, color=tint(RUST), **dress(wall="LA", ftex="FA", ctex="KA"))
 frame((0, 288), (0, 352), (-1, 0), 101, RUST)
 frame((768, 288), (768, 352), (1, 0), 102, RUST)
 frame((352, 640), (416, 640), (0, 1), 103, RUST)
 hang((192, 0), (320, 0), "BB")
 hang((544, 640), (672, 640), "CB")
-hang((448, 0), (576, 0), "CB")
+hang((448, 0), (576, 0), "RD")                                               # how the beam goes
 
 # --- the darkroom, west: the sensor, and a frame for a leaf --------------------------
 DARK_H = 192
@@ -90,11 +91,11 @@ passage((-128, 160, 0, 224), "LA", "PU", "DARKROOM", ((0, 160), (0, 224)), (-1, 
 over((-128, 160), (-128, 224), "PU")
 ajarmap.recess(m, (-704, 96), (-704, 160), (-1, 0), 0, 104, far_id(RED), color=tint(COLD), home=TEAL, only=3)
 ajarmap.target(m, -146, 128, 2, beam=True, z=30)
-hang((-448, 256), (-320, 256), "GA")
+hang((-448, 256), (-320, 256), "SL")                                         # the safelight, prints on a line
 
 # --- the range, north, behind the steel door the target opens -----------------------
 ajarmap.fitted(m, (-448, 816, 1216, 1072), [
-    ((-96, 832, 32, 896), I1.box(48)), ((160, 992, 288, 1056), I1.box(64)),
+    ((-96, 832, 32, 896), I1.box(48, "OT", "OS")), ((160, 992, 288, 1056), I1.box(64)),
 ] + [((544 + 24 * i, 816, 568 + 24 * i, 1072), dict(floor=PIT * (i + 1) // 8)) for i in range(8)] + [
     ((736, 816, 992, 1072), dict(floor=PIT)),
 ], floor=0, ceil=H, light=190, color=tint(STEEL), **dress(wall="EX", ftex="FE", ctex="KE"))
@@ -104,11 +105,14 @@ ajarmap.steel(m, (96, 640), (160, 640), (0, 1), 0, 1)
 m.line((96, 640), (160, 640), id=311)
 ajarmap.recess(m, (1216, 912), (1216, 976), (1, 0), 0, far_id(RED), 101, far_colour=RED, color=tint(STEEL))
 ajarmap.watch(m, (992, 816, 1216, 1072), RED)
-ajarmap.emitter(m, -400, 944, 0, EMIT, (-448, 1008), (-448, 1040))
+ajarmap.emitter(m, -400, 944, 0, EMIT, (-448, 1008), (-448, 1040), tex="AJLBF", foot=True)
 frame((-320, 816), (-256, 816), (0, -1), 105, STEEL)                         # somewhere to put a door down: five doors, and hands for one
 hang((-448, 832), (-448, 960), "CP")                                         # the desk it is fired from
 hang((-256, 816), (-192, 816), "WS")
 hang((320, 1072), (384, 1072), "WS")
+hang((192, 816), (256, 816), "R1")                                           # the range's marks
+hang((416, 816), (480, 816), "R2")
+hang((1024, 816), (1088, 816), "R3")
 
 
 # --- the two test cells, north of the range, behind the steel doors the sensor opens --
@@ -138,6 +142,7 @@ ajarmap.fitted(m, (384, 1424, 896, 1744), [
 ], floor=0, ceil=H, light=150, color=tint(DIM), **dress(wall="AR", ftex="FR", ctex="KA"))
 I1.opening((608, 1408), (672, 1408), (0, 1), "CK", "AR", "LENS STORE")
 hang((384, 1552), (384, 1680), "CI")
+hang((896, 1552), (896, 1680), "LS")                                         # racks of lenses
 
 # --- the door with locks 1 and 2, and beyond it the night room ----------------------
 EV = dict(ceil=160, light=150, color=tint(STEEL), **dress(wall="EV", ftex="FE", ctex="KE"))
@@ -159,13 +164,13 @@ ajarmap.key(m, 2, -340, 1130)
 m.thing(384, 48, 1, angle=90)
 m.thing(384, 120, 2001)                                                     # shotgun
 things(2008, (330, 120), (438, 120))
-m.thing(608, 208, 2002)                                                     # chaingun, on the tall bench
+m.thing(608, 152, 2002)                                                     # chaingun, by the tall bench
 things(2048, (700, 40))
 things(2011, (40, 40), (90, 40))
 things(2012, (700, 600))
 things(2049, (40, 600))
 things(ZOMBIE, (300, 250), (470, 250), (384, 400), angle=270)
-things(SERGEANT, (224, 480), (544, 480), (680, 420), angle=270)              # two of them on benches
+things(SERGEANT, (270, 410), (500, 410), (680, 420), angle=270)              # by the benches, not on them: they could not get down
 things(IMP, (120, 300), (650, 300), (250, 580), (520, 580), (384, 560), angle=270)
 things(DEMON, (200, 380), (560, 380), angle=270)
 
@@ -176,18 +181,18 @@ things(2012, (-660, 30), (-180, 230))
 m.thing(-420, 100, 2018)                                                    # green armour
 things(SPECTRE, (-420, 0), (-640, 100), (-420, 220), (-220, 100), angle=0)
 things(DEMON, (-300, 150), (-520, 130), angle=0)
-things(IMP, (-600, -40), (-200, 30), (-200, -30), (-640, 160), (-180, 50), angle=0)
+things(IMP, (-600, -40), (-200, 30), (-200, -30), (-640, 160), (-160, 40), angle=0)
 m.thing(-640, 30, KNIGHT, angle=0)
 
 # --- the range ---------------------------------------------------------------------------
-m.thing(-32, 864, 2003)                                                     # rocket launcher, on a crate
-things(2046, (200, 1010), (-420, 850))
+m.thing(-32, 880, 2003)                                                     # rocket launcher, at the edge of a crate
+things(2046, (200, 968), (-420, 850))
 things(2049, (-420, 1040), (500, 840), (300, 840))
 things(2048, (100, 1040), (-150, 840))
 things(2012, (500, 1040), (-300, 944), (60, 1040))
 m.thing(400, 1040, 2019)                                                    # blue armour
 things(IMP, (-100, 1000), (120, 860), (330, 1000), (420, 900), (-200, 880), (480, 980), angle=180)
-things(SERGEANT, (0, 944), (224, 1024), (350, 860), angle=180)
+things(SERGEANT, (0, 944), (130, 1024), (350, 860), angle=180)
 things(CHAINGUNNER, (200, 944), (500, 900), angle=180)
 things(KNIGHT, (100, 944), (400, 980), angle=180)
 things(DEMON, (-60, 944), (260, 900), (460, 1040), angle=180)
@@ -223,13 +228,13 @@ m.thing(820, 1700, KNIGHT, angle=180)
 # --- ambushes ------------------------------------------------------------------------------------
 # GREEN, taken: the hall
 ajarmap.ambush(m, 10 + GREEN, IMP, (300, 60), (470, 60), angle=90)
-ajarmap.ambush(m, 10 + GREEN, SERGEANT, (120, 200), (650, 200), angle=0, after=3)
+ajarmap.ambush(m, 10 + GREEN, SERGEANT, (120, 200), (700, 200), angle=0, after=3)
 # a leaf, taken: the hall, and the darkroom's way
-ajarmap.ambush(m, 10 + TEAL, DEMON, (384, 320), (300, 500), (470, 500), angle=90)
+ajarmap.ambush(m, 10 + TEAL, DEMON, (384, 320), (340, 540), (430, 540), angle=90)
 ajarmap.ambush(m, 10 + TEAL, REVENANT, (60, 100), (700, 240), angle=0, after=4)
 # RED, taken: the range, behind you
 ajarmap.ambush(m, 10 + RED, IMP, (-400, 880), (-400, 1000), (-250, 944), angle=0)
-ajarmap.ambush(m, 10 + RED, KNIGHT, (-100, 880), angle=180, after=3)
+ajarmap.ambush(m, 10 + RED, KNIGHT, (-160, 880), angle=180, after=3)
 # key 1, beyond the pit: cacodemons over it, then the range
 ajarmap.ambush(m, 1, CACO, (800, 944), (900, 860), (900, 1030), angle=0)
 ajarmap.ambush(m, 1, REVENANT, (300, 944), (420, 860), angle=0, after=4)
@@ -252,7 +257,7 @@ things(2046, (700, 500), (-640, -40), (360, 1040), (1100, 850))
 things(2048, (60, 150), (700, 400), (-200, 944), (300, 900))
 things(2012, (384, 300), (60, 250), (-400, 220), (-150, 1000), (540, 840), (1190, 1000), (-60, 1380), (860, 1250), (440, 1500), (984, 80))
 m.thing(-330, 1112, 2013)                                                   # a soul sphere, in GREEN's cell
-things(8, (256, 480))                                                       # a backpack on a bench
+things(8, (256, 464))                                                       # a backpack at the edge of a bench
 
 LEAF_A, LEAF_B = ajarmap.LEAVES[TEAL]
 FACING = ((101, 102), (102, 101))

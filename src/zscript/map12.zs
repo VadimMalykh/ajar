@@ -39,7 +39,7 @@ extend class AjarHandler
 		if (t == 160) Pose(mo, 0, 60, 384, 90);
 		Forward(mo, t, 160, 30);
 		if (t == 195) Check("onTop", mo.pos.z == 384 && mo.pos.y > 128);
-		if (t == 196) Pose(mo, 840, 864, 448, 0);
+		if (t == 196) Pose(mo, 720, 864, 384, 0);
 		Forward(mo, t, 196, 6);
 		if (t == 205) Check("key1", Has(mo, 1));
 		// down by the booth to the first floor, for GREEN

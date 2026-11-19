@@ -3176,10 +3176,160 @@ freely. The four questions were answered by "as proposed": mirrors wait for
   emitter is a button with the way out's sign and no lamp to see, the
   targets are two plain discs (`AJTG`), the grille is the night room's. No
   secret, no tour of views, no look board.
-- **MAP12 leads to MAP13**; MAP13's way out starts it again until there is
-  a MAP14.
+- **MAP12 leads to MAP13**, and MAP13 to MAP14.
+- Since then (2026-11-19, after Vadim played it): the emitter's button has
+  a plate of its own (`AJLBF`, a lamp and its beam, on the lift buttons'
+  trunking) in place of the way out's sign.
 - Not known: how hard it is; whether the beam's line reads without a lamp
   to see; whether monsters walking to their posts look right.
+
+### Nothing to pick up out of reach (2026-11-19)
+
+Vadim found MAP12's backpack on a 96-high block: nothing gets up there
+(no jumping, a step is 24 at most). His rule: **there are no items the
+player cannot take.** `tools/itemcheck.py map_... ` walks each level from
+the start, from every frame, far side and room door and from every tagged
+sector, up 24 and down any drop, and reports a pickup in a sector never
+walked into. One on furniture counts as within reach only if it is no more
+than 48 up and less than 20 in from an edge the player can stand at (their
+middle stays 16 short of the step, and they touch what is within 36). It is
+not part of `build.sh`; run it with mapcheck and thingcheck on a new level.
+
+It found 14, all moved: MAP07 two boxes of shells in the middle of the
+shed's tables; MAP11 the super shotgun on a 64 crate; MAP12 **key 1** on the
+winding room's far platform (the level could not be finished), a soul
+sphere, rockets and cells on another, the super shotgun on a 64 bench, the
+berserk 20 in on a bench, the backpack (now on the low crate under the gap
+from the workshops, where Vadim stood); MAP13 the chaingun on a 96 bench,
+rockets on a 64 crate, the rocket launcher and the backpack in the middle
+of 48 furniture. Things on platforms went to the floor at their foot;
+steps up to the platforms would be the other way. Also MAP13: two imps in
+the darkroom stood in each other.
+
+### MAP14 "On the Level" (2026-11-19; Vadim's idea, built the same day)
+
+`tools/map_institute4.py`, `src/zscript/map14.zs`; `MAP=MAP14 ./run.sh`,
+`MAP=MAP14 MODE=1 EXTRA=-nomonsters tools/smoke.sh "$PWD/build/smoke14"`
+(34 checks, all pass, out by the loop). **Not played by hand.** The idea
+is Vadim's: "combine the lift with a frame and the two-door exit: set the
+proper door in the lift and on one of the floors where it is properly
+aligned; then you need to send the lift to the proper floor and it will
+build the exit way". The name, the building and the puzzle are Claude's, to
+be changed freely. Mirrors, which the MAP13 outline kept for 14, wait again.
+
+- **One idea: the way out is a chain with one end in the lift.** MAP09's
+  chain (`way_through`: two brass frames, two doors whose far sides are
+  the two ends of the line), but one brass frame is in the car's east wall
+  and the other in the west wall of the first floor, across the room and
+  the landing from it. They face each other only while the car stands at
+  the first floor, and only then is the loop closed.
+- **The rule** (`AjarHandler.BrassLevel`, in `LoopLen`): with a brass frame
+  in a lift sector, the loop needs the car standing still with its floor
+  at the other frame's. Nothing is fixed by it, as in MAP09: send the car
+  away and the loop is open again, and the two doors are then a way between
+  that floor and the car, wherever it is, by the line. Walking onto the line
+  through the closed loop makes its doors stay, as before. (Claude had
+  proposed that it stay built once it had lined up; this follows the
+  chain's own rule of 2026-11-17 instead. To be argued.) What is said:
+  hanging the second door with the car elsewhere, "they do not face each
+  other: the lift is at another floor"; the car arriving, "the lift stops
+  level with the other brass frame"; the car leaving, that they no longer
+  face each other.
+- **Found on the way**: the engine pushes a frame that rides in a car down
+  under the ceiling its recess had when the level began, each tic, and
+  `LiftTick` puts it back later in the same tic. So the two frames are
+  compared by their sectors' floors, not their own heights.
+- **The building**, the staff wing, three floors round one lift, no stairs.
+  Ground: the canteen (start; RED; frame 101) and its kitchen (the super
+  shotgun). First, west of the shaft: accounts (GREEN; the brass frame;
+  nothing stands between it and the landing), and behind lock 1 the
+  cashier's office (BLUE, the rocket launcher). Top, north: the director's
+  floor (key 1), and behind lock 2 the safe room (VIOLET). The cold store
+  (GREEN's far side; key 2, the plasma rifle) has no way in but GREEN. The
+  line is MAP09's night room. Gaps drop from the top to accounts and from
+  accounts to the canteen.
+- **The buttons are the puzzle.** The car's own panel is torn out. The
+  canteen sends it to the ground and to the top; the top sends it to the
+  first floor; accounts has no button. So the car comes level with the
+  brass frame only when sent from the top, and whoever sent it gets down
+  by the gap. RED's far side is in the car, as in MAP12.
+- **The puzzle**, 8 door actions, 1427 states, 0 stuck, nothing losable
+  (`home_chain=dict(..., level=1)` in the solver: the loop counts only with
+  the lift at that floor): RED in 101, the car to the top, through RED (key
+  1); the car to the first floor and down the gap; GREEN in the brass frame
+  there, which is a frame like any other (key 2); down to the canteen, the
+  car to the top, VIOLET out of the safe room into the car's brass frame;
+  the car to the first floor, the gap, BLUE out of the cashier's office
+  swapped in for GREEN. Shorter than 11 to 13 (10, 9, 10): to be made
+  longer if it plays too easy.
+- **The fights**: 109 monsters on "Resident" (58 on "Just visiting"),
+  22790 health of them, every weapon up to the plasma rifle, a backpack on
+  a canteen table. Six ambushes (RED, key 1, GREEN, key 2, VIOLET, BLUE);
+  BLUE's puts demons in the car, and they come out of whatever opens onto
+  it. A player dropping from the top lands on or by a desk.
+- **Its look** is MAP11's Post Box from MAP11's parts (canteen: the
+  experiment hall; kitchen: the archive; accounts: the lab; cashier: the
+  cloakroom; cold store: the pump room; the top: the lobby; safe room: the
+  lift's steel). The buttons are MAP12's. Its own props and pictures came
+  the same day: see "MAP13 and MAP14: props and pictures of their own". No
+  floor indicator, no secret, no look board.
+- **MAP13 leads to MAP14**; MAP14's way out starts it again until there is
+  a MAP15.
+- Not known: whether the two frames read as a pair across 770 units of
+  office; whether "sent from the top, met by the gap" is found or stumbled
+  on; how the closed loop looks from inside the car; a monster standing in
+  the landing when the car is sent holds it, and with it the way out.
+
+### MAP13 and MAP14: props and pictures of their own (2026-11-19)
+
+Vadim: "rework decoration for 13 and 14 a bit"; asked how far, "props and
+pictures only", and "they look ok. Just to introduce something new, not make
+them all absolutely the same". So walls, floors and ceilings stay MAP11's
+Post Box, and each level gets things of its own: `tools/gfx_institute2.py`
+(names `AJI<part><look>` as before, drawn in all three looks; a contact
+sheet: `python3 tools/gfx_institute2.py <dir>`). All Claude's invention.
+
+- **MAP13**: optical benches in the hall and the range (a slab on a steel
+  frame, a rail with lenses in their holders, `OS`/`OT`); a chart of how the
+  beam goes, in at a door and out of its frame (`RD`, in place of one of the
+  hall's two lens cabinets); in the darkroom a safelight and prints pegged
+  on a line (`SL`, in place of the gauges); the range's marks 100, 200, 400
+  stencilled along its south wall (`R1..R3`); racks of lenses in the lens
+  store (`LS`). **The emitter can be seen**: a lamp on a stand (`AJEMA0`;
+  `AjarEmitter` is no longer invisible, in the test map OPT too).
+- **MAP14**: the canteen's tables are MAP11's (`TS`/`TT`, 32 high, oilcloth)
+  and its east wall has the kitchen's hatch, shut, and a menu (`HT`); the
+  kitchen has a range 48 high where a stack stood to the ceiling (`RS`/`RT`)
+  and pans on a rail (`PN`); accounts has MAP11's desks, 40 high, with a
+  ledger and an adding machine on top (`AT`), the plan and how it was met
+  (`PF`: in look 3 the line turns down and stops) and filing cabinets
+  (`FG`); the cashier's office has the window, CLOSED (`CW`); the safe room
+  the safe's door (`SF`); the director's floor MAP11's desk and counters, a
+  bookcase (`BC`) and the pale square where a portrait hung (`PR`).
+- **Tours**: `MAP=MAP13 MODE=2` (7 views) and `MAP=MAP14 MODE=2` (15),
+  `SightUnseenViews` and `OnTheLevelViews`. Seen in look 3 only, headless.
+- Not done: a look board; anything for the cold store, the cells or the
+  lift car; the darkroom's lamp is a picture and lights nothing.
+
+### MAP13: monsters that could not move (2026-11-19)
+
+Vadim, playing: "some monsters appear in stale positions, where they
+cannot move". Four ambush spots overlapped furniture (a sergeant's and two
+demons' in the hall, a knight's in the range: the checks took an ambusher
+for a thing of radius 16), so those came in wedged into a bench or crate.
+Moved clear. Three sergeants placed on benches and a crate could not come
+down either (a monster does not step off more than 24) and now stand
+beside them; MAP14's four on tables and desks likewise. **MAP11 and MAP12
+still have monsters placed on crates and platforms on purpose** (snipers);
+to be taken down too if Vadim reads them as stuck. No other level had an
+ambush spot in furniture.
+
+### Two sessions, one checkout (2026-11-19)
+
+Several sessions were building in this checkout at once and wrote over each
+other's `build/ajar.pk3` (seen as "ZIP file corrupt", and as Doom's own
+MAP13). `AJAR_OUT=build/mine.pk3 ./build.sh` builds to another file and
+`PK3=build/mine.pk3 tools/smoke.sh` tests it.
 
 ### Sight lines, built and tested (2026-11-19)
 

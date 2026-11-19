@@ -261,8 +261,8 @@ things(2049, (600, 680), (600, 1400))
 things(2012, (420, 1240))
 things(2046, (420, 1560))
 
-# --- the optics lab: the super shotgun on a crate -------------------------------------------
-m.thing(128, 1104, 82)
+# --- the optics lab: the super shotgun at the edge of the low crate (within reach) ----------
+m.thing(-48, 944, 82)
 things(DEMON, (-180, 1040), (-40, 1090), (260, 900), (300, 1160), angle=0)
 things(IMP, (-80, 944), (-192, 1152), (290, 1010), angle=0)
 m.thing(0, 870, REVENANT, angle=0)

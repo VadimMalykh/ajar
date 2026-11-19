@@ -132,14 +132,16 @@ def target(m, x, y, tag, *, beam=False, z=32):
     m.thing(x, y, TARGET_T, height=z, args=(tag, int(beam)))
 
 
-def emitter(m, x, y, angle, tid, a, b, *, tex="AJEXIT"):
+def emitter(m, x, y, angle, tid, a, b, *, tex="AJEXIT", foot=False):
     """A fixed lamp at x, y that fires a beam along `angle` (40 above the
     floor) when the button on the wall piece a-b is pressed. The beam is a
     missile: it goes through a hung door and keeps its line, so it comes out
-    square to whatever frame the door of the far side it flew into hangs in."""
+    square to whatever frame the door of the far side it flew into hangs in.
+    `foot`: `tex` is laid from the floor up, as in lift_button()."""
     m.thing(x, y, EMITTER_T, angle=angle, id=tid)
     m.cut(a, b)
-    m.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=tex, exact=True)
+    m.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=tex, exact=True,
+           **(dict(dontpegbottom=True) if foot else {}))
 
 
 def watch(m, box, colour):
@@ -394,7 +396,12 @@ def brass_pair(m, w1, w2, e1, e2, floor, a, b, *, outs=((-1, 0), (1, 0))):
     an east wall, facing each other across the caller's room (`outs`: the
     two walls' directions, if they are others). The doors `a` and `b` belong
     in them, either way round; they are frames like any other, and whatever
-    hangs in them can be taken down again."""
+    hangs in them can be taken down again.
+
+    One of the two may be in a lift car instead (MAP14: two recess() calls
+    with `chain=`, the car's with `tag=`), across a landing from the other:
+    the loop is then closed only while the car stands at that floor
+    (AjarHandler.BrassLevel; `home_chain=dict(level=n)` in a PUZZLE graph)."""
     brass = ("AJXA", "AJXAF")
     recess(m, w1, w2, outs[0], floor, HOME, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME2))
     recess(m, e1, e2, outs[1], floor, HOME2, far_id(a), trim=brass, home=far_id(a), chain=(far_id(b), HOME))

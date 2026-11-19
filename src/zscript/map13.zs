@@ -76,4 +76,19 @@ extend class AjarHandler
 		if (t == 745) { Pose(mo, 1066, -64, 0, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
 		Forward(mo, t, 752, 12);
 	}
+
+	// MAP13's tour of what is its own: MAP=MAP13 MODE=2 tools/smoke.sh (run it with EXTRA=-nomonsters).
+	void SightUnseenViews()
+	{
+		static const double v[] = {
+			512, 200, 0, 270, 0,    // the hall: the chart of the beam
+			224, 340, 0, 90, 15,    // the hall: an optical bench
+			-384, 110, 0, 90, 0,    // the darkroom: the safelight, prints on a line
+			-250, 944, 0, 180, 0,    // the range: the emitter's lamp, its button, the desk
+			300, 1010, 0, 270, 0,    // the range's marks
+			-32, 1010, 0, 270, 15,    // the range: a bench
+			800, 1616, 0, 0, 0    // the lens store: racks of lenses
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
 }

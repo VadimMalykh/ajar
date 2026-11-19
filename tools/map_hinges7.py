@@ -698,7 +698,7 @@ things(SERGEANT, (-670, 760), (-420, 620), (-570, 880), angle=0)
 things(SPECTRE, (-760, 700), (-320, 880), angle=0)
 things(KNIGHT, (-720, 820), angle=0)
 things(CACO, (-510, 620), angle=0, ambush=True)
-things(SHELLS, (-544, 688), (-544, 816))
+things(SHELLS, (-544, 704), (-544, 800))                                    # at the tables' edges: within reach
 things(MEDIKIT, (-300, 890))
 # the stacks: key 1, a chaingun, a rocket launcher for the readers below, and
 # a quiet reader or two

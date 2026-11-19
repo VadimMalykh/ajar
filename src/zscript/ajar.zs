@@ -541,7 +541,14 @@ class AjarHandler : EventHandler
 	// the two in the brass frames, the other of the two in the third frame: a
 	// loop of three rooms. Closing it is a secret, and leaving the line by it
 	// is the secret way out.
+	//
+	// One of the two brass frames may be in a lift car (Vadim, 2026-11-19;
+	// MAP14), across a landing from the other. Then they face each other
+	// only while the car stands at that floor, and only then is the loop
+	// closed (BrassLevel): with the car anywhere else the two doors are a way
+	// between the car and that floor, by the line, and nothing more.
 	bool chainBuilt, onTheLine, longFound;
+	bool chainHung;        // the loop's doors hang in its frames, level or not
 	Vector2 lineAt;        // where on the line the player last was, from its middle
 	int chainLen;          // 0, or how many rooms the closed loop has: 2 or 3
 
@@ -553,13 +560,30 @@ class AjarHandler : EventHandler
 		return null;
 	}
 
+	// Do the two brass frames face each other? Those of one room always do.
+	// With one of them in a lift car: while the car stands level with the other.
+	bool BrassLevel(AjarFrame f, AjarFrame o)
+	{
+		if (liftKnown < 2) return true;
+		int n = liftSectors.Size();
+		if (liftSectors.Find(f.CurSector.Index()) == n && liftSectors.Find(o.CurSector.Index()) == n) return true;
+		// (by their floors: the engine pushes a frame in a car under the ceiling
+		// its recess had when the level began, each tic, until LiftTick puts it back)
+		return !LiftMoving() && abs(f.CurSector.floorplane.ZatPoint(f.pos.xy) - o.CurSector.floorplane.ZatPoint(o.pos.xy)) < 1;
+	}
+
 	int LoopLen(Actor room)
 	{
+		chainHung = false;
 		AjarFrame f = BrassFrame();
 		AjarFrame o = f ? FindFrame(f.args[3]) : null;
 		if (!o || !f.door || !o.door || f.door.IsStray() || o.door.IsStray()) return 0;
 		int a = f.args[1], b = f.args[2], x = f.door.args[0], y = o.door.args[0];
-		if ((x == a && y == b) || (x == b && y == a)) return 2;
+		if ((x == a && y == b) || (x == b && y == a))
+		{
+			chainHung = true;
+			return BrassLevel(f, o) ? 2 : 0;
+		}
 		int c = room.args[3];
 		AjarFrame t = room.args[2] ? FindFrame(room.args[2]) : null;
 		if (!t || !t.door || t.door.IsStray() || (x != c && y != c)) return 0;
@@ -579,9 +603,16 @@ class AjarHandler : EventHandler
 	{
 		Actor room = ChainRoom();
 		if (!room || onTheLine) return;
+		bool hung = chainHung;
+		int was = chainLen;
 		chainLen = LoopLen(room);
 		chainBuilt = wayOutBuilt = chainLen > 0;
 		let mo = players[consoleplayer].mo;
+		// the doors hung already, and now the car has come level (or gone)
+		if (hung && chainHung && !was && chainLen == 2)
+			Say("The lift stops level with the other brass frame.\nThe way out runs through it.");
+		else if (hung && chainHung && was == 2 && !chainLen)
+			Say("The lift has left: the brass frames no longer face each other.");
 		if (chainLen == 3 && !longFound && mo)
 		{
 			longFound = true;
@@ -810,6 +841,8 @@ class AjarHandler : EventHandler
 			Say("Three doors, three frames: the long way round.\nA secret way out runs through it!");
 		else if (chainLen == 2 && InChain(d))
 			Say("Two doors, two frames, one room at the other end of both.\nThe way out runs through it.");
+		else if (chainHung && d.frame && d.frame.args[3])
+			Say("Two doors, two brass frames, but they do not face each other:\nthe lift is at another floor.");
 		else if (d.nailer == d)
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is the way out.");
 		else if (old) Say("You swap the " .. old.Label() .. " door for the " .. d.Label() .. " one.");
@@ -1159,6 +1192,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "MAP12" && mode == 1) GoingUpScript(mo, t);
 		else if (level.mapname ~== "MAP13" && mode == 1) SightUnseenScript(mo, t);
+		else if (level.mapname ~== "MAP14" && mode == 1) OnTheLevelScript(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
@@ -2892,6 +2926,8 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP10") { AllChangeViews1(); AllChangeViews2(); }
 			else if (level.mapname ~== "MAP31") SecretOneViews();
 			else if (level.mapname ~== "MAP11") ByAppointmentViews();
+			else if (level.mapname ~== "MAP13") SightUnseenViews();
+			else if (level.mapname ~== "MAP14") OnTheLevelViews();
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}

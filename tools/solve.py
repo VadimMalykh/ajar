@@ -31,6 +31,9 @@ A puzzle is a dict:
   home_chain    optional dict(frames=[two frame ids], doors=[two colours])
                 (ajarmap.way_through): the level is won when those two doors
                 hang in those two frames, either way round. With
+                level=n, only while the lift stands at floor n as well: one
+                of the frames is in the car, the other on that landing, and
+                they face each other only there (MAP14). With
                 secret=dict(frame=id, door=colour) (ajarmap.way_longer) there
                 is a longer loop as well, and a secret way out: that door
                 and one of the two in the two frames, the other of the two
@@ -231,6 +234,8 @@ def _chain(p, s):
     chain = p.get("home_chain")
     if not chain:
         return 0
+    if chain.get("level", s[6]) != s[6]:
+        return 0                                     # the car is not level with the other brass frame
     where = dict(zip(sorted(p["doors"]), s[2]))
     brass = {("frame", f) for f in chain["frames"]}
     a, b = chain["doors"]

@@ -1308,7 +1308,10 @@ def make_all():
     import map_institute1                                        # ... and the names and door faces the map asks for
     import map_institute2                                        # MAP12 wears the same look: its names and faces join MAP11's
     import map_institute3                                        # ... and MAP13's
+    import map_institute4                                        # ... and MAP14's
     gfx_institute.make(out, map_institute1.SIGNS, map_institute1.FACES)
+    import gfx_institute2                                        # MAP13's and MAP14's own props and pictures
+    gfx_institute2.make(out)
     import gfx_lift                                              # the lift's buttons (MAP12)
     gfx_lift.make(out)
     import ajarmap

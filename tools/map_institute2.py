@@ -177,7 +177,7 @@ ajarmap.door(m, RED, -400, -300, angle=0)
 ajarmap.door(m, GREEN, -200, -50, angle=180)
 ajarmap.door(m, VIOLET, 850, -500, angle=180)
 ajarmap.pair(m, TEAL, (-1190, 256, 0, 106), (-980, 560, 0))
-ajarmap.key(m, 1, 872, 864)                                                  # on the far platform of the winding room
+ajarmap.key(m, 1, 744, 864)                                                  # at the foot of the far platform of the winding room
 ajarmap.key(m, 2, -1560, -300)
 
 # --- things: the loading hall -------------------------------------------------------------------
@@ -195,8 +195,8 @@ things(2011, (-400, -780), (-340, -780))
 things(2012, (420, -160))
 things(2049, (-420, -160))
 
-# --- the workshops: the super shotgun on a bench ---------------------------------------------------
-m.thing(-416, 352, 82)
+# --- the workshops: the super shotgun by a bench (the bench is too tall to take it from) -----------
+m.thing(-416, 260, 82)
 things(2049, (-960, -40), (-180, 560))
 things(2048, (-960, 20))
 m.thing(-300, -50, 2018)                                                    # green armour
@@ -226,11 +226,11 @@ things(2012, (860, -310))
 # --- the winding room ------------------------------------------------------------------------------------
 m.thing(0, 220, 2019)                                                       # blue armour by the lift
 m.thing(-60, 300, 2003)                                                     # rocket launcher
-things(2046, (60, 300), (850, 190))
+things(2046, (60, 300), (748, 148))
 things(17, (240, 180), (-60, 600))
 things(2049, (560, 180))
 things(2012, (-60, 180), (240, 840), (720, 500), (500, 840))
-m.thing(848, 190, 2013)                                                     # a soul sphere on a platform
+m.thing(748, 192, 2013)                                                     # a soul sphere at the foot of a platform
 things(MANCUBUS, (250, 512), (560, 512), angle=270)
 things(REVENANT, (-48, 832), (840, 816), angle=270)                         # on the far platforms
 things(IMP, (60, 420), (400, 320), (740, 420), (60, 700), (740, 700), (400, 700), angle=270)
@@ -244,7 +244,7 @@ things(IMP, (-60, -560), (60, -560), angle=270)                             # th
 things(DEMON, (0, -400), angle=270)
 things(SERGEANT, (-400, -600), angle=0)
 m.thing(-272, -272, 2012)
-m.thing(256, -560, 8)                                                       # a backpack on the tall crate
+m.thing(-256, -320, 8)                                                      # a backpack on the low crate under the gap from the workshops
 things(2049, (420, -800))
 things(IMP, (-180, 300), (-960, 480), angle=0)                              # the workshops
 things(SPECTRE, (-640, -40), (-500, 560), angle=0)
@@ -253,7 +253,7 @@ things(2048, (-180, -60))
 things(2049, (-600, 180))
 things(2046, (-960, 200))
 things(2012, (-960, 120), (-420, 180))
-m.thing(-700, 84, 2023)                                                    # berserk, on a bench
+m.thing(-700, 80, 2023)                                                    # berserk, at the edge of a bench
 things(DEMON, (-1300, -560), (-1420, -440), angle=0)               # the battery room
 things(2047, (-1260, -300), (-1260, -340))
 things(IMP, (500, -480), angle=180)                                         # the store
@@ -270,7 +270,7 @@ things(17, (700, 180))
 things(2049, (100, 840), (840, 640))
 things(2012, (560, 840), (-60, 420))
 things(2049, (-420, -800), (300, 180))
-things(17, (840, 232))
+things(17, (748, 236))
 
 # --- ambushes ----------------------------------------------------------------------------------------------
 # RED, taken: the hall
