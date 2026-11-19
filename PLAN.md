@@ -4364,8 +4364,8 @@ it.** No name yet.
   level"): the relay with yourself. MAP08's shutter with the lever too far
   to run, the earlier self pulls it while the player stands at the shutter;
   or the earlier self sends the lift the player rides.
-- **To test first**: done, see "Doors in a fight that is stepped out of"
-  below. Still to do there: the fight handed across (a frame in a box).
+- **To test first**: done, all three steps, see "Doors in a fight that is
+  stepped out of" below.
 - **Open**: fights as thick as MAP31's or more puzzle than fight; the
   place and the name; whether it waits for MAP15's mirrors to be built.
 
@@ -4373,8 +4373,10 @@ it.** No name yet.
 
 For MAP32. `src/zscript/timedoor.zs`, the test map `tools/map_timedoor.py`
 (TDOOR: the time box with a frame in the hall, one in the west box and a
-TEAL leaf in each). `MAP=TDOOR MODE=3 TIMEOUT=120 tools/smoke.sh`: 20
-checks, all pass. **Not played by hand.**
+TEAL leaf in each; and a chain, a brass frame in the hall and one in the
+box, RED and BLUE, the night room). `MAP=TDOOR MODE=3 TIMEOUT=120
+tools/smoke.sh`: 20 checks; `MODE=4` (the chain): 8, and out by the line;
+`MODE=5` (a fight handed across): 7. All pass. **Not played by hand.**
 
 - **A door is not a puppet: what was done to it is done again.** Every
   change to a door while a fight is on is written down with the fight's
@@ -4397,11 +4399,27 @@ checks, all pass. **Not played by hand.**
   leaf, the Pair is joined and held; open at the handover and walked
   through; a second trip with a leaf in hand, left at the door, and both
   earlier selves hang their leaves again.
+- **The chain by two selves** (MODE=4): RED hung in the hall's brass frame,
+  out; BLUE hung in the box's; the earlier self hangs RED again and the
+  loop is closed in the replay. **A closed loop is held whole** while the
+  fight is watched, the box's end too (Claude's choice), or the player
+  would be on the line and out of the level before the fight is where it
+  was left. At the handover: through BLUE onto the line, out by RED, the
+  level ends. So two brass frames that one carrier cannot join (a door
+  does not go through a time door) are step 3; the loop of three (MAP10's
+  `way_longer`) would need the third self, and is not tried.
+- **A fight handed across** (MODE=5): a demon on the player's heels comes
+  out into the box; BLUE hung in the box's frame opens onto the night room;
+  the player goes through, the demon after them (`AjarSense`, as with any
+  hung door); BLUE taken down, the demon is shut away and no longer counts
+  in the fight (`Left`: it is in none of the fight's zones). A door from a
+  box to anywhere but the hall is not held. `MAP=TIME MODE=4`, the older
+  test of following, fails all four checks as before.
 - **Not done**: a paradox (the player takes down in a box a leaf that a
   self in the same box is about to hang: the replay just takes it out of
   their hands); a fight put back after a death (`Resume`, `GoOnAs`); open
-  fights (halls 2 and 3 of MAP31 have other machinery); plain doors, brass
-  frames and the chain; a thief; a save in the middle.
+  fights (halls 2 and 3 of MAP31 have other machinery); brass
+  frames with a lift; the loop of three; a thief; a save in the middle.
 - `MAP=TIME MODE=3` still passes (14). `MAP=MAP31 MODE=3` fails one to
   three checks a run, not the same ones (`noneWakesAsIStepIn`,
   `aLastKillForEveryHall`, `lastScenesOnScreen`), **with and without these
