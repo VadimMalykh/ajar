@@ -444,6 +444,7 @@ class AjarHandler : EventHandler
 		case 68: return "Arachnotron";
 		case 71: return "PainElemental";
 		case 64: return "Archvile";
+		case 16: return "Cyberdemon";
 		}
 		return null;
 	}

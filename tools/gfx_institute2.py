@@ -15,7 +15,7 @@ Pictures (one to a wall piece, on the wall named):
          LS 128 AR  racks of lenses
   MAP14  HT 128 EX  the kitchen's hatch, shut, and today's menu
          PN 128 AR  pans on a rail, a shelf of jars
-         PF 128 LA  the plan and how it was met
+         PF 128 LA  the throat between a door and its far side
          FG 128 LA  filing cabinets
          CW 128 CK  the cashier's window
          SF 128 EV  the safe's door
@@ -299,29 +299,55 @@ def pans(n):
 
 
 def plan_chart(n):
-    """128 wide, in accounts: the plan, and how it was met."""
+    """128 wide, in accounts: the throat between a door and its far side
+    (Vadim, 2026-11-19: "not just PLAN: something scientifically more
+    interesting"). Two sheets of space drawn as funnels joined at the neck,
+    rings of equal radius, and the path through. In look 3 somebody has
+    ringed the neck in red and drawn the path stopping there."""
     im = on_wall(n, "LA", 128)
     y0 = 112
     sheet(im, 10, y0, 118, y0 + 92, n)
     ink = PLATE[n][1] if n != 1 else (40, 40, 44)
-    text(im, "PLAN", 46, y0 + 6, ink, 2)
-    gx, gy, gw, gh = 22, y0 + 24, 86, 54
-    for k in range(5):
-        im.rect(gx, gy + k * gh // 4, gx + gw, gy + k * gh // 4 + 1, shade(PAPER, 0.8))
-    im.rect(gx, gy, gx + 1, gy + gh + 1, INK)
-    im.rect(gx, gy + gh, gx + gw, gy + gh + 1, INK)
-    for x in range(gw):                                          # the plan: up and to the right
-        y = gy + gh - 6 - x * (gh - 12) // gw
-        if x % 4 < 2:
-            im.set(gx + x, y, INK)
-    pts = [(0, 46), (12, 40), (24, 36), (36, 30), (46, 31), (56, 40), (64, 48)] if n == 3 else \
-          [(0, 46), (14, 40), (28, 33), (42, 27), (56, 20), (70, 13), (84, 7)]
-    for (x1, y1), (x2, y2) in zip(pts, pts[1:]):                 # what was done
-        for k in range(x2 - x1 + 1):
-            y = y1 + (y2 - y1) * k / max(1, x2 - x1)
-            im.rect(gx + x1 + k, int(gy + y), gx + x1 + k + 1, int(gy + y) + 2, RED)
+    text(im, "THROAT", 29, y0 + 5, ink, 2)
+    cx, cy, half = 60, y0 + 54, 27
+    grey = shade(PAPER, 0.62)
+
+    def r(z):                                                    # the funnel's radius z from the neck (Flamm's parabola)
+        return 5 + z * z / 22.0
+
+    for z in (-27, -20, -12, 0, 12, 20, 27):                     # rings: each a circle seen from the side
+        w, h = r(z), max(1.0, r(z) / 5)
+        for k in range(160):
+            t = k * math.pi / 80
+            back = math.sin(t) < 0
+            if back and k % 4 > 1 and abs(z) != 27:
+                continue                                         # the far half dotted
+            im.set(int(cx + w * math.cos(t) + 0.5), int(cy + z - (h * math.sin(t) if z < 0 else -h * math.sin(t)) + 0.5),
+                   grey if back else INK)
+    for z2 in range(-half * 2, half * 2 + 1):                    # the outline
+        z = z2 / 2
+        for sgn in (-1, 1):
+            im.set(int(cx + sgn * r(z) + 0.5), int(cy + z + 0.5), INK)
+    for k in range(1, 6):                                        # lines down the funnel
+        t = k * math.pi / 6
+        for z2 in range(-half * 2, half * 2 + 1):
+            z = z2 / 2
+            if z2 % 3:
+                continue
+            im.set(int(cx + r(z) * math.cos(t) + 0.5), int(cy + z + (1 if z > 0 else -1) * r(z) / 5 * math.sin(t) + 0.5), grey)
+    text(im, "A", 106, cy - half - 2, ink, 1)
+    text(im, "B", 106, cy + half - 3, ink, 1)
+    im.rect(cx + 8, cy, cx + 30, cy + 1, INK)                    # the neck, measured
+    text(im, "R0", 93, cy - 2, ink, 1)
+    stop = 0 if n == 3 else half + 4                             # the path through
+    for z in range(-half - 4, stop):
+        if z % 3 < 2:
+            im.rect(cx - 1, cy + z, cx + 1, cy + z + 1, RED)
     if n == 3:                                                   # and there it stops
-        im.frame(gx + 60, gy + 42, gx + 70, gy + 54, RED, 1)
+        im.frame(cx - 10, cy - 7, cx + 10, cy + 7, RED, 1)
+    else:
+        for k in range(4):
+            im.rect(cx - 1 - k, cy + stop - k, cx + 1 + k, cy + stop - k + 1, RED)
     im.noise(2, 2460 + n)
     return im
 
