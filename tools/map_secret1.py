@@ -242,6 +242,12 @@ class Hall:
             d = (bx + u[0] * 120, by + u[1] * 120)
             da, db = (d[0] - v[0] * 32, d[1] - v[1] * 32), (d[0] + v[0] * 32, d[1] + v[1] * 32)
             ajartime.box_door(m, k, n, da, db, u, BOXF, **dark)
+            if open:
+                # beside the glass, plates that wind the fight as it is played:
+                # back on the left of one who looks out, on on the right
+                for side in (-1, 1):
+                    ajartime.wind(m, bx - u[0] * 118 + v[0] * 96 * side, by - u[1] * 118 + v[1] * 96 * side,
+                                  {(-1, 0): 180, (0, 1): 90, (1, 0): 0}[u], side > 0)
             if LOOK:
                 # the wall under and over the glass is the hall's on the
                 # hall's side and the box's on the box's; the glass has a
@@ -254,6 +260,11 @@ class Hall:
             lo = (bx - u[0] * 135 - abs(v[0]) * 112, by - u[1] * 135 - abs(v[1]) * 112)
             hi = (bx + u[0] * 190 + abs(v[0]) * 112, by + u[1] * 190 + abs(v[1]) * 112)
             ajartime.zone(m, k, n, min(lo[0], hi[0]), min(lo[1], hi[1]), max(lo[0], hi[0]), max(lo[1], hi[1]))
+        if open:
+            # and in the hall, either side of the way in (for one who comes back
+            # to the fight on foot, from a box left over from an earlier one)
+            ajartime.wind(m, cx + 176, y + 2, 90, False)
+            ajartime.wind(m, cx - 176, y + 2, 90, True)
         # the way on: a steel door in the north wall, shut until the fight is won
         a, b = (x + w - 192, y + h), (x + w - 128, y + h)
         c, d = (a[0], a[1] + 16), (b[0], b[1] + 16)
@@ -409,6 +420,7 @@ spots(17, (h3.cx + 60, -100))
 # (Vadim: more rockets for this one) four more boxes by the way in, and two
 # more in each of its boxes
 spots(2046, (h3.cx - 100, -250), (h3.cx + 100, -250), (h3.cx - 100, -150), (h3.cx + 100, -150))
+spots(8, (h3.cx, -250))                     # a backpack (Vadim, 2026-11-19)
 # the wall the arrow points at: straight south of its block. It opens with
 # USE, from the hall only; behind it the level's one secret.
 sx = h3.x + 384

@@ -72,3 +72,12 @@ def locker(m, x, y, key, *what, angle=0):
     """A cupboard that room key `key` opens, facing `angle`; `what` is the
     Doom editor numbers of one or two things in it."""
     m.thing(x, y, LOCKER_T, angle=angle, args=(key,) + tuple(what))
+
+
+WIND_T = 20043
+
+
+def wind(m, x, y, angle, on, z=30):
+    """A plate on a wall, facing `angle`, `z` above the floor: USE winds an
+    open fight that is being played half a minute back, or (`on`) on."""
+    m.thing(x, y, WIND_T, angle=angle, height=float(z), args=(int(on),))

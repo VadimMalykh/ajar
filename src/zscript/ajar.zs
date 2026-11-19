@@ -2256,7 +2256,9 @@ class AjarHandler : EventHandler
 			5880, 150, 0, 45, -6,          // the great hall from its floor
 			6656, 1300, 0, 270, -8,         // the great hall: the screen
 			6132, -30, 0, 215, 0,          // the secret closet
-			7390, 1518, 0, 50, 0           // the last lobby: the way out
+			7390, 1518, 0, 50, 0,          // the last lobby: the way out
+			2560, 608, 64, 0, 0,           // hall 2's west box: the plates that wind the fight, beside the glass
+			3520, 300, 0, 270, 0           // and in hall 2, either side of the way in
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}
