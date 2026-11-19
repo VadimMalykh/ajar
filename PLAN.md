@@ -3331,7 +3331,35 @@ other's `build/ajar.pk3` (seen as "ZIP file corrupt", and as Doom's own
 MAP13). `AJAR_OUT=build/mine.pk3 ./build.sh` builds to another file and
 `PK3=build/mine.pk3 tools/smoke.sh` tests it.
 
-### Sight lines, built and tested (2026-11-19)
+### MAP13 made harder, MAP14 given a boss (2026-11-19, branch `map13-harder`)
+
+Vadim, having played both: in MAP13 "the main puzzle is the beam; the exit
+door itself is very easy, and the blue door is not needed at all. Maybe we
+could make it more challenging too"; "the backpack in both 13 and 14 is too
+easy to obtain"; in MAP14, on the director's floor once VIOLET is taken,
+"more enemies and the main boss, as an ambush" and "a couple of
+arch-viles", one arch-vile in the safe room, and for the PLAN chart
+"something scientifically more interesting". What was built is Claude's.
+
+- **MAP13: BLUE is needed.** The lens store (VIOLET) has a steel door, and
+  its sensor is on the east wall of BLUE's cell in line with BLUE's far
+  side: BLUE goes where the leaf hung and the emitter is fired again.
+- **MAP13: the way out is a step more.** Past locks 1 and 2 there is a
+  steel door; its target is in the night room beside the brass frame and
+  is shot through VIOLET hung in the hall, which then comes down again to
+  be carried in. 15 door actions (were 10), no stuck states, nothing
+  losable; the walkthrough has 44 checks.
+- **Backpacks**: MAP13's beyond the pit (by RED only), MAP14's in the cold
+  store (by GREEN only).
+- **MAP14**: VIOLET taken brings three revenants, then the cyberdemon (on
+  every difficulty) and three cacodemons, then two mancubi and three
+  knights, then two arch-viles; an arch-vile stands in the safe room; cells
+  and rockets added there and on the floor (ammo x1.97 on Resident before
+  the last of it). Ambushes can bring a cyberdemon (16).
+- **MAP14's chart** `PF` is THROAT: two funnels joined at the neck, R0, the
+  path through; in look 3 the neck is ringed in red and the path stops.
+- Not played by hand; the boss fight's balance is a guess.
+
 
 `tools/map_optics.py`, `src/zscript/optics.zs`; `MAP=OPT ./run.sh`,
 `MAP=OPT MODE=1..3 tools/smoke.sh`. Run headless only.

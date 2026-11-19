@@ -133,7 +133,7 @@ ajarmap.recess(m, (-896, -32), (-896, 32), (-1, 0), Z1, HOME2, far_id(BLUE), tri
 m.sector(rect(-400, -160, -272, -96), floor=Z1, ceil=Z1 + 112, light=176, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
 over((-400, -96), (-272, -96), "LA")
 over((-400, -160), (-272, -160), "EX")
-hang((-768, 608), (-640, 608), "PF")                                         # the plan, and how it was met
+hang((-768, 608), (-640, 608), "PF")                                         # the throat between a door and its far side
 hang((-320, 608), (-192, 608), "FG")                                         # filing cabinets
 # the cashier's office, behind lock 1
 m.sector(rect(-704, 624, -320, 880), floor=Z1, ceil=Z1 + 160, light=170, color=tint(PAPER),
@@ -188,7 +188,7 @@ m.thing(0, -760, 2001)                                                      # sh
 things(2008, (-60, -760), (60, -760))
 m.thing(380, -840, 2002)                                                    # chaingun
 things(2048, (400, -760), (-400, -700))
-things(8, (-272, -416))                                                     # a backpack at the edge of a table
+things(8, (-1560, -290))                                                    # a backpack in the cold store: got by GREEN only
 things(ZOMBIE, (-120, -480), (120, -480), (-380, -220), (380, -640), angle=270)
 things(SERGEANT, (-272, -540), (272, -540), (380, -230), (-120, -300), angle=270)   # by the tables, not on them: they could not get down
 things(IMP, (0, -280), (-272, -340), (272, -330), (-400, -780), (120, -620), (-120, -620), angle=270)
@@ -240,8 +240,8 @@ things(2047, (-1260, -300), (-1260, -340))
 
 # --- the director's floor --------------------------------------------------------------------------------
 m.thing(0, 260, 2019)                                                       # blue armour by the lift
-things(2046, (60, 330), (700, 860), (300, 820), (640, 300))
-things(17, (240, 220), (-60, 620), (700, 220), (840, 360))
+things(2046, (60, 330), (700, 860), (300, 820), (640, 300), (500, 240))
+things(17, (240, 220), (-60, 620), (700, 220), (840, 360), (840, 860), (-60, 300))
 things(2049, (560, 220), (100, 860), (840, 660), (300, 220))
 things(2012, (-60, 220), (240, 860), (720, 540), (500, 860), (-60, 440))
 m.thing(800, 240, 2013)                                                     # a soul sphere at the edge of a side table
@@ -256,16 +256,19 @@ m.thing(400, 840, BARON, angle=270)                                         # be
 
 # --- the safe room -------------------------------------------------------------------------------------------
 things(KNIGHT, (300, 1060), angle=270)
+m.thing(480, 1040, 64, angle=270)                                           # an arch-vile (Vadim: "that guy who can revive other monsters")
 m.thing(400, 1140, 2013)                                                    # a soul sphere
 things(17, (290, 1160), (290, 990))
 things(2012, (520, 990))
+things(17, (520, 1160), (460, 1160), (290, 1100), (520, 1110))                                        # for what waits outside
+things(2046, (340, 1160), (520, 1050))
 
 # --- ambushes --------------------------------------------------------------------------------------------------
 # RED, taken: the canteen
 ajarmap.ambush(m, 10 + RED, IMP, (-200, -820), (200, -820), angle=90)
 ajarmap.ambush(m, 10 + RED, SERGEANT, (-380, -480), (380, -480), angle=0, after=3)
 # key 1, at the top: cacodemons over the desk, then knights at the lift
-ajarmap.ambush(m, 1, CACO, (250, 280), (560, 280), (400, 700), angle=90)
+ajarmap.ambush(m, 1, CACO, (250, 280), (560, 280), (400, 640), angle=90)
 ajarmap.ambush(m, 1, KNIGHT, (-40, 400), (60, 260), angle=90, after=4)
 # GREEN, taken: accounts, round you
 ajarmap.ambush(m, 10 + GREEN, SPECTRE, (-800, 380), (-760, 560), (-240, 250), angle=0)
@@ -274,8 +277,13 @@ ajarmap.ambush(m, 10 + GREEN, REVENANT, (-200, 100), (-240, 340), angle=180, aft
 ajarmap.ambush(m, 2, DEMON, (-780, -40), (-780, 40), (-700, 0), angle=180)
 ajarmap.ambush(m, 2, IMP, (-1300, -480), (-1560, -540), angle=0, after=2)
 # VIOLET, taken: the safe room's door, and the top beyond it
-ajarmap.ambush(m, 10 + VIOLET, REVENANT, (300, 860), (500, 800), angle=270)
+# (Vadim, having played it: "more enemies and the main boss, as an ambush")
+ajarmap.ambush(m, 10 + VIOLET, REVENANT, (300, 860), (500, 800), (100, 780), angle=270)
+ajarmap.ambush(m, 10 + VIOLET, 16, (400, 760), angle=270, after=3)             # the cyberdemon, on every difficulty
 ajarmap.ambush(m, 10 + VIOLET, CACO, (400, 320), (200, 520), (600, 520), angle=90, after=3)
+ajarmap.ambush(m, 10 + VIOLET, MANCUBUS, (250, 660), (560, 660), angle=90, after=6)
+ajarmap.ambush(m, 10 + VIOLET, KNIGHT, (760, 700), (760, 380), (20, 600), angle=180, after=6)
+ajarmap.ambush(m, 10 + VIOLET, 64, (80, 480), (740, 540), angle=270, after=8)      # two arch-viles (Vadim)
 # BLUE, taken: the cashier's door, and the car: they come out of the brass frame, wherever the car is
 ajarmap.ambush(m, 10 + BLUE, KNIGHT, (-512, 500), (-512, 340), angle=90)
 ajarmap.ambush(m, 10 + BLUE, DEMON, (-40, -60), (40, 60), angle=180, after=3)
