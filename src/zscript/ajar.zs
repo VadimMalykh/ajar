@@ -757,11 +757,13 @@ class AjarHandler : EventHandler
 		}
 		d.Show();
 		ChainUpdate();
+		Spring(f);          // a sprung frame's door is shut unless its plate is pressed (plate.zs)
 	}
 
 	AjarDoor Unhang(AjarFrame f)
 	{
 		AjarDoor d = f.door;
+		Unspring(f, d);
 		Link(f.args[0], 0, FRAME_TEX);
 		Link(d.args[0], 0, d.BackTex());       // a Pair: the twin's frame, which shows a shut door now
 		f.door = null;

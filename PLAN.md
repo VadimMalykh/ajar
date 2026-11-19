@@ -5024,3 +5024,77 @@ Smoke tests:
 **Not done**: played by hand; how hard the base is with the baron and the
 nailer at once; the den's look (dark, the bars) and whether the staff
 stair reads as "only the porter".
+
+## The plate lab: the sprung frame and the room of goes (built 2026-11-20)
+
+A lab for the rebuilt MAP32 (the player working with their earlier selves
+in one room): map `PLATE` (`tools/map_plate.py`), the engine piece in
+`src/zscript/plate.zs`. No real level uses it yet; MAP31 and MAP32 are
+untouched by it (their checks pass as before).
+
+- **The sprung frame.** A plate on the floor (`AjarPlate`, editor number
+  20044, `ajartime.plate(m, x, y, frame)`) names a frame by its id. A door
+  hung in that frame is a door only while the plate is pressed: while the
+  player or an earlier self (`AjarGhost`) stands within 28 of its middle,
+  feet on the floor. Otherwise it is shut as a Pair's leaf hung alone is: its
+  face on the frame's line and on its far side, both lines solid and
+  blocking shots, hitscans and sight. Heard opening and shutting (the fast
+  door's sounds, Claude's choice), and the plate clicks. Who stands in the
+  doorway when it shuts is put 26 clear of the line, on the side they are on
+  (`AjarHandler.StandClear`; the player only: ghosts walk through anything).
+  Hooked into `Hang` (shut at once if the plate is not pressed) and `Unhang`
+  (the lines are as any empty frame's); no plate, no change.
+- **The room of goes.** An `AjarZone` of a hall with `args[4]` 2
+  (`ajartime.zone(..., goes=True)`; documented in the header of `time.zs`).
+  Built on the open fight's takes and ghosts (`AjarTake`, `RecordTake`,
+  `PlayGhosts`), not on its demo: no monsters, never won by kills, no death
+  rescue, no box limit. One box, number 1: every time door of the hall leads
+  into it and it back by time door 1, open the whole time. Through a time
+  door the player is in the box at the start of a new go, every time.
+- **Doors done again.** Each go writes down what the player did to doors
+  (took, hung, took down, left leaning) with the go's tic and how the door
+  was found (`AjarGoLog`). At the start of every go every touched door is as
+  at the first entry (a door in the player's hands then counts as leaning at
+  time door 1). Each earlier self does its door actions again for real at
+  their tic if the door is just then as it found it (leaning there, hanging
+  in that frame, or in that self's own hands) and, to hang it, the frame is
+  empty; if not, that action and its later ones on that door in this go are
+  mimed. A take in the same tic as a hang (a swap) is done first. A door in
+  a ghost's hands is hidden; when the ghost's go is over, what it holds is
+  left leaning where it went.
+- **Earlier goes that are over simply go** (Claude's choice): the ghost
+  vanishes at its last tic, which is at the time door it went out by.
+- **The room is over** when the player is outside its zones by a way that is
+  not a time door: the time doors shut, ghosts gone (what they hold is left
+  where they stood), and it is over for good (Claude's choice: it is marked
+  won and does not begin again).
+- **Begin anew**: a plate on the box's wall (`AjarAnew`, 20045,
+  `ajartime.anew`; a ring that runs back to its start, pale blue) forgets
+  every go; doors as at the first entry; the go that is on is the first.
+- **The clock** at the top as the open fight's: this go's tic over the
+  longest earlier go's length, while there is one.
+- **The map**: the hall 512 square, time door in its west wall and the box
+  (192 square) behind; sprung frame 101 in the north wall, RED leaning in
+  the hall, its plate 312 from the mouth. RED's far side in the far room to
+  the north, which is in the same zone as the hall. Sprung frame 102 in the
+  far room's east wall, BLUE leaning there, its plate 352 from the mouth.
+  BLUE's far side in the third room, outside the zone; its east end is the
+  exit (a line to walk over).
+- **Go 1 stands on the plate about six seconds** (o 60 to 272), not less:
+  in go 2 the player walks through RED, hangs BLUE, stands on its plate and
+  must come back through RED before the first self steps off.
+- **Tests**: `MAP=PLATE MODE=3` (23 checks: alone, hung and shut, no walk
+  and no shot through, opens with the plate, shuts again; go 1 out, in the
+  box and open at once, doors as at the start; go 2 the earlier self hangs
+  and holds RED, the player is put clear of the doorway when it lets go,
+  through, BLUE hung and held, back through RED; go 3 two selves, through
+  both, the room over and its time doors shut, out by the exit).
+  `MAP=PLATE MODE=4` (6: the conflict rule mimed, six goes through the one
+  box with five selves, begin anew forgets, one self in the go after).
+- **Not done or not tested**: a Pair or a Stray door in a sprung frame; a
+  monster or shot in a doorway when it shuts (only the player is put
+  clear); doors carried into the room from outside after it began (they are
+  reset as touched doors are); a hall with several time doors (all lead in,
+  the box leads back by door 1); shooting in a room of goes (ghosts fire
+  again what was fired, as in the open fight, untested). Not played by hand:
+  `MAP=PLATE ./run.sh` in the worktree.
