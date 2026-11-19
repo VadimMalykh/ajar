@@ -2970,6 +2970,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP09") { PuttingThroughViews1(); PuttingThroughViews2(); PuttingThroughViews3(); }
 			else if (level.mapname ~== "MAP10") { AllChangeViews1(); AllChangeViews2(); }
 			else if (level.mapname ~== "MAP31") SecretOneViews();
+			else if (level.mapname ~== "MAP11") ByAppointmentViews();
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}

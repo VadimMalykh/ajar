@@ -2923,8 +2923,8 @@ Claude's outline, to argue over:
 
 ### MAP11 "By Appointment" (2026-11-18, built twice)
 
-`tools/map_institute1.py`; `MAP=MAP11 ./run.sh`. Plain walls and tints: no
-look yet. **Not played by hand.** The name is Claude's, to be changed freely.
+`tools/map_institute1.py`; `MAP=MAP11 ./run.sh`. Its look: see "Look:
+MAP11". **Not played by hand.** The name is Claude's, to be changed freely.
 MAP10's plain way out and MAP31's lead here; its own starts it again.
 
 The first build was six rooms and six monsters. Vadim: far too simple for an
@@ -2986,6 +2986,68 @@ repainter or a Stray door.
 ambusher was seen to come but key 2's imps, which are due after the walk has
 left. `mapcheck` and `thingcheck`: 0 problems. Not known: how hard any of
 it is.
+
+## Look: MAP11 (started 2026-11-19)
+
+Board: https://claude.ai/artifact/Au3vTbXEAfHzH9bbVMmALm (source `design/map11-board.html`, images in
+`build/board11/`: `<look>/view_NN.jpg`, `tex/` swatches, `sheet_<look>.jpg`
+contact sheets). **Vadim chose 3, Post Box, for the whole level
+(2026-11-19)**, and it is the default; `AJAR_INSTITUTE=1` or `2` are the
+other two. The board shows the choice as open. Not played by hand.
+
+`AJAR_INSTITUTE` picks the institute's look (`tools/gfx_institute.py`, names
+`AJI<part><look>`); unset is 3, and 0 is the plain level (whose map is byte
+for byte what it was before the looks, checked). Three institutes:
+1. **Academy** (1950s): cream plaster under a cornice, oak panelling, red
+   marble pillars and chequered stone in the lobby; parquet and olive oil
+   paint in the corridor; white tile in the lab and the hall; globes.
+2. **Thaw** (1960s, a science town): white perforated panels over ash slats,
+   aluminium, terrazzo, a mosaic; pale blue in the corridor, green enamel in
+   the lab, glass blocks and yellow mosaic in the canteen, concrete with a
+   hazard stripe in the hall.
+3. **Post Box** (a closed establishment, some years on): green or blue oil
+   paint over yellowed whitewash, flaking; brown lino, khaki steel, tiles
+   gone from the walls, red stencils.
+
+The same idea in all three, drawn per look: the street doors behind the
+start; on the lobby's long wall what the institute says of itself (a
+painting of the first door; a mosaic of an atom with a door on one orbit; a
+board of honour with two photographs taken down); a clock at a quarter to
+and VISITORS BY APPOINTMENT ONLY; coats behind the cloakroom's counter; a
+blackboard with the Pair drawn on it and cabinets of lenses in the lab; the
+gallery's front as the kitchen's hatch, a menu; stacks and a card index in
+the archive; tanks and gauges in the pump room; the machine (a door's
+outline within itself on each face), the desk it was run from and a warning
+in the hall. A plate over each way off the corridor (CLOAKROOM, OPTICS,
+CANTEEN, PUMPS, ARCHIVE; TEST HALL on the locked door). The trim over frames
+and far sides and the night room are not touched. All of it is Claude's
+invention; Vadim, 2026-11-19: "your inventions are all good" (the machine,
+the painting of the first door, the Pair on the blackboard, DO NOT OPEN
+ANYTHING among them), so they stand.
+
+How it is built (`map_institute1.py`): `dress()` gives a sector the look's
+textures, `tint()` drops the room tints, `box()` and `pillar()` name a piece
+of furniture's top and side, `over()` carries a wall on over and under an
+opening, `opening()` and `squeeze()` do that for both sides, `named()` puts
+a plate over a way (the map lists what it needs in `SIGNS`, and the locked
+door's two faces in `FACES`; `gfx.make_all` hands both to
+`gfx_institute.make`), `hang()` puts a picture on a piece of wall. The
+canteen's wall is two storeys of 128, so the gallery and the balcony stand
+in the upper one. Light is as it was: the pump room is nearly black in the
+photographs.
+
+The tour (`ByAppointmentViews` in `map11.zs`, `MAP=MAP11 MODE=2`,
+`smoke_MAP11_2.cfg`) has 37 views. `tools/board11_shots.sh` builds and
+shoots all four (about 20 minutes), look 3 last, so the pk3 is left as the
+game is.
+
+Run: the tour in 0 to 3; `MAP=MAP11 tools/smoke.sh` in looks 1 and 3. Not run: the
+solver (the puzzle is untouched, and the builds were `AJAR_QUICK=1`).
+
+Put to Vadim at the foot of the board, none built: light (and a lamp in the
+pump room), windows, things on the floor, the machine as a free-standing
+frame, whether the staff left in a hurry or long ago, room numbers on the
+plates, a railing with gaps at the drops.
 
 ## MAP09: the start is back on the street (2026-11-17)
 
