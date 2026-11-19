@@ -283,6 +283,16 @@ map TIME "Ajar: the time box"
 	music = ""
 }
 
+// The time box with doors (tools/map_timedoor.py): MAP=TDOOR ./run.sh
+map TDOOR "Ajar: the time box, with doors"
+{
+	next = "TDOOR"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
 // Mechanics test box (tools/map_test.py): "map TEST" in the console
 map TEST "Ajar: test frames"
 {

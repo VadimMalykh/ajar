@@ -1453,7 +1453,7 @@ class AjarTimeHandler : EventHandler
 	// every box whose door has opened; else that box alone.
 	bool Counts(Actor a, int box)
 	{
-		if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a.bInvisible) return false;
+		if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarDoor" || a.bInvisible) return false;      // a door: timedoor.zs
 		let inv = Inventory(a);
 		if (inv && inv.owner) return false;
 		int k, b;
@@ -1607,6 +1607,7 @@ class AjarTimeHandler : EventHandler
 		main = new("AjarTrack");
 		boxes.Clear();
 		phase = LIVE;
+		DoorBegin();
 		HallDoors(1);
 		if (!(said & 1)) Say("A door with a clock on it leads out of the fight,\nand back into it where you left.");
 		said |= 1;
@@ -2018,6 +2019,7 @@ class AjarTimeHandler : EventHandler
 			if ((a.pos.xy - mid).Length() > FOLLOW_NEAR || !Counts(a, 0)) continue;
 			pending.Push(a); pendingTics.Push(a.tics);
 		}
+		DoorLeave(mo);
 		Freeze(mo);
 		for (int i = 0; i < pending.Size(); i++) { pending[i].tics = -1; pending[i].bInvisible = true; }
 		trips++;
@@ -2070,6 +2072,7 @@ class AjarTimeHandler : EventHandler
 		}
 		DropPuppets(-1);
 		Unfreeze();
+		DoorEnd();
 		phase = LIVE;
 		let h = Doors();
 		h.Link(BoxLine(fight, at), used, TIME_TEX);
@@ -2132,6 +2135,7 @@ class AjarTimeHandler : EventHandler
 		}
 		else if (phase == LIVE)
 		{
+			DoorWatch(FightTic());
 			if (mo.health > 0 && k == fight)
 			{
 				if (at == 0 && b == trips + 1) { if (open) Retake(mo); else Leave(mo); }
@@ -2159,6 +2163,7 @@ class AjarTimeHandler : EventHandler
 		if (phase == REPLAY)
 		{
 			Show(fight, rt, mo);
+			DoorPlay(rt);
 			PlayBack(main, rt);
 			for (int n = 0; n < boxes.Size() - 1; n++)
 			{
@@ -2179,6 +2184,7 @@ class AjarTimeHandler : EventHandler
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (mode == 4 && level.mapname ~== "TIME") FollowScript(PlayerPawn(mo));
 		else if (mode && level.mapname ~== "TIME") TimeScript(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "TDOOR") DoorScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));

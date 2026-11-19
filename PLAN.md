@@ -4177,3 +4177,84 @@ in the TIME box. The 25 seconds are Claude's guess.
   its box; the second's stand in a box; a spare box's door.
   `MAP=TIME MODE=4` fails on `followed` and did before today.
 - Everything is on `origin/main`.
+
+## MAP32, the second secret level (2026-11-19, agreed in outline; not built)
+
+From MAP15's secret way out (the door only the glass shows). Vadim's brief:
+MAP31 was time paradoxes; this one joins time and space. He chose four of
+Claude's five ideas. Everything not marked as his is Claude's proposal, and
+**every engine claim here is an expectation: `time.zs` was not read for
+it.** No name yet.
+
+- **The rule** (Claude's; Vadim took the ideas that rest on it and has not
+  spoken on it by itself): MAP31's "the past cannot be changed" stays. New:
+  **what an earlier self did to a door is done again for real** when the
+  replay reaches that moment (hang, take down). Glass keeps the player
+  from the earlier self's side as it does in the boxes; doors are what
+  crosses it. Time parts the selves, space joins them.
+- **1. Meet yourself halfway.** Two wings with no way between, a leaf of
+  one Pair in each. First go: through wing A, hang the leaf, into the clock
+  door. Out in wing B before the fight, the earlier self behind glass in A.
+  Hang the twin; when the earlier self hangs its leaf the link opens. A
+  leaf hung alone is a shut door, so nothing the earlier self saw is
+  contradicted.
+- **2. A fight handed across.** What is on the player's heels comes out
+  into the box with them (MAP31 has this). The box has a frame: the player
+  chooses where the earlier fight's monsters are delivered, a cell or the
+  other group (MAP13's infighting).
+- **3. Three of you, one chain.** MAP09's way out (two doors in two brass
+  frames) with the frames too far apart for one carrier: each go carries
+  one door, the third walks the line. The level's end.
+- **The level's own secret: the glass shows later.** A mirror shows the
+  room as it will be (MAP15's mirror-only things): a door hanging in a
+  frame that is empty now. The player takes it out of the reflection and
+  owes it: it must hang in that frame by the end. What is shut while it is
+  owed is not settled.
+- **Not here** (Vadim: "rather left as a secret or a puzzle for a normal
+  level"): the relay with yourself. MAP08's shutter with the lever too far
+  to run, the earlier self pulls it while the player stands at the shutter;
+  or the earlier self sends the lift the player rides.
+- **To test first**: done, see "Doors in a fight that is stepped out of"
+  below. Still to do there: the fight handed across (a frame in a box).
+- **Open**: fights as thick as MAP31's or more puzzle than fight; the
+  place and the name; whether it waits for MAP15's mirrors to be built.
+
+## Doors in a fight that is stepped out of (2026-11-19, built and tested)
+
+For MAP32. `src/zscript/timedoor.zs`, the test map `tools/map_timedoor.py`
+(TDOOR: the time box with a frame in the hall, one in the west box and a
+TEAL leaf in each). `MAP=TDOOR MODE=3 TIMEOUT=120 tools/smoke.sh`: 20
+checks, all pass. **Not played by hand.**
+
+- **A door is not a puppet: what was done to it is done again.** Every
+  change to a door while a fight is on is written down with the fight's
+  tic, the one lived or the one being watched from a box. On stepping out
+  the doors are put as they were at the fight's first tic, and the replay
+  makes each change again for real (`AjarHandler.Hang`, `Unhang`): the
+  earlier self takes the leaf, the leaf hangs, a Pair joins. What a self
+  did in a box is done again in later trips the same way. Doors are left
+  out of the puppets and of what stands still (`Counts`).
+- **Held while watched** (Claude's choice, to be seen by Vadim): a hung
+  door with an end in the fight's hall is seen through during the replay,
+  the earlier self close to in front of its frame, but nothing passes it,
+  no walker, shot or sight (`DoorHold`). It opens when the fight is where
+  it was left. The other choice is a shut leaf until then.
+- **A door does not go through a time door** (Claude's choice): it is left
+  leaning at it. Carried through, the same door would lean in the hall and
+  be in the player's hands at once.
+- Tested: the hall's leaf hung alone, out, the leaf back where it leaned;
+  the twin hung in the box first; the earlier self takes and hangs its
+  leaf, the Pair is joined and held; open at the handover and walked
+  through; a second trip with a leaf in hand, left at the door, and both
+  earlier selves hang their leaves again.
+- **Not done**: a paradox (the player takes down in a box a leaf that a
+  self in the same box is about to hang: the replay just takes it out of
+  their hands); a fight put back after a death (`Resume`, `GoOnAs`); open
+  fights (halls 2 and 3 of MAP31 have other machinery); plain doors, brass
+  frames and the chain; a thief; a save in the middle.
+- `MAP=TIME MODE=3` still passes (14). `MAP=MAP31 MODE=3` fails one to
+  three checks a run, not the same ones (`noneWakesAsIStepIn`,
+  `aLastKillForEveryHall`, `lastScenesOnScreen`), **with and without these
+  changes**: the fights are not the same twice.
+- Two sessions building at once write over `build/ajar.pk3`:
+  `AJAR_OUT=build/mine.pk3 ./build.sh`, `PK3=build/mine.pk3 tools/smoke.sh`.

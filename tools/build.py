@@ -26,10 +26,11 @@ import map_eng
 import map_lift
 import map_optics
 import map_time
+import map_timedoor
 import map_secret1
 import solve
 
-MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "MAP10": map_hinges10, "MAP11": map_institute1, "MAP12": map_institute2, "MAP13": map_institute3, "TEST": map_test, "LAB": map_lab, "ENG": map_eng, "LIFT": map_lift, "OPT": map_optics, "TIME": map_time, "MAP31": map_secret1}
+MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "MAP10": map_hinges10, "MAP11": map_institute1, "MAP12": map_institute2, "MAP13": map_institute3, "TEST": map_test, "LAB": map_lab, "ENG": map_eng, "LIFT": map_lift, "OPT": map_optics, "TIME": map_time, "TDOOR": map_timedoor, "MAP31": map_secret1}
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
