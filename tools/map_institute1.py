@@ -1,4 +1,4 @@
-"""Act 2, level 1: "By Appointment" (MAP11). Plain walls and tints: no look yet.
+"""Act 2, level 1: "By Appointment" (MAP11). Its look: AJAR_INSTITUTE, below.
 
 The way into the institute that studies the doors. One new thing, the Pair:
 two leaves of one colour (TEAL) that open onto each other. Plain doors are
@@ -27,21 +27,103 @@ the archive opens onto the hall. Then the experiment hall, and the night room.
 
 Secret: the south end of the balcony, seen from the canteen's floor.
 """
+import os
+
 import ajarmap
 from ajarmap import RED, GREEN, VIOLET, TEAL, far_id
 from udmf import Map
 
 m = Map()
+# The institute's look (gfx_institute.py): 1 Academy (the 1950s), 2 Thaw (the
+# 1960s), 3 Post Box (a closed establishment, some years on); AJAR_INSTITUTE=0
+# is the level in the plain walls and tints it was built in. None is chosen
+# yet (design/map11-board.html): look 1 is worn until one is. A look changes
+# textures and hangs pictures on walls; no wall, floor or thing moves, and
+# rooms are not tinted in a look.
+LOOK = int(os.environ.get("AJAR_INSTITUTE") or "1")
+SIGNS, FACES = {}, {}                       # the names over ways and the door faces this build needs: gfx_institute.make draws them
+if LOOK:
+    import gfx_institute
+    m.align |= gfx_institute.ALIGNED
 UP, TOP = 128, 256                          # the gallery's floor; every ceiling
 PALE, MINT, PAPER, DIM, RUST, COLD, STEEL = 0xDCE8DC, 0xC8E0C8, 0xF0E4C8, 0xB0B8C8, 0xE8C8B0, 0xA8C0D8, 0xC8D0E0
 ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE = 3004, 9, 3001, 3002, 58
 CHAINGUNNER, KNIGHT, BARON, REVENANT, SOUL, CACO, MANCUBUS = 65, 69, 3003, 66, 3006, 3005, 67
-PILLAR = dict(floor=TOP)
 SUMP = 32                                   # the pump room's floor: its hatch is a way out, not in
 
 
-def box(height, **k):                       # a crate, a desk, a table
+def T(part):
+    return f"AJI{part}{LOOK}"
+
+
+def dress(**parts):
+    """Sector properties for the look: wall="LB" is the look's texture LB."""
+    return {k: T(v) for k, v in parts.items()} if LOOK else {}
+
+
+def tint(c):
+    return None if LOOK else c
+
+
+def box(height, top="BT", side=None, **k):  # a crate, a desk, a table: in a look, a bench of the lab unless named
+    if LOOK:
+        return dict(floor=height, ftex=T(top), side=T(side or {48: "B4", 64: "B6", 96: "B9"}[height]), **k)
     return dict(floor=height, ftex="AJBOARD", side="AJWOOD", **k)
+
+
+def pillar(part):                           # to the ceiling: a pillar, a stack, a tank, the machine
+    return dict(floor=TOP, **dress(side=part))
+
+
+def over(a, b, part):
+    """In a look: the wall over the opening a-b carries on as the wall `part`,
+    in line with the wall beside it; and under it, where there is a step."""
+    if LOOK:
+        m.line(a, b, upper=T(part), lower=T(part), dontpegtop=True, dontpegbottom=True)
+
+
+def _shift(a, b, out):
+    """Where in its 64 a wall's texture stands at the left end of a-b, for
+    someone looking `out` at it (udmf lays walls by where they are)."""
+    lo, hi = sorted((a[0], b[0]) if out[0] == 0 else (a[1], b[1]))
+    return lo % 64 if out in ((0, 1), (-1, 0)) else -hi % 64
+
+
+def named(a, b, out, part, words, oh=96):
+    """In a look: over the way a-b through the wall `part`, seen looking
+    `out`, a plate with `words`. The way's head is `oh` above the floor."""
+    if LOOK and words:
+        w = abs(a[0] - b[0]) + abs(a[1] - b[1])
+        key = (LOOK, part, words, _shift(a, b, out), w, oh)
+        m.line(a, b, upper=SIGNS.setdefault(key, f"AJIS{LOOK}{len(SIGNS):02d}"), exact=True)
+
+
+def _far(a, b, out, thick=16):
+    return (a[0] + out[0] * thick, a[1] + out[1] * thick), (b[0] + out[0] * thick, b[1] + out[1] * thick)
+
+
+def opening(a, b, out, near, far, words="", color=None):
+    """An open way from the room whose wall is `near` to the one whose wall
+    is `far`; `words` is what the near side calls what is beyond."""
+    ajarmap.opening(m, a, b, out, 0, color=tint(color))
+    over(a, b, near)
+    over(*_far(a, b, out), far)
+    named(a, b, out, near, words)
+
+
+def squeeze(a, b, out, floor, near, far, words="", oh=64):
+    ajarmap.squeeze(m, a, b, out, floor)
+    over(a, b, near)
+    over(*_far(a, b, out), far)
+    named(a, b, out, near, words, oh)
+
+
+def hang(a, b, part):
+    """In a look: the wall piece a-b (a multiple of 64 from a multiple of 64)
+    shows the picture `part`."""
+    if LOOK:
+        m.cut(a, b)
+        m.line(a, b, mid=T(part), exact=True)
 
 
 def things(kind, *spots, angle=0):
@@ -50,70 +132,98 @@ def things(kind, *spots, angle=0):
 
 
 def frame(a, b, out, n, color, floor=0):
-    ajarmap.recess(m, a, b, out, floor, n, far_id(RED), color=color)
+    ajarmap.recess(m, a, b, out, floor, n, far_id(RED), color=tint(color))
 
 
 # --- the lobby and its cloakroom ---------------------------------------------
 ajarmap.fitted(m, (0, 0, 1024, 640), [
-    ((384, 352, 640, 416), box(40)),                                         # the reception desk
-    ((224, 160, 288, 224), PILLAR), ((736, 160, 800, 224), PILLAR),
-    ((224, 416, 288, 480), PILLAR), ((736, 416, 800, 480), PILLAR),
-], floor=0, ceil=TOP, light=200, color=PALE)
+    ((384, 352, 640, 416), box(40, "DT", "DS")),                             # the reception desk
+    ((224, 160, 288, 224), pillar("PI")), ((736, 160, 800, 224), pillar("PI")),
+    ((224, 416, 288, 480), pillar("PI")), ((736, 416, 800, 480), pillar("PI")),
+], floor=0, ceil=TOP, light=200, color=tint(PALE), **dress(wall="LB", ftex="FL", ctex="KL"))
+hang((448, 0), (576, 0), "ST")                                               # the street doors, behind the start
+hang((64, 640), (320, 640), "MO")                                            # what the institute says of itself
+hang((768, 640), (896, 640), "NB")                                           # the clock; visitors by appointment only
 frame((0, 288), (0, 352), (-1, 0), 101, PALE)
 frame((1024, 288), (1024, 352), (1, 0), 102, PALE)
 ajarmap.fitted(m, (-336, 64, -16, 256), [
-    ((-336, 64, -304, 256), box(48)),                                        # the counter
-], floor=0, ceil=160, light=150, color=PAPER)
-ajarmap.opening(m, (0, 128), (0, 192), (-1, 0), 0, color=PALE)
+    ((-336, 64, -304, 256), box(48, "UT", "US")),                            # the counter
+], floor=0, ceil=160, light=150, color=tint(PAPER), **dress(wall="CK", ftex="FC", ctex="KC"))
+for y in (64, 128, 192):
+    hang((-336, y), (-336, y + 64), "CT")                                    # coats, behind it
+opening((0, 128), (0, 192), (-1, 0), "LB", "CK", "CLOAKROOM", color=PALE)
 
 # --- the corridor ---------------------------------------------------------------
-ajarmap.fitted(m, (384, 640, 640, 1664), [], floor=0, ceil=TOP, light=180, color=MINT)
+ajarmap.fitted(m, (384, 640, 640, 1664), [], floor=0, ceil=TOP, light=180, color=tint(MINT),
+               **dress(wall="CO", ftex="FC", ctex="KC"))
 frame((384, 704), (384, 768), (-1, 0), 103, MINT)
 
 # --- the optics lab, west ---------------------------------------------------------
 ajarmap.fitted(m, (-256, 832, 368, 1216), [
     ((-128, 896, -32, 992), box(48)), ((64, 1056, 192, 1152), box(64)), ((-224, 1120, -160, 1184), box(96)),
-], floor=0, ceil=TOP, light=170, color=RUST)
-ajarmap.opening(m, (384, 992), (384, 1056), (-1, 0), 0, color=MINT)
+], floor=0, ceil=TOP, light=170, color=tint(RUST), **dress(wall="LA", ftex="FA", ctex="KA"))
+hang((-64, 1216), (64, 1216), "BB")                                          # a blackboard
+hang((128, 832), (256, 832), "CB")                                           # cabinets of lenses
+opening((384, 992), (384, 1056), (-1, 0), "CO", "LA", "OPTICS", color=MINT)
 frame((-256, 1000), (-256, 1064), (-1, 0), 104, RUST)                        # a fourth frame for the hall: hands can always be emptied
 
+TABLE = box(32, "TT", "TS")
+HIGH = dress(ftex="GT", side="GF") if LOOK else dict(side="AJTRIM")          # the gallery and the balcony: their floor, their front
 # --- the canteen, east; the balcony down its east side, its south end a secret
 ajarmap.fitted(m, (656, 672, 1360, 1120), [
-    ((800, 768, 928, 832), box(32)), ((800, 928, 928, 992), box(32)),
-    ((1024, 768, 1152, 832), box(32)), ((1024, 928, 1152, 992), box(32)),
-    ((1264, 672, 1360, 1120), dict(floor=UP, side="AJTRIM")),
-    ((1264, 672, 1360, 736), dict(floor=UP, side="AJTRIM", special=1024)),
-], floor=0, ceil=TOP, light=200, color=PAPER)
-ajarmap.opening(m, (640, 800), (640, 864), (1, 0), 0, color=MINT)
+    ((800, 768, 928, 832), TABLE), ((800, 928, 928, 992), TABLE),
+    ((1024, 768, 1152, 832), TABLE), ((1024, 928, 1152, 992), TABLE),
+    ((1264, 672, 1360, 1120), dict(floor=UP, **HIGH)),
+    ((1264, 672, 1360, 736), dict(floor=UP, special=1024, **HIGH)),
+], floor=0, ceil=TOP, light=200, color=tint(PAPER), **dress(wall="CA", ftex="FN", ctex="KC"))
+if LOOK:                                                                     # under the balcony: the canteen's own wall
+    m.line((1264, 672), (1264, 1120), lower=T("CA"), dontpegbottom=True)
+hang((896, 672), (1024, 672), "MN")                                          # the menu
+opening((640, 800), (640, 864), (1, 0), "CO", "CA", "CANTEEN", color=MINT)
 
 # --- the gallery over the canteen's north side ------------------------------------
-m.sector([(656, 1120), (656, 1312), (1360, 1312), (1360, 1120)], floor=UP, ceil=TOP, light=190, color=PAPER, side="AJTRIM")
-ajarmap.recess(m, (1360, 1184), (1360, 1248), (1, 0), UP, far_id(RED), 101, far_colour=RED, color=PAPER)
+m.sector([(656, 1120), (656, 1312), (1360, 1312), (1360, 1120)], floor=UP, ceil=TOP, light=190, color=tint(PAPER),
+         **dict(HIGH, **dress(wall="CA", ctex="KC")))                         # its front is the kitchen's hatch
+ajarmap.recess(m, (1360, 1184), (1360, 1248), (1, 0), UP, far_id(RED), 101, far_colour=RED, color=tint(PAPER))
+over((656, 1312), (1360, 1312), "AR")                                        # the drop into the archive: the archive's wall
 
 # --- the archive: a drop from the gallery, a hole from the corridor ----------------
 ajarmap.fitted(m, (656, 1312, 1360, 1760), [
-    ((784, 1472, 848, 1696), PILLAR), ((976, 1472, 1040, 1696), PILLAR), ((1168, 1472, 1232, 1696), PILLAR),    # the stacks
-], floor=0, ceil=TOP, light=140, color=DIM)
-ajarmap.squeeze(m, (640, 1500), (640, 1548), (1, 0), 0)
+    ((784, 1472, 848, 1696), pillar("SK")), ((976, 1472, 1040, 1696), pillar("SK")), ((1168, 1472, 1232, 1696), pillar("SK")),    # the stacks
+], floor=0, ceil=TOP, light=140, color=tint(DIM), **dress(wall="AR", ftex="FR", ctex="KA"))
+hang((832, 1760), (960, 1760), "CI")                                         # the card index
+hang((1088, 1760), (1216, 1760), "CI")
+squeeze((640, 1500), (640, 1548), (1, 0), 0, "CO", "AR", "ARCHIVE")
 frame((1360, 1500), (1360, 1564), (1, 0), 106, DIM)
 frame((976, 1760), (1040, 1760), (0, 1), 107, DIM)
 frame((704, 1760), (768, 1760), (0, 1), 108, DIM)                            # three: one more than the doors that can be shut in here
 
 # --- the pump room, west: GREEN's far side; a hatch from the corridor ---------------
 ajarmap.fitted(m, (-256, 1296, 368, 1664), [
-    ((-128, 1392, -32, 1488), PILLAR), ((96, 1392, 192, 1488), PILLAR), ((-16, 1552, 80, 1616), PILLAR),       # the tanks
-], floor=SUMP, ceil=SUMP + 192, light=110, color=COLD)
-ajarmap.recess(m, (-256, 1456), (-256, 1520), (-1, 0), SUMP, far_id(GREEN), 101, far_colour=GREEN, color=COLD)
-ajarmap.squeeze(m, (384, 1448), (384, 1496), (-1, 0), SUMP)                # its hatch: empty hands only, and a step too high from the corridor
+    ((-128, 1392, -32, 1488), pillar("TK")), ((96, 1392, 192, 1488), pillar("TK")), ((-16, 1552, 80, 1616), pillar("TK")),       # the tanks
+], floor=SUMP, ceil=SUMP + 192, light=110, color=tint(COLD), **dress(wall="PU", ftex="FP", ctex="KP"))
+hang((192, 1664), (320, 1664), "GA")                                         # gauges and valves
+ajarmap.recess(m, (-256, 1456), (-256, 1520), (-1, 0), SUMP, far_id(GREEN), 101, far_colour=GREEN, color=tint(COLD))
+squeeze((384, 1448), (384, 1496), (-1, 0), SUMP, "CO", "PU", "PUMPS", oh=96)   # its hatch: empty hands only, and a step too high from the corridor
 
+PLATFORM = box(64, "PT", "PS")
 # --- the experiment hall, behind locks 1 and 2; the night room beyond ---------------
 ajarmap.fitted(m, (-128, 1680, 624, 2320), [
-    ((184, 1936, 312, 2064), PILLAR),                                        # the machine
-    ((-128, 2192, 0, 2320), box(64)), ((496, 2192, 624, 2320), box(64)),
-    ((-128, 1936, -64, 2064), box(64)), ((560, 1936, 624, 2064), box(64)),
-], floor=0, ceil=TOP, light=190, color=STEEL)
+    ((184, 1936, 312, 2064), pillar("MC")),                                  # the machine
+    ((-128, 2192, 0, 2320), PLATFORM), ((496, 2192, 624, 2320), PLATFORM),
+    ((-128, 1936, -64, 2064), PLATFORM), ((560, 1936, 624, 2064), PLATFORM),
+], floor=0, ceil=TOP, light=190, color=tint(STEEL), **dress(wall="EX", ftex="FE", ctex="KE"))
+hang((-128, 1728), (-128, 1856), "CP")                                       # the desk it was run from
+hang((624, 1792), (624, 1856), "WS")
 ajarmap.roomdoor(m, (480, 1664), (544, 1664), (0, 1), 0, keys="12", line_id=301, free_inside=True)
-m.sector([(184, 2320), (184, 2400), (312, 2400), (312, 2320)], ceil=160, light=150, color=STEEL)
+if LOOK:                                    # the door's two faces: the wall of each side over the leaf, its name on the corridor's
+    for (a, b), out, part, words in ((((480, 1664), (544, 1664)), (0, 1), "CO", "TEST HALL"),
+                                     (((480, 1680), (544, 1680)), (0, -1), "EX", "")):
+        key = (LOOK, part, _shift(a, b, out), "12", words)
+        m.line(a, b, upper=FACES.setdefault(key, f"AJID{LOOK}{len(FACES):02d}"))
+m.sector([(184, 2320), (184, 2400), (312, 2400), (312, 2320)], ceil=160, light=150, color=tint(STEEL),
+         **dress(wall="EV", ftex="FE", ctex="KE"))
+over((184, 2320), (312, 2320), "EX")
 ajarmap.way_home(m, 88, 2400, VIOLET, only=True)
 
 # --- doors and keys -------------------------------------------------------------------

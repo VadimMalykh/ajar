@@ -43,4 +43,50 @@ extend class AjarHandler
 		if (t == 305) { Pose(mo, 370, 2528, 0, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
 		Forward(mo, t, 312, 12);
 	}
+
+	// MAP11's tour (see PartyWallViews): MAP=MAP11 MODE=2, for the look board
+	// (tools/board11_shots.sh).
+	void ByAppointmentViews()
+	{
+		static const double v[] = {
+			512, 60, 0, 90, 0,             // the lobby from the start: the desk, the corridor beyond
+			512, 300, 0, 270, 0,           // the street doors
+			100, 300, 0, 75, -8,           // the lobby's long wall
+			600, 300, 0, 180, 0,           // west: a frame, a TEAL leaf, the cloakroom's way in
+			420, 300, 0, 0, 0,             // east: the frame facing it, the other leaf
+			900, 300, 0, 101, -8,          // the clock, the notice
+			640, 250, 0, 60, 0,            // the desk from the side, a pillar
+			-50, 160, 0, 180, 0,           // the cloakroom: the counter, coats
+			512, 600, 0, 90, 0,            // the corridor
+			610, 880, 0, 172, 0,           // its west wall: a frame, the way into the lab
+			410, 832, 0, 0, 0,             // its east wall: the way into the canteen
+			512, 1400, 0, 90, 0,           // its far end: the door with two locks, the hatch, the hole
+			600, 1472, 0, 180, 0,          // the pump room's hatch
+			420, 1524, 0, 0, 0,            // the hole into the archive
+			340, 1024, 0, 180, 0,          // the lab from its way in
+			0, 1000, 0, 90, 0,             // the lab: the blackboard
+			-200, 1150, 0, 320, 0,         // the lab from its far corner: benches, cabinets
+			690, 832, 0, 0, -6,            // the canteen from its way in: tables, the balcony
+			1000, 760, 0, 90, -12,         // the gallery's front
+			960, 1000, 0, 270, 0,          // the canteen's south wall: the menu
+			700, 1216, 128, 0, 0,          // on the gallery: RED's far side at its end
+			1000, 1290, 128, 270, 18,      // from the gallery, down into the canteen
+			1312, 1060, 128, 270, 8,       // along the balcony to its south end
+			1000, 1150, 128, 90, 22,       // from the gallery, down into the archive
+			700, 1390, 0, 0, 0,            // the archive: along the stacks' ends
+			912, 1420, 0, 90, 0,           // between two stacks
+			1104, 1730, 0, 15, 0,          // the archive: VIOLET, a frame
+			900, 1730, 0, 170, 0,          // its north wall: the card index, a frame
+			330, 1480, 32, 180, 0,         // the pump room from its hatch: tanks, GREEN's far side
+			256, 1540, 32, 90, 0,          // the pump room: gauges
+			-200, 1340, 32, 330, 0,        // the pump room from its far corner
+			512, 1730, 0, 125, 0,          // the experiment hall from its door
+			248, 1790, 0, 90, 0,           // the machine
+			80, 1792, 0, 180, 0,           // the desk it was run from
+			248, 2130, 0, 90, 0,           // the way to the night room, the platforms
+			500, 2100, 0, 215, 0,          // the hall from its far side: the door
+			248, 2360, 0, 90, 0            // the way to the night room
+		};
+		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
+	}
 }
