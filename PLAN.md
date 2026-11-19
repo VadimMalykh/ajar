@@ -3418,6 +3418,143 @@ by hand.**
   thief does not ride or press); more than one lift in a level (the tag is
   an argument everywhere but in the test's script).
 
+### MAP15 and MAP16 (2026-11-19, agreed in outline)
+
+Vadim chose from five proposals: **mirrors for 15, the thief with a Pair
+leaf for 16**; the other three are kept for the rounds after (below).
+Everything not marked as his is Claude's proposal. (This section and the
+two after it were written, lost when the file was put back to the last
+commit by another session, and written again the same evening.)
+
+- **MAP15: mirrors, the optics wing's other half.** As outlined: things
+  seen only in the glass; the emitter's beam aimed by door and mirror; a
+  fight with monsters only the mirrors show. Built: see below.
+- **Size** (Vadim): considerably bigger than MAP13 (he had not seen 14).
+- **A secret way out** (Vadim: yes), and **the secret** (Vadim, from four
+  proposals: "let's try"): a door only the glass shows. It leans in a room
+  that looks empty; the mirror shows it; the player walks to where the
+  reflection says it is and takes it by feel, and its far side is the
+  secret way out. The other three, not used: a mirror that is not one (a
+  leaf onto a room built as the mirror image: you are not in it); a target
+  hit only by the beam off a mirror the puzzle never uses; a switch that is
+  only in the third copy of a room between a leaf and a mirror.
+- **MAP16: company comes back.** A thief that takes a Pair leaf shuts the
+  link from anywhere; the level is about guarding the rope the player has
+  paid out. To test first: thief and nailer with a Pair; the solver's thief
+  with a lift, and with Pairs at all.
+
+**Secret levels** (Vadim, 2026-11-19): secret ways out in 15, 20 and 30 as
+well as MAP10's. Four secret levels are possible: GZDoom's `secretnext`
+names any map, and nothing limits their number. Not decided: where a
+secret level reached from MAP30, the last, leads back to.
+
+**Kept for later rounds** (Vadim: all three sound interesting):
+- **Conveyors, the goods dispatch.** A belt that ends at a frame delivers
+  what it carries to that door's far side: a weight onto a plate, barrels
+  into a sealed cell, monsters to the player. With a Pair both ends are the
+  player's. To test: a scrolled thing crossing a hung door.
+- **Timetable and relay run, the clock room.** Frames behind shutters that
+  open by the clock; lay the track of doors, pull the lever, run it. The
+  metronome (a fireball lapping a loop the player builds) as the clock. The
+  solver needs time in its state: the heaviest. Claude: 17 or so.
+- **The inside-out room and the honeycomb, the geometry department.** The
+  strongest to look at, the thinnest puzzle ("the arrangement is the map").
+
+### Mirrors, built and tested (2026-11-19)
+
+`tools/map_mirror.py`, `src/zscript/mirror.zs`; `MAP=MIR ./run.sh`,
+`MAP=MIR MODE=1..3 tools/smoke.sh`. Run headless only; **not played by
+hand.** Three rooms with no way between them.
+
+- **Nothing comes back off a mirror by itself**: not a bullet, not a
+  plasma ball. A mirror is a wall to every shot.
+- **The beam does, by script** (`AjarBeam.A_Glance`, `optics.zs`): a beam
+  that strikes a `Line_Mirror` wall goes on from it at the mirrored angle,
+  from the very point its middle was flying at, a new beam with the same
+  sender. MODE=1: fired at a mirror at 153 degrees it lands on a sensor on
+  the wall opposite. The player's own shots are not turned.
+- **The door only the glass shows** (`ajarmap.door(..., unseen=True)`, the
+  door thing's `args[3]` = 2): leaning, it is drawn in mirrors only and has
+  no glow; USE where it stands takes it ("Your hands find the GREEN door
+  that only the glass showed."), and from then on it is a door like any
+  other. Taken by a script call in the test, not by a key press. Open:
+  whether it should keep a faint glow as a hint.
+- **A monster only the glass shows** (`AjarUnseenImp`, 20092): drawn in the
+  mirror only, blocks the player, is hit by a bullet, hurts the player. Its
+  fireballs are drawn as usual.
+- **The lodger and a Pair**: MODE=3: a leaf hung alone plugs its frame, and
+  so do both leaves joined (500 tics each, the lodger stayed in). "A lodger
+  comes out of either end" (the Pair's notes) is not built.
+- A mirror has no frame or look of its own: on a wall it reads as an
+  opening onto another room until something is seen to be doubled.
+
+### MAP15 "On Reflection", built (2026-11-19)
+
+`tools/map_institute5.py`, `src/zscript/map15.zs`; `MAP=MAP15 ./run.sh`,
+`MAP=MAP15 MODE=1 tools/smoke.sh` (26 checks, all pass, out by the way
+out; the secret door and its room on the way), `MODE=2` the tour of its
+mirrors. Vadim: "just build it, I'll check in game". **Not played by
+hand.** The name, the building and the puzzle are Claude's, to be changed
+freely. MAP14 leads to it; its way out and its secret one start it again
+until there is a MAP16 and a MAP32.
+
+- **What changed from the outline.** One Pair, not two: every way Claude
+  found to need two in one beam had a shorter way round with one. No
+  lodger in the glass (with a Pair it plugs like any door, and adds
+  nothing here). The player's own shots are not turned.
+- **Places.** The mirror hall (start; both TEAL leaves; frames 101 west,
+  102 east, 103 north): a mirror stands aslant in its middle, facing
+  north-west, so that 103 and 101 look at each other in it and 102 looks at
+  its back. On the north wall a target only the mirror shows: shot, it
+  opens the steel door north. West, the darkroom (frame 106, a TEAL leaf
+  only; sensor B). North, the gallery: empty to look at, four mirror panes
+  down its north wall, and 18 monsters only they show (seen once dead);
+  RED; frame 105; PINK. North of that the beam lab (the emitter, RED's far
+  side at the other end, frame 107) and two cells behind steel doors: the
+  first (sensor B opens it) has key 1, BLUE and the plasma rifle, the
+  second (sensor C) key 2, and beyond it the store with VIOLET. The
+  periscope room is BLUE's far side and has no other way in: frame 104,
+  and two mirrors across its east corners that carry what comes out of 104
+  round three walls to sensor C. Off the hall behind locks 1 and 2 the
+  night room, brass frame for VIOLET only.
+- **The puzzle**, 11 door actions, 480336 states, 0 stuck, nothing losable
+  (the proof takes some minutes): a leaf in 101, its twin in 106, RED in
+  103, the emitter (the beam goes by RED, the hall's mirror and the Pair to
+  sensor B); BLUE swapped in for RED, through it with RED, which goes in
+  104, the emitter (sensor C); key 2, VIOLET. The other way: the twin out
+  of 106 into 104, and RED stays. The Pair is needed (106 takes nothing
+  else).
+- **The secret**: PINK leans by the gallery's south wall and only the glass
+  shows it. Its far side is a room (a megasphere, cells, rockets) with the
+  secret way out, a switch with the way out's sign (`Exit_Secret`). It is
+  in the solver's proof as a door like any other. One secret sector.
+- **The fights**: 158 monsters on "Resident" (81 on "Just visiting"), 32630
+  health of them (MAP13: 106 and 21260), ammunition worth 2.41 times that,
+  920 health, 500 armour, every weapon up to the plasma rifle, a backpack.
+  Six ambushes (a leaf, RED, key 1, BLUE, key 2, VIOLET); RED's fills the
+  gallery again, with monsters that are seen.
+- **Made for it**: `ajarmap.unseen(m, box)` (every monster in the box at
+  the start is drawn in mirrors only until it dies; `AjarUnseen`, 20093),
+  `target(unseen=True)`, and the beam's reflection from the exact point of
+  the glass (it was off by up to 18, enough to miss a sensor beyond a Pair).
+- **Its look** is MAP11's Post Box from MAP11's parts (hall: the lab;
+  darkroom: the pump room; gallery: the lobby; beam lab: the experiment
+  hall; cells: the cloakroom; store: the archive; periscope room: the
+  corridor). **Nothing was drawn for it**: a mirror has no frame, and in
+  the gallery it is told from a doorway only by the strips of wall between
+  the panes and by yourself in it.
+- Since then (2026-11-19, Vadim played it: "there are invisible monsters?
+  is this intended?"): a monster of the gallery is unseen only while it is
+  in the gallery; one that walks out into the hall is seen like any other
+  (`UnseenTick`). He also met the steel door already open after dying: a
+  plain restart was tried headless and starts with it shut, so most likely
+  a save made after the target was shot. Not settled: that the gallery
+  does not explain itself.
+- Not known: how hard the gallery is (monsters that are not seen, knights
+  and cacodemons among them); whether the target in the glass is found;
+  whether the beam's way round the periscope room reads; the frame rate
+  with mirrors and hung doors in one view (headless only so far).
+
 ## Look: MAP11 (started 2026-11-19)
 
 Board: https://claude.ai/artifact/Au3vTbXEAfHzH9bbVMmALm (source `design/map11-board.html`, images in

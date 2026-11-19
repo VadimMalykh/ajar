@@ -177,7 +177,9 @@ class AjarDoor : Actor
 		int c = Colour();
 		sprite = GetSpriteIndex(nailer ? nailedSpr[c] : spr[c]);
 		bInvisible = false;
-		A_AttachLight('glow', DynamicLight.PointLight, glow[c], 80, 80, 0, (0, 0, 56));
+		bOnlyVisibleInMirrors = args[3] == 2;      // ajarmap.door(unseen=True), until it is first taken
+		if (bOnlyVisibleInMirrors) A_RemoveLight('glow');
+		else A_AttachLight('glow', DynamicLight.PointLight, glow[c], 80, 80, 0, (0, 0, 56));
 	}
 
 	void Hide()
@@ -932,7 +934,8 @@ class AjarHandler : EventHandler
 		d.Hide();
 		carried = d;
 		user.A_StartSound("doors/dr1_clos", CHAN_AUTO);
-		if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for a few seconds.");
+		if (d.args[3] == 2) { d.args[3] = 0; Say("Your hands find the " .. d.Label() .. " door\nthat only the glass showed."); }
+		else if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for a few seconds.");
 		else if (d.IsPair()) Say("A leaf of the " .. d.Label() .. " pair: it opens onto its twin,\nwherever that hangs.");
 		else Say("You pick up the " .. d.Label() .. " door.");
 	}
@@ -987,6 +990,8 @@ class AjarHandler : EventHandler
 			if (f) Hang(d, f);
 			else d.Show();
 		}
+
+		UnseenInit();
 
 		// a thief may start with a door on its back (its args[0]: the colour)
 		let ti = ThinkerIterator.Create("AjarThief");
@@ -1179,6 +1184,7 @@ class AjarHandler : EventHandler
 		if (mo && mo.health > 0) Followers(mo);
 		LiftTick();
 		OpticsTick(mo);
+		UnseenTick();
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (!mode || !mo) return;
 		int t = testTic++;
@@ -1187,12 +1193,14 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
 		if (level.mapname ~== "LAB") LabScript(mo, t);
 		else if (level.mapname ~== "OPT") OpticsScript(mo, t, mode);
+		else if (level.mapname ~== "MIR") GlassScript(mo, t, mode);
 		else if (level.mapname ~== "LIFT" && mode == 2) LiftCompanyScript(mo, t);
 		else if (level.mapname ~== "LIFT") LiftScript(mo, t);
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "MAP12" && mode == 1) GoingUpScript(mo, t);
 		else if (level.mapname ~== "MAP13" && mode == 1) SightUnseenScript(mo, t);
 		else if (level.mapname ~== "MAP14" && mode == 1) OnTheLevelScript(mo, t);
+		else if (level.mapname ~== "MAP15" && mode == 1) OnReflectionScript(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
@@ -2928,6 +2936,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP11") ByAppointmentViews();
 			else if (level.mapname ~== "MAP13") SightUnseenViews();
 			else if (level.mapname ~== "MAP14") OnTheLevelViews();
+			else if (level.mapname ~== "MAP15") OnReflectionViews();
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}

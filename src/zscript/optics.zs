@@ -40,8 +40,38 @@ class AjarBeam : Actor
 		PLSS AB 3 Bright;
 		Loop;
 	Death:
-		PLSE ABCDE 3 Bright;
+		PLSE A 3 Bright A_Glance();
+		PLSE BCDE 3 Bright;
 		Stop;
+	}
+
+	Vector3 flew;      // its velocity while it last moved: gone by the time it has struck
+
+	override void Tick()
+	{
+		if (vel.xy.Length() > 1) flew = vel;
+		Super.Tick();
+	}
+
+	// A beam that strikes a mirror (a Line_Mirror wall) goes on from it as
+	// light does. The engine does not do this for any shot.
+	void A_Glance()
+	{
+		Line l = BlockingLine;
+		if (!l || l.special != 182 /* Line_Mirror */) return;
+		Vector2 e = l.delta.Unit();
+		Vector2 n = (e.y, -e.x);                   // into the room
+		Vector2 v = flew.xy - 2 * (flew.xy dot n) * n;
+		// from the very point of the glass its middle was flying at: a beam is
+		// 12 wide, and what struck was its edge
+		Vector2 d = flew.xy.Unit(), w = l.v1.p - pos.xy, at = pos.xy;
+		double det = d.x * e.y - d.y * e.x;
+		if (abs(det) > 0.001) at += d * ((w.x * e.y - w.y * e.x) / det);
+		let b = AjarBeam(Spawn("AjarBeam", (at + v.Unit() * 14, pos.z)));
+		b.target = target;
+		b.angle = VectorAngle(v.x, v.y);
+		b.vel = (v.x, v.y, flew.z);
+		b.A_StartSound(b.SeeSound, CHAN_VOICE);
 	}
 }
 
@@ -114,6 +144,7 @@ class AjarTarget : Actor
 	{
 		Super.PostBeginPlay();
 		if (args[1]) SetStateLabel("Sensor");
+		bOnlyVisibleInMirrors = args[2] != 0;      // ajarmap.target(unseen=True), until it is set off
 	}
 
 	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
@@ -121,7 +152,11 @@ class AjarTarget : Actor
 		if (done) return 0;
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		bool beam = inflictor is "AjarBeam", player = source && source.player;
-		if (args[1] ? beam : player) Trigger(h);
+		if (args[1] ? beam : player)
+		{
+			if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST target %d set off t=%d by=%s of=%s mod=%s", args[0], level.maptime, inflictor ? inflictor.GetClassName() : 'none', source ? source.GetClassName() : 'none', mod);
+			Trigger(h);
+		}
 		else if (args[1] && player && h && level.maptime > told)
 		{
 			told = level.maptime + 105;
@@ -133,6 +168,7 @@ class AjarTarget : Actor
 	void Trigger(AjarHandler h)
 	{
 		done = true;
+		bOnlyVisibleInMirrors = false;
 		if (args[1]) SetStateLabel("SensorLit");
 		else SetStateLabel("Lit");
 		A_StartSound("switches/normbutn", CHAN_AUTO, 0, 1, ATTN_NONE);
