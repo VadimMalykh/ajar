@@ -952,6 +952,17 @@ def make_all():
         gr.rect(x, 0, x + 4, 64, (150, 118, 48))
     gr.rect(0, 30, 64, 34, (176, 140, 60))
     out["textures/AJGRIL.png"] = gr.png()
+    # a pane of glass in a steel frame, 64 by 128 (MAP16's lobby): seen through, faintly
+    gl = Img(64, 128, (176, 206, 214, 34))
+    for i in range(0, 128, 2):
+        for k in range(10):
+            x = (i // 2 + k + 18) % 64
+            gl.set(x, i, (230, 240, 244, 70))                         # a streak of light across it
+    gl.rect(0, 0, 64, 3, (70, 74, 80))
+    gl.rect(0, 125, 64, 128, (70, 74, 80))
+    gl.rect(0, 0, 2, 128, (70, 74, 80))
+    gl.rect(62, 0, 64, 128, (70, 74, 80))
+    out["textures/AJGLAS.png"] = gl.png()
     # the same as a block of floor that sinks (the stage front)
     bl = Img(64, 128, steel)
     bl.frame(0, 0, 64, 128, shade(steel, 0.5), 3)
@@ -1310,7 +1321,12 @@ def make_all():
     import map_institute3                                        # ... and MAP13's
     import map_institute4                                        # ... and MAP14's
     import map_institute5                                        # ... and MAP15's
+    import map_institute6                                        # ... and MAP16's
     gfx_institute.make(out, map_institute1.SIGNS, map_institute1.FACES)
+    for n in gfx_institute.LOOKS:                                # MAP16's lever, on the canteen gallery's wall
+        levers(out, f"AJICL{n}", unpng(out[f"textures/AJICA{n}.png"]), 128)
+    out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
+                           + "cameratexture AJREEL 512 224\n").encode()
     import gfx_institute2                                        # MAP13's and MAP14's own props and pictures
     gfx_institute2.make(out)
     import gfx_lift                                              # the lift's buttons (MAP12)

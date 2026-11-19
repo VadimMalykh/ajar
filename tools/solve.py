@@ -20,7 +20,18 @@ A puzzle is a dict:
                 have keys of their own (ajarmap.LEAVES), not their colour.
                 Hung both, each frame leads to the other; one alone is shut
   thief         optional dict(zone=region, sees=[regions]): one thief, which
-                stays in `zone` and can see the player there and in `sees`
+                stays in `zone` and can see the player there and in `sees`.
+                A porter (MAP16) has more: takes=(doors): the only doors it
+                takes; into=frame id: it hangs what it carries in that frame
+                only (which need not be in its zone), never swaps, and never
+                takes a door out of it; watched=True: it picks up a leaning
+                door only while it sees the player, as it takes a hung one;
+                respawn=True: killing it only makes it drop what it carries
+                (another comes). A porter is also the player's to use: with
+                its frame empty and the player where it sees them, a door it
+                takes that hangs or leans in its zone can be left to it, and
+                it carries that door to its frame (a move of the player's
+                that costs no action)
   nailer        optional dict(zone=region or [regions]): one nailer, which can
                 walk to the frames in those regions. (region, key) in the
                 list: only once the player has that key (a gate that opens)
@@ -63,6 +74,12 @@ A puzzle is a dict:
                 region like any other, with frames and far sides of its
                 own, and is joined on foot to the landing it stands at.
                 Sending it costs nothing, and a door rides in it
+  lures         optional [dict(at=region, door=colour, frame=id, to=region,
+                key=letter, needs=letters)]: a monster that follows the
+                player through a door and, on the far side, does something
+                (MAP16's baron on the weighbridge): with that door hanging in
+                that frame and every key in `needs`, the player in `at` may
+                go through it to `to` and has the key `key`
   sights        optional {key (a letter): what sets it off} (ajarmap.target):
                 something that is shot, and opens steel doors (walk links
                 that need that key) for good. dict(through=door): a target
@@ -135,8 +152,22 @@ def _moves(p, state, nailed=False):
         w = dict(where)
         for c in loot:
             w[c] = ("lean", here)
-        yield 0, "kill the thief" + (f" (it drops {nm(loot[0])})" if loot else ""), (
-            here, carried, tuple(w[c] for c in colours), keys, 0, nails, car)
+        again = p["thief"].get("respawn")              # another comes: killing it only drops what it carries
+        if loot or not again:
+            yield 0, "kill the thief" + (f" (it drops {nm(loot[0])})" if loot else ""), (
+                here, carried, tuple(w[c] for c in colours), keys, 1 if again else 0, nails, car)
+    t = p.get("thief")
+    if t and t.get("into") is not None and thief & 1 and (here == t["zone"] or here in t.get("sees", ())):
+        if not any(loc == ("frame", t["into"]) for loc in where.values()):
+            for c, loc in where.items():
+                if c in t.get("takes", (c,)) and (loc == ("lean", t["zone"]) or (
+                        loc[0] == "frame" and loc[1] != t["into"] and p["frames"][loc[1]] == t["zone"])):
+                    yield 0, f"let the thief carry {nm(c)} to {t['into']}", out(**{f"d{c}": ("frame", t["into"])})
+    for lu in p.get("lures", ()):
+        if (here == lu["at"] and lu["key"] not in keys and all(k in keys for k in lu.get("needs", ""))
+                and where[lu["door"]] == ("frame", lu["frame"])):
+            yield 0, f"through {nm(lu['door'])} to {lu['to']}, followed (key {lu['key']})", (
+                lu["to"], carried, locs, tuple(sorted(keys + (lu["key"],))), thief, nails, car)
     if nails and here in _zone(p["nailer"], keys):
         yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0, car)
     for k, sg in p.get("sights", {}).items():
@@ -314,16 +345,24 @@ def _thief(p, state):
         w.update({int(k[1:]): v for k, v in change.items()})
         return (here, carried, tuple(w[c] for c in colours), keys, thief, nails, car)
 
+    takes, into = t.get("takes"), t.get("into")
     loot = next((c for c, loc in where.items() if loc == ("thief",)), None)
-    if loot is None:
+    if loot is None and (seen or not t.get("watched")):
         for c, loc in where.items():
-            if loc == ("lean", t["zone"]):
+            if loc == ("lean", t["zone"]) and (takes is None or c in takes):
                 yield out(**{f"d{c}": ("thief",)})
     hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
     for f, region in p["frames"].items():
-        if region != t["zone"]:
-            continue
         c = hung.get(f)
+        if into is not None:                           # a porter: it hangs in its own frame only, and never swaps
+            if f == into and c is None and loot is not None:
+                yield out(**{f"d{loot}": ("frame", f)})
+            elif (f != into and region == t["zone"] and c is not None and seen and loot is None
+                  and (takes is None or c in takes)):
+                yield out(**{f"d{c}": ("thief",)})
+            continue
+        if region != t["zone"] or (c is not None and takes is not None and c not in takes):
+            continue
         if c is None and loot is not None:
             yield out(**{f"d{loot}": ("frame", f)})
         elif c is not None and seen and loot is None:

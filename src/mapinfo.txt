@@ -25,6 +25,7 @@ DoomEdNums
 	20041 = AjarCue
 	20042 = AjarLocker
 	20043 = AjarWind
+	20070 = AjarWeighbridge
 	20044 = AjarPlate
 	20045 = AjarAnew
 	20011 = AjarKey1

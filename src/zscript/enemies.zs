@@ -108,7 +108,8 @@ class AjarWorker : AjarEnemy
 	// Puts the marker there if this monster can see the place and walk to it
 	// in a straight line: no step on the way higher than it can climb and no
 	// drop it would not come back up (it cannot plan a way down into a pit,
-	// across one, or round by stairs).
+	// across one, or round by stairs), and nowhere too low for it (MAP16's
+	// staff stair, 54 high: a thief goes up it, a nailer does not).
 	bool CanReach(Vector2 at)
 	{
 		if (!spot) spot = Spawn("AjarLure", pos);
@@ -118,8 +119,9 @@ class AjarWorker : AjarEnemy
 		for (double done = 16; done < len + 16; done += 16)
 		{
 			Vector2 p = pos.xy + d * (min(done, len) / max(len, 1.));
-			double pz = level.PointInSector(p).floorplane.ZAtPoint(p);
-			if (abs(pz - z) > 24) return false;
+			Sector s = level.PointInSector(p);
+			double pz = s.floorplane.ZAtPoint(p);
+			if (abs(pz - z) > 24 || s.ceilingplane.ZAtPoint(p) - pz < height) return false;
 			z = pz;
 		}
 		// nor through a squeeze, which no monster passes
@@ -158,6 +160,14 @@ class AjarWorker : AjarEnemy
 // Thing arguments: args[0] is the colour of a door it starts with on its
 // back (put that door thing where the thief stands); args[1] = 1 keeps it
 // from walking through doors, so it stays in the part of the level it is in.
+// args[2], a frame's line id, makes it a porter (MAP16): it takes only a
+// leaf of the Pair whose colour that frame takes (ajarmap.recess only=3),
+// hung in any other frame or leaning, and only while it sees you; it always
+// hangs it in that frame and never takes anything out of it; with nothing
+// to do it goes back to where it stood when the level began. Killed, another
+// comes there 30 seconds later (AjarThiefReturn), and if it dies higher than
+// 32 below that spot (in the den or on its stair, where nobody else goes)
+// with the leaf on its back, the leaf is hung in its frame.
 //
 // It only goes for things it can see and walk to. Taking a hung door down
 // (or swapping it out) it does only while it can see you: that is the one
@@ -183,6 +193,9 @@ class AjarThief : AjarWorker
 	int lastTime, lastThrough, lastFled;
 	int steps;
 	int testMode;              // smoke tests: 1 = nearest job, never through; 2 = always through
+	bool homing;               // a porter on its way back to its post
+	double homeAngle;
+	Vector3 home;
 
 	Default
 	{
@@ -224,7 +237,7 @@ class AjarThief : AjarWorker
 	Death:
 		VILE Q 6 A_Scream();
 		VILE R 5 A_ThiefDrop();
-		VILE S 5 A_NoBlocking();
+		VILE S 5 { A_NoBlocking(); A_PorterGone(); }
 		VILE TUVWXY 5;
 		VILE Z -1;
 		Stop;
@@ -238,6 +251,8 @@ class AjarThief : AjarWorker
 	{
 		Super.PostBeginPlay();
 		A_SetRenderStyle(SHADE, STYLE_TranslucentStencil);       // has no name as a property
+		homeAngle = angle;
+		home = pos;          // not SpawnPoint: a map thing's z there is its height above the floor
 	}
 
 	// The door it carries is hidden (AjarHandler.ThiefPicksUp); what shows on
@@ -276,6 +291,7 @@ class AjarThief : AjarWorker
 
 	void GoIdle()
 	{
+		homing = false;
 		jobFrame = null;
 		jobDoor = null;
 		jobLine = null;
@@ -296,6 +312,7 @@ class AjarThief : AjarWorker
 		Array<AjarDoor> leaning;      // doors to pick up
 		Array<Line> ways;             // openings to walk through
 		Array<AjarDoor> wayDoors;
+		AjarFrame own = args[2] ? h.FindFrame(args[2]) : null;   // a porter's frame
 
 		let fi = ThinkerIterator.Create("AjarFrame");
 		AjarFrame f;
@@ -305,6 +322,8 @@ class AjarThief : AjarWorker
 			// with a door: hang it, or swap; without: take the one that hangs there.
 			// Anything that takes a hung door down needs the player watching.
 			bool job = loot ? (!f.door || seen) : (f.door && seen);
+			if (own)                  // a porter: the leaf into its own frame, out of any other
+				job = f == own ? loot && !f.door : !loot && f.door && seen && Porters(f.door);
 			Line l = h.FindLine(f.args[0]);
 			if (job && l && CanReach(Front(l, REACH))) frames.Push(f);
 		}
@@ -315,7 +334,7 @@ class AjarThief : AjarWorker
 			if (d.carried || d.IsStray()) continue;      // a Stray door is nothing to a thief
 			if (!d.frame)
 			{
-				if (!loot && d != avoid && CanReach(d.pos.xy)) leaning.Push(d);
+				if (!loot && d != avoid && (!own || (seen && Porters(d))) && CanReach(d.pos.xy)) leaning.Push(d);
 				continue;
 			}
 			if (d.Shut()) continue;                      // a Pair leaf hung alone is a wall
@@ -333,6 +352,13 @@ class AjarThief : AjarWorker
 		else if (testMode == 2) through = ways.Size() > 0;
 		else through = ways.Size() > 0 && level.time - lastThrough > (work ? 250 : 100)
 			&& (!work || random[AjarThief](0, 99) < 35);
+		if (!through && !work && own && (pos.xy - home.xy).Length() > 48 && CanReach(home.xy))
+		{
+			homing = true;            // a porter with nothing to do: back to its post
+			bFrightened = false;      // (it may have been running from you with the leaf)
+			GoWalk();
+			return;
+		}
 		if (!through && !work)
 		{
 			// Nothing to do with what it carries (MAP09: no frame in its wing):
@@ -383,8 +409,17 @@ class AjarThief : AjarWorker
 		GoWalk();
 	}
 
+	// What a porter carries: a leaf of its frame's Pair.
+	bool Porters(AjarDoor d)
+	{
+		let h = Handler();
+		AjarFrame own = h ? h.FindFrame(args[2]) : null;
+		return own && d.IsPair() && d.args[1] == own.args[1];
+	}
+
 	bool JobStillThere()
 	{
+		if (homing) return true;
 		if (jobLine) return jobLineDoor && jobLineDoor.frame && !jobLineDoor.Shut();
 		if (jobDoor) return !jobDoor.frame && !jobDoor.carried;
 		return jobFrame && (loot || jobFrame.door);
@@ -429,7 +464,17 @@ class AjarThief : AjarWorker
 			vel.xy = d.Unit() * min(8., d.Length() / 2);
 			return;
 		}
-		if (!jobLine && Distance2D(spot) < 40) { SetStateLabel("Work"); return; }
+		if (homing)
+		{
+			// back to its post in a straight line (CanReach saw it clear): Doom's
+			// chasing beside a hung door may set off the wrong way
+			Vector2 d = home.xy - pos.xy;
+			if (d.Length() < 24) { vel.xy = (0, 0); angle = homeAngle; GoIdle(); return; }
+			angle = VectorAngle(d.x, d.y);
+			vel.xy = d.Unit() * min(8., d.Length() / 2);
+			return;
+		}
+		if (!jobLine && !homing && Distance2D(spot) < 40) { SetStateLabel("Work"); return; }
 		StepToSpot();
 	}
 
@@ -462,6 +507,7 @@ class AjarThief : AjarWorker
 		jobDoor = null;
 		jobFrame = null;
 		avoid = null;
+		if (args[2]) { GoIdle(); return; }      // a porter goes straight on with the leaf
 		bFrightened = true;
 		GoRest();
 	}
@@ -505,8 +551,23 @@ class AjarThief : AjarWorker
 	void A_ThiefDrop()
 	{
 		let h = Handler();
-		if (h && loot) h.DropDoor(loot, self);
+		AjarFrame own = h && args[2] && health <= 0 && pos.z >= home.z - 32 ? h.FindFrame(args[2]) : null;
+		if (h && loot && own && !own.door) h.Hang(loot, own);     // a porter, killed in the den: the leaf was going there
+		else if (h && loot) h.DropDoor(loot, self);
 		loot = null;
+	}
+
+	// A porter is never the last (MAP16): another comes to its post.
+	void A_PorterGone()
+	{
+		if (!args[2]) return;
+		let r = Spawn("AjarThiefReturn", home, ALLOW_REPLACE);
+		if (!r) return;
+		for (int i = 0; i < 5; i++) r.args[i] = args[i];
+		r.angle = homeAngle;
+		let h = Handler();
+		if (h && !h.porterSaid) { h.porterSaid = true; h.Say("The porter is down. Another will come
+out of the den before long."); }
 	}
 
 	override void OnDestroy()
@@ -515,6 +576,38 @@ class AjarThief : AjarWorker
 		if (pack) pack.Destroy();
 		if (eyes) eyes.Destroy();
 		Super.OnDestroy();
+	}
+}
+
+// Where a porter comes back, 30 seconds after one is killed (AjarThief args[2]).
+class AjarThiefReturn : Actor
+{
+	const DELAY = 1050;
+	int wait;
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+
+	override void Tick()
+	{
+		if (++wait < DELAY || wait % 35) return;      // and then once a second until its place is free
+		let t = AjarThief(Spawn("AjarThief", pos, ALLOW_REPLACE));
+		if (!t) return;
+		for (int i = 0; i < 5; i++) t.args[i] = args[i];
+		t.angle = angle;
+		t.homeAngle = angle;
+		t.ClearCounters();                          // only the first is in the level's tally
+		if (!t.TestMobjLocation()) { t.Destroy(); return; }
+		Spawn("TeleportFog", pos, ALLOW_REPLACE);
+		Destroy();
 	}
 }
 
