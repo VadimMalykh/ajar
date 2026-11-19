@@ -188,6 +188,8 @@ class AjarClip play
 	// not the player's death but a big monster's: how big, and what
 	int big;
 	string what;
+	// ... or the last monster of its hall to be killed, whatever its size
+	bool last;
 }
 
 // An earlier self in an open fight: it goes where the player went and its
@@ -463,7 +465,7 @@ class AjarTimeHandler : EventHandler
 			showDigit = d;
 			SetScreen(k, d);
 			// heard in the box too, through the glass
-			if (d && mo) mo.A_StartSound("switches/normbutn", CHAN_AUTO, 0, phase == REPLAY ? 0.5 : 1.0);
+			if (d && mo) mo.A_StartSound("switches/exitbutn", CHAN_AUTO, 0, phase == REPLAY ? 0.5 : 1.0);
 		}
 	}
 
@@ -1215,14 +1217,30 @@ class AjarTimeHandler : EventHandler
 	const BIG_AFTER = 45;
 	Array<AjarClip> kills, dueKills;
 	Array<int> dueTic;
+	// And after those, for every hall, the death of the monster killed last
+	// in it (Vadim, 2026-11-19): each death in a lived fight is a candidate,
+	// kept BIG_AFTER tics later unless another has died by then; a hall's
+	// later one replaces its earlier one.
+	Array<AjarClip> lastKills;
+	AjarClip dueLast;
+	int dueLastTic;
 
 	override void WorldThingDied(WorldEvent e)
 	{
 		Actor t = e.thing;
-		if (!t || !t.bIsMonster || phase != LIVE || t.SpawnHealth() < BIG) return;
+		if (!t || !t.bIsMonster || phase != LIVE) return;
 		int k, b;
 		[k, b] = Where(t.pos.xy);
 		if (k != fight || b != 0) return;
+		let l = new("AjarClip");
+		l.fight = fight;
+		l.at = t.pos;
+		l.ang = t.angle;
+		l.big = max(1, t.SpawnHealth());
+		l.what = t.GetTag();
+		l.last = true;
+		dueLast = l; dueLastTic = level.maptime + BIG_AFTER;
+		if (t.SpawnHealth() < BIG) return;
 		let c = new("AjarClip");
 		c.fight = fight;
 		c.at = t.pos;
@@ -1234,6 +1252,18 @@ class AjarTimeHandler : EventHandler
 
 	void KeepKills()
 	{
+		if (dueLast && dueLastTic <= level.maptime)
+		{
+			if (recent.Size())
+			{
+				dueLast.stills.Copy(recent);
+				for (int i = lastKills.Size() - 1; i >= 0; i--) if (lastKills[i].fight == dueLast.fight) lastKills.Delete(i);
+				int at = 0;
+				while (at < lastKills.Size() && lastKills[at].fight < dueLast.fight) at++;
+				lastKills.Insert(at, dueLast);
+			}
+			dueLast = null;
+		}
 		while (dueTic.Size() && dueTic[0] <= level.maptime)
 		{
 			AjarClip c = dueKills[0];
@@ -1294,6 +1324,14 @@ class AjarTimeHandler : EventHandler
 		TexMan.SetCameraToTexture(cam, "AJREEL", 55);
 		if (!clips.Size()) clips.Copy(kills);
 		caption = clips.Size() ? "" : "Not once were you killed in a hall.";
+		// the last scene of each hall: the monster killed last in it (not
+		// twice, where that death is among the big ones already)
+		for (int i = 0; i < lastKills.Size(); i++)
+		{
+			bool there = false;
+			for (int j = 0; j < clips.Size(); j++) if (clips[j].big && clips[j].fight == lastKills[i].fight && clips[j].at == lastKills[i].at) there = true;
+			if (!there) clips.Push(lastKills[i]);
+		}
 	}
 
 	// The camera: near where they fell, on them, from where they can be seen.
@@ -1303,7 +1341,7 @@ class AjarTimeHandler : EventHandler
 		let mark = Actor.Spawn("AjarCam", c.at + (0, 0, 32));
 		for (int i = 0; i < 8; i++)
 		{
-			Vector2 p = c.at.xy + Actor.AngleToVector(c.ang + tryAt[i], c.big ? 230 : 120);
+			Vector2 p = c.at.xy + Actor.AngleToVector(c.ang + tryAt[i], c.big >= 300 ? 230 : 120);
 			Sector sec = level.PointInSector(p);
 			if (!level.IsPointInLevel((p, c.at.z + 44)) || sec.ceilingplane.ZAtPoint(p) - sec.floorplane.ZAtPoint(p) < 64) continue;
 			cam.SetOrigin((p, max(c.at.z, sec.floorplane.ZAtPoint(p)) + 44), false);
@@ -1361,7 +1399,7 @@ class AjarTimeHandler : EventHandler
 			if (t == 0)
 			{
 				Aim(c);
-				caption = c.big ? String.Format("HALL %d   -   %s", c.fight, c.what) : String.Format("HALL %d   -   %d of %d", c.fight, reelClip + 1, clips.Size());
+				caption = c.last ? String.Format("HALL %d   -   the last to fall: %s", c.fight, c.what) : c.big ? String.Format("HALL %d   -   %s", c.fight, c.what) : String.Format("HALL %d   -   %d of %d", c.fight, reelClip + 1, clips.Size());
 			}
 			if (shown < n) Stage(c.stills[shown], true);
 			else if (c.big) fall += 7 * REEL_FALL;     // its fall is in the clip: only the pause
@@ -2079,7 +2117,7 @@ class AjarTimeHandler : EventHandler
 		if (phase == IDLE)
 		{
 			// a big monster's death that won the fight is still being kept
-			if (dueTic.Size()) { Snap(mo); KeepKills(); }
+			if (dueTic.Size() || dueLast) { Snap(mo); KeepKills(); }
 			if (comeBack && k == fight && b == 0) Resume(mo);
 			else if (!comeBack && k && b == 0 && won.Find(k) == won.Size() && mo.health > 0) Begin(k);
 		}
@@ -2524,7 +2562,9 @@ class AjarTimeHandler : EventHandler
 			// the reel: by the last way out to the seat in hall 1; two deaths in halls were kept
 			if (v == 6) Go(mo, 384, 420, 0, 270);
 			if (v == 10) Check("bigDeathsKept", kills.Size() == 3 && kills[0].big >= BIG && kills[0].stills.Size() > 10 && kills[0].what != "");
-			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 3 && mo.bInvisible && ShowLight(1, false));
+			if (v == 10) Console.Printf("AJARTEST lastKills=%d clips=%d", lastKills.Size(), clips.Size());
+			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 3 + lastKills.Size() && mo.bInvisible && ShowLight(1, false));
+			if (v == 10) Check("aLastKillForEveryHall", lastKills.Size() == Fights() && lastKills[0].fight == 1 && lastKills[0].stills.Size() > 10 && clips[clips.Size() - 1].last);
 			if (v == 150)
 			{
 				let si = level.CreateSectorTagIterator(REEL_TAG);
@@ -2535,8 +2575,9 @@ class AjarTimeHandler : EventHandler
 				Check("aDeathInHall2", ck == 2 && clips[0].fight == 2 && clips[1].fight == 3 && clips[2].fight == 3);
 			}
 			if (v == 420) Check("goneToLightOnScreen", reel == 2 && reelClip == 0 && fallen && !fallen.bInvisible && fallen.alpha < 1);
-			if (v == 440 || v == 450 || v == 460) { reelTic = 100000; }      // the rest, quickly
-			if (v == 470) Check("theEnd", reel == 3);
+			if (v >= 440 && v <= 490 && v % 10 == 0 && reel == 2) { reelTic = 100000; }      // the rest, quickly
+			if (v == 485) Check("lastScenesOnScreen", reel == 2 && clips[reelClip].last && caption.IndexOf("the last to fall") > 0);
+			if (v == 500) Check("theEnd", reel == 3);
 			return;
 		}
 		double x = hx[k], cx = x + hw[k] / 2, cy = hh[k] / 2;

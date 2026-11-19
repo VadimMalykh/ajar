@@ -3744,6 +3744,22 @@ Run: `MAP=MAP31 MODE=3 TIMEOUT=250` (after the halls: `bigDeathsKept`,
 `levelExited`; 14 pictures). Not run: a reel of monsters' deaths, a reel
 with nothing in it, USE to skip.
 
+## MAP31: the reel's last scenes, and the count's sound (2026-11-19)
+
+Vadim's two asks, done by the MAP12 session. **Not played by hand.**
+
+- **After the reel's clips, one more for every hall: the monster killed
+  last in it**, whatever its size, with its fall (kept 45 tics after it
+  died, as the big ones are). Caption "HALL n - the last to fall: NAME".
+  Where that death is already among the big monsters' it is not shown
+  twice. Every death in a lived fight is a candidate; a later one in the
+  same hall replaces it (`lastKills`, `dueLast` in `time.zs`). Checks in
+  `MAP=MAP31 MODE=3 TIMEOUT=280`: `aLastKillForEveryHall`,
+  `lastScenesOnScreen`.
+- **The count before a fight ticks with the switch-off sound**
+  (`switches/exitbutn`, what the menu makes closing) instead of the
+  switch-on one. The plates that wind a fight keep the old sound.
+
 ## MAP31: not killed but taken out (2026-11-18)
 
 Vadim changed his mind about the body: the player is not dead, they were
