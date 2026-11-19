@@ -106,6 +106,38 @@ class AjarLocker : Actor
 	}
 }
 
+// A plate on a wall of an open fight's box, and of its hall beside the way
+// in: USE winds the fight as it is played half a minute back (args[0] 0) or
+// on (1). See AjarTimeHandler.Wind.
+class AjarWind : Actor
+{
+	Default { Radius 12; Height 24; +NOGRAVITY +WALLSPRITE +DONTTHRUST +NOTELEPORT }
+	States
+	{
+	Spawn:
+		AJWD A -1 Bright;
+		Stop;
+	On:
+		AJWD B -1 Bright;
+		Stop;
+	}
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		if (args[0]) SetStateLabel("On");
+	}
+
+	override bool Used(Actor user)
+	{
+		let h = AjarTimeHandler(EventHandler.Find("AjarTimeHandler"));
+		let mo = PlayerPawn(user);
+		if (!h || !mo || !mo.player) return false;
+		h.Wind(mo, args[0] ? 1 : -1);
+		return true;
+	}
+}
+
 // What is seen of something as it was: a picture and nothing more.
 class AjarEcho : Actor
 {
@@ -198,6 +230,7 @@ class AjarRole play
 	Array<int> sf, hp;
 	// while it is recorded
 	Actor src;
+	AjarRole twin;              // of a role being played: its record so far in the go being recorded, when time was wound
 	bool seen;
 	int lag;                    // tics it has lain dead and still, not written down (it is as it was last)
 	// while it is played: mode 0 not yet come, 1 on the demo, 2 no longer
@@ -671,6 +704,42 @@ class AjarTimeHandler : EventHandler
 		if (st) a.SetState(st, true);
 	}
 
+	// The monster on the demo is as its record says at tic i of it. `quiet`:
+	// time was wound, and a death that is in the past is not heard.
+	void Pose(AjarRole r, Actor a, AjarRail rail, int i, bool quiet)
+	{
+		int f = r.sf[i];
+		if (f < 0)      // it was out of the hall then
+		{
+			if (!r.hidden) { r.hidden = true; a.bInvisible = true; a.bShootable = false; }
+			return;
+		}
+		if (r.hidden) { r.hidden = false; a.bInvisible = false; a.bShootable = !r.dead; }
+		int hp = r.hp[i];
+		if (hp <= 0 && !r.dead)
+		{
+			r.dead = true;
+			a.health = 0;
+			a.Die(null, null);
+			a.A_NoBlocking();
+			if (!quiet) a.A_StartSound(a.DeathSound, CHAN_VOICE);
+		}
+		else if (hp > 0 && r.dead)
+		{
+			r.dead = false;
+			a.Revive();
+			a.bSolid = false;
+		}
+		rail.hp = r.dead ? 0 : hp;
+		if (!r.dead) a.health = RAIL_HEALTH;
+		a.SetOrigin((r.x[i], r.y[i], r.z[i]), true);
+		a.angle = r.ang[i];
+		a.sprite = f >> 8;
+		a.frame = f & 127;
+		a.bBright = (f & 128) != 0;
+		a.tics = -1;
+	}
+
 	void PlayDemo(Actor mo)
 	{
 		if (!demo) return;
@@ -687,10 +756,24 @@ class AjarTimeHandler : EventHandler
 			int i = ot - r.born;
 			if (r.mode == 0)
 			{
-				if (i != 0) { if (ended) r.mode = 2; continue; }
+				if (i != 0 && !(wound && i > 0)) { if (ended) r.mode = 2; continue; }
+				int n0 = r.x.Size(), j = 0;
+				if (i > 0)
+				{
+					// time was wound into the middle of its record: it is there as it was then
+					if (!n0 || r.sf[0] < 0) { r.mode = 2; continue; }
+					j = i;
+					if (i >= n0)
+					{
+						// its record is over: a body that lay still from then on, or it was gone
+						if (r.lag <= 0 || (i >= n0 + r.lag && r.born + n0 + r.lag < demo.len)) { r.mode = 2; continue; }
+						j = n0 - 1;
+					}
+					while (j > 0 && r.sf[j] < 0) j--;       // out of the hall then: where it was last seen
+				}
 				// not if its cue has brought it already, or its pain elemental is awake
-				if ((r.cue && r.cue.special1) || (r.maker && r.maker.mode != 1) || r.sf[0] < 0) { r.mode = 2; continue; }
-				Actor n = Actor.Spawn(r.cls, (r.x[0], r.y[0], r.z[0]));
+				else if ((r.cue && r.cue.special1) || (r.maker && r.maker.mode != 1) || r.sf[0] < 0) { r.mode = 2; continue; }
+				Actor n = Actor.Spawn(r.cls, (r.x[j], r.y[j], r.z[j]));
 				if (!n) { r.mode = 2; continue; }
 				n.GiveInventoryType("AjarRail");
 				n.bSolid = false;
@@ -698,13 +781,26 @@ class AjarTimeHandler : EventHandler
 				{
 					r.cue.special1 = 1;
 					bornA.Push(n); bornC.Push(r.cue);
-					Actor.Spawn("TeleportFog", n.pos, ALLOW_REPLACE);
-					n.A_StartSound(n.SeeSound, CHAN_VOICE);
+					if (i == 0)
+					{
+						Actor.Spawn("TeleportFog", n.pos, ALLOW_REPLACE);
+						n.A_StartSound(n.SeeSound, CHAN_VOICE);
+					}
 				}
 				r.actor = n;
 				r.mode = 1;
 				r.dead = r.hidden = false;
 				r.wakeDue = false;
+				if (i > 0 && r.twin) r.twin.src = n;        // its record goes on from here
+				if (i > 0)
+				{
+					// as it was when last seen (dead, if it was: one that is out of the hall now stays so)
+					Pose(r, n, AjarRail(n.FindInventory("AjarRail")), j, true);
+					n.vel = (0, 0, 0);
+					n.target = null;
+					n.tics = -1;
+					if (i >= n0) continue;
+				}
 			}
 			Actor a = r.actor;
 			let rail = a ? AjarRail(a.FindInventory("AjarRail")) : null;
@@ -718,7 +814,9 @@ class AjarTimeHandler : EventHandler
 			bool has = i < r.x.Size();
 			if (!has)
 			{
-				if (r.lag > 0 && !ended) continue;          // a body that lay still from then on
+				// a body that lay still from then on. (Not what was gone before the
+				// go ended, a lost soul that burst: its last picture hung in the air.)
+				if (r.lag > 0 && !ended && (i < r.x.Size() + r.lag || r.born + r.x.Size() + r.lag >= demo.len)) continue;
 				if (r.born + r.x.Size() + r.lag < demo.len)     // it was gone then (a lost soul that burst)
 				{
 					if (!r.dead) a.ClearCounters();
@@ -735,37 +833,9 @@ class AjarTimeHandler : EventHandler
 			a.target = null;
 			a.tics = -1;
 			if (!has) continue;
-			int f = r.sf[i];
-			if (f < 0)      // it was out of the hall then
-			{
-				if (!r.hidden) { r.hidden = true; a.bInvisible = true; a.bShootable = false; }
-				continue;
-			}
-			if (r.hidden) { r.hidden = false; a.bInvisible = false; a.bShootable = !r.dead; }
-			int hp = r.hp[i];
-			if (hp <= 0 && !r.dead)
-			{
-				r.dead = true;
-				a.health = 0;
-				a.Die(null, null);
-				a.A_NoBlocking();
-				a.A_StartSound(a.DeathSound, CHAN_VOICE);
-			}
-			else if (hp > 0 && r.dead)
-			{
-				r.dead = false;
-				a.Revive();
-				a.bSolid = false;
-			}
-			rail.hp = r.dead ? 0 : hp;
-			if (!r.dead) a.health = RAIL_HEALTH;
-			a.SetOrigin((r.x[i], r.y[i], r.z[i]), true);
-			a.angle = r.ang[i];
-			a.sprite = f >> 8;
-			a.frame = f & 127;
-			a.bBright = (f & 128) != 0;
-			a.tics = -1;
+			Pose(r, a, rail, i, wound);
 		}
+		wound = false;
 		// what they shot then flies again
 		for (; demo.next < demo.evTic.Size() && demo.evTic[demo.next] <= ot; demo.next++)
 		{
@@ -971,6 +1041,124 @@ class AjarTimeHandler : EventHandler
 		rescued = false;
 	}
 
+	// --- winding ---------------------------------------------------------------------
+	// A plate on the wall (AjarWind) winds an open fight that is being played
+	// half a minute back or on: in its boxes, and in its hall beside the way
+	// in (for when the player comes back to it on foot, from a box left over
+	// from an earlier fight). The go begins over, at that moment of the last
+	// one: the hall is cleared and everything in it is as it was then; this
+	// go's record up to then is the last go's, with the player standing where
+	// they stand. From the hall it winds only while the fight is still as it
+	// went (nothing is awake); from a box, always. Each winding costs 10
+	// health and 5 armour, and is not to be had with 10 health or less.
+	const WIND_TICS = 30 * 35;
+	const WIND_HEALTH = 10;
+	const WIND_ARMOUR = 5;
+	bool wound;                 // time was wound: PlayDemo brings the monsters in as they were at this tic
+
+	bool Awake()
+	{
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0 || OnDemo(a)) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k == fight && b == 0) return true;
+		}
+		return false;
+	}
+
+	void Wind(PlayerPawn mo, int dir)
+	{
+		int k, b;
+		[k, b] = Where(mo.pos.xy);
+		if (!open || phase != LIVE || k != fight) { Say("Nothing is playing."); return; }
+		if (!demo) { Say("This is the fight's first time:\nthere is nothing to wind yet."); return; }
+		if (at == 0 && (!Demoing() || Awake())) { Say("The fight is yours now.\nIt winds from a box."); return; }
+		int now = min(ot, demo.len);
+		int to = clamp(now + dir * WIND_TICS, 0, max(0, demo.len - 70));
+		if (dir > 0 && to <= now) { Say("It ends here: there is no more of it to wind on to."); return; }
+		// it costs (Vadim): 10 health, and 5 armour of what there is
+		if (mo.health <= WIND_HEALTH) { Say("Winding takes it out of you:\nyou have not the health for it."); return; }
+		mo.health = mo.player.health = mo.health - WIND_HEALTH;
+		let arm = mo.FindInventory("BasicArmor");
+		if (arm) arm.Amount = max(0, arm.Amount - WIND_ARMOUR);
+		WindTo(mo, to);
+		mo.A_SetBlend("white", 0.5, 14);
+		mo.A_StartSound("switches/normbutn", CHAN_AUTO);
+	}
+
+	void WindTo(PlayerPawn mo, int to)
+	{
+		ClearHall();
+		recent.Clear();
+		takes.Pop();
+		NewTake(mo);
+		// this go so far: the player has stood here
+		AjarTake t = takes[takes.Size() - 1];
+		int sf = (int(mo.sprite) << 8) | (mo.frame & 127);
+		for (int i = 0; i < to; i++)
+		{
+			t.x.Push(mo.pos.x); t.y.Push(mo.pos.y); t.z.Push(mo.pos.z); t.ang.Push(mo.angle); t.pit.Push(mo.pitch); t.sf.Push(sf);
+		}
+		// what the earlier selves fired before then is not fired again
+		for (int i = 0; i < takes.Size() - 1; i++)
+			for (takes[i].next = 0; takes[i].next < takes[i].evTic.Size() && takes[i].evTic[takes[i].next] < to; takes[i].next++) {}
+		// the monsters' records up to then
+		for (int i = 0; i < demo.roles.Size(); i++) demo.roles[i].twin = null;
+		for (int i = 0; i < demo.roles.Size(); i++)
+		{
+			AjarRole r = demo.roles[i];
+			if (r.born >= to) continue;
+			let c = new("AjarRole");
+			c.cls = r.cls; c.born = r.born; c.cue = r.cue;
+			c.maker = r.maker ? r.maker.twin : null;
+			int n = min(r.x.Size(), to - r.born);
+			c.x.Copy(r.x); c.y.Copy(r.y); c.z.Copy(r.z); c.ang.Copy(r.ang); c.sf.Copy(r.sf); c.hp.Copy(r.hp);
+			c.x.Resize(n); c.y.Resize(n); c.z.Resize(n); c.ang.Resize(n); c.sf.Resize(n); c.hp.Resize(n);
+			c.lag = n == r.x.Size() ? min(r.lag, to - r.born - n) : 0;
+			r.twin = c;
+			rec.roles.Push(c);
+		}
+		// and what they shot
+		int ne = 0;
+		while (ne < demo.evTic.Size() && demo.evTic[ne] < to) ne++;
+		rec.evTic.Copy(demo.evTic); rec.evCls.Copy(demo.evCls);
+		rec.ex.Copy(demo.ex); rec.ey.Copy(demo.ey); rec.ez.Copy(demo.ez);
+		rec.evx.Copy(demo.evx); rec.evy.Copy(demo.evy); rec.evz.Copy(demo.evz);
+		rec.evTic.Resize(ne); rec.evCls.Resize(ne);
+		rec.ex.Resize(ne); rec.ey.Resize(ne); rec.ez.Resize(ne);
+		rec.evx.Resize(ne); rec.evy.Resize(ne); rec.evz.Resize(ne);
+		for (int e = 0; e < ne; e++) rec.evBy.Push(demo.evBy[e] ? demo.evBy[e].twin : null);
+		demo.next = ne;
+		// what was seen besides: the track up to then; what it shows at that
+		// moment is seen (and ends there in this go's track: RecordFx writes
+		// it down again, as what is seen now)
+		AjarTrack fx = demo.fx, nfx = rec.fx;
+		int tf = fx ? min(to, fx.first.Size()) : 0;
+		int nr = !fx ? 0 : tf < fx.first.Size() ? fx.first[tf] : fx.slot.Size();
+		if (fx)
+		{
+			nfx.first.Copy(fx.first); nfx.first.Resize(tf);
+			nfx.slot.Copy(fx.slot); nfx.sf.Copy(fx.sf); nfx.x.Copy(fx.x); nfx.y.Copy(fx.y); nfx.z.Copy(fx.z); nfx.ang.Copy(fx.ang);
+			nfx.slot.Resize(nr); nfx.sf.Resize(nr); nfx.x.Resize(nr); nfx.y.Resize(nr); nfx.z.Resize(nr); nfx.ang.Resize(nr);
+			Array<int> last;
+			for (int i = 0; i < slotCls.Size(); i++) last.Push(-1);
+			for (int r = 0; r < nr; r++) last[fx.slot[r]] = fx.sf[r] < 0 ? -1 : r;
+			for (int s = 0; s < last.Size(); s++)
+			{
+				if (last[s] < 0) continue;
+				if (tf) nfx.Put(s, -1, (0, 0, 0), 0);
+				if (to < fx.first.Size()) Puppet(fx, last[s]);
+			}
+		}
+		while (nfx.first.Size() < to) nfx.first.Push(nfx.slot.Size());
+		ot = to;
+		wound = true;
+	}
+
 	// --- the reel -----------------------------------------------------------------
 	// When every fight is won the last way out leads back to the first hall,
 	// to a seat. The lights go down, a big screen comes down before the way
@@ -1087,6 +1275,18 @@ class AjarTimeHandler : EventHandler
 		mo.bInvisible = true;
 		mo.vel = (0, 0, 0);
 		mo.pitch = -8;
+		// nothing lies between the seat and the screen (nor in a clip of this
+		// hall): the bodies of its fight and what they dropped are unseen
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			let inv = Inventory(a);
+			if (!(a.bCorpse || (a.bIsMonster && a.health <= 0) || (inv && !inv.owner))) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k == 1 && b == 0) a.bInvisible = true;
+		}
 		HouseLights(1, 0);
 		level.ExecuteSpecial(40 /* Ceiling_LowerByValue */, null, null, false, REEL_TAG, 16, 224);
 		cam = AjarCam(Actor.Spawn("AjarCam", mo.pos + (0, 0, 40)));
@@ -1270,14 +1470,19 @@ class AjarTimeHandler : EventHandler
 	void PlayBack(AjarTrack tr, int i)
 	{
 		int to = i + 1 < tr.first.Size() ? tr.first[i + 1] : tr.slot.Size();
-		for (int r = tr.first[i]; r < to; r++)
+		for (int r = tr.first[i]; r < to; r++) Puppet(tr, r);
+	}
+
+	// What record r of the track says is seen.
+	void Puppet(AjarTrack tr, int r)
+	{
 		{
 			int s = tr.slot[r];
 			int k = puppetSlot.Find(s);
 			if (tr.sf[r] < 0)
 			{
 				if (k < puppets.Size()) DropPuppet(k);
-				continue;
+				return;
 			}
 			Vector3 p = (tr.x[r], tr.y[r], tr.z[r]);
 			AjarEcho e;
@@ -1594,12 +1799,11 @@ class AjarTimeHandler : EventHandler
 			mo.vel = (0, 0, 0);
 			if (--over == 0)
 			{
-				// The level is left, on their feet: not frozen, in full health;
-				// and if what comes next is this level again, as they first came.
+				// The level begins again (whatever its way out leads to), on
+				// their feet: not frozen, in full health, and as they first came.
 				mo.player.cheats &= ~CF_TOTALLYFROZEN;
 				mo.bBuddha = false;
-				string next = level.nextmap != "" ? level.nextmap : level.mapname;
-				level.ChangeLevel(next, 0, CHANGELEVEL_RESETHEALTH | (next ~== level.mapname ? CHANGELEVEL_RESETINVENTORY : 0));
+				level.ChangeLevel(level.mapname, 0, CHANGELEVEL_RESETHEALTH | CHANGELEVEL_RESETINVENTORY);
 			}
 			return false;
 		}
@@ -1931,6 +2135,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
+		if (mode == 7 && level.mapname ~== "MAP31") WindScript(PlayerPawn(mo));
 	}
 
 	// How far the fight that is being watched has got, and when the door opens.
@@ -2146,6 +2351,99 @@ class AjarTimeHandler : EventHandler
 		}
 	}
 	int goStart;
+	// Winding (MAP=MAP31 MODE=7 tools/smoke.sh): hall 2. A first go; in the
+	// second, from the box, time is wound back and then on, and the hall is
+	// each time as it was at that moment; the third go plays the second whole,
+	// its wound stretches as they were; and the plates wind by half a minute.
+	int seenA, seenB, seenC;
+	void WindScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		double cx = 2752 + 768;
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d phase=%d at=%d trips=%d ot=%d len=%d takes=%d onDemo=%d awake=%d",
+			t, phase, at, trips, ot, demo ? demo.len : -1, takes.Size(), Rails(true), Rails(false));
+		if (t == 1)
+		{
+			int n = 0;
+			let it = ThinkerIterator.Create("AjarWind");
+			while (it.Next()) n++;
+			Check("plates", n == 16);
+			Go(mo, cx, 60, 0, 90);
+		}
+		if (t == 5) { Wind(mo, -1); Check("nothingToWindYet", ot > 2 && takes.Size() == 1); }
+		if (t == 260) Hurt(mo, 30, 100000);
+		if (t == 300) Hurt(mo, 6, 20);
+		if (t == 340) Hurt(mo, 16, 100000);
+		if (t == 520) mo.health = mo.player.health = 1;
+		if (t == 524) Check("go2", open && at == 1 && takes.Size() == 2);
+		if (takes.Size() == 2 && (testStep < 10 || testStep == 21))
+		{
+			if (ot == 200 && testStep == 0) { seenA = Rails(true); testStep = 1; }
+			if (ot == 302 && testStep == 1) { seenB = Rails(true) * 1000 + RailsDead(); testStep = 2; }
+			if (ot == 422 && testStep == 2) { seenC = Rails(true) * 1000 + RailsDead(); testStep = 21; }
+			if (ot == 430 && testStep == 21) { WindTo(mo, 300); testStep = 3; }
+			else if (ot == 302 && testStep == 3)
+			{
+				Check("woundBack", Rails(true) * 1000 + RailsDead() == seenB && !Rails(false) && takes.Size() == 2
+					&& takes[1].x.Size() == ot && rec.fx.first.Size() == ot);
+				Console.Printf("AJARTEST seenB=%d now=%d", seenB, Rails(true) * 1000 + RailsDead());
+				testStep = 4;
+			}
+			if (ot == 310 && testStep == 4) { WindTo(mo, 420); testStep = 5; }
+			else if (ot == 422 && testStep == 5)
+			{
+				Check("woundOn", Rails(true) * 1000 + RailsDead() == seenC && takes[1].x.Size() == ot);
+				Console.Printf("AJARTEST seenC=%d now=%d", seenC, Rails(true) * 1000 + RailsDead());
+				testStep = 6;
+			}
+			// into the hall: something is hurt awake, and it does not wind from there
+			if (ot == 440 && testStep == 6) { Back(); Go(mo, cx, 300, 0, 90); testStep = 7; }
+			if (ot == 450 && testStep == 7) { Hurt(mo, 3, 20); testStep = 8; }
+			if (ot == 470 && testStep == 8) { int was = ot; Wind(mo, -1); Check("notFromTheHallOnceAwake", ot == was && Rails(false) > 0); testStep = 9; }
+			if (ot == 530 && testStep == 9) { mo.health = mo.player.health = 1; testStep = 10; }
+		}
+		if (takes.Size() == 3)
+		{
+			if (ot == 4 && testStep == 10) { Check("go3", at == 2 && demo && demo.len >= 525 && demo.len <= 535); testStep = 11; }
+			if (ot == 200 && testStep == 11) { Check("itsStartIsThere", Rails(true) == seenA); testStep = 12; }
+			if (ot == 302 && testStep == 12)
+			{
+				Check("theWoundStretchIsThere", Rails(true) * 1000 + RailsDead() == seenB);
+				Console.Printf("AJARTEST seenB=%d now=%d", seenB, Rails(true) * 1000 + RailsDead());
+				testStep = 13;
+			}
+			// the plates: half a minute back is the start; half a minute on is two seconds before its end
+			if (ot == 320 && testStep == 13) { mo.GiveInventoryType("GreenArmor"); seenA = mo.health; Wind(mo, -1); testStep = 14; }
+			else if (ot == 2 && testStep == 14)
+			{
+				Check("backToTheStart", !Rails(true) && takes.Size() == 3);
+				Check("itCosts", mo.health == seenA - 10 && mo.CountInv("BasicArmor") == 95);
+				testStep = 15;
+			}
+			if (ot == 30 && testStep == 15) { Wind(mo, 1); testStep = 16; }
+			else if (testStep == 16) { Check("onToItsEnd", ot >= demo.len - 70 && ot <= demo.len - 66 && Rails(true) > 5); testStep = 17; }
+			else if (testStep == 17 && ot == demo.len - 40) { int was = ot; Wind(mo, 1); Check("noFurther", ot == was && mo.health == seenA - 20); testStep = 18; }
+			else if (testStep == 18 && ot == demo.len - 30)
+			{
+				int was = ot;
+				mo.health = mo.player.health = 10;
+				Wind(mo, -1);
+				Check("notWithoutTheHealth", ot == was && mo.health == 10);
+				mo.health = mo.player.health = 50;
+				testStep = 19;
+			}
+			if (testStep == 19 && ot == demo.len + 60) { Check("awakeAtItsEnd", !Rails(true) && Rails(false) > 5); testStep = 20; }
+		}
+	}
+	int testStep;
+	int RailsDead()
+	{
+		int n = 0;
+		for (int i = 0; demo && i < demo.roles.Size(); i++) if (demo.roles[i].mode == 1 && demo.roles[i].dead) n++;
+		return n;
+	}
+
 	void ThirdGoScript(PlayerPawn mo)
 	{
 		int t = testTic++;

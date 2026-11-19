@@ -38,8 +38,11 @@ m = Map()
 LOOK = int(os.environ.get("AJAR_CINEMA") or "3")
 
 
-def tx(part):
-    return f"AJY{part}{LOOK}"
+HALL = 0                    # the hall being built: it wears its own colour (gfx_cinema.hall_name)
+
+
+def tx(part, hall=None):
+    return gfx_cinema.hall_name(f"AJY{part}{LOOK}", HALL if hall is None else hall)
 
 
 def dress(**parts):
@@ -178,8 +181,13 @@ def spots(kind, *at):
 
 class Hall:
     def __init__(self, k, x, y, w, h, blocks, *, ceil=256, light=190, last=False, open=False):
+        global HALL
         self.k, self.x, self.y, self.w, self.h = k, x, y, w, h
         HALLS[k] = self
+        HALL = k
+        if LOOK:                                        # its pillars and banks were made before it: in its colour
+            blocks = [(r, {p: gfx_cinema.hall_name(v, k) if isinstance(v, str) else v for p, v in look.items()})
+                      for r, look in blocks]
         self.solid = [(x + a, y + b, x + c, y + d) for (a, b, c, d), _ in blocks]      # pillars and banks
         cx, cy = self.cx, self.cy = x + w // 2, y + h // 2
         W = "G" if ceil > 256 else "H"                  # the hall's wall is as tall as the hall
@@ -187,7 +195,7 @@ class Hall:
         if LOOK:
             # the lights are down: the hall is dark but for what the screen
             # throws on the floor before it; then the seats
-            light = gfx_cinema.LIGHT[LOOK]
+            light = gfx_cinema.LIGHT[LOOK] - (gfx_cinema.HALL_DIM.get(k, 0) if LOOK == gfx_cinema.HALL_LOOK else 0)
             seats = [((x, y, x + w, y + 96), dict(light=light + 40)),
                      ((x, y + 96, x + w, y + 192), dict(light=light + 20))] + rows(k, x, y, w, h)
         if k == 1:
@@ -234,6 +242,12 @@ class Hall:
             d = (bx + u[0] * 120, by + u[1] * 120)
             da, db = (d[0] - v[0] * 32, d[1] - v[1] * 32), (d[0] + v[0] * 32, d[1] + v[1] * 32)
             ajartime.box_door(m, k, n, da, db, u, BOXF, **dark)
+            if open:
+                # beside the glass, plates that wind the fight as it is played:
+                # back on the left of one who looks out, on on the right
+                for side in (-1, 1):
+                    ajartime.wind(m, bx - u[0] * 118 + v[0] * 96 * side, by - u[1] * 118 + v[1] * 96 * side,
+                                  {(-1, 0): 180, (0, 1): 90, (1, 0): 0}[u], side > 0)
             if LOOK:
                 # the wall under and over the glass is the hall's on the
                 # hall's side and the box's on the box's; the glass has a
@@ -246,6 +260,11 @@ class Hall:
             lo = (bx - u[0] * 135 - abs(v[0]) * 112, by - u[1] * 135 - abs(v[1]) * 112)
             hi = (bx + u[0] * 190 + abs(v[0]) * 112, by + u[1] * 190 + abs(v[1]) * 112)
             ajartime.zone(m, k, n, min(lo[0], hi[0]), min(lo[1], hi[1]), max(lo[0], hi[0]), max(lo[1], hi[1]))
+        if open:
+            # and in the hall, either side of the way in (for one who comes back
+            # to the fight on foot, from a box left over from an earlier one)
+            ajartime.wind(m, cx + 176, y + 2, 90, False)
+            ajartime.wind(m, cx - 176, y + 2, 90, True)
         # the way on: a steel door in the north wall, shut until the fight is won
         a, b = (x + w - 192, y + h), (x + w - 128, y + h)
         c, d = (a[0], a[1] + 16), (b[0], b[1] + 16)
@@ -269,6 +288,7 @@ class Hall:
             m.cut(*self.on)
             # the way out leads back to the first hall, for the reel; the level ends after it
             m.line(*self.on, special=70, args=(ajartime.REEL_TAG,), playeruse=True, repeatspecial=True, mid="AJEXIT", exact=True)
+        HALL = 0
 
     def at(self, *pts):
         return [(self.x + a, self.y + b) for a, b in pts]
@@ -397,6 +417,10 @@ spots(2012, (h3.cx + 60, -150))
 spots(83, (h3.cx, -150))                    # megasphere (it was blue armour)
 spots(2046, (h3.cx - 60, -100))
 spots(17, (h3.cx + 60, -100))
+# (Vadim: more rockets for this one) four more boxes by the way in, and two
+# more in each of its boxes
+spots(2046, (h3.cx - 100, -250), (h3.cx + 100, -250), (h3.cx - 100, -150), (h3.cx + 100, -150))
+spots(8, (h3.cx, -250))                     # a backpack (Vadim, 2026-11-19)
 # the wall the arrow points at: straight south of its block. It opens with
 # USE, from the hall only; behind it the level's one secret.
 sx = h3.x + 384
@@ -408,7 +432,7 @@ for p, q in ((a, c), (b, d)):
     m.line(p, q, mid="AJTRIM", dontpegbottom=True)
 m.sector(rect(sx - 32, -144, sx + 96, -16), ceil=128, light=220, special=1024, **dress(wall="C", ftex="LF", ctex="LC"))
 if LOOK:                                    # shut, it is the wall of each side
-    m.line(a, b, upper=tx("G"))
+    m.line(a, b, upper=tx("G", 3))
     m.line(c, d, upper=tx("C"))
 spots(83, (sx + 32, -80))                   # megasphere (the BFG is in hall 1's second box now)
 spots(17, (sx, -110), (sx + 64, -110))
@@ -431,9 +455,9 @@ cue(3, 4, 6, 3001, *h3.at((200, 1300), (1720, 1300), (200, 160), (1720, 160)))
 h3.stock(1, 2012, 2012, 17, 2046, 2011)
 h3.stock(2, 2012, 2012, 17, 2046, 2049, 2011)
 h3.stock(3, 2012, 2012, 17, 2046, 2049, 2011)
-h3.more(1, 2018, 17, 17, 2013)
-h3.more(2, 2018, 17, 2019, 17)
-h3.more(3, 2018, 17)
+h3.more(1, 2018, 17, 17, 2013, 2046, 2046)
+h3.more(2, 2018, 17, 2019, 17, 2046, 2046)
+h3.more(3, 2018, 17, 2046, 2046)
 flush()
 
 if __name__ == "__main__":

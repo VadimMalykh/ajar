@@ -52,6 +52,18 @@ def make(out):
                     c.rect(x, y, x + 10, y + 1, shade(steel, 0.6))
             c.noise(5, 31)
         out[f"sprites/AJLK{fr}0.png"] = c.png(grab=(20, 56))
+    # a plate on the wall that winds the fight back or on by 30 seconds (AjarWind)
+    for fr, on in (("A", False), ("B", True)):
+        w = Img(30, 30, (34, 36, 42))
+        w.frame(0, 0, 30, 30, (206, 180, 96), 2)
+        lit = (250, 244, 214)
+        for k in range(2):                                    # two arrowheads
+            x0 = 5 + 10 * k
+            for i in range(10):
+                d = (9 - i if on else i) // 2
+                w.rect(x0 + i, 9 - d, x0 + i + 1, 10 + d, lit)
+        gfx.text(w, "30", 6, 16, lit)
+        out[f"sprites/AJWD{fr}0.png"] = w.png(grab=(15, 30))
     # the top of a tall block with an arrow on it, pointing south (a flat's top is north)
     ar = Img(64, 64, (150, 146, 138))
     ar.noise(6, 32)
