@@ -447,6 +447,7 @@ class AjarHandler : EventHandler
 		case 71: return "PainElemental";
 		case 64: return "Archvile";
 		case 20004: return "AjarNailer";       // MAP16: it comes to the foot of the stair
+		case 16: return "Cyberdemon";
 		}
 		return null;
 	}

@@ -63,18 +63,41 @@ extend class AjarHandler
 		if (t == 652) Pose(mo, -340, 1160, 0, 270);
 		Forward(mo, t, 652, 6);
 		if (t == 660) Check("key2", Has(mo, 2));
-		// BLUE's cell, the lens store, VIOLET
+		// BLUE's cell: the lens store is shut, and VIOLET in it is not to be had
 		if (t == 662) Pose(mo, 480, 1040, 0, 90);
 		Forward(mo, t, 662, 16);
-		if (t == 680) { Check("inBluesCell", InBox(mo, 384, 1088, 896, 1408)); Take(mo, 5); }
-		if (t == 682) Check("tookViolet", violet);
-		// the door with locks 1 and 2, and the night room
-		if (t == 684) { Pose(mo, 730, 128, 0, 0); FindLine(301).Activate(mo, 0, SPAC_Use); }
-		if (t == 724) Check("locks1And2Open", RoomOpen(301));
-		Forward(mo, t, 724, 16);
-		if (t == 742) Check("pastTheLocks", mo.pos.x > 784 && violet);
-		if (t == 745) { Pose(mo, 1066, -64, 0, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
-		Forward(mo, t, 752, 12);
+		if (t == 680) Check("inBluesCell", InBox(mo, 384, 1088, 896, 1408));
+		if (t == 681) Pose(mo, 640, 1300, 0, 90);
+		Forward(mo, t, 681, 16);
+		if (t == 698) Check("lensStoreShut", !RoomOpen(314) && mo.pos.y < 1408);
+		// BLUE where the leaf hung: the beam comes out in BLUE's cell, onto its sensor
+		if (t == 700) { Take(mo, 2); Pose(mo, 708, 320, 0, 0); FindFrame(102).Activate(mo); Check("blueSwappedIn", carried && carried.args[1] == 8 && FindFrame(102).door.args[1] == 2); }
+		if (t == 702) { Pose(mo, -288, 870, 0, 270); FindFrame(105).Activate(mo); Check("leafPutAside", !carried); }
+		if (t == 704) { Press(721, mo); Pose(mo, -400, 60, 0, 90); }
+		if (t == 900) Check("lensStoreOpen", RoomOpen(314));
+		if (t == 902) Pose(mo, 640, 1300, 0, 90);
+		Forward(mo, t, 902, 24);
+		if (t == 928) { Check("inLensStore", InBox(mo, 384, 1424, 896, 1744)); Take(mo, 5); }
+		if (t == 930) Check("tookViolet", violet);
+		// the door with locks 1 and 2: beyond it a steel door, shut
+		if (t == 932) { Pose(mo, 730, 128, 0, 0); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (t == 972) Check("locks1And2Open", RoomOpen(301));
+		Forward(mo, t, 972, 16);
+		if (t == 990) Check("pastTheLocks", mo.pos.x > 784 && violet);
+		if (t == 991) Pose(mo, 944, 150, 0, 270);
+		Forward(mo, t, 991, 16);
+		if (t == 1008) Check("nightRoomShut", !RoomOpen(315) && mo.pos.y > 64);
+		// VIOLET hung in the hall, the target beside the brass frame shot through it, and VIOLET down again
+		if (t == 1010) { Pose(mo, 384, 590, 0, 90); FindFrame(103).Activate(mo); Check("violetHung", carried && carried.args[1] == 3 && FindFrame(103).door.args[1] == 5); }
+		if (t == 1012) Pose(mo, 386, 500, 0, 97.5);
+		if (t == 1014) mo.LineAttack(mo.angle, 4096, 0, 10, 'Hitscan', "BulletPuff");
+		if (t == 1050) Check("nightRoomOpen", RoomOpen(315));
+		if (t == 1052) { Pose(mo, 384, 590, 0, 90); FindFrame(103).Activate(mo); Check("violetDownAgain", carried && carried.args[1] == 5); }
+		if (t == 1054) Pose(mo, 944, 150, 0, 270);
+		Forward(mo, t, 1054, 20);
+		if (t == 1076) Check("inNightRoom", InBox(mo, 784, -192, 1104, 64) && violet);
+		if (t == 1078) { Pose(mo, 1066, -64, 0, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
+		Forward(mo, t, 1084, 12);
 	}
 
 	// MAP13's tour of what is its own: MAP=MAP13 MODE=2 tools/smoke.sh (run it with EXTRA=-nomonsters).

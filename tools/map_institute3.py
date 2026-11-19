@@ -20,7 +20,11 @@ So: GREEN hung in the hall and the target shot through it (the range
 opens). RED in 101 or 102 and a leaf in the frame facing it, its twin in
 the darkroom: the emitter's beam flies into RED's far side, out of RED's
 frame, across the hall, in at the leaf and out at the sensor (the cells
-open). Key 1 by RED, key 2 and VIOLET from the cells, and the night room.
+open). BLUE in the leaf's place: the beam comes out of BLUE's far side
+across its cell onto a second sensor (the lens store opens: VIOLET). VIOLET
+hung in the hall, and the target beside the night room's brass frame shot
+through it (the night room's steel door opens); VIOLET down again, key 1
+by RED, key 2 from GREEN's cell, and in by locks 1 and 2.
 Not needed, and worth doing: GREEN and BLUE in the two frames that face each
 other, before the cells are opened. What lives in them fights it out.
 
@@ -140,16 +144,29 @@ m.line((448, 1072), (512, 1072), id=313)
 ajarmap.fitted(m, (384, 1424, 896, 1744), [
     ((512, 1520, 576, 1680), solid("SK")), ((704, 1520, 768, 1680), solid("SK")),
 ], floor=0, ceil=H, light=150, color=tint(DIM), **dress(wall="AR", ftex="FR", ctex="KA"))
-I1.opening((608, 1408), (672, 1408), (0, 1), "CK", "AR", "LENS STORE")
+# a steel door, and its sensor on the cell's east wall, in line with BLUE's far side:
+# the beam gets there by BLUE, hung where the leaf hung
+ajarmap.steel(m, (608, 1408), (672, 1408), (0, 1), 0, 3)
+m.line((608, 1408), (672, 1408), id=314)
+over((608, 1408), (672, 1408), "CK")
+over((608, 1424), (672, 1424), "AR")
+named((608, 1408), (672, 1408), (0, 1), "CK", "LENS STORE")
+ajarmap.target(m, 878, 1248, 3, beam=True, z=30)
 hang((384, 1552), (384, 1680), "CI")
 hang((896, 1552), (896, 1680), "LS")                                         # racks of lenses
 
 # --- the door with locks 1 and 2, and beyond it the night room ----------------------
 EV = dict(ceil=160, light=150, color=tint(STEEL), **dress(wall="EV", ftex="FE", ctex="KE"))
 m.sector(rect(784, 96, 880, 160), **EV)
-m.sector(rect(880, 64, 1008, 192), **EV)
+m.sector(rect(880, 80, 1008, 192), **EV)
 locked((768, 96), (768, 160), (1, 0), 0, "12", 301, "LA", "EV", "WAY OUT", free_inside=True)
 ajarmap.way_home(m, 784, -192, VIOLET, only=True)
+# ... and a steel door: its target is in the night room, beside the brass frame,
+# and is shot through VIOLET, which then has to come down again to be carried in
+ajarmap.steel(m, (912, 80), (976, 80), (0, -1), 0, 4)
+m.line((912, 80), (976, 80), id=315)
+over((912, 80), (976, 80), "EV")
+ajarmap.target(m, 1086, -8, 4)
 
 # --- doors and keys ------------------------------------------------------------------
 ajarmap.door(m, GREEN, 40, 440, angle=0)
@@ -255,9 +272,9 @@ things(2049, (384, 600), (120, 40), (-660, 230), (-180, 180), (-100, 1040), (440
 things(17, (-420, 944), (520, 1040), (640, 1440), (860, 1700))
 things(2046, (700, 500), (-640, -40), (360, 1040), (1100, 850))
 things(2048, (60, 150), (700, 400), (-200, 944), (300, 900))
-things(2012, (384, 300), (60, 250), (-400, 220), (-150, 1000), (540, 840), (1190, 1000), (-60, 1380), (860, 1250), (440, 1500), (984, 80))
+things(2012, (384, 300), (60, 250), (-400, 220), (-150, 1000), (540, 840), (1190, 1000), (-60, 1380), (860, 1250), (440, 1500), (984, 168))
 m.thing(-330, 1112, 2013)                                                   # a soul sphere, in GREEN's cell
-things(8, (256, 464))                                                       # a backpack at the edge of a bench
+things(8, (1120, 1000))                                                     # a backpack beyond the pit: seen from the range, got by RED
 
 LEAF_A, LEAF_B = ajarmap.LEAVES[TEAL]
 FACING = ((101, 102), (102, 101))
@@ -268,7 +285,8 @@ PUZZLE = dict(
           ("far", "range"),                                                 # the pit, and its steps
           ("range", "cellA", "b"), ("cellA", "range", "b"),                 # the steel doors the sensor opens
           ("range", "cellB", "b"), ("cellB", "range", "b"),
-          ("hall", "night", "12"), ("night", "hall")],
+          ("cellB", "store", "c"), ("store", "cellB", "c"),                 # the steel door the cell's own sensor opens
+          ("hall", "night", "12d"), ("night", "hall", "d")],                # locks 1 and 2, and the steel door VIOLET's target opens
     keys={"1": "far", "2": "cellA"},
     frames={101: "hall", 102: "hall", 103: "hall", 104: "dark", 105: "range", ajarmap.HOME: "night"},
     only={ajarmap.HOME: VIOLET, 104: (LEAF_A, LEAF_B)},
@@ -276,13 +294,16 @@ PUZZLE = dict(
         RED: dict(home="far", lean="range"),
         GREEN: dict(home="cellA", lean="hall", barred=True),
         BLUE: dict(home="cellB", lean="range", barred=True),
-        VIOLET: dict(home="night", lean="cellB"),
+        VIOLET: dict(home="night", lean="store"),
         **ajarmap.leaves(TEAL, "hall", "hall"),
     },
     sights={
         "a": dict(through=GREEN, say="shoot the target through GREEN"),
         "b": dict(at="range", say="fire the emitter: the beam is on the sensor",
                   lines=[{RED: (r,), x: (f,), y: (104,)} for r, f in FACING for x, y in ((LEAF_A, LEAF_B), (LEAF_B, LEAF_A))]),
+        "c": dict(at="range", say="fire the emitter: the beam is on the sensor in BLUE's cell",
+                  lines=[{RED: (r,), BLUE: (f,)} for r, f in FACING]),
+        "d": dict(through=VIOLET, say="shoot the target in the night room through VIOLET"),
     },
 )
 I1.m = _theirs

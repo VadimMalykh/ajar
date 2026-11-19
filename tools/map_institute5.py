@@ -143,7 +143,10 @@ over((96, 816), (160, 816), "LB")
 ajarmap.steel(m, (96, 640), (160, 640), (0, 1), 0, 1)
 m.line((96, 640), (160, 640), id=311)
 for x in (-256, 0, 256, 512):                                                # four panes, a strip of wall between
-    mirror((x, 1264), (x + 192, 1264))
+    # each in a frame of trim: set 8 back, a sill 24 high under it and a head over it
+    m.sector(rect(x, 1264, x + 192, 1272), floor=24, ceil=200, light=200, wall="AJTRIM", side="AJTRIM",
+             ftex="AJTRIMF", ctex="AJTRIMF")
+    m.line((x, 1272), (x + 192, 1272), special=MIRROR)
 frame((288, 816), (352, 816), (0, -1), 105, PALE)
 ajarmap.unseen(m, GAL)
 
