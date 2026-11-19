@@ -3034,7 +3034,8 @@ freely.
 `tools/map_institute2.py`, `src/zscript/map12.zs`; `MAP=MAP12 ./run.sh`,
 `MAP=MAP12 MODE=1 EXTRA=-nomonsters tools/smoke.sh`. **Not played by hand.**
 Vadim's answers: the lift for MAP12 and optics later; a bit larger than
-MAP11. MAP11's way round the Pair is still his to decide. What differs from
+MAP11. MAP11's way round the Pair stays (Vadim, 2026-11-19: "it's ok"):
+MAP12 cannot be finished without the Pair anyway. What differs from
 the outline above is Claude's choice, to be changed freely.
 
 - **The building.** Ground: the loading hall (start, RED, one frame). First
