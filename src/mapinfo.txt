@@ -233,12 +233,12 @@ map MAP14 "On the Level"
 }
 
 // Act 2, level 5 (tools/map_institute5.py). Its way out starts it again
-// until there is a MAP16, and so does its secret one (the door only the
-// glass shows) until there is a second secret level.
+// until there is a MAP16. Its secret one (the door only the glass shows)
+// leads to MAP32.
 map MAP15 "On Reflection"
 {
 	next = "MAP15"
-	secretnext = "MAP15"
+	secretnext = "MAP32"
 	nointermission
 	nojump
 	nocrouch
@@ -250,6 +250,17 @@ map MAP15 "On Reflection"
 map MAP31 "This Is Where We Came In"
 {
 	next = "MAP11"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The second secret level (tools/map_secret2.py), from MAP15's secret way
+// out. Its way out starts it again until there is a MAP16.
+map MAP32 "Double Shift"
+{
+	next = "MAP32"
 	nointermission
 	nojump
 	nocrouch
