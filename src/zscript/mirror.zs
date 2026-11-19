@@ -53,9 +53,22 @@ extend class AjarHandler
 		}
 	}
 
+	bool unseenTold;
+
 	void UnseenTick()
 	{
 		if (level.maptime % 4) return;
+		// the first time the player stands in such a room with any of them alive
+		let mo = players[consoleplayer].mo;
+		for (int i = 0; mo && !unseenTold && i < unseenOnes.Size(); i++)
+		{
+			Actor a = unseenOnes[i], u = unseenMarks[i];
+			if (a && u && a.health > 0 && abs(mo.pos.x - u.pos.x) < u.args[0] && abs(mo.pos.y - u.pos.y) < u.args[1])
+			{
+				unseenTold = true;
+				Say("This room is not as empty as it looks.\nThe glass shows who is here.");
+			}
+		}
 		for (int i = 0; i < unseenOnes.Size(); i++)
 		{
 			Actor a = unseenOnes[i], u = unseenMarks[i];

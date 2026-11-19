@@ -3548,8 +3548,12 @@ MAP16, and its secret one leads to MAP32.
   in the gallery; one that walks out into the hall is seen like any other
   (`UnseenTick`). He also met the steel door already open after dying: a
   plain restart was tried headless and starts with it shut, so most likely
-  a save made after the target was shot. Not settled: that the gallery
-  does not explain itself.
+  a save made after the target was shot. For the gallery to explain
+  itself (Vadim: "let's try to make the gallery more readable"): each
+  pane stands in a frame of trim, set 8 back with a sill 24 high and a
+  head at 200, and the first time the player stands in the room with any
+  of them alive it says "This room is not as empty as it looks. The glass
+  shows who is here." Seen headless only.
 - Not known: how hard the gallery is (monsters that are not seen, knights
   and cacodemons among them); whether the target in the glass is found;
   whether the beam's way round the periscope room reads; the frame rate
