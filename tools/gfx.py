@@ -1276,7 +1276,10 @@ def make_all():
     gfx_cinema.make(out)
     import gfx_institute                                         # MAP11's institute: three looks
     import map_institute1                                        # ... and the names and door faces the map asks for
+    import map_institute2                                        # MAP12 wears the same look: its names and faces join MAP11's
     gfx_institute.make(out, map_institute1.SIGNS, map_institute1.FACES)
+    import gfx_lift                                              # the lift's buttons (MAP12)
+    gfx_lift.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)

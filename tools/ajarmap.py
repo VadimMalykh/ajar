@@ -52,7 +52,9 @@ def recess(m, m1, m2, out, floor, line_id, target, *, far_colour=None, color=Non
     line id of the pair's other door, the line id of the other brass frame):
     see brass_pair(). `only` (frames with `home`): no other door hangs in it;
     2: none but the two of `home` and `chain`, and it is no way out by itself
-    (way_longer). `tag` is a sector tag for the recess and its stub: that of
+    (way_longer). `only=3` with `home` a Pair's colour (TEAL, ORANGE): the
+    frame takes a leaf of that Pair and nothing else (MAP12's booth; in a
+    PUZZLE graph `only={frame: the two leaves' keys}`). `tag` is a sector tag for the recess and its stub: that of
     the lift car it is in, so that it rides with the car (see lift_button).
     """
     b1 = (m1[0] + out[0] * DEPTH, m1[1] + out[1] * DEPTH)
@@ -84,17 +86,19 @@ LIFT = 700          # sector tag of a level's lift car, and of the recesses in i
 LIFT_T = 20050      # AjarLiftButton
 
 
-def lift_button(m, a, b, z, tid, at, *, tag=LIFT, tex="AJEXIT"):
+def lift_button(m, a, b, z, tid, at, *, tag=LIFT, tex="AJEXIT", foot=False):
     """A button on the wall a-b that sends the lift car (every sector with
     `tag`: the car, and the recesses in it, made with recess(tag=)) to the
     floor height z. The car's floor and ceiling move together, so a landing
     is a sector beside it whose floor is at a stop's height and whose
     ceiling is lower than the car's floor at the next stop up: at any other
     stop it is a wall. `tid` is a thing id of its own for each button, `at` any
-    spot in the room for the thing that stands for it.
+    spot in the room for the thing that stands for it. `foot`: `tex` is
+    laid from the floor up (a plate at hand height on a strip of its own).
     A frame or a far side in the car rides with it (src/zscript/lift.zs)."""
     m.cut(a, b)
-    m.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=tex, exact=True)
+    m.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=tex, exact=True,
+           **(dict(dontpegbottom=True) if foot else {}))
     m.thing(at[0], at[1], LIFT_T, id=tid, args=(tag, z))
 
 
@@ -158,7 +162,7 @@ HOME, HOME_MOUTH = 190, 590
 SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze): see squeeze()
 
 
-def way_home(m, x, y, colour, *, grille=False, only=False):
+def way_home(m, x, y, colour, *, grille=False, only=False, floor=0):
     """A way out the player has to build (MAP05 on). The same night room as
     way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
     its two ends are not joined yet: the far side of the door `colour` is in
@@ -185,9 +189,11 @@ def way_home(m, x, y, colour, *, grille=False, only=False):
     frame takes no door but `colour` (and its brass is inlaid with that
     colour, to be told by). Then no other door hung there makes a
     way in for it, and it comes in on foot or not at all. In a PUZZLE graph:
-    `only={HOME: colour}`."""
+    `only={HOME: colour}`. `floor`: the room's floor, where it is not 0
+    (MAP12's is on the top floor)."""
     room(m, [x, x + 160, x + 320] if grille else [x, x + 320], [y, y + 96, y + 160, y + 256],
-         lambda i, j: j == 1, ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+         lambda i, j: j == 1, ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
+         floor=floor)
     if grille:
         m.cut((x + 160, y + 16), (x + 160, y + 64))
         for a, b in ((y, y + 16), (y + 64, y + 96), (y + 96, y + 160), (y + 160, y + 256)):
@@ -196,10 +202,10 @@ def way_home(m, x, y, colour, *, grille=False, only=False):
     brass = ("AJXA", "AJXAF")
     # the far side keeps the surround of its colour, so that whoever gets here
     # by another way (a Stray door) can tell which door belongs in the frame
-    recess(m, (x, y + 96), (x, y + 160), (-1, 0), 0, far_id(colour), HOME, far_colour=colour)
+    recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far_id(colour), HOME, far_colour=colour)
     # ... and a frame that takes that door only says so: its brass is inlaid
     # with the door's colour
-    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0, HOME, far_id(colour),
+    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, HOME, far_id(colour),
            trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=far_id(colour), only=only)
     for xx in (x, x + 320):
         m.line((xx, y + 96), (xx, y + 160), id=HOME_MOUTH)

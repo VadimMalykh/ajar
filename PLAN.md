@@ -3029,6 +3029,49 @@ freely.
   round; whether the Pair is to be the only way in 12 (and MAP11's 8-action
   way round shut); whether MAP11's size is right (it has not been played).
 
+### MAP12 "Going Up", built (2026-11-19)
+
+`tools/map_institute2.py`, `src/zscript/map12.zs`; `MAP=MAP12 ./run.sh`,
+`MAP=MAP12 MODE=1 EXTRA=-nomonsters tools/smoke.sh`. **Not played by hand.**
+Vadim's answers: the lift for MAP12 and optics later; a bit larger than
+MAP11. MAP11's way round the Pair is still his to decide. What differs from
+the outline above is Claude's choice, to be changed freely.
+
+- **The building.** Ground: the loading hall (start, RED, one frame). First
+  floor, west of the shaft: the workshops (GREEN, a TEAL leaf; no frame). Top,
+  north: the winding room (key 1; no frame), and behind locks 1 and 2 the
+  night room, whose brass frame takes VIOLET only. Off the hall behind lock
+  1, the store, sunk 64 (VIOLET; two frames): a drop in, a hole and steps
+  out that no door fits. The battery room (key 2, plasma rifle) has no way
+  in but GREEN. Gaps drop from the top to the workshops and from the
+  workshops to the hall: the only way up is the lift.
+- **The lift's rules.** The car's own panel is torn out. The hall and the
+  workshops each have buttons 0 and 1. Only the dispatcher's booth has
+  button 2, and the booth is walled up behind glass on the first floor: the
+  other TEAL leaf hangs in its frame, which takes a TEAL leaf and nothing
+  else (new: AjarFrame args[4] = 3, `recess(home=TEAL, only=3)`; without it
+  the solver found VIOLET swapped into the booth and the top lost for good).
+- **The puzzle**, 9 door actions, no stuck states, nothing losable: RED in
+  the hall's frame, button 1, through RED (the first floor); the leaf in the
+  car's frame (the booth opens onto the car), button 2 and back (the top,
+  key 1); GREEN for key 2; RED taken down and hung in the store, VIOLET
+  through it into the car, by the leaf to the booth, button 2, and back: the
+  top with VIOLET. The Pair is needed, and so is the car's frame for the
+  first trip to the top (the workshops have no frame for the leaf).
+- **The fights**: 100 monsters on "Resident" (54 on "Just visiting"), 18400
+  health of them (MAP11: 86 and 15030), ammunition worth 2.29 times that,
+  595 health, 300 armour; every weapon up to the plasma rifle. Five
+  ambushes; the one only this level can have comes with key 2: demons
+  appear in the car, wherever it is, and come out by whatever door opens
+  onto it.
+- **Its look** is MAP11's Post Box, from MAP11's parts (the hall wears the
+  experiment hall, the workshops the lab, the winding room the lobby with
+  the machine for its engine). New: the lift's buttons (`tools/gfx_lift.py`,
+  AJLB0..2 and the torn-out AJLBX). Nothing else was drawn for it: no look
+  board, no secret, no tour of views yet.
+- **MAP11 now leads to MAP12**; MAP12's way out starts it again until
+  there is a MAP13.
+
 ### The lift, built and tested (2026-11-19)
 
 `tools/map_lift.py`, `src/zscript/lift.zs`; `MAP=LIFT ./run.sh`,

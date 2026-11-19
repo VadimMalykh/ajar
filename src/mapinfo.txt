@@ -187,11 +187,21 @@ map MAP10 "All Change"
 	music = ""
 }
 
-// Act 2, level 1 (tools/map_institute1.py). Its way out starts it again
-// until there is a MAP12.
+// Act 2, level 1 (tools/map_institute1.py).
 map MAP11 "By Appointment"
 {
-	next = "MAP11"
+	next = "MAP12"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 2, level 2 (tools/map_institute2.py). Its way out starts it again
+// until there is a MAP13.
+map MAP12 "Going Up"
+{
+	next = "MAP12"
 	nointermission
 	nojump
 	nocrouch

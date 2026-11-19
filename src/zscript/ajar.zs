@@ -14,6 +14,7 @@
 //  * AjarFrame args[4]: 1 if no door but that of args[1] hangs in it; 2 if
 //    none but those of args[1] and args[2] (the third frame of a longer
 //    chain, ajarmap.way_longer: it is not a way out by itself).
+//    3 if none but a leaf of the Pair whose colour is args[1] (MAP12).
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
 //    With args[3] the frame is one end of a chain (ajarmap.brass_pair):
@@ -463,6 +464,7 @@ class AjarHandler : EventHandler
 			if (a.wait > 0) { a.wait -= 5; continue; }
 			class<Actor> cls = AmbushClass(a.args[1]);
 			if (!cls) { a.Destroy(); continue; }
+			a.SetZ(a.floorz);                                   // one in a lift car comes where the car is now
 			Actor m = Actor.Spawn(cls, a.pos, ALLOW_REPLACE);
 			if (!m) continue;
 			if (!m.TestMobjLocation()) { m.ClearCounters(); m.Destroy(); continue; }
@@ -840,6 +842,12 @@ class AjarHandler : EventHandler
 			Say("The " .. carried.Label() .. " door opens onto this very room.\nHung here it would lead nowhere.");
 			return;
 		}
+		if (carried && f.args[4] == 3 && !(carried.IsPair() && carried.args[1] == f.args[1]))
+		{
+			// MAP12's booth: a frame for a leaf of one Pair (args[1] its colour)
+			Say("This frame takes a " .. (f.args[1] == 8 ? "TEAL" : "ORANGE") .. " leaf\nand no other door.");
+			return;
+		}
 		if (carried && f.args[4] == 1 && carried.args[0] != f.args[1])
 		{
 			Say("The brass frame takes one door only:\nthe one that opens onto this room.");
@@ -1140,6 +1148,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "LIFT" && mode == 2) LiftCompanyScript(mo, t);
 		else if (level.mapname ~== "LIFT") LiftScript(mo, t);
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
+		else if (level.mapname ~== "MAP12" && mode == 1) GoingUpScript(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
