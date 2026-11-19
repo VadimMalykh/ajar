@@ -31,26 +31,33 @@ extend class AjarHandler
 	// Monsters that only a mirror shows (ajarmap.unseen): those that stand in
 	// the marker's box when the level begins, while they are alive and in
 	// that box. One that walks out of the room with the mirrors is seen like
-	// any other, and unseen again if it goes back.
+	// any other, and unseen again if it goes back. Since 2026-11-19 also one
+	// an ambush brings into that box (AmbushTick: MAP15's gallery, RED's).
 	Array<Actor> unseenOnes;
 	Array<Actor> unseenMarks;
 
 	void UnseenInit()
 	{
+		let mi = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(mi.Next())) UnseenJoin(a);
+	}
+
+	// Is the monster a in a marker's box? Then it is one of the unseen.
+	bool UnseenJoin(Actor a)
+	{
+		if (!a || !a.bIsMonster) return false;
 		let marks = ThinkerIterator.Create("AjarUnseen");
 		Actor u;
 		while (u = Actor(marks.Next()))
-		{
-			let mi = ThinkerIterator.Create("Actor");
-			Actor a;
-			while (a = Actor(mi.Next()))
-				if (a.bIsMonster && abs(a.pos.x - u.pos.x) < u.args[0] && abs(a.pos.y - u.pos.y) < u.args[1])
-				{
-					a.bOnlyVisibleInMirrors = true;
-					unseenOnes.Push(a);
-					unseenMarks.Push(u);
-				}
-		}
+			if (abs(a.pos.x - u.pos.x) < u.args[0] && abs(a.pos.y - u.pos.y) < u.args[1])
+			{
+				a.bOnlyVisibleInMirrors = true;
+				unseenOnes.Push(a);
+				unseenMarks.Push(u);
+				return true;
+			}
+		return false;
 	}
 
 	bool unseenTold;

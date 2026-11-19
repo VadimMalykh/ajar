@@ -4,7 +4,8 @@ Line ids: 1xx = frames, 200 + colour = that door's far side; a fixed
 doorway number n uses 150 + n and 250 + n
 (number 9 is every level's way out: way_out()). 270-289 are the places a
 Stray door may open onto (stray_place). 190 is the frame of a way out the
-player builds (way_home), 590 both of its mouths.
+player builds (way_home), 590 both of its mouths; 193 and 591 the same for
+a secret way out the player builds (MAP15).
 """
 FRAME_T, DOOR_T = 20001, 20002
 KEY_T = {"1": 20011, "2": 20012, "3": 20013, "4": 20014}      # room keys, by number
@@ -138,8 +139,9 @@ UNSEEN_T = 20093    # AjarUnseen
 
 def unseen(m, box):
     """Every monster that stands in `box` (x1, y1, x2, y2) when the level
-    begins is drawn only in mirrors (a Line_Mirror wall) until it is dead.
-    Those that come later (an ambush) are seen as usual."""
+    begins is drawn only in mirrors (a Line_Mirror wall) while it is alive
+    and in the box. So is one an ambush() brings into the box later
+    (2026-11-19)."""
     x1, y1, x2, y2 = box
     m.thing((x1 + x2) / 2, (y1 + y2) / 2, UNSEEN_T, args=((x2 - x1) // 2, (y2 - y1) // 2))
 
@@ -223,10 +225,11 @@ def way_out(m, x, y, colour):
 
 
 HOME, HOME_MOUTH = 190, 590
+SECRET_HOME, SECRET_MOUTH = 193, 591    # a secret way out the player builds (way_home(frame=, mouth=))
 SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze): see squeeze()
 
 
-def way_home(m, x, y, colour, *, grille=False, only=False, floor=0):
+def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, mouth=HOME_MOUTH, rose=False):
     """A way out the player has to build (MAP05 on). The same night room as
     way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
     its two ends are not joined yet: the far side of the door `colour` is in
@@ -254,10 +257,17 @@ def way_home(m, x, y, colour, *, grille=False, only=False, floor=0):
     colour, to be told by). Then no other door hung there makes a
     way in for it, and it comes in on foot or not at all. In a PUZZLE graph:
     `only={HOME: colour}`. `floor`: the room's floor, where it is not 0
-    (MAP12's is on the top floor)."""
+    (MAP12's is on the top floor).
+
+    A secret way out the player builds (MAP15 since 2026-11-19): `frame` and
+    `mouth` are SECRET_HOME and SECRET_MOUTH instead, and `rose` gives it the
+    look of PINK's places (ROSE, as way_longer()) and makes the carpet strip
+    one secret sector. Hung there, the door turns its mouths into
+    Exit_Secret, and the plain way out is not touched (ComeHome)."""
+    tinted = dict(color=ROSE) if rose else {}
     room(m, [x, x + 160, x + 320] if grille else [x, x + 320], [y, y + 96, y + 160, y + 256],
          lambda i, j: j == 1, ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
-         floor=floor)
+         floor=floor, **tinted, **(dict(strip=dict(special=1024)) if rose else {}))
     if grille:
         m.cut((x + 160, y + 16), (x + 160, y + 64))
         for a, b in ((y, y + 16), (y + 64, y + 96), (y + 96, y + 160), (y + 160, y + 256)):
@@ -266,13 +276,13 @@ def way_home(m, x, y, colour, *, grille=False, only=False, floor=0):
     brass = ("AJXA", "AJXAF")
     # the far side keeps the surround of its colour, so that whoever gets here
     # by another way (a Stray door) can tell which door belongs in the frame
-    recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far_id(colour), HOME, far_colour=colour)
+    recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far_id(colour), frame, far_colour=colour, **tinted)
     # ... and a frame that takes that door only says so: its brass is inlaid
     # with the door's colour
-    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, HOME, far_id(colour),
-           trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=far_id(colour), only=only)
+    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, frame, far_id(colour),
+           trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=far_id(colour), only=only, **tinted)
     for xx in (x, x + 320):
-        m.line((xx, y + 96), (xx, y + 160), id=HOME_MOUTH)
+        m.line((xx, y + 96), (xx, y + 160), id=mouth)
     for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
         m.thing(x + cx, y + cy, 35)                               # candelabra
 
@@ -563,17 +573,18 @@ def key(m, number, x, y):
     m.thing(x, y, KEY_T[str(number)])
 
 
-def room(m, xs, ys, runner, *, ceil, light, rug="AJRUG", lite="AJLITE", lift=16, **base):
+def room(m, xs, ys, runner, *, ceil, light, rug="AJRUG", lite="AJLITE", lift=16, strip=None, **base):
     """A flat rectangular room cut into a grid by the lists xs and ys. Cells
     for which runner(i, j) is true (column i, row j) are a strip of carpet
     under a raised row of ceiling lights; use it to lead from door to door.
-    `rug` is the carpet's flat."""
+    `rug` is the carpet's flat; `strip`, more sector properties for the
+    carpet's cells only (a secret: special=1024)."""
     for i in range(len(xs) - 1):
         for j in range(len(ys) - 1):
             cell = [(xs[i], ys[j]), (xs[i], ys[j + 1]), (xs[i + 1], ys[j + 1]), (xs[i + 1], ys[j])]
             if runner(i, j):
                 m.sector(cell, ceil=ceil + lift, lift=lift, light=min(255, light + 30),
-                         **dict(base, ftex=rug, ctex=lite))
+                         **dict(base, ftex=rug, ctex=lite, **(strip or {})))
             else:
                 m.sector(cell, ceil=ceil, light=light, **base)
 

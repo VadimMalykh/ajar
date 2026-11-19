@@ -16,7 +16,7 @@ Frame 105. North of that the beam lab: the emitter at its west end fires
 east into RED's far side; frame 107. Off the lab two cells behind steel
 doors: sensor B opens the first (key 1, BLUE), sensor C the second (key 2;
 beyond it the store, VIOLET). BLUE's far side is the periscope room, which
-has no other way in: frame 104 on its west wall, and two mirrors across its
+has no other way in but the secret's (below): frame 104 on its west wall, and two mirrors across its
 east corners that carry what flies out of 104 round to sensor C. Off the
 hall behind locks 1 and 2, the night room, whose brass frame takes VIOLET
 only.
@@ -28,7 +28,17 @@ through it with the twin, which goes in 104 (or RED itself does), the
 emitter again: sensor C. Keys 1 and 2, VIOLET, and the night room.
 
 Secret: PINK, leaning by the gallery's south wall, drawn only in the
-mirror. Its far side is a room with the secret way out.
+mirror. Its far side is a night room in PINK's rose (a secret sector): PINK's
+far side in its west end, in its east end a brass frame inlaid with PINK
+that takes PINK only (SECRET_HOME), and in the back of that frame's empty
+recess sensor D. Hung there, PINK is the secret way out (2026-11-19). A
+passage from the periscope room's north wall leads to it, behind a steel
+door that sensor D opens.
+
+So the secret: RED in 103 and PINK in 101 (or the other way round), the
+emitter: the beam goes by RED and the mirror into PINK, out of its far side
+down the night room onto sensor D. PINK down again, through BLUE into the
+periscope room with it, through the steel door, and PINK in the brass frame.
 """
 import ajarmap
 import map_institute1 as I1
@@ -135,7 +145,9 @@ hang((-448, 256), (-320, 256), "SL")
 # Its north wall is mirrors from x = -256 to the east wall.
 GAL = (-448, 816, 704, 1264)
 ajarmap.fitted(m, GAL, [
-    ((-192, 976, -128, 1040), I1.pillar("PI")), ((128, 976, 192, 1040), I1.pillar("PI")),
+    # each before a strip of wall between two panes, not before a pane: from
+    # the way in the pane 0..192 is clear (Vadim, 2026-11-19)
+    ((-64, 976, 0, 1040), I1.pillar("PI")), ((192, 976, 256, 1040), I1.pillar("PI")),
     ((448, 976, 512, 1040), I1.pillar("PI")),
 ], floor=0, ceil=H, light=200, color=tint(PALE), **dress(wall="LB", ftex="FL", ctex="KL"))
 passage((96, 656, 160, 816), "LA", "LB", "GALLERY", ((96, 640), (160, 640)), (0, 1))
@@ -200,12 +212,15 @@ frame((1536, 544), (1536, 608), (-1, 0), 104, MINT)
 ajarmap.recess(m, (1536, 288), (1536, 352), (-1, 0), 0, far_id(BLUE), 101, far_colour=BLUE, color=tint(MINT))
 ajarmap.target(m, 1550, 64, 3, beam=True, z=30)
 
-# --- the secret: PINK's far side, and the secret way out -----------------------------------
-ajarmap.fitted(m, (1536, 900, 1792, 1156), [], floor=0, ceil=160, light=160, color=tint(STEEL),
-               special=1024, **dress(wall="EV", ftex="FE", ctex="KE"))
-ajarmap.recess(m, (1536, 996), (1536, 1060), (-1, 0), 0, far_id(PINK), 101, far_colour=PINK, color=tint(STEEL))
-m.cut((1792, 996), (1792, 1060))
-m.line((1792, 996), (1792, 1060), special=244, playeruse=True, mid="AJEXIT", exact=True)      # Exit_Secret
+# --- the secret: PINK's far side, and a secret way out the player builds ------------------
+# A night room in PINK's look: what flies out of PINK's far side goes east
+# down y = 1028 into the back of the brass frame's recess, onto sensor D.
+ajarmap.way_home(m, 1536, 900, PINK, only=True, frame=ajarmap.SECRET_HOME, mouth=ajarmap.SECRET_MOUTH, rose=True)
+ajarmap.target(m, 1862, 1028, 4, beam=True, z=30)
+# the way in on foot, from the periscope room's north wall: a steel door sensor D opens
+passage((1664, 656, 1728, 900), "CO", "", "STAFF ONLY", ((1664, 640), (1728, 640)), (0, 1))
+ajarmap.steel(m, (1664, 640), (1728, 640), (0, 1), 0, 4)
+m.line((1664, 640), (1728, 640), id=314)
 
 # --- the door with locks 1 and 2, and beyond it the night room ----------------------------
 EV = dict(ceil=160, light=150, color=tint(STEEL), **dress(wall="EV", ftex="FE", ctex="KE"))
@@ -253,7 +268,7 @@ things(2046, (-640, -40))
 
 # --- the gallery: what only the glass shows ---------------------------------------------------
 things(IMP, (-300, 900), (-60, 1100), (60, 900), (260, 1150), (400, 900), (560, 1100), (640, 950), (-380, 1180), angle=270)
-things(DEMON, (-160, 1180), (0, 1000), (320, 1000), (560, 900), (-300, 1050), angle=270)
+things(DEMON, (-160, 1180), (40, 1000), (320, 1000), (560, 900), (-300, 1050), angle=270)
 things(KNIGHT, (240, 900), (-60, 880), angle=270)
 things(IMP, (-200, 900), (160, 1100), (520, 1200), angle=270)
 things(CACO, (60, 1180), (420, 1160), angle=270)
@@ -317,17 +332,17 @@ things(2046, (1900, 600), (1660, 40))
 m.thing(1792, 420, 2019)                                                    # blue armour
 
 # --- the secret ----------------------------------------------------------------------------------------
-m.thing(1664, 1100, 83)                                                     # megasphere
-things(17, (1600, 940), (1720, 940))
-things(2046, (1600, 1116), (1740, 1116))
+m.thing(1696, 1110, 83)                                                     # megasphere
+things(17, (1610, 940), (1790, 940))
+things(2046, (1610, 1116), (1790, 1116))
 
 # --- ambushes --------------------------------------------------------------------------------------------
 # a leaf, taken: the hall
 ajarmap.ambush(m, 10 + TEAL, IMP, (300, 60), (470, 60), (384, 200), angle=90)
 ajarmap.ambush(m, 10 + TEAL, DEMON, (150, 240), (620, 260), angle=0)
 ajarmap.ambush(m, 10 + TEAL, REVENANT, (60, 100), (700, 240), angle=0, after=4)
-# RED, taken: the gallery again, and this time they are seen
-ajarmap.ambush(m, 10 + RED, IMP, (-300, 880), (-60, 1150), (200, 1000), (400, 1100), angle=180)
+# RED, taken: the gallery again, and they too are seen only in the glass while there
+ajarmap.ambush(m, 10 + RED, IMP, (-300, 880), (-60, 1150), (220, 1110), (400, 1100), angle=180)
 ajarmap.ambush(m, 10 + RED, SPECTRE, (-250, 1150), (60, 950), angle=180)
 ajarmap.ambush(m, 10 + RED, KNIGHT, (560, 1000), (300, 880), angle=180, after=3)
 # key 1, in the first cell: round you, and then the lab outside
@@ -362,11 +377,13 @@ PUZZLE = dict(
     walk=[("hall", "lab"), ("lab", "hall"),                                 # the steel door the target in the glass opens
           ("lab", "cell1", "b"), ("cell1", "lab", "b"),                     # the steel doors the sensors open
           ("lab", "cell2", "c"), ("cell2", "lab", "c"),
-          ("hall", "night", "12"), ("night", "hall")],
+          ("hall", "night", "12"), ("night", "hall"),
+          ("peri", "secret", "d"), ("secret", "peri", "d")],                 # the steel door sensor D opens
     keys={"1": "cell1", "2": "cell2"},
     frames={101: "hall", 102: "hall", 103: "hall", 106: "hall", 105: "lab", 107: "lab", 104: "peri",
-            ajarmap.HOME: "night"},
-    only={ajarmap.HOME: VIOLET, 106: (LEAF_A, LEAF_B)},
+            ajarmap.HOME: "night", ajarmap.SECRET_HOME: "secret"},
+    only={ajarmap.HOME: VIOLET, 106: (LEAF_A, LEAF_B), ajarmap.SECRET_HOME: PINK},
+    stays={ajarmap.SECRET_HOME: PINK},                                      # the secret way out, built
     doors={
         RED: dict(home="lab", lean="lab"),
         BLUE: dict(home="peri", lean="cell1"),
@@ -379,6 +396,8 @@ PUZZLE = dict(
                   lines=[{RED: (r,), x: (f,), y: (106,)} for r, f in BY_GLASS for x, y in PAIRS]),
         "c": dict(at="lab", say="fire the emitter: the beam is on sensor C",
                   lines=[{RED: (104,)}] + [{RED: (r,), x: (f,), y: (104,)} for r, f in BY_GLASS for x, y in PAIRS]),
+        "d": dict(at="lab", say="fire the emitter: the beam goes into PINK and onto sensor D",
+                  lines=[{RED: (r,), PINK: (f,)} for r, f in BY_GLASS]),
     },
 )
 I1.m = _theirs

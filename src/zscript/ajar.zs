@@ -18,6 +18,8 @@
 //    4 if any door but the one whose colour is args[1] (MAP11's archive).
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
+//    Frame 193 is the same for a secret way out (MAP15), and lines 591 its
+//    mouths: they become Exit_Secret, and the plain way out is not touched.
 //    With args[3] the frame is one end of a chain (ajarmap.brass_pair):
 //    args[3] is the other brass frame, args[1] and args[2] the far-side
 //    lines of the two doors that belong in the pair, either way round. Their
@@ -207,6 +209,8 @@ class AjarHandler : EventHandler
 	const STRAY_PLACES = 20;
 	const STRAY_TICS = 175;       // the longest a Stray door stays open: see StrayTics()
 	const HOME_MOUTH = 590;       // both mouths of a way out the player builds (ajarmap.way_home)
+	const SECRET_HOME = 193;      // the brass frame of a secret way out the player builds (ajarmap.SECRET_HOME)
+	const SECRET_MOUTH = 591;     // and both its mouths
 	AjarDoor carried;
 	int testTic;
 
@@ -452,6 +456,8 @@ class AjarHandler : EventHandler
 		return null;
 	}
 
+	int ambushHid[20], ambushShown[20];      // by cause: ambushers that came unseen (UnseenJoin), and seen
+
 	void AmbushTick(PlayerPawn mo)
 	{
 		if (level.maptime % 5) return;
@@ -475,11 +481,13 @@ class AjarHandler : EventHandler
 			if (!m.TestMobjLocation()) { m.ClearCounters(); m.Destroy(); continue; }
 			m.angle = a.angle;
 			Actor.Spawn("TeleportFog", a.pos, ALLOW_REPLACE);
+			bool hid = UnseenJoin(m);                           // come into a room only the glass shows
+			if (g >= 0 && g < 20) { if (hid) ambushHid[g]++; else ambushShown[g]++; }
 			if (CVar.GetCVar("ajar_autotest").GetInt())
 			{
 				// a scripted walkthrough: it came, which is all the test wants
 				// to know, and it must not stand in the walker's way
-				Console.Printf("AJARTEST ambusher=%s cause=%d", m.GetClassName(), g);
+				Console.Printf("AJARTEST ambusher=%s cause=%d unseen=%d", m.GetClassName(), g, hid);
 				m.ClearCounters();
 				m.Destroy();
 			}
@@ -512,17 +520,23 @@ class AjarHandler : EventHandler
 	// faces it: the room opens onto itself. The door stays there for good,
 	// as the doorway of every earlier level's way out, and walking into
 	// either end ends the level.
-	bool wayOutBuilt;
-	void ComeHome(AjarDoor d)
+	//
+	// The same in the brass frame SECRET_HOME (MAP15, 2026-11-19) is a secret
+	// way out: its mouths end the level by Exit_Secret, and the plain way out
+	// (wayOutBuilt, HOME_MOUTH) is left as it was.
+	bool wayOutBuilt, secretOutBuilt;
+	void ComeHome(AjarDoor d, AjarFrame f)
 	{
 		d.nailer = d;
-		wayOutBuilt = true;
-		let it = level.CreateLineIdIterator(HOME_MOUTH);
+		bool secret = f.args[0] == SECRET_HOME;
+		if (secret) secretOutBuilt = true;
+		else wayOutBuilt = true;
+		let it = level.CreateLineIdIterator(secret ? SECRET_MOUTH : HOME_MOUTH);
 		int i;
 		while ((i = it.Next()) >= 0)
 		{
 			Line l = level.lines[i];
-			l.special = 243;                           // Exit_Normal
+			l.special = secret ? 244 /* Exit_Secret */ : 243 /* Exit_Normal */;
 			l.args[0] = 0;
 			l.activation = SPAC_Cross;
 		}
@@ -713,7 +727,7 @@ class AjarHandler : EventHandler
 			let si = ThinkerIterator.Create("AjarDoor");
 			AjarDoor o;
 			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
-			if (!f.args[3] && f.args[4] != 2 && f.args[1] && f.args[1] == d.args[0]) ComeHome(d);
+			if (!f.args[3] && f.args[4] != 2 && f.args[1] && f.args[1] == d.args[0]) ComeHome(d, f);
 		}
 		// A Pair leaf leads to the frame its twin hangs in, if it hangs; and
 		// then the twin leads here.
@@ -847,6 +861,8 @@ class AjarHandler : EventHandler
 			Say("Two doors, two frames, one room at the other end of both.\nThe way out runs through it.");
 		else if (chainHung && d.frame && d.frame.args[3])
 			Say("Two doors, two brass frames, but they do not face each other:\nthe lift is at another floor.");
+		else if (d.nailer == d && d.frame && d.frame.args[0] == SECRET_HOME)
+			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is a secret way out!");
 		else if (d.nailer == d)
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is the way out.");
 		else if (old) Say("You swap the " .. old.Label() .. " door for the " .. d.Label() .. " one.");
@@ -867,7 +883,9 @@ class AjarHandler : EventHandler
 		}
 		if (f.door && f.door.nailer)
 		{
-			if (f.door.nailer == f.door) Say(wayOutBuilt && f.args[1] ? "This is the way out now." : "This doorway is part of the building.\nIt is not yours to take.");
+			bool secret = f.args[0] == SECRET_HOME;
+			if (f.door.nailer == f.door && secret && secretOutBuilt) Say("This is a secret way out now.");
+			else if (f.door.nailer == f.door) Say(wayOutBuilt && f.args[1] && !secret ? "This is the way out now." : "This doorway is part of the building.\nIt is not yours to take.");
 			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
 			return;
 		}
@@ -1052,7 +1070,9 @@ class AjarHandler : EventHandler
 	// --- headless smoke tests (ajar_autotest 1 or 2, see tools/smoke.sh) ----
 	override void WorldUnloaded(WorldEvent e)
 	{
-		if (CVar.GetCVar("ajar_autotest").GetInt()) Check("levelExited", true);
+		int mode = CVar.GetCVar("ajar_autotest").GetInt();
+		if (mode) Check("levelExited", true);
+		if (mode == 3 && level.mapname ~== "MAP15") Check("outBySecretWayOut", e.NextMap ~== "MAP32");
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1205,6 +1225,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP13" && mode == 1) SightUnseenScript(mo, t);
 		else if (level.mapname ~== "MAP14" && mode == 1) OnTheLevelScript(mo, t);
 		else if (level.mapname ~== "MAP15" && mode == 1) OnReflectionScript(mo, t);
+		else if (level.mapname ~== "MAP15" && mode == 3) OnReflectionSecret(mo, t);
 		else if (level.mapname ~== "MAP16" && mode == 1) WatchYourStepScript(mo, t);
 		else if (level.mapname ~== "MAP16" && mode == 3) WatchYourStepCompany(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);

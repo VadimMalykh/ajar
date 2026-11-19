@@ -3761,6 +3761,31 @@ MAP16, and its secret one leads to MAP32.
   head at 200, and the first time the player stands in the room with any
   of them alive it says "This room is not as empty as it looks. The glass
   shows who is here." Seen headless only.
+- **The secret way out, built with PINK** (2026-11-19, Vadim disliked the
+  switch with the arrow). PINK's far side is now a night room in PINK's
+  rose (`way_home(only=True, frame=SECRET_HOME, mouth=SECRET_MOUTH,
+  rose=True)`: frame 193, mouths 591, the carpet strip one secret sector),
+  with a brass frame inlaid with PINK that takes PINK only. Hung there,
+  PINK stays and the mouths become `Exit_Secret` (`ComeHome` tells the
+  frame by its id; `wayOutBuilt`, frame 190 and lines 590 are not touched;
+  `secretOutBuilt`). In the back of that frame's empty recess sensor D
+  (tag 4): it opens a steel door (line 314) at the north end of a passage
+  from the periscope room's north wall (x 1664-1728, signed STAFF ONLY) to
+  the middle of the night room's south wall. So: RED in 103 and PINK in
+  101 (or the other way round), the emitter; the beam goes by RED and the
+  mirror into PINK, out of its far side down the room onto sensor D. Then
+  PINK through BLUE into the periscope room, through the steel door, into
+  the brass frame. In the solver: region "secret", sight "d", and
+  `stays={193: PINK}` (new in solve.py: a door hung there is not taken
+  down again); nothing losable. `MAP=MAP15 MODE=3 tools/smoke.sh` plays it
+  and leaves by it to MAP32.
+- **RED's ambush is unseen too** (2026-11-19): an ambusher that comes in
+  an `AjarUnseen` box joins the unseen ones (`UnseenJoin`), unseen while
+  alive and in the box, as those placed there. The flash is seen.
+- **The gallery's pillars stand before the strips of wall** between the
+  panes (2026-11-19, Vadim: the one at 128..192 stood straight before the
+  way in and hid the glass): x -64..0, 192..256 and 448..512. From the way
+  in the pane 0..192 is clear. A demon and a spot of RED's ambush moved.
 - Not known: how hard the gallery is (monsters that are not seen, knights
   and cacodemons among them); whether the target in the glass is found;
   whether the beam's way round the periscope room reads; the frame rate
