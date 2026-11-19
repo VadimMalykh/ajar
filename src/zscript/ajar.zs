@@ -450,6 +450,7 @@ class AjarHandler : EventHandler
 		case 68: return "Arachnotron";
 		case 71: return "PainElemental";
 		case 64: return "Archvile";
+		case 20004: return "AjarNailer";       // MAP16: it comes to the foot of the stair
 		case 16: return "Cyberdemon";
 		}
 		return null;
@@ -1212,7 +1213,9 @@ class AjarHandler : EventHandler
 		if (t % 35 == 0)
 			Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
-		if (level.mapname ~== "LAB") LabScript(mo, t);
+		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
+		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
+		else if (level.mapname ~== "LAB") LabScript(mo, t);
 		else if (level.mapname ~== "OPT") OpticsScript(mo, t, mode);
 		else if (level.mapname ~== "MIR") GlassScript(mo, t, mode);
 		else if (level.mapname ~== "LIFT" && mode == 2) LiftCompanyScript(mo, t);
@@ -1223,6 +1226,8 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP14" && mode == 1) OnTheLevelScript(mo, t);
 		else if (level.mapname ~== "MAP15" && mode == 1) OnReflectionScript(mo, t);
 		else if (level.mapname ~== "MAP15" && mode == 3) OnReflectionSecret(mo, t);
+		else if (level.mapname ~== "MAP16" && mode == 1) WatchYourStepScript(mo, t);
+		else if (level.mapname ~== "MAP16" && mode == 3) WatchYourStepCompany(mo, t);
 		else if (level.mapname ~== "TEST") TestLevelScript(mo, t, mode);
 		else if (level.mapname ~== "MAP04" && mode == 3) DisposalScript(mo, t);
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
@@ -2959,6 +2964,7 @@ class AjarHandler : EventHandler
 			else if (level.mapname ~== "MAP13") SightUnseenViews();
 			else if (level.mapname ~== "MAP14") OnTheLevelViews();
 			else if (level.mapname ~== "MAP15") OnReflectionViews();
+			else if (level.mapname ~== "MAP16") WatchYourStepViews();
 			else if (level.mapname ~== "MAP02") for (int k = 0; k < hotel.Size(); k++) tourViews.Push(hotel[k]);
 			else for (int k = 0; k < theatre.Size(); k++) tourViews.Push(theatre[k]);
 		}
@@ -3617,6 +3623,94 @@ class AjarHandler : EventHandler
 		if (t > 570 && t < 596) mo.vel.xy = Actor.AngleToVector(mo.angle, 10);
 		if (t == 600) { Check("onGallery", mo.pos.y > 512 && mo.pos.z > 100 && abs(mo.pos.x - 128) < 8); mo.vel.xy = (0, 0); }
 		if (t == 605) Pose(mo, 400, 560, 128, 200);                    // shot: the gallery, looking back at 116
+	}
+
+	// The lab, MODE=2 and 3: company with a Pair (before MAP16). What must
+	// hold whatever anyone does: both leaves hung, each leads to the other's
+	// frame and both frames are open; otherwise neither leads anywhere and a
+	// leaf that hangs is a wall.
+	bool PairOk(AjarDoor a, AjarDoor b)
+	{
+		if (a.frame && b.frame)
+			return a.args[0] == b.frame.args[0] && b.args[0] == a.frame.args[0]
+				&& !(FindLine(a.args[0]).flags & Line.ML_BLOCKING) && !(FindLine(b.args[0]).flags & Line.ML_BLOCKING);
+		if (a.args[0] || b.args[0]) return false;
+		if (a.frame && !(FindLine(a.frame.args[0]).flags & Line.ML_BLOCKING)) return false;
+		if (b.frame && !(FindLine(b.frame.args[0]).flags & Line.ML_BLOCKING)) return false;
+		return true;
+	}
+
+	void LabPut(AjarDoor d, double x, double y)
+	{
+		if (d.frame) Unhang(d.frame);
+		d.carried = false;
+		d.SetOrigin((x, y, 0), false);
+		d.Show();
+	}
+
+	// MODE=2: a thief takes a hung leaf while it is watched (the link is cut
+	// at both ends) and hangs it in another frame (the link is made again
+	// from there); a leaf hung alone is no way through for it; a Pair, both
+	// hung, is, and it comes out at the twin.
+	bool leafTaken, leafMoved, pairBroken, shutWay, throughPair;
+
+	void LabThiefScript(Actor mo, int t)
+	{
+		AjarDoor a = LabLeaf(8, 0), b = LabLeaf(8, 1), red = DoorOf(1);
+		AjarFrame w = FindFrame(111), e = FindFrame(112), g = FindFrame(116);
+		if (!PairOk(a, b) && !pairBroken) { pairBroken = true; Console.Printf("AJARTEST pair broken at t=%d", t); }
+		if (t > 40 && t % 35 == 0 && thief)
+			Console.Printf("AJARTEST thief pos=(%d,%d,%d) loot=%s a=%d>%d b=%d>%d", thief.pos.x, thief.pos.y, thief.pos.z,
+				thief.loot ? thief.loot.Label() : "-", a.frame ? a.frame.args[0] : 0, a.args[0], b.frame ? b.frame.args[0] : 0, b.args[0]);
+		if (t == 20) { Pose(mo, 120, 128, 0, 180); a.Used(mo); w.Activate(mo); }
+		if (t == 25) { b.Used(mo); Pose(mo, 700, 128, 0, 0); e.Activate(mo); Check("linked", a.args[0] == 112 && b.args[0] == 111); }
+		if (t == 40) { Pose(mo, 384, 300, 0, 0); thief = AjarThief(Actor.Spawn("AjarThief", (680, 128, 0))); thief.testMode = 1; }
+		if (t > 40 && t < 700 && thief && thief.loot == b && a.Shut()
+			&& (FindLine(111).flags & Line.ML_BLOCKING) && (FindLine(112).flags & Line.ML_BLOCKING)) leafTaken = true;
+		if (t > 40 && t < 700 && leafTaken && b.frame && b.frame != e) leafMoved = true;
+		if (t == 700)
+		{
+			Check("thiefTakesLeafAndCutsTheLink", leafTaken);
+			Check("thiefHangsLeafElsewhere", leafMoved);
+			Check("pairHeldTogether", !pairBroken);
+			thief.Destroy();
+		}
+		// a leaf hung alone: nothing to walk through
+		if (t == 705) { LabPut(a, 300, 440); LabPut(b, 440, 440); LabPut(red, 620, 440); }
+		if (t == 710) { Pose(mo, 120, 128, 0, 180); a.Used(mo); w.Activate(mo); Check("aloneShut", a.Shut()); }
+		if (t == 715) { Pose(mo, 384, 300, 0, 0); thief = AjarThief(Actor.Spawn("AjarThief", (300, 128, 0))); thief.testMode = 2; }
+		if (t > 715 && t < 820 && thief && thief.jobLine) shutWay = true;
+		if (t == 820) { Check("shutLeafIsNoWay", !shutWay); thief.Destroy(); }
+		// both hung, one in the hall and one on the gallery: it goes up by them
+		if (t == 825) { LabPut(a, 300, 440); LabPut(b, 440, 440); LabPut(red, 620, 440); }
+		if (t == 830) { Pose(mo, 120, 128, 0, 180); a.Used(mo); w.Activate(mo); b.Used(mo); Pose(mo, 128, 600, 128, 90); g.Activate(mo); }
+		if (t == 835) { Check("joined", a.args[0] == 116 && b.args[0] == 111); Pose(mo, 384, 300, 0, 180); thief = AjarThief(Actor.Spawn("AjarThief", (300, 128, 0))); thief.testMode = 2; }
+		if (t > 835 && thief && thief.pos.z > 100) throughPair = true;
+		if (t == 1130) { Check("thiefWalksThroughPair", throughPair); Check("pairHeldTogetherToTheEnd", !pairBroken); }
+	}
+
+	// MODE=3: a nailer nails a hung leaf. It cannot be taken; its twin can,
+	// and the nailed leaf is then a shut door that stays nailed; the twin
+	// hung elsewhere, the nailed leaf leads there.
+	void LabNailerScript(Actor mo, int t)
+	{
+		AjarDoor a = LabLeaf(8, 0), b = LabLeaf(8, 1);
+		AjarFrame w = FindFrame(111), e = FindFrame(112), c = FindFrame(113);
+		if (!PairOk(a, b) && !pairBroken) { pairBroken = true; Console.Printf("AJARTEST pair broken at t=%d", t); }
+		if (t == 20) { Pose(mo, 120, 128, 0, 180); a.Used(mo); w.Activate(mo); }
+		if (t == 25) { b.Used(mo); Pose(mo, 700, 128, 0, 0); e.Activate(mo); Check("linked", a.args[0] == 112 && b.args[0] == 111); }
+		if (t == 40) { Pose(mo, 384, 300, 0, 0); nailer = Actor.Spawn("AjarNailer", (600, 128, 0)); }
+		if (t > 40 && t % 35 == 0 && nailer)
+			Console.Printf("AJARTEST nailer pos=(%d,%d) a=%d b=%d", nailer.pos.x, nailer.pos.y, a.nailer != null, b.nailer != null);
+		if (t > 40 && !killTic && b.nailer == nailer) { killTic = t; Check("nailerNailsLeaf", true); }
+		if (killTic && t == killTic + 2) { Pose(mo, 700, 128, 0, 0); e.Activate(mo); Check("nailedLeafCannotBeTaken", !carried && b.frame == e); }
+		if (killTic && t == killTic + 4) { Pose(mo, 120, 128, 0, 180); w.Activate(mo); Check("itsTwinCanBe", carried == a && b.Shut() && b.nailer == nailer); }
+		if (killTic && t == killTic + 6) { Pose(mo, 640, 80, 0, 270); c.Activate(mo); Check("nailedLeafLeadsToTheNewFrame", a.args[0] == 112 && b.args[0] == 113 && !(FindLine(112).flags & Line.ML_BLOCKING)); }
+		if (killTic && t == killTic + 10) Pose(mo, 500, 128, 0, 0);          // shot: the nailed leaf, open onto 113
+		if (killTic && t == killTic + 80) nailer.DamageMobj(null, null, 1000, 'None');
+		if (killTic && t == killTic + 100) { Check("nailsFallOut", !b.nailer && !a.nailer); Pose(mo, 700, 128, 0, 0); e.Activate(mo); }
+		if (killTic && t == killTic + 102) { Check("leafTakenAgain", carried == b && a.Shut()); Check("pairHeldTogether", !pairBroken); }
+		if (t == 600 && !killTic) Check("nailerNailsLeaf", false);
 	}
 
 	void TestLevelScript(Actor mo, int t, int mode)
