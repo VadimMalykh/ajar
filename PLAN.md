@@ -4986,3 +4986,119 @@ untouched by it (their checks pass as before).
   the box leads back by door 1); shooting in a room of goes (ghosts fire
   again what was fired, as in the open fight, untested). Not played by hand:
   `MAP=PLATE ./run.sh` in the worktree.
+
+## The second goes lab: a won fight that stays, the press, two keys at once (built 2026-11-20)
+
+Three more pieces for the rebuilt MAP32, on two lab maps: `PRESS`
+(`tools/map_press.py`) and `TWOKEY` (`tools/map_twokey.py`); the engine in
+`src/zscript/goes.zs` (its header has the contracts), hooks in `time.zs`,
+`plate.zs` and `ajar.zs` (`Hang`, `SayHung`). No real level uses them yet:
+MAP31, MAP32 and PLATE pass their checks as before.
+
+- **A fight that becomes a room of goes.** An `AjarZone` of a hall with
+  `args[4]` 3 (`ajartime.zone(..., mix=True)`; documented in the header of
+  `time.zs`). Until it is won it is an open fight (boxes, ghosts whose shots
+  are real, the last go's monsters on the demo, the rescue at death, winding
+  if the map has plates), and besides: at the start of each go every touched
+  door is as at the first entry, each go writes down what the player did to
+  doors and presses (the room of goes' `AjarGoLog`), and the earlier selves
+  do it again at their tics by the same rules (the conflict rule included);
+  a ghost on a plate presses it. In the fight the door log replaces the
+  stepping-out door record (`DoorWatch`): this kind of fight is never
+  watched from a box. When it is won the steel door (sector tag 3090 + 100 *
+  fight) opens as usual and the hall is a room of goes (`WonGoes` calls
+  `BeginGoes`): its time doors lead into box 1, a go begins at the win, the
+  hall as it is then (bodies, doors, what lies there) is the new first
+  entry, the fight's ghosts and demo are gone. Begin anew forgets the goes
+  since the win. Leaving its zones by a way that is not a time door ends it
+  for good, as any room of goes.
+- **Choices of mine there.** The press is not put up at the win itself (it
+  finishes its stroke), only at the start of each later go. What earlier
+  selves hold at the win is left leaning where they stand. Box 1 is not
+  kept back from the spare boxes (it is spare only if the fight was won
+  without stepping out, and the room of goes uses it anyway). After the win
+  nobody is rescued (`bBuddha` off): the press kills the player for real
+  there, as anything would in a room of goes. Killed in the fight while an
+  earlier self is in the hall, the player goes on as it (the open fight's
+  rule); what that self had still to do to doors and presses is dropped and
+  what it held is left leaning where it stood (`MixGoOnAs`, not tested).
+  Winding in such a fight (`MixWound`): the doors are as at the first entry
+  with the earlier selves' door actions up to that moment done at once, and
+  what the player did in this go is forgotten (not tested; PRESS has no
+  winding plates). The messages say "as when the fight was won" in such a
+  room (`goesWon`).
+- **The press.** `AjarPress` (20046, `ajartime.press(m, x, y, tag)`): args[0]
+  the sector tag of its area. `AjarPressSwitch` (20047,
+  `ajartime.press_switch(m, x, y, angle, tag)`): a lever plate on a wall,
+  args[0] the press's tag; USE sets it off if it is up ("The press is not up
+  yet." otherwise). A warning (18 tics, the countdown beep), down in 16 tics,
+  down 35, up in 70 (`WARN`, `DOWN`, `HOLD`, `RISE`), then ready again; the
+  lever shows down while it works. Moved tic by tic with
+  `Sector.MoveCeiling` (crush 0: things in the way are squeezed, not hurt,
+  and do not stop it); bodies in the area are made `DontGib` first, so they
+  are not ground to pulp. At the bottom and every tic while down, everything
+  living in its sectors dies: awake monsters (damage with the player as the
+  source, so the kill and the kill count are theirs), monsters on the demo
+  (`Squashed`: the demo lets them go, as `Wake` does, and they are killed
+  for real; the next go's demo has them die then), and the player (with
+  the fight's `bBuddha`, they are then rescued by its rule). Ghosts are not
+  hurt. Each go begins with every press up and ready (`PressesUp` in
+  `Retake`, `Resume`, `NextGo`, `Anew`); a player's USE is written in the
+  go log (`pTic`, `pTag`) and an earlier self's is done again at its tic if
+  the press is up then (`GhostPresses`). Sounds (mine): the countdown beep
+  to warn, the lift's start going down and up, the fast door's slam at the
+  bottom, the lift's stop at the top. A dropped item under the press is
+  destroyed by the engine (none in PRESS).
+- **Two keys at once.** `AjarTogether` (20048, `ajartime.together(m, x, y,
+  angle, frame)`): a small clock lamp on the wall beside a frame, args[0]
+  the frame's id (a thing rather than a frame arg, so that there is
+  something to see). A Pair whose leaves hang in two frames of which one or
+  both have one is joined only if the leaves were hung within 70 tics of
+  each other (`AjarDoor.hungAt`, set in `Hang`; `InTime`); else both are
+  shut leaves. A leaf taken down and hung again is a new hanging; ghosts'
+  hangings count (they hang through `Hang` too). While a leaf hangs alone in
+  such a frame and its 70 tics are not up the lamps blink (every such lamp,
+  so the far one shows it too) and that frame's lamp clicks every half
+  second; joined in time the item pick-up chime and green lamps; too late
+  the lift's stop, red lamps and "Too late: ..." (also when the time of a
+  leaf hung alone runs out).
+- **The maps.** PRESS: the hall 1024 by 768 entered from the way in to the
+  south (outside the zones). Its north third (sector tag 3500, steel walls
+  and ceiling) is the press; the switch is on the south wall at x 320. Ten
+  monsters, all AjarCues of wave 1 (six demons, four imps, `always`), all
+  outside the press. Time doors in the west and south walls; box 1 west and
+  box 2 south, behind glass. Sprung frame 101 in the east wall, RED by it,
+  its plate 324 from the mouth; RED's far side in a small room to the east
+  (outside the zones), whose east end is the exit. The steel door is in the
+  west wall, into a lobby that is in the hall's zone (harmless). TWOKEY: a
+  room of goes shaped as an L (south arm 1152 by 320, north arm 320 by 768
+  at its east end). Frame A (131) in the west wall, frame B (132) in the
+  north wall, a lamp and a TEAL leaf by each; on foot about 1550 apart (the
+  generator asserts over 1400: about 90 tics at a run; the brief's 900
+  would be about 55). Time door south, the box behind it with the plate
+  that forgets. The exit is a plain line in a nook off the north arm (the
+  brief allowed it): the joined Pair is only the way across.
+- **Tests.** `MAP=PRESS MODE=3` (13: begun, killedIntoTheBox,
+  theyGoWhereTheyWent, pressCameDown, killsAreMine, killedOnTheDemo, won,
+  clockDoorStays, steelOpens, afterTheWin, myEarlierSelfHoldsIt, through,
+  levelExited). In the runs 4 to 6 of the 10 monsters were on the demo
+  under the press and died. `killsAreMine` counts the press's own rise of
+  the level's kill count and the player's: once a seventh kill came in the
+  same second from elsewhere (most likely a death of the last go played on
+  the demo: `Pose` calls `Die`, which counts it; MAP31 does the same, left
+  alone). `MAP=PRESS MODE=4` (the switch is used at the first tic from 200
+  on with nothing under it; 5: cameDownOnNothing, upAtTheStart,
+  myEarlierSelfPressesIt, killedByThePress (under it while the first self
+  is still in the hall: on as that self), upAtTheStartAgain). `MAP=TWOKEY
+  MODE=3` (8: begun, itTicks, tooLateAlone, tookDown, forgotten,
+  joinedWithMyself, throughThePair, tooLateTogether). The old ones pass as
+  before (PLATE 3 and 4, TDOOR 3, 4 and 5, TIME 3, MAP32 3 and 4, MAP31 6
+  and 7; MAP31 3 with only its known random `noneWakesAsIStepIn`).
+- **Not done or not tested**: winding in such a fight, `MixGoOnAs` with
+  doors in hand, a door carried in at the first entry, a monster that
+  wakes on the demo under the press, the press over a frame or a door (a
+  hung door's leaf is not hurt or moved), a press in a fight that is
+  watched from a box (closed fights: it is not recorded for replay), several
+  presses at once, a Pair whose leaves start hung in such frames, the exit
+  behind the Pair. Not played by hand: `MAP=PRESS ./run.sh` and
+  `MAP=TWOKEY ./run.sh` in the worktree.

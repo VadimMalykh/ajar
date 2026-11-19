@@ -19,7 +19,11 @@
 //    a hall's zone may be drawn generously.
 //    args[4] on a hall's zone: 1 an OPEN fight (below), 2 a ROOM OF GOES
 //    (plate.zs: no monsters, one box, any number of goes; it is over when
-//    the player leaves its zones by a way that is not a time door).
+//    the player leaves its zones by a way that is not a time door), 3 an
+//    open fight that is also a room of goes and becomes one when it is won
+//    (goes.zs: earlier selves do again what they did to doors, plates and
+//    presses; from the win on its time doors lead into box 1, as a room of
+//    goes', from the hall as it is at the win).
 //  * Lines 3000 + 100 * fight + j: the hall's time doors, j from 1.
 //    Lines 3050 + 100 * fight + n: the door of box n. All are portal lines
 //    as a door's far side is (ajarmap.recess).
@@ -381,6 +385,7 @@ class AjarTimeHandler : EventHandler
 		{
 			if (a.args[4] == 2) goesFights.Push(a.args[0]);       // plate.zs
 			else if (a.args[4]) openFights.Push(a.args[0]);
+			if (a.args[4] == 3) mixFights.Push(a.args[0]);        // goes.zs
 			zf.Push(a.args[0]); zb.Push(a.args[1]);
 			zx.Push(a.pos.x); zy.Push(a.pos.y); zw.Push(a.args[2]); zh.Push(a.args[3]);
 		}
@@ -1041,6 +1046,8 @@ class AjarTimeHandler : EventHandler
 		EndGo();
 		ClearHall();
 		NewTake(mo);
+		PressesUp();                // goes.zs: each go begins with the presses up
+		if (mixed) MixRetake(mo);
 		HallDoors(0);
 		h.Link(BoxLine(fight, at), used, TIME_TEX);
 		h.Link(used, BoxLine(fight, at), TIME_TEX);
@@ -1262,6 +1269,7 @@ class AjarTimeHandler : EventHandler
 		while (nfx.first.Size() < to) nfx.first.Push(nfx.slot.Size());
 		ot = to;
 		wound = true;
+		if (mixed) MixWound(mo);    // goes.zs
 	}
 
 	// --- the reel -----------------------------------------------------------------
@@ -1711,6 +1719,7 @@ class AjarTimeHandler : EventHandler
 		boxes.Clear();
 		phase = LIVE;
 		DoorBegin();
+		MixBegin(k);                // goes.zs
 		HallDoors(1);
 		if (!(said & 1)) Say("A door with a clock on it leads out of the fight,\nand back into it where you left.");
 		said |= 1;
@@ -1921,6 +1930,7 @@ class AjarTimeHandler : EventHandler
 		if (best < 0) return false;
 		AjarTake t = takes[best];
 		AjarGhost g = ghosts[best];
+		if (mixed) MixGoOnAs(best, g);         // goes.zs
 		KeepClip(mo);
 		Actor c = Actor.Spawn("AjarSnatch", mo.pos);
 		if (c) { c.angle = mo.angle; c.translation = mo.translation; c.sprite = mo.sprite; c.frame = mo.frame; c.vel.z = 1; }
@@ -2076,7 +2086,7 @@ class AjarTimeHandler : EventHandler
 		comeBack = false;
 		phase = LIVE;
 		at = 0;
-		if (open) NewTake(mo);
+		if (open) { NewTake(mo); PressesUp(); if (mixed) MixRetake(mo); }
 		else
 		{
 			main = new("AjarTrack");
@@ -2196,6 +2206,7 @@ class AjarTimeHandler : EventHandler
 
 	void Win()
 	{
+		if (mixed) LeaveHeld();     // goes.zs: what earlier selves hold is left where they stand
 		won.Push(fight);
 		for (int n = trips + 1; n <= BoxCount(fight); n++) spare.Push(fight * 10 + n);     // the boxes not used are kept
 		HallDoors(0);
@@ -2210,6 +2221,7 @@ class AjarTimeHandler : EventHandler
 		boxes.Clear();
 		slotCls.Clear();
 		level.ExecuteSpecial(11 /* Door_Open */, null, null, false, 3090 + 100 * fight, 32);
+		if (mixed) WonGoes();       // goes.zs: the hall is a room of goes from now on
 	}
 
 	override void WorldTick()
@@ -2240,7 +2252,8 @@ class AjarTimeHandler : EventHandler
 		}
 		else if (phase == LIVE)
 		{
-			DoorWatch(FightTic());
+			if (mixed) GoWatch(ot);     // goes.zs: what the player did to doors, in this go's log
+			else DoorWatch(FightTic());
 			if (mo.health > 0 && k == fight)
 			{
 				if (at == 0 && b == trips + 1) { if (open) Retake(mo); else Leave(mo); }
@@ -2252,7 +2265,13 @@ class AjarTimeHandler : EventHandler
 				Show(fight, ft, mo);
 				if (at == 0) Snap(mo);
 				KeepKills();
-				if (open) { RecordTake(PlayerPawn(mo)); PlayGhosts(mo); PlayDemo(mo); RecordDemo(); RecordFx(rec.fx); ot++; }
+				if (open)
+				{
+					RecordTake(PlayerPawn(mo));
+					PlayGhosts(mo);
+					if (mixed) { GhostDoors(); GhostPresses(); }      // goes.zs
+					PlayDemo(mo); RecordDemo(); RecordFx(rec.fx); ot++;
+				}
 				else Record(main);
 				// a hall with a show is empty until the count is over
 				int go = HasShow(fight) ? SHOW_GO : 0;
@@ -2300,6 +2319,9 @@ class AjarTimeHandler : EventHandler
 		if (mode == 7 && level.mapname ~== "MAP31") WindScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "PLATE") PlateScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "PLATE") GoesScript(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "PRESS") PressScript(PlayerPawn(mo));
+		if (mode == 4 && level.mapname ~== "PRESS") PressGoScript(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "TWOKEY") TwoKeyScript(PlayerPawn(mo));
 	}
 
 	// How far the fight that is being watched has got, and when the door opens.

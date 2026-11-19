@@ -87,6 +87,30 @@ def make(out):
             p.disc(cx, cy, 1, shade(brass, 0.4))
         p.noise(4, 33)
         out[f"sprites/AJPL{fr}0.png"] = p.png(grab=(28, 28))
+    # a switch on the wall that sets off a press (AjarPressSwitch): a steel
+    # plate with a red lever, up and ready (A), and down while the press works (B)
+    for fr, ready in (("A", True), ("B", False)):
+        w = Img(24, 32, (96, 102, 110))
+        w.frame(0, 0, 24, 32, (60, 64, 70), 2)
+        w.rect(3, 26, 21, 29, (220, 180, 40))                 # hazard stripes on its foot
+        for x in range(3, 21, 6):
+            w.rect(x, 26, x + 3, 29, (30, 30, 30))
+        w.rect(10, 6, 14, 22, (40, 40, 44))                   # the slot
+        y = 7 if ready else 17
+        w.rect(7, y, 17, y + 4, (210, 40, 30))                # the handle
+        w.noise(4, 34)
+        out[f"sprites/AJPS{fr}0.png"] = w.png(grab=(12, 32))
+    # a lamp beside a frame whose Pair must be hung together (AjarTogether):
+    # a small clock face; dark (A), lit while a leaf waits (B), green joined
+    # (C), red too late (D)
+    for fr, lit in (("A", (70, 66, 56)), ("B", (250, 236, 170)), ("C", (90, 230, 110)), ("D", (230, 60, 40))):
+        c = Img(26, 26, (0, 0, 0, 0))
+        c.disc(13, 13, 12, (150, 128, 70))
+        c.disc(13, 13, 10, lit)
+        dark = (30, 28, 24)
+        c.rect(12, 5, 14, 14, dark)                           # the hands, at twelve and three
+        c.rect(12, 12, 19, 14, dark)
+        out[f"sprites/AJTW{fr}0.png"] = c.png(grab=(13, 26))
     # the top of a tall block with an arrow on it, pointing south (a flat's top is north)
     ar = Img(64, 64, (150, 146, 138))
     ar.noise(6, 32)
