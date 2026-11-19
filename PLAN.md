@@ -4913,6 +4913,118 @@ checks, all pass. **Not played by hand.**
   when played); the clock's "running back" for the first second after
   winding back to the start (the overlay shows it as at a step-out).
 
+## MAP16 rebuilt after Vadim played it (2026-11-20)
+
+`tools/map_institute6.py` written again; `src/zscript/map16.zs` (the
+weighbridge and the tests), `enemies.zs` (the porter), `tools/solve.py`
+(the porter and the lure in the solver), `tools/gfx.py` (glass, the CA wall
+lever). **Not played by hand.**
+
+**What Vadim found** in the first MAP16: too many keys and stores, and the
+puzzle hid in them; the stair and its thief did not read. Agreed: keep the
+Pair (the head's leaf fixed, the player's leaf loose), GREEN, RED, VIOLET
+and the brass frame; drop keys 1 and 2, the strongroom, the cold store and
+frame 105's stores.
+
+**The level now**, MAP11's look, four floors, the well closed, each floor a
+wing with its drop at the far end; the drops stay open:
+
+- Top (384): the reading room (start, the leaf leans there) looks through
+  glass into the sealed lobby: the head's TEAL frame, the weighbridge in
+  front of it, and the heavy shutter to the test hall (brass frame,
+  VIOLET only, the night room). The lobby's door to the reading room opens
+  only from the lobby side (a bolt) and stays open.
+- Labs (256): the hall cut east-west by a trench with bars (shots and sight
+  pass, nobody crosses). GREEN in the south half; its frame in the south
+  wall, its far side in the north wall. The drop to the canteen off the
+  north half; a lab each side.
+- Canteen (128): RED leans; its frame in the west wall, its far side on the
+  gallery above. The gallery's lever opens the shutter to the base for
+  good. Kitchen to the east. Secret: a panel in the gallery's west wall,
+  the upper texture unpegged (the tell), opens on use; blue armour.
+- Base (0): the boiler room and the foot (frame 104). The den is raised
+  (40) behind bars with its own frame (105, TEAL only) and VIOLET. The staff
+  stair into it: its top step is level with the den and 54 high, and the
+  line at its foot blocks players; the porter (52) is the only thing that
+  passes. The lower steps are open above so the porter sees down the
+  stair (Claude's choice: with all four steps low it saw neither the
+  foot nor the player). The hole (squeeze) to the cubby, whose doorway of
+  the building's goes up to the lobby. The cubby is not secret.
+
+**The porter** (a thief with args[2] = its frame): takes the TEAL leaf only,
+hung or leaning, only while it sees the player, from any frame but its own;
+always hangs it in the den's frame and never takes it from there; uses no
+other door. With nothing to do it walks back to its post in a straight line
+(Doom's chasing beside the hung leaf set it off the wrong way). Killed,
+another comes out of the den 30 seconds later, every time; killed on its
+stair or in the den with the leaf, the leaf is hung in the den's frame.
+`CanReach` now also checks headroom.
+
+**The nailer** comes when VIOLET is first taken, stays in the boiler room
+(cannot climb into the den), nails what hangs at the foot. The porter
+leaves a nailed leaf. The nails fall when the nailer dies.
+
+**The weighbridge** (`AjarWeighbridge`, thing 20070): the first time the
+player comes into the lobby a baron appears at the foot, on every skill;
+20 seconds after it dies another comes, until the shutter is open. Anything
+of a hell knight's mass or more on the plate opens the test hall's shutter
+for good. The player's weight does not, and a message says it was built to
+weigh something heavier. Only the first baron is in the tally.
+
+**The way through** (the solver's, and the walkthrough's): a first trip
+down empty-handed (GREEN, RED, the lever), up by the hole, the cubby and
+the doorway to the lobby, open its door; the leaf down, hung at the foot,
+up through it with the baron behind you onto the weighbridge; down again,
+let the porter see you: it carries the leaf to the den, and the head now
+opens into the den; up by the cubby, through the head into the den, VIOLET,
+back through it to the lobby, the test hall, the brass frame.
+
+Departures from the plan as briefed, and why:
+- The first trip down cannot carry the leaf: one door at a time, and the
+  labs have one frame, so GREEN must be hung first. Later trips are quick.
+- "VIOLET to the lobby, then open the lobby door, take the leaf from the
+  den" does not work: there is no frame in the lobby to set VIOLET down in,
+  and a door is only put down in a frame. So the baron goes first (the
+  leaf at the foot), then the porter carries the leaf to the den. With
+  VIOLET parked at the foot instead, the nailer nails VIOLET there.
+- The nailer is never needed: killing the porter gives 30 seconds.
+
+**Solver**: 8 door actions, 3074 states, 0 stuck, nothing lost. What it
+does not model: the porter's nails (its porter ignores the nailer; the
+nailer is luck either way), the timing of a new porter (a dead porter is
+back at once for it), the baron as a monster (it is a move: "through the
+leaf at the foot, followed", needing the lobby once entered), the
+weighbridge's other heavy monsters, and that the player alone on the plate
+does nothing (there is no move for it).
+
+**Monsters**: 148 at skill 3 (hp 17190), ammo x1.60 (about x1.51 with one
+baron, which budget.py does not count); 78 at skill 1, x2.53. Knights only
+in the base and the test hall. Ambushes: VIOLET (the nailer, revenants,
+knights), TEAL (imps, sergeants), GREEN (spectres, imps), RED (spectres,
+cacodemons).
+
+**Checks**: mapcheck 306 sectors, 0 problems; thingcheck, itemcheck 0.
+Smoke tests:
+- `MAP=MAP16 tools/smoke.sh`: 41 checks, all pass, out by the brass frame.
+- `MAP=MAP16 MODE=2 EXTRA=-nomonsters`: 17 views.
+- `MAP=MAP16 MODE=3 TIMEOUT=260`: 13 checks, all pass: the porter carries
+  the leaf from the foot to the den and stays in the base; leaves RED; a
+  nailer nails the leaf at the foot while the player is away; the porter
+  leaves the nailed leaf; the nails fall when the nailer dies; the player
+  alone on the plate opens nothing; a baron comes to the foot, follows the
+  player through the leaf onto the weighbridge, and the shutter opens; the
+  porter killed, another comes out of the den.
+- Still pass: `MAP=MAP15` modes 1 and 3 (24, 14, out by the line), `MAP=MAP32
+  MODE=3` (10, out), `MAP=LAB` modes 1, 2, 3 (13, 9, 8). `MAP=MAP32 MODE=4`
+  passes some runs and not others: its last check (`onTheGallery`, the
+  player pushed through for 22 tics must stop short of y -192) lands
+  anywhere from -35 to -206 from run to run with monsters about; on main
+  too (-190 in one run). Not this change's, but worth making steady.
+
+**Not done**: played by hand; how hard the base is with the baron and the
+nailer at once; the den's look (dark, the bars) and whether the staff
+stair reads as "only the porter".
+
 ## The plate lab: the sprung frame and the room of goes (built 2026-11-20)
 
 A lab for the rebuilt MAP32 (the player working with their earlier selves
