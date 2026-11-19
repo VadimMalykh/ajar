@@ -2125,6 +2125,7 @@ class AjarTimeHandler : EventHandler
 			Tests(mo);
 			return;
 		}
+		if (phase == LIVE && k && k != fight && b == 0 && won.Find(k) == won.Size()) Quit();     // map32.zs
 		SpareTick(mo, k, b);
 		if (phase == IDLE)
 		{
@@ -2187,6 +2188,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "TDOOR") DoorScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "TDOOR") ChainScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "TDOOR") HandScript(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "MAP32") Map32Script(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));

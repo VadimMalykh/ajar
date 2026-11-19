@@ -3495,8 +3495,8 @@ hand.** Three rooms with no way between them.
 out; the secret door and its room on the way), `MODE=2` the tour of its
 mirrors. Vadim: "just build it, I'll check in game". **Not played by
 hand.** The name, the building and the puzzle are Claude's, to be changed
-freely. MAP14 leads to it; its way out and its secret one start it again
-until there is a MAP16 and a MAP32.
+freely. MAP14 leads to it; its way out starts it again until there is a
+MAP16, and its secret one leads to MAP32.
 
 - **What changed from the outline.** One Pair, not two: every way Claude
   found to need two in one beam had a shorter way round with one. No
@@ -4465,7 +4465,7 @@ in the TIME box. The 25 seconds are Claude's guess.
   `MAP=TIME MODE=4` fails on `followed` and did before today.
 - Everything is on `origin/main`.
 
-## MAP32, the second secret level (2026-11-19, agreed in outline; not built)
+## MAP32, the second secret level (2026-11-19, agreed in outline; built: see "Double Shift" below)
 
 From MAP15's secret way out (the door only the glass shows). Vadim's brief:
 MAP31 was time paradoxes; this one joins time and space. He chose four of
@@ -4563,3 +4563,62 @@ tools/smoke.sh`: 20 checks; `MODE=4` (the chain): 8, and out by the line;
   changes**: the fights are not the same twice.
 - Two sessions building at once write over `build/ajar.pk3`:
   `AJAR_OUT=build/mine.pk3 ./build.sh`, `PK3=build/mine.pk3 tools/smoke.sh`.
+
+## MAP32 "Double Shift", built (2026-11-19)
+
+`tools/map_secret2.py`, `src/zscript/map32.zs`; `MAP=MAP32 ./run.sh`;
+`MAP=MAP32 MODE=3 TIMEOUT=120 tools/smoke.sh "$PWD/build/smoke32"`: 18
+checks, all pass, and out by the line. **Not played by hand: no fight has
+been fought, the test's monsters stand still, and the numbers of monsters
+and supplies are a first guess.** Built in a worktree (`../ajar-map32`,
+branch `map32`). Vadim chose the three steps and left the rest; the place,
+the name, the layout and the numbers are Claude's, to be changed freely.
+
+- **The place: a works, three shops.** A shop is a pit (the shop floor)
+  under a gallery, which is the way in: a drop of 64 that is not climbed.
+  Time doors in the pit's walls as in MAP31; behind glass, the offices. The
+  first trip out of a fight leads to the big one, **the wing**; the next
+  two to small ones with supplies, as MAP31's boxes. All fights are watched
+  ones (hall 1 of MAP31), none open. In plain textures: no look yet.
+- **What makes two selves needed.** A door does not go through a time door,
+  and the gallery cannot be reached from the pit or the wing. So what is
+  on the gallery can be hung there only before the drop, by the self that
+  is then seen from the wing.
+- **1, the fitting shop: meet yourself halfway.** On the gallery a TEAL
+  leaf, YELLOW, and a frame that takes a TEAL leaf only (`only=3`); in the
+  wing the twin and two frames. YELLOW opens onto shop 2, so it is wanted
+  in the wing. Hang the leaf, drop, step out, hang the twin; when the fight
+  is where it was left, go through to the gallery, fetch YELLOW, hang it
+  in the wing. The fight is not won but left. 20 monsters and two waves
+  (34 on "Resident" before thinning).
+- **2, the press shop: a fight handed across.** This one is won (its steel
+  door is the way on). Two arch-viles come with the second wave. The wing
+  has a frame and GREEN, which opens onto the lock-up, a room with a pillar
+  that nothing else leads to: what is on the player's heels at a time door
+  (two at most, an arch-vile is small enough) comes into the wing and can
+  be led through GREEN and shut away. 25 and two waves (46).
+- **3, the despatch: one chain, two selves.** RED and a brass frame on the
+  gallery, BLUE and the other brass frame in the wing, the night room
+  (`way_through`). The loop is closed in the replay and held; at the
+  handover, through BLUE onto the line and out. Left, not won. 30 and two
+  waves, a cyberdemon in the last (48). **Not "three of you"**: the loop of
+  three is not tried, and two selves are what the tests cover.
+- **Nobody is stuck.** A fight won opens its steel doors: in shops 1 and 3
+  a stair from the pit to the gallery and a passage from the gallery to
+  the wing, so everything can then be carried on foot. A player who drops
+  without hanging, or spends the wing's trip, has that left: the fight.
+- **A fight left unwon is over when the next begins**
+  (`AjarTimeHandler.Quit`, when the player stands in another fight's
+  hall): MAP31 never needed it. Coming back to a fight that was left
+  begins it again with what is still alive; not tested.
+- **The generator refuses a monster in a wall, a pillar or another of its
+  wave** (`Shop.room_for`): one that has no room never comes, and the
+  fight is never won. The first build had five such.
+- **Not here yet**: the level's own secret (the glass shows later: it
+  needs MAP15's mirrors); a hint for the player who drops without hanging;
+  a look; a `next` (it starts itself again until there is a MAP16).
+  MAP15's secret way out leads here (`secretnext`).
+- **Not tested**: any fight; a death in a fight with doors about (the
+  rescue goes by `Leave`, so the doors should be put back the same way);
+  the lock-up with real monsters after the player; the ways on foot after
+  a fight is won in shops 1 and 3.
