@@ -32,26 +32,35 @@ it sees the player, from any frame but its own, and always hangs it in the
 den's frame (its args[2]); killed, another comes out of the den 30 seconds
 later. Only it passes the staff stair into the den (its top step 54 high: the player and
 every Doom monster are 56 or more). The nailer comes to the foot when VIOLET
-is first taken and nails what hangs there. The weighbridge (AjarWeighbridge,
-map16.zs): when the player first comes into the lobby a baron appears at
-the foot, and another 20 seconds after each that dies; anything as heavy as
-a hell knight crossing the plate opens the test hall's shutter for good.
-Since 2026-11-20 it weighs the total of what stands on it (the player 100,
-monsters by their Mass; 1000 opens it), and a dial on the lobby's east wall
-beside the head shows that total in tenths up to a red mark; each baron is
-announced; and a glass case in the reading room's north wall, by the window,
-shows it solved: a baron on the plate, the dial at the mark.
+is first taken and nails what hangs there.
 
-So: the leaf down, floor by floor, to the foot; the porter carries it to
-the den, and the head opens into the den. By the hole and the cubby up to
-the lobby, through the head, VIOLET out to the lobby. The leaf out of the
-den, hung at the foot and nailed there, and up through it with the baron
-behind: it comes out of the head onto the weighbridge. VIOLET into the
-brass frame.
+The weighbridge (AjarWeighbridge, map16.zs) weighs what stands or lies on
+its plate: the player 100, live monsters and dead ones' bodies by their
+Mass. While the total is 1000 or more the test hall's shutter goes up; when
+it falls below, the shutter comes down again (never on anyone). A body of
+1000 or more lying on the plate (a dead baron) holds it up for good. A dial
+on the lobby's east wall beside the head shows the total in tenths up to a
+red mark, and a glass case in the reading room's north wall, by the window,
+shows it solved: a baron lying dead on the plate, the dial at the mark.
+Its baron stands on the canteen's gallery from the start, on every skill;
+20 seconds after each that dies another comes there, announced, until the
+weighbridge holds a body. It is dogged: seeing the player on the canteen
+floor below it does not give up a door it is making for.
 
-Nothing as heavy as a hell knight is anywhere but the base and the test
-hall: one coming through the head from a frame upstairs would open the
-shutter too.
+So: RED hung in the canteen's frame, up through it to the gallery with the
+leaf, and down through RED again with the baron behind; in the canteen RED
+swapped out of the frame for the leaf, and through the leaf to the lobby:
+the baron follows and comes out of the head onto the weighbridge, and the
+shutter goes up while it stands there. Killed on the plate, its body holds
+the shutter up. (The same from any floor's frame: RED hung in the labs' or
+at the foot, swapped there for the leaf.) Then the leaf to the foot; the
+porter carries it to the den, and the head opens into the den. By the hole
+and the cubby up to the lobby, through the head, VIOLET out to the lobby and
+into the brass frame.
+
+Nothing as heavy as a baron (a hell knight, a mancubus) is anywhere but the
+gallery and the test hall: one coming through the head would hold the
+shutter up as well while it stood on the plate.
 
 In the PUZZLE graph the leaf is a plain door whose far side is the lobby,
 which is what a Pair with one leaf fixed is.
@@ -86,7 +95,7 @@ LEAF = ajarmap.LEAVES[TEAL][1]              # the player's leaf, in the PUZZLE g
 # sector tags: the lobby, its weighbridge, the test hall's shutter, the bolted
 # door into the reading room, the canteen's shutter to the base
 LOBBY, PLATE, TEST_SHUTTER, LOBBY_DOOR, BASE_SHUTTER = 616, 618, 617, 615, 614
-BARON_SPOT = 16                             # the MapSpot where a baron appears
+BARON_SPOT = 16                             # the MapSpot on the gallery where the baron stands
 
 
 def box(base, height, top="BT", side=None, **k):
@@ -313,12 +322,12 @@ things(2049, (40, -1800), (560, -2120))
 m.thing(200, -2120, 2018)                                                   # green armour
 
 # the glass case in the reading room's north wall, by the window onto the
-# lobby: the weighbridge solved (a baron on the plate, the dial at the mark).
+# lobby: the weighbridge solved (a baron lying dead on the plate, the dial at the mark).
 # No time doors in this level: no plaque, and the glass framed as the window.
 CASE_A, CASE_B, CASE_DEEP = (576, -1664), (736, -1664), 96
 CASE = ajartime.case(m, CASE_A, CASE_B, (0, 1), Z3, deep=CASE_DEEP, light=220, color=tint(STEEL), plaque=False,
                      trim=("AJTRIM", "AJTRIMF"), **dress(wall="EX", ftex="FE", ctex="KE"))
-CASE_FIGURES = [(648, -1606, "plate", 0, 270), (648, -1606, "standing", BARON, 270), (704, -1554, "dial", 0, 270)]
+CASE_FIGURES = [(648, -1606, "plate", 0, 270), (648, -1606, "body", BARON, 270), (704, -1554, "dial", 0, 270)]
 for x, y, what, kind, ang in CASE_FIGURES:
     r = 1 if what == "dial" else 8
     assert CASE_A[0] + r < x < CASE_B[0] - r and CASE_A[1] + 16 + r < y < CASE_A[1] + 16 + CASE_DEEP - r, (x, y, what)
@@ -377,8 +386,10 @@ things(2049, (190, -620))
 things(2012, (860, -600))
 things(2011, (190, -250), (464, -680))
 m.thing(400, -470, 2023)                                                    # berserk, between the tables
-# the gallery
-things(IMP, (240, -140), (400, -140), (640, -140), (840, -140), (520, -110), (320, -110), angle=270)
+# the gallery: the weighbridge's baron stands at its east end, over the
+# canteen (AjarWeighbridge puts it on this spot, and each that comes after)
+m.thing(840, -150, 9001, id=BARON_SPOT, angle=270)
+things(IMP, (240, -140), (400, -140), (640, -140), (320, -110), angle=270)
 m.thing(720, -110, CHAINGUNNER, angle=270)
 things(2049, (200, -110))
 things(2048, (620, -110))
@@ -396,12 +407,11 @@ m.thing(1200, -660, 2013)                                                   # a 
 
 # --- the base -----------------------------------------------------------------------------------------
 m.thing(-576, -40, THIEF, angle=270, args=(0, 1, DEN))                       # the porter, at its post in the den
-m.thing(-480, -680, 9001, id=BARON_SPOT, angle=90)                         # where a baron appears (AjarWeighbridge)
 things(SPECTRE, (-960, -720), (-700, -260), (-200, -720), angle=0)
 things(IMP, (-960, -260), (-200, -260), (-960, -480), (-200, -470), angle=0)
 things(DEMON, (-700, -480), (-450, -480), angle=0)
 things(REVENANT, (-960, -600), (-200, -660), angle=90)
-m.thing(-760, -620, KNIGHT, angle=90)
+m.thing(-760, -620, CACO, angle=90)
 things(IMP, (-640, -260), (-450, -260), angle=270)
 m.thing(-300, -720, CHAINGUNNER, angle=90)
 m.thing(-40, -440, SERGEANT, angle=180)                                     # at the foot of the flights
@@ -416,7 +426,7 @@ things(2011, (-1200, -580), (-1100, -580))
 # ambushers: there on every difficulty), and company in the boiler room
 ajarmap.ambush(m, 10 + VIOLET, NAILER, (-640, -700), angle=90)
 ajarmap.ambush(m, 10 + VIOLET, REVENANT, (-700, -580), (-450, -600), angle=90)
-ajarmap.ambush(m, 10 + VIOLET, KNIGHT, (-750, -400), (-400, -400), angle=90, after=3)
+ajarmap.ambush(m, 10 + VIOLET, CACO, (-750, -400), (-400, -400), angle=90, after=3)
 # the leaf, taken: the reading room
 ajarmap.ambush(m, 10 + TEAL, IMP, (60, -2480), (710, -2480), angle=90)
 ajarmap.ambush(m, 10 + TEAL, SERGEANT, (192, -2500), (580, -2500), angle=90, after=2)
@@ -437,8 +447,8 @@ PUZZLE = dict(
           ("lobby", "test", "W"),                                                       # the shutter: the weighbridge
           ("test", "night"), ("night", "test"), ("test", "labS"),                       # the hatch to the labs
           ("den", "base")],                                                             # out of the den: a drop
-    keys={"L": "gallery", "b": "lobby", "B": "lobby"},
-    auto=("b", "B"),                        # the bolt is drawn from the lobby; B: a baron is at the foot
+    keys={"L": "gallery", "b": "lobby"},
+    auto=("b",),                            # the bolt is drawn from the lobby
     frames={LABS: "labS", CANTEEN: "canteen", FOOT: "base", DEN: "den", HOME: "night"},
     only={HOME: VIOLET, DEN: (LEAF,)},
     doors={
@@ -451,8 +461,9 @@ PUZZLE = dict(
     # and the canteen's landing from the foot of the flights
     thief=dict(zone="base", sees=["den", "cubby", "canteen"], takes=(LEAF,), into=DEN, watched=True, respawn=True),
     nailer=dict(zone="base"),
-    # the baron at the foot, after the player through the leaf: the weighbridge
-    lures=[dict(at="base", door=LEAF, frame=FOOT, to="lobby", key="W", needs="B")],
+    # the baron on the gallery: it follows the player through hung doors, and
+    # out of the head it is on the weighbridge
+    lures=[dict(home="gallery", to="lobby", key="W", name="baron")],
 )
 I1.m = _theirs
 
