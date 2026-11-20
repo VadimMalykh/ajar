@@ -14,7 +14,10 @@
 // clear of it on the side it is worked from, and anything else in its way
 // (an earlier self, a monster) it waits for: it never crushes. Every go of
 // a fight or a room of goes begins with every shutter shut and every
-// shutter's plate up (ShuttersShut; a screen open: below). args[2] 1 (MAP32's room 3): the sector
+// shutter's plate up (ShuttersShut; a screen open: below). A shutter is also
+// open while its key levers have it KEYED (keys.zs, AjarShutter.keyed: every
+// lever of its set pulled within two seconds of each other, then half a
+// minute; MAP32's room 4), and every go begins with none keyed. args[2] 1 (MAP32's room 3): the sector
 // right behind it is a booth whose only way out it is: a player in the booth
 // when it shuts is put out on the side it is worked from too, before the
 // opening, so nobody is shut in. args[3] a sector tag (MAP32's room 3: its
@@ -81,6 +84,7 @@ class AjarShutter : Actor
 	const TICS = 12;            // tics to open, and to shut
 	const TALL = 96;
 	bool known, want, told;
+	int keyed;                  // tics it is still keyed open by its key levers (keys.zs)
 	Array<int> secs, area;
 	Array<double> bottom;
 	double x1, y1, x2, y2;      // round the opening
@@ -146,8 +150,10 @@ class AjarShutter : Actor
 	}
 	bool IsShut() { return Opened() < 0.001; }
 	bool IsOpen() { return Opened() > 0.999; }
-	// held now (a plate that names it pressed, or someone in its area)
-	bool Held() { return Pressed(); }
+	// held now (a plate that names it pressed, someone in its area, or keyed open by its levers)
+	bool Held() { return Pressed() || keyed > 0; }
+	// keyed open for `tics` (keys.zs: every lever of its set live at once)
+	void Key(int tics) { keyed = tics; }
 	// wholly as held: a shutter fully open, a screen fully shut
 	bool Worked() { return Screen() ? IsShut() : IsOpen(); }
 
@@ -211,7 +217,13 @@ class AjarShutter : Actor
 	{
 		Super.Tick();
 		Know();
-		bool w = Pressed() != Screen();         // want it open: a shutter held, a screen not
+		if (keyed > 0)
+		{
+			keyed--;
+			// the last three seconds: a beep each second (the press's warning)
+			if (keyed > 0 && keyed <= 105 && keyed % 35 == 0) A_StartSound("switches/exitbutn", CHAN_VOICE);
+		}
+		bool w = Held() != Screen();            // want it open: a shutter held, a screen not
 		if (w != want)
 		{
 			want = w;
@@ -244,6 +256,7 @@ class AjarLamp : Actor
 	const AMBER = 4;
 	double homeZ;
 	bool homed;
+	bool quiet;                 // no click as it turns amber (AjarKeyLamp clicks its own)
 
 	Default { Radius 8; Height 16; +NOGRAVITY +WALLSPRITE +NOBLOCKMAP +DONTTHRUST +NOTELEPORT +BRIGHT }
 	States
@@ -266,7 +279,7 @@ class AjarLamp : Actor
 		if (!homed) { homed = true; homeZ = pos.z; }
 		else if (pos.z != homeZ) SetZ(homeZ);
 		int f = Shows();
-		if (f == AMBER && frame != AMBER) A_StartSound("switches/normbutn", CHAN_BODY, 0, 0.35);
+		if (f == AMBER && frame != AMBER && !quiet) A_StartSound("switches/normbutn", CHAN_BODY, 0, 0.35);
 		frame = f;
 	}
 }
@@ -445,6 +458,7 @@ extend class AjarTimeHandler
 	// stands on one presses it again at once).
 	void ShuttersShut()
 	{
+		KeysUp();                   // keys.zs: every key lever up, no shutter keyed
 		let pi = ThinkerIterator.Create("AjarPlate");
 		AjarPlate p;
 		while (p = AjarPlate(pi.Next()))

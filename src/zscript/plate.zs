@@ -136,6 +136,9 @@ class AjarGoLog play
 	// and the presses it set off (goes.zs): at tic pTic, the press with sector tag pTag
 	Array<int> pTic, pTag;
 	int pNext;
+	// and the key levers it pulled (keys.zs): at tic kTic, lever number kNum of the shutter of tag kTag
+	Array<int> kTic, kTag, kNum;
+	int kNext;
 }
 
 extend class AjarHandler
@@ -371,7 +374,7 @@ extend class AjarTimeHandler
 		AjarDoor had = h.carried;
 		DropGhosts();
 		FirstDoors();
-		for (int i = 0; i < logs.Size(); i++) { logs[i].next = 0; logs[i].pNext = 0; logs[i].broken.Clear(); }
+		for (int i = 0; i < logs.Size(); i++) { logs[i].next = 0; logs[i].pNext = 0; logs[i].kNext = 0; logs[i].broken.Clear(); }
 		for (int i = 0; i < takes.Size(); i++) takes[i].next = 0;
 		PressesUp();
 		ShuttersShut();

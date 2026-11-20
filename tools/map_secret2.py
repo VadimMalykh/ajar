@@ -27,9 +27,12 @@ drop). Every frame of a puzzle takes its own door and no other.
    middle, then 10, then two cyberdemons, and eight guards with the waves,
    none fighting another. Ammunition for about a third of them: the press is
    the way.
-4. The range (a fight of goes). A pen of 13 behind a shutter at the north end
-   of a range 1400 long; the shutter's plate is in a booth behind glass, the
-   firing spot at the south end.
+4. The range (a fight of goes), two keys under fire. A pen of 13 behind a
+   shutter at the north end of a range 1400 long, the firing spot at the south
+   end. Beside the range two wings that mirror each other, guarded, a key
+   lever at the far end of each: pulled within two seconds of each other (by
+   two selves: they are over 1750 apart on foot) they open the shutter for
+   half a minute.
 5. The airlock (a room of goes). S, L and E in a row, joined by two sprung
    frames (GREEN, PINK) whose plates are each in the chamber before; in E
    two brass frames face each other, RED hung in one from the start: BLUE,
@@ -524,14 +527,20 @@ for si, poly in enumerate(m.polys):
         ("the cage overlaps", si, poly)
 
 # === 4. the range: a fight of goes ============================================
-# The corridor from room 3 ends in a drop of 96 into the lobby, which is part
-# of the fight from 16 past the edge. The range (7200..7712, 0..1400), the
-# shutter in its north wall and the pen behind it, level with the range; the
-# booth east of the pen end, behind glass; the firing spot at the south end.
+# Two keys under fire. The corridor from room 3 ends in a drop of 96 into the
+# lobby, which is part of the fight from 16 past the edge. The range
+# (7200..7712, 0..1400), the shutter in its north wall and the pen behind it,
+# level with the range; the firing spot at the south end. Beside the range's
+# north half two wings that mirror each other, each with a key lever at its
+# far end: pulled within two seconds of each other (two selves: they are over
+# 1750 apart on foot) they open the shutter for half a minute (keys.zs). Each
+# wing has guards at their posts (idle until they see the player), more on the
+# clock, and wakes those on the demo, idle, as the player steps in (sentries).
 FIRST = len(m.polys)
 K4, F4 = 4, -96
 RX, RY, RW, RL = 7200, 0, 512, 1400
 SHUT4 = 3540            # the shutter's sector tag (map32.zs: SHUT32)
+WEST4TAG, EAST4TAG = 3541, 3542     # the wings' sectors (and their doorways'): what trips their sentries
 FIRE4 = (7456, 120)     # the firing spot (map32.zs)
 PILLARS4 = [(7296, 200), (7552, 200)]
 ajarmap.fitted(m, (RX, RY, RX + RW, RY + RL), [((x, y, x + 64, y + 64), dict(floor=F4 + 256)) for x, y in PILLARS4],
@@ -545,13 +554,92 @@ ajartime.zone(m, K4, 0, RX, RY, RX + RW, RY + RL, grow=72, mix=True)
 ENTRY4 = (stock(6600, 120, (40, 0), 2003, 8, 2046, 2046, 2046, 2046, 2046)
           + stock(6600, 200, (40, 0), 2046, 2046, 2046, 2046, 2046, 17, 17)
           + stock(6840, 120, (0, 40), 17, 2012, 2012))
-# the shutter, 384 wide, and the pen behind it (7072..7840, 1416..1736)
-ajartime.shutter(m, (7264, RY + RL), (7648, RY + RL), (0, 1), F4, SHUT4, keep=True)
+# the shutter, 384 wide, and the pen behind it (7072..7840, 1416..1736); worked by the key levers only
+SHUTTER4 = (7264, 7648)
+ajartime.shutter(m, (SHUTTER4[0], RY + RL), (SHUTTER4[1], RY + RL), (0, 1), F4, SHUT4, keep=True)
 PEN4 = (7072, 1416, 7840, 1736)
 m.sector(rect(*PEN4), floor=F4, ceil=F4 + 192, light=170, color=PEN, wall="AJBOLT")
 PEN_SECTOR = len(m.polys) - 1
 ajartime.zone(m, K4, 0, *PEN4, mix=True)
-c4 = ajartime.Crowd(m, K4, [PEN4], calm=True)
+# its lamps, on the range's north wall either side of it, facing south
+ajartime.shut_lamp(m, SHUTTER4[0] - 32, RY + RL - 2, 270, SHUT4)
+ajartime.shut_lamp(m, SHUTTER4[1] + 32, RY + RL - 2, 270, SHUT4)
+
+# the wings. Drawn for the west one, the east one its mirror about the range's axis (x 7456)
+MID4 = RX + RW // 2
+WING4C = 0xD0D8E0       # the wings' own colour
+WW4 = (6896, 720, 7184, 1380)           # the west wing (288 by 660); its range-side wall is 16 thick
+WC4 = F4 + 160
+DOOR4 = (720, 848)      # the doorway from the range, at the wing's south end, in the range-side wall
+BAFFLE4 = 224           # the baffles' length (gap 64): the first from the outer wall, the second from the range side
+B1Y, B2Y = 960, 1168
+WIN4 = (1268, 1364)     # the window in the range-side wall, beside the lever: its sill 32 over the floor, 80 high
+LEVER4 = (7040, 1378)   # in the middle of the north wall, 2 off it
+
+
+def mx(x, west):
+    return x if west else 2 * MID4 - x
+
+
+def mrect(r, west):
+    """The rectangle r of the west wing, in the wing `west` (or the east)."""
+    xa, xb = mx(r[0], west), mx(r[2], west)
+    return (min(xa, xb), r[1], max(xa, xb), r[3])
+
+
+def mpt(p, west):
+    return (mx(p[0], west), p[1])
+
+
+BAFFLES4W = [(WW4[0], B1Y, WW4[0] + BAFFLE4, B1Y + 32), (WW4[2] - BAFFLE4, B2Y, WW4[2], B2Y + 32)]
+DOORWAY4W = (WW4[2], DOOR4[0], RX, DOOR4[1])
+WINDOW4W = (WW4[2], WIN4[0], RX, WIN4[1])
+WINGS4 = [WW4, mrect(WW4, False)]
+BAFFLES4 = BAFFLES4W + [mrect(b, False) for b in BAFFLES4W]
+LEVERS4 = []            # what lies by each lever, for the reckoning
+for west in (True, False):
+    tag, n = (WEST4TAG, 1) if west else (EAST4TAG, 2)
+    wing = mrect(WW4, west)
+    ajarmap.fitted(m, wing, [(mrect(b, west), dict(floor=WC4)) for b in BAFFLES4W], floor=F4, ceil=WC4, light=190,
+                   color=WING4C, id=tag)
+    # the doorway: a gap 16 thick; nothing of the fight walks or flies through it, nor is heard
+    door = mrect(DOORWAY4W, west)
+    m.sector(rect(*door), floor=F4, ceil=F4 + 128, light=190, color=WING4C, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF",
+             id=tag)
+    for x in (door[0], door[2]):
+        m.line((x, door[1]), (x, door[3]), blockmonsters=True, blocksound=True)
+    # the window: open (shots and sight pass), nobody walks through it
+    win = mrect(WINDOW4W, west)
+    m.sector(rect(*win), floor=F4 + 32, ceil=F4 + 112, light=200, color=WING4C, wall="AJTRIM", ftex="AJTRIMF",
+             ctex="AJTRIMF", id=tag)
+    for x in (win[0], win[2]):
+        m.line((x, win[1]), (x, win[3]), blocking=True)
+    # the lever, its lamp beside it (on the range side), and by it two boxes of rockets, a cell pack, a medikit
+    ajartime.key_lever(m, *mpt(LEVER4, west), 270, SHUT4, n)
+    ajartime.key_lamp(m, *mpt((LEVER4[0] + 48, LEVER4[1]), west), 270, SHUT4, n)
+    LEVERS4 += stock(*mpt((6960, 1250), west), (40 if west else -40, 0), 2046, 2046, 17, 2012)
+    ajartime.zone(m, K4, 0, *wing, mix=True)
+    # the player (not an earlier self) in the wing wakes, idle, what of it stands there on the demo
+    ajartime.sentries(m, (wing[0] + wing[2]) / 2, wing[1] + 40, K4, tag, tag, idle=True)
+
+# the two windows face each other across the range, nothing between them
+WMID4 = [((w[0] + w[2]) / 2, (w[1] + w[3]) / 2) for w in (WINDOW4W, mrect(WINDOW4W, False))]
+assert WMID4[0][1] == WMID4[1][1] and not any(cuts(WMID4[0], WMID4[1], (x, y, x + 64, y + 64)) for x, y in PILLARS4)
+assert B2Y + 32 < WIN4[0] and WIN4[1] < WW4[3] and DOOR4[1] < B1Y - 64
+# one body cannot pull both levers in time: from one lever to the other (round the baffles, a player's
+# middle 16 off every corner, through both doorways) is more than the fastest run in 70 tics
+HALF4 = [(LEVER4[0], LEVER4[1] - 22), (BAFFLES4W[1][0] - 16, B2Y + 48), (BAFFLES4W[1][0] - 16, B2Y - 16),
+         (BAFFLES4W[0][2] + 16, B1Y + 48), (BAFFLES4W[0][2] + 16, B1Y - 16), (RX, DOOR4[1] - 16)]
+LEVER_TO_LEVER4 = walk(*HALF4, *[mpt(p, False) for p in reversed(HALF4)])
+assert LEVER_TO_LEVER4 > 1750 and LEVER_TO_LEVER4 > JOIN, LEVER_TO_LEVER4
+# the wings clear the boxes, the time doors' recesses, the corridor to room 5 and room 5
+for w in WINGS4:
+    for o in [(6992, 500, 7184, 680), (7136, 400, 7200, 464), (7712, 560, 7776, 624), (7712, 388, 8048, 516),
+              (8048, 96, 8632, 744)]:
+        assert w[2] <= o[0] or o[2] <= w[0] or w[3] <= o[1] or o[3] <= w[1], ("a wing overlaps", w, o)
+
+# the fight: all of it AjarCues, calm. The pen: wave 1
+c4 = ajartime.Crowd(m, K4, [PEN4] + WINGS4, BAFFLES4, calm=True)
 
 
 def at4(*pts):
@@ -563,20 +651,29 @@ c4.cue(1, 0, 16, *at4((384, 240)), angle=270, always=True)                      
 c4.cue(1, 0, 3003, *at4((180, 120), (588, 120)), angle=270)                             # barons
 c4.cue(1, 0, 66, *at4((60, 60), (300, 60), (468, 60), (708, 60)), angle=270)            # revenants
 c4.cue(1, 0, 64, *at4((384, 60), (384, 140)), angle=270, always=True)                   # arch-viles
+# the guards of each wing, drawn for the west one: wave 1 idle at their posts, out of sight of the doorway
+# (two imps behind the first baffle, two hell knights behind the second, a revenant by the lever); on the
+# clock (threshold 0: 25 and 50 seconds) a hell knight and a revenant, then a baron, at the doorway end
+GUARDS4 = [(1, 3001, (6930, 1040), 270, True), (1, 3001, (6950, 1110), 270, True),
+           (1, 69, (7130, 1260), 180, True), (1, 69, (7130, 1330), 180, True), (1, 66, (6940, 1320), 270, True),
+           (2, 69, (6960, 790), 0, False), (2, 66, (7060, 800), 0, False), (3, 3003, (7000, 880), 0, False)]
+for west in (True, False):
+    for wave, kind, at, ang, idle in GUARDS4:
+        c4.cue(wave, 0, kind, mpt(at, west), angle=ang if west else (180 - ang) % 360, idle=idle)
 assert not c4.bad, c4.bad
+# the posts are out of sight of the doorway: every line from its opening to a wave 1 guard crosses a baffle
+for wave, kind, at, ang, idle in GUARDS4:
+    if wave == 1:
+        for y in range(DOOR4[0], DOOR4[1] + 1, 16):
+            for x in (WW4[2], RX):
+                assert any(cuts((x, y), at, b) for b in BAFFLES4W), ("a guard seen from the doorway", at, (x, y))
+# supplies: the entrance's and what lies by the levers, against the pen's and the guards' health
 HARD4 = ajartime.toughness(c4.kinds)
-FIRE4X = ajartime.firepower(ENTRY4)
+FIRE4X = ajartime.firepower(ENTRY4 + LEVERS4)
 assert FIRE4X >= 1.2 * HARD4, (FIRE4X, HARD4)
-# the booth, east of the pen end: a way in from the range, glass onto it, the plate
-m.sector(rect(7712, 1100, 7728, 1164), floor=F4, ceil=F4 + 128, light=190, color=HALL)
-ajartime.glass(m, (7712, 1180), (7712, 1380), (1, 0), F4)
-m.sector(rect(7728, 1100, 7920, 1380), floor=F4, ceil=F4 + 128, light=210, color=HALL)
-PLATE4 = (7840, 1300)
-ajartime.shutter_plate(m, *PLATE4, SHUT4)
-ajartime.zone(m, K4, 0, 7712, 1100, 7920, 1380, mix=True)
-# time doors west and east; boxes 1 and 2 south behind glass, box 3 west
-ajartime.hall_door(m, K4, 1, (RX, 700), (RX, 764), (-1, 0), F4, color=HALL)
-ajartime.hall_door(m, K4, 2, (RX + RW, 700), (RX + RW, 764), (1, 0), F4, color=HALL)
+# time doors west and east (moved south of the wings); boxes 1 and 2 south behind glass, box 3 west
+ajartime.hall_door(m, K4, 1, (RX, 400), (RX, 464), (-1, 0), F4, color=HALL)
+ajartime.hall_door(m, K4, 2, (RX + RW, 560), (RX + RW, 624), (1, 0), F4, color=HALL)
 m.sector(rect(7200, -208, 7376, -16), floor=F4 + 64, ceil=F4 + 192, light=210, color=BOX)
 ajartime.glass(m, (7232, RY), (7344, RY), (0, -1), F4 + 64)
 ajartime.box_door(m, K4, 1, (7200, -144), (7200, -80), (-1, 0), F4 + 64, color=BOX)
@@ -592,23 +689,24 @@ ajartime.box_door(m, K4, 3, (6992, 560), (6992, 624), (-1, 0), F4 + 64, color=BO
 ajartime.zone(m, K4, 3, 6928, 500, 7184, 680)
 BOXES4 = (stock(7240, -180, (40, 0), 2018, 2012, 2046) + stock(7576, -180, (40, 0), 2018, 2012, 17)
           + stock(7020, 520, (0, 40), 2012, 2012, 2046))
-# the case in the range's east wall, seen from the way in: the player on the
-# booth's plate, another at the firing spot, bodies in the pen
-case((RX + RW, 96), (RX + RW, 288), (1, 0), F4, [(7760, 124, "plate", 0, 0), (7760, 124, "me", 0, 180),
-                                                (7760, 124, "go", 1, 0), (7790, 266, "me", 0, 180),
-                                                (7790, 266, "go", 2, 0), (7800, 170, "body", 16, 0),
-                                                (7810, 220, "body", 67, 0)], color=HALL, ceil=256)
+# the case in the range's east wall, seen from the way in: self 1 at a lever on the case's south wall, self 2
+# at a lever on its north wall, a clock lamp lit green between them, a dead cyberdemon and mancubus
+case((RX + RW, 96), (RX + RW, 288), (1, 0), F4, [(7776, 98, "lever", 0, 90), (7776, 122, "me", 0, 270),
+                                                (7776, 122, "go", 1, 0), (7776, 286, "lever", 0, 270),
+                                                (7776, 262, "me", 0, 90), (7776, 262, "go", 2, 0),
+                                                (7812, 192, "lamp", 0, 180), (7790, 160, "body", 16, 0),
+                                                (7800, 225, "body", 67, 0)], color=HALL, ceil=256)
 # the steel door the win opens, east, and the corridor on to room 5 (no fight's)
 steel(K4, (RX + RW, 420), (RX + RW, 484), (1, 0), F4)
 CORRIDOR4 = m.sector(rect(7728, 388, 8048, 516), floor=F4, ceil=F4 + 128, light=180, color=HALL)
 REGIONS[4] = ajartime.on_foot("room 4", {"range": (RX, RY, RX + RW, RY + RL + 16), "lobby": (6872, 32, 7200, 320),
-                                         "booth": (7712, 1100, 7920, 1380), "box1": (7200, -208, 7376, -16),
+                                         "west": WINGS4[0], "east": WINGS4[1], "box1": (7200, -208, 7376, -16),
                                          "box2": (7536, -208, 7712, -16), "box3": (6992, 500, 7184, 680)},
-                              [("lobby", "range", True), ("range", "booth", True), ("box1", "range"),
-                               ("box2", "range"), ("box3", "range")],
-                              {"range": [(RX + 4, 732), (RX + RW - 4, 732)], "box1": [(7204, -112)],
+                              [("lobby", "range", True), ("range", "west", True), ("range", "east", True),
+                               ("box1", "range"), ("box2", "range"), ("box3", "range")],
+                              {"range": [(RX + 4, 432), (RX + RW - 4, 592)], "box1": [(7204, -112)],
                                "box2": [(7708, -112)], "box3": [(6996, 592)]})
-ajartime.covers(m, "room 4", FIRST, REGIONS[4], zone=(6888, -72, 7920, 1736), exempt=CASES + [PEN_SECTOR, CORRIDOR4])
+ajartime.covers(m, "room 4", FIRST, REGIONS[4], zone=(6888, -72, 8020, 1736), exempt=CASES + [PEN_SECTOR, CORRIDOR4])
 # the plate that begins the fight anew: on the lobby's north wall, to the left of the way in
 ajartime.fight_anew(m, K4, 6960, 318, 270)
 

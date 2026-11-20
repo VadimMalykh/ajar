@@ -66,16 +66,19 @@ def show_tag(k):
     return 3080 + 100 * k
 
 
-def cue(m, k, wave, when, kind, *spots, angle=0, always=False, calm=False):
+def cue(m, k, wave, when, kind, *spots, angle=0, always=False, calm=False, idle=False):
     """Monsters of Doom editor number `kind` that come into fight k at
     `spots`, as wave number `wave`, once no more than `when` are left. A
     hall with a show starts empty: its first monsters are wave 1, when 0.
     `always`: on every difficulty (what a fight is remembered by). `calm`:
-    they never fight each other (NOINFIGHTING; time.zs, Calm)."""
+    they never fight each other (NOINFIGHTING; time.zs, Calm). `idle`: guards
+    at their posts (the thing's ambush flag): each comes with no target, in
+    its Spawn state, deaf, and wakes when it sees the player or is hurt
+    (time.zs, Cues)."""
     for x, y in spots:
         i = m.cues = getattr(m, "cues", -1) + 1         # thinned on the easier difficulties, as ajarmap.ambush
         m.thing(x, y, CUE_T, angle=angle, args=(k, wave, when, kind, int(calm)),
-                skill=1 if always or i % 2 == 0 else 3 if i % 4 == 3 else 2)
+                skill=1 if always or i % 2 == 0 else 3 if i % 4 == 3 else 2, **({"ambush": True} if idle else {}))
 
 
 LOCKER_T = 20042
@@ -208,11 +211,33 @@ def press_lamp(m, x, y, angle, tag, z=72):
     m.thing(x, y, PRESS_LAMP_T, angle=angle, height=float(z), args=(tag,))
 
 
-def sentries(m, x, y, fight, pen_tag, trip_tag):
+def sentries(m, x, y, fight, pen_tag, trip_tag, idle=False):
     """Fight `fight`'s monsters on the demo that stand in a sector of
     `pen_tag` wake while the player stands in a sector of `trip_tag` (time.zs,
-    AjarSentry). x, y anywhere."""
-    m.thing(x, y, SENTRY_T, args=(fight, pen_tag, trip_tag))
+    AjarSentry). x, y anywhere. `idle`: they wake idle, at their posts (no
+    target, their Spawn state, deaf), not set on the player (args[3] 1)."""
+    m.thing(x, y, SENTRY_T, args=(fight, pen_tag, trip_tag, int(idle)))
+
+
+KEY_T = 20056
+KEY_LAMP_T = 20057
+
+
+def key_lever(m, x, y, angle, tag, number, seconds=30, z=40):
+    """A key lever on a wall, facing `angle`, `z` over the floor (stand it 2
+    off the wall): every key lever of shutter `tag` is one set, and when all of
+    them have been pulled within two seconds of each other the shutter is open
+    for `seconds` (keys.zs, AjarKeyLever). `number` its number in the set, 1,
+    2, ..."""
+    m.thing(x, y, KEY_T, angle=angle, height=float(z), args=(tag, seconds, number))
+
+
+def key_lamp(m, x, y, angle, tag, number, z=72):
+    """A lamp beside key lever `number` of shutter `tag`, facing `angle`:
+    green while the shutter is keyed open, amber and green by turns while
+    another lever of the set is live, amber while an earlier self's pull of
+    another is about to come, red otherwise (keys.zs, AjarKeyLamp)."""
+    m.thing(x, y, KEY_LAMP_T, angle=angle, height=float(z), args=(tag, number))
 
 
 def seen(spaces, p, q):

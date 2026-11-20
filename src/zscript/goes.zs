@@ -36,7 +36,9 @@
 // earlier self under it is not hurt; bodies lying there stay as they lie
 // (they are not ground). Each go begins with every press up and ready, and
 // an earlier self's USE of a switch is done again at its tic (if the press
-// is up then; if not, it is mimed).
+// is up then; if not, it is mimed). Key levers (keys.zs) are logged and
+// pulled again by earlier selves the same way (GhostKeys, called from
+// GhostPresses), each go beginning with them up (KeysUp in ShuttersShut).
 //
 // TWO KEYS AT ONCE. AjarTogether thing beside a frame (args[0] the frame's
 // id): a lamp on the wall. A Pair whose leaves hang in two frames one of
@@ -383,7 +385,7 @@ extend class AjarTimeHandler
 	void MixRetake(Actor mo)
 	{
 		FirstDoors();
-		for (int i = 0; i < logs.Size(); i++) { logs[i].next = 0; logs[i].pNext = 0; logs[i].broken.Clear(); }
+		for (int i = 0; i < logs.Size(); i++) { logs[i].next = 0; logs[i].pNext = 0; logs[i].kNext = 0; logs[i].broken.Clear(); }
 		logs.Push(new("AjarGoLog"));
 	}
 
@@ -403,6 +405,10 @@ extend class AjarTimeHandler
 			while (n < lg.pTic.Size() && lg.pTic[n] < ot) n++;
 			lg.pTic.Resize(n); lg.pTag.Resize(n);
 			lg.pNext = min(lg.pNext, n);
+			n = 0;
+			while (n < lg.kTic.Size() && lg.kTic[n] < ot) n++;
+			lg.kTic.Resize(n); lg.kTag.Resize(n); lg.kNum.Resize(n);
+			lg.kNext = min(lg.kNext, n);
 		}
 		for (int i = 0; i < dHold.Size(); i++)
 		{
@@ -425,6 +431,7 @@ extend class AjarTimeHandler
 			AjarGoLog lg = logs[i];
 			lg.next = 0; lg.broken.Clear();
 			for (lg.pNext = 0; lg.pNext < lg.pTic.Size() && lg.pTic[lg.pNext] < ot; lg.pNext++) {}
+			for (lg.kNext = 0; lg.kNext < lg.kTic.Size() && lg.kTic[lg.kNext] < ot; lg.kNext++) {}
 		}
 		logs.Push(new("AjarGoLog"));
 		GhostDoors();
@@ -479,6 +486,7 @@ extend class AjarTimeHandler
 				while (s = Actor(it.Next())) if (s.args[0] == tag) s.A_StartSound("switches/normbutn", CHAN_BODY);
 			}
 		}
+		GhostKeys();                // keys.zs: and the key levers they pulled
 	}
 
 	// A monster on the demo under a press: it dies really, by the player's
