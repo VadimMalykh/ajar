@@ -5630,3 +5630,19 @@ spending a fight's boxes costs the room, never the level.
   are shut); the plate used while in a box (it is in the hall); death after
   the last box while an earlier self still fights (the existing rule: go on
   as it). **Not played by hand.**
+
+## Idea for maps 20 to 30: one map, two halves, two of you (Vadim, 2026-11-20; a note, nothing built or checked)
+
+Like MAP32, but the whole map is the room of goes.
+
+- The map has two halves. In the first go you play one half to its end.
+- Then you begin again from the start, and play the other half while your
+  earlier self plays the first beside you, in parallel.
+- Mostly the two halves are apart: two parts of one map. In some places they
+  cross, and there the two of you can be in the same fight.
+- At the end something happens that is at the same moment for both, and the
+  two of you must do something together, at once, to open the exit.
+
+Not decided: how the halves are told apart and which is played first, what
+the crossing fights are, what the thing done together is, what happens when
+the second go spoils what the first one did. No checks asked for yet.
