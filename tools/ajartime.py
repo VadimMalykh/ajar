@@ -225,7 +225,7 @@ def shutter_plate(m, x, y, tag):
 
 
 FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5, "lamp": 6, "walking": 7, "go": 8, "frame": 9,
-           "plaque": 10, "lever": 11}
+           "plaque": 10, "lever": 11, "standing": 12, "dial": 13}
 GO_OVER = 34        # how high a go's number floats over the floor under a self of scale 0.5
 
 
@@ -240,8 +240,12 @@ def figure(m, x, y, what, *, kind=0, angle=0, scale=None, z=0):
     self is, floating over its head: put it where the self stands), "frame"
     (a door frame's face, brass inlaid with colour `kind`, 0 plain: stand it
     against a wall and the "hung" door 2 in front of it), "plaque" (the
-    clock plaque over a case, which case() puts there) or "lever" (the
-    press's switch, set off, on a wall: stand it against the wall). `scale` its size (by
+    clock plaque over a case, which case() puts there), "lever" (the
+    press's switch, set off, on a wall: stand it against the wall),
+    "standing" (a live monster of Doom editor number `kind`, standing: the
+    first picture of its Spawn state) or "dial" (MAP16's weighbridge dial,
+    its needle at the red mark and its lamp green: stand it against a
+    wall). `scale` its size (by
     default 0.5; a plate 0.75, the plaque 1). Nothing about it is alive: not
     solid, not shot, never counted, never recorded and no weight on a plate.
     `z` over the floor (a go's number: over that, GO_OVER more)."""
@@ -254,24 +258,27 @@ def figure(m, x, y, what, *, kind=0, angle=0, scale=None, z=0):
 
 
 def case(m, a, b, out, floor, *, deep=96, raised=16, top=112, light=240, color=None, wall="AJWALL",
-         ftex="AJFLOOR", ctex="AJCEIL", ceil=192):
+         ftex="AJFLOOR", ctex="AJCEIL", ceil=192, plaque=True, trim=None):
     """A glass case in a wall: a-b is its glass on the room's side (16
     thick, framed in the time door's ivory), `out` points from the room into
     it. Its floor is `raised` over `floor`. Inside, it is a piece of the room:
     `wall`, `ftex`, `ctex` the room's own textures (`color` its tint), lit
     `light`. Over the glass, between its head and the room's ceiling (`ceil`
     over `floor`; no more than 24 over the head), the clock plaque that says
-    "later" (a figure). Returns the
+    "later" (a figure). In a level with no time doors (MAP16): `plaque`
+    False leaves the plaque out, and `trim` (texture, flat) frames the glass
+    in the level's own trim instead of the ivory. Returns the
     case's sector, for sealed(). Put figures in it."""
-    glass(m, a, b, out, floor, sill=raised, top=top, color=color, trim=(f"AJTR{TIME}", f"AJTF{TIME}"))
+    glass(m, a, b, out, floor, sill=raised, top=top, color=color, trim=trim or (f"AJTR{TIME}", f"AJTF{TIME}"))
     c = (a[0] + out[0] * 16, a[1] + out[1] * 16)
     d = (b[0] + out[0] * 16, b[1] + out[1] * 16)
     e = (d[0] + out[0] * deep, d[1] + out[1] * deep)
     f = (c[0] + out[0] * deep, c[1] + out[1] * deep)
     ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]
-    assert ceil - top >= 40, "no room for the plaque over the glass"
-    figure(m, (a[0] + b[0]) / 2 - out[0] * 2, (a[1] + b[1]) / 2 - out[1] * 2, "plaque", angle=ang,
-           z=min((top + ceil) / 2 - 16, top + 24))
+    if plaque:
+        assert ceil - top >= 40, "no room for the plaque over the glass"
+        figure(m, (a[0] + b[0]) / 2 - out[0] * 2, (a[1] + b[1]) / 2 - out[1] * 2, "plaque", angle=ang,
+               z=min((top + ceil) / 2 - 16, top + 24))
     return m.sector([c, d, e, f], floor=floor + raised, ceil=floor + top, light=light, wall=wall,
                     ftex=ftex, ctex=ctex, color=color)
 

@@ -6,17 +6,22 @@
 // args[2]: the tag of the lobby's sectors; args[3]: the tid of the MapSpot
 // at the foot where a baron appears; args[4]: the seconds before another.
 // When the player first comes into the lobby a baron appears at the foot,
-// and whenever that one dies another comes; anything as heavy as a hell
-// knight (Mass 1000: a knight, a baron, a mancubus) on the plate opens the
-// shutter for good. The player's weight does not.
+// and whenever that one dies another comes; each is announced (its sight
+// sound heard everywhere, and a message). It weighs everything alive that
+// stands on the plate, the player and monsters, by their Mass (something
+// flying over it weighs nothing): a total of HEAVY or more (a baron, a hell
+// knight, a mancubus; never the player alone, who is 100) opens the shutter
+// for good. The dial beside it (AjarWeighDial) shows the total.
 class AjarWeighbridge : Actor
 {
 	const HEAVY = 1000;
 	Array<int> plate, lobby;
 	Actor baron;
 	bool called, isOpen, quiet;  // quiet: no more barons (the smoke walkthrough)
-	int wait, said, barons;
-	Actor openedBy;
+	int wait, said, barons, announced;
+	int weight;                  // the total on the plate, as of the last look (every 3 tics)
+	Actor heaviest;              // the heaviest thing on it then
+	Actor openedBy;              // the heaviest thing on it when it opened
 
 	Default
 	{
@@ -48,20 +53,37 @@ class AjarWeighbridge : Actor
 		if (h) h.Say(msg);
 	}
 
-	override void Tick()
+	// The total weight of what is alive and stands on the plate.
+	void Weigh()
 	{
-		if (isOpen || level.maptime % 3) return;
+		weight = 0;
+		heaviest = null;
+		Array<Actor> seen;
 		let bi = BlockThingsIterator.CreateFromPos(pos.x, pos.y, pos.z, 128, 128, false);
 		while (bi.Next())
 		{
 			Actor a = bi.thing;
-			if (a && a.bIsMonster && a.health > 0 && a.Mass >= HEAVY && OnPlate(a)) { OpenShutter(a); return; }
+			if (!a || a.health <= 0 || !(a.bIsMonster || a.player) || !OnPlate(a)) continue;
+			if (a.pos.z > a.floorz + 4 || seen.Find(a) < seen.Size()) continue;
+			seen.Push(a);
+			weight += a.Mass;
+			if (!heaviest || a.Mass > heaviest.Mass) heaviest = a;
 		}
+	}
+
+	override void Tick()
+	{
+		if (level.maptime % 3) return;
+		Weigh();
+		if (isOpen) return;
+		if (weight >= HEAVY) { OpenShutter(heaviest); return; }
 		let p = players[consoleplayer].mo;
 		if (p && p.health > 0 && OnPlate(p) && level.maptime - said > 175)
 		{
 			said = level.maptime;
-			Say("The weighbridge does not stir under you.\nIt was built to weigh something heavier.");
+			int tenths = weight * 10 / HEAVY;
+			Say("The weighbridge does not stir under you.\nThe dial beside it reads "
+				.. (tenths == 1 ? "a tenth" : String.Format("%d tenths", tenths)) .. " of what it was built to weigh.");
 		}
 		if (!called)
 		{
@@ -86,6 +108,12 @@ class AjarWeighbridge : Actor
 		Spawn("TeleportFog", spot.pos, ALLOW_REPLACE);
 		if (barons++) b.ClearCounters();             // only the first is in the level's tally
 		baron = b;
+		// heard wherever the player is, and said
+		b.A_StartSound(b.SeeSound, CHAN_VOICE, CHANF_DEFAULT, 1, ATTN_NONE);
+		Say(barons == 1 ? "Far below, something heavy has come in\nat the foot of the building."
+			: "Another, as heavy, has come in\nat the foot of the building.");
+		said = level.maptime;                         // (the plate's message waits)
+		announced++;
 		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST baronCalled=%d", barons);
 	}
 
@@ -95,7 +123,47 @@ class AjarWeighbridge : Actor
 		openedBy = by;
 		level.ExecuteSpecial(11 /* Door_Open */, null, null, false, args[1], 16);
 		Say("The weighbridge takes the weight. Behind the lobby\nthe test hall's shutter rolls up, for good.");
-		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST weighbridgeBy=%s", by.GetClassName());
+		if (CVar.GetCVar("ajar_autotest").GetInt())
+			Console.Printf("AJARTEST weighbridgeBy=%s weight=%d", by ? by.GetClassName() : 'None', weight);
+	}
+}
+
+// The dial beside the weighbridge, on the wall (a wall sprite, facing its
+// angle): it reads the total weight on the plate in tenths of what the
+// weighbridge was built to weigh, to its red mark (10) and one past it (11).
+// The needle moves a step every STEP tics toward what it should read; at or
+// past the mark the lamp on it is green.
+class AjarWeighDial : Actor
+{
+	const STEP = 4;
+	AjarWeighbridge w;
+	int needle;
+
+	Default { Radius 8; Height 16; Scale 1.25; +NOGRAVITY +WALLSPRITE +NOBLOCKMAP +DONTTHRUST +NOTELEPORT +BRIGHT }
+	States
+	{
+	Spawn:
+		AJWG A -1 Bright;
+		Stop;
+	Needles:                    // only so that these are loaded
+		AJWG ABCDEFGHIJKL -1;
+		Stop;
+	}
+
+	int Reads() { return w ? clamp(w.weight * 10 / w.HEAVY, 0, 11) : 0; }     // where the needle should be
+	bool Green() { return needle >= 10; }
+
+	override void Tick()
+	{
+		Super.Tick();
+		if (!w) w = AjarWeighbridge(ThinkerIterator.Create("AjarWeighbridge").Next());
+		if (level.maptime % STEP == 0)
+		{
+			int to = Reads();
+			if (needle < to) needle++;
+			else if (needle > to) needle--;
+		}
+		frame = needle;
 	}
 }
 
@@ -264,6 +332,9 @@ extend class AjarHandler
 			-576, 0, 40, 270, 0,        // in the den
 			-1100, -496, 0, 180, 0,     // the cubby: the doorway up
 			850, -2048, 384, 0, 0,      // the lobby: the head, the weighbridge
+			1080, -2060, 384, 30, 0,    // on the plate: the dial beside the head
+			740, -1920, 384, 0, 0,      // through the glass from the reading room: the dial
+			660, -1760, 384, 90, -8,    // the glass case: a baron on the plate, the dial at the mark
 			1000, -1800, 384, 90, 0,    // the test hall
 			1360, -1648, 384, 0, 0      // the night room
 		};
@@ -279,13 +350,33 @@ extend class AjarHandler
 	//  3 the leaf at the foot again, the player away upstairs: a nailer nails it.
 	//  4 the player in sight again: the porter leaves the nailed leaf alone.
 	//  5 the nailer killed: the nails fall out.
-	//  6 up through the leaf: the player alone does not open the shutter; a
-	//    baron comes to the foot. Down again in its sight and up once more: it
+	//  6 up through the leaf: the player alone on the plate does not open the
+	//    shutter, and the dial comes to rest at a tenth; a baron comes to the
+	//    foot, announced. Down again in its sight and up once more: it
 	//    follows through the leaf, out of the head onto the weighbridge, and
-	//    the shutter opens.
+	//    the shutter opens. The baron is held there while the needle swings
+	//    up: at or past the mark, the lamp green.
+	// And at the start: the glass case's three figures are there.
 	//  7 the porter killed: another comes out of the den 30 seconds later.
-	int m16phase, phaseAt;
+	int m16phase, phaseAt, heldAt;
+	Vector3 held;
 	bool porterAway;
+
+	// The glass case's figures (bad: those solid, shot, counted, alive or not
+	// shown), and a baron standing among them: plate, baron, dial.
+	int CaseFigures(bool bad)
+	{
+		int n = 0, baron = 0;
+		let it = ThinkerIterator.Create("AjarFigure");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (a.args[0] == 12 && a.sprite == Actor.GetSpriteIndex("BOSS")) baron++;
+			if (a.args[0] == 13 && a.sprite == Actor.GetSpriteIndex("AJWG") && a.frame == 10) baron++;
+			if (!bad || a.bSolid || a.bShootable || a.bCountKill || a.bCountItem || a.bIsMonster || !a.bNoBlockmap || a.bInvisible) n++;
+		}
+		return bad || baron == 2 ? n : -1;
+	}
 	AjarThief firstPorter;
 
 	// (each phase starts on the tic after the last one ends: the callers return)
@@ -297,6 +388,8 @@ extend class AjarHandler
 		AjarFrame foot = FindFrame(104), den = FindFrame(105), head = FindFrame(110);
 		AjarDoor leaf = StairLeaf(), red = DoorOf(1);
 		let w = Weighbridge();
+		let dial = AjarWeighDial(ThinkerIterator.Create("AjarWeighDial").Next());
+		if (t == 3) Check("caseIsThere", CaseFigures(false) == 3 && !CaseFigures(true));
 		if (t == 1)
 		{
 			let mi = ThinkerIterator.Create("Actor");
@@ -374,15 +467,35 @@ extend class AjarHandler
 		if (m16phase == 6)
 		{
 			Forward(mo, t, phaseAt, 10);                    // up through the leaf, alone
-			if (s == 30) Check("playerAloneDoesNotOpen", mo.pos.z == 384 && !w.isOpen && !TagOpen(617));
-			if (s == 40) Check("aBaronComesToTheFoot", w.baron && w.baron.pos.z == 0);
+			if (s == 12) Pose(mo, 1100, -2048, 384, 180);   // standing still on the plate
+			if (s == 30)
+			{
+				Check("playerAloneDoesNotOpen", mo.pos.z == 384 && !w.isOpen && !TagOpen(617));
+				Check("dialReadsATenth", w.OnPlate(mo) && w.weight == 100 && dial && dial.needle == 1 && !dial.Green());
+			}
+			if (s == 40)
+			{
+				Check("aBaronComesToTheFoot", w.baron && w.baron.pos.z == 0);
+				Check("theBaronIsAnnounced", w.barons == 1 && w.announced == 1);
+				Check("dialRestsAtATenth", dial && dial.needle == 1 && !w.isOpen && !TagOpen(617));
+			}
 			if (s == 41) Pose(mo, 1130, -2048, 384, 0);     // down again, into its sight
 			Forward(mo, t, phaseAt + 41, 10);
 			if (s == 100) Pose(mo, -576, -740, 0, 270);     // and up once more, with it behind
 			Forward(mo, t, phaseAt + 100, 30);
-			if (w.isOpen || s > 900)
+			if (!heldAt && (w.isOpen || s > 900))
 			{
 				Check("baronFollowsOntoTheWeighbridge", w.isOpen && w.openedBy is "BaronOfHell");
+				heldAt = t;
+				if (w.isOpen && w.baron) held = w.baron.pos;
+			}
+			// the baron held where it opened it, on the plate, while the needle swings up
+			if (heldAt && w.baron && w.baron.health > 0 && held != (0, 0, 0)) { w.baron.SetOrigin(held, false); w.baron.vel = (0, 0, 0); }
+			if (heldAt && t == heldAt + 70)
+			{
+				Check("dialAtTheMark", w.isOpen && w.weight >= w.HEAVY && dial && dial.needle >= 10 && dial.Green()
+					&& TagOpen(617));
+				Console.Printf("AJARTEST weight=%d needle=%d", w.weight, dial ? dial.needle : -1);
 				thief.DamageMobj(null, null, 1000, 'None');
 				NextStep(7, t);
 				return;
