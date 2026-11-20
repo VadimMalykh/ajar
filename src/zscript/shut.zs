@@ -44,12 +44,16 @@
 // time the player steps on it (once a level; MAP32's room 3).
 //
 // AN EARLIER SELF'S SHOTS, in a fight of goes (zone args[4] 3) while it is
-// a fight: what an AjarGhost fires hurts a monster on the demo and wakes it
-// as the player's own shot does (AjarRail, time.zs), and its kills are the
-// player's kills (a monster on the demo it wakes dead is killed by the
-// player, as Wake does; any other death counts to the player as the engine
-// counts every monster death in single play). MAP31's open fights (args[4]
-// 1) are as they were.
+// a fight: what an AjarGhost fires hurts a monster on the demo but never
+// wakes it (AjarRail, time.zs; PLAN.md, "Fights of goes: an earlier self's
+// shots wake nobody"). A hit the demo already has (the shot as it went in
+// the last go) does nothing: the demo carries it. A hit the demo has not
+// (rockets through this shutter, shut in the last go) is counted and the
+// monster stays on the demo; when that is its health it dies there, killed
+// by the player (Fell), without waking. Its kills are the player's kills
+// (any other death counts to the player as the engine counts every monster
+// death in single play). A monster awake is hurt by them as by anyone's.
+// MAP31's open fights (args[4] 1) are as they were.
 //
 // KILLED IN A ROOM OF GOES (and in a fight of goes after its win): the
 // player cannot die there (bBuddha). At the last moment they are in box 1

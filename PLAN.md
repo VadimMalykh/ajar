@@ -6323,3 +6323,128 @@ glass, its plate and its zone are gone.
   are only heard; the messages are checked by the bits said, not their text.
   The wave 2 and 3 guards of the wings (not idle) are not looked at by a test.
 - **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
+
+## Fights of goes: an earlier self's shots wake nobody (built 2026-11-20)
+
+**The bug.** In a mixed open fight (MAP32 rooms 3 and 4) `AjarRail.ModifyDamage`
+counted an earlier self's (`AjarGhost`'s) hit on a monster on the demo as the
+player's: it set `hit`, so the demo loop woke that monster, real and after the
+PRESENT player. In room 3 the first self is the bait under the press and shoots
+the horde around it; in the next go every one of those shots, replayed, woke its
+monster, which left the press and hunted the next self ("after resurrection some
+monsters attack me even though I never touched them"; "monsters don't all go
+under the press"). And the hit was in the demo already (the recorded health fell
+then), so counting it in `dmg` counted it twice. The tests' bait never shot.
+
+**The rule** (time.zs `AjarRail`, `Replayed`, `Fell`, the demo loop; headers of
+time.zs, goes.zs, shut.zs):
+1. An earlier self's shot never wakes a monster on the demo. Only the present
+   player does (hurting it, walking into it, tripping its sentries) and the
+   demo's end. `rail.hit` now means hurt by the present player only.
+2. An earlier self's hit that the demo already has does nothing (no `dmg`, no
+   `hit`): the demo carries it, the monster's health and death come from the
+   record.
+3. One the demo does not have (room 4: rockets through a shutter that was shut
+   in the last go) is counted in `dmg` (and in `ghostDmg`, for the tests) and
+   the monster stays on the demo. When `hp - dmg` reaches 0 it dies then and
+   there (`Fell`: off the demo, no target, killed by the player with
+   `DMG_FORCED`, so the player's kill), without first turning on anyone. Woken
+   later, it has the health left after what was counted (`Wake`, as before).
+4. A monster awake (real) is hurt by an earlier self's shots as by anyone's.
+5. MAP31's open fights (not mixed): an earlier self's shots do nothing to a
+   monster on the demo, as before.
+6. A guard at its post (idle cue) hurt only by an earlier self still wakes idle
+   at the demo's end (`!rail.hit`), with what is left of its health. No second
+   flag was needed: `hit` is the player's, `ghostDmg` the earlier selves'.
+
+**The window** (`REPLAY_TICS` = 4). A role's record is written once a tic
+(`RecordDemo`), index `ot - born`, and played at the same index. An earlier
+self's hit "is in the demo" when the monster's recorded health falls between two
+consecutive entries in the hall within 4 tics either side of the present index.
+Fired again from where the earlier self was, the same shot lands on the posed
+monster a tic after the index of its recorded fall (the record is written at
+the start of the tic, after the last tic's thinkers), or within a tic or two.
+The price: a hit the demo has not, landing within 4 tics of a recorded fall of
+the same monster by some other cause, is taken as replayed and does nothing.
+
+**The replay is not exact** (found by the tests, not changed). A monster on
+the demo is posed where it was at the start of the tic, while in the recorded
+go the shots met it where it had moved to in that tic, a few units on. So now
+and then a shot that missed (or hit another monster) in the last go hits a
+monster now that the record has not hurt then: in 3 of 8 MODE=9 runs with
+plasma, one or two such hits of 10 to 30 among 22 to 39 replayed ones (where
+logged, the nearest recorded fall of that monster was 7 and 44 tics away).
+By rule 3 it is counted (the monster stays on the demo and wakes that much
+weaker); it never wakes anything. Posing a tic ahead would close most of it
+but moves every demo by a tic (MAP31's tests too); not done. A note: a monster
+on the demo is recorded in the go being played with the demo's health
+(`rail.hp`, not less `dmg`), so in a third go an earlier self's new hit (room
+4) is new to that record too and is counted again; one that `Fell` is recorded
+dead, and in the next go it dies when it died.
+
+**Tests.**
+- New MODE=9 (`tools/smoke_MAP32_9.cfg`, `GhostShotScript` in map32.zs; hooks
+  `GsDamaged` from map32's `WorldThingDamaged`, `GsDied` from time.zs's
+  `WorldThingDied`): entered at room 3's lobby as MODE=5 and 7. Go 1, the bait in
+  the chamber by door 3, shoots rockets at the weakest monster in sight until
+  one it hurt dies (at most 40; with plasma, 48 shots often killed nothing),
+  then plasma twice each at two monsters of 300 health or more, and leaves by
+  door 3 (`begun9`, `baitShoots3`: one it hurt dead, one
+  alive, every shot written down). Go 2 stays in box 1 and touches nothing:
+  `inTheBox9`; `myEarlierSelfsShotsWakeNone3` (no monster of the hall awake and
+  none after the player while the demo played, replayed hits seen);
+  `hurtOnceNotTwice3` (those it hurt and did not kill wake at the demo's end
+  with the record's last health less what was counted on them, below their
+  spawn health; one that fell of what was counted fell once; and every hit of
+  the earlier self that was counted had no recorded fall of that monster within
+  4 tics: logged with its distance); `diedWhenItDied3`
+  (the one it killed died once, on the demo, within a tic of when it died).
+  Under the old rule (checked once, the old line patched back in): all three
+  fail (5 awake while the demo played, one after the player, woken with more
+  or less than the record's health).
+- MODE=3 room 4: new `hurtButOnTheDemo4` (go 2, K4P + 300, before the player
+  fires: the earlier self's rockets have hit the pen, the hurt ones carry
+  `ghostDmg`, every living pen monster is on the demo, none after the player).
+  `myEarlierSelfHurtsThem4` asserted only hits and is unchanged, but its count
+  of "my" hits no longer counts a `Fell` kill (the player is its source; it is
+  told by `DMG_FORCED`, counted as `penFell`): the first run after the change
+  failed on exactly that. New `killedOnTheDemo4` (K4P + 375): what the earlier
+  self's rockets counted killed a pen monster on the demo (`penFell > 0`; 1, 2
+  and 1 in the three final runs).
+- **Results** (2026-11-20, full build, each suite alone under a shared lock):
+  MAP32 MODE=3 61 of 61 (59 before, plus hurtButOnTheDemo4 and
+  killedOnTheDemo4) in each of three runs; MODE=9 6 of 6 in each of three runs
+  (11, 34 and 33 replayed hits; 0, 0 and 1 counted: 1 point of rocket splash,
+  the nearest recorded fall 11 tics away); MODE=5 23, MODE=7 18, MODE=8 5, MODE=4 7,
+  SHUT 3 20, SHUT 4 7, PRESS 3 13, PRESS 4 5, MAP31 6 9, MAP31 7 15, all pass.
+  Flaky, not of this change (nothing of it runs there: no earlier self shoots
+  in them): MODE=7 `guardsWakeAsIStepIn3` failed once (one of two guards still
+  on the demo 10 tics after the landing), then passed 3 of 3; PRESS 3
+  `killsAreMine` failed once (a sixth kill from elsewhere, as noted for it
+  before), then passed 2 of 2.
+
+**The megasphere in room 3's cage** ("once taken, never restored there, even
+when I restart the level"). A scratch script (MODE=10, not kept) tried, on one
+full build: at a fresh start of the level with the skill cvar 2 (what
+`+skill 2` sets, "Resident", also the smoke runs' default) it is there; the
+thing has skill1 to skill5 set in MAP32's TEXTMAP (udmf.py thins only
+monsters). Every box used, taken in the last go, the player killed: the fight
+begins anew by itself (`Rescue`, `FightAnew(mo, true)`) and it is back. Begun
+anew by the plate twice in a row, taken before each: back each time. All pass.
+The one path that loses it: once the fight is WON, the same plate is the room
+of goes' (`UseFightAnew` -> plate.zs `Anew`), which forgets goes and puts the
+doors back but no pick-ups; taken after the win (or before it), it does not
+come back for the rest of the level (a scratch check `backAfterTheWinsPlate`
+failed, as the code says). A fresh start of the level (`map MAP32`, the new
+game, the show's end's `ChangeLevel`: there is no hub in mapinfo) has it. Not
+tried: GZDoom, when the player dies in single play, loads the last save made
+(autosave or one's own) if there is one, else restarts the map; a save made
+after taking it brings it back taken. Nothing was changed for it: whether a won
+fight's plate should give back the hall's pick-ups is a design question.
+
+**Not tested.** That a monster killed by `Fell` never had the player as its
+target first is not asserted (the code clears it). Rule 6 (a guard hurt only by
+an earlier self wakes idle) has no check. A third go with two earlier selves shooting in room 3 is not run. A monster on
+the demo hit by a new earlier-self hit may show its pain frame for a tic before
+the next pose.
+- **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
