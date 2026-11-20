@@ -172,6 +172,10 @@ ajarmap.room(m, [512, 1664], [HALL[0], 192, 256, HALL[1]], lambda i, j: j == 1,
              floor=UP, ceil=UP + 112, light=175, color=WARM, rug=RUG, **UPHALL)
 m.sector(rect(1664, 160, 1792, 288), floor=UP, ceil=LOFT + 144, light=170, color=WARM,
          **dict(UPHALL, **ATTIC))                                           # under the attic
+# over the hall's ceiling the shaft's west wall is the attic's, as its other
+# three are: not the hall's 112 of wallpaper laid twice (Vadim, 2026-11-20)
+for a, b in ((HALL[0], 192), (192, 256), (256, HALL[1])):
+    m.line((1664, a), (1664, b), upper=ATTIC["wall"])
 R201 = guest(704, True, UP, bath="e", light=165, color=WARM)        # key 4 in the bathroom
 R202 = guest(704, False, UP, bathdoor=False, light=140, color=WARM)
 R203 = guest(1216, True, UP, keys="23", line_id=302, bath="e", suite=True,
