@@ -30,9 +30,16 @@ def zone(m, k, n, x1, y1, x2, y2, *, grow=0, open=False, goes=False, mix=False):
         m.mix_fights = getattr(m, "mix_fights", set()) | {k}         # for fight_anew_reached()
 
 
-def hall_door(m, k, j, a, b, out, floor, **look):
-    """Time door j of hall k: a-b is its 64-wide mouth."""
+def hall_door(m, k, j, a, b, out, floor, *, out_only=False, **look):
+    """Time door j of hall k: a-b is its 64-wide mouth. `out_only`: the
+    player goes out by it as by any (and an earlier self that went out by it
+    goes out by it again), but the next go's box opens onto the hall's time
+    door 1, not onto this one (time.zs: args[4] 1 on the portal line)."""
     ajarmap.recess(m, a, b, out, floor, hall_line(k, j), box_line(k, 1), far_colour=TIME, **look)
+    if out_only:
+        d = ajarmap.DEPTH
+        m.line((a[0] + out[0] * d, a[1] + out[1] * d), (b[0] + out[0] * d, b[1] + out[1] * d),
+               args=(box_line(k, 1), 0, 1, 1, 1))
 
 
 def box_door(m, k, n, a, b, out, floor, **look):
@@ -143,7 +150,8 @@ FIGURE_T = 20051
 SHUT_HIGH = 96          # how high a shutter opens, over its floor
 
 
-def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, behind=False, color=None):
+def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, behind=False, under=0,
+            nomonsters=False, color=None):
     """A shutter in a wall: a-b is its face on the side it is worked from
     (where whoever is in its way is put when it shuts), `out` points through
     it to the other side. It is a sector `thick` deep (tag `tag`) whose
@@ -155,7 +163,11 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, b
     sight pass it, so what is penned fights through the open shutter).
     `behind`: the sector right behind it is a booth whose only way out it
     is: a player in the booth when it shuts is put out, as one in its way
-    is (shut.zs, AjarShutter args[2])."""
+    is (shut.zs, AjarShutter args[2]). `under`: a sector tag (a press's);
+    the shutter is open also while the player or an earlier self is in a
+    sector with that tag (AjarShutter args[3]; with no plate, only then).
+    `nomonsters`: no monster walks or flies past its face a-b (players,
+    shots and sight do)."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
     m.sector([a, b, d, c], floor=floor, ceil=floor, light=170, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
@@ -164,8 +176,45 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, b
         m.line(c, d, blocking=True)
     for p, q in ((a, c), (b, d)):
         m.line(p, q, mid="AJTRIM", dontpegbottom=True)
+    if nomonsters:
+        m.line(a, b, blockmonsters=True)
     ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]
-    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high, int(behind)))
+    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high, int(behind), under))
+
+
+SHUT_LAMP_T = 20053
+
+
+def shut_lamp(m, x, y, angle, tag, z=72):
+    """A lamp on the wall beside the shutter of `tag`, facing `angle`, `z`
+    over the floor: red while it is shut, green while it is open (shut.zs,
+    AjarShutLamp). Stand it 2 off the wall."""
+    m.thing(x, y, SHUT_LAMP_T, angle=angle, height=float(z), args=(tag,))
+
+
+def seen(spaces, p, q):
+    """Is the point q (x, y, z) seen from p, through `spaces`, a list of
+    (x1, y1, x2, y2, floor, ceil) that tile the rooms between them? Sight in
+    2.5D as the engine has it: every piece of the line lies in a space, and
+    between its floor and its ceiling where it enters and leaves it."""
+    xs = {v for s in spaces for v in (s[0], s[2])}
+    ys = {v for s in spaces for v in (s[1], s[3])}
+    ts = {0.0, 1.0}
+    for vs, i in ((xs, 0), (ys, 1)):
+        d = q[i] - p[i]
+        if d:
+            ts |= {(v - p[i]) / d for v in vs if 0 < (v - p[i]) / d < 1}
+    ts = sorted(ts)
+    at = lambda t: tuple(p[i] + (q[i] - p[i]) * t for i in range(3))
+    for a, b in zip(ts, ts[1:]):
+        mx, my, _ = at((a + b) / 2)
+        sp = [s for s in spaces if s[0] <= mx <= s[2] and s[1] <= my <= s[3]]
+        if not sp:
+            return False
+        f, c = sp[0][4], sp[0][5]
+        if not all(f < at(t)[2] < c for t in (a, b)):
+            return False
+    return True
 
 
 def shutter_plate(m, x, y, tag):
