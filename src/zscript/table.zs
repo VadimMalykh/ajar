@@ -16,18 +16,25 @@
 //    frame (args[0] a frame) in the room, the spans an earlier self stands on
 //    it. A span is [from, to): its first tic and the tic after its last.
 //  * PULLS: every lever pull an earlier self will make (AjarGoLog.pTic,
-//    pTag) that is still in its log (MixGoOnAs drops the rest).
+//    pTag) that is still in its log (MixGoOnAs drops the rest); and every
+//    key lever pull (keys.zs; AjarGoLog.kTic, kTag, kNum: KEY PULLS).
+//  * For a shutter worked by key levers (keys.zs), HOLDS too: for every
+//    moment at which the earlier selves' own key pulls, as logged, have every
+//    lever of its set live at once, a span from that tic for the set's time
+//    (KeyHolds).
 // It is a forecast of the records and nothing more: if the live game differs
 // (a pull that finds the press not up) the table is not corrected.
 // Two questions: HoldIn(tag), the tics until some earlier self begins to hold
 // that shutter (0 while one holds it, -1 if none will), and PullIn(tag), the
-// tics until an earlier self's next pull of that press (-1 if none). The
-// lamps ask them (AjarShutLamp, AjarPressLamp, shut.zs): amber within SOON.
+// tics until an earlier self's next pull of that press (-1 if none); and
+// KeyPullIn(tag, n) (keys.zs), the tics until an earlier self's next pull of a
+// key lever of the set `tag` other than number n. The lamps ask them
+// (AjarShutLamp, AjarPressLamp, shut.zs; AjarKeyLamp, keys.zs): amber within SOON.
 // The clock at the top draws it as a bar under the text (TableBar): a dark
 // strip for tic 0 to the clock's length, one row for each shutter, screen or
 // sprung frame's plate an earlier self holds in this go (green where held,
 // in a fixed order: shutters by tag, then plates by frame), a gold tick at
-// each pull, a white cursor at this go's tic. The ui only reads the timetable.
+// each pull and each key pull, a white cursor at this go's tic. The ui only reads the timetable.
 
 class AjarTable play
 {
@@ -35,8 +42,9 @@ class AjarTable play
 	Array<int> rTag, rFrame;            // the rows: a shutter's tag, or (rTag 0) a sprung frame's plate, its frame
 	Array<int> sRow, sSelf, sFrom, sTo; // the holds: row, earlier self (its take), first tic, the tic after the last
 	Array<int> pSelf, pTic, pTag;       // the pulls: earlier self, tic, the press's tag
+	Array<int> kSelf, kTic, kTag, kNum; // the key pulls (keys.zs): earlier self, tic, the shutter's tag, the lever's number
 
-	bool Empty() { return !rTag.Size() && !sRow.Size() && !pTic.Size(); }
+	bool Empty() { return !rTag.Size() && !sRow.Size() && !pTic.Size() && !kTic.Size(); }
 }
 
 extend class AjarTimeHandler
@@ -55,7 +63,7 @@ extend class AjarTimeHandler
 		keyNow.Push((goes ? 1 : 0) + (mixed ? 2 : 0) + (phase == LIVE ? 4 : 0));
 		keyNow.Push(takes.Size());
 		for (int i = 0; i < takes.Size() - 1; i++) keyNow.Push(takes[i].x.Size());
-		for (int i = 0; i < logs.Size(); i++) keyNow.Push(logs[i].pTic.Size());
+		for (int i = 0; i < logs.Size(); i++) { keyNow.Push(logs[i].pTic.Size()); keyNow.Push(logs[i].kTic.Size()); }
 		bool same = timetable && keyNow.Size() == tableKey.Size();
 		for (int i = 0; same && i < keyNow.Size(); i++) if (keyNow[i] != tableKey[i]) same = false;
 		if (!same)
@@ -138,6 +146,12 @@ extend class AjarTimeHandler
 				}
 			}
 		}
+		// a shutter worked by key levers: held while the earlier selves' own pulls have it keyed (keys.zs)
+		for (int r = 0; r < sh.Size(); r++)
+		{
+			KeyHolds(sh[r].args[0], n);
+			for (int e = 0; e < khFrom.Size(); e++) { sRow.Push(r); sSelf.Push(khSelf[e]); sFrom.Push(khFrom[e]); sTo.Push(khTo[e]); }
+		}
 		// only the rows that some earlier self holds, in their order
 		Array<int> keep;
 		for (int r = 0; r < rows; r++)
@@ -154,6 +168,11 @@ extend class AjarTimeHandler
 		}
 		for (int i = 0; i < n && i < logs.Size(); i++)
 			for (int e = 0; e < logs[i].pTic.Size(); e++) { timetable.pSelf.Push(i); timetable.pTic.Push(logs[i].pTic[e]); timetable.pTag.Push(logs[i].pTag[e]); }
+		for (int i = 0; i < n && i < logs.Size(); i++)
+			for (int e = 0; e < logs[i].kTic.Size(); e++)
+			{
+				timetable.kSelf.Push(i); timetable.kTic.Push(logs[i].kTic[e]); timetable.kTag.Push(logs[i].kTag[e]); timetable.kNum.Push(logs[i].kNum[e]);
+			}
 	}
 
 	// Tics until some earlier self begins to hold the shutter of `tag` (0: one holds it now; -1: none will).
@@ -209,6 +228,8 @@ extend class AjarTimeHandler
 		}
 		for (int i = 0; i < timetable.pTic.Size(); i++)
 			if (timetable.pTic[i] <= len) Fill(x0 + W * timetable.pTic[i] / len - 1, y0, 2, h, 0xFFC020);
+		for (int i = 0; i < timetable.kTic.Size(); i++)
+			if (timetable.kTic[i] <= len) Fill(x0 + W * timetable.kTic[i] / len - 1, y0, 2, h, 0xFFC020);
 		Fill(x0 + W * ot / len - 1, y0 - 2, 2, h + 4, 0xFFFFFF);
 	}
 }

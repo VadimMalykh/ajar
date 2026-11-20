@@ -5541,6 +5541,7 @@ its entrance. Nothing hurts in rooms 1, 2 and 5.
 - Room 3 is rebuilt as a chamber after Vadim played it: see "MAP32 room 3: the press as a chamber" at the end.
 - Room 3 is rebuilt again, as two shifts (the bait fights in the chamber, the next self fights through a guarded wing to the lever): see "MAP32 room 3: two shifts" at the end.
 - Room 3 gets plates in the chamber that work the wing (a screen before the guards, a cage), guards that wake for whoever comes into the wing, and a timetable (amber lamps, a bar under the clock): see "MAP32 room 3: plates in the fight, and the timetable" at the end.
+- Room 4 is rebuilt around two keys under fire (two key levers in two guarded wings, pulled within two seconds of each other by two selves, open the pen's shutter for half a minute; the booth and its plate are gone): see "MAP32 room 4: two keys under fire" at the end.
 
 ## Begin anew in a fight (built 2026-11-20)
 
@@ -6234,4 +6235,91 @@ protected from nothing. Now they wake for whoever comes into the wing.
   screen is shutting (the bars keep them off its sector; asserted only by
   geometry). Winding, or going on as an earlier self, while the table is up
   (it is rebuilt by its key; not exercised). The sentries in any other room.
+- **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
+
+## MAP32 room 4: two keys under fire (built 2026-11-20)
+
+Room 4 was a range with a booth: a plate in it held the pen's shutter open, so
+one self stood on the plate while the next fired. Now two selves must each turn
+a key, far apart and under fire, at nearly the same moment. The booth, its
+glass, its plate and its zone are gone.
+
+- **Key levers** (`src/zscript/keys.zs`, `AjarKeyLever`, 20056,
+  `ajartime.key_lever(m, x, y, angle, tag, number, seconds=30)`: args tag,
+  seconds (0 is 30), number in the set). The name `AjarKey` was taken (the
+  room keys). USE pulls it when it is up and its shutter is not keyed; it is
+  then live for `JOIN` = `AjarHandler.TOGETHER_TICS` (70, two seconds). When
+  every lever of the tag is live at once the shutter is KEYED: held open for
+  the seconds (`AjarShutter.keyed` counts down; `Held()` is a pressed plate or
+  keyed), the joined chime, the levers held down until it runs out, then up;
+  a beep at three, two and one seconds left. A live lever that runs out alone
+  comes up with the "too late" sound. The player's pulls are logged
+  (`AjarGoLog.kTic/kTag/kNum`) and an earlier self replays each at its tic if
+  that lever is up then (`GhostKeys`, after `GhostPresses`). Every go begins
+  with every lever up and nothing keyed (`ShuttersShut` calls `KeysUp`).
+  Three messages, each once a level: the first lone pull, the first too late,
+  the first keyed with an earlier self.
+- **Key lamps** (`AjarKeyLamp`, 20057, `ajartime.key_lamp`, args tag,
+  number): green while keyed; while another lever of the set is live, amber
+  and green by turns every 6 tics with a click each half second (pull now);
+  amber within SOON of an earlier self's pull of another lever; else red.
+- **The timetable** (table.zs): key pulls are gold ticks on the bar
+  (`kTic`), `KeyPullIn(tag, n)`, and the shutter's row holds the spans in
+  which the earlier selves' pulls key it (`KeyHolds`: their logged pulls in
+  tic order, by the live rules, ignoring pulls while it is keyed).
+- **Idle guards** (time.zs): an `AjarCue` with the ambush flag comes idle
+  (deaf, no target, no fog or sound); on the demo it wakes idle where it is
+  at the demo's end if it was not hit. Sentry args[3] 1 wakes the monsters
+  idle (`ajartime.sentries(..., idle=True)`, `AjarRole.wakeIdle`). `Hunt`
+  leaves an idle monster alone.
+- **Room 4** (`tools/map_secret2.py`). Tags `SHUT4` 3540 (unchanged
+  meaning), `WEST4TAG` 3541, `EAST4TAG` 3542. Two mirrored wings off the
+  range (about MID4 7456): 288 by 660, a doorway that blocks monsters and
+  sound, two baffles 224 long across the way, a window to the range (with
+  asserts: the windows face each other, nothing cuts the line between them),
+  at the far end the lever (1 west, 2 east) and its lamp, and stock by the
+  lever (two cell packs, a rocket box, a medikit). Guards: wave 1 idle (two
+  imps, two hell knights, a revenant, out of sight of the doorway), wave 2 a
+  hell knight and a revenant, wave 3 a baron; sentries per wing, idle. The
+  walk from lever to lever is 1845.5 (> 1750 asserted). Supplies 21800
+  against 17440 (1.25). The time doors moved along their walls (door 1 at
+  400..464, door 2 at 560..624) to make room. A new case on the range's far
+  wall: two selves at two levers, a lamp, a cyberdemon and a mancubus.
+- **Choices of mine.** A lever is live while `maptime - pulledAt <= 70`.
+  Idle guards come without fog or sound, and one on the demo that was not hit
+  wakes idle where it stands when the demo ends. The third message is said
+  when the keying pull finds any earlier self in the fight. The wing is 660
+  long (the brief's 580 left the lever-to-lever walk at about 1729) with
+  baffles 224 long, which moved the time doors 1 and 2 along their walls.
+  The doorway's ceiling is F4+128. Placements of the lamps, the stock and the
+  guards are mine (mirrored for the east wing). No rockets were added at the
+  entry: the stock by the levers already brings the supplies over 1.2.
+- **Tests.** MODE=3 room 4 rewritten: begun4, noLeak4, guardsIdle4; go 1 the
+  west lever alone (shutAlone4, both messages), rockets at the shut shutter
+  (rocketsStopped4); go 2 the east wing on the demo, then awake and idle
+  (guardsOnTheDemo4, guardsWake4), its lamp amber before the earlier self's
+  pull and blinking (keyLampAmber4), keyed by two (keyedByTwo4), the earlier
+  self's rockets in the pen (myEarlierSelfHurtsThem4), mine
+  (hurtThroughTheShutter4), still open at 30 s less two tics (openStill4,
+  added), shut again (shutsAfterHalfAMinute4), won4, steel4. theyFireBack4 is
+  gone. MODE=5 room 4: go 1 pulls the west lever, takes what lies by it and
+  fires; asAtTheFirstEntry4 also asks the levers up, the shutter shut, nothing
+  keyed. New MODE=8 (`tools/smoke_MAP32_8.cfg`, `KeyScript`): four goes,
+  tooLateTogether4 (go 2 pulls 100 tics after go 1), inTimeWithMyFirstSelf4
+  (go 3, 30 after), shutterOnTheTimetable4 (go 4's table: one span of self 2
+  from the keying pull, 30 s long, and the three pulls), amberBeforeItOpens4,
+  openedByMyEarlierSelves4 (the player far from both levers), and a
+  screenshot in go 4: the shutter open, both lamps green, the pen's crowd
+  behind, the bar under the clock with its span and gold ticks. MODE=2's three
+  views of room 4 are six now (entry, the west wing from its doorway, the
+  lever, through the windows, the shutter, the case).
+- **Results** (2026-11-20, full build, each suite alone): MODE=3 59 of 59
+  checks (the count of `AJARTEST name=1` lines, with levelExited) in each of
+  three runs, MODE=5 23 of 23 three times, MODE=8 5 of 5 three times. Once
+  each (quick build): MODE=7 18, MODE=4 7, SHUT 3 20, SHUT 4 7, PRESS 3 13,
+  PRESS 4 5, TWOKEY 3 8, PLATE 3 34, MAP31 6 9, MAP31 7 15; MODE=2 (33
+  screenshots) and MODE=6 (6) run without errors.
+- **Not tested.** The beeps in the last three seconds and the "too late" sound
+  are only heard; the messages are checked by the bits said, not their text.
+  The wave 2 and 3 guards of the wings (not idle) are not looked at by a test.
 - **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
