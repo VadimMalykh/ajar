@@ -20,8 +20,8 @@ drop). Every frame of a puzzle takes its own door and no other.
    gallery; the pit is left only by its own time door or the joined Pair.
 3. The press (a fight of goes). A hall 1536 by 768 with four slabs for
    cover; north of it the press, a chamber with one mouth; the bait's plate
-   in a recess at its far end holds open the booth the lever is in, at the
-   hall's south end. 34 monsters in the south and middle, then 10, then two
+   in a cell behind glass at its far end (in by a squeeze) holds open the
+   booth the lever is in, at the hall's south end. 34 monsters in the south and middle, then 10, then two
    cyberdemons, none fighting another. Ammunition for about a third of them:
    the press is the way.
 4. The range (a fight of goes). A pen of 13 behind a shutter at the north end
@@ -176,12 +176,14 @@ ajartime.covers(m, "room 2", FIRST, REGIONS[2], zone=(1928, -328, 3864, 712), ex
 # The hall (5000..6536, 0..768) and north of it the press, a chamber
 # (5000..6536, 800..1280) of steel behind a solid wall 32 thick with one mouth
 # in its middle, 192 wide (the mouth is part of the press: whatever stands in
-# it when the press comes down is under it). In the middle of the chamber's
-# north wall the bait's recess (not under the press): its plate holds the
-# lever's booth open, time door 3 is in its east wall. The lever is in a
-# booth in the middle of the hall's south wall, behind a shutter: open only
-# while someone stands on the recess's plate, so one body is never both the
-# bait and at the lever. Four slabs in the hall to hide behind. Entered from
+# it when the press comes down is under it). Behind the chamber's north wall
+# the bait's cell (not under the press), seen through glass from the mouth
+# and entered only by a squeeze that monsters do not pass: its plate holds the
+# lever's booth open, time door 3 is in its east wall, and nothing in the
+# chamber or the hall sees a self on the plate. The lever is in a booth in
+# the middle of the hall's south wall, behind a shutter, seen through a slit
+# of glass beside it: open only while someone stands on the cell's plate, so
+# one body is never both the bait and at the lever. Four slabs in the hall to hide behind. Entered from
 # YELLOW's far side, a ledge 96 over the lobby (south-west), which is part of
 # the fight from 16 past the ledge's edge: so a player on the ledge is in no
 # room, and one in the lobby cannot climb back.
@@ -193,10 +195,14 @@ SHUT3 = 3535            # the booth's shutter (map32.zs: SHUT33)
 PY = HY + 768           # the hall's north wall
 CY = PY + 32            # the chamber's south wall (the wall between is solid but for the mouth)
 MOUTH3 = (HX + 672, HX + 864)
-REC3 = (HX + 704, HY + HH, HX + 832, HY + HH + 96)        # the bait's recess
-PLATE3 = (HX + 768, HY + HH + 56)
-BOOTH3 = (HX + 704, HY - 112, HX + 832, HY - 16)          # the booth, behind its shutter (HY - 16..HY)
-LEVER3 = (HX + 768, BOOTH3[1] + 2)
+CELL3 = (HX + 672, HY + HH + 16, HX + 928, HY + HH + 112)  # the bait's cell, behind the chamber's north wall
+GLASS3 = (HX + 736, HX + 928)                              # its window onto the chamber
+SQUEEZE3 = (HX + 672, HX + 720)                            # its way in, beside the glass
+PLATE3 = (HX + 880, HY + HH + 64)
+BOOTH3 = (HX + 704, HY - 112, HX + 880, HY - 16)          # the booth: behind its shutter and its slit (HY - 16..HY)
+SHUTTER3 = (HX + 704, HX + 832)
+SLIT3 = (HX + 832, HX + 880)
+LEVER3 = (HX + 848, BOOTH3[1] + 2)
 SLABS3 = [(HX + x, HY + y, HX + x + 192, HY + y + 64) for x, y in ((160, 160), (1184, 160), (480, 320), (864, 320))]
 ajarmap.fitted(m, (HX, HY, HX + HW, PY), [(s, dict(floor=320)) for s in SLABS3], ceil=320, light=200, color=HALL)
 for x1, x2 in ((HX, HX + 512), (HX + 512, HX + 1024), (HX + 1024, HX + HW)):
@@ -206,21 +212,55 @@ m.sector(rect(MOUTH3[0], PY, MOUTH3[1], CY), ceil=192, light=185, color=HALL, wa
          ctex="AJTRIMF", id=PRESS3)
 assert HX + 512 <= MOUTH3[0] and MOUTH3[1] <= HX + 1024
 ajartime.press(m, HX + 768, HY + 1024, PRESS3)
-# the recess: plain walls (not steel), bright, the plate in it; a self on the plate is wholly out of the press
-m.sector(rect(*REC3), ceil=128, light=230, color=HALL)
+# the cell: plain walls (not steel), bright, the plate in it; a self on the plate is wholly out of the press.
+# Its front is glass, but for the squeeze at its west end (a 16-thick wall between, 1280..1296).
+WY = HY + HH            # the chamber's north wall
+m.sector(rect(*CELL3), ceil=128, light=230, color=HALL)
+ajartime.glass(m, (GLASS3[0], WY), (GLASS3[1], WY), (0, 1), 0, sill=0)
+ajarmap.squeeze(m, (SQUEEZE3[0], WY), (SQUEEZE3[1], WY), (0, 1), 0)
+assert CELL3[0] == SQUEEZE3[0] and SQUEEZE3[1] < GLASS3[0] and GLASS3[1] == CELL3[2] and CELL3[1] == WY + 16
 ajartime.shutter_plate(m, *PLATE3, SHUT3)
-assert PLATE3[1] - 28 - 16 >= REC3[1], "on the plate, wholly out of the press"
-ajartime.hall_door(m, K3, 3, (REC3[2], REC3[1] + 16), (REC3[2], REC3[1] + 80), (1, 0), 0, color=HALL)
-ajartime.zone(m, K3, 0, REC3[0], REC3[1], REC3[2] + 16, REC3[3], mix=True)
-# the booth and its shutter; whoever is in the booth when it shuts is put out into the hall
-m.sector(rect(*BOOTH3), ceil=128, light=200, color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF")
-ajartime.shutter(m, (BOOTH3[0], HY), (BOOTH3[2], HY), (0, -1), 0, SHUT3, behind=BOOTH3[3] - BOOTH3[1], color=HALL)
+m.thing(*PLATE3, 9800, height=12, args=(255, 200, 96, 112))       # a warm light on it, seen through the glass
+assert PLATE3[1] - 28 - 16 >= WY + 16 and CELL3[0] + 44 <= PLATE3[0] <= CELL3[2] - 44, "on the plate, wholly in the cell"
+assert PLATE3[0] - 16 > SQUEEZE3[1] + 64, "the plate out of line with the squeeze"
+ajartime.hall_door(m, K3, 3, (CELL3[2], PLATE3[1] - 32), (CELL3[2], PLATE3[1] + 32), (1, 0), 0, color=HALL)
+ajartime.zone(m, K3, 0, CELL3[0], WY, CELL3[2] + 16, CELL3[3], mix=True)
+# the booth, its shutter and the slit of glass beside it onto the lever; whoever is in the booth when it
+# shuts is put out into the hall (shutter(behind=True): the booth is the sector behind it)
+m.sector(rect(*BOOTH3), ceil=128, light=230, color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF")
+ajartime.shutter(m, (SHUTTER3[0], HY), (SHUTTER3[1], HY), (0, -1), 0, SHUT3, behind=True, color=HALL)
+ajartime.glass(m, (SLIT3[0], HY), (SLIT3[1], HY), (0, -1), 0)
+assert BOOTH3[0] == SHUTTER3[0] and SHUTTER3[1] == SLIT3[0] and SLIT3[1] == BOOTH3[2] and BOOTH3[3] == HY - 16
+assert SLIT3[0] <= LEVER3[0] <= SLIT3[1], "the lever seen through the slit"
 ajartime.press_switch(m, *LEVER3, 90, PRESS3)
 ajartime.zone(m, K3, 0, BOOTH3[0], BOOTH3[1], BOOTH3[2], HY, mix=True)
 ajartime.zone(m, K3, 0, HX, HY, HX + HW, HY + HH, grow=72, mix=True)
 # nobody runs from the plate to the lever before the shutter shuts (12 tics)
-WALK3 = walk(PLATE3, (HX + 768, PY), (HX + 768, HY + 16), (LEVER3[0], LEVER3[1] + 40))
+WALK3 = walk(PLATE3, ((SQUEEZE3[0] + SQUEEZE3[1]) / 2, WY + 24), ((SQUEEZE3[0] + SQUEEZE3[1]) / 2, WY - 24),
+             (HX + 768, PY), (HX + 768, HY + 16), (LEVER3[0], LEVER3[1] + 40))
 assert WALK3 > 600, WALK3
+
+
+def crosses(p, q, a, b):
+    """Do the segments p-q and a-b cross (touching counts)?"""
+    def side(o, u, v):
+        return (u[0] - o[0]) * (v[1] - o[1]) - (u[1] - o[1]) * (v[0] - o[0])
+    d1, d2, d3, d4 = side(a, b, p), side(a, b, q), side(p, q, a), side(p, q, b)
+    return d1 * d2 <= 0 and d3 * d4 <= 0
+
+
+# nothing in the hall, the mouth or the chamber sees a self on the plate (the glass is solid to sight;
+# the slabs are left out, which only makes it harder): every wall between them, as segments
+SEEN3 = [((HX, PY), (MOUTH3[0], PY)), ((MOUTH3[1], PY), (HX + HW, PY)), ((MOUTH3[0], PY), (MOUTH3[0], CY)),
+         ((MOUTH3[1], PY), (MOUTH3[1], CY)), ((HX, CY), (MOUTH3[0], CY)), ((MOUTH3[1], CY), (HX + HW, CY)),
+         ((HX, WY), (SQUEEZE3[0], WY)), ((SQUEEZE3[1], WY), (HX + HW, WY)),
+         ((SQUEEZE3[0], WY), (SQUEEZE3[0], WY + 16)), ((SQUEEZE3[1], WY), (SQUEEZE3[1], WY + 16)),
+         ((SQUEEZE3[1], WY + 16), (CELL3[2], WY + 16))]
+for gx in range(HX + 16, HX + HW, 32):
+    for gy in list(range(HY + 16, PY, 32)) + [PY + 16] + list(range(CY + 16, WY, 32)):
+        if PY < gy < CY and not MOUTH3[0] < gx < MOUTH3[1]:
+            continue
+        assert any(crosses((gx, gy), PLATE3, a, b) for a, b in SEEN3), ("the plate seen from", gx, gy)
 
 
 def cuts(p, q, box):
@@ -262,7 +302,7 @@ CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4826, 396, "plate", 0, 0), (
                                                  (4942, 384, "me", 0, 0), (4942, 384, "go", 2, 0),
                                                  (4966, 384, "lever", 0, 180)],
              color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF")
-# time doors west and east (door 3 is in the recess); boxes west, east, south behind glass
+# time doors west and east (door 3 is in the cell); boxes west, east, south behind glass
 ajartime.hall_door(m, K3, 1, (HX, 688), (HX, 752), (-1, 0), 0, color=HALL)
 ajartime.hall_door(m, K3, 2, (HX + HW, 688), (HX + HW, 752), (1, 0), 0, color=HALL)
 BOXF = 64
@@ -325,13 +365,13 @@ HARD3 = ajartime.toughness(c3.kinds)
 FIRE3 = ajartime.firepower(LOBBY3 + BOXES3)
 assert 0.28 <= FIRE3 / HARD3 <= 0.4, (FIRE3, HARD3)
 REGIONS[3] = ajartime.on_foot("room 3", {"hall": (HX, HY, HX + HW, PY), "chamber": (HX, PY, HX + HW, HY + HH),
-                                         "recess": REC3, "booth": BOOTH3,
+                                         "cell": (CELL3[0], WY, CELL3[2], CELL3[3]), "booth": BOOTH3,
                                          "lobby": (4744, 64, 5000, 320), "box1": (4776, 464, 4984, 656),
                                          "box2": (6552, 464, 6760, 656), "box3": (6100, -216, 6356, -16)},
-                              [("hall", "chamber", True), ("chamber", "recess", True), ("hall", "lobby", True),
+                              [("hall", "chamber", True), ("chamber", "cell", True), ("hall", "lobby", True),
                                ("booth", "hall"), ("box1", "hall"), ("box2", "hall"), ("box3", "hall")],
                               # (the hall to the booth: only while an earlier self holds the plate)
-                              {"hall": [(HX + 4, 720), (HX + HW - 4, 720)], "recess": [(REC3[2] - 4, REC3[1] + 48)],
+                              {"hall": [(HX + 4, 720), (HX + HW - 4, 720)], "cell": [(CELL3[2] - 4, PLATE3[1])],
                                "box1": [(4780, 560)], "box2": [(6756, 560)], "box3": [(6228, -212)]})
 ajartime.covers(m, "room 3", FIRST, REGIONS[3], zone=(4744, -120, 6608, 1400), exempt=CASES)
 # the plate that begins the fight anew: on the lobby's west wall, to the left of the way in

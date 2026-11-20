@@ -304,7 +304,7 @@ extend class AjarTimeHandler
 	// box 1; go 2 picks up box 1's three things and uses the plate: all is as
 	// at the first entry. Then every box is used and the player killed after
 	// the last: it begins anew again (not the level). Then the fight is won,
-	// as before: the steel door opens. Room 3's go 2 stands on the recess's
+	// as before: the steel door opens. Room 3's go 2 stands on the cell's
 	// plate first, and the booth's shutter is shut again (boothShutAnew3).
 	int faStep, faT, faRoom, faTotal, faLeft, faPicks, faDeaths;
 	bool faBooth;               // room 3: the booth was open, its plate pressed, when the plate was used
@@ -463,8 +463,8 @@ extend class AjarTimeHandler
 			}
 			// out into the hall, two more killed, and to the plate
 			if (o == 34) { Go(mo, r3 ? 5100 : 7300, r3 ? 200 : 100, r3 ? 0 : -96, 90); }
-			// (room 3: on the recess's plate, so that the booth's shutter is opening)
-			if (r3 && o == 35) Go(mo, 5768, 1336, 0, 270);
+			// (room 3: on the cell's plate, so that the booth's shutter is opening)
+			if (r3 && o == 35) Go(mo, 5880, 1344, 0, 270);
 			if (o == 40) KillTwo(mo);
 			if (o == 44)
 			{

@@ -18,8 +18,9 @@ extend class AjarTimeHandler
 	const TA32 = 200;           // when the first self hangs leaf a in room 2
 	int dsStep, dsT, dsT2, dsUsed, dsBefore, dsShots, dsOut0;
 	int dsOnFrom;               // walking on, ahead, until the fight that is on is another than this
-	int dsPlateO, dsStuckT;     // room 3: the tic go 1 stood on the recess's plate; the booth seen shut again
+	int dsPlateO, dsStuckT;     // room 3: the tic go 1 stood on the cell's plate; the booth seen shut again
 	double dsStuckY;
+	int dsCell, dsNearO, dsNearH, dsMinH, dsInCell;     // room 3, go 1 in the cell (without godmode)
 	Array<Actor> dsPenShots, dsPenOut;
 	AjarDoor leafA32, leafB32;
 	Actor dsGhost;              // MODE=2: a self on room 3's plate, for the view of the booth open
@@ -102,6 +103,23 @@ extend class AjarTimeHandler
 		return n >= 2 && calm == n && apart && would;
 	}
 
+	// Room 3's cell (map_secret2.CELL3) and its glass (GLASS3, on the chamber's north wall).
+	bool InCell32(Actor a) { return a.pos.x > 5672 && a.pos.x < 5928 && a.pos.y > 1296 && a.pos.y < 1392; }
+	int MonstersBy32(double near, bool inCell)
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0) continue;
+			if (inCell) { if (InCell32(a)) n++; continue; }
+			double dx = max(5736 - a.pos.x, 0, a.pos.x - 5928), dy = max(1280 - a.pos.y, 0, a.pos.y - 1296);
+			if (dx * dx + dy * dy <= near * near) n++;
+		}
+		return n;
+	}
+
 	// Nothing of the room before is left: one go, no earlier selves, nothing written down.
 	bool Fresh(int k)
 	{
@@ -124,6 +142,7 @@ extend class AjarTimeHandler
 		if (level.totaltime > level.maptime + 10) return;
 		int t = testTic++;
 		mo.player.cheats |= CF_GODMODE;
+		if (dsCell) mo.player.cheats &= ~CF_GODMODE;     // room 3's bait in the cell: hurt as anyone (safeInTheCell3)
 		let h = Doors();
 		Leaves32();
 		AjarDoor violet = Door32(5), yellow = Door32(4), green = Door32(3), pink = Door32(6), blue = Door32(2), red = Door32(1);
@@ -248,9 +267,11 @@ extend class AjarTimeHandler
 			Check("noLeak3", Fresh(3));
 		}
 		// go 1: the monsters do not fight each other; alone, the booth is shut and
-		// the lever out of reach; then the bait walks through the mouth to the
-		// recess's plate, stands there until six are under the press, and leaves
-		// by the recess's time door
+		// the lever out of reach; then the bait walks through the mouth and the
+		// squeeze into the cell and onto its plate, stands there (without
+		// godmode) until twelve are under the press or 700 tics, and at least
+		// 150 tics after the first monster came within 200 of the glass, and
+		// leaves by the cell's time door
 		if (dsStep == 3 && open && g == 1)
 		{
 			if (o == 6) Check("noInfighting3", NoInfighting(3));
@@ -263,26 +284,49 @@ extend class AjarTimeHandler
 				Check("boothShutAlone3", sh3.IsShut() && !sp3.pressed && ld.HitType == TRACE_HitWall && ld.HitLocation.y > -17
 					&& ld.HitLocation.y < 1 && mo.Distance2D(sw) > 64 + mo.radius && PressUp(pr));
 			}
-			if (o == 12) Go(mo, 5768, 740, 0, 90);
+			if (o == 12) Go(mo, 5696, 740, 0, 90);
 			if (o > 12 && !dsPlateO)
 			{
-				if (mo.pos.y < 1320 && o < 250) Walk(mo, (0, 12));
-				else { Go(mo, 5768, 1336, 0, 270); dsPlateO = o; Console.Printf("AJARTEST info on the plate o=%d", o); }
+				if (mo.pos.y < 1336 && o < 300) Walk(mo, (0, 10));
+				else if (mo.pos.x < 5870 && o < 300) Walk(mo, (10, 0));
+				else
+				{
+					Console.Printf("AJARTEST info on the plate o=%d from (%d,%d) through the squeeze=%d", o, mo.pos.x, mo.pos.y, InCell32(mo));
+					Go(mo, 5880, 1344, 0, 270);
+					dsPlateO = o;
+					dsCell = 1;
+					dsMinH = dsNearH = mo.health;
+				}
 			}
-			if (dsPlateO && o > dsPlateO && !dsT2 && (UnderPress(pr) >= 6 || o >= 700)) { dsT2 = o; Console.Printf("AJARTEST info under=%d o=%d", UnderPress(pr), o); }
-			if (dsT2 && o == dsT2 + 40) Go(mo, 5800, 1328, 0, 0);
-			if (dsT2 && o > dsT2 + 40 && o < dsT2 + 60) Walk(mo, (8, 0));
+			if (dsCell && !dsT2)
+			{
+				int near = MonstersBy32(200, false);
+				if (!dsNearO && near) { dsNearO = o; dsNearH = mo.health; Console.Printf("AJARTEST info near the glass o=%d health=%d", o, mo.health); }
+				dsMinH = min(dsMinH, mo.health);
+				dsInCell += MonstersBy32(0, true);
+				if ((dsNearO && o >= dsNearO + 150 && (UnderPress(pr) >= 12 || o >= 700)) || o >= 900)
+				{
+					dsT2 = o;
+					dsCell = 0;
+					Console.Printf("AJARTEST info under=%d o=%d near=%d health=%d min=%d inCell=%d", UnderPress(pr), o, near, mo.health, dsMinH, dsInCell);
+					Check("safeInTheCell3", dsNearO && o - dsNearO >= 150 && dsMinH >= dsNearH && mo.health == dsNearH && !dsInCell);
+				}
+			}
+			if (dsT2 && o == dsT2 + 2) Go(mo, 5904, 1344, 0, 0);
+			if (dsT2 && o > dsT2 + 2 && o < dsT2 + 20) Walk(mo, (8, 0));
 		}
 		// go 2: the booth stands open while the earlier self holds the plate; in,
 		// the lever when the monsters, played as they went, are under the press;
 		// put out into the hall when the shutter shuts
 		if (dsStep == 3 && open && g == 2)
 		{
-			if (o == 2) Check("outByTheRecessDoor3", at == 1 && bx == 1 && demo != null && !takes[0].died && takes[0].door == HallLine(3, 3));
+			if (o == 2) Check("outByTheCellDoor3", at == 1 && bx == 1 && demo != null && !takes[0].died && takes[0].door == HallLine(3, 3));
 			if (o == 3) Go(mo, 5768, 40, 0, 270);
 			if (o == dsPlateO + 20) Check("boothOpenForMyEarlierSelf3", sh3.IsOpen() && sp3.pressed && AllGhosts() >= 1 && !sp3.On(mo));
 			if (o > dsPlateO + 20 && !dsUsed && mo.pos.y > -64) Walk(mo, (0, -8));
-			if (!dsUsed && o > dsPlateO + 30 && mo.pos.y < -40 && Demoing() && (UnderPress(pr, 1) >= 4 || o >= demo.len - AjarPress.WARN - AjarPress.DOWN - 10))
+			else if (o > dsPlateO + 20 && !dsUsed && mo.pos.x < 5820) Walk(mo, (8, 0));
+			if (!dsUsed && o > dsPlateO + 30 && mo.pos.y < -40 && mo.Distance2D(sw) < 64 && Demoing()
+				&& (UnderPress(pr, 1) >= 10 || o >= demo.len - AjarPress.WARN - AjarPress.DOWN - 10))
 			{
 				Console.Printf("AJARTEST info under=%d onDemo=%d len=%d lever=%.1f away", UnderPress(pr, 1), Rails(true), demo.len, mo.Distance2D(sw));
 				dsBefore = mo.player.killcount;
@@ -512,7 +556,7 @@ extend class AjarTimeHandler
 
 	// MODE=2: views of the level, one every 40 tics (tools/smoke_MAP32_2.cfg
 	// takes a screenshot of each). Before the last two, BLUE is hung opposite RED;
-	// for room 3's booth open a self (a bare AjarGhost) stands on the recess's plate.
+	// for room 3's booth open a self (a bare AjarGhost) stands on the cell's plate.
 	void Views32(PlayerPawn mo)
 	{
 		int t = testTic++;
@@ -528,10 +572,11 @@ extend class AjarTimeHandler
 			4872, 170, 0, 90, -10,          // room 3's lobby: the case, close
 			4800, 150, 0, 8, 0,             // room 3's hall from the lobby, as the player comes in
 			5768, 250, 0, 90, 0,            // the mouth of the press from the hall
-			5768, 760, 0, 90, 0,            // the chamber from the mouth: the recess and its plate at the end
-			5716, 1214, 0, 55, -5,          // the recess, close: its plate and time door
-			5768, 220, 0, 270, 0,           // the booth, shut
-			5768, 220, 0, 270, 0,           // the booth, open: a self on the recess's plate
+			5768, 760, 0, 90, 0,            // the chamber from the mouth: the cell's glass, the plate behind it, the squeeze
+			5696, 1180, 0, 80, 0,           // the cell from just outside the squeeze
+			5700, 1320, 0, 5, -5,           // inside the cell: the plate and the time door
+			5856, 160, 0, 270, -5,          // the booth shut: the lever through the slit
+			5768, 220, 0, 270, 0,           // the booth, open: a self on the cell's plate
 			7000, 176, -96, 0, 0,           // room 4 as entered: the range, the case on its far wall
 			7580, 150, -96, 15, -10,        // room 4's case, close (south of the pillar before it)
 			7456, 120, -96, 90, 0,          // the firing spot: the shutter
@@ -541,9 +586,9 @@ extend class AjarTimeHandler
 			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
 			9672, 384, -192, 0, 0           // and the other way, into BLUE's
 		};
-		int WIDE = 19, OPEN3 = 13;
+		int WIDE = 20, OPEN3 = 14;
 		int i = t / 40;
-		if (t == OPEN3 * 40 - 15) dsGhost = Actor.Spawn("AjarGhost", (5768, 1336, 0));
+		if (t == OPEN3 * 40 - 15) dsGhost = Actor.Spawn("AjarGhost", (5880, 1344, 0));
 		if (t == OPEN3 * 40 + 39 && dsGhost) { dsGhost.Destroy(); dsGhost = null; }
 		if (i >= v.Size() / 5) return;
 		Go(mo, v[i * 5], v[i * 5 + 1], v[i * 5 + 2], v[i * 5 + 3]);

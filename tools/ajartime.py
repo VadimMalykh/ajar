@@ -143,7 +143,7 @@ FIGURE_T = 20051
 SHUT_HIGH = 96          # how high a shutter opens, over its floor
 
 
-def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, behind=0, color=None):
+def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, behind=False, color=None):
     """A shutter in a wall: a-b is its face on the side it is worked from
     (where whoever is in its way is put when it shuts), `out` points through
     it to the other side. It is a sector `thick` deep (tag `tag`) whose
@@ -153,8 +153,9 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, b
     nothing walks between the shutter and the far side, open or shut (a pen:
     the line there is impassable to players and monsters, but shots and
     sight pass it, so what is penned fights through the open shutter).
-    `behind`: a booth that deep lies behind it, as wide as it is: a player
-    in it when it shuts is put out, as one in its way is."""
+    `behind`: the sector right behind it is a booth whose only way out it
+    is: a player in the booth when it shuts is put out, as one in its way
+    is (shut.zs, AjarShutter args[2])."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
     m.sector([a, b, d, c], floor=floor, ceil=floor, light=170, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
@@ -164,7 +165,7 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, b
     for p, q in ((a, c), (b, d)):
         m.line(p, q, mid="AJTRIM", dontpegbottom=True)
     ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]
-    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high, behind))
+    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high, int(behind)))
 
 
 def shutter_plate(m, x, y, tag):

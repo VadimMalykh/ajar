@@ -14,9 +14,10 @@
 // clear of it on the side it is worked from, and anything else in its way
 // (an earlier self, a monster) it waits for: it never crushes. Every go of
 // a fight or a room of goes begins with every shutter shut and every
-// shutter's plate up (ShuttersShut). args[2] (MAP32's room 3): a booth that
-// deep lies behind it, as wide as the opening: a player in it when it shuts
-// is put out on the side it is worked from too, so nobody is shut in.
+// shutter's plate up (ShuttersShut). args[2] 1 (MAP32's room 3): the sector
+// right behind it is a booth whose only way out it is: a player in the booth
+// when it shuts is put out on the side it is worked from too, before the
+// opening, so nobody is shut in.
 //
 // AN EARLIER SELF'S SHOTS, in a fight of goes (zone args[4] 3) while it is
 // a fight: what an AjarGhost fires hurts a monster on the demo and wakes it
@@ -60,6 +61,7 @@ class AjarShutter : Actor
 	Array<int> secs;
 	Array<double> bottom;
 	double x1, y1, x2, y2;      // round the opening
+	double bx1, by1, bx2, by2;  // round the booth behind it (args[2])
 
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
@@ -69,6 +71,19 @@ class AjarShutter : Actor
 		if (known) return;
 		known = true;
 		x1 = y1 = 1e9; x2 = y2 = -1e9;
+		bx1 = by1 = 1e9; bx2 = by2 = -1e9;
+		if (args[2])
+		{
+			Sector b = level.PointInSector(pos.xy - AngleToVector(angle, 24));
+			for (int j = 0; j < b.lines.Size(); j++)
+			{
+				for (int v = 0; v < 2; v++)
+				{
+					Vector2 p = v ? b.lines[j].v2.p : b.lines[j].v1.p;
+					bx1 = min(bx1, p.x); by1 = min(by1, p.y); bx2 = max(bx2, p.x); by2 = max(by2, p.y);
+				}
+			}
+		}
 		let it = level.CreateSectorTagIterator(args[0]);
 		int i;
 		while ((i = it.Next()) >= 0)
@@ -113,12 +128,12 @@ class AjarShutter : Actor
 		if (!mo) return;
 		double r = mo.radius;
 		Vector2 d = AngleToVector(angle), p = mo.pos.xy;
-		double bx1 = x1, by1 = y1, bx2 = x2, by2 = y2, b = args[2];
-		if (abs(d.x) > abs(d.y)) { if (d.x > 0) bx1 -= b; else bx2 += b; }
-		else { if (d.y > 0) by1 -= b; else by2 += b; }
-		if (mo.pos.x + r <= bx1 || mo.pos.x - r >= bx2 || mo.pos.y + r <= by1 || mo.pos.y - r >= by2) return;
-		if (abs(d.x) > abs(d.y)) p.x = d.x > 0 ? x2 + r + 1 : x1 - r - 1;
-		else p.y = d.y > 0 ? y2 + r + 1 : y1 - r - 1;
+		bool inWay = !(mo.pos.x + r <= x1 || mo.pos.x - r >= x2 || mo.pos.y + r <= y1 || mo.pos.y - r >= y2);
+		bool inBooth = !(mo.pos.x + r <= bx1 || mo.pos.x - r >= bx2 || mo.pos.y + r <= by1 || mo.pos.y - r >= by2);
+		if (!inWay && !inBooth) return;
+		// out on the worked side (from a booth: before the opening)
+		if (abs(d.x) > abs(d.y)) { p.x = d.x > 0 ? x2 + r + 1 : x1 - r - 1; if (args[2]) p.y = clamp(p.y, y1 + r, y2 - r); }
+		else { p.y = d.y > 0 ? y2 + r + 1 : y1 - r - 1; if (args[2]) p.x = clamp(p.x, x1 + r, x2 - r); }
 		mo.SetOrigin((p, mo.pos.z), true);
 	}
 
