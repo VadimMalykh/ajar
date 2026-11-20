@@ -164,7 +164,10 @@ class AjarWorker : AjarEnemy
 // leaf of the Pair whose colour that frame takes (ajarmap.recess only=3),
 // hung in any other frame or leaning, and only while it sees you; it always
 // hangs it in that frame and never takes anything out of it; with nothing
-// to do it goes back to where it stood when the level began. Killed, another
+// to do it goes back to where it stood when the level began. The rule is
+// checked again on the way and at the hinges: a door swapped in for the leaf
+// under its hands is left where it hangs (Vadim found it carrying RED off to
+// the den, and the level could not be finished). Killed, another
 // comes there 30 seconds later (AjarThiefReturn), and if it dies higher than
 // 32 below that spot (in the den or on its stair, where nobody else goes)
 // with the leaf on its back, the leaf is hung in its frame.
@@ -422,7 +425,16 @@ class AjarThief : AjarWorker
 		if (homing) return true;
 		if (jobLine) return jobLineDoor && jobLineDoor.frame && !jobLineDoor.Shut();
 		if (jobDoor) return !jobDoor.frame && !jobDoor.carried;
+		if (jobFrame && args[2]) return PorterJob(jobFrame);
 		return jobFrame && (loot || jobFrame.door);
+	}
+
+	// A porter's job at a frame is still the one it chose: the leaf into its
+	// own frame while that is empty, or a leaf out of any other.
+	bool PorterJob(AjarFrame f)
+	{
+		if (f.args[0] == args[2]) return loot && !f.door;
+		return !loot && f.door && Porters(f.door);
 	}
 
 	void A_ThiefWalk()
@@ -500,6 +512,8 @@ class AjarThief : AjarWorker
 		}
 		else
 		{
+			// a porter only ever moves the leaf: a door swapped in under its hands stays
+			if (args[2] && !PorterJob(jobFrame)) { GoIdle(); return; }
 			loot = h.ThiefUsesFrame(jobFrame, loot, self);
 			lastFrame = jobFrame;
 			lastTime = level.time;

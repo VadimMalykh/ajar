@@ -6505,6 +6505,24 @@ the gallery) is the ordinary "off the plate" case, tested once.
 **Not played by hand**:
 `cd /data/src/doom/doomer/.wt/ajar/m16-gallery-baron && MAP=MAP16 ./run.sh`
 
+## MAP16: the porter leaves a door swapped in under its hands (2026-11-20)
+
+Vadim, playing: the porter set off for the leaf at the foot, RED was hung
+there in its place before it arrived, and it carried RED to the den's frame.
+Nobody could get into the den or to RED's far side again: the level could not
+be finished. Why: the porter's rule (only the leaf) was checked when it chose
+the job, not when it did it; on the way and at the hinges it only asked
+whether some door still hung there. Now `JobStillThere()` asks the porter's
+own question again (`PorterJob`: the leaf out of another frame, or into its
+own empty one), so it gives the job up on the way or at the hinges, and
+`A_ThiefAct` checks once more before it touches the frame. The plain thief is
+as before. MODE 3 has a new phase 3 (the later ones are one higher): the leaf
+at the foot, GREEN swapped in once the porter is at the hinges; it leaves
+GREEN hanging, carries nothing, the den stays empty. Without the fix it took
+GREEN and hung it in the den (both checks 0). `MAP=MAP16 MODE=3 TIMEOUT=260`
+(about 3 minutes): 44 checks, all pass, twice. `MAP=MAP16` 52, `MAP=LAB
+MODE=2` 9, `MAP=TEST MODE=5` 7: all pass.
+
 ## MAP32 room 2: the Pair shuts again (built 2026-11-20)
 
 In room 2 the second self used to do everything at leisure: once joined, the
