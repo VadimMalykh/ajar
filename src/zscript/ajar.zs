@@ -33,7 +33,9 @@
 //    its own: args[0] is 0 until both hang, and then it is the line of the
 //    frame the twin hangs in (set in Hang, cleared in Unhang), so that
 //    whatever asks where a hung door leads is told the truth. One leaf hung
-//    alone is a shut door: its own face on the frame's line.
+//    alone is a shut door: its own face on the frame's line. A frame with an
+//    AjarTogether thing (goes.zs) joins a Pair only if its two leaves were
+//    hung within two seconds of each other.
 //  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
 //    (ajarmap.route_board; BoardTick).
 
@@ -99,6 +101,7 @@ class AjarDoor : Actor
 	bool carried;
 	Actor nailer;      // who nailed it to its frame, or null (itself: a fixed doorway)
 	int strayTics;     // a Stray door that is open: how long it has left
+	int hungAt;        // a Pair's leaf: the level's tic it was last hung (goes.zs, two keys at once)
 
 	Default
 	{
@@ -734,7 +737,9 @@ class AjarHandler : EventHandler
 		AjarDoor tw = d.Twin();
 		if (d.IsPair())
 		{
-			d.args[0] = tw && tw.frame ? tw.frame.args[0] : 0;
+			// (two frames that are hung "together" join only leaves hung close in time: goes.zs)
+			d.hungAt = level.maptime;
+			d.args[0] = tw && tw.frame && InTime(d, f, tw) ? tw.frame.args[0] : 0;
 			if (d.args[0]) tw.args[0] = f.args[0];
 		}
 		Link(f.args[0], d.args[0], d.IsPair() ? d.BackTex() : FRAME_TEX);
@@ -852,6 +857,10 @@ class AjarHandler : EventHandler
 	{
 		if (d.IsPair() && d.args[0])
 			Say("Both leaves of the " .. d.Label() .. " pair hang:\neach frame opens onto the other.");
+		else if (d.IsPair() && Late(d))
+			Say(LateText(d));
+		else if (d.IsPair() && d.frame && Together(d.frame))
+			Say("One leaf of the " .. d.Label() .. " pair, in a frame marked with a clock:\nits twin must be hung within two seconds, or it stays shut.");
 		else if (d.IsPair())
 			Say("One leaf of the " .. d.Label() .. " pair. It stays shut\nuntil its twin hangs in a frame somewhere.");
 		else if (d.IsStray())

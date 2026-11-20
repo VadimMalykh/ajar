@@ -28,6 +28,9 @@ DoomEdNums
 	20070 = AjarWeighbridge
 	20044 = AjarPlate
 	20045 = AjarAnew
+	20046 = AjarPress
+	20047 = AjarPressSwitch
+	20048 = AjarTogether
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
@@ -355,6 +358,27 @@ map TDOOR "Ajar: the time box, with doors"
 map PLATE "Ajar: the plate lab"
 {
 	next = "PLATE"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The second goes lab (tools/map_press.py, tools/map_twokey.py): a fight that
+// becomes a room of goes, with a press; two frames whose Pair is hung together.
+// MAP=PRESS ./run.sh, MAP=TWOKEY ./run.sh
+map PRESS "Ajar: the press"
+{
+	next = "PRESS"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+map TWOKEY "Ajar: two keys at once"
+{
+	next = "TWOKEY"
 	nointermission
 	nojump
 	nocrouch

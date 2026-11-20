@@ -33,6 +33,9 @@
 // hold is left where they stood), and it does not begin again. A plate on a
 // wall of the box (AjarAnew) forgets every go: no earlier selves, the doors
 // as at the first entry, and the go that is on is the first.
+//
+// An open fight can also become a room of goes when it is won (zone args[4]
+// 3): goes.zs. Its first entry is then the moment of the win.
 
 class AjarPlate : Actor
 {
@@ -110,6 +113,9 @@ class AjarGoLog play
 	Array<double> x, y, z, a, fx, fy;
 	int next;                   // the next of them to be done again
 	Array<int> broken;          // doors it no longer does anything to, in this go
+	// and the presses it set off (goes.zs): at tic pTic, the press with sector tag pTag
+	Array<int> pTic, pTag;
+	int pNext;
 }
 
 extend class AjarHandler
@@ -187,6 +193,7 @@ extend class AjarTimeHandler
 {
 	Array<int> goesFights;
 	bool goes;                  // the fight that is on is a room of goes
+	bool goesWon;               // and it was a fight until it was won (goes.zs): its first entry is the win
 	Array<AjarGoLog> logs;      // logs[i]: what was done to doors in takes[i]
 	Array<int> dHold;           // dHold[i]: the earlier self (its take) door i is in the hands of, or -1
 
@@ -208,11 +215,13 @@ extend class AjarTimeHandler
 		shots.Clear();
 	}
 
-	void BeginGoes(int k)
+	// `atWin`: a fight that has just been won becomes a room of goes (goes.zs).
+	void BeginGoes(int k, bool atWin = false)
 	{
 		let mo = players[consoleplayer].mo;
 		fight = k;
 		goes = true;
+		goesWon = atWin;
 		open = false;
 		demo = rec = null;
 		takes.Clear(); logs.Clear();
@@ -223,7 +232,17 @@ extend class AjarTimeHandler
 		boxes.Clear();
 		phase = LIVE;
 		DoorBegin();
-		// a door in the player's hands as they first come in is, as at the first entry, leaning at the time door
+		LeanHeld(k);
+		GoTake(mo);
+		GoesDoors(true);
+		if (atWin) Say("The fight is won, and its clock door stays: through it you are here again,\nas it is now, and every go of yours from now on with you.");
+		else Say("A door with a clock on it: through it you are here again,\nas you first came in, and every earlier go of yours with you.");
+	}
+
+	// A door in the player's hands as they first come in is, as at the first
+	// entry, leaning at the time door. (And no earlier self holds anything.)
+	void LeanHeld(int k)
+	{
 		Line l = Doors().FindLine(HallLine(k, 1));
 		dHold.Clear();
 		for (int i = 0; i < dDoor.Size(); i++)
@@ -234,9 +253,6 @@ extend class AjarTimeHandler
 			d0Car[i] = 0; d0Frame[i] = null;
 			d0x[i] = p.x; d0y[i] = p.y; d0z[i] = l.frontsector.floorplane.ZAtPoint(p); d0a[i] = VectorAngle(l.delta.y, -l.delta.x);
 		}
-		GoTake(mo);
-		GoesDoors(true);
-		Say("A door with a clock on it: through it you are here again,\nas you first came in, and every earlier go of yours with you.");
 	}
 
 	void GoesTick(PlayerPawn mo)
@@ -250,6 +266,7 @@ extend class AjarTimeHandler
 		RecordTake(mo);
 		PlayGhosts(mo);
 		GhostDoors();
+		GhostPresses();
 		ot++;
 	}
 
@@ -328,17 +345,20 @@ extend class AjarTimeHandler
 		AjarDoor had = h.carried;
 		DropGhosts();
 		FirstDoors();
-		for (int i = 0; i < logs.Size(); i++) { logs[i].next = 0; logs[i].broken.Clear(); }
+		for (int i = 0; i < logs.Size(); i++) { logs[i].next = 0; logs[i].pNext = 0; logs[i].broken.Clear(); }
 		for (int i = 0; i < takes.Size(); i++) takes[i].next = 0;
+		PressesUp();
 		GoTake(mo);
 		at = 1;
 		mo.A_SetBlend("white", 1.0, 40);
 		mo.A_StartSound("misc/teleport", CHAN_AUTO);
 		string door = had ? "\nThe " .. had.Label() .. " door does not come through: it is where it was." : "";
-		Say(String.Format("Go %d. It is as when you first came in,\nand your earlier selves do again what they did.", takes.Size()) .. door);
+		string first = goesWon ? "as when the fight was won" : "as when you first came in";
+		Say(String.Format("Go %d. It is %s,\nand your earlier selves do again what they did.", takes.Size(), first) .. door);
 	}
 
-	void EndGoes()
+	// What the earlier selves hold is left leaning where they stand.
+	void LeaveHeld()
 	{
 		for (int i = 0; i < dHold.Size(); i++)
 		{
@@ -348,10 +368,15 @@ extend class AjarTimeHandler
 			if (g) DoorSet(i, null, false, g.pos, g.angle);
 			dHold[i] = -1;
 		}
+	}
+
+	void EndGoes()
+	{
+		LeaveHeld();
 		GoesDoors(false);
 		DropGhosts();
 		takes.Clear(); logs.Clear();
-		won.Push(fight);
+		if (won.Find(fight) == won.Size()) won.Push(fight);      // (a fight that became a room of goes is won already)
 		goes = false;
 		phase = IDLE;
 		at = 0;
@@ -367,11 +392,13 @@ extend class AjarTimeHandler
 		}
 		DropGhosts();
 		FirstDoors();
+		PressesUp();
 		takes.Clear(); logs.Clear();
 		GoTake(mo);
 		mo.A_SetBlend("a0d0ff", 0.8, 30);
 		mo.A_StartSound("misc/teleport", CHAN_AUTO);
-		Say("Every go is forgotten. Nobody else is here,\nand the doors are as when you first came in.");
+		Say(goesWon ? "Every go since the win is forgotten. Nobody else is here,\nand the doors are as when the fight was won."
+			: "Every go is forgotten. Nobody else is here,\nand the doors are as when you first came in.");
 	}
 
 	int GhostsHere()

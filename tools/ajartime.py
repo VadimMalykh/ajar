@@ -17,13 +17,15 @@ def box_line(k, n):
     return 3050 + 100 * k + n
 
 
-def zone(m, k, n, x1, y1, x2, y2, *, grow=0, open=False, goes=False):
+def zone(m, k, n, x1, y1, x2, y2, *, grow=0, open=False, goes=False, mix=False):
     """Part of fight k: of its hall and the way into it (n 0), or of its box n.
     `grow` widens it, to take in recesses and the stubs behind doors. `open`
     (on a hall's zone): the fight is an open one (time.zs). `goes` (on a
-    hall's zone): it is a room of goes (plate.zs), with one box, number 1."""
+    hall's zone): it is a room of goes (plate.zs), with one box, number 1.
+    `mix` (on a hall's zone): an open fight that becomes a room of goes when
+    it is won (goes.zs)."""
     m.thing((x1 + x2) / 2, (y1 + y2) / 2, ZONE_T,
-            args=(k, n, (x2 - x1) // 2 + grow, (y2 - y1) // 2 + grow, 2 if goes else int(open)))
+            args=(k, n, (x2 - x1) // 2 + grow, (y2 - y1) // 2 + grow, 3 if mix else 2 if goes else int(open)))
 
 
 def hall_door(m, k, j, a, b, out, floor, **look):
@@ -96,6 +98,31 @@ def plate(m, x, y, frame):
     stands on the plate (plate.zs, AjarPlate). Put it far enough from the
     frame's mouth (256 or more) that it cannot be stepped off and the door run."""
     m.thing(x, y, PLATE_T, args=(frame,))
+
+
+PRESS_T = 20046
+PRESS_SWITCH_T = 20047
+TOGETHER_T = 20048
+
+
+def press(m, x, y, tag):
+    """A press over every sector with `tag` (give them a wall and ceiling of
+    steel: what a ceiling that comes down shows). x, y anywhere in the area:
+    its sounds are heard from there (goes.zs, AjarPress)."""
+    m.thing(x, y, PRESS_T, args=(tag,))
+
+
+def press_switch(m, x, y, angle, tag, z=40):
+    """A switch on a wall, facing `angle`, `z` above the floor: USE sets off
+    the press of `tag` (goes.zs, AjarPressSwitch). Stand it 2 off the wall."""
+    m.thing(x, y, PRESS_SWITCH_T, angle=angle, height=float(z), args=(tag,))
+
+
+def together(m, x, y, angle, frame, z=72):
+    """A lamp on the wall beside frame `frame` (its line id), facing `angle`:
+    a Pair joins through it only if both leaves were hung within two seconds
+    of each other (goes.zs, AjarTogether)."""
+    m.thing(x, y, TOGETHER_T, angle=angle, height=float(z), args=(frame,))
 
 
 def anew(m, x, y, angle, z=30):
