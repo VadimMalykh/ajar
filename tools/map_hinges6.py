@@ -486,6 +486,12 @@ things(STIM, (600, 140))
 things(LAMP, (24, 24), (616, 24))
 things(ZOMBIE, (120, 200), (520, 240), angle=270)
 things(IMP, (320, 340), angle=270)
+# a harder start (Vadim, 2026-11-20: "over simplified"): the lobby is held
+things(SERGEANT, (80, 140), (560, 180), angle=270)
+things(IMP, (200, 340), (440, 340), angle=270)
+things(DEMON, (320, 260), angle=270)
+things(SHELLS, (240, 80), (240, 120))
+things(STIM, (600, 180))
 # the great hall: the night staff. The lodger wakes when you are well into it
 # Fireballs and teeth at the front, guns at the back: from the lobby the men at
 # the far end shoot through everything that is coming for you
@@ -494,6 +500,13 @@ things(IMP, (-180, 450), (820, 450), (96, 640), (544, 640), (200, 800), (440, 80
 things(SERGEANT, (0, 980), (640, 980), (320, 1080), angle=270)
 things(DEMON, (320, 620), (760, 900), angle=270)
 things(CACO, (320, 880), angle=270, ambush=True)
+# and more of the night staff: teeth at the hall's mouth, a knight in its
+# middle, chainguns at the back under the porch
+things(DEMON, (200, 480), (440, 480), angle=270)
+things(KNIGHT, (440, 700), angle=270)
+things(CHAINGUNNER, (240, 1110), (400, 1110), angle=270)
+things(MEDIKIT, (-32, 920))
+things(SHELLBOX, (672, 920))
 things(LODGER, (320, 760), args=(300,))
 things(LAMP, (-232, 408), (872, 408), (-232, 870), (872, 1128))
 things(SHELLS, (-32, 600), (672, 600), (320, 1120))
@@ -670,6 +683,11 @@ ajarmap.ambush(m, 1, REVENANT, (-160, 1250), angle=90, after=4)
 ajarmap.ambush(m, 1, IMP, (-200, 1420), (-120, 1560), angle=90, after=4)
 # key 2, in the cellar: out of the dark
 ajarmap.ambush(m, 2, SPECTRE, (1650, -360), (1500, -340), (1760, -130), angle=0)
+# a Stray door, taken (the lobby's is the first to hand): the lobby round you,
+# and then the hall's mouth
+ajarmap.ambush(m, 10 + ajarmap.STRAY, IMP, (120, 100), (520, 120), angle=90)
+ajarmap.ambush(m, 10 + ajarmap.STRAY, SPECTRE, (320, 200), angle=90)
+ajarmap.ambush(m, 10 + ajarmap.STRAY, SERGEANT, (200, 440), (440, 440), angle=270, after=3)
 # key 4, on the mezzanine: up from the great hall
 ajarmap.ambush(m, 4, CACO, (-150, 620), (200, 600), angle=180)
 

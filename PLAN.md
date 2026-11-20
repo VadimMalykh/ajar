@@ -931,6 +931,14 @@ Ajar's own monsters but two lodgers.
 - `MAP=MAP06 ./tools/smoke.sh`: 38 checks, to the exit. `MODE=2`: tour, 58
   views (`TIMEOUT=400`). No test of the level's Stray doors or of the bell.
 
+- **A harder start** (2026-11-20, Vadim: the start is "over simplified",
+  meaning the fight). The lobby: two sergeants, two more imps and a demon
+  (it had two zombies and an imp). The great hall: two demons at its mouth,
+  a hell knight in the middle, two chaingunners under the porch at the
+  back. Taking a Stray door (the lobby's is the first to hand) brings two
+  imps and a spectre into the lobby and two sergeants to the hall's mouth.
+  Shells, a shell box, a stimpack and a medikit for it. Not played by hand.
+
 Tried and dropped: a thief in the west wing with YELLOW on its back. With
 a wing behind a lock the solver found the player locked out of their own
 key (RED swapped into the wing's frame from the far side, key 1 not yet
