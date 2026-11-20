@@ -307,8 +307,8 @@ extend class AjarTimeHandler
 	// as before: the steel door opens. Room 3's go 2 stands under the press
 	// first, and the wing's shutter is shut again (shutterShutAnew3).
 	int faStep, faT, faRoom, faTotal, faLeft, faPicks, faDeaths;
-	bool faShut3;
-	bool faMega;                // room 3: go 1 took the megasphere               // room 3: the wing's shutter was opening, the player under the press, when the plate was used
+	bool faShut3;               // room 3: the wing's shutter was opening, the player under the press, when the plate was used
+	bool faMega;                // room 3: go 1 took the megasphere
 	AjarFightAnew faPlate;
 
 	AjarFightAnew FightAnewOf(int k)

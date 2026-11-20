@@ -764,7 +764,7 @@ extend class AjarTimeHandler
 		{
 			if (!a.bIsMonster || a.health <= 0 || !InPen33(a)) continue;
 			FLineTraceData ld;
-			a.LineTrace(90, 400, 0, 0, 40, data: ld);
+			a.LineTrace(90, 400, 0, TRF_THRUACTORS, 40, data: ld);       // (past the other guards: the wall is what is asked)
 			Console.Printf("AJARTEST info trace from (%d,%d,%d) angle %d: hit=%d at (%.1f,%.1f,%.1f)", a.pos.x, a.pos.y, a.pos.z, a.angle, ld.HitType,
 				ld.HitLocation.x, ld.HitLocation.y, ld.HitLocation.z);
 			if (ld.HitType != TRACE_HitWall || ld.HitLocation.y < -177 || ld.HitLocation.y > -159) return false;

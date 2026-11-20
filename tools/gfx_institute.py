@@ -1268,6 +1268,56 @@ def warning(n):
     return im
 
 
+WEIGH_STEPS = 12        # the needle's places: none, the tenths to the mark (10), one past it
+
+
+def weigh_dial(out, n):
+    """MAP16's weighbridge dial (map16.zs, AjarWeighDial), a wall sprite in
+    look n's steel: a round face with ten tenths to a red mark, a red band
+    past it, and a lamp over it. Frames A to L: the needle at 0 to 11
+    tenths; at the mark and past it (K, L) the lamp is green."""
+    metal = METAL[n] if n else KHAKI
+    ink, red, face = (28, 28, 30), (196, 36, 30), (240, 236, 218)
+    cx, cy, r = 32, 48, 29
+
+    def at(p, rad):
+        t = math.pi * (0.75 + 1.5 * p / (WEIGH_STEPS - 1))
+        return cx + rad * math.cos(t), cy + rad * math.sin(t)
+
+    def stroke(im, p, r1, r2, c, w=1.0):
+        for k in range(int(r1 * 4), int(r2 * 4) + 1):
+            x, y = at(p, k / 4)
+            im.disc(x, y, w, c)
+
+    for k in range(WEIGH_STEPS):
+        im = Img(64, 84, (0, 0, 0, 0))
+        im.rect(2, 0, 62, 84, shade(metal, 0.8))                 # the housing: a steel plate, riveted
+        im.frame(2, 0, 62, 84, shade(metal, 0.45), 2)
+        for x, y in ((6, 4), (57, 4), (6, 79), (57, 79)):
+            im.disc(x, y, 1, shade(metal, 0.4))
+        im.disc(32, 9, 7, shade(metal, 0.4))                     # the lamp
+        im.disc(32, 9, 5, (90, 236, 110) if k >= 10 else (70, 54, 46))
+        if k >= 10:
+            im.disc(31, 8, 1.5, (210, 255, 210))
+        im.disc(cx, cy, r + 1, shade(metal, 0.45))               # the face
+        im.disc(cx, cy, r - 1, face)
+        for y in range(cy - r, cy + r + 1):                      # the red band, from the mark on
+            for x in range(cx - r, cx + r + 1):
+                d = math.hypot(x - cx, y - cy)
+                t = math.atan2(y - cy, x - cx) / math.pi % 2
+                q = ((t - 0.75) % 2) / 1.5 * (WEIGH_STEPS - 1)
+                if r - 9 <= d <= r - 2 and 9.85 <= q <= 11.7:
+                    im.set(x, y, red)
+        for p in range(10):                                      # a tick at each tenth
+            stroke(im, p, r - 7 if p % 5 == 0 else r - 5, r - 3, ink, 0.6)
+        stroke(im, 10, r - 16, r - 2, red, 1.8)                  # the mark
+        stroke(im, k, 0, r - 5, ink, 1.3)                        # the needle
+        im.disc(cx, cy, 3, ink)
+        im.disc(cx, cy, 1, shade(metal, 1.2))
+        im.noise(2, 1950 + k)
+        out[f"sprites/AJWG{'ABCDEFGHIJKL'[k]}0.png"] = im.png(grab=(32, 84))
+
+
 def make(out, signs={}, faces={}, looks=LOOKS):
     """`signs`, `faces`: what the map asks for (map_institute1.SIGNS, FACES):
     {(look, wall, words, shift, width, the opening's height): name},

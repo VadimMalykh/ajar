@@ -5920,6 +5920,103 @@ bait for the self after it.
   amounts are mine, a first guess. `firstKept3` still asks for 17 pick-ups
   or more.
 
+## MAP16: the weighbridge made readable (built 2026-11-20)
+
+`tools/map_institute6.py` (the dial, the case), `src/zscript/map16.zs` (the
+weighbridge's rule, the dial, the announcement, the tests), `shut.zs` (two
+figures), `tools/ajartime.py` (`case` without a plaque, in other trim),
+`tools/gfx_institute.py` and `tools/gfx.py` (the dial's pictures),
+`src/mapinfo.txt` (thing 20071), `tools/mapcheck.py` and
+`tools/thingcheck.py` (figures and wall things), `tools/smoke_MAP16_2.cfg`
+and `_3.cfg`. **Not played by hand.**
+
+**What Vadim found**: playing MAP16 he could not find the weighbridge's
+point. The level said only WEIGHBRIDGE over the head and "It was built to
+weigh something heavier", and nothing tied the baron at the foot to the
+plate. Agreed: a dial that reads the weight, the baron announced, and a
+glass case that shows it solved.
+
+**The dial** (`AjarWeighDial`, thing 20071, a bright wall sprite AJWG at
+1.25 times its size) is on the lobby's east wall, north of the head's frame
+(its middle at y -1912, 40 over the floor), seen from the plate, from the
+lobby's door and through the glass from the reading room. A round face in
+the look's steel (khaki in Post Box), a tick at each tenth, a red mark at
+the weight the weighbridge needs and a red band past it, and a lamp over it
+that is dark below the mark and green at it or past it. Twelve needle
+places: none, the ten tenths, one past the mark. It reads the total on the
+plate in tenths of 1000, and the needle steps once every 4 tics toward that,
+so it is seen to swing (0 to the mark in about a second). The drawing is
+mine.
+
+**The rule changed** from "any one monster of Mass 1000 or more" to "the
+total weight on the plate is 1000 or more": everything alive that stands on
+it, the player (100) and monsters by their `Mass`. A baron alone still opens
+it; the player alone still does not. `openedBy` is the heaviest thing on the
+plate when it opened. Two choices of mine: something flying over the plate
+(more than 4 over its floor: a cacodemon) weighs nothing, and lighter
+monsters add up, so two demons and the player (900) do not open it but two
+demons, an imp and the player would. Nothing that light comes up to the
+lobby but by the head, behind the player.
+
+**The words.** On the plate, alone: "The weighbridge does not stir under
+you. / The dial beside it reads a tenth of what it was built to weigh." (with
+more on it, "N tenths"). The plate's message waits while a baron's is on
+screen. **The baron** is announced each time one comes to the foot: its
+sight sound is heard wherever the player is (no attenuation), and "Far
+below, something heavy has come in / at the foot of the building."; a later
+one: "Another, as heavy, has come in / at the foot of the building." The
+words are mine.
+
+**The case** is in the reading room's north wall, x 576 to 736, just west of
+the corner with the window onto the lobby: who stands at the window turns
+left and sees it. Behind that wall there is nothing (the stair head is west
+of it, the test hall east). Inside, the lobby's walls, floor and ceiling,
+a pressed plate with a baron standing on it (half size), and the dial against
+the back wall with its needle at the mark and its lamp green. No plaque, and
+the glass framed in AJTRIM as the lobby's window: `ajartime.case` has
+`plaque=False` and `trim=` for this; MAP32's and SHUT's maps come out of the
+generator byte for byte the same. New figures: "standing" (a live monster
+by Doom editor number, the first picture of its Spawn state) and "dial".
+Asserted sealed and every figure inside.
+
+**Checks**: mapcheck 308 sectors, 0 problems; thingcheck, itemcheck 0. To
+get there mapcheck no longer counts wall things that are not solid (the
+wind, begin-anew and press plates, the lamps, figures, the dial) as reaching
+a wall, and thingcheck lets figures share a spot (a self on a plate figure);
+MAP32 had 19 and 14 such reports, and now 1 and 2 that are not these. The
+solver: 8 door actions, 3074 states, 0 stuck, as before (the rule is the
+same move for it).
+
+**Tests**:
+- `MAP=MAP16 tools/smoke.sh`: 41 checks, all pass, out by the brass frame,
+  twice. The walk-through's baron is put on the plate by hand as before; it
+  opens it alone (weight 1000).
+- `MAP=MAP16 MODE=3 TIMEOUT=260`: 17 checks (13 before), all pass, twice.
+  New: `caseIsThere` (three figures, none solid, counted or hidden, a
+  baron's picture and the dial at the mark among them); `dialReadsATenth`
+  (the player alone, still on the plate: weight 100, needle 1, lamp dark,
+  shutter shut) and `dialRestsAtATenth` ten tics later; `theBaronIsAnnounced`
+  (one baron, one announcement); `dialAtTheMark` (70 tics after the baron
+  opens it: weight 1000 or more, needle 10 or 11, lamp green, shutter open).
+  For that last one the test holds the baron where it stood when it opened
+  the shutter (it would walk off after the player). The baron's way up took
+  longer in one run than the old ending allowed, so `smoke_MAP16_3.cfg`
+  runs 500 tics more.
+- `MAP=MAP16 MODE=2 EXTRA=-nomonsters`: 20 views (17 before): from the
+  plate, the dial beside the head; through the glass from the reading room,
+  the dial left of the head with the WEIGHBRIDGE sign, the needle at 0 and
+  the red mark plain to see (the glass's mullions hide it from some spots, so
+  the dial is north of the window's middle); the case: a baron on a lit
+  plate, the dial with its needle on the red mark and its lamp green.
+- `MAP=MAP32 MODE=3 TIMEOUT=750`: 54 checks, all pass, out. `MAP=SHUT
+  MODE=3`: 20, all pass.
+- **Not tested**: the sight sound heard everywhere (the smoke tests run with
+  no sound: only that the announcement was made); the plate's message with
+  more than the player on it; a flying monster over the plate; light monsters
+  adding up to 1000; a later baron's message; whether the needle reads at a
+  glance in play rather than in a still. **Not played by hand**:
+  `cd .wt/ajar/m16-weigh-hints && MAP=MAP16 ./run.sh`.
+
 ## MAP32 room 3: plates in the fight, and the timetable (built 2026-11-20)
 
 Vadim found that in the two shifts the selves had only one link between them:
@@ -6087,7 +6184,15 @@ protected from nothing. Now they wake for whoever comes into the wing.
   from elsewhere, as noted for it earlier; afterTheWin with a body moved;
   theyGoWhereTheyWent), and 4 of 4 runs of main's code. Nothing of this
   change runs differently on PRESS that I could find (no sentry, no screen;
-  the table is only read); not settled.
+  the table is only read). **Settled after the merge with main** (the MAP16
+  weighbridge): run alone, one test at a time, PRESS 3 passed 5 of 5; the
+  failures were from tests run side by side. On the merged build: MODE=7 18
+  of 18 three times, MODE=3 54 of 54 twice, MODE=5 23, MODE=4 7, PRESS 4 5,
+  SHUT 3 20, MAP16 3 all pass. Before that MODE=7 failed
+  `screenDownWithItsPlate3` once: the test's trace from one guard hit the
+  other guard, not the screen; the trace now goes through actors. And MODE=3
+  failed `theyFireBack4` once (room 4, untouched here: no pen monster
+  happened to fire out in its 230 tics).
 - **Not tested.** The bar in a room of goes (`GoesClock`: no room of goes
   has an earlier self holding a shutter in a test; the code is the same
   `TableBar`). A sprung frame's plate as a row (none in room 3). The amber

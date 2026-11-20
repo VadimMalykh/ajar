@@ -1326,6 +1326,7 @@ def make_all():
     gfx_institute.make(out, map_institute1.SIGNS, map_institute1.FACES)
     for n in gfx_institute.LOOKS:                                # MAP16's lever, on the canteen gallery's wall
         levers(out, f"AJICL{n}", unpng(out[f"textures/AJICA{n}.png"]), 128)
+    gfx_institute.weigh_dial(out, map_institute1.LOOK)           # MAP16's weighbridge dial, in the build's look
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
                            + "cameratexture AJREEL 512 224\n").encode()
     import gfx_institute2                                        # MAP13's and MAP14's own props and pictures
