@@ -931,6 +931,14 @@ Ajar's own monsters but two lodgers.
 - `MAP=MAP06 ./tools/smoke.sh`: 38 checks, to the exit. `MODE=2`: tour, 58
   views (`TIMEOUT=400`). No test of the level's Stray doors or of the bell.
 
+- **A harder start** (2026-11-20, Vadim: the start is "over simplified",
+  meaning the fight). The lobby: two sergeants, two more imps and a demon
+  (it had two zombies and an imp). The great hall: two demons at its mouth,
+  a hell knight in the middle, two chaingunners under the porch at the
+  back. Taking a Stray door (the lobby's is the first to hand) brings two
+  imps and a spectre into the lobby and two sergeants to the hall's mouth.
+  Shells, a shell box, a stimpack and a medikit for it. Not played by hand.
+
 Tried and dropped: a thief in the west wing with YELLOW on its back. With
 a wing behind a lock the solver found the player locked out of their own
 key (RED swapped into the wing's frame from the far side, key 1 not yet
@@ -3786,6 +3794,17 @@ MAP16, and its secret one leads to MAP32.
   panes (2026-11-19, Vadim: the one at 128..192 stood straight before the
   way in and hid the glass): x -64..0, 192..256 and 448..512. From the way
   in the pane 0..192 is clear. A demon and a spot of RED's ambush moved.
+- **Two ambushes after the second beam** (2026-11-20, Vadim: after both
+  beam experiments the gallery and the periscope room are walked again,
+  empty). `ajarmap.ambush` has a new cause, 20 plus a target's or sensor's
+  tag (set off), and `near=`: the ambusher holds back until the player is
+  within that distance of its spot and in sight of it. Sensor C (cause 23):
+  the gallery a third time, unseen (3 spectres, 2 revenants, 2 knights, then
+  a cacodemon and a baron; near 700, so the far end comes as he walks in),
+  and the periscope room, seen (4 imps, 2 chaingunners, a revenant, then a
+  knight and a mancubus; near 640, all of the room from BLUE's far side).
+  One who never goes back never meets them, and they are not in the kill
+  count until they come. Checks `periAmbushSeen`, `galleryAmbushUnseen`.
 - Not known: how hard the gallery is (monsters that are not seen, knights
   and cacodemons among them); whether the target in the glass is found;
   whether the beam's way round the periscope room reads; the frame rate

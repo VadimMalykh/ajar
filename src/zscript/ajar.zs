@@ -430,7 +430,9 @@ class AjarHandler : EventHandler
 	// --- ambushes (ajarmap.ambush) ------------------------------------------
 	// An AjarAmbush thing is a monster that is not there yet. args[0] is what
 	// brings it: 1..4, taking that room key; 11..16, taking the door of that
-	// colour (less 10) for the first time. args[1]
+	// colour (less 10) for the first time; 21.., the target or sensor with that
+	// tag (less 20) set off. args[3], if set: it holds back until the player is
+	// within that distance of it and in sight of it. args[1]
 	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
 	// after, facing the way the thing faces, and knows where the player is.
 	// If something stands in its place it waits until the place is free.
@@ -459,7 +461,7 @@ class AjarHandler : EventHandler
 		return null;
 	}
 
-	int ambushHid[20], ambushShown[20];      // by cause: ambushers that came unseen (UnseenJoin), and seen
+	int ambushHid[30], ambushShown[30];      // by cause: ambushers that came unseen (UnseenJoin), and seen
 
 	void AmbushTick(PlayerPawn mo)
 	{
@@ -471,7 +473,13 @@ class AjarHandler : EventHandler
 			int g = a.args[0];
 			if (!a.armed)
 			{
-				if (g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
+				if (g > 20)
+				{
+					let tg = TargetTagged(g - 20);
+					if (!tg || !tg.done) continue;
+				}
+				else if (g >= 1 && g <= 4 ? !Has(mo, g) : !(carried && carried.Colour() == g - 10)) continue;
+				if (a.args[3] && (a.Distance2D(mo) > a.args[3] || !a.CheckSight(mo))) continue;
 				a.armed = true;
 				a.wait = 20 + 5 * random(0, 5) + 35 * a.args[2];    // args[2]: seconds a later wave holds back
 			}
@@ -485,7 +493,7 @@ class AjarHandler : EventHandler
 			m.angle = a.angle;
 			Actor.Spawn("TeleportFog", a.pos, ALLOW_REPLACE);
 			bool hid = UnseenJoin(m);                           // come into a room only the glass shows
-			if (g >= 0 && g < 20) { if (hid) ambushHid[g]++; else ambushShown[g]++; }
+			if (g >= 0 && g < 30) { if (hid) ambushHid[g]++; else ambushShown[g]++; }
 			if (CVar.GetCVar("ajar_autotest").GetInt())
 			{
 				// a scripted walkthrough: it came, which is all the test wants
