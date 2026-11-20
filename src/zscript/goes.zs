@@ -900,13 +900,15 @@ extend class AjarTimeHandler
 					&& !(la.flags & Line.ML_BLOCKING) && !(lb.flags & Line.ML_BLOCKING));
 			if (o == when + 2 && keyStep == 2)
 				Check("tooLateTogether", a.frame == fa && b.frame == fb && a.Shut() && b.Shut() && h.Late(b) && (lb.flags & Line.ML_BLOCKING));
+			// (through the Pair once the first self has left A's mouth, at 330: coming out of A
+			// into it would be a paradox, paradox.zs)
 			if (keyStep == 1)
 			{
-				if (o == when + 4) Go(mo, 992, 1030, 0, 90);
-				if (o > when + 4 && o < when + 20) Walk(mo, (0, 8));
-				if (o == when + 22) Check("throughThePair", mo.pos.x < 300 && mo.pos.y > 100 && mo.pos.y < 260);
-				if (o == when + 30) Go(mo, 480, 40, 0, 270);
-				if (o > when + 30 && o < when + 55) Walk(mo, (0, -8));
+				if (o == when + 24) Go(mo, 992, 1030, 0, 90);
+				if (o > when + 24 && o < when + 40) Walk(mo, (0, 8));
+				if (o == when + 42) Check("throughThePair", mo.pos.x < 300 && mo.pos.y > 100 && mo.pos.y < 260);
+				if (o == when + 50) Go(mo, 480, 40, 0, 270);
+				if (o > when + 50 && o < when + 75) Walk(mo, (0, -8));
 			}
 		}
 	}

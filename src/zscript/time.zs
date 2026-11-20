@@ -24,7 +24,9 @@
 //    (goes.zs: earlier selves do again what they did to doors, plates and
 //    presses; from the win on its time doors lead into box 1, as a room of
 //    goes', from the hall as it is at the win). In a room of goes the player
-//    is never killed: they are in box 1 at the start of a new go (shut.zs).
+//    is never killed: they are in box 1 at the start of a new go (shut.zs);
+//    but in a room of goes proper (2) touching an earlier self is a paradox,
+//    and that death is real (paradox.zs).
 //    A level may have several such rooms and fights, one after another.
 //  * Lines 3000 + 100 * fight + j: the hall's time doors, j from 1.
 //    Lines 3050 + 100 * fight + n: the door of box n. All are portal lines
@@ -263,7 +265,9 @@ class AjarClip play
 }
 
 // An earlier self in an open fight: it goes where the player went and its
-// shots are real. It cannot be hurt, but what it shoots turns on it.
+// shots are real. It cannot be hurt, but what it shoots turns on it. The
+// player walks through it; in a room of goes proper, touching it ends the
+// universe (paradox.zs).
 class AjarGhost : Actor
 {
 	Default { Radius 16; Height 56; +SHOOTABLE +NODAMAGE +NOBLOOD +NOGRAVITY +DONTTHRUST +NOTELEPORT }
@@ -2419,6 +2423,7 @@ class AjarTimeHandler : EventHandler
 		if (!zf.Size()) return;
 		let mo = players[consoleplayer].mo;
 		if (!mo) return;
+		if (paradox) { ParadoxTick(PlayerPawn(mo)); Tests(mo); return; }      // paradox.zs: this universe is over
 		if (reel && reel < 4) { ReelTick(PlayerPawn(mo)); Tests(mo); return; }
 		if (goes) { GoesTick(PlayerPawn(mo)); playerWas = mo.pos; Table(); Tests(mo); return; }      // a room of goes (plate.zs); the timetable (table.zs)
 		Rescue(PlayerPawn(mo));
@@ -2518,6 +2523,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 7 && level.mapname ~== "MAP31") WindScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "PLATE") PlateScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "PLATE") GoesScript(PlayerPawn(mo));
+		if (mode == 5 && level.mapname ~== "PLATE") ParadoxScript(PlayerPawn(mo));     // paradox.zs
 		if (mode == 3 && level.mapname ~== "PRESS") PressScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "PRESS") PressGoScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "TWOKEY") TwoKeyScript(PlayerPawn(mo));
@@ -2534,6 +2540,7 @@ class AjarTimeHandler : EventHandler
 			if (reel == 2) Screen.DrawText(SmallFont, Font.CR_GRAY, 320 - SmallFont.StringWidth("USE: the next") / 2, 384, "USE: the next", DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
 			return;
 		}
+		if (paradox) return;                // paradox.zs: no clock in a universe that is over
 		if (goes && GoesClock()) return;      // plate.zs
 		if (open && phase == LIVE && takes.Size() > 1)
 		{

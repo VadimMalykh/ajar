@@ -310,6 +310,7 @@ extend class AjarTimeHandler
 			Check("through1", k == 2 && mo.pos.x > 2100 && mo.pos.x < 2300 && mo.pos.y < 120 && won.Find(1) < won.Size() && (l1.flags & Line.ML_BLOCKING)
 				&& (h.FindLine(HallLine(1, 1)).flags & Line.ML_BLOCKING));
 			Check("noLeak2", Fresh(2));
+			Check("noParadox1", !paradoxes && !paradox);      // paradox.zs: no self touched an earlier one
 			dsStep = 1;
 		}
 		// go 1: A, then B 83 tics later: too late; out by the pit's own time door
@@ -401,7 +402,8 @@ extend class AjarTimeHandler
 				dsAmber2 = true;
 			}
 			if (o == 5) { Go(mo, YX32, YY32, F32, 270); yellow.Used(mo); }
-			if (o == 7) Go(mo, 3696, 600, F32, 90);
+			// waits 40 behind B's mouth, where the second self stands to hang b until join2 + 4 (paradox.zs)
+			if (o == 7) Go(mo, 3696, 560, F32, 90);
 			// the lamps: not lit 140 tics before the earlier selves join it, amber 40 before, green when joined
 			if (o == join2 - 140) dsAmber2 = dsAmber2 && PairLamps32(0) && abs(PairJoinIn(131) - 140) <= 1;
 			if (o == TA32 - 40) dsAmber2 = dsAmber2 && PairLamps32(AjarTogether.AMBER);
@@ -428,6 +430,7 @@ extend class AjarTimeHandler
 		{
 			Check("on2", k == 3 && won.Find(2) < won.Size() && (h.FindLine(HallLine(2, 1)).flags & Line.ML_BLOCKING)
 				&& (h.FindLine(HallLine(2, 2)).flags & Line.ML_BLOCKING) && yellow.frame == fw);
+			Check("noParadox2", !paradoxes && !paradox);
 			dsStep = 3;
 			dsT = t;
 		}
@@ -749,8 +752,11 @@ extend class AjarTimeHandler
 		if (dsStep == 7 && goes && g == 3)
 		{
 			if (o == 3) { Go(mo, 8300, 600, G32, 90); blue.Used(mo); }
-			if (o == 5) Go(mo, 8530, 416, G32, 0);
-			if (o > 5 && o < 20) Ahead(mo);
+			// through F1 once the first self has hung GREEN in it (it stands in its mouth till 11), and out of
+			// the way of the second self, which comes through F1 on this path at 25 (paradox.zs)
+			if (o == 12) Go(mo, 8530, 416, G32, 0);
+			if (o > 12 && o < 27) Ahead(mo);
+			if (o == 28) Go(mo, 9100, 520, G32, 0);
 			if (o == 80)
 			{
 				Check("twoEarlierSelves5", AllGhosts() == 2 && p51.pressed && p52.pressed && pink.frame == g2 && green.frame == g1 && h.carried == blue);
@@ -760,7 +766,7 @@ extend class AjarTimeHandler
 			if (o == 97) Check("through5b", k == 5 && mo.pos.x > 9600 && mo.pos.x < 10112 && mo.pos.y > 160 && mo.pos.y < 608 && h.carried == blue);
 			if (o == 99) { Go(mo, 10080, 384, G32, 0); home2.Activate(mo); }
 			if (o == 101) Check("chainClosed5", h.chainLen == 2 && blue.frame == home2 && red.frame == home && !h.carried);
-			if (o == 103) Go(mo, 9640, 384, G32, 180);
+			if (o == 103) { Go(mo, 9640, 384, G32, 180); Check("noParadox5", !paradoxes && !paradox); }
 			if (o > 103) Ahead(mo);
 		}
 	}
@@ -825,7 +831,8 @@ extend class AjarTimeHandler
 		}
 		if (dsStep == 2 && goes && fight == 5 && g == 2)
 		{
-			if (o == 3) Go(mo, 8232, 240, G32, 90);
+			// (it waits off the way from door 1, where the third self comes in: paradox.zs)
+			if (o == 3) Go(mo, 8400, 240, G32, 90);
 			if (o == 20) Go(mo, 8530, 416, G32, 0);
 			if (o > 20 && o < 35) Ahead(mo);
 			if (o == 180) Check("shutInTheLock", k == 5 && mo.pos.x > 8800 && mo.pos.x < 9248 && (lg1.flags & Line.ML_BLOCKING) && !p51.pressed);
