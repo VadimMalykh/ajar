@@ -78,18 +78,25 @@ extend class AjarHandler
 		}
 		if (t == 700) Check("beamOnSensorC", sensorC.done);
 		if (t == 730) Check("secondCellOpen", RoomOpen(313));
+		// sensor C's ambushes come when the walker is back in the room: the
+		// periscope room's (it stands there) seen, the gallery's unseen
+		if (t == 731) Check("lateAmbushWaits", !ambushHid[23]);
+		if (t == 790) Check("periAmbushSeen", ambushShown[23] > 0 && !ambushHid[23]);
+		if (t == 791) Pose(mo, 128, 900, 0, 90);
+		if (t == 850) Check("galleryAmbushUnseen", ambushHid[23] > 0);
+		int u = t - 120;
 		// key 2, VIOLET
-		if (t == 732) Pose(mo, 840, 1790, 0, 270);
-		Forward(mo, t, 732, 7);
-		if (t == 742) Check("key2", Has(mo, 2));
-		if (t == 744) { Take(mo, 5); Check("tookViolet", carried && carried.args[1] == 5); }
+		if (u == 732) Pose(mo, 840, 1790, 0, 270);
+		Forward(mo, u, 732, 7);
+		if (u == 742) Check("key2", Has(mo, 2));
+		if (u == 744) { Take(mo, 5); Check("tookViolet", carried && carried.args[1] == 5); }
 		// the door with locks 1 and 2, and the night room
-		if (t == 746) { Pose(mo, 730, 128, 0, 0); FindLine(301).Activate(mo, 0, SPAC_Use); }
-		if (t == 786) Check("locks1And2Open", RoomOpen(301));
-		Forward(mo, t, 786, 16);
-		if (t == 804) Check("pastTheLocks", mo.pos.x > 784 && violet);
-		if (t == 807) { Pose(mo, 1066, -64, 0, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried && !secretOutBuilt); }
-		Forward(mo, t, 814, 12);
+		if (u == 746) { Pose(mo, 730, 128, 0, 0); FindLine(301).Activate(mo, 0, SPAC_Use); }
+		if (u == 786) Check("locks1And2Open", RoomOpen(301));
+		Forward(mo, u, 786, 16);
+		if (u == 804) Check("pastTheLocks", mo.pos.x > 784 && violet);
+		if (u == 807) { Pose(mo, 1066, -64, 0, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried && !secretOutBuilt); }
+		Forward(mo, u, 814, 12);
 	}
 
 	// MAP=MAP15 MODE=3 tools/smoke.sh: the secret way out (see the top).

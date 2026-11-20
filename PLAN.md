@@ -3786,6 +3786,17 @@ MAP16, and its secret one leads to MAP32.
   panes (2026-11-19, Vadim: the one at 128..192 stood straight before the
   way in and hid the glass): x -64..0, 192..256 and 448..512. From the way
   in the pane 0..192 is clear. A demon and a spot of RED's ambush moved.
+- **Two ambushes after the second beam** (2026-11-20, Vadim: after both
+  beam experiments the gallery and the periscope room are walked again,
+  empty). `ajarmap.ambush` has a new cause, 20 plus a target's or sensor's
+  tag (set off), and `near=`: the ambusher holds back until the player is
+  within that distance of its spot and in sight of it. Sensor C (cause 23):
+  the gallery a third time, unseen (3 spectres, 2 revenants, 2 knights, then
+  a cacodemon and a baron; near 700, so the far end comes as he walks in),
+  and the periscope room, seen (4 imps, 2 chaingunners, a revenant, then a
+  knight and a mancubus; near 640, all of the room from BLUE's far side).
+  One who never goes back never meets them, and they are not in the kill
+  count until they come. Checks `periAmbushSeen`, `galleryAmbushUnseen`.
 - Not known: how hard the gallery is (monsters that are not seen, knights
   and cacodemons among them); whether the target in the glass is found;
   whether the beam's way round the periscope room reads; the frame rate

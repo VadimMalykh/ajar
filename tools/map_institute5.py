@@ -359,6 +359,18 @@ ajarmap.ambush(m, 2, BARON, (480, 1568), angle=90, after=3)
 ajarmap.ambush(m, 10 + VIOLET, REVENANT, (460, 2084), (820, 2090), angle=270)
 ajarmap.ambush(m, 10 + VIOLET, SPECTRE, (640, 1900), (560, 2000), angle=90, after=3)
 ajarmap.ambush(m, 10 + VIOLET, MANCUBUS, (640, 1568), angle=180, after=5)
+# sensor C lit (the second beam): the gallery a third time, unseen as before, when the player is back in it
+ajarmap.ambush(m, 23, SPECTRE, (-200, 1000), (120, 1100), (360, 950), angle=180, near=700)
+ajarmap.ambush(m, 23, REVENANT, (600, 1150), (-380, 900), angle=180, near=700)
+ajarmap.ambush(m, 23, KNIGHT, (100, 900), (560, 900), angle=180, near=700)
+ajarmap.ambush(m, 23, CACO, (300, 1180), angle=270, after=3, near=700)
+ajarmap.ambush(m, 23, BARON, (-150, 1150), angle=270, after=4, near=700)
+# and the periscope room, seen, when the player is back in that
+ajarmap.ambush(m, 23, IMP, (1640, 120), (1640, 520), (1960, 560), (1960, 80), angle=180, near=640)
+ajarmap.ambush(m, 23, CHAINGUNNER, (1900, 200), (1900, 440), angle=180, near=640)
+ajarmap.ambush(m, 23, REVENANT, (2080, 320), angle=180, near=640)
+ajarmap.ambush(m, 23, KNIGHT, (1680, 150), angle=90, after=3, near=640)
+ajarmap.ambush(m, 23, MANCUBUS, (1960, 320), angle=180, after=3, near=640)
 things(BARON, (944, 100), (944, 156), angle=180)                            # before the night room
 
 # --- and what it takes ---------------------------------------------------------------------------------------
