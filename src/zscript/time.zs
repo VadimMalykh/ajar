@@ -34,6 +34,9 @@
 //    args[1] its wave (from 1), args[2] the wave comes when no more than
 //    that many monsters are left, or 25 seconds after the wave before it
 //    was due (Cues), args[3] the monster's Doom editor number.
+//    args[4] 1: the fight is CALM, its monsters never fight each other
+//    (NOINFIGHTING on each as it comes, live or on the demo, and when it is
+//    raised: Calm). MAP32's fights of goes, rooms 3 and 4, are calm.
 //
 //  * Sector tag and line id 3080 + 100 * fight: the hall's sectors and its
 //    screen (the upper texture of that line, a name whose fifth letter is a
@@ -353,6 +356,20 @@ class AjarTimeHandler : EventHandler
 	const FOLLOW_NEAR = 150;
 	int said;                   // which hints have been given
 
+	// --- a calm fight (an AjarCue with args[4] 1): its monsters never fight each other ---
+	Array<int> calmFights;
+
+	void Calm(Actor m)
+	{
+		if (!m || !m.bIsMonster) return;
+		int k, b;
+		[k, b] = Where(m.pos.xy);
+		if (k && calmFights.Find(k) < calmFights.Size()) m.bNoInfighting = true;
+	}
+
+	// raised (an arch-vile): the engine gives it its default flags again
+	override void WorldThingRevived(WorldEvent e) { Calm(e.thing); }
+
 	// --- places ---------------------------------------------------------------
 	// Which fight's zone a point is in, and which box of it (0: the hall; -1: none).
 	int, int Where(Vector2 p)
@@ -398,6 +415,8 @@ class AjarTimeHandler : EventHandler
 			zf.Push(a.args[0]); zb.Push(a.args[1]);
 			zx.Push(a.pos.x); zy.Push(a.pos.y); zw.Push(a.args[2]); zh.Push(a.args[3]);
 		}
+		it = ThinkerIterator.Create("AjarCue");
+		while (a = Actor(it.Next())) if (a.args[4] && calmFights.Find(a.args[0]) == calmFights.Size()) calmFights.Push(a.args[0]);
 		let h = Doors();
 		for (int k = 1; k < 10; k++)
 		{
@@ -799,6 +818,7 @@ class AjarTimeHandler : EventHandler
 				else if ((r.cue && r.cue.special1) || (r.maker && r.maker.mode != 1) || r.sf[0] < 0) { r.mode = 2; continue; }
 				Actor n = Actor.Spawn(r.cls, (r.x[j], r.y[j], r.z[j]));
 				if (!n) { r.mode = 2; continue; }
+				if (r.cue && r.cue.args[4]) n.bNoInfighting = true;
 				n.GiveInventoryType("AjarRail");
 				n.bSolid = false;
 				if (r.cue)
@@ -1865,6 +1885,7 @@ class AjarTimeHandler : EventHandler
 			// someone stands there: it comes when there is room (the wave is not over until it has)
 			if (!m.TestMobjLocation()) { m.ClearCounters(); m.Destroy(); continue; }
 			m.angle = c.angle;
+			if (c.args[4]) m.bNoInfighting = true;
 			Actor.Spawn("TeleportFog", c.pos, ALLOW_REPLACE);
 			m.target = mo;
 			bornA.Push(m); bornC.Push(c);

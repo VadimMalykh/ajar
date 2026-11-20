@@ -12,13 +12,17 @@ extend class AjarTimeHandler
 {
 	const PRESS32 = 3530;       // room 3's press (map_secret2.PRESS3)
 	const SHUT32 = 3540;        // room 4's shutter (map_secret2.SHUT4)
+	const SHUT33 = 3535;        // room 3's booth's shutter (map_secret2.SHUT3)
 	const F32 = -96;            // the floor of the pit, of room 4
 	const G32 = -192;           // of room 5
 	const TA32 = 200;           // when the first self hangs leaf a in room 2
 	int dsStep, dsT, dsT2, dsUsed, dsBefore, dsShots, dsOut0;
 	int dsOnFrom;               // walking on, ahead, until the fight that is on is another than this
+	int dsPlateO, dsStuckT;     // room 3: the tic go 1 stood on the recess's plate; the booth seen shut again
+	double dsStuckY;
 	Array<Actor> dsPenShots, dsPenOut;
 	AjarDoor leafA32, leafB32;
+	Actor dsGhost;              // MODE=2: a self on room 3's plate, for the view of the booth open
 
 	void Ahead(Actor mo) { mo.vel.xy = Actor.AngleToVector(mo.angle, 8); }
 
@@ -60,6 +64,44 @@ extend class AjarTimeHandler
 		mo.TakeInventory("RocketAmmo", 1);
 	}
 
+	// Two living monsters of fight k, awake and of two kinds, each hurt by the
+	// other: neither turns on the other (a calm fight, time.zs). The control:
+	// one with the flag taken off for a moment does.
+	bool NoInfighting(int k)
+	{
+		Actor a = null, b = null;
+		int n = 0, calm = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor m;
+		while (m = Actor(it.Next()))
+		{
+			if (!m.bIsMonster || m.health <= 0 || OnDemo(m)) continue;
+			int mk, mb;
+			[mk, mb] = Where(m.pos.xy);
+			if (mk != k) continue;
+			n++;
+			if (m.bNoInfighting) calm++;
+			if (!a) a = m;
+			else if (!b && m.GetClass() != a.GetClass()) b = m;
+		}
+		if (!a || !b) return false;
+		a.DamageMobj(b, b, 1, 'None');
+		b.DamageMobj(a, a, 1, 'None');
+		bool apart = a.target != b && b.target != a;
+		Actor was = a.target;
+		int th = a.threshold;
+		a.bNoInfighting = false;
+		a.threshold = 0;
+		a.DamageMobj(b, b, 1, 'None');
+		bool would = a.target == b;
+		a.bNoInfighting = true;
+		a.target = was;
+		a.threshold = th;
+		Console.Printf("AJARTEST info infighting: %d of %d calm, %s and %s apart=%d, without the flag it would=%d",
+			calm, n, a.GetClassName(), b.GetClassName(), apart, would);
+		return n >= 2 && calm == n && apart && would;
+	}
+
 	// Nothing of the room before is left: one go, no earlier selves, nothing written down.
 	bool Fresh(int k)
 	{
@@ -91,7 +133,8 @@ extend class AjarTimeHandler
 		Line l1 = h.FindLine(101), la = h.FindLine(131), lb = h.FindLine(132), lg1 = h.FindLine(141), lg2 = h.FindLine(142);
 		AjarPlate p1 = FloorPlate32(101, 0), p51 = FloorPlate32(141, 0), p52 = FloorPlate32(142, 0), sp = FloorPlate32(0, SHUT32);
 		AjarPress pr = FindPress(PRESS32);
-		AjarShutter sh = FindShutter(SHUT32);
+		AjarShutter sh = FindShutter(SHUT32), sh3 = FindShutter(SHUT33);
+		AjarPlate sp3 = FloorPlate32(0, SHUT33);
 		AjarPressSwitch sw = null;
 		let si = ThinkerIterator.Create("AjarPressSwitch");
 		AjarPressSwitch s;
@@ -103,9 +146,9 @@ extend class AjarTimeHandler
 			phase ? Left() : -1, level.killed_monsters, dsStep);
 		if (t == 3)
 		{
-			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 37 && !Figures(true));
+			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 41 && !Figures(true));
 			Check("allThere", violet && yellow && green && pink && blue && red && a && b && f1 && fa && fb && fw && g1 && g2 && home && home2
-				&& p1 && p51 && p52 && sp && pr && sh && sw && red.frame == home && !h.chainLen);
+				&& p1 && p51 && p52 && sp && pr && sh && sw && sh3 && sp3 && red.frame == home && !h.chainLen);
 		}
 
 		// on to the next room (a room left is over at once: no go, no tic of its own)
@@ -201,23 +244,49 @@ extend class AjarTimeHandler
 		if (dsStep == 3 && t == dsT + 6)
 		{
 			Console.Printf("AJARTEST info left=%d", Left());
-			Check("begun3", phase == LIVE && open && mixed && Left() >= 17 && PressUp(pr));
+			Check("begun3", phase == LIVE && open && mixed && Left() >= 17 && PressUp(pr) && sh3.IsShut() && !sp3.pressed);
 			Check("noLeak3", Fresh(3));
 		}
+		// go 1: the monsters do not fight each other; alone, the booth is shut and
+		// the lever out of reach; then the bait walks through the mouth to the
+		// recess's plate, stands there until six are under the press, and leaves
+		// by the recess's time door
 		if (dsStep == 3 && open && g == 1)
 		{
-			if (o == 10) Go(mo, 5768, 1024, 0, 270);
-			if (o > 10 && !dsT2 && (UnderPress(pr) >= 6 || o >= 700)) { dsT2 = o; Console.Printf("AJARTEST info under=%d o=%d", UnderPress(pr), o); }
-			if (dsT2 && o == dsT2 + 40) mo.health = mo.player.health = 1;
+			if (o == 6) Check("noInfighting3", NoInfighting(3));
+			if (o == 8) Go(mo, 5768, 20, 0, 270);
+			if (o == 10)
+			{
+				FLineTraceData ld;
+				mo.LineTrace(270, 200, 0, 0, 40, data: ld);
+				Console.Printf("AJARTEST info booth: hit=%d at y=%.1f lever=%.1f away", ld.HitType, ld.HitLocation.y, mo.Distance2D(sw));
+				Check("boothShutAlone3", sh3.IsShut() && !sp3.pressed && ld.HitType == TRACE_HitWall && ld.HitLocation.y > -17
+					&& ld.HitLocation.y < 1 && mo.Distance2D(sw) > 64 + mo.radius && PressUp(pr));
+			}
+			if (o == 12) Go(mo, 5768, 740, 0, 90);
+			if (o > 12 && !dsPlateO)
+			{
+				if (mo.pos.y < 1320 && o < 250) Walk(mo, (0, 12));
+				else { Go(mo, 5768, 1336, 0, 270); dsPlateO = o; Console.Printf("AJARTEST info on the plate o=%d", o); }
+			}
+			if (dsPlateO && o > dsPlateO && !dsT2 && (UnderPress(pr) >= 6 || o >= 700)) { dsT2 = o; Console.Printf("AJARTEST info under=%d o=%d", UnderPress(pr), o); }
+			if (dsT2 && o == dsT2 + 40) Go(mo, 5800, 1328, 0, 0);
+			if (dsT2 && o > dsT2 + 40 && o < dsT2 + 60) Walk(mo, (8, 0));
 		}
+		// go 2: the booth stands open while the earlier self holds the plate; in,
+		// the lever when the monsters, played as they went, are under the press;
+		// put out into the hall when the shutter shuts
 		if (dsStep == 3 && open && g == 2)
 		{
-			if (o == 2) Check("killedIntoTheBox3", at == 1 && bx == 1 && mo.health == RESCUE_HEALTH && demo != null);
-			if (o == 3) Go(mo, 5768, 48, 0, 270);
-			if (!dsUsed && o > 30 && Demoing() && (UnderPress(pr, 1) >= 4 || o >= demo.len - AjarPress.WARN - AjarPress.DOWN - 10))
+			if (o == 2) Check("outByTheRecessDoor3", at == 1 && bx == 1 && demo != null && !takes[0].died && takes[0].door == HallLine(3, 3));
+			if (o == 3) Go(mo, 5768, 40, 0, 270);
+			if (o == dsPlateO + 20) Check("boothOpenForMyEarlierSelf3", sh3.IsOpen() && sp3.pressed && AllGhosts() >= 1 && !sp3.On(mo));
+			if (o > dsPlateO + 20 && !dsUsed && mo.pos.y > -64) Walk(mo, (0, -8));
+			if (!dsUsed && o > dsPlateO + 30 && mo.pos.y < -40 && Demoing() && (UnderPress(pr, 1) >= 4 || o >= demo.len - AjarPress.WARN - AjarPress.DOWN - 10))
 			{
-				Console.Printf("AJARTEST info under=%d onDemo=%d len=%d", UnderPress(pr, 1), Rails(true), demo.len);
+				Console.Printf("AJARTEST info under=%d onDemo=%d len=%d lever=%.1f away", UnderPress(pr, 1), Rails(true), demo.len, mo.Distance2D(sw));
 				dsBefore = mo.player.killcount;
+				mo.vel = (0, 0, 0);
 				sw.Used(mo);
 				dsUsed = o;
 			}
@@ -230,7 +299,17 @@ extend class AjarTimeHandler
 				// (the player's count may rise by one more in those tics: a death the demo plays, as in the PRESS lab)
 				Check("pressKills3", n > 0 && pr.kills == pr.victims.Size() && mo.player.killcount - dsBefore >= pr.victims.Size() && !pr.byGhost);
 			}
-			if (dsUsed && o > down + 62 && o % 5 == 0) KillAll(mo);
+			// the earlier self leaves the plate: the shutter shuts, the player is put out and walks on
+			if (dsUsed && !dsStuckT && o > dsUsed && sh3.IsShut())
+			{
+				dsStuckT = o;
+				dsStuckY = mo.pos.y;
+				Console.Printf("AJARTEST info shut again o=%d at (%d,%d)", o, mo.pos.x, mo.pos.y);
+			}
+			if (dsStuckT && o > dsStuckT && o < dsStuckT + 8) Walk(mo, (0, 8));
+			if (dsStuckT && o == dsStuckT + 10)
+				Check("notStuckInTheBooth3", dsStuckY > 0 && mo.pos.y > dsStuckY + 16 && k == 3 && bx == 0 && !sp3.pressed);
+			if (dsStuckT && o > dsStuckT + 10 && o > down + 62 && o % 5 == 0) KillAll(mo);
 		}
 		if (dsStep == 3 && goes && fight == 3)
 		{
@@ -432,7 +511,8 @@ extend class AjarTimeHandler
 	}
 
 	// MODE=2: views of the level, one every 40 tics (tools/smoke_MAP32_2.cfg
-	// takes a screenshot of each). Before the last two, BLUE is hung opposite RED.
+	// takes a screenshot of each). Before the last two, BLUE is hung opposite RED;
+	// for room 3's booth open a self (a bare AjarGhost) stands on the recess's plate.
 	void Views32(PlayerPawn mo)
 	{
 		int t = testTic++;
@@ -446,7 +526,12 @@ extend class AjarTimeHandler
 			2300, 200, 0, 0, 0,             // the gallery to the pit
 			3500, 0, -96, 70, 0,            // the pit: B and its lamp
 			4872, 170, 0, 90, -10,          // room 3's lobby: the case, close
-			5250, 120, 0, 60, 0,            // the hall and the press
+			4800, 150, 0, 8, 0,             // room 3's hall from the lobby, as the player comes in
+			5768, 250, 0, 90, 0,            // the mouth of the press from the hall
+			5768, 760, 0, 90, 0,            // the chamber from the mouth: the recess and its plate at the end
+			5716, 1214, 0, 55, -5,          // the recess, close: its plate and time door
+			5768, 220, 0, 270, 0,           // the booth, shut
+			5768, 220, 0, 270, 0,           // the booth, open: a self on the recess's plate
 			7000, 176, -96, 0, 0,           // room 4 as entered: the range, the case on its far wall
 			7580, 150, -96, 15, -10,        // room 4's case, close (south of the pillar before it)
 			7456, 120, -96, 90, 0,          // the firing spot: the shutter
@@ -456,8 +541,10 @@ extend class AjarTimeHandler
 			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
 			9672, 384, -192, 0, 0           // and the other way, into BLUE's
 		};
-		int WIDE = 14;
+		int WIDE = 19, OPEN3 = 13;
 		int i = t / 40;
+		if (t == OPEN3 * 40 - 15) dsGhost = Actor.Spawn("AjarGhost", (5768, 1336, 0));
+		if (t == OPEN3 * 40 + 39 && dsGhost) { dsGhost.Destroy(); dsGhost = null; }
 		if (i >= v.Size() / 5) return;
 		Go(mo, v[i * 5], v[i * 5 + 1], v[i * 5 + 2], v[i * 5 + 3]);
 		mo.pitch = v[i * 5 + 4];

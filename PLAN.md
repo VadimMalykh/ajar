@@ -5538,6 +5538,7 @@ its entrance. Nothing hurts in rooms 1, 2 and 5.
   the new ones), not 23; SHUT's `caseIsThere` 5, not 4.
 
 - Rooms 3 and 4 can be begun anew: see "Begin anew in a fight" below.
+- Room 3 is rebuilt as a chamber after Vadim played it: see "MAP32 room 3: the press as a chamber" at the end.
 
 ## Begin anew in a fight (built 2026-11-20)
 
@@ -5646,3 +5647,97 @@ Like MAP32, but the whole map is the room of goes.
 Not decided: how the halves are told apart and which is played first, what
 the crossing fights are, what the thing done together is, what happens when
 the second go spoils what the first one did. No checks asked for yet.
+
+## MAP32 room 3: the press as a chamber (built 2026-11-20)
+
+Vadim played room 3 and found three things. The monsters did not all come for
+him: most kept fighting each other. When few were left he could lead them
+under the press himself, run round and pull the lever alone: nothing made it
+a job for an earlier self. When the arch-viles came there was nowhere to
+hide. Now the press is a chamber with one way in, the lever is in a booth
+that only an earlier self can open, and the hall has cover.
+
+- **No infighting in rooms 3 and 4.** The monsters of these two fights never
+  turn on each other. An AjarCue with args[4] 1 makes its fight calm
+  (`ajartime.cue(calm=True)`, `Crowd(calm=True)`): each monster of a calm
+  fight gets NOINFIGHTING as it comes, live (`Cues`) or on the demo, and again
+  when an arch-vile raises it (the engine gives a raised monster its default
+  flags back; `AjarTimeHandler.Calm`, `WorldThingRevived`, time.zs). Other
+  maps and fights are as before (their cues have args[4] 0).
+- **The chamber.** The hall is 1536 by 768 (5000..6536, 0..768). North of it
+  a solid wall 32 thick, and behind that the press: three sectors
+  (5000..6536, 800..1280) with the press's tag, steel walls, a steel ceiling
+  at 192. The one way in is the mouth in the middle of the wall, 192 wide
+  (5672..5864, 768..800). The mouth is part of the press (a fourth sector with
+  its tag): whatever stands in it with its middle there when the press comes
+  down dies; one with its middle in the hall is clear of it and is only
+  squeezed for the second the press is down, as the press does to anything
+  half under it. Asserted: the mouth is wider than the widest monster of the
+  fight (the arachnotron, 128) by 32, and every kind is lower than its
+  ceiling (`ajartime.HEIGHT`).
+- **The bait's recess.** In the middle of the chamber's north wall, 128 wide
+  and 96 deep (5704..5832, 1280..1376), floor level, plain walls (not steel),
+  lit 230, not part of the press: the plate in it (5768, 1336) is so far in
+  that a self on it is wholly out of the press (asserted). Its side walls are
+  solid, so a monster sees into it only from in front of it, from under the
+  press (or from straight down the line of the mouth). The plate holds the
+  booth's shutter open (`shutter_plate`, tag 3535). Time door 3 is in the
+  recess's east wall (5832, 1296..1360); it was in the hall's south wall.
+  Doors 1 and 2 stay in the west and east walls; three boxes as before.
+- **The lever's booth.** In the middle of the hall's south wall, 128 wide and
+  96 deep (5704..5832, -112..-16), steel inside, the lever on its back wall
+  (5768, -110); a shutter (16, -16..0, not `keep`) closes it. It is open only
+  while someone stands on the recess's plate, so the player alone can never
+  be the bait and at the lever: the walk from the plate through the mouth to
+  the lever is 1406 (asserted over 600), the shutter shuts in 12 tics. An
+  earlier self's time on the plate is played again, so in the next go the
+  booth stands open as long as that self stood there. A player in the booth
+  when it shuts is put out into the hall, as one in the shutter's way always
+  was (`ajartime.shutter(behind=96)`, AjarShutter args[2]: the depth of a
+  booth behind it that `Clear` empties too). Behind a shut shutter the booth
+  cannot be seen; the shutter's ribbed face says what it is.
+- **Cover.** The four 64-square pillars are now four slabs 192 by 64, long
+  side east-west, full height: (5160..5352, 160..224), (6184..6376,
+  160..224), (5480..5672, 320..384), (5864..6056, 320..384). Each is 160 or
+  more from every wall and from the others, and the place 40 south of its
+  middle is out of sight of the mouth and of the hall's middle (asserted by
+  a line test in the generator). Six monster spots moved off them (two imps
+  40 south, two mancubi 60 north, two arachnotrons 20 south); nothing else
+  moved.
+- **The case** (lobby's north wall, steel as before): self 1 on a pressed
+  plate with a revenant, a mancubus and a baron lying round it, and apart at
+  the east end self 2 facing the side wall, where a new figure, "lever" (the
+  press's switch set off, `AjarFigure` args[0] 11), hangs. `begun1` counts 41
+  figures, not 37.
+- **Unchanged**: the waves and their numbers, the supplies and the boxes'
+  stock, the lobby, the begin-anew plate, the steel door and the corridor.
+  The generator's checks hold for the new shape: `on_foot` has the chamber,
+  the recess and the booth as regions (hall and chamber both ways, chamber
+  and recess both ways, the booth to the hall only: in needs an earlier
+  self), `covers`, `fight_anew_reached`, `Crowd` (the hall and the chamber as
+  floors, the slabs as solid), the firepower, every case sealed.
+- **Tests.** `MAP=MAP32 MODE=3 TIMEOUT=400` now plays the new solution in
+  room 3: go 1 shows the monsters calm (`noInfighting3`: every living monster
+  of the fight has the flag; two of two kinds each hurt by the other do not
+  turn on each other, and one with the flag taken off for a moment does),
+  the booth shut and the lever out of reach alone (`boothShutAlone3`: a trace
+  from before the shutter hits it at its face, the lever 130 away, the press
+  up), then walks through the mouth to the plate, stands there until six are
+  under the press and leaves by the recess's time door (`outByTheRecessDoor3`,
+  in place of `killedIntoTheBox3`: the go did not end in death). Go 2:
+  `boothOpenForMyEarlierSelf3`, into the booth, the lever when four on the
+  demo are under the press (`pressKills3`), and when the earlier self's time
+  on the plate is over the shutter shuts and the player is put out into the
+  hall and walks on (`notStuckInTheBooth3`). 44 checks. `MAP=MAP32 MODE=5`:
+  room 3's go 2 stands on the recess's plate before it uses the begin-anew
+  plate, and `boothShutAnew3` checks the shutter shut again and the plate up
+  (23 checks). `MAP=MAP32 MODE=2`: 22 views; room 3's are the hall from the
+  lobby, the mouth from the hall, the chamber from the mouth, the recess
+  close, the booth shut, the booth open (a bare AjarGhost stands on the plate
+  for it).
+- **Not tested**: the fight as fought (godmode, the script's kills); whether
+  monsters crowd into the chamber after a bait who is not in godmode and
+  shoots back; arch-viles raising monsters (the flag is set again then, but
+  no test raises one); a monster shut in the booth; hiding behind the slabs
+  from arch-viles. The numbers are a first guess, to be tuned after Vadim
+  plays. **Not played by hand.**

@@ -14,7 +14,9 @@
 // clear of it on the side it is worked from, and anything else in its way
 // (an earlier self, a monster) it waits for: it never crushes. Every go of
 // a fight or a room of goes begins with every shutter shut and every
-// shutter's plate up (ShuttersShut).
+// shutter's plate up (ShuttersShut). args[2] (MAP32's room 3): a booth that
+// deep lies behind it, as wide as the opening: a player in it when it shuts
+// is put out on the side it is worked from too, so nobody is shut in.
 //
 // AN EARLIER SELF'S SHOTS, in a fight of goes (zone args[4] 3) while it is
 // a fight: what an AjarGhost fires hurts a monster on the demo and wakes it
@@ -44,7 +46,8 @@
 // green, as when a Pair is joined in time; 7 the player mid-stride; 8 the
 // number args[1] (1 to 3) of a go, over a self's head; 9 a door frame's face,
 // brass inlaid with colour args[1], for a door to stand in; 10 the plaque
-// over a case, a clock and "wind on": later), args[2] its size
+// over a case, a clock and "wind on": later; 11 the press's switch, set
+// off, on a wall), args[2] its size
 // in percent (0: 100). A plate has a small warm light. No behaviour: not solid, not shootable, never
 // counted, no weight on a plate, and not recorded, replayed or snapped by
 // the go machinery (Counts, RecordFx, Snap leave it out).
@@ -102,14 +105,18 @@ class AjarShutter : Actor
 		return false;
 	}
 
-	// The player is not left in it: a step clear on the side it is worked from.
+	// The player is not left in it (nor in the booth behind it, args[2] deep):
+	// a step clear on the side it is worked from.
 	void Clear()
 	{
 		let mo = players[consoleplayer].mo;
 		if (!mo) return;
 		double r = mo.radius;
-		if (mo.pos.x + r <= x1 || mo.pos.x - r >= x2 || mo.pos.y + r <= y1 || mo.pos.y - r >= y2) return;
 		Vector2 d = AngleToVector(angle), p = mo.pos.xy;
+		double bx1 = x1, by1 = y1, bx2 = x2, by2 = y2, b = args[2];
+		if (abs(d.x) > abs(d.y)) { if (d.x > 0) bx1 -= b; else bx2 += b; }
+		else { if (d.y > 0) by1 -= b; else by2 += b; }
+		if (mo.pos.x + r <= bx1 || mo.pos.x - r >= bx2 || mo.pos.y + r <= by1 || mo.pos.y - r >= by2) return;
 		if (abs(d.x) > abs(d.y)) p.x = d.x > 0 ? x2 + r + 1 : x1 - r - 1;
 		else p.y = d.y > 0 ? y2 + r + 1 : y1 - r - 1;
 		mo.SetOrigin((p, mo.pos.z), true);
@@ -236,6 +243,12 @@ class AjarFigure : Actor
 			bWallSprite = true;
 			sprite = GetSpriteIndex("AJPQ");
 			frame = 0;
+			bBright = true;
+			break;
+		case 11:        // the press's switch on a wall, set off (MAP32's room 3)
+			bWallSprite = true;
+			sprite = GetSpriteIndex("AJPS");
+			frame = 1;
 			bBright = true;
 			break;
 		}
