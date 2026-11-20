@@ -6235,3 +6235,183 @@ protected from nothing. Now they wake for whoever comes into the wing.
   geometry). Winding, or going on as an earlier self, while the table is up
   (it is rebuilt by its key; not exercised). The sentries in any other room.
 - **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
+
+## MAP16: the weight has to stay, and the baron on the gallery (built 2026-11-20)
+
+`tools/map_institute6.py` (the baron's spot, the gallery, the base's heavy
+monsters, the case, the docstring, the PUZZLE), `src/zscript/map16.zs` (the
+weighbridge's rule, its words, the three tests), `src/zscript/enemies.zs`
+(`AjarSense.dogged`), `tools/solve.py` (a lure with a place of its own),
+`tools/smoke_MAP16_1.cfg`, `_2.cfg`, `_3.cfg`. `shut.zs` and `ajartime.py`
+not touched. **Not played by hand.**
+
+**What Vadim found**: MAP16 was too weak as a puzzle. The baron appeared at
+the foot beside the frame, and the plate was right in front of the head, so
+"hang the leaf, step through" did the weighing; and the shutter opened for
+good at a touch. Agreed: the two changes below. A third idea, a switch in
+the labs shot through GREEN, was proposed and left out. Everything else
+stays (the porter, the den, VIOLET, the nailer, GREEN, RED's far side on the
+gallery, the lever, the secret, the dial).
+
+**Change 1: the weight has to stay.** The weighbridge weighs everything that
+stands or lies on the plate, by where its middle is: the player (100) and
+live monsters by their `Mass` (more than 4 over the floor weighs nothing),
+and dead monsters' bodies by theirs (`weight` the total, `deadWeight` the
+dead part). The shutter follows the total: while it is 1000 or more the
+shutter goes up, below it comes down again. The weighbridge moves it itself,
+tic by tic (`Sector.MoveCeiling`, crush off, 2 a tic as Door_Open at speed
+16 did: about 3.6 seconds up or down, with the door sound sequence). Coming
+down it waits while anything stands or lies in the doorway (players,
+monsters alive or dead, solid things), and goes on when it is clear. A body
+of 1000 or more on the plate (a dead baron) settles it: the shutter goes up
+and stays, and no more barons come.
+
+**Change 2: the baron lives on the canteen's gallery.** The MapSpot (tid 16)
+is at the gallery's east end, (840, -150), facing the canteen: clear of RED's
+far side (x 496..560), the lever (704..768) and the panel (west end). The
+weighbridge puts a baron there on its first look, on every skill, unannounced
+(it is in the level's tally); 20 seconds after each dies another comes on
+the same spot (tried again on later looks if the spot is taken), its sight
+sound heard everywhere and announced, until settled. The gallery lost two
+imps (four imps and the chaingunner are left). Its barons are **dogged**: a
+flag on `AjarSense`, off for every other monster, that the weighbridge sets
+on each baron. A dogged monster does not drop the door it is making for
+because it sees the player straight while the player's floor is more than
+24 from its own; once through (the jump) it is like any other monster. That
+is what lets a baron on the gallery, which sees the player on the canteen
+floor, follow the player down through RED.
+
+The hell knights are gone from the base: the placed one at (-760,-620) and
+the two of VIOLET's ambush (after 3) are cacodemons now (400, and they fly:
+over the plate they weigh nothing). The test hall's two knights stay.
+Nothing as heavy as a baron is anywhere but the gallery and the test hall.
+
+**The way it gets weighed** (the puzzle): RED hung in the canteen's frame
+101, up through it to the gallery carrying the leaf, down through RED again
+with the baron behind; in the canteen RED swapped out of 101 for the leaf,
+through the leaf to the lobby: the baron follows and comes out of the head
+onto the plate. The shutter goes up while it is on the plate and comes down
+when it walks off; killed on the plate, its body holds the shutter up for
+good. The same from any floor's frame (RED hung in 102 or 104, swapped there
+for the leaf; not tested).
+
+**The words** (as agreed; through `AjarHandler.Say`):
+- the player alone on the plate: as before ("does not stir under you ... a
+  tenth of what it was built to weigh");
+- the total reaches the mark: "The weighbridge takes the weight, and the test
+  hall's / shutter rolls up." (the first time, then not more than every 10
+  seconds);
+- the total falls below: "The weight is off the weighbridge. / The shutter
+  comes down again." (the same limit);
+- settled, once: "Dead weight. The weighbridge holds it, / and the test
+  hall's shutter stays up.";
+- a baron of the weighbridge dies off the plate, the first two times: "It
+  lies where nothing weighs it.";
+- a later baron: "Another, as heavy, has come onto the gallery / over the
+  canteen." (the first is not announced).
+
+**The case** shows the baron lying dead on the plate: the existing "body"
+figure (a monster's last death picture) instead of "standing"; no new figure
+was needed. Still asserted sealed, every figure inside.
+
+**The solver.** `lures` has a new form, `dict(home=region, to=region,
+key=letter, name=word)`: the monster has a place in the state (an eighth
+element), starts at `home`, may come with the player through any hung door
+from the region it is in (both successors), goes by hung doors only (never a
+drop, a squeeze or a doorway of the building's), is killed by a free move at
+any time (another at `home`), and in `to` gives the key for good and leaves
+the state. The old form still works (no map uses it now). MAP16:
+`lures=[dict(home="gallery", to="lobby", key="W", name="baron")]`, and the
+auto key "B" is gone. **10 door actions, 9529 states, 0 stuck, nothing
+lost** (was 8, 3074). Every other level's numbers in the full build are
+unchanged in kind (all solvable, 0 stuck). The solution as printed:
+
+    walk to labS / pick up GREEN / hang GREEN in 102 / through GREEN to labN
+    walk to canteen / pick up RED / hang RED in 101 / through RED to gallery
+    through RED to canteen, the baron behind / through RED to gallery
+    take key L / walk to canteen / kill the baron (another comes to gallery)
+    walk to base (key L) / walk to cubby (squeeze) / walk to lobby / take key b
+    walk to read (key b) / pick up the TEAL leaf / walk to labS
+    through GREEN to labN / walk to canteen / through RED to gallery
+    through RED to canteen, the baron behind
+    swap RED for the TEAL leaf in 101
+    through the TEAL leaf to lobby, the baron behind (key W)
+    through the TEAL leaf to canteen / swap the TEAL leaf for RED in 101
+    walk to base (key L) / hang the TEAL leaf in 104
+    let the thief carry the TEAL leaf to 105 / walk to cubby (squeeze)
+    walk to lobby / through the TEAL leaf to den / pick up VIOLET
+    through the TEAL leaf to lobby / walk to test (key W) / walk to night
+    hang VIOLET in 190
+
+The first trip's "the baron behind ... kill the baron" costs nothing and
+changes nothing: the search's order, not a needed step. The walkthrough
+leaves it out.
+
+**Monsters** (`budget.py`): 146 at skill 3 (hp 16770), ammunition x1.64
+(about x1.55 with the gallery's baron, which budget.py does not count, and
+less for each later baron); 76 at skill 1, x2.72.
+
+**Checks**: mapcheck 308 sectors, 0 problems; thingcheck 0; itemcheck 0.
+Full `./build.sh`: passes, every level solvable with 0 stuck.
+
+**Tests**:
+- `MAP=MAP16 tools/smoke.sh` (walkthrough, the solver's order): 43 checks,
+  all pass, out by the brass frame; twice. New: the baron on the gallery at
+  the start (then taken away); up through RED with the leaf and down again;
+  RED swapped for the leaf, through it to the lobby; a baron put on the
+  plate by hand and held there: the shutter goes up (`liveBaronRaisesTheShutter`,
+  `shutterGoingUp`, `shutterUp`); moved off the plate: it comes down
+  (`offThePlateItComesDown`, `shutterDownAgain`); back on and killed: settled,
+  still up 140 tics later; back through the leaf, the leaf swapped for RED,
+  the leaf to the foot and on as before.
+- `MAP=MAP16 MODE=3 TIMEOUT=1000` (the company, by themselves): 41 checks,
+  all pass; twice. The porter and nailer checks as before (phase 2 now hangs
+  GREEN at the foot, not RED: RED's far side is on the gallery and the baron
+  would come down through it). The baron: on the gallery at the start; with
+  the player on the canteen floor in its sight and RED not hung it stays up
+  (300 tics, awake, after the player); RED hung in 101, the player up through
+  it with the leaf and down again: the real baron comes through RED into the
+  canteen; RED swapped for the leaf, the player through it to the lobby: the
+  baron follows through the leaf and comes out of the head onto the plate;
+  held there 70 tics (as the last test did) the dial is at the mark, lamp
+  green, the shutter going up; let go it walks off after the player and 170
+  tics later the shutter is down; killed off the plate: "It lies ..." said,
+  no baron for 600 tics, another on the gallery after the wait, announced;
+  the whole walk again with the second, killed on the plate: dead weight
+  1000, settled, the shutter up and still up 900 tics later, no more barons;
+  and the porter, killed meanwhile, has another in the den. The test places
+  the player (godmode) and the doors; the baron does its walking through RED
+  and the leaf itself. To make room for the walk the player steps away from
+  frame 101 after coming down (the baron comes out where the player stood
+  and blocked the swap in the first try). `smoke_MAP16_3.cfg` runs 6150 tics.
+- `MAP=MAP16 MODE=2 EXTRA=-nomonsters`: 21 views (20 before). New: the
+  gallery from the canteen floor: the baron at the gallery's east end, RED's
+  far side to the west of it. The case: the baron's body on the lit plate,
+  the dial at the mark with its lamp green (the body is low in the picture,
+  partly behind the weapon). The weighbridge's baron is there with
+  -nomonsters (it is spawned, not placed).
+- Regressions, once each, all pass: `MAP=LAB` modes 1, 2, 3 (13, 9, 8),
+  `MAP=MAP15` modes 1 and 3 (31, 13), `MAP=SHUT MODE=3` (20),
+  `MAP=MAP32 MODE=3 TIMEOUT=750` (54, out).
+
+**Departures from the brief, and why**:
+- "Takes the weight" is said whenever the total reaches the mark and it is
+  not settled, not only when nothing dead is part of it: with a light body
+  making up part of the total the shutter would otherwise go up unexplained.
+- Anything lying in the doorway (a body too) keeps the shutter from coming
+  down: closing on a body would grind it. A body left in the doorway keeps
+  the shutter up.
+- MODE 3's phase 2 uses GREEN for "the porter leaves other doors" (see above).
+
+**Not tested**: the same weighing from the labs' frame 102 or the foot's 104;
+the sight sound heard everywhere (no sound in the tests); the shutter waiting
+for something in its doorway (nothing stood there in any test); lighter
+monsters or bodies adding up to the mark; a later baron arriving while its
+spot is taken; the up and down words' 10-second limit; how hard the gallery
+fight is with a baron in it, and how often a player kills the first baron
+before thinking of the weighbridge; whether "It lies where nothing weighs
+it." is enough of a hint. A baron that dies on its way (in the canteen, on
+the gallery) is the ordinary "off the plate" case, tested once.
+
+**Not played by hand**:
+`cd /data/src/doom/doomer/.wt/ajar/m16-gallery-baron && MAP=MAP16 ./run.sh`
