@@ -22,6 +22,12 @@
 //    moment at which the earlier selves' own key pulls, as logged, have every
 //    lever of its set live at once, a span from that tic for the set's time
 //    (KeyHolds).
+//  * For a Pair joined for a time (goes.zs, AjarTogether args[1]), HOLDS too:
+//    the spans in which the earlier selves' own hangings, as logged, have it
+//    joined by the live rules (the second leaf hung within TOGETHER_TICS of
+//    the first, in frames of which one has such a lamp: from that tic for the
+//    lamps' seconds, or until a leaf is taken down), one row for the Pair
+//    (PAIR SPANS: jFa, jFb, jFrom, jTo, for PairJoinIn(frame)).
 // It is a forecast of the records and nothing more: if the live game differs
 // (a pull that finds the press not up) the table is not corrected.
 // Two questions: HoldIn(tag), the tics until some earlier self begins to hold
@@ -40,6 +46,8 @@ class AjarTable play
 {
 	bool on;                            // a room of goes or a fight of goes, with an earlier self
 	Array<int> rTag, rFrame;            // the rows: a shutter's tag, or (rTag 0) a sprung frame's plate, its frame
+	Array<int> rPair;                   // or (both 0) a Pair joined for a time: its args[4] (0 for the others)
+	Array<int> jFa, jFb, jFrom, jTo;    // the spans a Pair is joined for a time: its two frames, first tic, the tic after the last
 	Array<int> sRow, sSelf, sFrom, sTo; // the holds: row, earlier self (its take), first tic, the tic after the last
 	Array<int> pSelf, pTic, pTag;       // the pulls: earlier self, tic, the press's tag
 	Array<int> kSelf, kTic, kTag, kNum; // the key pulls (keys.zs): earlier self, tic, the shutter's tag, the lever's number
@@ -64,6 +72,7 @@ extend class AjarTimeHandler
 		keyNow.Push(takes.Size());
 		for (int i = 0; i < takes.Size() - 1; i++) keyNow.Push(takes[i].x.Size());
 		for (int i = 0; i < logs.Size(); i++) { keyNow.Push(logs[i].pTic.Size()); keyNow.Push(logs[i].kTic.Size()); }
+		for (int i = 0; i < takes.Size() - 1 && i < logs.Size(); i++) keyNow.Push(logs[i].tic.Size());
 		bool same = timetable && keyNow.Size() == tableKey.Size();
 		for (int i = 0; same && i < keyNow.Size(); i++) if (keyNow[i] != tableKey[i]) same = false;
 		if (!same)
@@ -152,15 +161,26 @@ extend class AjarTimeHandler
 			KeyHolds(sh[r].args[0], n);
 			for (int e = 0; e < khFrom.Size(); e++) { sRow.Push(r); sSelf.Push(khSelf[e]); sFrom.Push(khFrom[e]); sTo.Push(khTo[e]); }
 		}
+		// a Pair joined for a time: held while the earlier selves' own hangings have it joined (goes.zs)
+		Array<int> pairs;
+		PairHolds(n);
+		for (int e = 0; e < phPair.Size(); e++)
+		{
+			int q = pairs.Find(phPair[e]);
+			if (q == pairs.Size()) pairs.Push(phPair[e]);
+			sRow.Push(rows + q); sSelf.Push(phSelf[e]); sFrom.Push(phFrom[e]); sTo.Push(phTo[e]);
+			timetable.jFa.Push(phFa[e]); timetable.jFb.Push(phFb[e]); timetable.jFrom.Push(phFrom[e]); timetable.jTo.Push(phTo[e]);
+		}
 		// only the rows that some earlier self holds, in their order
 		Array<int> keep;
-		for (int r = 0; r < rows; r++)
+		for (int r = 0; r < rows + pairs.Size(); r++)
 		{
 			keep.Push(-1);
 			if (sRow.Find(r) == sRow.Size()) continue;
 			keep[r] = timetable.rTag.Size();
 			timetable.rTag.Push(r < sh.Size() ? sh[r].args[0] : 0);
-			timetable.rFrame.Push(r < sh.Size() ? 0 : fp[r - sh.Size()].args[0]);
+			timetable.rFrame.Push(r < sh.Size() || r >= rows ? 0 : fp[r - sh.Size()].args[0]);
+			timetable.rPair.Push(r < rows ? 0 : pairs[r - rows]);
 		}
 		for (int i = 0; i < sRow.Size(); i++)
 		{
@@ -188,6 +208,74 @@ extend class AjarTimeHandler
 			if (tb.sFrom[i] > ot && (best < 0 || tb.sFrom[i] - ot < best)) best = tb.sFrom[i] - ot;
 		}
 		return best;
+	}
+
+	// Tics until the earlier selves' hangings join a Pair for a time in frame `id` (0: they have it joined now; -1: never).
+	int PairJoinIn(int id)
+	{
+		let tb = Table();
+		if (!tb.on) return -1;
+		int best = -1;
+		for (int i = 0; i < tb.jFrom.Size(); i++)
+		{
+			if (tb.jFa[i] != id && tb.jFb[i] != id) continue;
+			if (tb.jFrom[i] <= ot && ot < tb.jTo[i]) return 0;
+			if (tb.jFrom[i] > ot && (best < 0 || tb.jFrom[i] - ot < best)) best = tb.jFrom[i] - ot;
+		}
+		return best;
+	}
+
+	// The spans in which the earlier selves' own hangings (of the first n takes), as logged, have a Pair
+	// joined for a time, by the live rules (Hang, InTime, JoinFor, Unhang): phPair (its args[4]), phSelf
+	// (the self whose hanging joined it), phFa, phFb (the frames), phFrom, phTo (the tic after the last).
+	Array<int> phPair, phSelf, phFa, phFb, phFrom, phTo;
+	void PairHolds(int n)
+	{
+		phPair.Clear(); phSelf.Clear(); phFa.Clear(); phFb.Clear(); phFrom.Clear(); phTo.Clear();
+		let h = Doors();
+		// the hangings and takings down of Pair leaves, in the order of their tics
+		Array<int> et, ed, es;
+		Array<AjarFrame> ef;
+		for (int i = 0; i < n && i < logs.Size(); i++)
+		{
+			AjarGoLog lg = logs[i];
+			for (int e = 0; e < lg.tic.Size(); e++)
+			{
+				int di = lg.door[e];
+				if (di >= dDoor.Size() || !dDoor[di] || !dDoor[di].IsPair() || lg.frm[e] == lg.fFrm[e]) continue;
+				int j = 0;
+				while (j < et.Size() && et[j] <= lg.tic[e]) j++;
+				et.Insert(j, lg.tic[e]); ed.Insert(j, di); es.Insert(j, i); ef.Insert(j, lg.frm[e]);
+			}
+		}
+		if (!et.Size()) return;
+		// each leaf: where it hangs, since when; and the span that is open (-1: none)
+		Array<AjarFrame> at;
+		Array<int> since, open;
+		for (int i = 0; i < dDoor.Size(); i++) { at.Push(d0Frame[i]); since.Push(-1000000); open.Push(-1); }
+		for (int e = 0; e < et.Size(); e++)
+		{
+			int di = ed[e], t = et[e];
+			AjarDoor d = dDoor[di];
+			int ti = dDoor.Find(d.Twin());
+			if (ti == dDoor.Size()) continue;
+			// taken down (or moved): the span it was joined in ends
+			if (at[di] && at[di] != ef[e] && open[di] >= 0)
+			{
+				phTo[open[di]] = min(phTo[open[di]], t);
+				open[ti] = open[di] = -1;
+			}
+			at[di] = ef[e];
+			if (!ef[e]) continue;
+			since[di] = t;
+			if (!at[ti] || t - since[ti] > AjarHandler.TOGETHER_TICS || (!h.Together(ef[e]) && !h.Together(at[ti]))) continue;
+			if (open[ti] >= 0 && phTo[open[ti]] > t) continue;       // (joined already: not as the live game has it)
+			int secs = h.JoinSeconds(ef[e].args[0], at[ti].args[0]);
+			if (secs <= 0) continue;
+			phPair.Push(d.args[4]); phSelf.Push(es[e]); phFa.Push(ef[e].args[0]); phFb.Push(at[ti].args[0]);
+			phFrom.Push(t); phTo.Push(t + 35 * secs);
+			open[di] = open[ti] = phFrom.Size() - 1;
+		}
 	}
 
 	// Tics until an earlier self's next pull of the press of `tag` (-1: none).

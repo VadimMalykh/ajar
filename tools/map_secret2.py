@@ -16,8 +16,10 @@ drop). Every frame of a puzzle takes its own door and no other.
 2. Two keys (a room of goes). A gallery and a pit 96 below it. Frame A on
    the gallery and frame B in the pit join the TEAL Pair only if both leaves
    are hung within two seconds (clock lamps), and they are 1850 apart on
-   foot. YELLOW leans in the pit; its frame W (YELLOW only) is on the
-   gallery; the pit is left only by its own time door or the joined Pair.
+   foot; joined, the Pair stays so three seconds only. YELLOW leans at the
+   far south end of the pit, too far to fetch while it is joined; its frame
+   W (YELLOW only) is on the gallery; the pit is left only by its own time
+   door or the joined Pair.
 3. The press (a fight of goes), two shifts. A hall 1536 by 768 with four
    slabs for cover; north of it the press, a chamber with one mouth, two slabs
    and two time doors that are out only. The bait fights in the chamber; the
@@ -133,14 +135,20 @@ ajartime.covers(m, "room 1", FIRST, REGIONS[1], zone=(-72, -264, 712, 584), exem
 # end is the pit's edge. Frame A in the gallery's west wall, frame B in the
 # pit's north wall, a clock lamp by each; YELLOW in the pit, W (YELLOW only)
 # in the gallery's south wall. VIOLET's far side (from room 1) is in the
-# gallery's south wall, the case in its north wall.
+# gallery's south wall, the case in its north wall. Joined, the Pair stays so
+# for PAIR2 seconds only (PLAN.md, "MAP32 room 2: the Pair shuts again"), and
+# the pit is long: YELLOW leans at its far south end, so that hanging the leaf
+# in B and only then fetching YELLOW is too late; a self that waits at B with
+# YELLOW gets through.
 FIRST = len(m.polys)
 FA, FB, FW = 131, 132, 133
 PITF = -96
+PAIR2 = 3
+PIT2 = (3280, -900, 3792, 640)
 m.sector(rect(2000, 0, 3280, 320), ceil=192, light=200, color=ROOM)
-m.sector(rect(3280, -256, 3792, 640), floor=PITF, ceil=192, light=180, color=PIT, wall="AJBOLT")
+m.sector(rect(*PIT2), floor=PITF, ceil=192, light=180, color=PIT, wall="AJBOLT")
 ajartime.zone(m, 2, 0, 2000, 0, 3280, 320, grow=72, goes=True)
-ajartime.zone(m, 2, 0, 3280, -256, 3792, 640, grow=72, goes=True)
+ajartime.zone(m, 2, 0, *PIT2, grow=72, goes=True)
 ajarmap.recess(m, (2160, 0), (2224, 0), (0, -1), 0, far_id(VIOLET), F1, far_colour=VIOLET, color=ROOM)
 spots(2011, (2140, 60), (2244, 60))         # stimpacks
 spots(2012, (2192, 100))                    # medikit
@@ -149,15 +157,18 @@ spots(2048, (2340, 60))                     # bullets
 # A and B, their lamps and leaves
 ajarmap.recess(m, (2000, 128), (2000, 192), (-1, 0), 0, FA, FB, home=TEAL, only=3, color=ROOM)
 ajarmap.recess(m, (3664, 640), (3728, 640), (0, 1), PITF, FB, FA, home=TEAL, only=3, color=PIT)
-ajartime.together(m, 2002, 224, 0, FA)
-ajartime.together(m, 3760, 638, 270, FB)
+ajartime.together(m, 2002, 224, 0, FA, seconds=PAIR2)
+ajartime.together(m, 3760, 638, 270, FB, seconds=PAIR2)
 LEAF_A, LEAF_B = (2100, 260), (3560, 560)
 ajarmap.pair(m, TEAL, LEAF_A + (0,), LEAF_B + (270,))
 # from before A along the gallery, over the edge and across the pit to before B
 A_TO_B = walk((2040, 160), (3296, 160), (3696, 600))
 assert A_TO_B >= 1400 and A_TO_B > JOIN, A_TO_B
-# YELLOW in the pit; W, which takes it only, in the gallery's south wall
-YELLOW_AT = (3700, -150)
+# YELLOW at the pit's far south end: from before B to it and back takes longer than the Pair stays joined,
+# at the fastest run, with 10 tics to spare; W, which takes it only, in the gallery's south wall
+YELLOW_AT = (3600, PIT2[1] + 60)
+B_TO_YELLOW = walk((3696, 600), YELLOW_AT)
+assert B_TO_YELLOW >= 1400 and 2 * B_TO_YELLOW / 23.6 >= 35 * PAIR2 + 10, B_TO_YELLOW
 ajarmap.door(m, YELLOW, *YELLOW_AT, angle=90)
 ajarmap.recess(m, (2600, 0), (2664, 0), (0, -1), 0, FW, far_id(YELLOW), home=far_id(YELLOW), only=5,
                trim=inlaid(YELLOW), color=ROOM)
@@ -168,15 +179,20 @@ m.sector(rect(2384, 480, 2576, 672), ceil=160, light=210, color=BOX)
 ajartime.box_door(m, 2, 1, (2448, 480), (2512, 480), (0, -1), 0, color=BOX)
 ajartime.zone(m, 2, 1, 2384, 416, 2576, 672)
 ajartime.anew(m, 2480, 670, 270)
-# the case: both leaves hanging, both lamps green, YELLOW in W
-case((2064, 320), (2288, 320), (0, 1), 0, [(2100, 400, "hung", TEAL, 270), (2116, 420, "lamp", 0, 270),
-                                         (2176, 400, "hung", TEAL, 270), (2192, 420, "lamp", 0, 270),
-                                         (2250, 400, "hung", YELLOW, 270)], color=ROOM)
-REGIONS[2] = ajartime.on_foot("room 2", {"gallery": (2000, 0, 3280, 320), "pit": (3280, -256, 3792, 640),
+# the case: self 1 at one hung leaf, self 2 at the other, both lamps green; self 3 by the second with YELLOW
+# leaning beside it (there is no figure of a self carrying a door). (YELLOW in W is left out: a case wider
+# than 256 has glass bigger than covers() lets go.)
+case((2048, 320), (2304, 320), (0, 1), 0, [(2088, 410, "hung", TEAL, 270), (2112, 420, "lamp", 0, 270),
+                                         (2068, 372, "me", 0, 300), (2068, 372, "go", 1, 0),
+                                         (2184, 410, "hung", TEAL, 270), (2208, 420, "lamp", 0, 270),
+                                         (2164, 372, "me", 0, 270), (2164, 372, "go", 2, 0),
+                                         (2242, 380, "me", 0, 240), (2242, 380, "go", 3, 0),
+                                         (2274, 404, "leaning", YELLOW, 270)], color=ROOM)
+REGIONS[2] = ajartime.on_foot("room 2", {"gallery": (2000, 0, 3280, 320), "pit": PIT2,
                                          "box": (2384, 480, 2576, 672)},
                               [("gallery", "pit"), ("box", "gallery")],          # (the pit to the gallery: the Pair only)
                               {"gallery": [(2480, 316)], "pit": [(3788, -96)], "box": [(2480, 484)]})
-ajartime.covers(m, "room 2", FIRST, REGIONS[2], zone=(1928, -328, 3864, 712), exempt=CASES)
+ajartime.covers(m, "room 2", FIRST, REGIONS[2], zone=(1928, PIT2[1] - 72, 3864, 712), exempt=CASES)
 
 # === 3. the press: a fight of goes ===========================================
 # The hall (5000..6536, 0..768) and north of it the press, a chamber

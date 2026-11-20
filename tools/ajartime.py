@@ -131,11 +131,13 @@ def press_switch(m, x, y, angle, tag, z=40):
     m.thing(x, y, PRESS_SWITCH_T, angle=angle, height=float(z), args=(tag,))
 
 
-def together(m, x, y, angle, frame, z=72):
+def together(m, x, y, angle, frame, z=72, seconds=0):
     """A lamp on the wall beside frame `frame` (its line id), facing `angle`:
     a Pair joins through it only if both leaves were hung within two seconds
-    of each other (goes.zs, AjarTogether)."""
-    m.thing(x, y, TOGETHER_T, angle=angle, height=float(z), args=(frame,))
+    of each other (goes.zs, AjarTogether). `seconds` n: and it stays joined
+    only n seconds after the second leaf is hung, then both leaves shut again
+    (0: for good; the two frames' lamps should give the same)."""
+    m.thing(x, y, TOGETHER_T, angle=angle, height=float(z), args=(frame, seconds))
 
 
 GRAPHS = {}         # on_foot()'s rooms, by name: (regions, links)

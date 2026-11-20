@@ -1120,6 +1120,12 @@ class AjarSense : Inventory
 	Vector3 lastPos;
 	bool muted;         // it is after its lure, and must not attack it
 	double ownRange;    // its melee range, kept while muted
+	// Dogged (MAP16's weighbridge sets it on its barons; off for every other
+	// monster): seeing the player straight does not make it give up the door
+	// it is making for while the player stands where it cannot simply walk
+	// (their floors more than 24 apart: a baron on a gallery, the player on
+	// the floor below). Once through the door it is like any other.
+	bool dogged;
 
 	// An opening is 64 wide and as high as a door.
 	bool Fits() { return owner.radius <= 31 && owner.height <= 96; }
@@ -1161,7 +1167,8 @@ class AjarSense : Inventory
 		bool jumped = via && (owner.pos.xy - lastPos.xy).Length() > 96;
 		lastPos = owner.pos;
 
-		if (jumped || !Fits() || owner.CheckSight(p)) via = null;
+		bool below = dogged && abs(p.floorz - owner.floorz) > 24;     // seen, but not to be walked at
+		if (jumped || !Fits() || (owner.CheckSight(p) && !below)) via = null;
 		else
 		{
 			bool seen;
