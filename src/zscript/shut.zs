@@ -14,7 +14,7 @@
 // clear of it on the side it is worked from, and anything else in its way
 // (an earlier self, a monster) it waits for: it never crushes. Every go of
 // a fight or a room of goes begins with every shutter shut and every
-// shutter's plate up (ShuttersShut). args[2] 1 (MAP32's room 3): the sector
+// shutter's plate up (ShuttersShut; a screen open: below). args[2] 1 (MAP32's room 3): the sector
 // right behind it is a booth whose only way out it is: a player in the booth
 // when it shuts is put out on the side it is worked from too, before the
 // opening, so nobody is shut in. args[3] a sector tag (MAP32's room 3: its
@@ -23,8 +23,22 @@
 // tag, by where its middle is; with no plate naming it, only then. The first
 // time it opens because the player stepped into such a sector, a short
 // message says so (once a level, Claude's choice). AjarShutLamp thing (20053,
-// ajartime.shut_lamp), on a wall beside it: args[0] the shutter's tag; red
-// while it is not open, green while it is open (the clock lamp's pictures).
+// ajartime.shut_lamp), on a wall beside it: args[0] the shutter's tag; green
+// while it is fully worked (Worked: open, for a screen shut), amber while an
+// earlier self holds it or will begin to within SOON tics (the timetable,
+// table.zs), red otherwise; one soft click as it turns amber (the clock
+// lamp's pictures, amber the frame E).
+// THE SCREEN (MAP32's room 3, before its pen): args[4] 1 makes an AjarShutter
+// the reverse of a shutter, SHUT while it is held (a plate that names it is
+// pressed, or someone is in its args[3] area) and OPEN otherwise
+// (ajartime.shutter(screen=True)). Every go begins with it open, as every
+// shutter begins shut: each at rest (ShuttersShut). Shutting, it puts the
+// player clear on the side it is worked from, as a shutter does, and waits
+// for anything else in its way. Two questions others ask of either kind:
+// Held() (is it held now) and Worked() (is it wholly as held: a shutter
+// fully open, a screen fully shut).
+// A plate's message: an AjarPlate with args[2] n says PlateText(n) the first
+// time the player steps on it (once a level; MAP32's room 3).
 //
 // AN EARLIER SELF'S SHOTS, in a fight of goes (zone args[4] 3) while it is
 // a fight: what an AjarGhost fires hurts a monster on the demo and wakes it
@@ -113,7 +127,14 @@ class AjarShutter : Actor
 		}
 	}
 
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		want = args[4] != 0;        // at rest: a shutter shut, a screen open (as the map has it)
+	}
+
 	double High() { return args[1] ? args[1] : TALL; }
+	bool Screen() { return args[4] != 0; }
 	// how far open: 0 shut, 1 open
 	double Opened()
 	{
@@ -123,6 +144,10 @@ class AjarShutter : Actor
 	}
 	bool IsShut() { return Opened() < 0.001; }
 	bool IsOpen() { return Opened() > 0.999; }
+	// held now (a plate that names it pressed, or someone in its area)
+	bool Held() { return Pressed(); }
+	// wholly as held: a shutter fully open, a screen fully shut
+	bool Worked() { return Screen() ? IsShut() : IsOpen(); }
 
 	bool Pressed()
 	{
@@ -184,12 +209,12 @@ class AjarShutter : Actor
 	{
 		Super.Tick();
 		Know();
-		bool w = Pressed();
+		bool w = Pressed() != Screen();         // want it open: a shutter held, a screen not
 		if (w != want)
 		{
 			want = w;
 			A_StartSound(w ? "doors/dr2_open" : "doors/dr2_clos", CHAN_BODY);
-			if (w && !told && PlayerIn())
+			if (w && !Screen() && !told && PlayerIn())
 			{
 				told = true;
 				let h = AjarHandler(EventHandler.Find("AjarHandler"));
@@ -199,19 +224,24 @@ class AjarShutter : Actor
 		Move(High() / TICS);
 	}
 
-	// At once shut (a go begins).
+	// At once at rest (a go begins): a shutter shut, a screen open.
 	void ShutNow()
 	{
 		Know();
-		want = false;
+		want = Screen();
 		Move(High());
 	}
 }
 
-// A lamp beside a shutter (args[0] its tag): red while it is not open, green while it is.
-class AjarShutLamp : Actor
+// A lamp on a wall: green, amber or red (AJTW C, E, D). It stays at the height
+// it was put (a press coming down over it pushes it down; it goes back).
+class AjarLamp : Actor
 {
-	AjarShutter sh;
+	const GREEN = 2;
+	const RED = 3;
+	const AMBER = 4;
+	double homeZ;
+	bool homed;
 
 	Default { Radius 8; Height 16; +NOGRAVITY +WALLSPRITE +NOBLOCKMAP +DONTTHRUST +NOTELEPORT +BRIGHT }
 	States
@@ -219,23 +249,69 @@ class AjarShutLamp : Actor
 	Spawn:
 		AJTW D -1 Bright;
 		Stop;
-	Lamps:                      // only so that these are loaded: C green, D red
-		AJTW CD -1;
+	Lamps:                      // only so that these are loaded: C green, D red, E amber
+		AJTW CDE -1;
 		Stop;
 	}
 
-	bool Green() { return sh && sh.IsOpen(); }
+	AjarTimeHandler Th() { return AjarTimeHandler(EventHandler.Find("AjarTimeHandler")); }
+
+	virtual int Shows() { return RED; }
 
 	override void Tick()
 	{
 		Super.Tick();
+		if (!homed) { homed = true; homeZ = pos.z; }
+		else if (pos.z != homeZ) SetZ(homeZ);
+		int f = Shows();
+		if (f == AMBER && frame != AMBER) A_StartSound("switches/normbutn", CHAN_BODY, 0, 0.35);
+		frame = f;
+	}
+}
+
+// A lamp beside a shutter or a screen (args[0] its tag): green while it is
+// wholly worked, amber while an earlier self holds it or will begin to within
+// SOON tics, red otherwise.
+class AjarShutLamp : AjarLamp
+{
+	AjarShutter sh;
+
+	bool ShWorked() { return sh && sh.Worked(); }
+
+	override int Shows()
+	{
 		if (!sh)
 		{
 			let it = ThinkerIterator.Create("AjarShutter");
 			AjarShutter s;
 			while (s = AjarShutter(it.Next())) if (s.args[0] == args[0]) sh = s;
 		}
-		frame = Green() ? 2 : 3;
+		if (ShWorked()) return GREEN;
+		let th = Th();
+		int soon = th ? th.HoldIn(args[0]) : -1;
+		return soon >= 0 && soon <= AjarTimeHandler.SOON ? AMBER : RED;
+	}
+}
+
+// A lamp beside a press (args[0] its tag; 20054, ajartime.press_lamp): red while
+// the press is not up and ready (the warning, coming down, down, rising), amber
+// while an earlier self's pull of it comes within SOON tics, green otherwise.
+class AjarPressLamp : AjarLamp
+{
+	AjarPress pr;
+
+	override int Shows()
+	{
+		if (!pr)
+		{
+			let it = ThinkerIterator.Create("AjarPress");
+			AjarPress p;
+			while (p = AjarPress(it.Next())) if (p.args[0] == args[0]) pr = p;
+		}
+		if (!pr || !pr.Ready()) return RED;
+		let th = Th();
+		int soon = th ? th.PullIn(args[0]) : -1;
+		return soon >= 0 && soon <= AjarTimeHandler.SOON ? AMBER : GREEN;
 	}
 }
 
@@ -357,6 +433,14 @@ extend class AjarTimeHandler
 		let it = ThinkerIterator.Create("AjarShutter");
 		AjarShutter s;
 		while (s = AjarShutter(it.Next())) s.ShutNow();
+	}
+
+	// What a plate with args[2] n says the first time the player steps on it.
+	static string PlateText(int n)
+	{
+		if (n == 1) return "A screen comes down before the guards in the tool room\nwhile someone stands on this plate.";
+		if (n == 2) return "A cage in the tool room is open while someone stands on this plate.";
+		return "";
 	}
 
 	AjarShutter FindShutter(int tag)

@@ -56,6 +56,18 @@
 //    used: every time door of the hall leads into it, and it back out by
 //    the hall's time door 1.
 //
+//  * AjarSentry thing (20055, ajartime.sentries): args[0] a fight, args[1]
+//    a sector tag (where its sentries stand: a pen of guards), args[2] a
+//    sector tag (what trips them). While a go's demo plays and the PLAYER
+//    (alive, in the hall, not in a box) stands in a sector with the trip
+//    tag, every living monster of that fight on the demo whose middle is in
+//    a sector with the pen tag wakes (wakeDue: Wake makes it real where it
+//    stands, with the health it had, after the player); one that comes into
+//    such a sector later does the same while the player is there. An
+//    earlier self does not trip it. Nothing else of the demo changes. Why
+//    (MAP32's room 3): on the demo the guards of the wing were puppets for
+//    the self that came into it as long as the bait's go lasted.
+//
 //  * AjarLocker thing: a cupboard. args[0] the room key that opens it,
 //    args[1] and args[2] the Doom editor numbers of what is in it.
 //
@@ -75,6 +87,30 @@ class AjarCue : Actor
 {
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
+}
+
+// Sentries: the player in a sector of tag args[2] wakes what of fight args[0]
+// stands on the demo in a sector of tag args[1] (the header).
+class AjarSentry : Actor
+{
+	Array<int> pen, trip;
+	bool known;
+
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+
+	void Know()
+	{
+		if (known) return;
+		known = true;
+		int i;
+		let a = level.CreateSectorTagIterator(args[1]);
+		while ((i = a.Next()) >= 0) pen.Push(i);
+		let b = level.CreateSectorTagIterator(args[2]);
+		while ((i = b.Next()) >= 0) trip.Push(i);
+	}
+	bool Pens(int sec) { Know(); return pen.Find(sec) < pen.Size(); }
+	bool Trips(int sec) { Know(); return trip.Find(sec) < trip.Size(); }
 }
 
 // A cupboard that a room key opens (a thing, so that it is played back).
@@ -798,6 +834,15 @@ class AjarTimeHandler : EventHandler
 			if (ot < demo.fx.first.Size()) PlayBack(demo.fx, ot);
 			else if (ot == demo.fx.first.Size()) DropPuppets(-1);
 		}
+		// sentries (AjarSentry): the player in a sector that trips them
+		Array<AjarSentry> watch;
+		if (at == 0 && mo.health > 0)
+		{
+			int ps = level.PointInSector(mo.pos.xy).Index();
+			let si = ThinkerIterator.Create("AjarSentry");
+			AjarSentry st;
+			while (st = AjarSentry(si.Next())) if (st.args[0] == fight && st.Trips(ps)) watch.Push(st);
+		}
 		for (int ri = 0; ri < demo.roles.Size(); ri++)
 		{
 			AjarRole r = demo.roles[ri];
@@ -858,6 +903,12 @@ class AjarTimeHandler : EventHandler
 			// a body that something has really raised is real
 			if (r.dead && a.health > 0) { a.bSolid = GetDefaultByType(a.GetClass()).bSolid; Release(r, rail); continue; }
 			if (rail.hit) r.wakeDue = true;
+			// a sentry in its pen, tripped by the player
+			if (watch.Size() && !r.dead && !r.hidden && !r.wakeDue)
+			{
+				int asec = level.PointInSector(a.pos.xy).Index();
+				for (int w = 0; w < watch.Size(); w++) if (watch[w].Pens(asec)) r.wakeDue = true;
+			}
 			// the player walks into it: it wakes (once they are out of it)
 			if (!r.dead && !r.hidden && !r.wakeDue && at == 0 && a.Distance2D(mo) < a.radius + mo.radius
 				&& mo.pos.z < a.pos.z + a.height && a.pos.z < mo.pos.z + mo.height) r.wakeDue = true;
@@ -2277,7 +2328,7 @@ class AjarTimeHandler : EventHandler
 		let mo = players[consoleplayer].mo;
 		if (!mo) return;
 		if (reel && reel < 4) { ReelTick(PlayerPawn(mo)); Tests(mo); return; }
-		if (goes) { GoesTick(PlayerPawn(mo)); playerWas = mo.pos; Tests(mo); return; }      // a room of goes (plate.zs)
+		if (goes) { GoesTick(PlayerPawn(mo)); playerWas = mo.pos; Table(); Tests(mo); return; }      // a room of goes (plate.zs); the timetable (table.zs)
 		Rescue(PlayerPawn(mo));
 		int k, b;
 		[k, b] = Where(mo.pos.xy);
@@ -2347,6 +2398,7 @@ class AjarTimeHandler : EventHandler
 			if (++rt >= main.first.Size()) EndReplay();
 		}
 		playerWas = mo.pos;
+		Table();                    // table.zs: the timetable, for the lamps and the clock
 		Tests(mo);
 	}
 
@@ -2365,6 +2417,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 2 && level.mapname ~== "MAP32") Views32(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP32") FightAnewScript(PlayerPawn(mo));     // anew.zs
 		if (mode == 6 && level.mapname ~== "MAP32") AnewViews32(PlayerPawn(mo));
+		if (mode == 7 && level.mapname ~== "MAP32") TableScript(PlayerPawn(mo));     // map32.zs: room 3's plates, the timetable
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
@@ -2394,6 +2447,7 @@ class AjarTimeHandler : EventHandler
 			if (ot >= len) return;
 			string o = String.Format("%d:%02d / %d:%02d", ot / 35 / 60, ot / 35 % 60, len / 35 / 60, len / 35 % 60);
 			Screen.DrawText(BigFont, Font.CR_WHITE, 320 - BigFont.StringWidth(o) / 2, 12, o, DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
+			TableBar(len);          // table.zs: what the earlier selves will do
 			return;
 		}
 		if (phase != REPLAY || !main) return;

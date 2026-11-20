@@ -123,8 +123,10 @@ def make(out):
         out[f"sprites/AJPS{fr}0.png"] = w.png(grab=(12, 32))
     # a lamp beside a frame whose Pair must be hung together (AjarTogether):
     # a small clock face; dark (A), lit while a leaf waits (B), green joined
-    # (C), red too late (D)
-    for fr, lit in (("A", (70, 66, 56)), ("B", (250, 236, 170)), ("C", (90, 230, 110)), ("D", (230, 60, 40))):
+    # (C), red too late (D); amber (E): an earlier self is about to work a shutter or a press
+    # (shut.zs, AjarShutLamp and AjarPressLamp: the timetable)
+    for fr, lit in (("A", (70, 66, 56)), ("B", (250, 236, 170)), ("C", (90, 230, 110)), ("D", (230, 60, 40)),
+                    ("E", (245, 160, 30))):
         c = Img(26, 26, (0, 0, 0, 0))
         c.disc(13, 13, 12, (150, 128, 70))
         c.disc(13, 13, 10, lit)
