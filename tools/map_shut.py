@@ -17,7 +17,8 @@ two bodies, a model of nothing in particular (shut.zs, AjarFigure).
 
 Room B (fight 2) is a fight of goes (goes.zs): a range 384 wide and 1100
 long, entered from the lobby on its west side. At its north end a pen behind
-a shutter 256 wide; the pen's floor is 64 lower, and it holds the fight's
+a shutter 256 wide; the pen's floor is level with the range, nothing walks
+through the shutter's far line (shots and sight do), and it holds the fight's
 monsters, all AjarCues of wave 1: four imps and two hell knights. The
 shutter's plate is in a booth east of the pen end, behind glass, entered
 from the range. A firing spot at the south end (where the player starts in
@@ -92,9 +93,10 @@ ajartime.press(m, 1092, 584, PRESS)
 ajartime.press_switch(m, 902, 584, 0, PRESS)
 assert not (1000 <= FIRE[0] <= 1064), "the pillar is in the line of fire"
 
-# the shutter, 256 wide, and the pen behind it, 64 lower
+# the shutter, 256 wide, and the pen behind it, level with the range: the
+# shutter's far line keeps everything in (keep), and lets shots and sight through
 ajartime.shutter(m, (964, 1100), (1220, 1100), (0, 1), 0, SHUT, keep=True)
-m.sector(rect(948, 1116, 1236, 1216), floor=-64, ceil=96, light=170, color=PEN, wall="AJBOLT")
+m.sector(rect(948, 1116, 1236, 1216), floor=0, ceil=128, light=170, color=PEN, wall="AJBOLT")
 IMPS = [(990, 1140), (1060, 1140), (1130, 1140), (1200, 1140)]
 KNIGHTS = [(1030, 1190), (1160, 1190)]
 ajartime.cue(m, 2, 1, 0, 3001, *IMPS, angle=270, always=True)

@@ -260,7 +260,7 @@ extend class AjarTimeHandler
 	// --- the tests (map SHUT) ------------------------------------------------------------
 	const SHUT_TAG = 3520;
 	const SHUT_PRESS = 3510;
-	int shutStep, shutT, shutOff, shutKills, shutKilled, shutShots;
+	int shutStep, shutT, shutOff, shutKills, shutKilled, shutShots, shutOut0;
 	Array<Actor> shutOnDemo, penShots, penOut;
 
 	int Figures(bool bad)       // AjarFigures (bad: those that are solid, shot, counted or alive)
@@ -281,22 +281,34 @@ extend class AjarTimeHandler
 		return n;
 	}
 
-	// A rocket from the player at a point (as aimed by hand: the test's aim is exact).
-	void ShootAt(PlayerPawn mo, Vector3 at)
+	// A rocket fired level (pitch 0, no autoaim) at the n-th living monster
+	// in the pen, counted from the west (none: straight ahead).
+	void ShootLevel(PlayerPawn mo, int n)
 	{
+		Array<Actor> pen;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0 || !InPen(a)) continue;
+			int i = 0;
+			while (i < pen.Size() && pen[i].pos.x < a.pos.x) i++;
+			pen.Insert(i, a);
+		}
+		if (pen.Size()) { Actor m = pen[n % pen.Size()]; mo.angle = VectorAngle(m.pos.x - mo.pos.x, m.pos.y - mo.pos.y); }
+		mo.pitch = 0;
 		Actor r, r2;
 		[r, r2] = mo.SpawnPlayerMissile("Rocket", noautoaim: true);
 		mo.TakeInventory("RocketAmmo", 1);
-		if (!r) return;
-		Vector3 d = at - r.pos;
-		r.vel = d.Unit() * r.Speed;
-		r.angle = VectorAngle(d.x, d.y);
 	}
-	// where the rockets go: low on the pen's back wall, across it
-	Vector3 PenSpot(int n)
+	bool InPen(Actor a) { return a.pos.x > 948 && a.pos.x < 1236 && a.pos.y > 1116 && a.pos.y < 1216; }
+	int OutOfPen()      // living monsters of the fight that are not in the pen
 	{
-		static const int xs[] = { 1092, 1010, 1174, 1050, 1134, 980, 1204 };
-		return (xs[n % 7], 1215, 6);
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0 && !InPen(a)) n++;
+		return n;
 	}
 
 	// monsters of the fight that were on the demo and are hurt (or dead), and those dead
@@ -453,9 +465,15 @@ extend class AjarTimeHandler
 		// --- go 2: at the firing spot; when the earlier self opens it, fire ---
 		if (shutStep == 4 && open && g == 2)
 		{
-			if (o == 3) Go(mo, FIRE_X, FIRE_Y, 0, 90);
-			// three rockets: enough to hurt, not to win (the fight must last past the earlier self's step off)
-			if (o >= 116 && o <= 160 && o % 12 == 8 && sh.IsOpen() && shutShots < 3) { ShootAt(mo, PenSpot(shutShots)); shutShots++; }
+			if (o == 3) { Go(mo, FIRE_X, FIRE_Y, 0, 90); shutOut0 = penOut.Size(); }
+			// three rockets, level, at a monster each: enough to hurt (and wake), not to win
+			// (the fight must last past the earlier self's step off)
+			if (o >= 116 && o <= 160 && o % 12 == 8 && sh.IsOpen() && shutShots < 3) { ShootLevel(mo, shutShots * 2); shutShots++; }
+			if (shutOff && o == shutOff - 6)
+			{
+				Console.Printf("AJARTEST info out=%d fired=%d health=%d", penOut.Size() - shutOut0, penShots.Size(), mo.health);
+				Check("theyFireBack", penOut.Size() > shutOut0);
+			}
 			if (o == 200)
 			{
 				int hurt, dead;
@@ -470,6 +488,8 @@ extend class AjarTimeHandler
 			{
 				Check("shutsWhenMyEarlierSelfLeaves", sh.IsShut() && !sp.pressed);
 				Check("putClearOfIt", mo.pos.y < 1100 - mo.radius && mo.pos.y > 1000 && mo.health > 0 && mo.TestMobjLocation());
+				Console.Printf("AJARTEST info left=%d out=%d", Left(), OutOfPen());
+				Check("nothingWalksOut", Left() > 0 && !OutOfPen());
 				shutStep = 5;
 			}
 		}
@@ -505,7 +525,7 @@ extend class AjarTimeHandler
 		if (shutStep == 0 && open && fight == 2 && g == 1)
 		{
 			if (o == 3) { Go(mo, FIRE_X, FIRE_Y, 0, 90); mo.GiveInventory("RocketLauncher", 1); mo.GiveInventory("RocketAmmo", 50); }
-			if (o >= 100 && o <= 400 && o % 20 == 0) ShootAt(mo, PenSpot(o / 20));
+			if (o >= 100 && o <= 400 && o % 20 == 0) ShootLevel(mo, o / 20);
 			if (o == 440)
 			{
 				int hurt = 0;

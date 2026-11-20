@@ -144,14 +144,15 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, c
     ceiling is at its floor while it is shut, and `high` over it while it is
     open: open only while a plate that names it is pressed (shutter_plate;
     shut.zs, AjarShutter). Declare the places on both sides first. `keep`:
-    nobody walks from the shutter into the far side (a pen: the line there
-    blocks players; monsters are kept by its floor, which must be lower)."""
+    nothing walks between the shutter and the far side, open or shut (a pen:
+    the line there is impassable to players and monsters, but shots and
+    sight pass it, so what is penned fights through the open shutter)."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
     m.sector([a, b, d, c], floor=floor, ceil=floor, light=170, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
              id=tag, color=color)
     if keep:
-        m.line(c, d, blockplayers=True)
+        m.line(c, d, blocking=True)
     for p, q in ((a, c), (b, d)):
         m.line(p, q, mid="AJTRIM", dontpegbottom=True)
     ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]

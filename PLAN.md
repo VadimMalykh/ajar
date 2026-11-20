@@ -5236,7 +5236,9 @@ and the three earlier labs pass their checks as before.
   crushing (crush -1: something in its way stops it, and it waits). Shutting,
   it first puts the player clear of it on its worked side (the brief allowed
   either; mine: the player is put clear, anything else is waited for).
-  `keep` makes its far line block players, so nobody drops into a pen.
+  `keep` makes its far line impassable (`blocking`: players and monsters)
+  while shots and sight pass it: a pen behind a shutter is kept by that
+  line, open or shut, and its monsters fight through it when it is open.
   Every go of a fight or a room of goes begins with every shutter shut at
   once and every shutter plate up (`ShuttersShut` in `Begin` of an open
   fight, `Retake`, `Resume`, `NextGo`, `Anew`, `BeginGoes` but not at the
@@ -5298,7 +5300,7 @@ and the three earlier labs pass their checks as before.
   west of the range. Room B (fight 2, a fight of goes): the range 384 by
   1100; the firing spot (1092, 80) at the south end, a pillar 64 square to
   its west for cover. At the north end the shutter (tag 3520, 256 wide) and
-  the pen behind it, 288 by 100, 64 lower, ceiling 96; four imps and two
+  the pen behind it, 288 by 100, level with the range, ceiling 128; four imps and two
   hell knights, AjarCues of wave 1. The booth east of the pen end (128 by
   200), entered from the range, glass onto it (`ajartime.glass`: it blocks
   sight too), the shutter's plate in it. Time doors in the west and east
@@ -5306,43 +5308,38 @@ and the three earlier labs pass their checks as before.
   The press (tag 3510, 128 square) in the middle of the range, its lever on
   the west wall. The steel door (3290) in the east wall, the exit room
   beyond it outside the fight's zones.
-- **Tests.** `MAP=SHUT MODE=3` (18: caseIsThere, fromThePitToTheBox,
+- **Tests.** `MAP=SHUT MODE=3` (20: caseIsThere, fromThePitToTheBox,
   outByDoorOne, onlyFrameHangsIt, opensWithItsPlate, heldByMyEarlierSelf,
   through, secondRoomBegins, shutWithoutThePlate, noShotThrough,
   opensWithThePlate, shutsAgain, killedIntoTheBox, shutAtTheStart,
-  hurtThroughTheShutter, openWhileMyEarlierSelfStands,
-  shutsWhenMyEarlierSelfLeaves, putClearOfIt: the player stands in the
-  opening when the earlier self steps off). The test's rockets are aimed
-  exactly (spawned by `SpawnPlayerMissile` and given a velocity at a point
-  low on the pen's back wall; it is given a rocket launcher and rockets);
-  in go 2 three of them are fired, more would win the fight before the
-  earlier self steps off. `MAP=SHUT MODE=4` (7: rocketsStopped (go 1's
-  sixteen rockets at the shut shutter hurt nothing), intoTheBox,
-  myEarlierSelfHurtsThem, killsAreMine (checked at the first death: the
-  earlier self's rockets killed all six in the runs before the test's own
-  kills were due), won, steelOpens, pressPutsMeInTheBox). Each passed in
-  three runs. The old ones as before: PRESS 3 (13) and 4 (5), TWOKEY 3
-  (8), PLATE 3 (23) and 4 (6), TDOOR 3 (20), 4 (8 and the exit), TIME 3
-  (14), MAP32 3 (18 and out) and 4 (20), MAP31 7 (15), 6 (9) and 3 (all
-  passed in the run). TDOOR 5 failed delivered, shutAway and
-  outOfTheFight (once inTheBox too) in 2 of 6 runs: the test's demon walks
-  back out of the box into the hall; it passed 3 of 3 on the main
-  package. None of this lab's code runs in that closed fight, so it looks
-  like the demon's chase at random; left alone, worth watching.
-- **Found, not fixed: the pen's monsters never fire out.** With the pen 64
-  below the shutter's sill, the line from a monster's eye (or its missile)
-  to anyone on the range passes under the sill unless the target is
-  nearer the sill than the monster is (roughly: the eye is some 20 under
-  the sill), so it is blocked by the step; and the booth's glass blocks
-  sight anyway.
-  Measured in the MODE=3 run: no missile fired by a pen monster in either
-  go, with the shutter open some 400 tics in each and two to six monsters
-  awake. The player's rockets reach them only by their blast (fired level,
-  they go over their heads); the test aims them at the back wall just over
-  the sill's height. To have them shoot out, the pen's floor would have to
-  be level with the range and the monsters kept in some other way (a line
-  that blocks monsters and players under the shutter, say): not done, the
-  design is Vadim's to choose.
+  hurtThroughTheShutter, theyFireBack (a pen monster's missile came out
+  past the shutter line while it was open), openWhileMyEarlierSelfStands,
+  shutsWhenMyEarlierSelfLeaves, putClearOfIt (the player stands in the
+  opening when the earlier self steps off), nothingWalksOut (every living
+  monster still in the pen at the end of go 2)). The test fires rockets
+  level (pitch 0, no autoaim), turned to face a monster in the pen
+  (`ShootLevel`); it is given a rocket launcher and rockets. In go 2 three
+  are fired, more would win the fight before the earlier self steps off; the
+  ones they wake fire back at the player at the firing spot (3 to 4 missiles
+  out in a run; godmode stays on, the check is the missile). `MAP=SHUT
+  MODE=4` (7: rocketsStopped (go 1's sixteen rockets at the shut shutter
+  hurt nothing), intoTheBox, myEarlierSelfHurtsThem, killsAreMine (checked
+  at the first death: the earlier self's rockets killed all six in the runs
+  before the test's own kills were due), won, steelOpens,
+  pressPutsMeInTheBox). Each passed in three runs (MODE=3 20 of 20, MODE=4 7 of 7). The old
+  ones as before: PRESS 3 (13) and 4 (5), TWOKEY 3 (8), PLATE 3 (23) and
+  4 (6), TDOOR 3 (20), 4 (8 and the exit), TIME 3 (14), MAP32 3 (18 and
+  out) and 4 (20), MAP31 7 (15), 6 (9) and 3 (all passed in the run).
+  TDOOR 5 failed delivered, shutAway and outOfTheFight (once inTheBox too)
+  in 2 of 9 runs on this branch, and passed 3 of 3 on the main package:
+  the test's demon walks back out of the box into the hall. None of this
+  lab's code runs in that closed fight, so it looks like chance (the
+  demon's chase); left alone, worth watching.
+- **The pen, first built 64 lower (as first asked), was changed** (Vadim,
+  2026-11-20): sunk 64, its monsters could not see or shoot over the sill at
+  anyone on the range (no missile came out in 400 tics open), and the
+  player's level shots went over their heads. Now the pen is level and the
+  shutter's far line keeps everything in.
 - **Not done or not tested**: a monster or a body in the shutter's way (it
   waits: untested), several shutters, a shutter in a closed fight, a door
   figure in a case (the lab's case has none), `MixGoOnAs` and winding with
