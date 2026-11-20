@@ -43,6 +43,13 @@
 //    args[4] 1: the fight is CALM, its monsters never fight each other
 //    (NOINFIGHTING on each as it comes, live or on the demo, and when it is
 //    raised: Calm). MAP32's fights of goes, rooms 3 and 4, are calm.
+//    The thing's AMBUSH flag (ajartime.cue(idle=True)): a guard at its post.
+//    Its monster comes IDLE: no target, in its Spawn state, with AMBUSH
+//    (deaf), not set on the player (Hunt leaves it be), no see-sound and no
+//    fog. It wakes as any Doom monster does, when it sees the player or is
+//    hurt. On the demo (a later go) it comes without fog or sound too, and
+//    when the demo is over it is woken idle, as it stands (unless it was hit).
+//    MAP32's room 4: the wings' guards.
 //
 //  * Sector tag and line id 3080 + 100 * fight: the hall's sectors and its
 //    screen (the upper texture of that line, a name whose fifth letter is a
@@ -67,6 +74,10 @@
 //    earlier self does not trip it. Nothing else of the demo changes. Why
 //    (MAP32's room 3): on the demo the guards of the wing were puppets for
 //    the self that came into it as long as the bait's go lasted.
+//    args[3] 1 (ajartime.sentries(idle=True); MAP32's room 4): those it wakes
+//    are left IDLE (real where they stand, with the health they had, but no
+//    target, their Spawn state, AMBUSH), not set on the player: guards at
+//    their posts, who wake when they see the player. With args[3] 0 as above.
 //
 //  * AjarLocker thing: a cupboard. args[0] the room key that opens it,
 //    args[1] and args[2] the Doom editor numbers of what is in it.
@@ -297,6 +308,7 @@ class AjarRole play
 	Actor actor;
 	int mode;
 	bool dead, wakeDue, hidden;
+	bool wakeIdle;              // it is to wake idle (a sentry with args[3], or an idle cue's demo over)
 	int waited;                 // tics it has been due to wake and did not stand free
 }
 
@@ -751,6 +763,14 @@ class AjarTimeHandler : EventHandler
 		r.mode = 2;
 		a.bBright = d.bBright;
 		a.health = max(1, hp);
+		if (r.wakeIdle && hp > 0)
+		{
+			// idle, at its post: no target, its Spawn state, deaf (time.zs header, AjarSentry args[3])
+			a.target = null;
+			a.bAmbush = true;
+			a.SetState(a.SpawnState);
+			return true;
+		}
 		a.target = mo;
 		a.SetState(a.SeeState ? a.SeeState : a.SpawnState);
 		if (hp <= 0) a.DamageMobj(mo, mo, RAIL_HEALTH, 'None');
@@ -876,7 +896,7 @@ class AjarTimeHandler : EventHandler
 				{
 					r.cue.special1 = 1;
 					bornA.Push(n); bornC.Push(r.cue);
-					if (i == 0)
+					if (i == 0 && !r.cue.bAmbush)      // (a guard at its post comes unheard)
 					{
 						Actor.Spawn("TeleportFog", n.pos, ALLOW_REPLACE);
 						n.A_StartSound(n.SeeSound, CHAN_VOICE);
@@ -885,7 +905,7 @@ class AjarTimeHandler : EventHandler
 				r.actor = n;
 				r.mode = 1;
 				r.dead = r.hidden = false;
-				r.wakeDue = false;
+				r.wakeDue = r.wakeIdle = false;
 				if (i > 0 && r.twin) r.twin.src = n;        // its record goes on from here
 				if (i > 0)
 				{
@@ -902,12 +922,12 @@ class AjarTimeHandler : EventHandler
 			if (!rail) { r.mode = 2; continue; }
 			// a body that something has really raised is real
 			if (r.dead && a.health > 0) { a.bSolid = GetDefaultByType(a.GetClass()).bSolid; Release(r, rail); continue; }
-			if (rail.hit) r.wakeDue = true;
-			// a sentry in its pen, tripped by the player
+			if (rail.hit) { r.wakeDue = true; r.wakeIdle = false; }
+			// a sentry in its pen, tripped by the player (args[3]: it wakes idle)
 			if (watch.Size() && !r.dead && !r.hidden && !r.wakeDue)
 			{
 				int asec = level.PointInSector(a.pos.xy).Index();
-				for (int w = 0; w < watch.Size(); w++) if (watch[w].Pens(asec)) r.wakeDue = true;
+				for (int w = 0; w < watch.Size(); w++) if (watch[w].Pens(asec)) { r.wakeDue = true; r.wakeIdle = watch[w].args[3] != 0; }
 			}
 			// the player walks into it: it wakes (once they are out of it)
 			if (!r.dead && !r.hidden && !r.wakeDue && at == 0 && a.Distance2D(mo) < a.radius + mo.radius
@@ -927,6 +947,8 @@ class AjarTimeHandler : EventHandler
 				}
 				if (r.dead) { Release(r, rail); FallOn(a); continue; }       // the demo is over: a body
 				if (r.hidden) { r.hidden = false; a.bInvisible = false; a.bShootable = true; }
+				// (a guard at its post, not hit: it stays at its post)
+				if (!r.wakeDue && r.cue && r.cue.bAmbush && !rail.hit) r.wakeIdle = true;
 				r.wakeDue = true;
 			}
 			if (r.wakeDue && !r.dead && !r.hidden && Wake(r, rail, mo)) continue;
@@ -1095,7 +1117,7 @@ class AjarTimeHandler : EventHandler
 			{
 				AjarRole r = demo.roles[i];
 				r.actor = null; r.src = null; r.mode = 0; r.waited = 0;
-				r.dead = r.wakeDue = r.hidden = false;
+				r.dead = r.wakeDue = r.hidden = r.wakeIdle = false;
 			}
 		}
 	}
@@ -1894,6 +1916,7 @@ class AjarTimeHandler : EventHandler
 			int k, b;
 			[k, b] = Where(a.pos.xy);
 			if (k != fight || b != 0 || OnDemo(a)) continue;
+			if (!a.target && a.bAmbush) continue;      // a guard at its post: it wakes when it sees the player (Cues)
 			if (a.target && (a.target != mo || at == 0)) continue;
 			Actor to = null;
 			if (at > 0)
@@ -1961,12 +1984,19 @@ class AjarTimeHandler : EventHandler
 			if (!m.TestMobjLocation()) { m.ClearCounters(); m.Destroy(); continue; }
 			m.angle = c.angle;
 			if (c.args[4]) m.bNoInfighting = true;
+			bornA.Push(m); bornC.Push(c);
+			c.special1 = 1;         // spent (not destroyed: an open fight begins again)
+			if (c.bAmbush)
+			{
+				// a guard at its post: idle, deaf, not after anyone, unheard (the header)
+				m.bAmbush = true;
+				m.target = null;
+				continue;
+			}
 			Actor.Spawn("TeleportFog", c.pos, ALLOW_REPLACE);
 			m.target = mo;
-			bornA.Push(m); bornC.Push(c);
 			if (m.SeeState) m.SetState(m.SeeState);
 			m.A_StartSound(m.SeeSound, CHAN_VOICE);
-			c.special1 = 1;         // spent (not destroyed: an open fight begins again)
 		}
 		return true;
 	}
@@ -2418,6 +2448,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 5 && level.mapname ~== "MAP32") FightAnewScript(PlayerPawn(mo));     // anew.zs
 		if (mode == 6 && level.mapname ~== "MAP32") AnewViews32(PlayerPawn(mo));
 		if (mode == 7 && level.mapname ~== "MAP32") TableScript(PlayerPawn(mo));     // map32.zs: room 3's plates, the timetable
+		if (mode == 8 && level.mapname ~== "MAP32") KeyScript(PlayerPawn(mo));       // map32.zs: room 4's key levers
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));

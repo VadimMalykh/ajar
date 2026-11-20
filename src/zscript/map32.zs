@@ -1,12 +1,15 @@
 // MAP32 "Double Shift", rebuilt (tools/map_secret2.py; PLAN.md, "MAP32
 // rebuilt"): five rooms in a row, each needing earlier selves. Nothing new in
 // the engine is needed for it but a plain frame that takes one door (ajar.zs,
-// AjarFrame args[4] 5) and a lamp among the figures (shut.zs). Its tests:
+// AjarFrame args[4] 5) and a lamp among the figures (shut.zs); room 4 since
+// has key levers and idle guards (keys.zs, time.zs; PLAN.md, "MAP32 room 4:
+// two keys under fire"). Its tests:
 //   MAP=MAP32 MODE=3 tools/smoke.sh   the whole level solved, room by room
 //   MAP=MAP32 MODE=4 tools/smoke.sh   the dead ends: out of the pit, out of
 //                                     the lock; a door of room 1 refused
 //   MAP=MAP32 MODE=2 tools/smoke.sh   views, for screenshots
 //   MAP=MAP32 MODE=7 tools/smoke.sh   room 3's plates, screen, cage, sentries and the timetable
+//   MAP=MAP32 MODE=8 tools/smoke.sh   room 4's key levers over four goes, and the timetable
 // The coordinates are the generator's.
 
 extend class AjarTimeHandler
@@ -27,7 +30,12 @@ extend class AjarTimeHandler
 	Array<Actor> dsSeen;        // room 3's monsters as first seen, and whether in the pen (a guard)
 	Array<int> dsGuard;
 	int dsGuards, dsGuardOut, dsHallInWing, dsLaterGuards;
-	Array<Actor> dsPenShots, dsPenOut;
+	// room 4: go 1 pulls the west lever at K4P; the east one is pulled 30 later in go 2
+	const K4P = 200;
+	double dsOpenMax;
+	bool dsLive4, dsAmber4, dsSawA4, dsSawG4;
+	int dsKeyO;
+	int penHitsMe, penHitsGhost;    // hits on a monster in room 4's pen by the player, by an earlier self
 	AjarDoor leafA32, leafB32;
 	Actor dsGhost;              // MODE=2: a self in room 3's chamber, for the view of the shutter open
 
@@ -51,6 +59,53 @@ extend class AjarTimeHandler
 	}
 
 	bool InPen32(Actor a) { return a.pos.x > 7072 && a.pos.x < 7840 && a.pos.y > 1416 && a.pos.y < 1736; }
+	// room 4's wings (map_secret2: WINGS4): 1 west, 2 east, 0 either
+	bool InWing4(Actor a, int side)
+	{
+		if (a.pos.y < 720 || a.pos.y > 1380) return false;
+		bool w = a.pos.x > 6896 && a.pos.x < 7184, e = a.pos.x > 7728 && a.pos.x < 8016;
+		return side == 1 ? w : side == 2 ? e : w || e;
+	}
+	// the living monsters in the wings: how many, how many idle at their posts (real, no target, in their
+	// Spawn state, deaf), how many on the demo
+	int, int, int Guards4(int side)
+	{
+		int n = 0, idle = 0, demo = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0 || !InWing4(a, side)) continue;
+			n++;
+			if (OnDemo(a)) demo++;
+			else if (!a.target && a.bAmbush && a.InStateSequence(a.CurState, a.SpawnState)) idle++;
+		}
+		return n, idle, demo;
+	}
+	// the living monsters in the pen, and how many of them are after the player
+	int, int PenAfter4(Actor mo)
+	{
+		int n = 0, after = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0 && InPen32(a)) { n++; if (a.target == mo) after++; }
+		return n, after;
+	}
+	AjarKeyLamp KeyLamp4(int n)
+	{
+		let it = ThinkerIterator.Create("AjarKeyLamp");
+		AjarKeyLamp l;
+		while (l = AjarKeyLamp(it.Next())) if (l.args[0] == SHUT32 && l.args[1] == n) return l;
+		return null;
+	}
+	// (the tests: who hurt what in room 4's pen)
+	override void WorldThingDamaged(WorldEvent e)
+	{
+		Actor a = e.Thing, s = e.DamageSource;
+		if (!a || !s || !a.bIsMonster || e.Damage <= 0 || !InPen32(a)) return;
+		if (s is "AjarGhost") penHitsGhost++;
+		else if (s.player) penHitsMe++;
+	}
 
 	// A rocket fired level at the n-th living monster in room 4's pen, from the west.
 	void ShootPen(PlayerPawn mo, int n)
@@ -189,7 +244,8 @@ extend class AjarTimeHandler
 		AjarFrame f1 = h.FindFrame(101), fa = h.FindFrame(131), fb = h.FindFrame(132), fw = h.FindFrame(133);
 		AjarFrame g1 = h.FindFrame(141), g2 = h.FindFrame(142), home = h.FindFrame(190), home2 = h.FindFrame(191);
 		Line l1 = h.FindLine(101), la = h.FindLine(131), lb = h.FindLine(132), lg1 = h.FindLine(141), lg2 = h.FindLine(142);
-		AjarPlate p1 = FloorPlate32(101, 0), p51 = FloorPlate32(141, 0), p52 = FloorPlate32(142, 0), sp = FloorPlate32(0, SHUT32);
+		AjarPlate p1 = FloorPlate32(101, 0), p51 = FloorPlate32(141, 0), p52 = FloorPlate32(142, 0);
+		AjarKeyLever kw = FindKeyLever(SHUT32, 1), ke = FindKeyLever(SHUT32, 2);
 		AjarPress pr = FindPress(PRESS32);
 		AjarShutter sh = FindShutter(SHUT32), sh3 = FindShutter(SHUT33);
 		AjarPressSwitch sw = null;
@@ -203,9 +259,9 @@ extend class AjarTimeHandler
 			phase ? Left() : -1, level.killed_monsters, dsStep);
 		if (t == 3)
 		{
-			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 41 && !Figures(true));
+			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 43 && !Figures(true));
 			Check("allThere", violet && yellow && green && pink && blue && red && a && b && f1 && fa && fb && fw && g1 && g2 && home && home2
-				&& p1 && p51 && p52 && sp && pr && sh && sw && sh3 && Lamp33() && red.frame == home && !h.chainLen);
+				&& p1 && p51 && p52 && kw && ke && KeyLamp4(1) && KeyLamp4(2) && pr && sh && sw && sh3 && Lamp33() && red.frame == home && !h.chainLen);
 		}
 
 		// on to the next room (a room left is over at once: no go, no tic of its own)
@@ -438,7 +494,7 @@ extend class AjarTimeHandler
 			dsT = t;
 		}
 		if (dsStep == 4 && t == dsT + 40) { Check("steel3", SteelUp(3)); Go(mo, 6500, 160, 0, 0); dsOnFrom = 3; }
-		// === 4: the range ===
+		// === 4: the range: two keys under fire ===
 		if (dsStep == 4 && fight == 4 && open)
 		{
 			dsStep = 5;
@@ -448,49 +504,108 @@ extend class AjarTimeHandler
 		if (dsStep == 5 && t == dsT + 6)
 		{
 			Console.Printf("AJARTEST info left=%d", Left());
-			Check("begun4", phase == LIVE && open && mixed && Left() >= 9 && sh.IsShut());
+			Check("begun4", phase == LIVE && open && mixed && Left() >= 9 && sh.IsShut() && kw && ke && !sh.keyed);
 			Check("noLeak4", Fresh(4));
 		}
-		if (dsStep == 5 && open && fight == 4)
-		{
-			let mi = ThinkerIterator.Create("Actor");
-			Actor m;
-			while (m = Actor(mi.Next()))
-			{
-				if (!m.bMissile || !m.target || !m.target.bIsMonster) continue;
-				if (dsPenShots.Find(m) == dsPenShots.Size()) dsPenShots.Push(m);
-				if (m.pos.y < 1390 && dsPenOut.Find(m) == dsPenOut.Size()) dsPenOut.Push(m);
-			}
-		}
+		// go 1: the guards of both wings idle at their posts, the pen's after the player; into the west
+		// wing, its lever pulled alone at K4P (nothing opens); rockets at the shut shutter; out by door 1
 		if (dsStep == 5 && open && g == 1)
 		{
 			if (o == 3) { Go(mo, 7456, 120, F32, 90); mo.GiveInventory("RocketLauncher", 1); mo.GiveInventory("RocketAmmo", 50); }
-			if (o == 5)
+			if (o == 6)
 			{
-				FLineTraceData ld;
-				mo.LineTrace(90, 1400, 0, 0, 32, data: ld);
-				Check("shutWithoutThePlate4", sh.IsShut() && !sp.pressed && ld.HitType == TRACE_HitWall && ld.HitLocation.y <= 1401 && ld.HitLocation.y > 1390);
+				int n, idle, pen, after;
+				[n, idle] = Guards4(0);
+				[pen, after] = PenAfter4(mo);
+				Console.Printf("AJARTEST info guards=%d idle=%d pen=%d after me=%d", n, idle, pen, after);
+				Check("guardsIdle4", n >= 6 && idle == n && pen > 0 && after == pen);
 			}
-			if (o == 10) Go(mo, 7840, 1300, F32, 180);
-			if (o == 30) Check("opensWithThePlate4", sp.pressed && sh.IsOpen());
-			if (o == 500) { Go(mo, 7840, 1150, F32, 180); mo.health = mo.player.health = 1; }
+			if (o == 10) Go(mo, 7150, 780, F32, 90);
+			if (o == 12) Go(mo, 7040, 1340, F32, 90);
+			if (o > 12 && o < K4P) mo.vel.xy = (0, 0);
+			if (o == K4P) { kw.Used(mo); dsOpenMax = 0; }
+			if (o > K4P && o <= K4P + 75) dsOpenMax = max(dsOpenMax, sh.Opened());
+			if (o == K4P + 2) dsLive4 = kw.Live() && kw.frame == 1 && (keySaid & 1) && !(keySaid & 2) && !sh.keyed;
+			if (o == K4P + AjarKeyLever.JOIN - 2) dsLive4 = dsLive4 && kw.Live();
+			if (o == K4P + 75)
+			{
+				Console.Printf("AJARTEST info alone: live=%d up=%d said=%d opened=%.2f", dsLive4, kw.Up(), keySaid, dsOpenMax);
+				Check("shutAlone4", dsLive4 && kw.Up() && kw.frame == 0 && ke.Up() && dsOpenMax == 0 && sh.IsShut() && (keySaid & 3) == 3 && !(keySaid & 4));
+			}
+			if (o == K4P + 80) Go(mo, 7456, 120, F32, 90);
+			if (o >= K4P + 90 && o <= K4P + 290 && o % 20 == 0) { ShootPen(mo, dsShots); dsShots++; }
+			if (o == K4P + 340)
+			{
+				int hurt = 0, n = 0;
+				let it = ThinkerIterator.Create("Actor");
+				Actor a;
+				while (a = Actor(it.Next())) if (a.bIsMonster && InPen32(a)) { n++; if (a.health < a.SpawnHealth()) hurt++; }
+				Console.Printf("AJARTEST info rockets at the shut shutter: %d, pen=%d hurt=%d hits=%d/%d", dsShots, n, hurt, penHitsMe, penHitsGhost);
+				Check("rocketsStopped4", sh.IsShut() && dsShots >= 8 && n >= 9 && !hurt && !penHitsMe);
+			}
+			if (o == K4P + 345) Go(mo, 7240, 432, F32, 180);
+			if (o > K4P + 345) Walk(mo, (-8, 0));
 		}
+		// go 2: before the east wing its guards are on the demo; stepping in wakes them, idle; at the east
+		// lever its lamp turns amber before the earlier self's pull and blinks once the west lever is live;
+		// pulled within two seconds: keyed open. The earlier self's rockets fly into the pen, then mine;
+		// shut again half a minute later. Then the rest are killed by the script
 		if (dsStep == 5 && open && g == 2)
 		{
-			if (o == 2) Check("killedIntoTheBox4", at == 1 && bx == 1 && mo.health == RESCUE_HEALTH && demo != null && sh.IsShut());
-			if (o == 3) { Go(mo, 7456, 120, F32, 90); dsOut0 = dsPenOut.Size(); }
-			if (o == 40) Check("heldByMyEarlierSelf4", sh.IsOpen() && sp.pressed && AllGhosts() >= 1 && !sp.On(mo));
-			if (o >= 60 && o <= 280 && o % 20 == 0 && sh.IsOpen()) { ShootPen(mo, dsShots * 3); dsShots++; }
-			if (o == 290)
+			AjarKeyLamp lamp = KeyLamp4(2);
+			if (o == 2) { Console.Printf("AJARTEST info go 2: at=%d box=%d demo=%d shut=%d", at, bx, demo != null, sh.IsShut()); penHitsMe = penHitsGhost = 0; }
+			if (o == 3) Go(mo, 7680, 784, F32, 0);
+			if (o == 4)
 			{
-				int hurt, dead;
-				[hurt, dead] = DemoHurt();
-				Console.Printf("AJARTEST info hurt=%d dead=%d shots=%d fired=%d out=%d onDemo=%d awake=%d", hurt, dead, dsShots, dsPenShots.Size(),
-					dsPenOut.Size() - dsOut0, Rails(true), Rails(false));
-				Check("hurtThroughTheShutter4", hurt > 0);
-				Check("theyFireBack4", dsPenOut.Size() > dsOut0);
+				int n, idle, demo;
+				[n, idle, demo] = Guards4(2);
+				Console.Printf("AJARTEST info east wing before: guards=%d on the demo=%d", n, demo);
+				Check("guardsOnTheDemo4", n > 0 && demo == n);
 			}
-			if (o > 300 && o % 5 == 0) KillAll(mo);
+			if (o == 6) Go(mo, 7720, 784, F32, 0);
+			if (o == 16)
+			{
+				int n, idle, demo;
+				[n, idle, demo] = Guards4(2);
+				Console.Printf("AJARTEST info east wing after stepping in: guards=%d idle=%d on the demo=%d", n, idle, demo);
+				Check("guardsWake4", n > 0 && !demo && idle == n);
+			}
+			if (o == 20) Go(mo, 7872, 1340, F32, 90);
+			if (o > 20 && o < K4P + 30) mo.vel.xy = (0, 0);
+			if (o == K4P - AjarTimeHandler.SOON - 20) dsAmber4 = lamp && lamp.frame == AjarLamp.RED;
+			if (o == K4P - 40) dsAmber4 = dsAmber4 && lamp.frame == AjarLamp.AMBER;
+			if (o > K4P + 1 && o < K4P + 26 && lamp) { if (lamp.frame == AjarLamp.AMBER) dsSawA4 = true; if (lamp.frame == AjarLamp.GREEN) dsSawG4 = true; }
+			if (o == K4P + 28)
+			{
+				Console.Printf("AJARTEST info east lamp: red then amber=%d, by turns amber=%d green=%d, west live=%d", dsAmber4, dsSawA4, dsSawG4, kw.Live());
+				Check("keyLampAmber4", dsAmber4 && dsSawA4 && dsSawG4 && kw.Live());
+			}
+			if (o == K4P + 30) { ke.Used(mo); dsKeyO = o; }
+			if (o == K4P + 30 + AjarShutter.TICS + 4)
+			{
+				Console.Printf("AJARTEST info keyed=%d open=%.2f lamps=%d/%d said=%d", sh.keyed, sh.Opened(), KeyLamp4(1).frame, lamp.frame, keySaid);
+				Check("keyedByTwo4", sh.IsOpen() && sh.keyed > 0 && kw.held && ke.held && KeyLamp4(1).frame == AjarLamp.GREEN
+					&& lamp.frame == AjarLamp.GREEN && LampsShow(SHUT32, AjarLamp.GREEN) && (keySaid & 4) && AllGhosts() >= 1);
+			}
+			if (o == K4P + 375)
+			{
+				Console.Printf("AJARTEST info before I fire: hits by the earlier self=%d, mine=%d", penHitsGhost, penHitsMe);
+				Check("myEarlierSelfHurtsThem4", penHitsGhost > 0 && !penHitsMe);
+				Go(mo, 7456, 120, F32, 90);
+			}
+			if (o >= K4P + 380 && o <= K4P + 500 && o % 20 == 0 && sh.IsOpen()) ShootPen(mo, o / 20);
+			if (o == K4P + 600)
+			{
+				Console.Printf("AJARTEST info my hits=%d", penHitsMe);
+				Check("hurtThroughTheShutter4", penHitsMe > 0);
+			}
+			if (dsKeyO && o == dsKeyO + 30 * 35 - 2) Check("openStill4", sh.IsOpen() && kw.held && ke.held);
+			if (dsKeyO && o == dsKeyO + 30 * 35 + AjarShutter.TICS + 4)
+			{
+				Console.Printf("AJARTEST info half a minute: keyed=%d opened=%.2f up=%d/%d", sh.keyed, sh.Opened(), kw.Up(), ke.Up());
+				Check("shutsAfterHalfAMinute4", sh.IsShut() && !sh.keyed && kw.Up() && ke.Up() && kw.frame == 0 && ke.frame == 0);
+			}
+			if (dsKeyO && o > dsKeyO + 30 * 35 + 20 && o % 5 == 0) KillAll(mo);
 		}
 		if (dsStep == 5 && goes && fight == 4)
 		{
@@ -660,16 +775,19 @@ extend class AjarTimeHandler
 			5672, -40, 96, 270, -5,         // and shut: a self on its plate
 			5800, -72, 96, 0, 0,            // the cage through its glass: the megasphere, its shutter and lamp
 			5170, -40, 0, 316, 0,           // the landing as the player comes in: the screen's repeater lamp
-			7000, 176, -96, 0, 0,           // room 4 as entered: the range, the case on its far wall
+			6920, 100, -96, 50, 0,          // room 4 as entered: the range from the lobby, the case on its far wall
+			7150, 760, -96, 125, 0,         // the west wing just in from its doorway: the first baffle
+			6950, 1225, -96, 40, 0,         // the west lever with its lamp, the window beside it
+			7168, 1295, -96, 0, 0,          // through the west window, across the range, to the east one
+			7456, 1000, -96, 90, 0,         // the shutter with its lamps
 			7580, 150, -96, 15, -10,        // room 4's case, close (south of the pillar before it)
-			7456, 120, -96, 90, 0,          // the firing spot: the shutter
 			8100, 452, -192, 0, 0,          // room 5 as entered: S, F1 and the case
 			8410, 576, -192, 0, -10,        // room 5's case, close
 			9856, 172, -192, 90, 0,         // E from PINK's far side, wide: the brass frames face each other
 			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
 			9672, 384, -192, 0, 0           // and the other way, into BLUE's
 		};
-		int WIDE = 27, OPEN3 = 12, SHUT3V = 19;
+		int WIDE = 30, OPEN3 = 12, SHUT3V = 19;
 		int i = t / 40;
 		if (t == OPEN3 * 40 - 15) dsGhost = Actor.Spawn("AjarGhost", (5768, 1000, 0));
 		if (t == OPEN3 * 40 + 39 && dsGhost) { dsGhost.Destroy(); dsGhost = null; }
@@ -1009,6 +1127,117 @@ extend class AjarTimeHandler
 			Check("saidOnce3", sp.steps >= 2 && sp.told == 1 && cp.steps >= 2 && cp.told == 1);
 			if (ttMark) ttMark.Destroy();
 			ttStep = 4;
+		}
+	}
+}
+
+// MODE=8 (tools/smoke_MAP32_8.cfg): room 4's key levers over four goes (PLAN.md,
+// "MAP32 room 4: two keys under fire"). Room 4 is entered at its lobby by the
+// script, godmode. Go 1 pulls the west lever at KS_P and leaves by door 1; go
+// 2 pulls the east lever 100 tics late (nothing opens); go 3 pulls it 30 after
+// KS_P (keyed: the second self's late pull finds it down); in go 4 the earlier
+// selves open the shutter by themselves, on the timetable, its lamps amber
+// before. The cfg takes a screenshot in go 4 with the bar under the clock.
+extend class AjarTimeHandler
+{
+	const KS_P = 200;           // go 1 pulls the west lever
+	const KS_STAY3 = 330;       // go 3 leaves this long after its start (go 4's clock and bar are up as long)
+	int ksKeyO, ksK31;
+	double ksOpenMax;
+	bool ksAmber;
+
+	void KeyScript(PlayerPawn mo)
+	{
+		if (level.totaltime > level.maptime + 10) return;
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		AjarShutter sh = FindShutter(SHUT32);
+		AjarKeyLever kw = FindKeyLever(SHUT32, 1), ke = FindKeyLever(SHUT32, 2);
+		int g = takes.Size(), o = ot, k, bx;
+		[k, bx] = Where(mo.pos.xy);
+		let tb = Table();
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) fight=%d phase=%d open=%d at=%d go=%d ot=%d selves=%d shutter=%.2f keyed=%d levers=%d/%d rows=%d spans=%d keys=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, fight, phase, open, at, g, o, AllGhosts(), sh ? sh.Opened() : -1, sh ? sh.keyed : -1,
+			kw ? kw.frame : -1, ke ? ke.frame : -1, tb.rTag.Size(), tb.sRow.Size(), tb.kTic.Size());
+		if (t == 2) Go(mo, 6950, 176, F32, 0);         // into room 4's lobby: the rooms before are left, and over
+		if (fight != 4 || !open) return;
+		// go 1: the west lever at KS_P; out by door 1
+		if (g == 1)
+		{
+			if (o == 5) Go(mo, 7040, 1340, F32, 90);
+			if (o > 5 && o < KS_P) mo.vel.xy = (0, 0);
+			if (o == KS_P) kw.Used(mo);
+			if (o == KS_P + 10) Go(mo, 7240, 432, F32, 180);
+			if (o > KS_P + 10) Walk(mo, (-8, 0));
+		}
+		// go 2: the east lever, 100 tics after the first self's west one: too late
+		if (g == 2)
+		{
+			if (o == 2) ksOpenMax = 0;
+			if (o > 2) ksOpenMax = max(ksOpenMax, sh.Opened());
+			if (o == 3) Go(mo, 7872, 1340, F32, 90);
+			if (o > 3 && o < KS_P + 100) mo.vel.xy = (0, 0);
+			if (o == KS_P + 100) ke.Used(mo);
+			if (o == KS_P + 100 + AjarKeyLever.JOIN + 5)
+			{
+				Console.Printf("AJARTEST info too late: opened=%.2f keyed=%d up=%d/%d", ksOpenMax, sh.keyed, kw.Up(), ke.Up());
+				Check("tooLateTogether4", ksOpenMax == 0 && !sh.keyed && sh.IsShut() && kw.Up() && ke.Up());
+			}
+			if (o == KS_P + 180) Go(mo, 7240, 432, F32, 180);
+			if (o > KS_P + 180) Walk(mo, (-8, 0));
+		}
+		// go 3: the east lever within JOIN of the first self's: keyed; the second self's late pull finds it down
+		if (g == 3)
+		{
+			if (o == 3) Go(mo, 7872, 1340, F32, 90);
+			if (o > 3 && o < KS_P + 30) mo.vel.xy = (0, 0);
+			if (o == KS_P + 30) { ke.Used(mo); ksKeyO = o; }
+			if (o == KS_P + 32) ksK31 = sh.keyed;
+			if (o == KS_P + 110)
+			{
+				Console.Printf("AJARTEST info in time: keyed=%d (%d at +32) open=%.2f held=%d/%d", sh.keyed, ksK31, sh.Opened(), kw.held, ke.held);
+				Check("inTimeWithMyFirstSelf4", sh.IsOpen() && ksK31 > 1000 && abs(sh.keyed - (ksK31 - 78)) <= 1 && ke.held && kw.held);
+			}
+			if (o == KS_STAY3) Go(mo, 7240, 432, F32, 180);
+			if (o > KS_STAY3) Walk(mo, (-8, 0));
+		}
+		// go 4: the earlier selves open it between them, the player nowhere near a lever
+		if (g == 4)
+		{
+			int keyAt = KS_P + 30;
+			if (o == 2)
+			{
+				int r = tb.rTag.Find(SHUT32), spans = 0;
+				bool span = false;
+				for (int i = 0; i < tb.sRow.Size(); i++)
+				{
+					if (tb.sRow[i] != r) continue;
+					spans++;
+					span = abs(tb.sFrom[i] - keyAt) <= 2 && tb.sTo[i] - tb.sFrom[i] == 30 * 35 && tb.sSelf[i] == 2;
+					Console.Printf("AJARTEST info span %d..%d of self %d", tb.sFrom[i], tb.sTo[i], tb.sSelf[i]);
+				}
+				bool pulls = tb.kTic.Size() == 3;
+				for (int i = 0; i < tb.kTic.Size(); i++)
+				{
+					Console.Printf("AJARTEST info key pull at %d, lever %d, self %d", tb.kTic[i], tb.kNum[i], tb.kSelf[i]);
+					int want = tb.kSelf[i] == 0 ? KS_P : tb.kSelf[i] == 1 ? KS_P + 100 : KS_P + 30;
+					if (abs(tb.kTic[i] - want) > 1 || tb.kNum[i] != (tb.kSelf[i] ? 2 : 1) || tb.kTag[i] != SHUT32) pulls = false;
+				}
+				Check("shutterOnTheTimetable4", tb.on && r < tb.rTag.Size() && spans == 1 && span && pulls);
+				ksAmber = true;
+			}
+			if (o == 3) Go(mo, 7456, 900, F32, 90);     // in the range, facing the shutter, far from both levers
+			if (o > 3) mo.vel.xy = (0, 0);
+			if (o == keyAt - AjarTimeHandler.SOON - 20) ksAmber = ksAmber && LampsShow(SHUT32, AjarLamp.RED);
+			if (o == keyAt - 40) ksAmber = ksAmber && LampsShow(SHUT32, AjarLamp.AMBER);
+			if (o == keyAt + AjarShutter.TICS + 4)
+			{
+				Console.Printf("AJARTEST info go 4: open=%.2f keyed=%d held=%d/%d away %d/%d", sh.Opened(), sh.keyed, kw.held, ke.held, mo.Distance2D(kw), mo.Distance2D(ke));
+				Check("openedByMyEarlierSelves4", sh.IsOpen() && sh.keyed > 0 && kw.held && ke.held && mo.Distance2D(kw) > 500 && mo.Distance2D(ke) > 500
+					&& AllGhosts() >= 2);
+				Check("amberBeforeItOpens4", ksAmber && LampsShow(SHUT32, AjarLamp.GREEN));
+			}
+			if (o == keyAt + 60) Console.Printf("AJARTEST info go 4 at o=%d is t=%d (the screenshot is due)", o, t);
 		}
 	}
 }

@@ -9,7 +9,8 @@
 // lay, the player's health, armour, weapons and ammunition as they were then,
 // and the player where they stood then, facing as then, standing still; all
 // its boxes unused, every take, log, earlier self and demo forgotten, the
-// doors as at the first entry, the presses up and the shutters shut. The
+// doors as at the first entry, the presses up, the key levers up and the
+// shutters shut (none keyed: keys.zs). The
 // level's kill and item counts are as they were then too. Nothing gained in
 // the fight survives it.
 // In a fight that has such a plate, death after its last box does the same
@@ -305,10 +306,14 @@ extend class AjarTimeHandler
 	// at the first entry. Then every box is used and the player killed after
 	// the last: it begins anew again (not the level). Then the fight is won,
 	// as before: the steel door opens. Room 3's go 2 stands under the press
-	// first, and the wing's shutter is shut again (shutterShutAnew3).
+	// first, and the wing's shutter is shut again (shutterShutAnew3). Room 4's
+	// go 1 pulls the west lever, takes what lies by it and fires at the shut
+	// shutter; its go 2 asks every key lever up (the first self's was live), the
+	// shutter shut and the wing's pick-ups back (asAtTheFirstEntry4).
 	int faStep, faT, faRoom, faTotal, faLeft, faPicks, faDeaths;
 	bool faShut3;               // room 3: the wing's shutter was opening, the player under the press, when the plate was used
 	bool faMega;                // room 3: go 1 took the megasphere
+	bool faLive4;               // room 4: the first self's west lever was live when the plate was used
 	AjarFightAnew faPlate;
 
 	AjarFightAnew FightAnewOf(int k)
@@ -444,9 +449,18 @@ extend class AjarTimeHandler
 			if (r3 && o == 16) Go(mo, 5940, -120, 96, 90);
 			if (r3 && o > 16 && o < 20) Walk(mo, (0, 8));
 			if (!r3 && o == 5) { mo.GiveInventory("RocketLauncher", 1); mo.GiveInventory("RocketAmmo", 20); }
-			if (o == 20) KillTwo(mo);
+			if (r3 && o == 20) KillTwo(mo);
 			if (r3 && o == 29) faMega = !MegaThere33() && mo.health >= 200;
-			if (o == 30) mo.health = mo.player.health = 1;
+			if (r3 && o == 30) mo.health = mo.player.health = 1;
+			// (room 4: the west lever pulled, what lies by it taken, rockets fired at the shut shutter)
+			if (!r3 && o == 6) Go(mo, 7040, 1340, -96, 90);
+			if (!r3 && o == 8) { AjarKeyLever kw = FindKeyLever(SHUT32, 1); if (kw) kw.Used(mo); }
+			if (!r3 && o == 10) Go(mo, 6930, 1250, -96, 0);
+			if (!r3 && o > 10 && o <= 30) Walk(mo, (8, 0));
+			if (!r3 && o == 32) Go(mo, 7456, 120, -96, 90);
+			if (!r3 && (o == 34 || o == 40)) ShootPen(mo, o);
+			if (!r3 && o == 44) KillTwo(mo);
+			if (!r3 && o == 50) mo.health = mo.player.health = 1;
 		}
 		// go 2: box 1's armour, medikit and the next; then the plate
 		if (faStep == 1 && g == 2)
@@ -471,6 +485,8 @@ extend class AjarTimeHandler
 			// (room 3: under the press, in its mouth, so that the wing's shutter is opening)
 			if (r3 && o == 35) Go(mo, 5768, 784, 0, 90);
 			if (o == 40) KillTwo(mo);
+			// (room 4: the first self's west lever is live, pulled again, when the plate is used)
+			if (!r3 && o == 43) { AjarKeyLever kw = FindKeyLever(SHUT32, 1); faLive4 = kw && kw.Live(); }
 			if (o == 44)
 			{
 				if (r3)
@@ -496,6 +512,14 @@ extend class AjarTimeHandler
 				AjarShutter scr = FindShutter(SCREEN3), cage = FindShutter(CAGE3);
 				rest = scr.IsOpen() && cage.IsShut() && MegaThere33();
 				Console.Printf("AJARTEST info room 3 at rest: screen=%.2f cage=%.2f megasphere=%d took=%d", scr.Opened(), cage.Opened(), MegaThere33(), faMega);
+			}
+			else
+			{
+				// room 4: every key lever up (the first self's was live), the shutter shut and not keyed
+				AjarShutter sh = FindShutter(SHUT32);
+				AjarKeyLever kw = FindKeyLever(SHUT32, 1), ke = FindKeyLever(SHUT32, 2);
+				rest = faLive4 && kw && ke && kw.Up() && ke.Up() && sh.IsShut() && !sh.keyed;
+				Console.Printf("AJARTEST info room 4 at rest: was live=%d up=%d/%d shutter=%.2f keyed=%d", faLive4, kw && kw.Up(), ke && ke.Up(), sh.Opened(), sh.keyed);
 			}
 			Check(String.Format("asAtTheFirstEntry%d", R), AsAtFirst(mo, R) && rest && (!r3 || faMega));
 			if (r3)

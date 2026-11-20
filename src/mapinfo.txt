@@ -38,6 +38,8 @@ DoomEdNums
 	20053 = AjarShutLamp
 	20054 = AjarPressLamp
 	20055 = AjarSentry
+	20056 = AjarKeyLever
+	20057 = AjarKeyLamp
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
