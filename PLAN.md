@@ -5308,7 +5308,22 @@ and the three earlier labs pass their checks as before.
   `ajartime.glass` and a raised, lit case behind it) and returns its
   sector; `ajartime.sealed(m, sector)` says whether nothing can walk into
   it (every way out over a non-blocking line leads back into it); the map
-  asserts it.
+  asserts it. Since 2026-11-20 (after Vadim played MAP32: a case did not
+  read as the room later) more kinds: 7 the player mid-stride (`walking`,
+  PLAY frame C), 8 the number args[1] of a go floating over a self's head
+  (`go`, kind 1 to 3; `figure` puts it `GO_OVER` 34 up; an ivory digit
+  outlined dark, sprite AJGN), 9 a door frame's face (`frame`, kind the
+  colour: brass inlaid with it, 0 plain brass; sprite AJFM, a wall sprite at
+  the door's scale, its opening 64 by 96 as the door's picture: stand it 2
+  off the back wall and the `hung` door 2 in front of it), 10 the plaque
+  (`plaque`, sprite AJPQ: ivory, a clock and the wind plate's two arrowheads
+  pointing right, "later"). A plate figure is 0.75 by default and has a small
+  warm light. `case` now frames the glass in the time door's ivory
+  (AJTR10, AJTF10), makes the inside a piece of the room (`wall`, `ftex`,
+  `ctex`, the room's own textures, by default AJWALL, AJFLOOR, AJCEIL; it was
+  dark trim, AJTRIM, which is what made it a dark cell), lit 240, and puts
+  the plaque over the glass, 2 off the wall, 24 over the head. The SHUT
+  case has five figures with the plaque (`caseIsThere`).
 - **The map.** Room A (fight 1, a room of goes): 640 square, the pit 256
   square in its north-east corner, 64 down; time door 1 in the west wall,
   time door 2 in the pit's east wall, the box west (with the plate that
@@ -5506,6 +5521,22 @@ its entrance. Nothing hurts in rooms 1, 2 and 5.
   1), death in rooms 3 and 4 beyond the rescue the tests use, skills other
   than the default. The numbers of monsters and supplies are a first guess.
   **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
+- **The cases, restaged (2026-11-20).** Vadim found room 1's case did not
+  read as the room later: a dark box, one self staring out, a door standing
+  free. Now every case is framed in ivory with the clock plaque over it
+  ("later"), and inside is a piece of its room, as bright (room 3's: the
+  press's steel walls and ceiling). Every self has its go's number over its
+  head. Room 1: VIOLET hung in its frame (brass inlaid violet) against the
+  back wall, self 2 walking into it with its back to the room, and to one
+  side self 1 on the pressed plate, turned to the door: the first you holds
+  the door, the second walks through. Room 3: the self at the lever is 2.
+  Room 4: the self on the plate 1, the one at the firing spot 2. Room 5: the
+  selves on the plates 1 and 2. Room 2 as it was. `MAP=MAP32 MODE=2` takes a
+  close view of each case (about 150 from the glass, looking 10 up; room
+  4's from south of the pillar before it) and room 1's from across the room
+  (150, 60): 17 views. `begun1` now counts 37 figures (the five plaques and
+  the new ones), not 23; SHUT's `caseIsThere` 5, not 4.
+
 - Rooms 3 and 4 can be begun anew: see "Begin anew in a fight" below.
 
 ## Begin anew in a fight (built 2026-11-20)
