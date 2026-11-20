@@ -74,12 +74,22 @@ A puzzle is a dict:
                 region like any other, with frames and far sides of its
                 own, and is joined on foot to the landing it stands at.
                 Sending it costs nothing, and a door rides in it
-  lures         optional [dict(at=region, door=colour, frame=id, to=region,
-                key=letter, needs=letters)]: a monster that follows the
-                player through a door and, on the far side, does something
-                (MAP16's baron on the weighbridge): with that door hanging in
-                that frame and every key in `needs`, the player in `at` may
-                go through it to `to` and has the key `key`
+  lures         optional [dict(home=region, to=region, key=letter, name=word)]:
+                a monster that follows the player through doors and, on
+                reaching `to`, does something (MAP16's baron on the
+                weighbridge). It has a place of its own in the state, and
+                starts in `home`. When the player steps through a hung door
+                from the region it is in, it may come with them or stay (both
+                happen: the player's choice). It goes by hung doors only:
+                never by a drop, a squeeze or a doorway of the building's
+                (walk links). Killed (a free move, any time, wherever it is)
+                another is at `home`. In `to` it gives the player the key
+                `key` for good and is gone from the state. `name` is for the
+                printed solution ("monster" if not given).
+                The older form, dict(at=region, door=colour, frame=id,
+                to=region, key=letter, needs=letters), is a move only: with
+                that door hanging in that frame and every key in `needs`, the
+                player in `at` may go through it to `to` and has the key `key`
   sights        optional {key (a letter): what sets it off} (ajarmap.target):
                 something that is shot, and opens steel doors (walk links
                 that need that key) for good. dict(through=door): a target
@@ -125,19 +135,31 @@ def _moves(p, state, nailed=False):
     """Yields (cost, description, next state): what the player can be sure
     of doing. With `nailed`, instead, only what they can do if the nailer
     has not got there first."""
-    here, carried, locs, keys, thief, nails, car = state
+    here, carried, locs, keys, thief, nails, car, lur = state
     colours = sorted(p["doors"])
     where = dict(zip(colours, locs))
     nm = lambda c: p.get("names", {}).get(c, c)
+    lures = p.get("lures", ())
 
     def out(region=here, carry=carried, at=car, **change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (region, carry, tuple(w[c] for c in colours), keys, thief, nails, at)
+        return (region, carry, tuple(w[c] for c in colours), keys, thief, nails, at, lur)
+
+    def moved(n, i, to):
+        """State n with lure i come along to `to` (and done there)."""
+        lu, ls = lures[i], list(n[7])
+        ks = n[3]
+        if to == lu["to"]:
+            ls[i] = None
+            ks = tuple(sorted(set(ks) | {lu["key"]}))
+        else:
+            ls[i] = to
+        return n[:3] + (ks,) + n[4:7] + (tuple(ls),)
 
     for k, region in p.get("keys", {}).items():
         if region == here and k not in keys:
-            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car)
+            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car, lur)
             if k in p.get("auto", ()):
                 return                               # it happens by itself, before anything else
     for a, b, *more in p["walk"]:
@@ -155,7 +177,7 @@ def _moves(p, state, nailed=False):
         again = p["thief"].get("respawn")              # another comes: killing it only drops what it carries
         if loot or not again:
             yield 0, "kill the thief" + (f" (it drops {nm(loot[0])})" if loot else ""), (
-                here, carried, tuple(w[c] for c in colours), keys, 1 if again else 0, nails, car)
+                here, carried, tuple(w[c] for c in colours), keys, 1 if again else 0, nails, car, lur)
     t = p.get("thief")
     if t and t.get("into") is not None and thief & 1 and (here == t["zone"] or here in t.get("sees", ())):
         if not any(loc == ("frame", t["into"]) for loc in where.values()):
@@ -163,13 +185,19 @@ def _moves(p, state, nailed=False):
                 if c in t.get("takes", (c,)) and (loc == ("lean", t["zone"]) or (
                         loc[0] == "frame" and loc[1] != t["into"] and p["frames"][loc[1]] == t["zone"])):
                     yield 0, f"let the thief carry {nm(c)} to {t['into']}", out(**{f"d{c}": ("frame", t["into"])})
-    for lu in p.get("lures", ()):
-        if (here == lu["at"] and lu["key"] not in keys and all(k in keys for k in lu.get("needs", ""))
+    for i, lu in enumerate(lures):
+        if "home" in lu:                             # a monster with a place: killed, another is at home
+            if lur[i] is not None and lur[i] != lu["home"]:
+                ls = list(lur)
+                ls[i] = lu["home"]
+                yield 0, f"kill the {lu.get('name', 'monster')} (another comes to {lu['home']})", (
+                    here, carried, locs, keys, thief, nails, car, tuple(ls))
+        elif (here == lu["at"] and lu["key"] not in keys and all(k in keys for k in lu.get("needs", ""))
                 and where[lu["door"]] == ("frame", lu["frame"])):
             yield 0, f"through {nm(lu['door'])} to {lu['to']}, followed (key {lu['key']})", (
-                lu["to"], carried, locs, tuple(sorted(keys + (lu["key"],))), thief, nails, car)
+                lu["to"], carried, locs, tuple(sorted(keys + (lu["key"],))), thief, nails, car, lur)
     if nails and here in _zone(p["nailer"], keys):
-        yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0, car)
+        yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0, car, lur)
     for k, sg in p.get("sights", {}).items():
         if k in keys:
             continue
@@ -180,7 +208,7 @@ def _moves(p, state, nailed=False):
             ok = here == sg["at"] and any(all(where[c][0] == "frame" and where[c][1] in fs for c, fs in alt.items())
                                           for alt in sg["lines"])
         if ok:
-            yield 0, sg.get("say", f"set off {k}"), (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car)
+            yield 0, sg.get("say", f"set off {k}"), (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car, lur)
     lift = p.get("lift")
     if lift:
         stops = lift["floors"]
@@ -208,6 +236,10 @@ def _moves(p, state, nailed=False):
         for a, b in (ends, ends[::-1]):
             if a == here and b != here:
                 yield 0, f"through {nm(c)} to {b}", out(region=b)
+                for i, lu in enumerate(lures):         # a lure here may come too
+                    if "home" in lu and lur[i] == here:
+                        yield 0, f"through {nm(c)} to {b}, the {lu.get('name', 'monster')} behind" + (
+                            f" (key {lu['key']})" if b == lu["to"] else ""), moved(out(region=b), i, b)
     for c, loc in where.items():
         if loc == ("lean", here) and carried is None:
             yield 1, f"pick up {nm(c)}", out(carry=c, **{f"d{c}": ("carried",)})
@@ -301,7 +333,7 @@ def _won(p, s):
 def _luck(p, state):
     """Yields the states that the nailer being slow, or the draw of a Stray
     door, can turn `state` into."""
-    here, carried, locs, keys, thief, nails, car = state
+    here, carried, locs, keys, thief, nails, car, lur = state
     if nails:
         for _, _, n in _moves(p, state, True):
             yield n
@@ -327,12 +359,12 @@ def _luck(p, state):
             # (but not the room of a longer chain's third door: ajarmap.way_longer)
             shut = p.get("home_chain", {}).get("secret", {}).get("door")
             for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame" and k != shut and "home" in p["doors"][k]}):
-                yield (place, c, tuple(w[k] for k in colours), keys, thief, nails, car)
+                yield (place, c, tuple(w[k] for k in colours), keys, thief, nails, car, lur)
 
 
 def _thief(p, state):
     """Yields the states the thief can turn `state` into."""
-    here, carried, locs, keys, thief, nails, car = state
+    here, carried, locs, keys, thief, nails, car, lur = state
     if not thief & 1:
         return
     t = p["thief"]
@@ -343,7 +375,7 @@ def _thief(p, state):
     def out(**change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (here, carried, tuple(w[c] for c in colours), keys, thief, nails, car)
+        return (here, carried, tuple(w[c] for c in colours), keys, thief, nails, car, lur)
 
     takes, into = t.get("takes"), t.get("into")
     loot = next((c for c, loc in where.items() if loc == ("thief",)), None)
@@ -400,7 +432,7 @@ def solve(p):
     start = (p["start"], None, tuple(
         ("frame", d["frame"]) if "frame" in d else ("thief",) if d.get("thief") else ("lean", d["lean"])
         for d in (p["doors"][c] for c in colours)), (), 1 if p.get("thief") else 0,
-        0, p.get("lift", {}).get("at", 0))
+        0, p.get("lift", {}).get("at", 0), tuple(lu.get("home") for lu in p.get("lures", ())))
     # the solution: the thief and the nailer do nothing in it, and no Stray door is used
     dist, prev, back = _search(p, start, False)
     wins = [s for s in dist if _won(p, s)]
