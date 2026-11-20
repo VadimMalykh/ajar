@@ -323,7 +323,12 @@ ajartime.zone(m, K3, 0, 4744, 80, 5000, 320, mix=True)     # from 16 past the le
 spots(2004, (4800, 200))                    # plasma rifle
 spots(2046, (4860, 260))                    # rockets
 spots(2011, (4920, 140), (4920, 180))
-LOBBY3 = [2004, 2046]
+# Vadim, after playing the two shifts: a BFG, a rocket launcher and more ammunition
+spots(2006, (4780, 280))                    # BFG
+spots(2003, (4940, 260))                    # rocket launcher
+spots(2046, (4900, 290))                    # more rockets
+spots(17, (4780, 130))                      # a cell pack
+LOBBY3 = [2004, 2046, 2006, 2003, 2046, 17]
 # the case in the lobby's north wall: self 1 standing among three bodies (under the press), and apart, at
 # the east end, self 2 at the lever on the case's side wall
 CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4826, 396, "me", 0, 270),
@@ -360,7 +365,8 @@ def stock(x, y, along, *kinds):
 
 BOXES3 = (stock(4810, 630, (40, 0), 2018, 2012, 2012, 17, 2046)
           + stock(6600, 630, (40, 0), 2018, 2012, 17, 2046)
-          + stock(6130, -190, (40, 0), 2012, 2012, 2047, 2046))
+          + stock(6130, -190, (40, 0), 2012, 2012, 17, 2046)
+          + stock(4810, 500, (40, 0), 2046) + stock(6600, 500, (40, 0), 2046) + stock(6130, -60, (40, 0), 2046))
 # the steel door the win opens, east, and the corridor on to room 4 (no fight's)
 steel(K3, (HX + HW, 128), (HX + HW, 192), (1, 0), 0)
 m.sector(rect(6552, 96, 6872, 224), ceil=128, light=180, color=HALL)
@@ -402,10 +408,11 @@ assert MOUTH3[1] - MOUTH3[0] > 2 * max(ajartime.RADIUS[k] for k in c3.kinds) + 3
 assert all(ajartime.HEIGHT[k] < 192 for k in c3.kinds)
 for x, y, _ in c3.placed[1]:
     assert y < PY - 24, "wave 1 starts out of the press"
-# a third of what it would take: the lobby's, the landing's and the boxes' ammunition against every monster's health
+# over half of what it would take (it was a third until Vadim asked for more): the lobby's, the landing's
+# and the boxes' ammunition against every monster's health; the BFG does more with a cell than is reckoned
 HARD3 = ajartime.toughness(c3.kinds)
 FIRE3 = ajartime.firepower(LOBBY3 + WING3 + BOXES3)
-assert 0.28 <= FIRE3 / HARD3 <= 0.4, (FIRE3, HARD3)
+assert 0.5 <= FIRE3 / HARD3 <= 0.7, (FIRE3, HARD3)
 REGIONS[3] = ajartime.on_foot("room 3", {"hall": (HX, HY, HX + HW, PY), "chamber": (HX, PY, HX + HW, HY + HH),
                                          "wing": (LANDING3[0], LANDING3[1], UPPER3[2], HY),
                                          "lobby": (4744, 64, 5000, 320), "box1": (4776, 464, 4984, 656),
