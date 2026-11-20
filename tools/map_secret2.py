@@ -69,12 +69,14 @@ def steel(k, a, b, out, floor):
 
 def case(a, b, out, floor, figures, *, deep=96, **look):
     """A glass case (ajartime.case) with figures in it: (x, y, what, kind,
-    angle); asserted sealed and every figure inside it."""
+    angle); asserted sealed and every figure inside it (8 clear of its
+    walls; a frame and the door in it may stand against the back wall)."""
     si = ajartime.case(m, a, b, out, floor, deep=deep, **look)
     xs = [a[0], b[0], a[0] + out[0] * (16 + deep), b[0] + out[0] * (16 + deep)]
     ys = [a[1], b[1], a[1] + out[1] * (16 + deep), b[1] + out[1] * (16 + deep)]
     for x, y, what, kind, ang in figures:
-        assert min(xs) + 8 < x < max(xs) - 8 and min(ys) + 8 < y < max(ys) - 8, (x, y, what)
+        r = 1 if what in ("frame", "hung") else 8
+        assert min(xs) + r < x < max(xs) - r and min(ys) + r < y < max(ys) - r, (x, y, what)
         ajartime.figure(m, x, y, what, kind=kind, angle=ang)
     CASES.append(si)
     return si
@@ -106,9 +108,13 @@ ajarmap.door(m, VIOLET, 560, 420, angle=180)
 P1 = (192, 160)
 ajartime.plate(m, *P1, F1)
 assert walk(P1, (192, 512)) >= 300
-# the case, in the north wall: the player on the plate, VIOLET hanging
-case((384, 512), (576, 512), (0, 1), 0, [(430, 570, "plate", 0, 0), (430, 570, "me", 0, 270),
-                                       (520, 590, "hung", VIOLET, 270)], color=ROOM)
+# the case, in the north wall: VIOLET hung in its inlaid frame against the
+# back wall, the second go walking into it, the first go on the pressed plate
+# to one side, turned to the door
+case((384, 512), (576, 512), (0, 1), 0, [(520, 622, "frame", VIOLET, 270), (520, 620, "hung", VIOLET, 270),
+                                       (512, 600, "walking", 0, 90), (512, 600, "go", 2, 0),
+                                       (430, 556, "plate", 0, 0), (430, 556, "me", 0, 35), (430, 556, "go", 1, 0)],
+     color=ROOM)
 REGIONS[1] = ajartime.on_foot("room 1", {"hall": (0, -192, 640, 512), "box": (-400, 32, -208, 224)},
                               [("box", "hall")], {"hall": [(4, 128)], "box": [(-212, 128)]})
 ajartime.covers(m, "room 1", FIRST, REGIONS[1], zone=(-72, -264, 712, 584), exempt=CASES)
@@ -192,10 +198,10 @@ spots(2046, (4860, 260))                    # rockets
 spots(2011, (4920, 140), (4920, 180))
 LOBBY3 = [2004, 2046]
 # the case in the lobby's north wall: the press up, three bodies under it, the player at the lever
-CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4800, 360, "me", 0, 90), (4840, 410, "body", 3003, 0),
-                                                 (4890, 400, "body", 66, 0), (4940, 410, "body", 67, 0)],
-             color=HALL)
-m.sectors[CASE3].update(wall="AJBOLT", ctex="AJTRIMF")
+CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4800, 360, "me", 0, 90), (4800, 360, "go", 2, 0),
+                                                 (4840, 410, "body", 3003, 0), (4890, 400, "body", 66, 0),
+                                                 (4940, 410, "body", 67, 0)],
+             color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF")
 # time doors west, east, south; boxes west, east, south behind glass
 ajartime.hall_door(m, K3, 1, (HX, 688), (HX, 752), (-1, 0), 0, color=HALL)
 ajartime.hall_door(m, K3, 2, (HX + HW, 688), (HX + HW, 752), (1, 0), 0, color=HALL)
@@ -337,9 +343,10 @@ BOXES4 = (stock(7240, -180, (40, 0), 2018, 2012, 2046) + stock(7576, -180, (40, 
           + stock(7020, 520, (0, 40), 2012, 2012, 2046))
 # the case in the range's east wall, seen from the way in: the player on the
 # booth's plate, another at the firing spot, bodies in the pen
-case((RX + RW, 96), (RX + RW, 288), (1, 0), F4, [(7760, 120, "plate", 0, 0), (7760, 120, "me", 0, 180),
-                                                (7790, 270, "me", 0, 180), (7800, 170, "body", 16, 0),
-                                                (7810, 220, "body", 67, 0)], color=HALL)
+case((RX + RW, 96), (RX + RW, 288), (1, 0), F4, [(7760, 124, "plate", 0, 0), (7760, 124, "me", 0, 180),
+                                                (7760, 124, "go", 1, 0), (7790, 266, "me", 0, 180),
+                                                (7790, 266, "go", 2, 0), (7800, 170, "body", 16, 0),
+                                                (7810, 220, "body", 67, 0)], color=HALL, ceil=256)
 # the steel door the win opens, east, and the corridor on to room 5 (no fight's)
 steel(K4, (RX + RW, 420), (RX + RW, 484), (1, 0), F4)
 CORRIDOR4 = m.sector(rect(7728, 388, 8048, 516), floor=F4, ceil=F4 + 128, light=180, color=HALL)
@@ -409,8 +416,9 @@ ajartime.zone(m, K5, 1, SX + 152, -240, SX + 344, 16)
 ajartime.anew(m, SX + 248, -238, 90, z=30)
 # the case in S's east wall, seen from the way in: BLUE hanging opposite RED, a player on each plate
 case((SX + 512, CY + 352), (SX + 512, CY + 480), (1, 0), F5,
-     [(SX + 540, CY + 370, "plate", 0, 0), (SX + 540, CY + 370, "me", 0, 180), (SX + 540, CY + 462, "plate", 0, 0),
-      (SX + 540, CY + 462, "me", 0, 180), (SX + 600, CY + 380, "hung", RED, 0), (SX + 600, CY + 452, "hung", BLUE, 0)],
+     [(SX + 540, CY + 374, "plate", 0, 0), (SX + 540, CY + 374, "me", 0, 180), (SX + 540, CY + 374, "go", 1, 0),
+      (SX + 540, CY + 458, "plate", 0, 0), (SX + 540, CY + 458, "me", 0, 180), (SX + 540, CY + 458, "go", 2, 0),
+      (SX + 600, CY + 380, "hung", RED, 0), (SX + 600, CY + 452, "hung", BLUE, 0)],
      color=ROOM)
 REGIONS[5] = ajartime.on_foot("room 5", {"S": (SX, CY, SX + 512, CY + 512), "L": (LX, CY, LX + 448, CY + 512),
                                          "E": (EX, CY, EX + 512, CY + 448), "night": (NX, NY - 16, NX + 320, NY + 256),
