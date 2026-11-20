@@ -29,6 +29,12 @@
 //  * Lines 3000 + 100 * fight + j: the hall's time doors, j from 1.
 //    Lines 3050 + 100 * fight + n: the door of box n. All are portal lines
 //    as a door's far side is (ajarmap.recess).
+//    args[4] 1 on a hall's time door (ajartime.hall_door(out_only=True)):
+//    the door is OUT ONLY. Leaving by it, or killed nearest to it, the player
+//    goes out by it as by any (the take keeps it: an earlier self killed
+//    there still runs to it), but the next box opens onto the hall's time
+//    door 1, not onto it (ComeOutBy). MAP32's room 3: its chamber's doors,
+//    so that the next self does not step out into the crowd there.
 //  * Sector tag 3090 + 100 * fight: opened (Door_Open) when the fight is won.
 //  * AjarCue thing: a monster that comes into the fight later. args[0] fight,
 //    args[1] its wave (from 1), args[2] the wave comes when no more than
@@ -1060,15 +1066,10 @@ class AjarTimeHandler : EventHandler
 	void Retake(Actor mo)
 	{
 		let h = Doors();
-		double best = 1e9;
-		for (int j = 1; h.FindLine(HallLine(fight, j)); j++)
-		{
-			Line l = h.FindLine(HallLine(fight, j));
-			double d = (playerWas.xy - (l.v1.p + l.v2.p) / 2).Length();
-			if (d < best) { best = d; used = HallLine(fight, j); }
-		}
+		int left = NearestDoor(playerWas.xy);
+		used = ComeOutBy(left);
 		takes[takes.Size() - 1].died = rescued;
-		takes[takes.Size() - 1].door = used;
+		takes[takes.Size() - 1].door = left;
 		trips++;
 		at = trips;
 		StepClear(mo, BoxLine(fight, trips));
@@ -1086,6 +1087,29 @@ class AjarTimeHandler : EventHandler
 		string last = trips == BoxCount(fight) ? LastBoxText() : "";      // anew.zs
 		Say((rescued ? "You were killed. " : "") .. "It is before the fight, and it plays as it went.\nThis door is open: step in when you choose." .. last);
 		rescued = false;
+	}
+
+	// The hall's time door nearest to p (its line; 0: none).
+	int NearestDoor(Vector2 p)
+	{
+		let h = Doors();
+		double best = 1e9;
+		int near = 0;
+		for (int j = 1; h.FindLine(HallLine(fight, j)); j++)
+		{
+			Line l = h.FindLine(HallLine(fight, j));
+			double d = (p - (l.v1.p + l.v2.p) / 2).Length();
+			if (d < best) { best = d; near = HallLine(fight, j); }
+		}
+		return near;
+	}
+
+	// The door the next box opens onto, the player having gone out by `left`:
+	// that one, or door 1 if it is out only (args[4]).
+	int ComeOutBy(int left)
+	{
+		Line l = Doors().FindLine(left);
+		return l && l.args[4] ? HallLine(fight, 1) : left;
 	}
 
 	// --- winding ---------------------------------------------------------------------
@@ -2058,13 +2082,7 @@ class AjarTimeHandler : EventHandler
 			{
 				AjarTake t = takes[takes.Size() - 1];
 				t.died = true;
-				double best = 1e9;
-				for (int j = 1; h.FindLine(HallLine(fight, j)); j++)
-				{
-					Line d = h.FindLine(HallLine(fight, j));
-					double far = (playerWas.xy - (d.v1.p + d.v2.p) / 2).Length();
-					if (far < best) { best = far; t.door = HallLine(fight, j); }
-				}
+				t.door = NearestDoor(playerWas.xy);         // (the spare box opens onto door 1 anyway)
 				EndGo();
 			}
 			ClearHall();
@@ -2148,15 +2166,10 @@ class AjarTimeHandler : EventHandler
 	void Leave(Actor mo)
 	{
 		let h = Doors();
-		double best = 1e9;
-		for (int j = 1; h.FindLine(HallLine(fight, j)); j++)
-		{
-			Line l = h.FindLine(HallLine(fight, j));
-			double d = (playerWas.xy - (l.v1.p + l.v2.p) / 2).Length();
-			if (d < best) { best = d; used = HallLine(fight, j); }
-		}
+		int left = NearestDoor(playerWas.xy);
+		used = ComeOutBy(left);
 		// what is on the player's heels comes too
-		Line door = h.FindLine(used);
+		Line door = h.FindLine(left);
 		Vector2 mid = (door.v1.p + door.v2.p) / 2;
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;

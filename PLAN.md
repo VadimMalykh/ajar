@@ -5539,6 +5539,7 @@ its entrance. Nothing hurts in rooms 1, 2 and 5.
 
 - Rooms 3 and 4 can be begun anew: see "Begin anew in a fight" below.
 - Room 3 is rebuilt as a chamber after Vadim played it: see "MAP32 room 3: the press as a chamber" at the end.
+- Room 3 is rebuilt again, as two shifts (the bait fights in the chamber, the next self fights through a guarded wing to the lever): see "MAP32 room 3: two shifts" at the end.
 
 ## Begin anew in a fight (built 2026-11-20)
 
@@ -5757,3 +5758,154 @@ earlier self can open, and the hall has cover.
   then, but no test raises one); a monster shut in the booth; hiding behind
   the slabs from arch-viles. The numbers are a first guess, to be tuned after
   Vadim plays. **Not played by hand.**
+
+## MAP32 room 3: two shifts (built 2026-11-20)
+
+Vadim played room 3 as a chamber and found it dull: go 1 stood on a plate in a
+safe cell behind glass, go 2 stood in a booth and waited to pull the lever.
+Now each self has a shift of real work. The bait is in danger in the chamber
+and buys time by staying alive under the press; the next self has that time
+to fight through a guarded wing to the lever, pulls it, and then is itself the
+bait for the self after it.
+
+- **The chamber is where the bait fights.** The cell, its glass, its squeeze,
+  its plate and light, the booth, its shutter and slit are gone, with their
+  asserts. The chamber (5000..6536, 800..1280) and its mouth are the press as
+  before. In it two full-height slabs of no tag, (5320..5448, 1008..1072) and
+  (6088..6216, 1008..1072): the press does not come down on them (asserted
+  160 or more from every wall and from the mouth). Time doors 3 (east wall)
+  and 4 (west wall) are in the chamber, at y 1008..1072. Doors 1 and 2 stay
+  in the hall's west and east walls; the three boxes as before.
+- **A time door that is out only** (time.zs, its header). args[4] 1 on a
+  hall's time door line (`ajartime.hall_door(out_only=True)`). Leaving by it,
+  or killed nearest to it, the player goes out by it as by any, and the take
+  keeps it (an earlier self killed there still runs to it), but the next
+  box opens onto the hall's time door 1. The three places that took the
+  nearest door (`Retake`, `Leave` of a closed fight, and the spare-box path
+  of the rescue) now go through `NearestDoor` and `ComeOutBy`; with no such
+  door, `ComeOutBy` gives back the door left by, as before. Doors 3 and 4 are
+  out only, so the next self never steps out into the crowd in the chamber.
+- **The wing's shutter** (shut.zs, its header). `AjarShutter` args[3] a
+  sector tag (`ajartime.shutter(under=)`): the shutter is open also while the
+  player (alive) or an earlier self (`AjarGhost`) is in a sector with that tag,
+  by where its middle is; with no plate naming it, only then. Room 3's shutter
+  (tag 3535) takes the press's tag 3530, so it is open while someone is in the
+  chamber or the mouth, and shut at the start of every go as every shutter. It
+  is worked from the hall: a player in its way when it shuts is put out into
+  the hall. Its face line stops monsters (walking and flying), not players,
+  shots or sight (`nomonsters`). Beside it on the hall's wall a lamp,
+  `AjarShutLamp` (20053, `ajartime.shut_lamp`), the clock lamp's pictures:
+  red while the shutter is not open, green while it is. The first time it
+  opens because the player stepped under the press: "A shutter in the hall is
+  open while someone is under the press." (once a level, my choice). The walk
+  from the nearest point under the press to the shutter is 873 (asserted over
+  600; it shuts in 12 tics).
+- **The wing, "the tool room"**, south of the hall, all of it the fight's hall
+  (a zone of its own, besides the hall's). The shutter in the hall's south
+  wall at x 5128..5256; behind it the landing at floor 0 (5112..5272,
+  -176..-16); the stairs east, six steps of 16, 32 deep (5272..5464); the upper
+  room at 96 (5464..5880, -176..-16); the wing's ceiling at 224 throughout. The
+  window in the upper room's north wall onto the hall (5704..5832), open, its
+  sill at the upper room's floor, 96 high: the wing's only way out when the
+  shutter is shut, a drop of 96, no way back. Its lines stop monsters as the
+  shutter's face does. From its middle the mouth is seen between the hall's
+  two middle slabs (asserted: no slab cuts the line). The lever (5856, -18) on
+  the upper room's north wall just east of the window. The pen (5464..5880,
+  -432..-176), same floor, along the upper room's whole south side, open to it
+  over a line of bars (AJGRIL, the grille texture): `blocking` (nobody walks
+  across), shots and sight pass. A cell pack and a medikit on the landing.
+- **What the pen sees, and a move of mine.** As laid out (stairs the whole
+  width of the landing) the pen saw the landing at a grazing angle from its
+  far east end, over the top step. So the stairs are 80 wide, along the north
+  wall (y -96..-16); south of them is wall. The generator now has a sight test
+  in 2.5D (`ajartime.seen`: the wing's floors and ceilings as boxes, a
+  monster's eye 42 or 48 over the pen's floor, a player's feet, middle and
+  head) and asserts: the pen does not see the landing at all, nor the first
+  step; the second and third steps are seen from no more than a fifth of the
+  pen (by the bars, at its east end); the top two from most of it; the pen
+  sees the upper room, the lever and the window. So the top of the stairs is
+  where the player fights from, the landing is safe.
+- **The guards**, AjarCues of fight 3 (calm) standing in the pen: with wave 1
+  two hell knights at the bars, with wave 2 two revenants and a mancubus at
+  its back, with wave 3 an arch-vile (`always`) in the middle and two hell
+  knights at the back. All eight spots clear of each other across waves
+  (asserted: an earlier wave's may still be there). The waves' thresholds are
+  as before (16 and 8 left, or on the clock), so the guards count among those
+  left. No hall monster gets into the wing.
+- **Supplies.** With the guards (3900 more health, 31700 in all) the lobby's
+  and the boxes' ammunition alone was 27.5 per cent, under the asserted 28:
+  the landing's cell pack makes it 10920, 34 per cent.
+- **The case** in the lobby: self 1 standing among the three bodies, no plate
+  under it; self 2 at the lever as before. `begun1` counts 40 figures, not 41.
+- **Generator checks**: `on_foot` has the wing as a region with a one-way link
+  to the hall (the window; the hall to the wing needs someone under the press,
+  of use only as an earlier self, so it is left out), the chamber with doors 3
+  and 4 as its time doors; `covers` exempts the pen; `Crowd` has the pen as a
+  floor and the chamber's slabs as solid; `fight_anew_reached`, the firepower,
+  every case sealed. The old "a monster on the lever" assert is dropped.
+- **Unchanged**: the hall, its four slabs, the hall's waves, their numbers and
+  thresholds, the lobby and its supplies, the boxes, the begin-anew plate, the
+  steel door and the corridor, no infighting.
+- **How it is meant to play.** Go 1: into the chamber, the horde after you
+  through the mouth; stay alive among its slabs as long as you dare; out by
+  door 3 or 4, or killed. Go 2: out of the box by door 1, across the hall past
+  the horde (on the demo it goes where it went), through the open shutter, up
+  the stairs, kill or pass the guards, pull the lever while the earlier self is
+  still drawing them under the press; the shutter shuts when that self is gone
+  (a pull after that still kills what is still under the press). Then out by
+  the window and into the chamber as the next bait.
+- **Tests.** `MAP=MAP32 MODE=3 TIMEOUT=750 tools/smoke.sh` (54 checks; the
+  run is now about 5000 tics, `smoke_MAP32_3.cfg` waits 4970, it waited
+  3970). Room 3's are begun3, noLeak3, noInfighting3; go 1: shutAlone3 (alone
+  in the hall: a trace from before the shutter hits its face, the lamp red,
+  the press up, nothing said yet), opensUnderThePress3 (standing in the mouth:
+  open, green, the message said), shutsWhenIStepOut3; then the bait stands by
+  door 3 in the chamber (godmode as everywhere in this test) until twelve are
+  under the press and a second more, or 900 tics, and walks out by door 3.
+  Go 2: outByDoorThree3 (the take's door is 3, the box opens onto door 1),
+  outByDoorOne3 (walked out of box 1: in the hall by door 1, not in the
+  chamber), openForMyEarlierSelf3 (open and green, an earlier self under the
+  press, the player not), upTheStairs3, guardsInThePen3, pressKills3 (as
+  before: the lever pulled when ten on the demo are under the press, or at the
+  tic go 1 had twelve), shutBehindMe3 (the earlier self's time over: shut, red,
+  the player in the upper room), outByTheWindow3 (down in the hall),
+  noWayBack3 (walking at the window and at the shutter from the hall: neither
+  lets them in), then the script kills the rest; guardsStayed3 (every monster
+  first seen in the pen never left it, watched every tic), laterGuards3 (a
+  revenant, mancubus or arch-vile first seen in the pen: a later wave's guards
+  came into it), noneInTheWing3 (no other monster of the fight was ever in the
+  wing), won3, steel3. Passed 54 of 54 three times running (and once more
+  before the wait was lengthened, 50 of 50 up to the old quit). Twelve under
+  the press came 619, 667, 699 and 313 tics after the bait came into the
+  chamber (that last one a quick run); the lever was pulled each time with 10
+  on the demo under it (the test's trigger), and the press killed 9 to 12.
+  The guards counted: 10 first seen in the pen in each run (four of the later
+  waves). `MAP=MAP32 MODE=5` (23): room 3's go 2 stands in the mouth before
+  it uses the begin-anew plate, `shutterShutAnew3` checks the shutter was
+  opening and is shut again; passed 23 of 23 three times. `MAP=MAP32 MODE=4`
+  7 of 7 three times. `MAP=MAP32 MODE=2`: 24 views; room 3's are the case,
+  the hall from the lobby, the mouth from the hall, the chamber from the mouth
+  (its east slab, door 3), the shutter shut with its red lamp, the same open
+  (a bare AjarGhost in the chamber) with the lamp green, the landing and the
+  stairs, the upper room (the bars, the pen, the window, the lever), and
+  through the window to the mouth between the hall's slabs.
+- **The older suites** on this branch, once each: SHUT 3 (20) and 4 (7),
+  PRESS 3 (13) and 4 (5), PLATE 3 (34) and 4 (6), TWOKEY 3 (8), SHIFT 3 (19)
+  and 4 (20), TDOOR 3 (20) and 4 (10), TIME 3 (14), MAP31 7 (15), 6 (9), 5 (4)
+  and 3. MAP31 3 run three times, four at once with other suites: once
+  `won3` failed (the win came about a second after the check, the hall's
+  show still playing), once the known `noneWakesAsIStepIn`, once all 57
+  passed. The main package, run at the same time under the same load,
+  failed two others (`aLastKillForEveryHall`, `lastScenesOnScreen`): MAP31
+  3 is sensitive to timing under load; nothing of this build runs there
+  (no out-only door, no shutter).
+- **Not tested**: the fight as fought (godmode, the script's kills); a player
+  killed nearest to an out-only door (the same code path as leaving by it);
+  a closed fight with an out-only door (none exists); the bait leaving by door
+  4; hall monsters' shots through the window or the open shutter at a player
+  in the wing; the guards fighting through the bars (they are seen and shot,
+  untested); a later wave kept waiting by a guard standing on its spot (the
+  spots are apart, but guards walk about the pen; the wave comes when there is
+  room, and the fight is not won till then); the message's wording on screen
+  (it is seen in the MODE=2 views). The numbers are a first guess.
+  **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.

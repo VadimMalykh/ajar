@@ -17,7 +17,14 @@
 // shutter's plate up (ShuttersShut). args[2] 1 (MAP32's room 3): the sector
 // right behind it is a booth whose only way out it is: a player in the booth
 // when it shuts is put out on the side it is worked from too, before the
-// opening, so nobody is shut in.
+// opening, so nobody is shut in. args[3] a sector tag (MAP32's room 3: its
+// press's, ajartime.shutter(under=)): the shutter is open also while the
+// player (alive) or an earlier self (an AjarGhost) is in a sector with that
+// tag, by where its middle is; with no plate naming it, only then. The first
+// time it opens because the player stepped into such a sector, a short
+// message says so (once a level, Claude's choice). AjarShutLamp thing (20053,
+// ajartime.shut_lamp), on a wall beside it: args[0] the shutter's tag; red
+// while it is not open, green while it is open (the clock lamp's pictures).
 //
 // AN EARLIER SELF'S SHOTS, in a fight of goes (zone args[4] 3) while it is
 // a fight: what an AjarGhost fires hurts a monster on the demo and wakes it
@@ -57,8 +64,8 @@ class AjarShutter : Actor
 {
 	const TICS = 12;            // tics to open, and to shut
 	const TALL = 96;
-	bool known, want;
-	Array<int> secs;
+	bool known, want, told;
+	Array<int> secs, area;
 	Array<double> bottom;
 	double x1, y1, x2, y2;      // round the opening
 	double bx1, by1, bx2, by2;  // round the booth behind it (args[2])
@@ -84,8 +91,13 @@ class AjarShutter : Actor
 				}
 			}
 		}
-		let it = level.CreateSectorTagIterator(args[0]);
 		int i;
+		if (args[3])
+		{
+			let ai = level.CreateSectorTagIterator(args[3]);
+			while ((i = ai.Next()) >= 0) area.Push(i);
+		}
+		let it = level.CreateSectorTagIterator(args[0]);
 		while ((i = it.Next()) >= 0)
 		{
 			Sector s = level.sectors[i];
@@ -117,6 +129,24 @@ class AjarShutter : Actor
 		let it = ThinkerIterator.Create("AjarPlate");
 		AjarPlate p;
 		while (p = AjarPlate(it.Next())) if (p.args[1] == args[0] && p.pressed) return true;
+		return PlayerIn() || GhostIn();
+	}
+
+	// args[3]: is the player (alive), or an earlier self, in a sector of that tag?
+	bool InArea(Actor a) { return a && area.Find(level.PointInSector(a.pos.xy).Index()) < area.Size(); }
+	bool PlayerIn()
+	{
+		Know();
+		let mo = players[consoleplayer].mo;
+		return area.Size() && mo && mo.health > 0 && InArea(mo);
+	}
+	bool GhostIn()
+	{
+		Know();
+		if (!area.Size()) return false;
+		let it = ThinkerIterator.Create("AjarGhost");
+		Actor g;
+		while (g = Actor(it.Next())) if (InArea(g)) return true;
 		return false;
 	}
 
@@ -159,6 +189,12 @@ class AjarShutter : Actor
 		{
 			want = w;
 			A_StartSound(w ? "doors/dr2_open" : "doors/dr2_clos", CHAN_BODY);
+			if (w && !told && PlayerIn())
+			{
+				told = true;
+				let h = AjarHandler(EventHandler.Find("AjarHandler"));
+				if (h) h.Say("A shutter in the hall is open while someone is under the press.");
+			}
 		}
 		Move(High() / TICS);
 	}
@@ -169,6 +205,37 @@ class AjarShutter : Actor
 		Know();
 		want = false;
 		Move(High());
+	}
+}
+
+// A lamp beside a shutter (args[0] its tag): red while it is not open, green while it is.
+class AjarShutLamp : Actor
+{
+	AjarShutter sh;
+
+	Default { Radius 8; Height 16; +NOGRAVITY +WALLSPRITE +NOBLOCKMAP +DONTTHRUST +NOTELEPORT +BRIGHT }
+	States
+	{
+	Spawn:
+		AJTW D -1 Bright;
+		Stop;
+	Lamps:                      // only so that these are loaded: C green, D red
+		AJTW CD -1;
+		Stop;
+	}
+
+	bool Green() { return sh && sh.IsOpen(); }
+
+	override void Tick()
+	{
+		Super.Tick();
+		if (!sh)
+		{
+			let it = ThinkerIterator.Create("AjarShutter");
+			AjarShutter s;
+			while (s = AjarShutter(it.Next())) if (s.args[0] == args[0]) sh = s;
+		}
+		frame = Green() ? 2 : 3;
 	}
 }
 
