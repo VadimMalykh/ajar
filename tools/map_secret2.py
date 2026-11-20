@@ -1,309 +1,424 @@
 """The second secret level: "Double Shift" (MAP32), reached by MAP15's
-secret way out (PLAN.md, "MAP32").
+secret way out (PLAN.md, "MAP32 rebuilt"). The first build of it is the lab
+map SHIFT (tools/map_shift.py).
 
-A works with three shops. Each shop is a fight too thick for one go: a pit
-(the shop floor) under a gallery (the way in: a drop that cannot be climbed),
-with time doors in the pit's walls (a clock on them) as in MAP31, and behind
-glass the offices: the first trip out of a fight leads to the big one (the
-wing), the next two to small ones with supplies.
+A works: five rooms in a row, each needing two or three of you in it at once
+(earlier selves: src/zscript/plate.zs, goes.zs, shut.zs). Each room is its
+own fight number, with its own box 1 and plate that forgets every go. A room
+is over for good when it is left by a way that is not a time door; the way
+from one room to the next goes one way only (a door that shuts behind, or a
+drop). Every frame of a puzzle takes its own door and no other.
 
-Here doors are carried, and **what an earlier self did to a door is done
-again** while the fight is watched (src/zscript/timedoor.zs). A door does not
-go through a time door, and a door that joins the fight's shop to anywhere
-is held shut while the fight is watched.
+1. The plate (a room of goes). A sprung frame that takes VIOLET only, VIOLET
+   leaning, its plate 352 from the mouth. Hang it, stand on the plate, out by
+   the time door; the next go walks through while the earlier self holds it.
+   VIOLET's far side is in room 2.
+2. Two keys (a room of goes). A gallery and a pit 96 below it. Frame A on
+   the gallery and frame B in the pit join the TEAL Pair only if both leaves
+   are hung within two seconds (clock lamps), and they are 1850 apart on
+   foot. YELLOW leans in the pit; its frame W (YELLOW only) is on the
+   gallery; the pit is left only by its own time door or the joined Pair.
+3. The press (a fight of goes). A hall 1536 by 1280 whose north third is a
+   press; 34 monsters in the south and middle, then 10, then two
+   cyberdemons. Ammunition for about a third of them: the press is the way.
+4. The range (a fight of goes). A pen of 13 behind a shutter at the north end
+   of a range 1400 long; the shutter's plate is in a booth behind glass, the
+   firing spot at the south end.
+5. The airlock (a room of goes). S, L and E in a row, joined by two sprung
+   frames (GREEN, PINK) whose plates are each in the chamber before; in E
+   two brass frames face each other, RED hung in one from the start: BLUE,
+   which leans in S, in the other closes the chain (ajarmap.way_through, the
+   night room), and walking it ends the level.
 
-1. The fitting shop: meet yourself halfway. A TEAL leaf and the YELLOW door
-   on the gallery, whose frame takes a TEAL leaf only; the twin and two
-   frames in the wing. YELLOW opens onto the next shop and can be hung in
-   the wing only. Hang the leaf, drop, step out of the fight, hang the twin:
-   when the earlier self has hung its leaf and the fight is where it was
-   left, gallery and wing are joined, and YELLOW can be fetched.
-2. The press shop: a fight handed across. This one has to be won, and two
-   arch-viles make it long. The wing has a frame and the GREEN door, which
-   opens onto the lock-up: what is on the player's heels at a time door
-   comes out into the wing with them, and can be led through GREEN and shut
-   away. It is out of the fight then.
-3. The despatch: one chain, two selves. The way out is MAP09's chain: RED
-   on the gallery with one brass frame, BLUE in the wing with the other.
-   Each self hangs one; the loop is closed when the earlier self hangs its
-   own, and open when the fight is where it was left.
-
-Nobody can be stuck: a fight that is won opens steel doors, in shops 1 and 3
-a stair from the pit up to the gallery and a passage from the gallery to the
-wing, so that everything can then be carried on foot. A fight that is left
-unwon is over when the next one begins (AjarTimeHandler.Quit).
-No solver. The level's own secret (the glass shows later) waits for MAP15's
-mirrors.
+Every room has a glass case where it is entered, with figures of it solved.
+Generator checks: every monster has room (ajartime.Crowd), every region of
+a room reaches a time door on foot (ajartime.on_foot, covers), the plates'
+distances, the walk from A to B, the cases sealed, the supplies of rooms 3
+and 4 against their monsters' health.
 """
 import ajarmap
 import ajartime
-from ajarmap import RED, BLUE, GREEN, YELLOW, TEAL, HOME, HOME2, far_id
+from ajarmap import RED, BLUE, GREEN, YELLOW, VIOLET, PINK, TEAL, HOME, HOME2, far_id
+from ajartime import walk
 from udmf import Map, rect
 
 m = Map()
-PIT = 0xD8DCE4
-GAL = 0xE8E0D0
-WING = 0xFFE8C0
-GF = 64                     # the gallery's floor, and every office's, above the pit's
-ANY = ajartime.hall_line(1, 1)      # a portal line that is there, for the targets nothing reads
-BRASS = ("AJXA", "AJXAF")
-FA, FB, FY, FG = 111, 112, 113, 114
-BAD = []
-RADIUS = {3001: 20, 9: 20, 65: 20, 3002: 30, 58: 30, 3005: 31, 69: 24, 3003: 24, 66: 20, 64: 20, 67: 48, 68: 64, 16: 40}
+ROOM = 0xE8E0D0
+PIT = 0xC8C0B4
+BOX = 0xFFE8C0
+HALL = 0xE4E0D8
+PEN = 0xD8C8B8
+LOCK = 0xD8E4F0
+END = 0xE0F0D8
 
 
-def steel(k, a, b, out, floor=0):
-    """A steel door 16 thick in the wall a-b, shut until fight k is won."""
-    c, d = (a[0] + out[0] * 16, a[1] + out[1] * 16), (b[0] + out[0] * 16, b[1] + out[1] * 16)
-    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF",
-             id=3090 + 100 * k)
-    m.line(a, b, exact=True)
-    m.line(c, d, exact=True)
-    for p, q in ((a, c), (b, d)):
-        m.line(p, q, mid="AJTRIM", dontpegbottom=True)
+def inlaid(c):
+    """The brass of a frame that takes one door only, inlaid with its colour."""
+    return f"AJXA{c}", f"AJXF{c}"
 
 
-class Shop:
-    """Fight k: a pit w by h with its south-west corner at x, y, the gallery
-    along its south side, the wing (bw by bh) behind glass in its west wall
-    and two small offices, north and east."""
-
-    def __init__(self, k, x, y, w, h, pillars, bw=384, bh=384, light=190):
-        self.k, self.x, self.y, self.w, self.h = k, x, y, w, h
-        self.pillars, self.placed = pillars, {}
-        cx, cy = self.cx, self.cy = x + w // 2, y + h // 2
-        ajarmap.fitted(m, (x, y, x + w, y + h),
-                       [((x + a, y + b, x + a + 64, y + b + 64), dict(floor=256)) for a, b in pillars],
-                       ceil=256, light=light, color=PIT)
-        m.sector(rect(x, y - 192, x + w, y), floor=GF, ceil=256, light=light + 10, color=GAL)
-        ajartime.zone(m, k, 0, x, y - 192, x + w, y + h, grow=72)
-        # the time doors: west (north of the wing), east, north
-        ajartime.hall_door(m, k, 1, (x, y + h - 96), (x, y + h - 32), (-1, 0), 0, color=PIT)
-        ajartime.hall_door(m, k, 2, (x + w, y + h - 160), (x + w, y + h - 96), (1, 0), 0, color=PIT)
-        ajartime.hall_door(m, k, 3, (x + 96, y + h), (x + 160, y + h), (0, 1), 0, color=PIT)
-        # the wing: office 1
-        wx, wy = self.wx, self.wy = x - 16 - bw, y + 160
-        assert wy + bh + 80 <= y + h - 96, "the west time door must be clear of the wing"
-        self.bw, self.bh = bw, bh
-        m.sector(rect(wx, wy, wx + bw, wy + bh), floor=GF, ceil=GF + 128, light=210, color=WING)
-        gy = wy + bh // 2
-        ajartime.glass(m, (x, gy - 80), (x, gy + 80), (-1, 0), GF)
-        ajartime.box_door(m, k, 1, (wx + 96, wy + bh), (wx + 160, wy + bh), (0, 1), GF, color=WING)
-        ajartime.zone(m, k, 1, wx, wy, wx + bw, wy + bh)
-        ajartime.zone(m, k, 1, wx + 96, wy + bh, wx + 160, wy + bh + 64)
-        # beside the glass, plates that wind the fight as it is watched: back
-        # on the left of one who looks out (north), on on the right
-        self.plates = {1: ((x - 18, gy + 96), (x - 18, gy - 96))}
-        for side, (px, py) in zip((-1, 1), self.plates[1]):
-            ajartime.wind(m, px, py, 180, side > 0)
-        # the small offices
-        self.box = {}
-        for n, (bx, by, u) in ((2, (cx, y + h + 136, (0, 1))), (3, (x + w + 136, cy, (1, 0)))):
-            v = (-u[1], u[0])
-            self.box[n] = (bx, by, u, v)
-            hw, hh = (120, 112) if u[0] else (112, 120)
-            m.sector(rect(bx - hw, by - hh, bx + hw, by + hh), floor=GF, ceil=GF + 128, light=210, color=WING)
-            g = (bx - u[0] * 136, by - u[1] * 136)
-            ajartime.glass(m, (g[0] - v[0] * 80, g[1] - v[1] * 80), (g[0] + v[0] * 80, g[1] + v[1] * 80), u, GF)
-            d = (bx + u[0] * 120, by + u[1] * 120)
-            ajartime.box_door(m, k, n, (d[0] - v[0] * 32, d[1] - v[1] * 32), (d[0] + v[0] * 32, d[1] + v[1] * 32),
-                              u, GF, color=WING)
-            lo = (bx - u[0] * 135 - abs(v[0]) * 112, by - u[1] * 135 - abs(v[1]) * 112)
-            hi = (bx + u[0] * 190 + abs(v[0]) * 112, by + u[1] * 190 + abs(v[1]) * 112)
-            ajartime.zone(m, k, n, min(lo[0], hi[0]), min(lo[1], hi[1]), max(lo[0], hi[0]), max(lo[1], hi[1]))
-            # the plates, as in MAP31's boxes
-            self.plates[n] = tuple((bx - u[0] * 118 + v[0] * 96 * side, by - u[1] * 118 + v[1] * 96 * side)
-                                   for side in (-1, 1))
-            for side, (px, py) in zip((-1, 1), self.plates[n]):
-                ajartime.wind(m, px, py, {(0, 1): 90, (1, 0): 0}[u], side > 0)
-
-    def at(self, *pts):
-        return [(self.x + a, self.y + b) for a, b in pts]
-
-    def room_for(self, wave, kind, pts):
-        """A monster must stand clear of the walls, the pillars and the others
-        of its wave: one that does not never comes, and the fight is never won."""
-        r = RADIUS[kind]
-        for px, py in pts:
-            if not (r + 8 <= px <= self.w - r - 8 and r + 8 <= py <= self.h - r - 8):
-                BAD.append((self.k, wave, kind, px, py, "wall"))
-            for a, b in self.pillars:
-                if a - r < px < a + 64 + r and b - r < py < b + 64 + r:
-                    BAD.append((self.k, wave, kind, px, py, "pillar"))
-            for ox, oy, orr in self.placed.setdefault(wave, []):
-                if max(abs(px - ox), abs(py - oy)) < r + orr:
-                    BAD.append((self.k, wave, kind, px, py, "another", ox, oy))
-            self.placed[wave].append((px, py, r))
-
-    def first(self, kind, *pts):
-        """The monsters the fight begins with: on the shop floor, facing the gallery."""
-        self.room_for(1, kind, pts)
-        for px, py in self.at(*pts):
-            m.thing(px, py, kind, angle=270)
-
-    def cue(self, wave, when, kind, *pts, **look):
-        self.room_for(wave, kind, pts)
-        ajartime.cue(m, self.k, wave, when, kind, *self.at(*pts), **look)
-
-    def wing(self, u, v):
-        """A place in the wing: u from its west wall, v from its south wall."""
-        return self.wx + u, self.wy + v
-
-    def stock(self, n, *kinds):
-        """Things in small office n, from the back corners forward."""
-        bx, by, du, dv = self.box[n]
-        for kind, (u, v) in zip(kinds, ((70, -85), (70, 85), (20, -90), (-30, -90), (-75, -90), (-75, 90), (20, 0))):
-            m.thing(bx + du[0] * u + dv[0] * v, by + du[1] * u + dv[1] * v, kind)
-
-    def on_foot(self):
-        """Won, the fight opens a stair from the pit up to the gallery (east)
-        and a passage from the gallery to the wing (west)."""
-        k, x, y, w = self.k, self.x, self.y, self.w
-        steel(k, (x + w, y + 96), (x + w, y + 160), (1, 0))
-        m.sector(rect(x + w + 16, y + 64, x + w + 144, y + 192), ceil=128, light=170, color=PIT)
-        for i in range(1, 5):
-            m.sector(rect(x + w + 16, y + 64 - 16 * i, x + w + 144, y + 80 - 16 * i), floor=16 * i, ceil=192,
-                     light=170, color=PIT)
-        m.sector(rect(x + w, y - 192, x + w + 144, y), floor=GF, ceil=192, light=180, color=GAL)
-        steel(k, (x, y - 128), (x, y - 64), (-1, 0), GF)
-        m.sector(rect(self.wx + 32, y - 128, x - 16, y - 64), floor=GF, ceil=GF + 128, light=170, color=WING)
-        m.sector(rect(self.wx + 32, y - 64, self.wx + 96, self.wy), floor=GF, ceil=GF + 128, light=170, color=WING)
-
-    def anteroom(self, depth=320):
-        """The room the gallery is entered from, south of its middle; not
-        part of the fight. Returns its south wall's middle."""
-        m.sector(rect(self.cx - 128, self.y - 192 - depth, self.cx + 128, self.y - 192), floor=GF, ceil=GF + 128,
-                 light=200, color=GAL)
-        return self.cx, self.y - 192 - depth
-
-
-def spots(kind, *at):
+def spots(kind, *at, angle=0):
     for x, y in at:
-        m.thing(x, y, kind)
+        m.thing(x, y, kind, angle=angle)
 
 
-# === 1. the fitting shop: meet yourself halfway ==============================
-s1 = Shop(1, 0, 0, 1024, 768, ((256, 288), (704, 288), (480, 544)))
-s1.on_foot()
-ax, ay = s1.anteroom()
-m.thing(ax, ay + 60, 1, angle=90)
-spots(2001, (ax - 70, ay + 150))            # shotgun
-spots(2002, (ax + 70, ay + 150))            # chaingun
-spots(2049, (ax - 70, ay + 200), (ax - 30, ay + 200))
-spots(2048, (ax + 70, ay + 200), (ax + 30, ay + 200))
-spots(2018, (ax, ay + 240))                 # armour
-# the gallery: its frame takes a TEAL leaf and nothing else; a leaf and YELLOW lean by it
-ajarmap.recess(m, (160, -192), (224, -192), (0, -1), GF, FA, ANY, home=TEAL, only=3, color=GAL)
-ajarmap.pair(m, TEAL, (300, -150, 90), s1.wing(60, 320) + (0,))
-ajarmap.door(m, YELLOW, 80, -150, angle=90)
-spots(82, (700, -100))                      # super shotgun
-spots(2049, (760, -100), (820, -100))
-# the wing: the twin's frame in its west wall, a frame for YELLOW in its south wall
-ajarmap.recess(m, (s1.wx, s1.wy + 160), (s1.wx, s1.wy + 224), (-1, 0), GF, FB, ANY, color=WING)
-ajarmap.recess(m, (s1.wx + 192, s1.wy), (s1.wx + 256, s1.wy), (0, -1), GF, FY, ANY, color=WING)
-spots(2012, s1.wing(330, 330), s1.wing(330, 290))
-spots(2049, s1.wing(330, 60))
-s1.first(3001, *[(140 + 110 * i, 680) for i in range(8)])                   # imps along the far wall
-s1.first(9, (120, 500), (904, 500), (120, 400), (904, 400))                 # shotgun guys down the sides
-s1.first(3002, (400, 440), (624, 440), (400, 340), (624, 340))              # demons, the middle
-s1.first(65, (200, 620), (824, 620))
-s1.first(3005, (380, 580), (512, 250))
-s1.cue(2, 8, 69, (160, 300), (160, 420), (160, 560))                        # hell knights, the west
-s1.cue(2, 8, 66, (864, 300), (864, 420), (864, 560), angle=180)             # revenants, the east
-s1.cue(3, 5, 67, (380, 680), (644, 680), angle=270)
-s1.cue(3, 5, 3001, (200, 200), (824, 200), (200, 680), (824, 680))
-s1.cue(3, 5, 3005, (512, 480), (512, 160))
-s1.stock(2, 2012, 2012, 2049, 2048, 2018, 2003, 2046)                       # the rocket launcher is in an office
-s1.stock(3, 2012, 2012, 2049, 2046, 2018, 2046)
+def steel(k, a, b, out, floor):
+    """The steel door that opens when fight k is won (time.zs)."""
+    ajarmap.steel(m, a, b, out, floor, 3090 + 100 * k)
 
-# === 2. the press shop: a fight handed across ================================
-s2 = Shop(2, 3072, 0, 1280, 896, ((320, 320), (896, 320), (608, 608)), bw=320, bh=320)
-ax, ay = s2.anteroom()
-ajarmap.recess(m, (ax - 32, ay), (ax + 32, ay), (0, -1), GF, far_id(YELLOW), ANY, far_colour=YELLOW, color=GAL)
-spots(2003, (ax - 70, ay + 120))            # rocket launcher
-spots(2046, (ax - 70, ay + 170), (ax - 30, ay + 170), (ax + 30, ay + 170))
-spots(2049, (ax + 70, ay + 120), (ax + 70, ay + 170))
-spots(2012, (ax - 90, ay + 240), (ax + 90, ay + 240))
-spots(2019, (ax, ay + 240))                 # blue armour
-# the wing: a frame, and GREEN, which opens onto the lock-up
-ajarmap.recess(m, (s2.wx, s2.wy + 128), (s2.wx, s2.wy + 192), (-1, 0), GF, FG, ANY, color=WING)
-ajarmap.door(m, GREEN, *s2.wing(200, 270), angle=180)      # clear of the plate behind it
-spots(2012, s2.wing(270, 50), s2.wing(230, 50))
-spots(2046, s2.wing(60, 50))
-# the lock-up: a room with a pillar to run round, and nothing else leads there
-LX, LY = 3072, -2048
-ajarmap.fitted(m, (LX, LY, LX + 448, LY + 448), [((LX + 192, LY + 192, LX + 256, LY + 256), dict(floor=160))],
-               ceil=160, light=150, color=0xC8D0E0)
-ajarmap.recess(m, (LX + 192, LY), (LX + 256, LY), (0, -1), 0, far_id(GREEN), ANY, far_colour=GREEN)
-s2.first(3001, *[(160 + 120 * i, 800) for i in range(9)], (640, 700))
-s2.first(65, (120, 600), (1160, 600), (120, 300), (1160, 300))
-s2.first(69, (500, 640), (780, 640), (500, 520), (780, 520))
-s2.first(3002, (440, 260), (840, 260), (560, 260), (720, 260))
-s2.first(3005, (640, 460), (400, 700), (880, 700))
-# remembered by: two arch-viles, with whatever is left to raise
-s2.cue(2, 10, 64, (300, 800), (980, 800), angle=270, always=True)
-s2.cue(2, 10, 66, (200, 460), (200, 560), (1080, 460), (1080, 560))
-s2.cue(3, 6, 67, (640, 800), (240, 240), (1040, 240), angle=270)
-s2.cue(3, 6, 3003, (540, 420), (740, 420), angle=270)
-s2.cue(3, 6, 58, (300, 640), (980, 640), (240, 440), (1040, 440))
-s2.cue(3, 6, 3001, (160, 180), (1120, 180), (160, 720), (1120, 720), (640, 180), (640, 560))
-s2.stock(2, 2012, 2012, 2046, 2049, 2018, 2046)
-s2.stock(3, 2012, 2012, 2046, 2048, 2018, 2013)
-# the way on: a steel door in the east wall, a lobby, and a doorway to the despatch
-steel(2, (s2.x + s2.w, 96), (s2.x + s2.w, 160), (1, 0))
-m.sector(rect(s2.x + s2.w + 16, 32, s2.x + s2.w + 208, 224), ceil=128, light=180, color=GAL)
 
-# === 3. the despatch: one chain, two selves ==================================
-s3 = Shop(3, 6144, 0, 1280, 1024, ((320, 352), (896, 352), (608, 672), (256, 800), (960, 800)))
-s3.on_foot()
-ax, ay = s3.anteroom()
-ajarmap.doorway(m, 1, (s2.x + s2.w + 208, 96), (s2.x + s2.w + 208, 160), (1, 0), 0,
-                (ax - 32, ay), (ax + 32, ay), (0, -1), GF)
-spots(2004, (ax - 70, ay + 120))            # plasma rifle
-spots(17, (ax - 70, ay + 170), (ax - 30, ay + 170), (ax + 30, ay + 170))
-spots(2046, (ax + 70, ay + 120), (ax + 70, ay + 170), (ax + 30, ay + 120))
-spots(83, (ax, ay + 240))                   # megasphere
-spots(8, (ax - 90, ay + 240))               # a backpack
-# the chain: a brass frame on the gallery, RED by it; the other in the wing, BLUE by it
-gx = s3.x
-ajarmap.recess(m, (gx + 160, -192), (gx + 224, -192), (0, -1), GF, HOME, ANY, trim=BRASS, home=far_id(RED),
-               chain=(far_id(BLUE), HOME2), color=GAL)
-ajarmap.recess(m, (s3.wx, s3.wy + 160), (s3.wx, s3.wy + 224), (-1, 0), GF, HOME2, ANY, trim=BRASS, home=far_id(RED),
-               chain=(far_id(BLUE), HOME), color=WING)
-ajarmap.door(m, RED, gx + 300, -150, angle=90)
-ajarmap.door(m, BLUE, *s3.wing(60, 320), angle=0)
-ajarmap.way_through(m, 6144, -2048, RED, BLUE)
-spots(2012, s3.wing(330, 330), s3.wing(330, 290))
-spots(17, s3.wing(330, 60))
-s3.first(3001, *[(140 + 100 * i, 920) for i in range(11)], (640, 820))
-s3.first(65, (120, 700), (1160, 700), (120, 480), (1160, 480), (120, 260), (1160, 260))
-s3.first(66, (480, 760), (800, 760), (480, 640), (800, 640))
-s3.first(69, (520, 500), (760, 500), (520, 380), (760, 380))
-s3.first(3005, (640, 560), (420, 820), (860, 820), (640, 240))
-s3.cue(2, 12, 3003, (200, 900), (1080, 900), (640, 900), angle=270)
-s3.cue(2, 12, 58, (300, 560), (980, 560), (300, 300), (980, 300))
-s3.cue(2, 12, 67, (200, 620), (1080, 620), (640, 820))
-s3.cue(2, 12, 64, (640, 440), always=True)
-# remembered by: a cyberdemon in the middle of the floor
-s3.cue(3, 6, 16, (640, 600), angle=270, always=True)
-s3.cue(3, 6, 68, (240, 240), (1040, 240), angle=90)
-s3.cue(3, 6, 66, (160, 940), (260, 940), (1020, 940), (1120, 940))
-s3.stock(2, 2012, 2012, 17, 2046, 2018, 2046, 17)
-s3.stock(3, 2012, 2012, 17, 2046, 2018, 2011, 2046)
+def case(a, b, out, floor, figures, *, deep=96, **look):
+    """A glass case (ajartime.case) with figures in it: (x, y, what, kind,
+    angle); asserted sealed and every figure inside it."""
+    si = ajartime.case(m, a, b, out, floor, deep=deep, **look)
+    xs = [a[0], b[0], a[0] + out[0] * (16 + deep), b[0] + out[0] * (16 + deep)]
+    ys = [a[1], b[1], a[1] + out[1] * (16 + deep), b[1] + out[1] * (16 + deep)]
+    for x, y, what, kind, ang in figures:
+        assert min(xs) + 8 < x < max(xs) - 8 and min(ys) + 8 < y < max(ys) - 8, (x, y, what)
+        ajartime.figure(m, x, y, what, kind=kind, angle=ang)
+    CASES.append(si)
+    return si
 
-assert not BAD, BAD
-# a plate is clear of what is in its box: a door, a frame's mark, a supply
-for s in (s1, s2, s3):
-    for n, plates in s.plates.items():
-        for px, py in plates:
-            near = [t for t in m.things if t["type"] not in (ajartime.WIND_T, ajartime.ZONE_T)
-                    and abs(t["x"] - px) < 40 and abs(t["y"] - py) < 40]
-            assert not near, (s.k, n, px, py, near)
-        # and a door that leans in the wing is not between a plate and the room
-        for px, py in plates:
-            for t in m.things:
-                if t["type"] == ajarmap.DOOR_T and abs(t["y"] - py) < 48 and 0 < px - t["x"] < 100:
-                    assert False, (s.k, n, px, py, t)
+
+CASES = []
+REGIONS = {}
+JOIN = 70 * 23.6        # two seconds at the fastest run (strafing): how far apart two hangings that must be together are
+
+
+# === 1. the plate: a room of goes ===========================================
+# The start nook (south) is part of the room, so that going back to it does
+# not end the room.
+FIRST = len(m.polys)
+F1 = 101
+m.sector(rect(0, 0, 640, 512), ceil=192, light=200, color=ROOM)
+m.sector(rect(224, -192, 416, 0), ceil=160, light=190, color=ROOM)
+m.thing(320, -120, 1, angle=90)
+ajartime.zone(m, 1, 0, 0, -192, 640, 512, grow=72, goes=True)
+ajartime.hall_door(m, 1, 1, (0, 96), (0, 160), (-1, 0), 0, color=ROOM)
+m.sector(rect(-400, 32, -208, 224), ceil=160, light=210, color=BOX)
+ajartime.box_door(m, 1, 1, (-208, 96), (-208, 160), (1, 0), 0, color=BOX)
+ajartime.zone(m, 1, 1, -400, 32, -208, 224, grow=64)
+ajartime.anew(m, -398, 128, 0)
+# the sprung frame that takes VIOLET only, VIOLET by the wall, the plate out in the room
+ajarmap.recess(m, (160, 512), (224, 512), (0, 1), 0, F1, far_id(VIOLET), home=far_id(VIOLET), only=True,
+               trim=inlaid(VIOLET), color=ROOM)
+ajarmap.door(m, VIOLET, 560, 420, angle=180)
+P1 = (192, 160)
+ajartime.plate(m, *P1, F1)
+assert walk(P1, (192, 512)) >= 300
+# the case, in the north wall: the player on the plate, VIOLET hanging
+case((384, 512), (576, 512), (0, 1), 0, [(430, 570, "plate", 0, 0), (430, 570, "me", 0, 270),
+                                       (520, 590, "hung", VIOLET, 270)], color=ROOM)
+REGIONS[1] = ajartime.on_foot("room 1", {"hall": (0, -192, 640, 512), "box": (-400, 32, -208, 224)},
+                              [("box", "hall")], {"hall": [(4, 128)], "box": [(-212, 128)]})
+ajartime.covers(m, "room 1", FIRST, REGIONS[1], zone=(-72, -264, 712, 584), exempt=CASES)
+
+# === 2. two keys: a room of goes =============================================
+# A gallery (floor 0) and, east of it, a pit (floor -96): the gallery's east
+# end is the pit's edge. Frame A in the gallery's west wall, frame B in the
+# pit's north wall, a clock lamp by each; YELLOW in the pit, W (YELLOW only)
+# in the gallery's south wall. VIOLET's far side (from room 1) is in the
+# gallery's south wall, the case in its north wall.
+FIRST = len(m.polys)
+FA, FB, FW = 131, 132, 133
+PITF = -96
+m.sector(rect(2000, 0, 3280, 320), ceil=192, light=200, color=ROOM)
+m.sector(rect(3280, -256, 3792, 640), floor=PITF, ceil=192, light=180, color=PIT, wall="AJBOLT")
+ajartime.zone(m, 2, 0, 2000, 0, 3280, 320, grow=72, goes=True)
+ajartime.zone(m, 2, 0, 3280, -256, 3792, 640, grow=72, goes=True)
+ajarmap.recess(m, (2160, 0), (2224, 0), (0, -1), 0, far_id(VIOLET), F1, far_colour=VIOLET, color=ROOM)
+spots(2011, (2140, 60), (2244, 60))         # stimpacks
+spots(2012, (2192, 100))                    # medikit
+spots(2049, (2300, 60))                     # shells
+spots(2048, (2340, 60))                     # bullets
+# A and B, their lamps and leaves
+ajarmap.recess(m, (2000, 128), (2000, 192), (-1, 0), 0, FA, FB, home=TEAL, only=3, color=ROOM)
+ajarmap.recess(m, (3664, 640), (3728, 640), (0, 1), PITF, FB, FA, home=TEAL, only=3, color=PIT)
+ajartime.together(m, 2002, 224, 0, FA)
+ajartime.together(m, 3760, 638, 270, FB)
+LEAF_A, LEAF_B = (2100, 260), (3560, 560)
+ajarmap.pair(m, TEAL, LEAF_A + (0,), LEAF_B + (270,))
+# from before A along the gallery, over the edge and across the pit to before B
+A_TO_B = walk((2040, 160), (3296, 160), (3696, 600))
+assert A_TO_B >= 1400 and A_TO_B > JOIN, A_TO_B
+# YELLOW in the pit; W, which takes it only, in the gallery's south wall
+YELLOW_AT = (3700, -150)
+ajarmap.door(m, YELLOW, *YELLOW_AT, angle=90)
+ajarmap.recess(m, (2600, 0), (2664, 0), (0, -1), 0, FW, far_id(YELLOW), home=far_id(YELLOW), only=5,
+               trim=inlaid(YELLOW), color=ROOM)
+# time door 1 in the gallery's north wall, the box north of it; time door 2 in the pit's east wall
+ajartime.hall_door(m, 2, 1, (2448, 320), (2512, 320), (0, 1), 0, color=ROOM)
+ajartime.hall_door(m, 2, 2, (3792, -128), (3792, -64), (1, 0), PITF, color=PIT)
+m.sector(rect(2384, 480, 2576, 672), ceil=160, light=210, color=BOX)
+ajartime.box_door(m, 2, 1, (2448, 480), (2512, 480), (0, -1), 0, color=BOX)
+ajartime.zone(m, 2, 1, 2384, 416, 2576, 672)
+ajartime.anew(m, 2480, 670, 270)
+# the case: both leaves hanging, both lamps green, YELLOW in W
+case((2064, 320), (2288, 320), (0, 1), 0, [(2100, 400, "hung", TEAL, 270), (2116, 420, "lamp", 0, 270),
+                                         (2176, 400, "hung", TEAL, 270), (2192, 420, "lamp", 0, 270),
+                                         (2250, 400, "hung", YELLOW, 270)], color=ROOM)
+REGIONS[2] = ajartime.on_foot("room 2", {"gallery": (2000, 0, 3280, 320), "pit": (3280, -256, 3792, 640),
+                                         "box": (2384, 480, 2576, 672)},
+                              [("gallery", "pit"), ("box", "gallery")],          # (the pit to the gallery: the Pair only)
+                              {"gallery": [(2480, 316)], "pit": [(3788, -96)], "box": [(2480, 484)]})
+ajartime.covers(m, "room 2", FIRST, REGIONS[2], zone=(1928, -328, 3864, 712), exempt=CASES)
+
+# === 3. the press: a fight of goes ===========================================
+# The hall (5000..6536, 0..1280), its north third the press. Entered from
+# YELLOW's far side, a ledge 96 over the lobby (south-west), which is part of
+# the fight from 16 past the ledge's edge: so a player on the ledge is in no
+# room, and one in the lobby cannot climb back.
+FIRST = len(m.polys)
+K3 = 3
+HX, HY, HW, HH = 5000, 0, 1536, 1280
+PRESS3 = 3530           # the press's sector tag (map32.zs: PRESS32)
+PY = HY + 768           # the press's south edge
+PILLARS3 = [(HX + 288, HY + 288), (HX + 1184, HY + 288), (HX + 288, HY + 544), (HX + 1184, HY + 544)]
+ajarmap.fitted(m, (HX, HY, HX + HW, PY), [((x, y, x + 64, y + 64), dict(floor=320)) for x, y in PILLARS3],
+               ceil=320, light=200, color=HALL)
+for x1, x2 in ((HX, HX + 512), (HX + 512, HX + 1024), (HX + 1024, HX + HW)):
+    m.sector(rect(x1, PY, x2, HY + HH), ceil=192, light=185, color=HALL, wall="AJBOLT", ftex="AJTRIMF",
+             ctex="AJTRIMF", id=PRESS3)
+ajartime.press(m, HX + 768, HY + 1024, PRESS3)
+LEVER3 = (HX + 768, HY + 2)
+ajartime.press_switch(m, *LEVER3, 90, PRESS3)
+ajartime.zone(m, K3, 0, HX, HY, HX + HW, HY + HH, grow=72, mix=True)
+# the lobby and YELLOW's ledge in its south wall
+m.sector(rect(4744, 64, 5000, 320), ceil=192, light=190, color=HALL)
+ajarmap.recess(m, (4840, 64), (4904, 64), (0, -1), 96, far_id(YELLOW), FW, far_colour=YELLOW, color=HALL)
+ajartime.zone(m, K3, 0, 4744, 80, 5000, 320, mix=True)     # from 16 past the ledge
+spots(2004, (4800, 200))                    # plasma rifle
+spots(2046, (4860, 260))                    # rockets
+spots(2011, (4920, 140), (4920, 180))
+LOBBY3 = [2004, 2046]
+# the case in the lobby's north wall: the press up, three bodies under it, the player at the lever
+CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4800, 360, "me", 0, 90), (4840, 410, "body", 3003, 0),
+                                                 (4890, 400, "body", 66, 0), (4940, 410, "body", 67, 0)],
+             color=HALL)
+m.sectors[CASE3].update(wall="AJBOLT", ctex="AJTRIMF")
+# time doors west, east, south; boxes west, east, south behind glass
+ajartime.hall_door(m, K3, 1, (HX, 688), (HX, 752), (-1, 0), 0, color=HALL)
+ajartime.hall_door(m, K3, 2, (HX + HW, 688), (HX + HW, 752), (1, 0), 0, color=HALL)
+ajartime.hall_door(m, K3, 3, (HX + 300, HY), (HX + 364, HY), (0, -1), 0, color=HALL)
+BOXF = 64
+m.sector(rect(4776, 464, 4984, 656), floor=BOXF, ceil=192, light=210, color=BOX)
+ajartime.glass(m, (HX, 496), (HX, 624), (-1, 0), BOXF)
+ajartime.box_door(m, K3, 1, (4776, 528), (4776, 592), (-1, 0), BOXF, color=BOX)
+ajartime.zone(m, K3, 1, 4712, 464, 4984, 656)
+ajartime.anew(m, 4880, 654, 270, z=BOXF + 30)
+m.sector(rect(6552, 464, 6760, 656), floor=BOXF, ceil=192, light=210, color=BOX)
+ajartime.glass(m, (HX + HW, 496), (HX + HW, 624), (1, 0), BOXF)
+ajartime.box_door(m, K3, 2, (6760, 528), (6760, 592), (1, 0), BOXF, color=BOX)
+ajartime.zone(m, K3, 2, 6552, 464, 6824, 656)
+m.sector(rect(6100, -216, 6356, -16), floor=BOXF, ceil=192, light=210, color=BOX)
+ajartime.glass(m, (6164, HY), (6292, HY), (0, -1), BOXF)
+ajartime.box_door(m, K3, 3, (6196, -216), (6260, -216), (0, -1), BOXF, color=BOX)
+ajartime.zone(m, K3, 3, 6100, -280, 6356, -16)
+
+
+def stock(x, y, along, *kinds):
+    """Supplies in a row from x, y, `along` apart; returned for the reckoning."""
+    for i, k in enumerate(kinds):
+        m.thing(x + along[0] * i, y + along[1] * i, k)
+    return list(kinds)
+
+
+BOXES3 = (stock(4810, 630, (40, 0), 2018, 2012, 2012, 17, 2046)
+          + stock(6600, 630, (40, 0), 2018, 2012, 17, 2046)
+          + stock(6130, -190, (40, 0), 2012, 2012, 2047, 2046))
+# the steel door the win opens, east, and the corridor on to room 4 (no fight's)
+steel(K3, (HX + HW, 128), (HX + HW, 192), (1, 0), 0)
+m.sector(rect(6552, 96, 6872, 224), ceil=128, light=180, color=HALL)
+# the fight: all of it AjarCues; wave 1 in the south and middle, to be drawn north
+SOLID3 = [(x, y, x + 64, y + 64) for x, y in PILLARS3]
+c3 = ajartime.Crowd(m, K3, [(HX, HY, HX + HW, HY + HH)], SOLID3)
+
+
+def at3(*pts):
+    return [(HX + a, HY + b) for a, b in pts]
+
+
+c3.cue(1, 0, 3001, *at3((120, 150), (220, 150), (420, 150), (520, 150), (1016, 150), (1116, 150),
+                        (1316, 150), (1416, 150), (620, 250), (916, 250)), angle=90)                  # imps, the south
+c3.cue(1, 0, 67, *at3((140, 330), (560, 400), (976, 400), (1396, 330)), angle=90)                   # mancubi
+c3.cue(1, 0, 66, *at3((440, 200), (1096, 200), (220, 470), (768, 330), (1316, 470), (700, 520)), angle=90)   # revenants
+c3.cue(1, 0, 69, *at3((120, 520), (440, 560), (560, 560), (976, 560), (1096, 560), (1416, 520),
+                      (400, 690), (1136, 690)), angle=90)                                             # hell knights
+c3.cue(1, 0, 3003, *at3((180, 680), (300, 680), (680, 680), (856, 680), (1236, 680), (1356, 680)), angle=90)  # barons
+c3.cue(2, 16, 64, *at3((200, 720), (1336, 720)), angle=90, always=True)                             # arch-viles
+c3.cue(2, 16, 68, *at3((500, 600), (1036, 600), (500, 250), (1036, 250)), angle=90)                # arachnotrons
+c3.cue(2, 16, 3005, *at3((768, 600), (200, 300), (1336, 300), (768, 200)), angle=90)               # cacodemons
+c3.cue(3, 8, 16, *at3((400, 500), (1136, 500)), angle=90, always=True)                             # cyberdemons
+assert not c3.bad, c3.bad
+for x, y, _ in c3.placed[1]:
+    assert y < PY - 24, "wave 1 starts out of the press"
+    assert walk((x, y), (LEVER3[0], LEVER3[1] + 46)) > 150, "a monster on the lever"
+# a third of what it would take: the lobby's and the boxes' ammunition against every monster's health
+HARD3 = ajartime.toughness(c3.kinds)
+FIRE3 = ajartime.firepower(LOBBY3 + BOXES3)
+assert 0.28 <= FIRE3 / HARD3 <= 0.4, (FIRE3, HARD3)
+REGIONS[3] = ajartime.on_foot("room 3", {"hall": (HX, HY, HX + HW, PY), "press": (HX, PY, HX + HW, HY + HH),
+                                         "lobby": (4744, 64, 5000, 320), "box1": (4776, 464, 4984, 656),
+                                         "box2": (6552, 464, 6760, 656), "box3": (6100, -216, 6356, -16)},
+                              [("hall", "press", True), ("hall", "lobby", True), ("box1", "hall"), ("box2", "hall"),
+                               ("box3", "hall")],
+                              {"hall": [(HX + 4, 720), (HX + HW - 4, 720), (HX + 332, HY + 4)],
+                               "box1": [(4780, 560)], "box2": [(6756, 560)], "box3": [(6228, -212)]})
+ajartime.covers(m, "room 3", FIRST, REGIONS[3], zone=(4744, -72, 6608, 1352), exempt=CASES)
+
+# === 4. the range: a fight of goes ============================================
+# The corridor from room 3 ends in a drop of 96 into the lobby, which is part
+# of the fight from 16 past the edge. The range (7200..7712, 0..1400), the
+# shutter in its north wall and the pen behind it, level with the range; the
+# booth east of the pen end, behind glass; the firing spot at the south end.
+FIRST = len(m.polys)
+K4, F4 = 4, -96
+RX, RY, RW, RL = 7200, 0, 512, 1400
+SHUT4 = 3540            # the shutter's sector tag (map32.zs: SHUT32)
+FIRE4 = (7456, 120)     # the firing spot (map32.zs)
+PILLARS4 = [(7296, 200), (7552, 200)]
+ajarmap.fitted(m, (RX, RY, RX + RW, RY + RL), [((x, y, x + 64, y + 64), dict(floor=F4 + 256)) for x, y in PILLARS4],
+               floor=F4, ceil=F4 + 256, light=200, color=HALL)
+for x, y in PILLARS4:
+    assert not (x - 16 < FIRE4[0] < x + 80), "a pillar in the line of fire"
+m.sector(rect(6872, 32, 7200, 320), floor=F4, ceil=F4 + 192, light=190, color=HALL)
+ajartime.zone(m, K4, 0, 6888, 32, 7200, 320, mix=True)     # from 16 past the corridor's end
+ajartime.zone(m, K4, 0, RX, RY, RX + RW, RY + RL, grow=72, mix=True)
+# the entrance's supplies, in the corridor (no fight's): enough to kill the pen once, and some over
+ENTRY4 = (stock(6600, 120, (40, 0), 2003, 8, 2046, 2046, 2046, 2046, 2046)
+          + stock(6600, 200, (40, 0), 2046, 2046, 2046, 2046, 2046, 17, 17)
+          + stock(6840, 120, (0, 40), 17, 2012, 2012))
+# the shutter, 384 wide, and the pen behind it (7072..7840, 1416..1736)
+ajartime.shutter(m, (7264, RY + RL), (7648, RY + RL), (0, 1), F4, SHUT4, keep=True)
+PEN4 = (7072, 1416, 7840, 1736)
+m.sector(rect(*PEN4), floor=F4, ceil=F4 + 192, light=170, color=PEN, wall="AJBOLT")
+PEN_SECTOR = len(m.polys) - 1
+ajartime.zone(m, K4, 0, *PEN4, mix=True)
+c4 = ajartime.Crowd(m, K4, [PEN4])
+
+
+def at4(*pts):
+    return [(PEN4[0] + a, PEN4[1] + b) for a, b in pts]
+
+
+c4.cue(1, 0, 67, *at4((100, 260), (260, 260), (508, 260), (668, 260)), angle=270)       # mancubi
+c4.cue(1, 0, 16, *at4((384, 240)), angle=270, always=True)                              # the cyberdemon
+c4.cue(1, 0, 3003, *at4((180, 120), (588, 120)), angle=270)                             # barons
+c4.cue(1, 0, 66, *at4((60, 60), (300, 60), (468, 60), (708, 60)), angle=270)            # revenants
+c4.cue(1, 0, 64, *at4((384, 60), (384, 140)), angle=270, always=True)                   # arch-viles
+assert not c4.bad, c4.bad
+HARD4 = ajartime.toughness(c4.kinds)
+FIRE4X = ajartime.firepower(ENTRY4)
+assert FIRE4X >= 1.2 * HARD4, (FIRE4X, HARD4)
+# the booth, east of the pen end: a way in from the range, glass onto it, the plate
+m.sector(rect(7712, 1100, 7728, 1164), floor=F4, ceil=F4 + 128, light=190, color=HALL)
+ajartime.glass(m, (7712, 1180), (7712, 1380), (1, 0), F4)
+m.sector(rect(7728, 1100, 7920, 1380), floor=F4, ceil=F4 + 128, light=210, color=HALL)
+PLATE4 = (7840, 1300)
+ajartime.shutter_plate(m, *PLATE4, SHUT4)
+ajartime.zone(m, K4, 0, 7712, 1100, 7920, 1380, mix=True)
+# time doors west and east; boxes 1 and 2 south behind glass, box 3 west
+ajartime.hall_door(m, K4, 1, (RX, 700), (RX, 764), (-1, 0), F4, color=HALL)
+ajartime.hall_door(m, K4, 2, (RX + RW, 700), (RX + RW, 764), (1, 0), F4, color=HALL)
+m.sector(rect(7200, -208, 7376, -16), floor=F4 + 64, ceil=F4 + 192, light=210, color=BOX)
+ajartime.glass(m, (7232, RY), (7344, RY), (0, -1), F4 + 64)
+ajartime.box_door(m, K4, 1, (7200, -144), (7200, -80), (-1, 0), F4 + 64, color=BOX)
+ajartime.zone(m, K4, 1, 7136, -208, 7376, -16)
+ajartime.anew(m, 7374, -112, 180, z=30)
+m.sector(rect(7536, -208, 7712, -16), floor=F4 + 64, ceil=F4 + 192, light=210, color=BOX)
+ajartime.glass(m, (7568, RY), (7680, RY), (0, -1), F4 + 64)
+ajartime.box_door(m, K4, 2, (7712, -144), (7712, -80), (1, 0), F4 + 64, color=BOX)
+ajartime.zone(m, K4, 2, 7536, -208, 7776, -16)
+m.sector(rect(6992, 500, 7184, 680), floor=F4 + 64, ceil=F4 + 192, light=210, color=BOX)
+ajartime.glass(m, (RX, 540), (RX, 640), (-1, 0), F4 + 64)
+ajartime.box_door(m, K4, 3, (6992, 560), (6992, 624), (-1, 0), F4 + 64, color=BOX)
+ajartime.zone(m, K4, 3, 6928, 500, 7184, 680)
+BOXES4 = (stock(7240, -180, (40, 0), 2018, 2012, 2046) + stock(7576, -180, (40, 0), 2018, 2012, 17)
+          + stock(7020, 520, (0, 40), 2012, 2012, 2046))
+# the case in the range's east wall, seen from the way in: the player on the
+# booth's plate, another at the firing spot, bodies in the pen
+case((RX + RW, 96), (RX + RW, 288), (1, 0), F4, [(7760, 120, "plate", 0, 0), (7760, 120, "me", 0, 180),
+                                                (7790, 270, "me", 0, 180), (7800, 170, "body", 16, 0),
+                                                (7810, 220, "body", 67, 0)], color=HALL)
+# the steel door the win opens, east, and the corridor on to room 5 (no fight's)
+steel(K4, (RX + RW, 420), (RX + RW, 484), (1, 0), F4)
+CORRIDOR4 = m.sector(rect(7728, 388, 8048, 516), floor=F4, ceil=F4 + 128, light=180, color=HALL)
+REGIONS[4] = ajartime.on_foot("room 4", {"range": (RX, RY, RX + RW, RY + RL + 16), "lobby": (6872, 32, 7200, 320),
+                                         "booth": (7712, 1100, 7920, 1380), "box1": (7200, -208, 7376, -16),
+                                         "box2": (7536, -208, 7712, -16), "box3": (6992, 500, 7184, 680)},
+                              [("lobby", "range", True), ("range", "booth", True), ("box1", "range"),
+                               ("box2", "range"), ("box3", "range")],
+                              {"range": [(RX + 4, 732), (RX + RW - 4, 732)], "box1": [(7204, -112)],
+                               "box2": [(7708, -112)], "box3": [(6996, 592)]})
+ajartime.covers(m, "room 4", FIRST, REGIONS[4], zone=(6888, -72, 7920, 1736), exempt=CASES + [PEN_SECTOR, CORRIDOR4])
+
+# === 5. the airlock and the way out: a room of goes ============================
+# S, L and E in a row (floor -192), entered by a drop of 96 from the corridor
+# into S. F1 (GREEN only) in S's east wall, GREEN's far side in L's west wall;
+# F2 (PINK only) in L's east wall, PINK's far side in E's south wall. In E the
+# two brass frames, west (RED hung) and east (BLUE only), face each other;
+# the night room north of E, a drop of 96 back into E by a hole in its south
+# wall. Each chamber has its own time door; one box, south of S.
+FIRST = len(m.polys)
+K5, F5 = 5, -192
+G1, G2 = 141, 142
+SX, LX, EX, CY = 8048, 8800, 9600, 160
+m.sector(rect(SX, CY, SX + 512, CY + 512), floor=F5, ceil=F5 + 192, light=200, color=ROOM)
+m.sector(rect(LX, CY, LX + 448, CY + 512), floor=F5, ceil=F5 + 192, light=190, color=LOCK)
+m.sector(rect(EX, CY, EX + 512, CY + 448), floor=F5, ceil=F5 + 224, light=190, color=END)
+spots(2012, (7900, 420), (7940, 420))       # the entrance's: in the corridor (no room's)
+spots(2011, (7900, 480), (7940, 480))
+ajartime.zone(m, K5, 0, SX + 16, CY - 64, SX + 584, CY + 584, goes=True)     # S, from 16 past the corridor's end
+ajartime.zone(m, K5, 0, LX - 72, CY - 64, LX + 520, CY + 584, goes=True)
+NX, NY, NF = EX + 96, CY + 464, F5 + 96
+ajartime.zone(m, K5, 0, EX - 72, CY - 64, EX + 584, NY + 264, goes=True)    # E and the night room
+# F1 and GREEN; F1's plate P1 in S
+ajarmap.recess(m, (SX + 512, CY + 224), (SX + 512, CY + 288), (1, 0), F5, G1, far_id(GREEN), home=far_id(GREEN),
+               only=True, trim=inlaid(GREEN), color=ROOM)
+ajarmap.recess(m, (LX, CY + 224), (LX, CY + 288), (-1, 0), F5, far_id(GREEN), G1, far_colour=GREEN, color=LOCK)
+ajarmap.door(m, GREEN, SX + 432, CY + 150, angle=180)
+P51 = (SX + 132, CY + 420)
+ajartime.plate(m, *P51, G1)
+assert walk(P51, (SX + 512, CY + 256)) >= 300
+ajarmap.door(m, BLUE, SX + 252, CY + 470, angle=270)
+# F2 and PINK; F2's plate P2 in L
+ajarmap.recess(m, (LX + 448, CY + 224), (LX + 448, CY + 288), (1, 0), F5, G2, far_id(PINK), home=far_id(PINK),
+               only=True, trim=inlaid(PINK), color=LOCK)
+ajarmap.recess(m, (EX + 224, CY), (EX + 288, CY), (0, -1), F5, far_id(PINK), G2, far_colour=PINK, color=END)
+ajarmap.door(m, PINK, LX + 350, CY + 120, angle=180)
+P52 = (LX + 130, CY + 420)
+ajartime.plate(m, *P52, G2)
+assert walk(P52, (LX + 448, CY + 256)) >= 300
+# E: the brass frames face each other, RED hung in the west one; the night room
+ajarmap.recess(m, (EX, CY + 192), (EX, CY + 256), (-1, 0), F5, HOME, far_id(RED), trim=inlaid(RED),
+               home=far_id(RED), chain=(far_id(BLUE), HOME2), only=True, color=END)
+ajarmap.recess(m, (EX + 512, CY + 192), (EX + 512, CY + 256), (1, 0), F5, HOME2, far_id(RED), trim=inlaid(BLUE),
+               home=far_id(BLUE), chain=(far_id(RED), HOME), only=True, color=END)
+ajarmap.door(m, RED, EX + 40, CY + 224, frame=HOME)
+ajarmap.way_through(m, NX, NY, RED, BLUE, floor=NF)
+m.sector(rect(NX + 128, NY - 16, NX + 192, NY), floor=NF, ceil=NF + 96, light=150, wall="AJXA", ftex="AJTRIMF",
+         ctex="AJTRIMF")
+assert NY - 16 == CY + 448 and EX <= NX + 128 and NX + 192 <= EX + 512
+# the time doors: S's (door 1) and L's in their south walls, E's in its south wall; the box south of S
+ajartime.hall_door(m, K5, 1, (SX + 152, CY), (SX + 216, CY), (0, -1), F5, color=ROOM)
+ajartime.hall_door(m, K5, 2, (LX + 200, CY), (LX + 264, CY), (0, -1), F5, color=LOCK)
+ajartime.hall_door(m, K5, 3, (EX + 400, CY), (EX + 464, CY), (0, -1), F5, color=END)
+m.sector(rect(SX + 152, -240, SX + 344, -48), floor=F5, ceil=F5 + 160, light=210, color=BOX)
+ajartime.box_door(m, K5, 1, (SX + 216, -48), (SX + 280, -48), (0, 1), F5, color=BOX)
+ajartime.zone(m, K5, 1, SX + 152, -240, SX + 344, 16)
+ajartime.anew(m, SX + 248, -238, 90, z=30)
+# the case in S's east wall, seen from the way in: BLUE hanging opposite RED, a player on each plate
+case((SX + 512, CY + 352), (SX + 512, CY + 480), (1, 0), F5,
+     [(SX + 540, CY + 370, "plate", 0, 0), (SX + 540, CY + 370, "me", 0, 180), (SX + 540, CY + 462, "plate", 0, 0),
+      (SX + 540, CY + 462, "me", 0, 180), (SX + 600, CY + 380, "hung", RED, 0), (SX + 600, CY + 452, "hung", BLUE, 0)],
+     color=ROOM)
+REGIONS[5] = ajartime.on_foot("room 5", {"S": (SX, CY, SX + 512, CY + 512), "L": (LX, CY, LX + 448, CY + 512),
+                                         "E": (EX, CY, EX + 512, CY + 448), "night": (NX, NY - 16, NX + 320, NY + 256),
+                                         "box": (SX + 152, -240, SX + 344, -48)},
+                              [("night", "E"), ("box", "S")],          # (S to L, L to E: earlier selves only)
+                              {"S": [(SX + 184, CY + 4)], "L": [(LX + 232, CY + 4)], "E": [(EX + 432, CY + 4)],
+                               "box": [(SX + 248, -52)]})
+ajartime.covers(m, "room 5", FIRST, REGIONS[5], zone=(SX + 16, -240, EX + 584, NY + 264), exempt=CASES)
 
 if __name__ == "__main__":
     import sys

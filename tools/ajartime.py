@@ -166,7 +166,7 @@ def shutter_plate(m, x, y, tag):
     m.thing(x, y, PLATE_T, args=(0, tag))
 
 
-FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5}
+FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5, "lamp": 6}
 
 
 def figure(m, x, y, what, *, kind=0, angle=0, scale=0.5, z=0):
@@ -174,7 +174,8 @@ def figure(m, x, y, what, *, kind=0, angle=0, scale=0.5, z=0):
     `what` is "me" (the player standing), "body" (a dead monster of Doom
     editor number `kind`, as it lies at the end of its death), "plate" (a
     floor plate, pressed), "hung" (a door of colour `kind` standing open, as
-    in a frame) or "leaning" (that door leaning). `scale` its size. Nothing
+    in a frame), "leaning" (that door leaning) or "lamp" (a clock lamp,
+    ajartime.together, lit green: joined in time). `scale` its size. Nothing
     about it is alive: not solid, not shot, never counted, never recorded
     and no weight on a plate. `z` over the floor."""
     m.thing(x, y, FIGURE_T, angle=angle, height=float(z),
@@ -214,3 +215,108 @@ def sealed(m, si):
                     seen.add(q)
                     todo.append(q)
     return seen == {si}
+
+
+# --- MAP32 rebuilt (tools/map_secret2.py): checks a generator makes ---------------
+RADIUS = {3004: 20, 9: 20, 65: 20, 3001: 20, 3002: 30, 58: 30, 3005: 31, 69: 24, 3003: 24, 66: 20, 64: 20, 67: 48,
+          68: 64, 71: 31, 16: 40, 7: 128}
+HEALTH = {3004: 20, 9: 30, 65: 70, 3001: 60, 3002: 150, 58: 150, 3005: 400, 69: 500, 3003: 1000, 66: 300, 64: 700,
+          67: 600, 68: 500, 71: 400, 16: 4000, 7: 3000}
+
+
+class Crowd:
+    """The monsters of fight k, all AjarCues (cue()), and where they may
+    stand: `floor` is a list of rectangles (x1, y1, x2, y2) a monster stands
+    wholly inside one of, `solid` of those it may not touch (pillars). A
+    monster must also stand clear of the others of its wave: one that has no
+    room never comes, and the fight is never won (as map_shift's
+    Shop.room_for). `bad` lists what has no room; the generator asserts it
+    empty. `kinds` is every monster placed, for toughness()."""
+
+    def __init__(self, m, k, floor, solid=()):
+        self.m, self.k, self.floor, self.solid = m, k, list(floor), list(solid)
+        self.placed, self.bad, self.kinds = {}, [], []
+
+    def cue(self, wave, when, kind, *spots, **look):
+        r = RADIUS[kind] + 8
+        for x, y in spots:
+            if not any(a + r <= x <= c - r and b + r <= y <= d - r for a, b, c, d in self.floor):
+                self.bad.append((self.k, wave, kind, x, y, "wall"))
+            for a, b, c, d in self.solid:
+                if a - r < x < c + r and b - r < y < d + r:
+                    self.bad.append((self.k, wave, kind, x, y, "pillar"))
+            for ox, oy, orr in self.placed.setdefault(wave, []):
+                if max(abs(x - ox), abs(y - oy)) < r - 8 + orr:
+                    self.bad.append((self.k, wave, kind, x, y, "another", ox, oy))
+            self.placed[wave].append((x, y, RADIUS[kind]))
+            self.kinds.append(kind)
+        cue(self.m, self.k, wave, when, kind, *spots, **look)
+
+
+def toughness(kinds):
+    """How much health a fight's monsters have between them."""
+    return sum(HEALTH[k] for k in kinds)
+
+
+# What a pick-up holds (a weapon: what comes with it), and what one round is
+# worth on average against a monster: a rocket's hit and some of its blast, a
+# plasma bolt, a shotgun's seven pellets, a bullet.
+AMMO = {2046: ("rocket", 5), 2010: ("rocket", 1), 2003: ("rocket", 2), 17: ("cell", 100), 2047: ("cell", 20),
+        2004: ("cell", 40), 2006: ("cell", 40), 2049: ("shell", 20), 2008: ("shell", 4), 2001: ("shell", 8),
+        82: ("shell", 8), 2048: ("bullet", 50), 2007: ("bullet", 10), 2002: ("bullet", 20)}
+ROUND = {"rocket": 150, "cell": 22, "shell": 70, "bullet": 10}
+
+
+def firepower(kinds):
+    """The damage the ammunition in `kinds` (Doom editor numbers) can do, on average."""
+    return sum(AMMO[k][1] * ROUND[AMMO[k][0]] for k in kinds if k in AMMO)
+
+
+def walk(*ps):
+    """The length of a walk through the points ps."""
+    return sum(((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5 for a, b in zip(ps, ps[1:]))
+
+
+def on_foot(name, regions, links, doors):
+    """No dead end in a room of goes or a fight: from every region a player can
+    stand in, a time door of the room is reached on foot, without an earlier
+    self. `regions` {name: (x1, y1, x2, y2)}; `links` [(a, b)] a way on foot
+    from a to b (a drop: one way), or (a, b, True) both ways; leave out every
+    way that needs an earlier self (a sprung frame, a Pair joined in time).
+    `doors` {region: [(x, y), ...]}: a point in the mouth of each time door
+    (or a box's door, which leads to one), asserted to be in its region.
+    Returns the regions, for covers()."""
+    for r, pts in doors.items():
+        x1, y1, x2, y2 = regions[r]
+        for x, y in pts:
+            assert x1 <= x <= x2 and y1 <= y <= y2, f"{name}: the door at {x, y} is not in {r}"
+    nxt = {r: set() for r in regions}
+    for a, b, *both in links:
+        nxt[a].add(b)
+        if both and both[0]:
+            nxt[b].add(a)
+    for r in regions:
+        seen, todo = {r}, [r]
+        while todo:
+            for q in nxt[todo.pop()] - seen:
+                seen.add(q)
+                todo.append(q)
+        assert seen & set(doors), f"{name}: no time door on foot from {r}"
+    return regions
+
+
+def covers(m, name, first, regions, *, zone, small=4096, exempt=()):
+    """Every sector made since index `first` that lies in the room's `zone`
+    (x1, y1, x2, y2) and is bigger than `small` is in one of the declared
+    `regions`, unless it is `exempt` (a case, a pen): so that no part of the
+    room is left out of on_foot()."""
+    for si in range(first, len(m.polys)):
+        if si in exempt:
+            continue
+        p = m.polys[si]
+        area = abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(p, p[1:] + p[:1]))) / 2
+        cx, cy = sum(q[0] for q in p) / len(p), sum(q[1] for q in p) / len(p)
+        if area <= small or not (zone[0] <= cx <= zone[2] and zone[1] <= cy <= zone[3]):
+            continue
+        assert any(x1 <= cx <= x2 and y1 <= cy <= y2 for x1, y1, x2, y2 in regions.values()), \
+            f"{name}: the sector at {cx, cy} is in no region"

@@ -40,7 +40,8 @@
 // FIGURES. AjarFigure thing, for a still model of a puzzle solved behind
 // glass: args[0] what (1 the player standing, 2 a body: args[1] a Doom
 // editor number, its last death picture; 3 a plate, pressed; 4 a door of
-// colour args[1] as it stands hung; 5 that door leaning), args[2] its size
+// colour args[1] as it stands hung; 5 that door leaning; 6 a clock lamp lit
+// green, as when a Pair is joined in time), args[2] its size
 // in percent (0: 100). No behaviour: not solid, not shootable, never
 // counted, no weight on a plate, and not recorded, replayed or snapped by
 // the go machinery (Counts, RecordFx, Snap leave it out).
@@ -202,6 +203,12 @@ class AjarFigure : Actor
 			A_AttachLight('glow', DynamicLight.PointLight, AjarDoor.glow[c], int(80 * scale.x), int(80 * scale.x), 0, (0, 0, 56 * scale.y));
 			break;
 		}
+		case 6:         // a clock lamp (AjarTogether), lit green: joined in time (MAP32)
+			bWallSprite = true;
+			sprite = GetSpriteIndex("AJTW");
+			frame = 2;
+			bBright = true;
+			break;
 		}
 	}
 
