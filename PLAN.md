@@ -5650,6 +5650,40 @@ Not decided: how the halves are told apart and which is played first, what
 the crossing fights are, what the thing done together is, what happens when
 the second go spoils what the first one did. No checks asked for yet.
 
+## Idea: one-sided portals (Vadim, 2026-11-20; a note, nothing built or checked)
+
+Not for any particular map. Vadim: a portal that is one-sided. From one side
+of an opening you simply see the normal neighbour room; from the other side
+you see another place.
+
+What follows is Claude's reading of it, to be agreed.
+
+- **The rule it could be**: a doorway has two faces, and each face leads to
+  its own place. An ordinary doorway is the case where the two agree.
+- **What it gives in play.**
+  - The turn-round: from A into B, look back, and the doorway shows C. Strong
+    once; it needs one of the others to last.
+  - Doorways with a direction: where you can get to depends on which side you
+    come from (the only way into C is to walk into B and turn back). Route
+    puzzles; a carried door hung in such a frame is a further twist.
+  - One-way sight in a fight: from your side you see the monsters and can
+    shoot them; they look at the same opening and see another room, so they
+    do not see you. The map can turn it against the player as well.
+  - Impossible shapes: a corridor longer going back than coming, a room bigger
+    inside than its walls allow.
+- **What would spoil it.** No visible rule: each face needs a sign of where it
+  leads, as the clock marks a time door and brass a way home (a lintel colour
+  per face, say). The automap, which would show A beside B while the doorway
+  leads to C.
+- **The engine**: an expectation, not tested. The game's portals are GZDoom
+  line portals (`ajarmap.recess`, `Line_SetPortal`), and each belongs to one
+  face of one line, so one-sided is their nature. Not known: a portal on a
+  line between two real rooms (today every portal line has only a stub sector
+  behind it), and what shots, sound and monsters' sight do across it. A small
+  lab map would settle it.
+- **Where first** (Claude's suggestion): a secret or one puzzle room in a
+  normal level; the one-way sight in a fight once the rule is understood.
+
 ## MAP32 room 3: the press as a chamber (built 2026-11-20)
 
 Vadim played room 3 and found three things. The monsters did not all come for
