@@ -5537,3 +5537,96 @@ its entrance. Nothing hurts in rooms 1, 2 and 5.
   (150, 60): 17 views. `begun1` now counts 37 figures (the five plaques and
   the new ones), not 23; SHUT's `caseIsThere` 5, not 4.
 
+- Rooms 3 and 4 can be begun anew: see "Begin anew in a fight" below.
+
+## Begin anew in a fight (built 2026-11-20)
+
+Vadim played room 4 of MAP32, spent its three boxes without killing the pen
+and was left alive in a fight that could not be won: the shutter's plate is
+behind glass, the time doors were shut, and the only way on was to die and
+play the level again from room 1. Room 3 had the same three-box rule. Now
+spending a fight's boxes costs the room, never the level.
+
+- **The rule.** A fight with a begin-anew plate in its hall can be put back,
+  at any time while it is on and not won, as it was when the player first
+  came in: every monster as at the start (the living and the bodies gone,
+  every wave's cues ready, wave 1 comes again), every pick-up of the fight's
+  zones (hall, lobby, boxes) where it lay (those taken come back, none is
+  doubled, what monsters dropped is gone), the player's health, armour,
+  weapons and ammunition as they were then, the player where they stood
+  then, facing as then, standing still; every box unused, every take, log,
+  earlier self and demo forgotten, the doors as at the first entry, the
+  presses up, the shutters shut. The level's kill and item counts are as
+  they were then (the kill total does not grow by it). A blue flash and the
+  teleport's sound; "The fight begins anew: it is as when you first came
+  in. All its boxes are unused." Nothing gained in the fight survives it.
+- **Death after the last box** in such a fight does the same, with a red
+  flash: "You were killed, and no box is left. The fight begins anew: it is
+  as when you first came in." It comes before the spare boxes of earlier
+  fights (on MAP32 a spare box of room 3 would put the player back into a
+  room that is over). Going on as an earlier self still comes first. A
+  fight with no such plate (MAP31, the labs) is as before: with no box left
+  the show is over and the level begins again. The last box's message in
+  such a fight says the plate begins it anew instead of "death is death".
+- **Once the fight is won** the plate is the room of goes' begin-anew plate
+  (`Anew`, plate.zs): every go since the win is forgotten. A fight is never
+  un-won.
+- **The thing.** `AjarFightAnew` (src/zscript/anew.zs, editor number 20052;
+  `ajartime.fight_anew(m, k, x, y, angle, z=16)`), a new actor, not an
+  argument of `AjarAnew` (the tests find the boxes' plates by class). Its
+  fight is the zone it stands in. 56 by 56, its foot 16 over the floor, the
+  boxes' begin-anew picture (AJAN) twice as big in a wide lit frame, bright,
+  pulsing slowly between two frames (AJAF, `gfx_time.fight_anew`).
+- **How it is built.** `Begin` keeps the first entry (`KeepFirst`, an
+  `AjarFirstEntry`) for an open fight: the player's position, angle, pitch,
+  health, armour (every field of BasicArmor), weapons, ammunition (amount
+  and maximum: a backpack's) and powers, the weapon in hand, the player's
+  and the level's kill and item counts, and every pick-up lying in the
+  fight's zones (the thing, its class, place and angle). A fight begun anew
+  keeps its first first entry. `FightAnew` then does what exists: it shuts
+  every box door, `FirstDoors`, `ClearHall` (and `ClearBoxes`: bodies, shots
+  and dropped things left in the boxes), `PressesUp`, `ShuttersShut`; puts
+  the pick-ups back (`PickupsBack`: one that lies untaken stays, one taken
+  is spawned again, anything else in the zones is removed) and the player
+  (`PlayerBack`); sets the counts; drops what the reel kept of the fight;
+  and calls `Begin` again, which forgets the takes, ghosts, demo, logs and
+  trips and opens the hall's doors onto box 1. Rescue calls it where it
+  would have ended the level (time.zs, one line).
+- **MAP32.** Room 3's plate on the lobby's west wall (4746, 192), to the
+  left of the way down from the ledge; room 4's on the lobby's north wall
+  (6960, 318), to the left of the drop from the corridor. Both away from the
+  monsters' line of fire. Room 4's box 1 keeps its plate that forgets.
+  Room 3's first entry holds 19 pick-ups, not 17: the hall's zone (grown by
+  72) takes in the corridor's first two things beyond the steel door, which
+  cannot be reached before the win and so are never changed.
+- **No dead end, asserted**: `ajartime.fight_anew_reached(m, {3: "room 3",
+  4: "room 4"})` asserts that every fight of goes (`zone(mix=True)`) has such
+  a plate and that from every region of its room declared to `on_foot` the
+  plate's region is reached on foot, without an earlier self. (`on_foot`
+  keeps each room's regions and ways in `ajartime.GRAPHS`.)
+- **Tests.** `MAP=MAP32 MODE=5 TIMEOUT=200 tools/smoke.sh` (22 checks, 11
+  a room): rooms 3 and 4, each entered at its lobby by the script (the room
+  before is left and over): firstKept, killedIntoTheBox (after go 1 took
+  the lobby's plasma rifle and rockets in room 3, or was given a rocket
+  launcher in room 4, and killed two monsters), pickedUp (box 1's three
+  things), plateThere, asAtTheFirstEntry (the plate used from the hall in
+  go 2: one go, no trips, no earlier selves, no demo, the hall's door open
+  onto box 1 and the boxes' shut, every pick-up where it lay and no more,
+  the inventory, health, place and angle, the kill counts, no bodies),
+  monstersAsAtFirst (wave 1 in again: as many monsters as at the first
+  entry, and the level's total as then), everyBoxUsed (killed in each box,
+  then out in the hall), killedAfterTheLastBox (as at the first entry, the
+  level not ended), wonAfterAnew and steelAfterAnew (killed to the end by
+  the script: the steel door opens), wonStaysWon (the plate then forgets
+  the goes since the win). `MAP=MAP32 MODE=6`: views of the two plates as
+  the player comes in and close (`smoke_MAP32_6.cfg`). `MAP=MAP31 MODE=5`
+  (the show is over with no plate) passes as before.
+- **Not restored or not tested**: a power's time left (one had then comes
+  back fresh, one taken since is removed; there are none in rooms 3 and 4);
+  keys, doors carried in from outside the fight, things not pick-ups;
+  decals and blood on the walls; the player's pitch and the weapon in hand
+  are set but not checked; a monster that had wandered
+  out of the fight's zones is not put back (none can on MAP32: the ways out
+  are shut); the plate used while in a box (it is in the hall); death after
+  the last box while an earlier self still fights (the existing rule: go on
+  as it). **Not played by hand.**

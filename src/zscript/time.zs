@@ -1063,7 +1063,7 @@ class AjarTimeHandler : EventHandler
 		h.Link(used, BoxLine(fight, at), TIME_TEX);
 		mo.A_SetBlend(rescued ? "ff2010" : "white", 1.0, 40);
 		if (!rescued) mo.A_StartSound("misc/teleport", CHAN_AUTO);
-		string last = trips == BoxCount(fight) ? "\nThe last box: after this the doors stay shut, and death is death." : "";
+		string last = trips == BoxCount(fight) ? LastBoxText() : "";      // anew.zs
 		Say((rescued ? "You were killed. " : "") .. "It is before the fight, and it plays as it went.\nThis door is open: step in when you choose." .. last);
 		rescued = false;
 	}
@@ -1730,6 +1730,7 @@ class AjarTimeHandler : EventHandler
 		phase = LIVE;
 		DoorBegin();
 		MixBegin(k);                // goes.zs
+		KeepFirst(k);               // anew.zs: the first entry, to begin anew from
 		if (open) ShuttersShut();   // shut.zs
 		HallDoors(1);
 		if (!(said & 1)) Say("A door with a clock on it leads out of the fight,\nand back into it where you left.");
@@ -1985,6 +1986,7 @@ class AjarTimeHandler : EventHandler
 		if (GoOnAs(mo)) return true;
 		let h = Doors();
 		bool own = trips < BoxCount(fight);
+		if (!own && open && HasFightAnew(fight)) { FightAnew(mo, true); return true; }     // anew.zs: not the show's end
 		if (!own && !spare.Size())
 		{
 			// the last of them: the level ends
@@ -2327,6 +2329,8 @@ class AjarTimeHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "MAP32") DoubleShiftScript(PlayerPawn(mo));      // map32.zs
 		if (mode == 4 && level.mapname ~== "MAP32") DeadEndScript(PlayerPawn(mo));
 		if (mode == 2 && level.mapname ~== "MAP32") Views32(PlayerPawn(mo));
+		if (mode == 5 && level.mapname ~== "MAP32") FightAnewScript(PlayerPawn(mo));     // anew.zs
+		if (mode == 6 && level.mapname ~== "MAP32") AnewViews32(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));

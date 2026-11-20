@@ -26,6 +26,27 @@ def time_door():
     return im
 
 
+def fight_anew(out):
+    """The plate on a wall of a fight's hall that begins the fight anew
+    (anew.zs, AjarFightAnew): the begin-anew plate of the boxes (AJAN), twice
+    its size, in a wide lit frame, and two frames that pulse, so that it is
+    seen across a big hall."""
+    for fr, glow in (("A", 0.8), ("B", 1.0)):
+        dark = (24, 30, 40)
+        a = Img(56, 56, dark)
+        rim = shade((150, 210, 245), glow)
+        a.frame(0, 0, 56, 56, rim, 5)
+        a.frame(6, 6, 50, 50, shade((90, 140, 180), glow), 1)
+        lit = shade((235, 248, 255), glow)
+        a.disc(28, 29, 17, lit)
+        a.disc(28, 29, 11, dark)
+        a.rect(28, 9, 47, 29, dark)                           # the ring's open quarter
+        for i in range(11):                                   # its arrowhead, at twelve, pointing right
+            a.rect(28 + i, 7 + i // 2, 29 + i, 19 - i // 2, lit)
+        a.disc(28, 29, 4, shade((250, 220, 120), glow))       # the clock's middle
+        out[f"sprites/AJAF{fr}0.png"] = a.png(grab=(28, 56))
+
+
 def make(out):
     d = time_door()
     out["textures/AJDR10.png"] = d.png()

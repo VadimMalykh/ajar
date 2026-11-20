@@ -271,6 +271,8 @@ REGIONS[3] = ajartime.on_foot("room 3", {"hall": (HX, HY, HX + HW, PY), "press":
                               {"hall": [(HX + 4, 720), (HX + HW - 4, 720), (HX + 332, HY + 4)],
                                "box1": [(4780, 560)], "box2": [(6756, 560)], "box3": [(6228, -212)]})
 ajartime.covers(m, "room 3", FIRST, REGIONS[3], zone=(4744, -72, 6608, 1352), exempt=CASES)
+# the plate that begins the fight anew: on the lobby's west wall, to the left of the way in
+ajartime.fight_anew(m, K3, 4746, 192, 0)
 
 # === 4. the range: a fight of goes ============================================
 # The corridor from room 3 ends in a drop of 96 into the lobby, which is part
@@ -358,6 +360,8 @@ REGIONS[4] = ajartime.on_foot("room 4", {"range": (RX, RY, RX + RW, RY + RL + 16
                               {"range": [(RX + 4, 732), (RX + RW - 4, 732)], "box1": [(7204, -112)],
                                "box2": [(7708, -112)], "box3": [(6996, 592)]})
 ajartime.covers(m, "room 4", FIRST, REGIONS[4], zone=(6888, -72, 7920, 1736), exempt=CASES + [PEN_SECTOR, CORRIDOR4])
+# the plate that begins the fight anew: on the lobby's north wall, to the left of the way in
+ajartime.fight_anew(m, K4, 6960, 318, 270)
 
 # === 5. the airlock and the way out: a room of goes ============================
 # S, L and E in a row (floor -192), entered by a drop of 96 from the corridor
@@ -427,6 +431,9 @@ REGIONS[5] = ajartime.on_foot("room 5", {"S": (SX, CY, SX + 512, CY + 512), "L":
                               {"S": [(SX + 184, CY + 4)], "L": [(LX + 232, CY + 4)], "E": [(EX + 432, CY + 4)],
                                "box": [(SX + 248, -52)]})
 ajartime.covers(m, "room 5", FIRST, REGIONS[5], zone=(SX + 16, -240, EX + 584, NY + 264), exempt=CASES)
+
+# a fight of goes whose boxes are spent is never a dead end: its plate that begins it anew is reached on foot
+ajartime.fight_anew_reached(m, {K3: "room 3", K4: "room 4"})
 
 if __name__ == "__main__":
     import sys

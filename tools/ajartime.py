@@ -26,6 +26,8 @@ def zone(m, k, n, x1, y1, x2, y2, *, grow=0, open=False, goes=False, mix=False):
     it is won (goes.zs)."""
     m.thing((x1 + x2) / 2, (y1 + y2) / 2, ZONE_T,
             args=(k, n, (x2 - x1) // 2 + grow, (y2 - y1) // 2 + grow, 3 if mix else 2 if goes else int(open)))
+    if mix:
+        m.mix_fights = getattr(m, "mix_fights", set()) | {k}         # for fight_anew_reached()
 
 
 def hall_door(m, k, j, a, b, out, floor, **look):
@@ -123,6 +125,9 @@ def together(m, x, y, angle, frame, z=72):
     a Pair joins through it only if both leaves were hung within two seconds
     of each other (goes.zs, AjarTogether)."""
     m.thing(x, y, TOGETHER_T, angle=angle, height=float(z), args=(frame,))
+
+
+GRAPHS = {}         # on_foot()'s rooms, by name: (regions, links)
 
 
 def anew(m, x, y, angle, z=30):
@@ -312,6 +317,7 @@ def on_foot(name, regions, links, doors):
         x1, y1, x2, y2 = regions[r]
         for x, y in pts:
             assert x1 <= x <= x2 and y1 <= y <= y2, f"{name}: the door at {x, y} is not in {r}"
+    GRAPHS[name] = (regions, links)          # for fight_anew_reached()
     nxt = {r: set() for r in regions}
     for a, b, *both in links:
         nxt[a].add(b)
@@ -342,3 +348,47 @@ def covers(m, name, first, regions, *, zone, small=4096, exempt=()):
             continue
         assert any(x1 <= cx <= x2 and y1 <= cy <= y2 for x1, y1, x2, y2 in regions.values()), \
             f"{name}: the sector at {cx, cy} is in no region"
+
+
+# --- begin anew in a fight (src/zscript/anew.zs; PLAN.md, "Begin anew in a fight") ---
+FIGHT_ANEW_T = 20052
+
+
+def fight_anew(m, k, x, y, angle, z=16):
+    """A big bright plate on a wall of fight k's hall (in its zone, by the way
+    in), facing `angle`, its foot `z` over the floor (it is 56 high): USE puts
+    the fight back as it was when the player first came in, and death after
+    its last box does the same (anew.zs, AjarFightAnew). Stand it 2 off the
+    wall. Recorded for fight_anew_reached()."""
+    m.thing(x, y, FIGHT_ANEW_T, angle=angle, height=float(z))
+    m.fight_anews = getattr(m, "fight_anews", {})
+    m.fight_anews.setdefault(k, []).append((x, y))
+
+
+def fight_anew_reached(m, rooms):
+    """No dead end when a fight of goes' boxes are spent: every fight of goes
+    (zone(mix=True)) has a begin-anew plate (fight_anew), and from every
+    region of its room (as declared to on_foot, by name: `rooms` {fight:
+    name}) the region the plate is in is reached on foot, without an earlier
+    self."""
+    mix = getattr(m, "mix_fights", set())
+    plates = getattr(m, "fight_anews", {})
+    assert set(rooms) == mix, f"fights of goes {sorted(mix)}, rooms given for {sorted(rooms)}"
+    for k, name in rooms.items():
+        assert plates.get(k), f"{name}: a fight of goes with no plate that begins it anew"
+        regions, links = GRAPHS[name]
+        nxt = {r: set() for r in regions}
+        for a, b, *both in links:
+            nxt[a].add(b)
+            if both and both[0]:
+                nxt[b].add(a)
+        for x, y in plates[k]:
+            at = [r for r, (x1, y1, x2, y2) in regions.items() if x1 <= x <= x2 and y1 <= y <= y2]
+            assert at, f"{name}: the begin-anew plate at {x, y} is in no region"
+            for r in regions:
+                seen, todo = {r}, [r]
+                while todo:
+                    for q in nxt[todo.pop()] - seen:
+                        seen.add(q)
+                        todo.append(q)
+                assert seen & set(at), f"{name}: the begin-anew plate is not reached on foot from {r}"
