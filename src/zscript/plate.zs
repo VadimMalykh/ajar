@@ -41,6 +41,13 @@ class AjarPlate : Actor
 {
 	bool pressed;
 	AjarFrame fr;
+	// args[2] n: the first time the player steps on it, it says
+	// AjarTimeHandler.PlateText(n) (shut.zs). steps: how often the player
+	// stepped on it; told: how often it said so (tests)
+	int steps, told;
+	bool mine;
+	double homeZ;               // its height: a press coming down over it pushes it down, and it goes back
+	bool homed;
 	const REACH = 28;           // how near its middle someone must stand
 	const FEET = 4;             // and how near the floor
 
@@ -63,7 +70,20 @@ class AjarPlate : Actor
 	override void Tick()
 	{
 		Super.Tick();
+		if (!homed) { homed = true; homeZ = pos.z; }
+		else if (pos.z != homeZ) SetZ(homeZ);
 		bool now = On(players[consoleplayer].mo);
+		if (now && !mine)
+		{
+			steps++;
+			if (args[2] && !told)
+			{
+				told++;
+				let dh = AjarHandler(EventHandler.Find("AjarHandler"));
+				if (dh) dh.Say(AjarTimeHandler.PlateText(args[2]));
+			}
+		}
+		mine = now;
 		if (!now)
 		{
 			let it = ThinkerIterator.Create("AjarGhost");
@@ -426,6 +446,7 @@ extend class AjarTimeHandler
 		if (ot >= len) return true;
 		string o = String.Format("%d:%02d / %d:%02d", ot / 35 / 60, ot / 35 % 60, len / 35 / 60, len / 35 % 60);
 		Screen.DrawText(BigFont, Font.CR_WHITE, 320 - BigFont.StringWidth(o) / 2, 12, o, DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
+		TableBar(len);              // table.zs: what the earlier selves will do
 		return true;
 	}
 

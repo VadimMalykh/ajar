@@ -151,7 +151,7 @@ SHUT_HIGH = 96          # how high a shutter opens, over its floor
 
 
 def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, behind=False, under=0,
-            nomonsters=False, color=None):
+            nomonsters=False, screen=False, color=None):
     """A shutter in a wall: a-b is its face on the side it is worked from
     (where whoever is in its way is put when it shuts), `out` points through
     it to the other side. It is a sector `thick` deep (tag `tag`) whose
@@ -167,11 +167,13 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, b
     the shutter is open also while the player or an earlier self is in a
     sector with that tag (AjarShutter args[3]; with no plate, only then).
     `nomonsters`: no monster walks or flies past its face a-b (players,
-    shots and sight do)."""
+    shots and sight do). `screen`: the reverse, a SCREEN, shut while it is
+    held and open otherwise (built open; AjarShutter args[4] 1). Returns its
+    sector."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    m.sector([a, b, d, c], floor=floor, ceil=floor, light=170, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
-             id=tag, color=color)
+    si = m.sector([a, b, d, c], floor=floor, ceil=floor + high if screen else floor, light=170, wall="AJSHUT",
+                  ftex="AJTRIMF", ctex="AJTRIMF", id=tag, color=color)
     if keep:
         m.line(c, d, blocking=True)
     for p, q in ((a, c), (b, d)):
@@ -179,7 +181,8 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, b
     if nomonsters:
         m.line(a, b, blockmonsters=True)
     ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]
-    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high, int(behind), under))
+    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high, int(behind), under, int(screen)))
+    return si
 
 
 SHUT_LAMP_T = 20053
@@ -187,9 +190,29 @@ SHUT_LAMP_T = 20053
 
 def shut_lamp(m, x, y, angle, tag, z=72):
     """A lamp on the wall beside the shutter of `tag`, facing `angle`, `z`
-    over the floor: red while it is shut, green while it is open (shut.zs,
-    AjarShutLamp). Stand it 2 off the wall."""
+    over the floor: green while it is wholly worked (a shutter open, a
+    screen shut), amber while an earlier self holds it or is about to, red
+    otherwise (shut.zs, AjarShutLamp). Stand it 2 off the wall."""
     m.thing(x, y, SHUT_LAMP_T, angle=angle, height=float(z), args=(tag,))
+
+
+PRESS_LAMP_T = 20054
+SENTRY_T = 20055
+
+
+def press_lamp(m, x, y, angle, tag, z=72):
+    """A lamp on a wall for the press of `tag`, facing `angle`: red while the
+    press is not up and ready, amber while an earlier self's pull of it is
+    about to come, green otherwise (shut.zs, AjarPressLamp). Stand it 2 off
+    the wall."""
+    m.thing(x, y, PRESS_LAMP_T, angle=angle, height=float(z), args=(tag,))
+
+
+def sentries(m, x, y, fight, pen_tag, trip_tag):
+    """Fight `fight`'s monsters on the demo that stand in a sector of
+    `pen_tag` wake while the player stands in a sector of `trip_tag` (time.zs,
+    AjarSentry). x, y anywhere."""
+    m.thing(x, y, SENTRY_T, args=(fight, pen_tag, trip_tag))
 
 
 def seen(spaces, p, q):
@@ -217,11 +240,12 @@ def seen(spaces, p, q):
     return True
 
 
-def shutter_plate(m, x, y, tag):
+def shutter_plate(m, x, y, tag, say=0):
     """A plate on the floor at x, y that holds the shutter of `tag` open
     while the player or an earlier self stands on it (an AjarPlate whose
-    args[1] is the shutter's tag)."""
-    m.thing(x, y, PLATE_T, args=(0, tag))
+    args[1] is the shutter's tag). `say` n: the first time the player steps
+    on it, message n (shut.zs, PlateText)."""
+    m.thing(x, y, PLATE_T, args=(0, tag, say))
 
 
 FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5, "lamp": 6, "walking": 7, "go": 8, "frame": 9,

@@ -6,6 +6,7 @@
 //   MAP=MAP32 MODE=4 tools/smoke.sh   the dead ends: out of the pit, out of
 //                                     the lock; a door of room 1 refused
 //   MAP=MAP32 MODE=2 tools/smoke.sh   views, for screenshots
+//   MAP=MAP32 MODE=7 tools/smoke.sh   room 3's plates, screen, cage, sentries and the timetable
 // The coordinates are the generator's.
 
 extend class AjarTimeHandler
@@ -13,6 +14,8 @@ extend class AjarTimeHandler
 	const PRESS32 = 3530;       // room 3's press (map_secret2.PRESS3)
 	const SHUT32 = 3540;        // room 4's shutter (map_secret2.SHUT4)
 	const SHUT33 = 3535;        // room 3's wing's shutter (map_secret2.SHUT3)
+	const SCREEN3 = 3536;       // room 3's screen before the guards (map_secret2.SCREEN3)
+	const CAGE3 = 3537;         // room 3's cage (map_secret2.CAGE3)
 	const F32 = -96;            // the floor of the pit, of room 4
 	const G32 = -192;           // of room 5
 	const TA32 = 200;           // when the first self hangs leaf a in room 2
@@ -109,7 +112,7 @@ extend class AjarTimeHandler
 	// Room 3's wing (map_secret2: LANDING3 .. UPPER3, the shutter and the window in the hall's south wall)
 	// and the pen in it (PEN3); the lamp beside the shutter
 	bool InPen33(Actor a) { return a.pos.x > 5464 && a.pos.x < 5880 && a.pos.y > -432 && a.pos.y < -176; }
-	bool InWing33(Actor a) { return a.pos.x > 5112 && a.pos.x < 5880 && a.pos.y > -432 && a.pos.y < 0; }
+	bool InWing33(Actor a) { return a.pos.x > 5112 && a.pos.x < 5976 && a.pos.y > -432 && a.pos.y < 0; }     // (the cage too)
 	AjarShutLamp Lamp33()
 	{
 		let it = ThinkerIterator.Create("AjarShutLamp");
@@ -200,7 +203,7 @@ extend class AjarTimeHandler
 			phase ? Left() : -1, level.killed_monsters, dsStep);
 		if (t == 3)
 		{
-			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 40 && !Figures(true));
+			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 41 && !Figures(true));
 			Check("allThere", violet && yellow && green && pink && blue && red && a && b && f1 && fa && fb && fw && g1 && g2 && home && home2
 				&& p1 && p51 && p52 && sp && pr && sh && sw && sh3 && Lamp33() && red.frame == home && !h.chainLen);
 		}
@@ -651,6 +654,12 @@ extend class AjarTimeHandler
 			5130, -56, 0, 0, -8,            // the landing: the stairs up along the north wall
 			5480, -100, 96, 0, 0,           // the upper room: the lever at the end, the window, the pen's bars
 			5768, -40, 96, 90, 0,           // through the window, between the hall's slabs, to the mouth
+			5768, 1110, 0, 90, 25,          // the chamber: the screen's plate at the back
+			5200, 1090, 0, 138, 25,         // the cage's plate in the north-west corner
+			5672, -40, 96, 270, -5,         // the screen open, from the upper room: the bars, the pen
+			5672, -40, 96, 270, -5,         // and shut: a self on its plate
+			5800, -72, 96, 0, 0,            // the cage through its glass: the megasphere, its shutter and lamp
+			5170, -40, 0, 316, 0,           // the landing as the player comes in: the screen's repeater lamp
 			7000, 176, -96, 0, 0,           // room 4 as entered: the range, the case on its far wall
 			7580, 150, -96, 15, -10,        // room 4's case, close (south of the pillar before it)
 			7456, 120, -96, 90, 0,          // the firing spot: the shutter
@@ -660,10 +669,12 @@ extend class AjarTimeHandler
 			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
 			9672, 384, -192, 0, 0           // and the other way, into BLUE's
 		};
-		int WIDE = 21, OPEN3 = 12;
+		int WIDE = 27, OPEN3 = 12, SHUT3V = 19;
 		int i = t / 40;
 		if (t == OPEN3 * 40 - 15) dsGhost = Actor.Spawn("AjarGhost", (5768, 1000, 0));
 		if (t == OPEN3 * 40 + 39 && dsGhost) { dsGhost.Destroy(); dsGhost = null; }
+		if (t == SHUT3V * 40 - 25) dsGhost = Actor.Spawn("AjarGhost", (5768, 1216, 0));       // on the screen's plate
+		if (t == SHUT3V * 40 + 39 && dsGhost) { dsGhost.Destroy(); dsGhost = null; }
 		if (i >= v.Size() / 5) return;
 		Go(mo, v[i * 5], v[i * 5 + 1], v[i * 5 + 2], v[i * 5 + 3]);
 		mo.pitch = v[i * 5 + 4];
@@ -676,6 +687,328 @@ extend class AjarTimeHandler
 			blue.Used(mo);
 			h.FindFrame(191).Activate(mo);
 			Console.Printf("AJARTEST info chain=%d", h.chainLen);
+		}
+	}
+}
+
+// MODE=7 (tools/smoke_MAP32_7.cfg): room 3's plates in the chamber, the screen,
+// the cage, the sentries and the timetable (PLAN.md, "MAP32 room 3: plates in
+// the fight, and the timetable"). Room 3 is entered at its lobby by the script
+// (as MODE=5), godmode. Go 1 is the bait: the screen's plate from TT_SCR to
+// TT_SCR_OFF, the cage's from TT_CAGE to TT_CAGE_OFF, out by door 3 at TT_OUT1.
+// Go 2 goes up the wing, into the cage while the first self holds it, pulls
+// the lever at TT_PULL, out by the window and door 2. Go 3 watches the press
+// lamps from box 2, and begins the fight anew.
+extend class AjarTimeHandler
+{
+	const TT_SCR = 160;
+	const TT_SCR_OFF = 340;
+	const TT_CAGE = 370;
+	const TT_CAGE_OFF = 520;
+	const TT_OUT1 = 700;
+	const TT_PULL = 560;
+	int ttStep, ttT, ttOutO, ttLandO, ttUpO, ttPull;
+	// go 1 as it went, live: the first tic of each hold, and the tic after its last (wing shutter, screen, cage)
+	int ttFrom[3], ttTo[3];
+	bool ttAmber, ttNoneSee;
+	Actor ttMark;
+
+	AjarShutLamp ShutLamp33(int tag, int n)       // the n-th lamp of a shutter
+	{
+		let it = ThinkerIterator.Create("AjarShutLamp");
+		AjarShutLamp l;
+		while (l = AjarShutLamp(it.Next())) if (l.args[0] == tag && n-- == 0) return l;
+		return null;
+	}
+
+	// every lamp of the shutter `tag` (or of the press, `press`) shows frame f
+	bool LampsShow(int tag, int f, bool press = false)
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create(press ? "AjarPressLamp" : "AjarShutLamp");
+		Actor l;
+		while (l = Actor(it.Next()))
+		{
+			if (l.args[0] != tag) continue;
+			if (l.frame != f) return false;
+			n++;
+		}
+		return n > 0;
+	}
+
+	// the living monsters in the pen: how many, how many on the demo, how many awake and after the player,
+	// how many have sight of `who` (none: not asked)
+	int, int, int, int Pen33(Actor mo, Actor who = null)
+	{
+		int n = 0, demo = 0, after = 0, see = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0 || !InPen33(a)) continue;
+			n++;
+			if (OnDemo(a)) demo++;
+			else if (a.target == mo) after++;
+			if (who && a.CheckSight(who, SF_IGNOREVISIBILITY)) see++;
+		}
+		return n, demo, after, see;
+	}
+
+	// a level trace north from every guard in the pen, at 40 over its feet: stopped by the screen?
+	bool TraceStopped33()
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0 || !InPen33(a)) continue;
+			FLineTraceData ld;
+			a.LineTrace(90, 400, 0, TRF_THRUACTORS, 40, data: ld);       // (past the other guards: the wall is what is asked)
+			Console.Printf("AJARTEST info trace from (%d,%d,%d) angle %d: hit=%d at (%.1f,%.1f,%.1f)", a.pos.x, a.pos.y, a.pos.z, a.angle, ld.HitType,
+				ld.HitLocation.x, ld.HitLocation.y, ld.HitLocation.z);
+			if (ld.HitType != TRACE_HitWall || ld.HitLocation.y < -177 || ld.HitLocation.y > -159) return false;
+			n++;
+		}
+		return n > 0;
+	}
+
+	// the megasphere in the cage, lying where it lay (map_secret2.MEGA3)
+	bool MegaThere33()
+	{
+		let it = ThinkerIterator.Create("Megasphere");
+		Inventory a;
+		while (a = Inventory(it.Next())) if (!a.owner && abs(a.pos.x - 5940) < 1 && abs(a.pos.y + 72) < 1) return true;
+		return false;
+	}
+
+	void TableScript(PlayerPawn mo)
+	{
+		if (level.totaltime > level.maptime + 10) return;
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		AjarShutter sh3 = FindShutter(SHUT33), scr = FindShutter(SCREEN3), cage = FindShutter(CAGE3);
+		AjarPlate sp = FloorPlate32(0, SCREEN3), cp = FloorPlate32(0, CAGE3);
+		AjarPress pr = FindPress(PRESS32);
+		AjarPressSwitch sw = null;
+		let si = ThinkerIterator.Create("AjarPressSwitch");
+		AjarPressSwitch s;
+		while (s = AjarPressSwitch(si.Next())) if (s.args[0] == PRESS32) sw = s;
+		int g = takes.Size(), o = ot, k, bx;
+		[k, bx] = Where(mo.pos.xy);
+		let tb = Table();
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) fight=%d phase=%d open=%d at=%d go=%d ot=%d selves=%d screen=%.2f cage=%.2f lamps=%d/%d/%d press=%d rows=%d spans=%d pulls=%d step=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, fight, phase, open, at, g, o, AllGhosts(), scr ? scr.Opened() : -1, cage ? cage.Opened() : -1,
+			ShutLamp33(SCREEN3, 0) ? ShutLamp33(SCREEN3, 0).frame : -1, ShutLamp33(CAGE3, 0) ? ShutLamp33(CAGE3, 0).frame : -1,
+			ShutLamp33(SHUT33, 0) ? ShutLamp33(SHUT33, 0).frame : -1, pr ? pr.phase : -1, tb.rTag.Size(), tb.sRow.Size(), tb.pTic.Size(), ttStep);
+		if (t == 2) Go(mo, 4872, 100, 0, 90);           // into room 3's lobby: the rooms before are left, and over
+		if (fight != 3) return;
+
+		// === go 1: the bait works the room ===
+		if (ttStep == 0 && open && g == 1)
+		{
+			if (o == 4)
+			{
+				Check("atRest3", scr.IsOpen() && cage.IsShut() && LampsShow(SCREEN3, AjarLamp.RED) && LampsShow(CAGE3, AjarLamp.RED)
+					&& LampsShow(PRESS32, AjarLamp.GREEN, true) && !tb.on && tb.Empty() && sp && cp && !sp.pressed && !cp.pressed);
+				ttMark = Actor.Spawn("AjarCam", (5672, -88, 126));      // a point in the upper room, for sight
+				for (int i = 0; i < 3; i++) { ttFrom[i] = -1; ttTo[i] = -1; }
+			}
+			if (o == TT_SCR) Go(mo, 5768, 1216, 0, 90);
+			if (o == TT_SCR + 90)
+			{
+				int n, demo, after, see;
+				[n, demo, after, see] = Pen33(mo, ttMark);
+				bool stopped = TraceStopped33();
+				Console.Printf("AJARTEST info screen down: guards=%d see=%d stopped=%d", n, see, stopped);
+				Check("screenDownWithItsPlate3", scr.IsShut() && sp.pressed && n > 0 && !see && stopped && LampsShow(SCREEN3, AjarLamp.GREEN));
+			}
+			if (o == TT_SCR_OFF) Go(mo, 5768, 1120, 0, 270);
+			if (o == TT_SCR_OFF + AjarShutter.TICS + 4)
+			{
+				int n, demo, after, see;
+				[n, demo, after, see] = Pen33(mo, ttMark);
+				Console.Printf("AJARTEST info screen up: guards=%d see=%d stopped=%d", n, see, TraceStopped33());
+				Check("screenUpAgain3", scr.IsOpen() && !sp.pressed && LampsShow(SCREEN3, AjarLamp.RED) && see > 0 && !TraceStopped33());
+			}
+			if (o == TT_CAGE) Go(mo, 5096, 1184, 0, 90);
+			if (o == TT_CAGE + 90) Check("cageOpensWithItsPlate3", cage.IsOpen() && cp.pressed && LampsShow(CAGE3, AjarLamp.GREEN));
+			if (o == TT_CAGE_OFF) Go(mo, 5096, 1080, 0, 0);
+			if (o == TT_CAGE_OFF + AjarShutter.TICS + 4) Check("cageShutsAgain3", cage.IsShut() && !cp.pressed && LampsShow(CAGE3, AjarLamp.RED));
+			if (o == TT_OUT1) Go(mo, 6500, 1040, 0, 0);
+			if (o > TT_OUT1) Walk(mo, (8, 0));
+			// the holds as they go (the take writes this tic's place at index o)
+			for (int i = 0; i < 3; i++)
+			{
+				bool on = i == 0 ? sh3.PlayerIn() : i == 1 ? sp.On(mo) : cp.On(mo);
+				if (on && ttFrom[i] < 0) ttFrom[i] = o;
+				if (!on && ttFrom[i] >= 0 && ttTo[i] < 0) ttTo[i] = o;
+			}
+		}
+		if (ttStep == 0 && open && g == 2) { ttStep = 1; ttT = t; }
+
+		// === go 2: the wing ===
+		if (ttStep == 1 && open && g == 2)
+		{
+			int len = takes[0].x.Size();
+			if (o == 2)
+			{
+				for (int i = 0; i < 3; i++) if (ttFrom[i] >= 0 && ttTo[i] < 0) ttTo[i] = len;
+				static const int tags[] = { SHUT33, SCREEN3, CAGE3 };
+				bool ok = tb.on && tb.rTag.Size() == 3 && tb.sRow.Size() == 3 && !tb.pTic.Size();
+				for (int r = 0; ok && r < 3; r++)
+				{
+					int j = tb.sRow.Find(r);
+					ok = tb.rTag[r] == tags[r] && j < tb.sRow.Size() && tb.sSelf[j] == 0
+						&& abs(tb.sFrom[j] - ttFrom[r]) <= 2 && abs(tb.sTo[j] - ttTo[r]) <= 2;
+					Console.Printf("AJARTEST info row %d tag=%d table %d..%d, go 1 %d..%d", r, tb.rTag[r], j < tb.sRow.Size() ? tb.sFrom[j] : -1,
+						j < tb.sRow.Size() ? tb.sTo[j] : -1, ttFrom[r], ttTo[r]);
+				}
+				Check("timetable3", ok);
+				ttAmber = true;
+			}
+			// the lamps: red more than SOON before the earlier self steps on, amber within it, green once worked
+			if (o == ttFrom[1] - SOON - 20) ttAmber = ttAmber && LampsShow(SCREEN3, AjarLamp.RED);
+			if (o == ttFrom[1] - 40) ttAmber = ttAmber && LampsShow(SCREEN3, AjarLamp.AMBER);
+			if (o == ttFrom[1] + AjarShutter.TICS + 6) ttAmber = ttAmber && LampsShow(SCREEN3, AjarLamp.GREEN);
+			if (o == ttFrom[2] - SOON - 20) ttAmber = ttAmber && LampsShow(CAGE3, AjarLamp.RED);
+			if (o == ttFrom[2] - 40) ttAmber = ttAmber && LampsShow(CAGE3, AjarLamp.AMBER);
+			if (o == ttFrom[2] + AjarShutter.TICS + 6)
+			{
+				ttAmber = ttAmber && LampsShow(CAGE3, AjarLamp.GREEN);
+				Check("amberBefore3", ttAmber);
+			}
+			// out of box 1 by door 1, before the shutter: the guards are on the demo
+			if (o == 3) Go(mo, 4810, 560, 64, 180);
+			if (o > 3 && !ttOutO)
+			{
+				if (at == 1) Ahead(mo);
+				else ttOutO = o;
+			}
+			if (ttOutO && o == ttOutO + 3) Go(mo, 5192, 40, 0, 270);
+			if (ttOutO && o == ttOutO + 4)
+			{
+				int n, demo, after, see;
+				[n, demo, after, see] = Pen33(mo);
+				Console.Printf("AJARTEST info before the wing: guards=%d on the demo=%d", n, demo);
+				Check("guardsOnTheDemo3", n > 0 && demo == n);
+			}
+			// through the shutter once the earlier self holds it open, onto the landing, up the stairs
+			if (ttOutO && o > ttOutO + 4 && !ttUpO && sh3.IsOpen() && o > TT_SCR + AjarShutter.TICS)
+			{
+				if (mo.pos.y > -56 && mo.pos.x < 5300) Walk(mo, (0, -8));
+				else if (mo.pos.x < 5600) Walk(mo, (8, 0));
+				else { ttUpO = o; mo.vel = (0, 0, 0); Console.Printf("AJARTEST info up at o=%d z=%d", o, mo.pos.z); }
+			}
+			if (!ttLandO && mo.pos.y < -16 && mo.pos.x < 5272 && mo.pos.x > 5112) ttLandO = o;
+			if (ttLandO && o == ttLandO + 10)
+			{
+				int n, demo, after, see;
+				[n, demo, after, see] = Pen33(mo);
+				Console.Printf("AJARTEST info on the landing at o=%d: guards=%d on the demo=%d after me=%d", ttLandO, n, demo, after);
+				Check("guardsWakeAsIStepIn3", n > 0 && !demo && after == n);
+			}
+			// the screen held by the earlier self: no guard sees me in the upper room; let go: one does
+			if (o == TT_SCR_OFF - 30)
+			{
+				int n, demo, after, see;
+				[n, demo, after, see] = Pen33(mo, mo);
+				Console.Printf("AJARTEST info screen held: guards=%d see=%d at (%d,%d,%d)", n, see, mo.pos.x, mo.pos.y, mo.pos.z);
+				ttNoneSee = ttUpO && scr.IsShut() && sp.pressed && !sp.On(mo) && n > 0 && !see && mo.pos.z == 96 && mo.pos.y > -160 && mo.pos.y < -16;
+			}
+			if (o == TT_SCR_OFF + AjarShutter.TICS + 12)
+			{
+				int n, demo, after, see;
+				[n, demo, after, see] = Pen33(mo, mo);
+				Console.Printf("AJARTEST info screen let go: guards=%d see=%d", n, see);
+				Check("screenHeldByMyEarlierSelf3", ttNoneSee && scr.IsOpen() && see > 0);
+			}
+			// the cage, held open by the earlier self: in, the megasphere, put out when it steps off
+			if (o == TT_CAGE + AjarShutter.TICS + 4)
+				Check("cageHeldByMyEarlierSelf3", cage.IsOpen() && cp.pressed && !cp.On(mo) && AllGhosts() >= 1);
+			if (o == TT_CAGE + AjarShutter.TICS + 5) Go(mo, 5860, -120, 96, 0);
+			if (o > TT_CAGE + AjarShutter.TICS + 5 && o <= TT_CAGE + AjarShutter.TICS + 15) Walk(mo, (8, 0));
+			if (o > TT_CAGE + AjarShutter.TICS + 15 && o <= TT_CAGE + AjarShutter.TICS + 20) Walk(mo, (0, 8));
+			if (o == TT_CAGE + AjarShutter.TICS + 26)
+			{
+				Console.Printf("AJARTEST info in the cage at (%d,%d,%d) health=%d", mo.pos.x, mo.pos.y, mo.pos.z, mo.health);
+				Check("megasphere3", mo.health == 200 && !MegaThere33() && mo.pos.x > 5896);
+			}
+			if (o == TT_CAGE_OFF + AjarShutter.TICS + 4)
+			{
+				Console.Printf("AJARTEST info put out at (%d,%d,%d)", mo.pos.x, mo.pos.y, mo.pos.z);
+				Check("putOutOfTheCage3", mo.pos.x < 5880 - 15 && mo.pos.x > 5464 && mo.pos.y > -160 && mo.pos.y < -16 && mo.pos.z == 96
+					&& cage.IsShut() && !cp.pressed && mo.TestMobjLocation());
+			}
+			// the lever at TT_PULL; out by the window, and by the hall's time door 2
+			if (o == TT_PULL - 15) Go(mo, 5856, -50, 96, 90);
+			if (o == TT_PULL)
+			{
+				Console.Printf("AJARTEST info pulled o=%d ready=%d", o, pr.Ready());
+				mo.vel = (0, 0, 0);
+				sw.Used(mo);
+				ttPull = o;
+			}
+			if (o == TT_PULL + 5) Go(mo, 5768, -40, 96, 90);
+			if (o > TT_PULL + 5 && o < TT_PULL + 18) Walk(mo, (0, 8));
+			if (o == TT_PULL + 30) Go(mo, 6500, 720, 0, 0);
+			if (o > TT_PULL + 30) Walk(mo, (8, 0));
+		}
+		if (ttStep == 1 && open && g == 3) { ttStep = 2; ttT = t; Console.Printf("AJARTEST info go 3 begins at t=%d", t); }
+
+		// === go 3: the pull on the timetable, the press lamps; then begin anew ===
+		if (ttStep == 2 && open && g == 3)
+		{
+			if (o == 2)
+			{
+				int n = tb.pTic.Size();
+				Console.Printf("AJARTEST info pulls=%d first=%d (tag %d, self %d) P=%d at=%d", n, n ? tb.pTic[0] : -1, n ? tb.pTag[0] : -1, n ? tb.pSelf[0] : -1, ttPull, at);
+				Check("pullOnTheTimetable3", tb.on && n == 1 && tb.pTic[0] == ttPull && tb.pTag[0] == PRESS32 && tb.pSelf[0] == 1);
+				ttAmber = true;
+			}
+			if (o == 3) Go(mo, 6600, 560, 64, 180);         // in box 2, looking into the hall
+			// the guards alive now are on the demo, though the second self is in the wing
+			if (o == 300)
+			{
+				int n, demo, after, see;
+				[n, demo, after, see] = Pen33(mo);
+				Actor g2 = ghosts.Size() > 1 ? ghosts[1] : null;
+				Console.Printf("AJARTEST info go 3: guards=%d on the demo=%d, the second self at (%d,%d)", n, demo, g2 ? g2.pos.x : 0, g2 ? g2.pos.y : 0);
+				Check("guardsOnTheDemoAgain3", g2 && InWing33(g2) && at > 0 && n > 0 && demo == n);
+			}
+			if (o == ttPull - SOON - 20) ttAmber = ttAmber && LampsShow(PRESS32, AjarLamp.GREEN, true);
+			if (o == ttPull - 30) ttAmber = ttAmber && LampsShow(PRESS32, AjarLamp.AMBER, true);
+			if (o == ttPull + 25)
+			{
+				Console.Printf("AJARTEST info press phase=%d byGhost=%d", pr.phase, pr.byGhost);
+				Check("pressLampAmber3", ttAmber && LampsShow(PRESS32, AjarLamp.RED, true) && pr.phase && pr.byGhost);
+			}
+			if (o == ttPull + 40)
+			{
+				AjarFightAnew pl = FightAnewOf(3);
+				Vector2 front = pl.pos.xy + Actor.AngleToVector(pl.angle, 40);
+				Go(mo, front.x, front.y, 0, pl.angle + 180);
+				pl.Used(mo);
+				ttStep = 3;
+				ttT = t;
+			}
+		}
+		if (ttStep == 3 && t == ttT + 1)
+		{
+			let tn = Table();
+			Check("restAnew3", scr.IsOpen() && cage.IsShut() && MegaThere33() && !tn.on && tn.Empty() && takes.Size() == 1 && open);
+		}
+		// each plate's message is said once a level: on both again
+		if (ttStep == 3 && t == ttT + 3) Go(mo, 5768, 1216, 0, 90);
+		if (ttStep == 3 && t == ttT + 6) Go(mo, 5768, 1120, 0, 90);
+		if (ttStep == 3 && t == ttT + 8) Go(mo, 5096, 1184, 0, 90);
+		if (ttStep == 3 && t == ttT + 11) Go(mo, 5096, 1080, 0, 90);
+		if (ttStep == 3 && t == ttT + 13)
+		{
+			Console.Printf("AJARTEST info screen plate steps=%d told=%d, cage plate steps=%d told=%d", sp.steps, sp.told, cp.steps, cp.told);
+			Check("saidOnce3", sp.steps >= 2 && sp.told == 1 && cp.steps >= 2 && cp.told == 1);
+			if (ttMark) ttMark.Destroy();
+			ttStep = 4;
 		}
 	}
 }

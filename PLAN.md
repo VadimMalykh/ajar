@@ -5540,6 +5540,7 @@ its entrance. Nothing hurts in rooms 1, 2 and 5.
 - Rooms 3 and 4 can be begun anew: see "Begin anew in a fight" below.
 - Room 3 is rebuilt as a chamber after Vadim played it: see "MAP32 room 3: the press as a chamber" at the end.
 - Room 3 is rebuilt again, as two shifts (the bait fights in the chamber, the next self fights through a guarded wing to the lever): see "MAP32 room 3: two shifts" at the end.
+- Room 3 gets plates in the chamber that work the wing (a screen before the guards, a cage), guards that wake for whoever comes into the wing, and a timetable (amber lamps, a bar under the clock): see "MAP32 room 3: plates in the fight, and the timetable" at the end.
 
 ## Begin anew in a fight (built 2026-11-20)
 
@@ -6015,3 +6016,188 @@ same move for it).
   adding up to 1000; a later baron's message; whether the needle reads at a
   glance in play rather than in a still. **Not played by hand**:
   `cd .wt/ajar/m16-weigh-hints && MAP=MAP16 ./run.sh`.
+
+## MAP32 room 3: plates in the fight, and the timetable (built 2026-11-20)
+
+Vadim found that in the two shifts the selves had only one link between them:
+someone under the press opens the wing's shutter. He agreed to two additions.
+Plates in the chamber that work things in the wing, so that the bait works the
+room while it fights and the next self moves in the windows the bait made. And
+the timetable: the room shows what the earlier selves are about to do, lamps
+that turn amber three seconds before, and marks under the clock at the top.
+While it was being built a third thing was added: the guards in the pen were
+puppets on the demo for the self in the wing (a monster on the demo wakes only
+when hit, walked into or when the demo is over), so the screen would have
+protected from nothing. Now they wake for whoever comes into the wing.
+
+- **The screen** (shut.zs). `AjarShutter` args[4] 1 makes it the reverse of
+  a shutter: SHUT while it is held (a plate that names it is pressed, or
+  someone is in its args[3] area) and OPEN otherwise
+  (`ajartime.shutter(screen=True)`, built open). Every go begins with it open:
+  `ShuttersShut` puts every shutter at rest (a shutter shut, a screen open).
+  Shutting, it puts the player clear on the side it is worked from, as a
+  shutter does, and waits for anything else in its way. Two questions any
+  shutter answers now: `Held()` (held now) and `Worked()` (wholly as held: a
+  shutter fully open, a screen fully shut). `ajartime.shutter` returns its
+  sector.
+- **The timetable** (`src/zscript/table.zs`, an `AjarTable` on
+  `AjarTimeHandler`). In a room of goes and a fight of goes, from the earlier
+  selves' records: the HOLDS, for every shutter and screen of the room (in the
+  fight's zones), the spans of this go's tics in which an earlier self holds
+  it by the live rules (its recorded place within `AjarPlate.REACH` of a plate
+  that names it and within `FEET` of the plate's height, or in a sector of its
+  args[3] tag), and the same for every sprung frame's plate of the room; and
+  the PULLS, every lever pull still in an earlier self's log (`pTic`, `pTag`).
+  It is worked out again whenever its key changes: the fight, the kind of
+  fight, the number of goes, each earlier go's length and each log's pulls.
+  That covers the start of every go, begin anew, a fight begun anew, the win,
+  going on as an earlier self (its record and log are cut) and winding. It is
+  a forecast and is never corrected by what happens live. `HoldIn(tag)`: tics
+  until an earlier self begins to hold that shutter (0 while one holds it, -1
+  none will). `PullIn(tag)`: tics until an earlier self's next pull of that
+  press (-1 none). `SOON` = 105 (three seconds).
+- **The lamps.** A new frame of the clock lamp, amber (AJTW E,
+  `gfx_time.py`). `AjarShutLamp`: green while its shutter is worked (open; a
+  screen shut), else amber while an earlier self holds it or will begin to
+  within SOON, else red. New `AjarPressLamp` (20054,
+  `ajartime.press_lamp(m, x, y, angle, tag, z=72)`): red while the press is
+  not up and ready, else amber while an earlier self's pull comes within
+  SOON, else green. Both click softly once as they turn amber (the button
+  sound at 0.35). Both are an `AjarLamp`, which keeps its height: a press
+  coming down over a lamp pushes it down and it goes back. A plate does the
+  same now (the two plates in the chamber are under the press).
+- **The clock.** Under the "m:ss / m:ss" at the top (the open fight's clock
+  in a fight of goes, `GoesClock` in a room of goes), a bar 240 wide in the
+  640 by 400 frame, tic 0 to the clock's length: a dark strip, one row 3 high
+  for each shutter, screen or sprung frame's plate an earlier self holds in
+  this go (shutters by tag, then plates by frame), green where it is held, a
+  gold tick the bar's full height at each pull, a white cursor at this go's
+  tic. Nothing when there is no earlier self or the go is past that length.
+  `TableBar` only reads the table.
+- **Sentries** (time.zs, its header). `AjarSentry` (20055,
+  `ajartime.sentries(m, x, y, fight, pen_tag, trip_tag)`): while a go's demo
+  plays and the PLAYER (alive, in the hall, not in a box) stands in a sector
+  with the trip tag, every living monster of that fight on the demo whose
+  middle is in a sector with the pen tag wakes (`wakeDue`: `Wake` makes it
+  real where it stands, with the health it had, after the player). One that
+  comes into such a sector later does the same while the player is there; an
+  earlier self never trips it. Nothing else about the demo changes: the
+  hall's horde stays on the demo.
+- **Room 3** (`tools/map_secret2.py`). New tags `SCREEN3` 3536, `CAGE3`
+  3537, `PENTAG3` 3538 (the pen's sector), `WING3TAG` 3539 (the landing, the
+  six steps, the upper room, the window's sector and the cage: every walkable
+  sector of the wing that had no tag; the screen keeps its own, the wing's
+  shutter is the threshold). One `sentries` thing for fight 3 with those two.
+  - Two plates in the chamber: the screen's at the back opposite the mouth
+    (5768, 1216), the cage's in the north-west corner (5096, 1184). Asserted
+    wholly in the chamber, 64 or more clear of its slabs and of the time
+    doors' mouths, and over 600 on foot from the wing's shutter.
+  - The screen: a sector 16 deep along the whole of the bars on the upper
+    room's side (5464..5880, -176..-160), worked from the upper room, opening
+    the full height (128). The upper room is 16 shallower (-160..-16). The bars
+    stay between the pen and the screen, so no guard can stand in its way.
+    The pen's sight asserts hold with the screen open (its sector is one of
+    the wing's spaces). Its lamps: in the upper room on the north wall west of
+    the window (5672, -18), and a repeater on the landing's east wall south of
+    the stairs (5270, -136), facing west.
+  - The cage: an alcove 80 by 96 east of the upper room (5896..5976,
+    -152..-56), floor 96, steel, lit 230. In the upper room's east wall its
+    shutter (64 wide, -152..-88, `behind`: a player inside when it shuts is
+    put out into the upper room) and a slit of glass (32 wide, -88..-56); the
+    line between them blocks and shows no trim. A megasphere at (5940, -72),
+    seen through the glass. Its lamp on the upper room's east wall (5878,
+    -36). Asserted: entered only by its shutter, overlapping nothing. The
+    wing's zone reaches east over it; `on_foot` has it as a region with a way
+    out to the wing only. A fight begun anew puts the megasphere back
+    (`Pickup` in anew.zs now counts a `Megasphere`: it is a CustomInventory,
+    none of the classes there).
+  - Press lamps: two in the chamber on its south wall either side of the
+    mouth (5640 and 5896, 802), facing north; one in the hall on its north
+    wall west of the mouth (5640, 766), facing south.
+  - The messages, once a level each, the first time the player steps on the
+    plate: "A screen comes down before the guards in the tool room / while
+    someone stands on this plate." and "A cage in the tool room is open while
+    someone stands on this plate." An `AjarPlate` with args[2] n says
+    `PlateText(n)` (`ajartime.shutter_plate(say=)`); it counts the player's
+    steps on it and its sayings.
+  - The case in the lobby: a pressed plate under self 1 again. `begun1`
+    counts 41 figures.
+  - Unchanged: the hall, the waves, the guards and their spots, the supplies
+    and their reckoning (a megasphere is not ammunition), the boxes, the time
+    doors, the wing's shutter and lamp, the begin-anew plate, no infighting.
+- **Choices of mine.** The table is worked out again by a key of the records,
+  not by a call at each event (it catches every one of them, and one that is
+  added later). The bar is drawn only in a room of goes or a fight of goes
+  (not in MAP31's open fights, which have no shutters or presses); rows are 4
+  apart with a gap of 1. The amber click is the button sound at 0.35. The
+  message is said by the plate, not the shutter (the shutter's args are all
+  in use). The lamps and the plates keep their height under the press. The
+  screen's lamp in the upper room at x 5672 (the window is 5704..5832), the
+  cage's lamp north of the glass at -36. The hall's press lamp west of the
+  mouth. The wing's shutter sector has no trip tag (the landing trips them).
+- **Tests.** `MAP=MAP32 MODE=7 TIMEOUT=400 tools/smoke.sh` (new,
+  `smoke_MAP32_7.cfg`; room 3 entered at its lobby as MODE=5, godmode; 18
+  checks). Go 1, the bait: atRest3 (screen open, cage shut, their lamps red,
+  the press lamps green, no table); on the screen's plate from tic 160 to
+  340: screenDownWithItsPlate3 (shut, its lamps green, no guard in the pen
+  sees a point in the upper room and a level trace north from each guard
+  stops at the screen), screenUpAgain3 (open, red, the guards see it again,
+  the trace passes); on the cage's plate from 370 to 520:
+  cageOpensWithItsPlate3, cageShutsAgain3. Out by door 3 at 700. Go 2:
+  timetable3 (three rows, the wing's shutter, the screen, the cage, one span
+  each, each beginning and ending within 2 tics of what go 1 did, no pull),
+  amberBefore3 (each lamp red 125 tics before the earlier self steps on, amber
+  40 before, green once worked), guardsOnTheDemo3 (before the wing's shutter),
+  guardsWakeAsIStepIn3 (10 tics after stepping on the landing: each awake and
+  after the player), screenHeldByMyEarlierSelf3 (in the upper room while the
+  earlier self holds the screen: no awake guard sees the player; after it
+  lets go some do), cageHeldByMyEarlierSelf3, megasphere3 (walked in, health
+  200), putOutOfTheCage3 (the earlier self steps off: the player is in the
+  upper room, the cage shut), the lever at tic 560; out by the window and the
+  hall's time door 2. Go 3, in box 2: pullOnTheTimetable3 (one pull, at 560,
+  the second self's), guardsOnTheDemoAgain3 (the second self in the wing, the
+  guards on the demo), pressLampAmber3 (the press lamps green 125 tics before
+  the pull, amber 30 before, red 25 after, the press set off by the earlier
+  self); then the begin-anew plate: restAnew3 (screen open, cage shut, the
+  megasphere back, the table empty); then both plates stepped on again:
+  saidOnce3 (each stepped on twice or more, its message said once; checked
+  here, at the end, rather than in go 1, so that "once" is tested without a
+  second hold in go 1). The screenshots of go 3 show the clock with its bar:
+  three green rows (the wing's shutter long, the screen, the cage later), a
+  gold tick at 560 near the right end, the white cursor moving across.
+  `MAP=MAP32 MODE=5`: room 3's go 1 also walks into the cage (from inside,
+  behind the shut shutter) and takes the megasphere; `asAtTheFirstEntry3`
+  now also asks the screen open, the cage shut, the megasphere back. `MODE=2`:
+  30 views, six new after room 3's: the screen's plate, the cage's plate, the
+  screen open and shut from the upper room (a bare `AjarGhost` on its plate),
+  the cage through its glass, the landing with the repeater lamp. MODE=3,
+  4, 6 unchanged in their scripts (the sentries wake the guards in MODE=3's
+  go 2 too; `guardsInThePen3`, `guardsStayed3`, `laterGuards3`,
+  `noneInTheWing3` pass as they were).
+- **Results** (2026-11-20, full build): MODE=7 18 of 18 in each of four
+  runs; MODE=3 54 of 54 in each of four runs (one on the quick build); MODE=5
+  23 of 23; MODE=4 7 of 7; MODE=2 30 views and MODE=6 6 views, looked at. The
+  labs once each: SHUT 3 (20) and 4 (7), PRESS 4 (5), PLATE 3 (34) and 4 (6),
+  TWOKEY 3 (8), SHIFT 3 (19) and 4 (20), MAP31 6 (9) and 7 (15), MAP31 3 (57,
+  no failed check) all pass. `MAP=PRESS MODE=3` (13) passed 3 of 6 runs on
+  this branch, each failure a different check (killsAreMine with a sixth kill
+  from elsewhere, as noted for it earlier; afterTheWin with a body moved;
+  theyGoWhereTheyWent), and 4 of 4 runs of main's code. Nothing of this
+  change runs differently on PRESS that I could find (no sentry, no screen;
+  the table is only read). **Settled after the merge with main** (the MAP16
+  weighbridge): run alone, one test at a time, PRESS 3 passed 5 of 5; the
+  failures were from tests run side by side. On the merged build: MODE=7 18
+  of 18 three times, MODE=3 54 of 54 twice, MODE=5 23, MODE=4 7, PRESS 4 5,
+  SHUT 3 20, MAP16 3 all pass. Before that MODE=7 failed
+  `screenDownWithItsPlate3` once: the test's trace from one guard hit the
+  other guard, not the screen; the trace now goes through actors. And MODE=3
+  failed `theyFireBack4` once (room 4, untouched here: no pen monster
+  happened to fire out in its 230 tics).
+- **Not tested.** The bar in a room of goes (`GoesClock`: no room of goes
+  has an earlier self holding a shutter in a test; the code is the same
+  `TableBar`). A sprung frame's plate as a row (none in room 3). The amber
+  click (the tests run with no sound). A guard waking in the pen while the
+  screen is shutting (the bars keep them off its sector; asserted only by
+  geometry). Winding, or going on as an earlier self, while the table is up
+  (it is rebuilt by its key; not exercised). The sentries in any other room.
+- **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.

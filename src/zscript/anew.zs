@@ -72,7 +72,7 @@ extend class AjarTimeHandler
 	static bool Pickup(Actor a)
 	{
 		return a is "Health" || a is "Ammo" || a is "Weapon" || a is "Armor" || a is "PowerupGiver" || a is "BackpackItem"
-			|| a is "HealthPickup";
+			|| a is "HealthPickup" || a is "Megasphere";
 	}
 
 	// Does fight k have a plate that begins it anew (in its hall's zone)?
@@ -308,6 +308,7 @@ extend class AjarTimeHandler
 	// first, and the wing's shutter is shut again (shutterShutAnew3).
 	int faStep, faT, faRoom, faTotal, faLeft, faPicks, faDeaths;
 	bool faShut3;               // room 3: the wing's shutter was opening, the player under the press, when the plate was used
+	bool faMega;                // room 3: go 1 took the megasphere
 	AjarFightAnew faPlate;
 
 	AjarFightAnew FightAnewOf(int k)
@@ -439,8 +440,12 @@ extend class AjarTimeHandler
 			if (r3 && o > 5 && o < 10) Walk(mo, (0, 8));
 			if (r3 && o == 11) Go(mo, 4860, 220, 0, 90);
 			if (r3 && o > 11 && o < 16) Walk(mo, (0, 8));
+			// (room 3: and the megasphere in the cage, stepped into from behind its shut shutter)
+			if (r3 && o == 16) Go(mo, 5940, -120, 96, 90);
+			if (r3 && o > 16 && o < 20) Walk(mo, (0, 8));
 			if (!r3 && o == 5) { mo.GiveInventory("RocketLauncher", 1); mo.GiveInventory("RocketAmmo", 20); }
 			if (o == 20) KillTwo(mo);
+			if (r3 && o == 29) faMega = !MegaThere33() && mo.health >= 200;
 			if (o == 30) mo.health = mo.player.health = 1;
 		}
 		// go 2: box 1's armour, medikit and the next; then the plate
@@ -484,7 +489,15 @@ extend class AjarTimeHandler
 		}
 		if (faStep == 2 && t == faT + 1)
 		{
-			Check(String.Format("asAtTheFirstEntry%d", R), AsAtFirst(mo, R));
+			bool rest = true;
+			if (r3)
+			{
+				// room 3: the screen open, the cage shut, the megasphere (taken in go 1) back
+				AjarShutter scr = FindShutter(SCREEN3), cage = FindShutter(CAGE3);
+				rest = scr.IsOpen() && cage.IsShut() && MegaThere33();
+				Console.Printf("AJARTEST info room 3 at rest: screen=%.2f cage=%.2f megasphere=%d took=%d", scr.Opened(), cage.Opened(), MegaThere33(), faMega);
+			}
+			Check(String.Format("asAtTheFirstEntry%d", R), AsAtFirst(mo, R) && rest && (!r3 || faMega));
 			if (r3)
 			{
 				AjarShutter sh3 = FindShutter(SHUT33);

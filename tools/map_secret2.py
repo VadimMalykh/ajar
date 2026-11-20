@@ -196,6 +196,10 @@ K3 = 3
 HX, HY, HW, HH = 5000, 0, 1536, 1280
 PRESS3 = 3530           # the press's sector tag (map32.zs: PRESS32)
 SHUT3 = 3535            # the wing's shutter (map32.zs: SHUT33)
+SCREEN3 = 3536          # the screen before the guards (map32.zs: SCREEN3)
+CAGE3 = 3537            # the cage's shutter (map32.zs: CAGE3)
+PENTAG3 = 3538          # the pen's sector: where the sentries stand (time.zs, AjarSentry)
+WING3TAG = 3539         # the wing's walkable sectors that have no tag of their own: what trips them
 PY = HY + 768           # the hall's north wall
 CY = PY + 32            # the chamber's south wall (the wall between is solid but for the mouth)
 WY = HY + HH            # the chamber's north wall
@@ -207,7 +211,10 @@ WF, WC = HY + 96, HY + 224          # the upper room's floor, and the wing's cei
 SHUTTER3 = (HX + 128, HX + 256)     # in the hall's south wall (HY .. HY - 16)
 LANDING3 = (HX + 112, HY - 176, HX + 272, HY - 16)
 STAIRS3 = (HX + 272, HY - 96, HX + 464, HY - 16)     # six steps of 16 going east, 32 deep, along the north wall
-UPPER3 = (HX + 464, HY - 176, HX + 880, HY - 16)
+UPPER3 = (HX + 464, HY - 160, HX + 880, HY - 16)     # (16 shallower than the pen: the screen is south of it)
+SCREENS3 = (HX + 464, HY - 176, HX + 880, HY - 160)  # the screen, along the whole of the bars, on the upper room's side
+CAGE3BOX = (HX + 896, HY - 152, HX + 976, HY - 56)   # the cage, east of the upper room behind its wall
+CAGEDOOR3 = (HY - 152, HY - 88)     # its shutter in the upper room's east wall (and the glass, HY - 88 .. HY - 56)
 WINDOW3 = (HX + 704, HX + 832)      # in the upper room's north wall, open, its sill at the upper room's floor
 LEVER3 = (HX + 856, HY - 18)        # on that wall just east of the window
 PEN3 = (HX + 464, HY - 432, HX + 880, HY - 176)      # the guards, behind bars along the upper room's south side
@@ -221,6 +228,11 @@ m.sector(rect(MOUTH3[0], PY, MOUTH3[1], CY), ceil=192, light=185, color=HALL, wa
          ctex="AJTRIMF", id=PRESS3)
 assert HX + 512 <= MOUTH3[0] and MOUTH3[1] <= HX + 1024
 ajartime.press(m, HX + 768, HY + 1024, PRESS3)
+# the press's lamps: two in the chamber on its south wall, either side of the mouth; one in the hall on its
+# north wall beside the mouth
+ajartime.press_lamp(m, MOUTH3[0] - 32, CY + 2, 90, PRESS3)
+ajartime.press_lamp(m, MOUTH3[1] + 32, CY + 2, 90, PRESS3)
+ajartime.press_lamp(m, MOUTH3[0] - 32, PY - 2, 270, PRESS3)
 # the chamber's slabs: 160 or more from every wall and from the mouth, and clear of the time doors' way in
 for s in CSLABS3:
     assert s[0] - HX >= 160 and HX + HW - s[2] >= 160 and s[1] - CY >= 160 and WY - s[3] >= 160, s
@@ -229,29 +241,85 @@ for s in CSLABS3:
 # the time doors out of the chamber: out only (time.zs: the next go's box opens onto door 1)
 ajartime.hall_door(m, K3, 3, (HX + HW, DOORS3[0]), (HX + HW, DOORS3[1]), (1, 0), 0, out_only=True, color=HALL)
 ajartime.hall_door(m, K3, 4, (HX, DOORS3[0]), (HX, DOORS3[1]), (-1, 0), 0, out_only=True, color=HALL)
+# two plates in the chamber that work the wing: the screen's at the back opposite the mouth, the cage's in
+# the north-west corner (each says what it does the first time the player steps on it)
+SCREEN_PLATE3 = (HX + 768, WY - 64)
+CAGE_PLATE3 = (HX + 96, WY - 96)
+ajartime.shutter_plate(m, *SCREEN_PLATE3, SCREEN3, say=1)
+ajartime.shutter_plate(m, *CAGE_PLATE3, CAGE3, say=2)
+
+
+def gap(p, box):
+    """How far the point p is from the rectangle box."""
+    gx, gy = max(box[0] - p[0], p[0] - box[2], 0), max(box[1] - p[1], p[1] - box[3], 0)
+    return (gx * gx + gy * gy) ** 0.5
+
+
+for pl in (SCREEN_PLATE3, CAGE_PLATE3):
+    r = 28          # AjarPlate.REACH, and its picture's half
+    assert HX + r <= pl[0] <= HX + HW - r and CY + r <= pl[1] <= WY - r, ("a plate not wholly in the chamber", pl)
+    for sl in CSLABS3:
+        assert gap(pl, sl) >= r + 64, ("a plate by a slab", pl, sl)
+    for dx in (HX, HX + HW):        # the time doors' way in: their mouths in the chamber's side walls
+        assert gap(pl, (dx, DOORS3[0], dx, DOORS3[1])) >= r + 64, ("a plate by a time door", pl)
+    # one body is never on a plate and in the wing
+    w = walk(pl, ((MOUTH3[0] + MOUTH3[1]) / 2, CY), ((MOUTH3[0] + MOUTH3[1]) / 2, PY), (SHUTTER3[1], HY))
+    assert w > 600, (pl, w)
 # the wing: the shutter (open while someone is under the press; nothing of the hall's walks or flies past
 # its face), the landing, the stairs, the upper room, the window and the lever, the pen
-m.sector(rect(*LANDING3), floor=HY, ceil=WC, light=200, color=HALL)
+m.sector(rect(*LANDING3), floor=HY, ceil=WC, light=200, color=HALL, id=WING3TAG)
 ajarmap.stairs(m, (STAIRS3[0], STAIRS3[1]), (STAIRS3[0], STAIRS3[3]), (1, 0), HY, WF - HY, steps=6, depth=32,
-               ceil=WC, light=200, color=HALL)
-m.sector(rect(*UPPER3), floor=WF, ceil=WC, light=210, color=HALL)
-m.sector(rect(*PEN3), floor=WF, ceil=WC, light=170, color=PEN, wall="AJBOLT")
+               ceil=WC, light=200, color=HALL, id=WING3TAG)
+m.sector(rect(*UPPER3), floor=WF, ceil=WC, light=210, color=HALL, id=WING3TAG)
+m.sector(rect(*PEN3), floor=WF, ceil=WC, light=170, color=PEN, wall="AJBOLT", id=PENTAG3)
 PEN_SECTOR3 = len(m.polys) - 1
 assert STAIRS3[2] - STAIRS3[0] == 6 * 32 and LANDING3[2] == STAIRS3[0] and STAIRS3[2] == UPPER3[0]
 assert LANDING3[0] <= SHUTTER3[0] and SHUTTER3[1] <= LANDING3[2] and PEN3[0] == UPPER3[0] and PEN3[2] == UPPER3[2]
-# the bars: nothing walks across (players and monsters), shots and sight pass
+# the screen: shut while someone stands on its plate in the chamber, open otherwise; worked from the
+# upper room (a player in its way is put north), the full height of the wing. Shut, nothing passes it
+assert SCREENS3[1] == PEN3[3] and SCREENS3[3] == UPPER3[1] and SCREENS3[0] == PEN3[0] and SCREENS3[2] == PEN3[2]
+ajartime.shutter(m, (SCREENS3[0], SCREENS3[3]), (SCREENS3[2], SCREENS3[3]), (0, -1), WF, SCREEN3, high=WC - WF,
+                 screen=True, color=HALL)
+# the bars, between the pen and the screen: nothing walks across (players and monsters), shots and sight
+# pass; so no guard stands in the screen's way
 m.line((PEN3[0], PEN3[3]), (PEN3[2], PEN3[3]), mid="AJGRIL", midboth=True, wrapmidtex=True, blocking=True)
+# the screen's lamps: in the upper room on its north wall west of the window, and a repeater on the
+# landing's east wall south of the stairs, seen as the player comes in through the shutter
+ajartime.shut_lamp(m, HX + 672, HY - 18, 270, SCREEN3)
+ajartime.shut_lamp(m, LANDING3[2] - 2, HY - 136, 180, SCREEN3)
+assert STAIRS3[1] > HY - 136 + 8
+# the cage: an alcove east of the upper room, steel inside and lit, entered only by its shutter (worked
+# from the upper room: a player inside when it shuts is put out); beside it a slit of glass; inside, in
+# view of the glass, a megasphere
+m.sector(rect(*CAGE3BOX), floor=WF, ceil=WC, light=230, color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF",
+         id=WING3TAG)
+CAGE_SECTOR3 = len(m.polys) - 1
+ajartime.shutter(m, (UPPER3[2], CAGEDOOR3[0]), (UPPER3[2], CAGEDOOR3[1]), (1, 0), WF, CAGE3, behind=True,
+                 color=HALL)
+CAGE_SHUT_SECTOR3 = len(m.polys) - 1
+ajartime.glass(m, (UPPER3[2], CAGEDOOR3[1]), (UPPER3[2], CAGE3BOX[3]), (1, 0), WF)
+# (the post between the shutter and the glass: no trim drawn in it, and nothing steps sideways into the glass)
+m.line((UPPER3[2], CAGEDOOR3[1]), (UPPER3[2] + 16, CAGEDOOR3[1]), mid=None, dontpegbottom=False, blocking=True)
+assert CAGE3BOX[0] == UPPER3[2] + 16 and CAGEDOOR3[0] == CAGE3BOX[1] and CAGEDOOR3[1] - CAGEDOOR3[0] == 64
+assert CAGE3BOX[3] - CAGEDOOR3[1] == 32 and UPPER3[1] < CAGE3BOX[1] and CAGE3BOX[3] < UPPER3[3]
+MEGA3 = (HX + 940, HY - 72)
+spots(83, MEGA3)
+assert CAGE3BOX[0] + 24 < MEGA3[0] < CAGE3BOX[2] - 24 and CAGEDOOR3[1] <= MEGA3[1] <= CAGE3BOX[3] - 16
+ajartime.shut_lamp(m, UPPER3[2] - 2, HY - 36, 180, CAGE3)
 ajartime.shutter(m, (SHUTTER3[0], HY), (SHUTTER3[1], HY), (0, -1), HY, SHUT3, under=PRESS3, nomonsters=True,
                  color=HALL)
 ajartime.shut_lamp(m, SHUTTER3[1] + 24, HY + 2, 90, SHUT3)
 # the window: a gap in the wall 16 thick, its sill at the upper room's floor, 96 high; a drop of 96 into the hall
 m.sector(rect(WINDOW3[0], HY - 16, WINDOW3[1], HY), floor=WF, ceil=WF + 96, light=200, color=HALL, wall="AJTRIM",
-         ftex="AJTRIMF", ctex="AJTRIMF")
+         ftex="AJTRIMF", ctex="AJTRIMF", id=WING3TAG)
 for y in (HY, HY - 16):
     m.line((WINDOW3[0], y), (WINDOW3[1], y), blockmonsters=True)
 assert UPPER3[0] < WINDOW3[0] and WINDOW3[1] < LEVER3[0] < UPPER3[2] - 16 and LEVER3[0] - WINDOW3[1] <= 32
 ajartime.press_switch(m, *LEVER3, 270, PRESS3)
-ajartime.zone(m, K3, 0, LANDING3[0], PEN3[1], UPPER3[2], HY, mix=True)
+ajartime.zone(m, K3, 0, LANDING3[0], PEN3[1], CAGE3BOX[2] + 16, HY, mix=True)    # (the cage too)
+# the guards are sentries: the player (not an earlier self) on the landing, the stairs, the upper room, the
+# window or in the cage wakes those on the demo in the pen (time.zs, AjarSentry)
+ajartime.sentries(m, HX + 672, HY - 300, K3, PENTAG3, WING3TAG)
 ajartime.zone(m, K3, 0, HX, HY, HX + HW, HY + HH, grow=72, mix=True)
 spots(17, (HX + 150, HY - 140))             # a cell pack and a medikit on the landing
 spots(2012, (HX + 230, HY - 140))
@@ -279,7 +347,7 @@ WIN_MID, MOUTH_MID = ((WINDOW3[0] + WINDOW3[1]) / 2, HY - 8), ((MOUTH3[0] + MOUT
 assert not any(cuts(WIN_MID, MOUTH_MID, s) for s in SLABS3), "a slab between the window and the mouth"
 # what the pen sees: the upper room, the lever and the window, but not the landing or the lower stairs
 # (so the top of the stairs is where the player fights from). Sight in 2.5D: the wing's floors and ceilings
-WING_SPACES3 = [LANDING3 + (HY, WC), PEN3 + (WF, WC), UPPER3 + (WF, WC)]
+WING_SPACES3 = [LANDING3 + (HY, WC), PEN3 + (WF, WC), UPPER3 + (WF, WC), SCREENS3 + (WF, WC)]    # (the screen open)
 WING_SPACES3 += [(STAIRS3[0] + 32 * i, STAIRS3[1], STAIRS3[0] + 32 * (i + 1), STAIRS3[3], HY + 16 * (i + 1), WC)
                  for i in range(6)]
 EYES3 = [(x, y) for x in range(PEN3[0] + 20, PEN3[2] - 19, 16) for y in range(PEN3[1] + 20, PEN3[3] - 19, 16)]
@@ -331,7 +399,7 @@ spots(17, (4780, 130))                      # a cell pack
 LOBBY3 = [2004, 2046, 2006, 2003, 2046, 17]
 # the case in the lobby's north wall: self 1 standing among three bodies (under the press), and apart, at
 # the east end, self 2 at the lever on the case's side wall
-CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4826, 396, "me", 0, 270),
+CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4826, 396, "plate", 0, 0), (4826, 396, "me", 0, 270),
                                                  (4826, 396, "go", 1, 0), (4800, 360, "body", 66, 0),
                                                  (4866, 366, "body", 67, 0), (4850, 416, "body", 3003, 0),
                                                  (4942, 384, "me", 0, 0), (4942, 384, "go", 2, 0),
@@ -414,19 +482,46 @@ HARD3 = ajartime.toughness(c3.kinds)
 FIRE3 = ajartime.firepower(LOBBY3 + WING3 + BOXES3)
 assert 0.5 <= FIRE3 / HARD3 <= 0.7, (FIRE3, HARD3)
 REGIONS[3] = ajartime.on_foot("room 3", {"hall": (HX, HY, HX + HW, PY), "chamber": (HX, PY, HX + HW, HY + HH),
-                                         "wing": (LANDING3[0], LANDING3[1], UPPER3[2], HY),
+                                         "wing": (LANDING3[0], LANDING3[1], UPPER3[2], HY), "cage": CAGE3BOX,
                                          "lobby": (4744, 64, 5000, 320), "box1": (4776, 464, 4984, 656),
                                          "box2": (6552, 464, 6760, 656), "box3": (6100, -216, 6356, -16)},
-                              [("hall", "chamber", True), ("hall", "lobby", True), ("wing", "hall"),
+                              [("hall", "chamber", True), ("hall", "lobby", True), ("wing", "hall"), ("cage", "wing"),
                                ("box1", "hall"), ("box2", "hall"), ("box3", "hall")],
                               # (the hall to the wing: only while someone is under the press, which needs an
-                              # earlier self to be of use; the wing to the hall: the window, a drop)
+                              # earlier self to be of use; the wing to the hall: the window, a drop; the wing
+                              # to the cage: only while someone stands on its plate in the chamber)
                               {"hall": [(HX + 4, 720), (HX + HW - 4, 720)],
                                "chamber": [(HX + 4, sum(DOORS3) / 2), (HX + HW - 4, sum(DOORS3) / 2)],
                                "box1": [(4780, 560)], "box2": [(6756, 560)], "box3": [(6228, -212)]})
 ajartime.covers(m, "room 3", FIRST, REGIONS[3], zone=(4744, -440, 6608, 1400), exempt=CASES + [PEN_SECTOR3])
 # the plate that begins the fight anew: on the lobby's west wall, to the left of the way in
 ajartime.fight_anew(m, K3, 4746, 192, 0)
+
+
+def neighbours(si):
+    """The sectors reached from sector si over a two-sided line that does not block."""
+    import re
+    text = m.textmap()
+    sides = [int(v) for v in re.findall(r"sidedef\{[^}]*?sector=(\d+);", text)]
+    out = set()
+    for ld in re.findall(r"linedef\{([^}]*)\}", text):
+        if "sideback" not in ld or "blocking=true" in ld:
+            continue
+        f = sides[int(re.search(r"sidefront=(\d+);", ld).group(1))]
+        k = sides[int(re.search(r"sideback=(\d+);", ld).group(1))]
+        if si in (f, k):
+            out.add(k if f == si else f)
+    return out
+
+
+# the cage is entered only by its shutter, and overlaps nothing (box 3 or anything else)
+assert neighbours(CAGE_SECTOR3) == {CAGE_SHUT_SECTOR3}, neighbours(CAGE_SECTOR3)
+for si, poly in enumerate(m.polys):
+    if si == CAGE_SECTOR3:
+        continue
+    xs, ys = [q[0] for q in poly], [q[1] for q in poly]
+    assert not (min(xs) < CAGE3BOX[2] and CAGE3BOX[0] < max(xs) and min(ys) < CAGE3BOX[3] and CAGE3BOX[1] < max(ys)), \
+        ("the cage overlaps", si, poly)
 
 # === 4. the range: a fight of goes ============================================
 # The corridor from room 3 ends in a drop of 96 into the lobby, which is part
