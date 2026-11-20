@@ -49,6 +49,23 @@
 // frame and its time is not up, the lamps blink and the leaf's ticks every
 // half second; joined in time, a clear sound and the lamps are green; too
 // late, a dull sound, a short message and the lamps are red.
+//
+// A PAIR JOINED FOR A TIME (MAP32's room 2; PLAN.md, "MAP32 room 2: the Pair
+// shuts again"). AjarTogether args[1] n: the Pair stays joined n seconds after
+// its second leaf is hung (0, as before: for good; if the lamps of the two
+// frames differ, the smaller of those not 0). AjarDoor.joinEnds is the tic it
+// shuts. While it is joined the lamps are green and beep (the key levers'
+// beep) at every whole second left that is less than the whole time; at the
+// end both leaves stay hanging but are no longer joined, exactly as two leaves
+// hung too late (Late): shut, red lamps, the "too late" sound. To join it again
+// both are taken down and hung together again. Whoever stands in either mouth
+// then is put a step clear, on the side they are on (StandClear, as a sprung
+// frame does; an earlier self is put where its record says each tic anyway).
+// Two messages, once a level each: the first such join (said even when earlier
+// selves made it) and the first time one shuts again. The timetable (table.zs)
+// has a row for such a Pair with the spans in which the earlier selves'
+// hangings have it joined, and the lamps of its frames are amber while one is
+// about to begin (within SOON).
 
 class AjarPress : Actor
 {
@@ -256,7 +273,7 @@ class AjarPressSwitch : Actor
 }
 
 // A lamp on the wall beside a frame (args[0] its id): a Pair joins there only
-// if its leaves are hung together.
+// if its leaves are hung together (args[1] n: and stays joined n seconds only).
 class AjarTogether : Actor
 {
 	AjarFrame fr;
@@ -268,10 +285,12 @@ class AjarTogether : Actor
 	Spawn:
 		AJTW A -1;
 		Stop;
-	Lamps:                      // only so that these are loaded: B lit, C joined, D too late
-		AJTW BCD -1;
+	Lamps:                      // only so that these are loaded: B lit, C joined, D too late, E amber (soon)
+		AJTW BCDE -1;
 		Stop;
 	}
+
+	const AMBER = 4;
 
 	override void Tick()
 	{
@@ -287,6 +306,13 @@ class AjarTogether : Actor
 			AjarDoor tw = d.Twin();
 			bool alone = !tw || !tw.frame;
 			int age = level.maptime - d.hungAt;
+			if (d.args[0] && d.joinEnds)
+			{
+				// joined for a time: a beep at each whole second left, and shut at the end
+				int left = d.joinEnds - level.maptime;
+				if (left <= 0) h.Unjoin(d);
+				else if (left < d.joinTics && left % 35 == 0) A_StartSound("switches/exitbutn", CHAN_VOICE);
+			}
 			if (d.args[0]) show = 2;
 			else if (alone && age < AjarHandler.TOGETHER_TICS)
 			{
@@ -309,6 +335,17 @@ class AjarTogether : Actor
 			// a leaf hung in another such frame is waiting for its twin: blink with it
 			int age = h.TickingAge();
 			if (age >= 0) show = (age / 9) % 2 ? 0 : 1;
+		}
+		// not joined, nothing ticking: amber while the earlier selves' hangings are about to join it (table.zs)
+		if (show == 0 && h.TickingAge() < 0 || show == 3)
+		{
+			let th = AjarTimeHandler(EventHandler.Find("AjarTimeHandler"));
+			int soon = th ? th.PairJoinIn(args[0]) : -1;
+			if (soon >= 0 && soon <= AjarTimeHandler.SOON)
+			{
+				if (frame != AMBER) A_StartSound("switches/normbutn", CHAN_BODY, 0, 0.35);
+				show = AMBER;
+			}
 		}
 		frame = show;
 		bBright = show > 0;
@@ -348,6 +385,63 @@ extend class AjarHandler
 	string LateText(AjarDoor d)
 	{
 		return "Too late: the two " .. d.Label() .. " leaves were not hung\nwithin two seconds of each other. Both stay shut.";
+	}
+
+	// --- a Pair joined for a time ---------------------------------------------------
+	int pairSaid;               // its messages said in this level (bits 1: the first join for a time, 2: the first shut)
+	int pairSaidAt;             // the tic (+ 1) the first was said (SayHung says nothing over it)
+
+	// How many seconds a Pair hung in frames fa and fb stays joined (0: for good): the
+	// smallest of their lamps' args[1] that is not 0.
+	int JoinSeconds(int fa, int fb)
+	{
+		int best = 0;
+		let it = ThinkerIterator.Create("AjarTogether");
+		Actor a;
+		while (a = Actor(it.Next()))
+			if ((a.args[0] == fa || a.args[0] == fb) && a.args[1] > 0 && (!best || a.args[1] < best)) best = a.args[1];
+		return best;
+	}
+
+	// Hang: leaf d has just joined its twin tw; for `tics` (0: for good).
+	void JoinFor(AjarDoor d, AjarDoor tw, int tics)
+	{
+		d.joinTics = tw.joinTics = tics;
+		d.joinEnds = tw.joinEnds = tics ? level.maptime + tics : 0;
+		if (!tics || (pairSaid & 1)) return;
+		pairSaid |= 1;
+		pairSaidAt = level.maptime + 1;
+		Say(String.Format("Both leaves of the %s pair hang: each frame opens onto the other,\nbut only for %d seconds. Then both shut again.", d.Label(), tics / 35));
+	}
+
+	// The time of a joined Pair is up: both leaves hang on, shut, as two hung too late.
+	void Unjoin(AjarDoor d)
+	{
+		AjarDoor tw = d.Twin();
+		Array<AjarDoor> both;
+		both.Push(d);
+		if (tw) both.Push(tw);
+		for (int i = 0; i < both.Size(); i++)
+		{
+			AjarDoor o = both[i];
+			o.args[0] = 0;
+			o.joinEnds = o.joinTics = 0;
+		}
+		for (int i = 0; i < both.Size(); i++)
+		{
+			AjarDoor o = both[i];
+			if (!o.frame) continue;
+			Link(o.frame.args[0], 0, o.BackTex());
+			o.Show();           // (hidden: a shut leaf is drawn on its line)
+			StandClear(FindLine(o.frame.args[0]));
+			o.frame.A_StartSound("plats/pt1_stop", CHAN_AUTO);
+			Spring(o.frame);
+		}
+		ChainUpdate();
+		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST info the %s pair shuts again at %d", d.Label(), level.maptime);
+		if (pairSaid & 2) return;
+		pairSaid |= 2;
+		Say("The " .. d.Label() .. " pair has shut again. To join it, both leaves\nmust be taken down and hung together again.");
 	}
 
 	// How long ago a leaf that waits for its twin in such a frame was hung (-1: none waits).

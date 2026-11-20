@@ -104,6 +104,8 @@ class AjarDoor : Actor
 	Actor nailer;      // who nailed it to its frame, or null (itself: a fixed doorway)
 	int strayTics;     // a Stray door that is open: how long it has left
 	int hungAt;        // a Pair's leaf: the level's tic it was last hung (goes.zs, two keys at once)
+	int joinEnds;      // joined for a time only (goes.zs): the level's tic it shuts again (0: for good)
+	int joinTics;      // and how long that time is
 
 	Default
 	{
@@ -751,7 +753,12 @@ class AjarHandler : EventHandler
 			// (two frames that are hung "together" join only leaves hung close in time: goes.zs)
 			d.hungAt = level.maptime;
 			d.args[0] = tw && tw.frame && InTime(d, f, tw) ? tw.frame.args[0] : 0;
-			if (d.args[0]) tw.args[0] = f.args[0];
+			d.joinEnds = d.joinTics = 0;
+			if (d.args[0])
+			{
+				tw.args[0] = f.args[0];
+				JoinFor(d, tw, 35 * JoinSeconds(f.args[0], tw.frame.args[0]));      // (goes.zs: a Pair joined for a time)
+			}
 		}
 		Link(f.args[0], d.args[0], d.IsPair() ? d.BackTex() : FRAME_TEX);
 		Link(d.args[0], f.args[0], d.BackTex());
@@ -790,7 +797,8 @@ class AjarHandler : EventHandler
 		{
 			AjarDoor tw = d.Twin();
 			d.args[0] = 0;
-			if (tw) { tw.args[0] = 0; if (tw.frame) tw.Show(); }
+			d.joinEnds = d.joinTics = 0;
+			if (tw) { tw.args[0] = 0; tw.joinEnds = tw.joinTics = 0; if (tw.frame) tw.Show(); }
 		}
 		ChainUpdate();
 		return d;
@@ -866,7 +874,9 @@ class AjarHandler : EventHandler
 	// What hanging the carried door in f has to say.
 	void SayHung(AjarDoor d, AjarDoor old)
 	{
-		if (d.IsPair() && d.args[0])
+		if (d.IsPair() && d.args[0] && pairSaidAt == level.maptime + 1)
+			return;             // (the first join for a time has said so: goes.zs, JoinFor)
+		else if (d.IsPair() && d.args[0])
 			Say("Both leaves of the " .. d.Label() .. " pair hang:\neach frame opens onto the other.");
 		else if (d.IsPair() && Late(d))
 			Say(LateText(d));

@@ -37,6 +37,19 @@ extend class AjarTimeHandler
 	int dsKeyO;
 	int penHitsMe, penHitsGhost;    // hits on a monster in room 4's pen by the player, by an earlier self
 	AjarDoor leafA32, leafB32;
+	const PAIR32 = 105;         // room 2's Pair stays joined three seconds (map_secret2.PAIR2)
+	const YX32 = 3600;          // where YELLOW leans in room 2's pit, and where it is taken from (map_secret2.YELLOW_AT)
+	const YY32 = -810;
+	bool dsAmber2;
+	// the clock lamps of room 2's frames A (131) and B (132): both showing frame f
+	bool PairLamps32(int f)
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("AjarTogether");
+		Actor l;
+		while (l = Actor(it.Next())) if (l.args[0] == 131 || l.args[0] == 132) { if (l.frame != f) return false; n++; }
+		return n == 2;
+	}
 	Actor dsGhost;              // MODE=2: a self in room 3's chamber, for the view of the shutter open
 
 	void Ahead(Actor mo) { mo.vel.xy = Actor.AngleToVector(mo.angle, 8); }
@@ -259,7 +272,7 @@ extend class AjarTimeHandler
 			phase ? Left() : -1, level.killed_monsters, dsStep);
 		if (t == 3)
 		{
-			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 43 && !Figures(true));
+			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 49 && !Figures(true));
 			Check("allThere", violet && yellow && green && pink && blue && red && a && b && f1 && fa && fb && fw && g1 && g2 && home && home2
 				&& p1 && p51 && p52 && kw && ke && KeyLamp4(1) && KeyLamp4(2) && pr && sh && sw && sh3 && Lamp33() && red.frame == home && !h.chainLen);
 		}
@@ -318,8 +331,10 @@ extend class AjarTimeHandler
 			dsStep = 2;
 			return;
 		}
-		// the solution: go 1 hangs a at TA32 and goes out by door 1; go 2 hangs b in time,
-		// and brings YELLOW up through the Pair
+		// the solution, three selves: go 1 hangs a at TA32 and goes out by door 1; go 2 hangs b in time (the
+		// Pair is joined for three seconds), fetches YELLOW from the far end of the pit, finds the Pair shut
+		// again and goes out by the pit's time door; go 3 takes YELLOW before the second self would, waits at
+		// B, walks through when the two earlier selves have joined it, and hangs YELLOW in W
 		if (dsStep == 2 && goes && fight == 2 && g == 1)
 		{
 			if (o == 2) Check("forgotten2", !a.frame && !b.frame && !a.carried && !b.carried && !AllGhosts() && !yellow.frame);
@@ -329,22 +344,80 @@ extend class AjarTimeHandler
 			if (o == TA32 + 4) Go(mo, 2480, 280, 0, 90);
 			if (o > TA32 + 4 && o < TA32 + 25) Walk(mo, (0, 8));
 		}
+		int join2 = TA32 + 8, shut2 = join2 + PAIR32;
 		if (dsStep == 2 && goes && fight == 2 && g == 2)
 		{
 			if (o == 3) { Go(mo, 3560, 530, F32, 90); b.Used(mo); }
 			if (o == 5) Go(mo, 3696, 600, F32, 90);
-			if (o == TA32 + 8) fb.Activate(mo);
-			if (o == TA32 + 10)
+			if (o == join2) fb.Activate(mo);
+			if (o == join2 + 2)
 				Check("joined2", a.frame == fa && b.frame == fb && a.args[0] == 132 && b.args[0] == 131 && AllGhosts() == 1
-					&& !(la.flags & Line.ML_BLOCKING) && !(lb.flags & Line.ML_BLOCKING));
-			if (o == TA32 + 12) { Go(mo, 3700, -120, F32, 270); yellow.Used(mo); }
-			if (o == TA32 + 14) Go(mo, 3696, 600, F32, 90);
-			if (o > TA32 + 14 && o < TA32 + 34) Ahead(mo);
-			if (o == TA32 + 36)
-				Check("yellowUp2", k == 2 && mo.pos.x < 2400 && mo.pos.z > -1 && h.carried == yellow && a.frame == fa && b.frame == fb);
-			if (o == TA32 + 38) { Go(mo, 2632, 40, 0, 270); fw.Activate(mo); }
-			if (o == TA32 + 40) Check("hungInW2", yellow.frame == fw && !h.carried && !yellow.nailer && !h.wayOutBuilt);
-			if (o == TA32 + 42) { Go(mo, 2632, 40, 0, 270); dsOnFrom = 2; }
+					&& !(la.flags & Line.ML_BLOCKING) && !(lb.flags & Line.ML_BLOCKING) && a.joinEnds == level.maptime - 2 + PAIR32);
+			if (o == join2 + 4) { Go(mo, YX32, YY32, F32, 270); yellow.Used(mo); }
+			// back at B just before it shuts, standing in its mouth (10 from the line)
+			if (o == shut2 - 6)
+			{
+				Vector2 dir = lb.delta.Unit(), n = (dir.y, -dir.x), mid = (lb.v1.p + lb.v2.p) / 2;
+				Go(mo, mid.x + n.x * 10, mid.y + n.y * 10, F32, 90);
+			}
+			if (o == shut2 - 2)
+				Check("stillJoined2", a.args[0] == 132 && b.args[0] == 131 && !(la.flags & Line.ML_BLOCKING) && !(lb.flags & Line.ML_BLOCKING)
+					&& PairLamps32(2) && h.carried == yellow);
+			if (o == shut2 + 2)
+			{
+				Vector2 dir = lb.delta.Unit(), n = (dir.y, -dir.x);
+				double off = (mo.pos.xy - lb.v1.p) dot n;
+				Console.Printf("AJARTEST info shut again: the player %.1f from B's line, at (%d,%d,%d)", off, mo.pos.x, mo.pos.y, mo.pos.z);
+				Check("shutAgain2", a.frame == fa && b.frame == fb && a.Shut() && b.Shut() && h.Late(a) && h.Late(b) && !a.joinEnds && !b.joinEnds
+					&& (la.flags & Line.ML_BLOCKING) && (lb.flags & Line.ML_BLOCKING) && PairLamps32(3) && h.pairSaid == 3);
+				Check("putClear2", off >= AjarHandler.CLEAR - 0.5 && k == 2 && mo.pos.z < -90);
+			}
+			// self 2, back with YELLOW, walks into B: shut
+			if (o > shut2 + 4 && o < shut2 + 24) Ahead(mo);
+			if (o == shut2 + 26) Check("backTooLate2", k == 2 && mo.pos.z < -90 && mo.pos.x > 3280 && h.carried == yellow && a.Shut() && b.Shut());
+			if (o == shut2 + 28) Go(mo, 3760, -96, F32, 0);
+			if (o > shut2 + 28 && o < shut2 + 48) Walk(mo, (8, 0));
+		}
+		if (dsStep == 2 && goes && fight == 2 && g == 3)
+		{
+			int yi = dDoor.Find(yellow);
+			if (o == 2)
+			{
+				// the timetable: the Pair's row, one span of the second self from its hanging, three seconds long
+				let tb = Table();
+				int rows = 0, row = -1;
+				for (int i = 0; i < tb.rPair.Size(); i++) if (tb.rPair[i]) { rows++; row = i; }
+				int n = 0;
+				bool ok = tb.on && rows == 1 && tb.jFrom.Size() == 1 && abs(tb.jFrom[0] - join2) <= 1 && tb.jTo[0] - tb.jFrom[0] == PAIR32
+					&& (tb.jFa[0] == 132 && tb.jFb[0] == 131);
+				for (int i = 0; i < tb.sRow.Size(); i++) if (tb.sRow[i] == row) { n++; ok = ok && tb.sSelf[i] == 1 && tb.sFrom[i] == tb.jFrom[0] && tb.sTo[i] == tb.jTo[0]; }
+				Console.Printf("AJARTEST info timetable: on=%d pairRows=%d spans=%d from=%d to=%d", tb.on, rows, tb.jFrom.Size(),
+					tb.jFrom.Size() ? tb.jFrom[0] : -1, tb.jTo.Size() ? tb.jTo[0] : -1);
+				Check("pairOnTheTimetable2", ok && n == 1 && !yellow.frame && !yellow.carried && Near(yellow, YX32, YY32 - 30, 8));
+				dsAmber2 = true;
+			}
+			if (o == 5) { Go(mo, YX32, YY32, F32, 270); yellow.Used(mo); }
+			if (o == 7) Go(mo, 3696, 600, F32, 90);
+			// the lamps: not lit 140 tics before the earlier selves join it, amber 40 before, green when joined
+			if (o == join2 - 140) dsAmber2 = dsAmber2 && PairLamps32(0) && abs(PairJoinIn(131) - 140) <= 1;
+			if (o == TA32 - 40) dsAmber2 = dsAmber2 && PairLamps32(AjarTogether.AMBER);
+			if (o == join2 + 2)
+			{
+				Check("pairLampsAmber2", dsAmber2 && PairLamps32(2) && PairJoinIn(132) == 0);
+				Check("joinedByMyEarlierSelves2", a.frame == fa && b.frame == fb && a.args[0] == 132 && b.args[0] == 131 && AllGhosts() == 2
+					&& !(la.flags & Line.ML_BLOCKING) && !(lb.flags & Line.ML_BLOCKING) && h.carried == yellow && a.joinTics == PAIR32);
+			}
+			// the second self's pick-up of YELLOW (at join2 + 4) finds it in my hands: it mimes it, and from then on
+			// does nothing to YELLOW
+			if (o == join2 + 6)
+				Check("lostPickUp2", h.carried == yellow && yellow.carried && logs[1].broken.Find(yi) < logs[1].broken.Size()
+					&& dHold[yi] == -1 && a.args[0] == 132);
+			if (o > join2 + 6 && o < join2 + 26) Ahead(mo);
+			if (o == join2 + 28)
+				Check("yellowUp2", k == 2 && mo.pos.x < 2400 && mo.pos.z > -1 && h.carried == yellow && a.frame == fa && b.frame == fb && o < shut2);
+			if (o == join2 + 30) { Go(mo, 2632, 40, 0, 270); fw.Activate(mo); }
+			if (o == join2 + 32) Check("hungInW2", yellow.frame == fw && !h.carried && !yellow.nailer && !h.wayOutBuilt);
+			if (o == join2 + 34) { Go(mo, 2632, 40, 0, 270); dsOnFrom = 2; }
 		}
 		// === 3: the press ===
 		if (dsStep == 2 && fight == 3)

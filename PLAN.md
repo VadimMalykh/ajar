@@ -5542,6 +5542,7 @@ its entrance. Nothing hurts in rooms 1, 2 and 5.
 - Room 3 is rebuilt again, as two shifts (the bait fights in the chamber, the next self fights through a guarded wing to the lever): see "MAP32 room 3: two shifts" at the end.
 - Room 3 gets plates in the chamber that work the wing (a screen before the guards, a cage), guards that wake for whoever comes into the wing, and a timetable (amber lamps, a bar under the clock): see "MAP32 room 3: plates in the fight, and the timetable" at the end.
 - Room 4 is rebuilt around two keys under fire (two key levers in two guarded wings, pulled within two seconds of each other by two selves, open the pen's shutter for half a minute; the booth and its plate are gone): see "MAP32 room 4: two keys under fire" at the end.
+- Room 2's Pair stays joined three seconds only, and the pit is longer, YELLOW at its far end (three selves are needed now): see "MAP32 room 2: the Pair shuts again" at the end.
 
 ## Begin anew in a fight (built 2026-11-20)
 
@@ -6503,3 +6504,110 @@ the gallery) is the ordinary "off the plate" case, tested once.
 
 **Not played by hand**:
 `cd /data/src/doom/doomer/.wt/ajar/m16-gallery-baron && MAP=MAP16 ./run.sh`
+
+## MAP32 room 2: the Pair shuts again (built 2026-11-20)
+
+In room 2 the second self used to do everything at leisure: once joined, the
+TEAL Pair stayed joined for good. Now a joined Pair can run out, room 2's after
+three seconds, and the pit is long enough that the self who hangs the leaf in B
+cannot then fetch YELLOW and bring it through.
+
+- **A Pair joined for a time** (goes.zs, its header). `AjarTogether` args[1]
+  n (`ajartime.together(..., seconds=n)`): the Pair stays joined n seconds
+  after its second leaf is hung; 0 is for good, as before (TWOKEY and every
+  other lamp have 0). If the two frames' lamps differ, the smaller that is not
+  0 (`JoinSeconds`). `Hang` sets `AjarDoor.joinEnds` and `joinTics` on both
+  leaves (`JoinFor`); `Unhang` clears them. While it is joined the lamps are
+  green and each beeps (the key levers' countdown beep, `switches/exitbutn`)
+  at every whole second left that is less than the whole time (at 2 and 1
+  for three seconds). At the end (`Unjoin`, done by the first lamp that
+  ticks then) both leaves stay hanging, un-joined: shut, both lines solid,
+  red lamps, the "too late" sound at both frames; exactly the state of two
+  leaves hung too late (`Late` is true). To join again both are taken down
+  and hung together again by the old rule. It is not a door action, so
+  nothing of it is written in the go log: the earlier selves' hangings bring
+  it about again in every go by themselves.
+- **Nobody is left stuck.** When it shuts, the player in either mouth is put a
+  step clear on the side they are on (`StandClear`, as a sprung frame does
+  when it shuts: 26 from the line). Without it the player could be left
+  overlapping a line that has just become solid. An earlier self is put where
+  its record says every tic (`SetOrigin`), so it is never stuck; one crossing
+  in its record when it shuts simply walks on through the wall, as a ghost
+  does wherever its go differs.
+- **Messages**, once a level each (`AjarHandler.pairSaid`): the first join
+  for a time, also when the earlier selves make it ("Both leaves of the TEAL
+  pair hang: each frame opens onto the other, / but only for 3 seconds. Then
+  both shut again."; `SayHung` does not say its own over it), and the first
+  time one shuts again ("The TEAL pair has shut again. To join it, both
+  leaves / must be taken down and hung together again.").
+- **The timetable** (table.zs). `PairHolds`: from the earlier selves' logs,
+  every hanging and taking down of a Pair leaf in tic order, played by the
+  live rules (joined when the second leaf is hung within 70 tics of the
+  first in frames of which one has a lamp; from that tic for the lamps'
+  seconds, or until a leaf is taken down; a joining for good is not a row):
+  one row on the bar per such Pair (`AjarTable.rPair`, its args[4]), green
+  over the spans, and the spans with their frames (`jFa`, `jFb`, `jFrom`,
+  `jTo`) for `PairJoinIn(frame)`: tics until the earlier selves have it
+  joined (0 while they do, -1 never). The table's key now also counts the
+  earlier logs' door entries. The lamp (`AjarTogether`) is amber (frame E,
+  now loaded by it) while such a span begins within `SOON`, when it is
+  neither joined nor blinking for a leaf hung alone, with the soft click of
+  the other lamps as it turns amber.
+- **Room 2** (`tools/map_secret2.py`): `PAIR2` 3 seconds on both lamps. The
+  pit is 3280..3792 by -900..640 (`PIT2`; it was -256..640), nothing was in
+  the way to the south; YELLOW leans at its far south end, (3600, -840).
+  From before B's mouth (3696, 600) to YELLOW is 1443 (asserted 1400 or
+  more), there and back at the fastest strafe-run (23.6 a tic) 122 tics
+  (asserted 105 + 10 or more). Time door 2, the leaf by B, the drop are as
+  they were. The zone, the `on_foot` pit region and the `covers` box follow
+  the pit. The case (glass 2048..2304, 256 wide, was 224): self 1 by one
+  hung TEAL leaf, self 2 by the other, both lamps green, self 3 by the
+  second leaf with YELLOW leaning beside it (there is no figure of a self
+  carrying a door), each with its number over its head. YELLOW in W is left
+  out: a case wider than 256 has glass bigger than `covers()` lets go
+  without a region, and three selves, two leaves and YELLOW fill 256.
+  `begun1` counts 49 figures (was 43).
+- **The solutions.** Three selves (tested): go 1 hangs a in A and leaves by
+  door 1; go 2 drops into the pit, hangs b in B within two seconds (joined
+  for three), runs for YELLOW, comes back to a shut Pair and leaves by the
+  pit's door (YELLOW stays there); go 3 takes YELLOW before self 2 would
+  (self 2's replayed pick-up finds it gone: the conflict rule drops that and
+  the rest of what it does to YELLOW, nothing breaks), waits at B, walks
+  through when the two earlier selves have joined it, and hangs YELLOW in W.
+  **The two-self solution of the brief is impossible**: it needs go 2 to put
+  YELLOW down by B and pick up leaf b, but a door cannot be put down (only
+  hung; "You can only carry one door"), B takes a TEAL leaf only, and a door
+  an earlier self holds is left leaning only where its go ends (at a time
+  door, after its hanging of A). So room 2 now needs three selves, which is what
+  Vadim asked for ("so we actually need 3 copies of the player"); the
+  two-self way was an addition of the session's that rested on a wrong
+  reading of the carrying rules. No way to put a door down was added.
+- **Choices of mine.** The beep and the end are played by each lamp and
+  each frame (heard at either end); the timed message is said by `Hang`
+  (so also for the earlier selves' join) and suppressed in `SayHung` in
+  that tic; amber only when the lamp is otherwise unlit or red; the span's
+  row is per Pair, not per frame; the case's layout and the room's numbers
+  above.
+- **Tests.** `MAP=MAP32 MODE=3 TIMEOUT=850` (`smoke_MAP32_3.cfg` waits 6800,
+  was 6300; the level is left at about tic 5450): room 2's part plays the
+  three-self solution. Kept: noLeak2, itTicks2, tooLateAlone2,
+  pitDoorToTheBox2, forgotten2, joined2 (now also asks the time it shuts),
+  yellowUp2 (now in go 3), hungInW2, on2. New (8): stillJoined2 (2 tics
+  before its time: joined, lines open, both lamps green), shutAgain2 (2
+  after: both hang, `Late`, not joined, both lines solid, both lamps red,
+  both messages said), putClear2 (self 2 stood 10 from B's line in its mouth
+  as it shut: put 26 from it, in the pit), backTooLate2 (self 2 walks into B
+  with YELLOW: still in the pit), pairOnTheTimetable2 (go 3's table: one
+  Pair row, one span of self 2 from its hanging, 105 long, and YELLOW back
+  at the far end), pairLampsAmber2 (both lamps unlit 140 tics before the
+  earlier selves join it, amber 48 before, green when joined),
+  joinedByMyEarlierSelves2, lostPickUp2 (self 2's pick-up of YELLOW broken,
+  YELLOW in my hands, nothing held by self 2). 67 checks in all (was 59).
+- **Results** (2026-11-20, full build, each suite alone): MODE=3 67 of 67 and
+  out by the line in each of three runs; once each: MODE=4 7, MODE=5 23,
+  MODE=7 18, MODE=8 5, TWOKEY 3 8, SHUT 3 20, PLATE 3 34, all as before;
+  MODE=2 (33 screenshots) without errors, room 2's case and pit looked at.
+- **Not tested**: a Pair joined for a time whose two lamps give different
+  seconds; a leaf taken down by hand while it is joined for a time (the
+  code path is `Unhang`'s, as before); a run by hand against the three
+  seconds. **Not played by hand.**
