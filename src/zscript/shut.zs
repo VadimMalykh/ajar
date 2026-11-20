@@ -14,7 +14,10 @@
 // clear of it on the side it is worked from, and anything else in its way
 // (an earlier self, a monster) it waits for: it never crushes. Every go of
 // a fight or a room of goes begins with every shutter shut and every
-// shutter's plate up (ShuttersShut).
+// shutter's plate up (ShuttersShut). args[2] 1 (MAP32's room 3): the sector
+// right behind it is a booth whose only way out it is: a player in the booth
+// when it shuts is put out on the side it is worked from too, before the
+// opening, so nobody is shut in.
 //
 // AN EARLIER SELF'S SHOTS, in a fight of goes (zone args[4] 3) while it is
 // a fight: what an AjarGhost fires hurts a monster on the demo and wakes it
@@ -44,7 +47,8 @@
 // green, as when a Pair is joined in time; 7 the player mid-stride; 8 the
 // number args[1] (1 to 3) of a go, over a self's head; 9 a door frame's face,
 // brass inlaid with colour args[1], for a door to stand in; 10 the plaque
-// over a case, a clock and "wind on": later), args[2] its size
+// over a case, a clock and "wind on": later; 11 the press's switch, set
+// off, on a wall), args[2] its size
 // in percent (0: 100). A plate has a small warm light. No behaviour: not solid, not shootable, never
 // counted, no weight on a plate, and not recorded, replayed or snapped by
 // the go machinery (Counts, RecordFx, Snap leave it out).
@@ -57,6 +61,7 @@ class AjarShutter : Actor
 	Array<int> secs;
 	Array<double> bottom;
 	double x1, y1, x2, y2;      // round the opening
+	double bx1, by1, bx2, by2;  // round the booth behind it (args[2])
 
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
@@ -66,6 +71,19 @@ class AjarShutter : Actor
 		if (known) return;
 		known = true;
 		x1 = y1 = 1e9; x2 = y2 = -1e9;
+		bx1 = by1 = 1e9; bx2 = by2 = -1e9;
+		if (args[2])
+		{
+			Sector b = level.PointInSector(pos.xy - AngleToVector(angle, 24));
+			for (int j = 0; j < b.lines.Size(); j++)
+			{
+				for (int v = 0; v < 2; v++)
+				{
+					Vector2 p = v ? b.lines[j].v2.p : b.lines[j].v1.p;
+					bx1 = min(bx1, p.x); by1 = min(by1, p.y); bx2 = max(bx2, p.x); by2 = max(by2, p.y);
+				}
+			}
+		}
 		let it = level.CreateSectorTagIterator(args[0]);
 		int i;
 		while ((i = it.Next()) >= 0)
@@ -102,16 +120,20 @@ class AjarShutter : Actor
 		return false;
 	}
 
-	// The player is not left in it: a step clear on the side it is worked from.
+	// The player is not left in it (nor in the booth behind it, args[2] deep):
+	// a step clear on the side it is worked from.
 	void Clear()
 	{
 		let mo = players[consoleplayer].mo;
 		if (!mo) return;
 		double r = mo.radius;
-		if (mo.pos.x + r <= x1 || mo.pos.x - r >= x2 || mo.pos.y + r <= y1 || mo.pos.y - r >= y2) return;
 		Vector2 d = AngleToVector(angle), p = mo.pos.xy;
-		if (abs(d.x) > abs(d.y)) p.x = d.x > 0 ? x2 + r + 1 : x1 - r - 1;
-		else p.y = d.y > 0 ? y2 + r + 1 : y1 - r - 1;
+		bool inWay = !(mo.pos.x + r <= x1 || mo.pos.x - r >= x2 || mo.pos.y + r <= y1 || mo.pos.y - r >= y2);
+		bool inBooth = !(mo.pos.x + r <= bx1 || mo.pos.x - r >= bx2 || mo.pos.y + r <= by1 || mo.pos.y - r >= by2);
+		if (!inWay && !inBooth) return;
+		// out on the worked side (from a booth: before the opening)
+		if (abs(d.x) > abs(d.y)) { p.x = d.x > 0 ? x2 + r + 1 : x1 - r - 1; if (args[2]) p.y = clamp(p.y, y1 + r, y2 - r); }
+		else { p.y = d.y > 0 ? y2 + r + 1 : y1 - r - 1; if (args[2]) p.x = clamp(p.x, x1 + r, x2 - r); }
 		mo.SetOrigin((p, mo.pos.z), true);
 	}
 
@@ -236,6 +258,12 @@ class AjarFigure : Actor
 			bWallSprite = true;
 			sprite = GetSpriteIndex("AJPQ");
 			frame = 0;
+			bBright = true;
+			break;
+		case 11:        // the press's switch on a wall, set off (MAP32's room 3)
+			bWallSprite = true;
+			sprite = GetSpriteIndex("AJPS");
+			frame = 1;
 			bBright = true;
 			break;
 		}

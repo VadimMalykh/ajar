@@ -304,8 +304,10 @@ extend class AjarTimeHandler
 	// box 1; go 2 picks up box 1's three things and uses the plate: all is as
 	// at the first entry. Then every box is used and the player killed after
 	// the last: it begins anew again (not the level). Then the fight is won,
-	// as before: the steel door opens.
+	// as before: the steel door opens. Room 3's go 2 stands on the cell's
+	// plate first, and the booth's shutter is shut again (boothShutAnew3).
 	int faStep, faT, faRoom, faTotal, faLeft, faPicks, faDeaths;
+	bool faBooth;               // room 3: the booth was open, its plate pressed, when the plate was used
 	AjarFightAnew faPlate;
 
 	AjarFightAnew FightAnewOf(int k)
@@ -461,9 +463,18 @@ extend class AjarTimeHandler
 			}
 			// out into the hall, two more killed, and to the plate
 			if (o == 34) { Go(mo, r3 ? 5100 : 7300, r3 ? 200 : 100, r3 ? 0 : -96, 90); }
+			// (room 3: on the cell's plate, so that the booth's shutter is opening)
+			if (r3 && o == 35) Go(mo, 5880, 1344, 0, 270);
 			if (o == 40) KillTwo(mo);
 			if (o == 44)
 			{
+				if (r3)
+				{
+					AjarShutter sh3 = FindShutter(SHUT33);
+					AjarPlate sp3 = FloorPlate32(0, SHUT33);
+					faBooth = sh3 && sp3 && sh3.Opened() > 0.3 && sp3.pressed;
+					Console.Printf("AJARTEST info booth opened=%.2f pressed=%d", sh3 ? sh3.Opened() : -1, sp3 && sp3.pressed);
+				}
 				Check(String.Format("plateThere%d", R), faPlate != null);
 				Vector2 front = faPlate.pos.xy + Actor.AngleToVector(faPlate.angle, 40);
 				Go(mo, front.x, front.y, r3 ? 0 : -96, faPlate.angle + 180);
@@ -472,7 +483,16 @@ extend class AjarTimeHandler
 				faT = t;
 			}
 		}
-		if (faStep == 2 && t == faT + 1) Check(String.Format("asAtTheFirstEntry%d", R), AsAtFirst(mo, R));
+		if (faStep == 2 && t == faT + 1)
+		{
+			Check(String.Format("asAtTheFirstEntry%d", R), AsAtFirst(mo, R));
+			if (r3)
+			{
+				AjarShutter sh3 = FindShutter(SHUT33);
+				AjarPlate sp3 = FloorPlate32(0, SHUT33);
+				Check("boothShutAnew3", faBooth && sh3.IsShut() && !sp3.pressed);
+			}
+		}
 		if (faStep == 2 && t == faT + 4)
 		{
 			Console.Printf("AJARTEST info room=%d left=%d/%d total=%d/%d", R, Left(), faLeft, level.total_monsters, faTotal);

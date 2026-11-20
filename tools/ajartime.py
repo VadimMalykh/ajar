@@ -59,14 +59,15 @@ def show_tag(k):
     return 3080 + 100 * k
 
 
-def cue(m, k, wave, when, kind, *spots, angle=0, always=False):
+def cue(m, k, wave, when, kind, *spots, angle=0, always=False, calm=False):
     """Monsters of Doom editor number `kind` that come into fight k at
     `spots`, as wave number `wave`, once no more than `when` are left. A
     hall with a show starts empty: its first monsters are wave 1, when 0.
-    `always`: on every difficulty (what a fight is remembered by)."""
+    `always`: on every difficulty (what a fight is remembered by). `calm`:
+    they never fight each other (NOINFIGHTING; time.zs, Calm)."""
     for x, y in spots:
         i = m.cues = getattr(m, "cues", -1) + 1         # thinned on the easier difficulties, as ajarmap.ambush
-        m.thing(x, y, CUE_T, angle=angle, args=(k, wave, when, kind),
+        m.thing(x, y, CUE_T, angle=angle, args=(k, wave, when, kind, int(calm)),
                 skill=1 if always or i % 2 == 0 else 3 if i % 4 == 3 else 2)
 
 
@@ -142,7 +143,7 @@ FIGURE_T = 20051
 SHUT_HIGH = 96          # how high a shutter opens, over its floor
 
 
-def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, color=None):
+def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, behind=False, color=None):
     """A shutter in a wall: a-b is its face on the side it is worked from
     (where whoever is in its way is put when it shuts), `out` points through
     it to the other side. It is a sector `thick` deep (tag `tag`) whose
@@ -151,7 +152,10 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, c
     shut.zs, AjarShutter). Declare the places on both sides first. `keep`:
     nothing walks between the shutter and the far side, open or shut (a pen:
     the line there is impassable to players and monsters, but shots and
-    sight pass it, so what is penned fights through the open shutter)."""
+    sight pass it, so what is penned fights through the open shutter).
+    `behind`: the sector right behind it is a booth whose only way out it
+    is: a player in the booth when it shuts is put out, as one in its way
+    is (shut.zs, AjarShutter args[2])."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
     m.sector([a, b, d, c], floor=floor, ceil=floor, light=170, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
@@ -161,7 +165,7 @@ def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, c
     for p, q in ((a, c), (b, d)):
         m.line(p, q, mid="AJTRIM", dontpegbottom=True)
     ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]
-    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high))
+    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high, int(behind)))
 
 
 def shutter_plate(m, x, y, tag):
@@ -172,7 +176,7 @@ def shutter_plate(m, x, y, tag):
 
 
 FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5, "lamp": 6, "walking": 7, "go": 8, "frame": 9,
-           "plaque": 10}
+           "plaque": 10, "lever": 11}
 GO_OVER = 34        # how high a go's number floats over the floor under a self of scale 0.5
 
 
@@ -186,8 +190,9 @@ def figure(m, x, y, what, *, kind=0, angle=0, scale=None, z=0):
     lit green: joined in time), "go" (the number `kind`, 1 to 3, of the go a
     self is, floating over its head: put it where the self stands), "frame"
     (a door frame's face, brass inlaid with colour `kind`, 0 plain: stand it
-    against a wall and the "hung" door 2 in front of it) or "plaque" (the
-    clock plaque over a case, which case() puts there). `scale` its size (by
+    against a wall and the "hung" door 2 in front of it), "plaque" (the
+    clock plaque over a case, which case() puts there) or "lever" (the
+    press's switch, set off, on a wall: stand it against the wall). `scale` its size (by
     default 0.5; a plate 0.75, the plaque 1). Nothing about it is alive: not
     solid, not shot, never counted, never recorded and no weight on a plate.
     `z` over the floor (a go's number: over that, GO_OVER more)."""
@@ -251,6 +256,10 @@ HEALTH = {3004: 20, 9: 30, 65: 70, 3001: 60, 3002: 150, 58: 150, 3005: 400, 69: 
           67: 600, 68: 500, 71: 400, 16: 4000, 7: 3000}
 
 
+HEIGHT = {3004: 56, 9: 56, 65: 56, 3001: 56, 3002: 56, 58: 56, 3005: 56, 69: 64, 3003: 64, 66: 56, 64: 56, 67: 64,
+          68: 64, 71: 56, 16: 110, 7: 100}
+
+
 class Crowd:
     """The monsters of fight k, all AjarCues (cue()), and where they may
     stand: `floor` is a list of rectangles (x1, y1, x2, y2) a monster stands
@@ -258,10 +267,11 @@ class Crowd:
     monster must also stand clear of the others of its wave: one that has no
     room never comes, and the fight is never won (as map_shift's
     Shop.room_for). `bad` lists what has no room; the generator asserts it
-    empty. `kinds` is every monster placed, for toughness()."""
+    empty. `kinds` is every monster placed, for toughness(). `calm`: they
+    never fight each other (cue())."""
 
-    def __init__(self, m, k, floor, solid=()):
-        self.m, self.k, self.floor, self.solid = m, k, list(floor), list(solid)
+    def __init__(self, m, k, floor, solid=(), calm=False):
+        self.m, self.k, self.floor, self.solid, self.calm = m, k, list(floor), list(solid), calm
         self.placed, self.bad, self.kinds = {}, [], []
 
     def cue(self, wave, when, kind, *spots, **look):
@@ -277,7 +287,7 @@ class Crowd:
                     self.bad.append((self.k, wave, kind, x, y, "another", ox, oy))
             self.placed[wave].append((x, y, RADIUS[kind]))
             self.kinds.append(kind)
-        cue(self.m, self.k, wave, when, kind, *spots, **look)
+        cue(self.m, self.k, wave, when, kind, *spots, calm=self.calm, **look)
 
 
 def toughness(kinds):

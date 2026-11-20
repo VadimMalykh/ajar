@@ -18,9 +18,12 @@ drop). Every frame of a puzzle takes its own door and no other.
    are hung within two seconds (clock lamps), and they are 1850 apart on
    foot. YELLOW leans in the pit; its frame W (YELLOW only) is on the
    gallery; the pit is left only by its own time door or the joined Pair.
-3. The press (a fight of goes). A hall 1536 by 1280 whose north third is a
-   press; 34 monsters in the south and middle, then 10, then two
-   cyberdemons. Ammunition for about a third of them: the press is the way.
+3. The press (a fight of goes). A hall 1536 by 768 with four slabs for
+   cover; north of it the press, a chamber with one mouth; the bait's plate
+   in a cell behind glass at its far end (in by a squeeze) holds open the
+   booth the lever is in, at the hall's south end. 34 monsters in the south and middle, then 10, then two
+   cyberdemons, none fighting another. Ammunition for about a third of them:
+   the press is the way.
 4. The range (a fight of goes). A pen of 13 behind a shutter at the north end
    of a range 1400 long; the shutter's plate is in a booth behind glass, the
    firing spot at the south end.
@@ -75,7 +78,7 @@ def case(a, b, out, floor, figures, *, deep=96, **look):
     xs = [a[0], b[0], a[0] + out[0] * (16 + deep), b[0] + out[0] * (16 + deep)]
     ys = [a[1], b[1], a[1] + out[1] * (16 + deep), b[1] + out[1] * (16 + deep)]
     for x, y, what, kind, ang in figures:
-        r = 1 if what in ("frame", "hung") else 8
+        r = 1 if what in ("frame", "hung", "lever") else 8
         assert min(xs) + r < x < max(xs) - r and min(ys) + r < y < max(ys) - r, (x, y, what)
         ajartime.figure(m, x, y, what, kind=kind, angle=ang)
     CASES.append(si)
@@ -170,7 +173,17 @@ REGIONS[2] = ajartime.on_foot("room 2", {"gallery": (2000, 0, 3280, 320), "pit":
 ajartime.covers(m, "room 2", FIRST, REGIONS[2], zone=(1928, -328, 3864, 712), exempt=CASES)
 
 # === 3. the press: a fight of goes ===========================================
-# The hall (5000..6536, 0..1280), its north third the press. Entered from
+# The hall (5000..6536, 0..768) and north of it the press, a chamber
+# (5000..6536, 800..1280) of steel behind a solid wall 32 thick with one mouth
+# in its middle, 192 wide (the mouth is part of the press: whatever stands in
+# it when the press comes down is under it). Behind the chamber's north wall
+# the bait's cell (not under the press), seen through glass from the mouth
+# and entered only by a squeeze that monsters do not pass: its plate holds the
+# lever's booth open, time door 3 is in its east wall, and nothing in the
+# chamber or the hall sees a self on the plate. The lever is in a booth in
+# the middle of the hall's south wall, behind a shutter, seen through a slit
+# of glass beside it: open only while someone stands on the cell's plate, so
+# one body is never both the bait and at the lever. Four slabs in the hall to hide behind. Entered from
 # YELLOW's far side, a ledge 96 over the lobby (south-west), which is part of
 # the fight from 16 past the ledge's edge: so a player on the ledge is in no
 # room, and one in the lobby cannot climb back.
@@ -178,17 +191,101 @@ FIRST = len(m.polys)
 K3 = 3
 HX, HY, HW, HH = 5000, 0, 1536, 1280
 PRESS3 = 3530           # the press's sector tag (map32.zs: PRESS32)
-PY = HY + 768           # the press's south edge
-PILLARS3 = [(HX + 288, HY + 288), (HX + 1184, HY + 288), (HX + 288, HY + 544), (HX + 1184, HY + 544)]
-ajarmap.fitted(m, (HX, HY, HX + HW, PY), [((x, y, x + 64, y + 64), dict(floor=320)) for x, y in PILLARS3],
-               ceil=320, light=200, color=HALL)
+SHUT3 = 3535            # the booth's shutter (map32.zs: SHUT33)
+PY = HY + 768           # the hall's north wall
+CY = PY + 32            # the chamber's south wall (the wall between is solid but for the mouth)
+MOUTH3 = (HX + 672, HX + 864)
+CELL3 = (HX + 672, HY + HH + 16, HX + 928, HY + HH + 112)  # the bait's cell, behind the chamber's north wall
+GLASS3 = (HX + 736, HX + 928)                              # its window onto the chamber
+SQUEEZE3 = (HX + 672, HX + 720)                            # its way in, beside the glass
+PLATE3 = (HX + 880, HY + HH + 64)
+BOOTH3 = (HX + 704, HY - 112, HX + 880, HY - 16)          # the booth: behind its shutter and its slit (HY - 16..HY)
+SHUTTER3 = (HX + 704, HX + 832)
+SLIT3 = (HX + 832, HX + 880)
+LEVER3 = (HX + 848, BOOTH3[1] + 2)
+SLABS3 = [(HX + x, HY + y, HX + x + 192, HY + y + 64) for x, y in ((160, 160), (1184, 160), (480, 320), (864, 320))]
+ajarmap.fitted(m, (HX, HY, HX + HW, PY), [(s, dict(floor=320)) for s in SLABS3], ceil=320, light=200, color=HALL)
 for x1, x2 in ((HX, HX + 512), (HX + 512, HX + 1024), (HX + 1024, HX + HW)):
-    m.sector(rect(x1, PY, x2, HY + HH), ceil=192, light=185, color=HALL, wall="AJBOLT", ftex="AJTRIMF",
+    m.sector(rect(x1, CY, x2, HY + HH), ceil=192, light=185, color=HALL, wall="AJBOLT", ftex="AJTRIMF",
              ctex="AJTRIMF", id=PRESS3)
+m.sector(rect(MOUTH3[0], PY, MOUTH3[1], CY), ceil=192, light=185, color=HALL, wall="AJBOLT", ftex="AJTRIMF",
+         ctex="AJTRIMF", id=PRESS3)
+assert HX + 512 <= MOUTH3[0] and MOUTH3[1] <= HX + 1024
 ajartime.press(m, HX + 768, HY + 1024, PRESS3)
-LEVER3 = (HX + 768, HY + 2)
+# the cell: plain walls (not steel), bright, the plate in it; a self on the plate is wholly out of the press.
+# Its front is glass, but for the squeeze at its west end (a 16-thick wall between, 1280..1296).
+WY = HY + HH            # the chamber's north wall
+m.sector(rect(*CELL3), ceil=128, light=230, color=HALL)
+ajartime.glass(m, (GLASS3[0], WY), (GLASS3[1], WY), (0, 1), 0, sill=0)
+ajarmap.squeeze(m, (SQUEEZE3[0], WY), (SQUEEZE3[1], WY), (0, 1), 0)
+assert CELL3[0] == SQUEEZE3[0] and SQUEEZE3[1] < GLASS3[0] and GLASS3[1] == CELL3[2] and CELL3[1] == WY + 16
+ajartime.shutter_plate(m, *PLATE3, SHUT3)
+m.thing(*PLATE3, 9800, height=12, args=(255, 200, 96, 112))       # a warm light on it, seen through the glass
+assert PLATE3[1] - 28 - 16 >= WY + 16 and CELL3[0] + 44 <= PLATE3[0] <= CELL3[2] - 44, "on the plate, wholly in the cell"
+assert PLATE3[0] - 16 > SQUEEZE3[1] + 64, "the plate out of line with the squeeze"
+ajartime.hall_door(m, K3, 3, (CELL3[2], PLATE3[1] - 32), (CELL3[2], PLATE3[1] + 32), (1, 0), 0, color=HALL)
+ajartime.zone(m, K3, 0, CELL3[0], WY, CELL3[2] + 16, CELL3[3], mix=True)
+# the booth, its shutter and the slit of glass beside it onto the lever; whoever is in the booth when it
+# shuts is put out into the hall (shutter(behind=True): the booth is the sector behind it)
+m.sector(rect(*BOOTH3), ceil=128, light=230, color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF")
+ajartime.shutter(m, (SHUTTER3[0], HY), (SHUTTER3[1], HY), (0, -1), 0, SHUT3, behind=True, color=HALL)
+ajartime.glass(m, (SLIT3[0], HY), (SLIT3[1], HY), (0, -1), 0)
+assert BOOTH3[0] == SHUTTER3[0] and SHUTTER3[1] == SLIT3[0] and SLIT3[1] == BOOTH3[2] and BOOTH3[3] == HY - 16
+assert SLIT3[0] <= LEVER3[0] <= SLIT3[1], "the lever seen through the slit"
 ajartime.press_switch(m, *LEVER3, 90, PRESS3)
+ajartime.zone(m, K3, 0, BOOTH3[0], BOOTH3[1], BOOTH3[2], HY, mix=True)
 ajartime.zone(m, K3, 0, HX, HY, HX + HW, HY + HH, grow=72, mix=True)
+# nobody runs from the plate to the lever before the shutter shuts (12 tics)
+WALK3 = walk(PLATE3, ((SQUEEZE3[0] + SQUEEZE3[1]) / 2, WY + 24), ((SQUEEZE3[0] + SQUEEZE3[1]) / 2, WY - 24),
+             (HX + 768, PY), (HX + 768, HY + 16), (LEVER3[0], LEVER3[1] + 40))
+assert WALK3 > 600, WALK3
+
+
+def crosses(p, q, a, b):
+    """Do the segments p-q and a-b cross (touching counts)?"""
+    def side(o, u, v):
+        return (u[0] - o[0]) * (v[1] - o[1]) - (u[1] - o[1]) * (v[0] - o[0])
+    d1, d2, d3, d4 = side(a, b, p), side(a, b, q), side(p, q, a), side(p, q, b)
+    return d1 * d2 <= 0 and d3 * d4 <= 0
+
+
+# nothing in the hall, the mouth or the chamber sees a self on the plate (the glass is solid to sight;
+# the slabs are left out, which only makes it harder): every wall between them, as segments
+SEEN3 = [((HX, PY), (MOUTH3[0], PY)), ((MOUTH3[1], PY), (HX + HW, PY)), ((MOUTH3[0], PY), (MOUTH3[0], CY)),
+         ((MOUTH3[1], PY), (MOUTH3[1], CY)), ((HX, CY), (MOUTH3[0], CY)), ((MOUTH3[1], CY), (HX + HW, CY)),
+         ((HX, WY), (SQUEEZE3[0], WY)), ((SQUEEZE3[1], WY), (HX + HW, WY)),
+         ((SQUEEZE3[0], WY), (SQUEEZE3[0], WY + 16)), ((SQUEEZE3[1], WY), (SQUEEZE3[1], WY + 16)),
+         ((SQUEEZE3[1], WY + 16), (CELL3[2], WY + 16))]
+for gx in range(HX + 16, HX + HW, 32):
+    for gy in list(range(HY + 16, PY, 32)) + [PY + 16] + list(range(CY + 16, WY, 32)):
+        if PY < gy < CY and not MOUTH3[0] < gx < MOUTH3[1]:
+            continue
+        assert any(crosses((gx, gy), PLATE3, a, b) for a, b in SEEN3), ("the plate seen from", gx, gy)
+
+
+def cuts(p, q, box):
+    """Does the rectangle `box` cut the segment p-q (Liang-Barsky)?"""
+    t0, t1 = 0.0, 1.0
+    for d, lo, hi, s in ((q[0] - p[0], box[0], box[2], p[0]), (q[1] - p[1], box[1], box[3], p[1])):
+        if d == 0:
+            if not lo < s < hi:
+                return False
+            continue
+        a, b = (lo - s) / d, (hi - s) / d
+        t0, t1 = max(t0, min(a, b)), min(t1, max(a, b))
+    return t0 < t1
+
+
+# each slab: 160 from every wall and from the other slabs, and behind it (south) a place out of sight of
+# the mouth and of the hall's middle
+for i, s in enumerate(SLABS3):
+    assert s[0] - HX >= 160 and HX + HW - s[2] >= 160 and s[1] - HY >= 160 and PY - s[3] >= 160, s
+    for o in SLABS3[i + 1:]:
+        gx, gy = max(o[0] - s[2], s[0] - o[2], 0), max(o[1] - s[3], s[1] - o[3], 0)
+        assert (gx * gx + gy * gy) ** 0.5 >= 160, (s, o)
+    hide = ((s[0] + s[2]) / 2, s[1] - 40)
+    for eye in ((HX + 768, PY), (HX + 768, HY + 384)):
+        assert cuts(hide, eye, s), (s, eye)
 # the lobby and YELLOW's ledge in its south wall
 m.sector(rect(4744, 64, 5000, 320), ceil=192, light=190, color=HALL)
 ajarmap.recess(m, (4840, 64), (4904, 64), (0, -1), 96, far_id(YELLOW), FW, far_colour=YELLOW, color=HALL)
@@ -197,15 +294,17 @@ spots(2004, (4800, 200))                    # plasma rifle
 spots(2046, (4860, 260))                    # rockets
 spots(2011, (4920, 140), (4920, 180))
 LOBBY3 = [2004, 2046]
-# the case in the lobby's north wall: the press up, three bodies under it, the player at the lever
-CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4800, 360, "me", 0, 90), (4800, 360, "go", 2, 0),
-                                                 (4840, 410, "body", 3003, 0), (4890, 400, "body", 66, 0),
-                                                 (4940, 410, "body", 67, 0)],
+# the case in the lobby's north wall: self 1 on the pressed plate with three bodies round it (under the
+# press), and apart, at the east end, self 2 at the lever on the case's side wall
+CASE3 = case((4776, 320), (4968, 320), (0, 1), 0, [(4826, 396, "plate", 0, 0), (4826, 396, "me", 0, 270),
+                                                 (4826, 396, "go", 1, 0), (4800, 360, "body", 66, 0),
+                                                 (4866, 366, "body", 67, 0), (4850, 416, "body", 3003, 0),
+                                                 (4942, 384, "me", 0, 0), (4942, 384, "go", 2, 0),
+                                                 (4966, 384, "lever", 0, 180)],
              color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF")
-# time doors west, east, south; boxes west, east, south behind glass
+# time doors west and east (door 3 is in the cell); boxes west, east, south behind glass
 ajartime.hall_door(m, K3, 1, (HX, 688), (HX, 752), (-1, 0), 0, color=HALL)
 ajartime.hall_door(m, K3, 2, (HX + HW, 688), (HX + HW, 752), (1, 0), 0, color=HALL)
-ajartime.hall_door(m, K3, 3, (HX + 300, HY), (HX + 364, HY), (0, -1), 0, color=HALL)
 BOXF = 64
 m.sector(rect(4776, 464, 4984, 656), floor=BOXF, ceil=192, light=210, color=BOX)
 ajartime.glass(m, (HX, 496), (HX, 624), (-1, 0), BOXF)
@@ -236,26 +335,28 @@ BOXES3 = (stock(4810, 630, (40, 0), 2018, 2012, 2012, 17, 2046)
 steel(K3, (HX + HW, 128), (HX + HW, 192), (1, 0), 0)
 m.sector(rect(6552, 96, 6872, 224), ceil=128, light=180, color=HALL)
 # the fight: all of it AjarCues; wave 1 in the south and middle, to be drawn north
-SOLID3 = [(x, y, x + 64, y + 64) for x, y in PILLARS3]
-c3 = ajartime.Crowd(m, K3, [(HX, HY, HX + HW, HY + HH)], SOLID3)
+c3 = ajartime.Crowd(m, K3, [(HX, HY, HX + HW, PY), (HX, CY, HX + HW, HY + HH)], SLABS3, calm=True)
 
 
 def at3(*pts):
     return [(HX + a, HY + b) for a, b in pts]
 
 
-c3.cue(1, 0, 3001, *at3((120, 150), (220, 150), (420, 150), (520, 150), (1016, 150), (1116, 150),
-                        (1316, 150), (1416, 150), (620, 250), (916, 250)), angle=90)                  # imps, the south
-c3.cue(1, 0, 67, *at3((140, 330), (560, 400), (976, 400), (1396, 330)), angle=90)                   # mancubi
+c3.cue(1, 0, 3001, *at3((120, 150), (220, 110), (420, 150), (520, 150), (1016, 150), (1116, 150),
+                        (1316, 110), (1416, 150), (620, 250), (916, 250)), angle=90)                  # imps, the south
+c3.cue(1, 0, 67, *at3((140, 330), (560, 460), (976, 460), (1396, 330)), angle=90)                   # mancubi
 c3.cue(1, 0, 66, *at3((440, 200), (1096, 200), (220, 470), (768, 330), (1316, 470), (700, 520)), angle=90)   # revenants
 c3.cue(1, 0, 69, *at3((120, 520), (440, 560), (560, 560), (976, 560), (1096, 560), (1416, 520),
                       (400, 690), (1136, 690)), angle=90)                                             # hell knights
 c3.cue(1, 0, 3003, *at3((180, 680), (300, 680), (680, 680), (856, 680), (1236, 680), (1356, 680)), angle=90)  # barons
 c3.cue(2, 16, 64, *at3((200, 720), (1336, 720)), angle=90, always=True)                             # arch-viles
-c3.cue(2, 16, 68, *at3((500, 600), (1036, 600), (500, 250), (1036, 250)), angle=90)                # arachnotrons
+c3.cue(2, 16, 68, *at3((500, 600), (1036, 600), (500, 230), (1036, 230)), angle=90)                # arachnotrons
 c3.cue(2, 16, 3005, *at3((768, 600), (200, 300), (1336, 300), (768, 200)), angle=90)               # cacodemons
 c3.cue(3, 8, 16, *at3((400, 500), (1136, 500)), angle=90, always=True)                             # cyberdemons
 assert not c3.bad, c3.bad
+# every monster of the fight goes through the mouth: wider than the widest by 32, and under its ceiling
+assert MOUTH3[1] - MOUTH3[0] > 2 * max(ajartime.RADIUS[k] for k in c3.kinds) + 32
+assert all(ajartime.HEIGHT[k] < 192 for k in c3.kinds)
 for x, y, _ in c3.placed[1]:
     assert y < PY - 24, "wave 1 starts out of the press"
     assert walk((x, y), (LEVER3[0], LEVER3[1] + 46)) > 150, "a monster on the lever"
@@ -263,14 +364,16 @@ for x, y, _ in c3.placed[1]:
 HARD3 = ajartime.toughness(c3.kinds)
 FIRE3 = ajartime.firepower(LOBBY3 + BOXES3)
 assert 0.28 <= FIRE3 / HARD3 <= 0.4, (FIRE3, HARD3)
-REGIONS[3] = ajartime.on_foot("room 3", {"hall": (HX, HY, HX + HW, PY), "press": (HX, PY, HX + HW, HY + HH),
+REGIONS[3] = ajartime.on_foot("room 3", {"hall": (HX, HY, HX + HW, PY), "chamber": (HX, PY, HX + HW, HY + HH),
+                                         "cell": (CELL3[0], WY, CELL3[2], CELL3[3]), "booth": BOOTH3,
                                          "lobby": (4744, 64, 5000, 320), "box1": (4776, 464, 4984, 656),
                                          "box2": (6552, 464, 6760, 656), "box3": (6100, -216, 6356, -16)},
-                              [("hall", "press", True), ("hall", "lobby", True), ("box1", "hall"), ("box2", "hall"),
-                               ("box3", "hall")],
-                              {"hall": [(HX + 4, 720), (HX + HW - 4, 720), (HX + 332, HY + 4)],
+                              [("hall", "chamber", True), ("chamber", "cell", True), ("hall", "lobby", True),
+                               ("booth", "hall"), ("box1", "hall"), ("box2", "hall"), ("box3", "hall")],
+                              # (the hall to the booth: only while an earlier self holds the plate)
+                              {"hall": [(HX + 4, 720), (HX + HW - 4, 720)], "cell": [(CELL3[2] - 4, PLATE3[1])],
                                "box1": [(4780, 560)], "box2": [(6756, 560)], "box3": [(6228, -212)]})
-ajartime.covers(m, "room 3", FIRST, REGIONS[3], zone=(4744, -72, 6608, 1352), exempt=CASES)
+ajartime.covers(m, "room 3", FIRST, REGIONS[3], zone=(4744, -120, 6608, 1400), exempt=CASES)
 # the plate that begins the fight anew: on the lobby's west wall, to the left of the way in
 ajartime.fight_anew(m, K3, 4746, 192, 0)
 
@@ -302,7 +405,7 @@ PEN4 = (7072, 1416, 7840, 1736)
 m.sector(rect(*PEN4), floor=F4, ceil=F4 + 192, light=170, color=PEN, wall="AJBOLT")
 PEN_SECTOR = len(m.polys) - 1
 ajartime.zone(m, K4, 0, *PEN4, mix=True)
-c4 = ajartime.Crowd(m, K4, [PEN4])
+c4 = ajartime.Crowd(m, K4, [PEN4], calm=True)
 
 
 def at4(*pts):
