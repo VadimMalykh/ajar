@@ -730,7 +730,8 @@ class AjarHandler : EventHandler
 			let si = ThinkerIterator.Create("AjarDoor");
 			AjarDoor o;
 			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
-			if (!f.args[3] && f.args[4] != 2 && f.args[1] && f.args[1] == d.args[0]) ComeHome(d, f);
+			// (a sprung frame made with `only` takes its door and is no way out: shut.zs)
+			if (!f.args[3] && f.args[4] != 2 && f.args[1] && f.args[1] == d.args[0] && !PlateFor(f)) ComeHome(d, f);
 		}
 		// A Pair leaf leads to the frame its twin hangs in, if it hangs; and
 		// then the twin leads here.
@@ -923,7 +924,16 @@ class AjarHandler : EventHandler
 		}
 		if (carried && f.args[4] == 1 && carried.args[0] != f.args[1])
 		{
-			Say("The brass frame takes one door only:\nthe one that opens onto this room.");
+			if (PlateFor(f))
+			{
+				// a sprung frame that takes one door (shut.zs)
+				string which = "one";
+				let di = ThinkerIterator.Create("AjarDoor");
+				AjarDoor o;
+				while (o = AjarDoor(di.Next())) if (!o.IsPair() && o.args[0] == f.args[1]) which = "the " .. o.Label();
+				Say("This frame takes " .. which .. " door\nand no other.");
+			}
+			else Say("The brass frame takes one door only:\nthe one that opens onto this room.");
 			return;
 		}
 		if (f.door && !carried)
