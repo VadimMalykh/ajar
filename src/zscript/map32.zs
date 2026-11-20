@@ -103,7 +103,7 @@ extend class AjarTimeHandler
 			phase ? Left() : -1, level.killed_monsters, dsStep);
 		if (t == 3)
 		{
-			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 23 && !Figures(true));
+			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 37 && !Figures(true));
 			Check("allThere", violet && yellow && green && pink && blue && red && a && b && f1 && fa && fb && fw && g1 && g2 && home && home2
 				&& p1 && p51 && p52 && sp && pr && sh && sw && red.frame == home && !h.chainLen);
 		}
@@ -439,26 +439,31 @@ extend class AjarTimeHandler
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 		static const double v[] = {
 			320, -150, 0, 90, 0,            // room 1 from the start: the sprung frame, the case
-			480, 400, 0, 90, 0,             // room 1's case
+			150, 60, 0, 57, 0,              // room 1's case across the room (where Vadim stood)
+			480, 362, 0, 90, -10,           // room 1's case, close, straight on
 			2192, 40, 0, 90, 0,             // room 2 as entered: the case in the gallery's wall
+			2176, 170, 0, 90, -10,          // room 2's case, close
 			2300, 200, 0, 0, 0,             // the gallery to the pit
 			3500, 0, -96, 70, 0,            // the pit: B and its lamp
-			4872, 120, 0, 90, 0,            // room 3's lobby: the case
+			4872, 170, 0, 90, -10,          // room 3's lobby: the case, close
 			5250, 120, 0, 60, 0,            // the hall and the press
 			7000, 176, -96, 0, 0,           // room 4 as entered: the range, the case on its far wall
+			7580, 150, -96, 15, -10,        // room 4's case, close (south of the pillar before it)
 			7456, 120, -96, 90, 0,          // the firing spot: the shutter
 			8100, 452, -192, 0, 0,          // room 5 as entered: S, F1 and the case
+			8410, 576, -192, 0, -10,        // room 5's case, close
 			9856, 172, -192, 90, 0,         // E from PINK's far side, wide: the brass frames face each other
 			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
 			9672, 384, -192, 0, 0           // and the other way, into BLUE's
 		};
+		int WIDE = 14;
 		int i = t / 40;
 		if (i >= v.Size() / 5) return;
 		Go(mo, v[i * 5], v[i * 5 + 1], v[i * 5 + 2], v[i * 5 + 3]);
 		mo.pitch = v[i * 5 + 4];
-		mo.player.SetFOV(i == 10 ? 130 : 90);      // wide, for both brass frames at once
+		mo.player.SetFOV(i == WIDE ? 130 : 90);      // wide, for both brass frames at once
 		Quiet(mo);
-		if (t == 11 * 40 - 5)
+		if (t == (WIDE + 1) * 40 - 5)
 		{
 			let h = Doors();
 			AjarDoor blue = Door32(2);

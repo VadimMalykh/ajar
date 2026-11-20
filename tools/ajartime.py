@@ -166,33 +166,55 @@ def shutter_plate(m, x, y, tag):
     m.thing(x, y, PLATE_T, args=(0, tag))
 
 
-FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5, "lamp": 6}
+FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5, "lamp": 6, "walking": 7, "go": 8, "frame": 9,
+           "plaque": 10}
+GO_OVER = 34        # how high a go's number floats over the floor under a self of scale 0.5
 
 
-def figure(m, x, y, what, *, kind=0, angle=0, scale=0.5, z=0):
+def figure(m, x, y, what, *, kind=0, angle=0, scale=None, z=0):
     """A still figure for a model of a puzzle solved (shut.zs, AjarFigure):
-    `what` is "me" (the player standing), "body" (a dead monster of Doom
-    editor number `kind`, as it lies at the end of its death), "plate" (a
-    floor plate, pressed), "hung" (a door of colour `kind` standing open, as
-    in a frame), "leaning" (that door leaning) or "lamp" (a clock lamp,
-    ajartime.together, lit green: joined in time). `scale` its size. Nothing
-    about it is alive: not solid, not shot, never counted, never recorded
-    and no weight on a plate. `z` over the floor."""
+    `what` is "me" (the player standing), "walking" (the player mid-stride),
+    "body" (a dead monster of Doom editor number `kind`, as it lies at the
+    end of its death), "plate" (a floor plate, pressed, with a warm light),
+    "hung" (a door of colour `kind` standing open, as in a frame),
+    "leaning" (that door leaning), "lamp" (a clock lamp, ajartime.together,
+    lit green: joined in time), "go" (the number `kind`, 1 to 3, of the go a
+    self is, floating over its head: put it where the self stands), "frame"
+    (a door frame's face, brass inlaid with colour `kind`, 0 plain: stand it
+    against a wall and the "hung" door 2 in front of it) or "plaque" (the
+    clock plaque over a case, which case() puts there). `scale` its size (by
+    default 0.5; a plate 0.75, the plaque 1). Nothing about it is alive: not
+    solid, not shot, never counted, never recorded and no weight on a plate.
+    `z` over the floor (a go's number: over that, GO_OVER more)."""
+    if scale is None:
+        scale = {"plate": 0.75, "plaque": 1.0}.get(what, 0.5)
+    if what == "go":
+        z += GO_OVER
     m.thing(x, y, FIGURE_T, angle=angle, height=float(z),
             args=(FIGURES[what], kind, int(round(scale * 100))))
 
 
-def case(m, a, b, out, floor, *, deep=96, raised=16, top=112, light=230, color=None):
+def case(m, a, b, out, floor, *, deep=96, raised=16, top=112, light=240, color=None, wall="AJWALL",
+         ftex="AJFLOOR", ctex="AJCEIL", ceil=192):
     """A glass case in a wall: a-b is its glass on the room's side (16
-    thick), `out` points from the room into it. Its floor is `raised` over
-    `floor`. Returns the case's sector, for sealed(). Put figures in it."""
-    glass(m, a, b, out, floor, sill=raised, top=top, color=color)
+    thick, framed in the time door's ivory), `out` points from the room into
+    it. Its floor is `raised` over `floor`. Inside, it is a piece of the room:
+    `wall`, `ftex`, `ctex` the room's own textures (`color` its tint), lit
+    `light`. Over the glass, between its head and the room's ceiling (`ceil`
+    over `floor`; no more than 24 over the head), the clock plaque that says
+    "later" (a figure). Returns the
+    case's sector, for sealed(). Put figures in it."""
+    glass(m, a, b, out, floor, sill=raised, top=top, color=color, trim=(f"AJTR{TIME}", f"AJTF{TIME}"))
     c = (a[0] + out[0] * 16, a[1] + out[1] * 16)
     d = (b[0] + out[0] * 16, b[1] + out[1] * 16)
     e = (d[0] + out[0] * deep, d[1] + out[1] * deep)
     f = (c[0] + out[0] * deep, c[1] + out[1] * deep)
-    return m.sector([c, d, e, f], floor=floor + raised, ceil=floor + top, light=light, wall="AJTRIM",
-                    ftex="AJTRIMF", ctex="AJTRIMF", color=color)
+    ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]
+    assert ceil - top >= 40, "no room for the plaque over the glass"
+    figure(m, (a[0] + b[0]) / 2 - out[0] * 2, (a[1] + b[1]) / 2 - out[1] * 2, "plaque", angle=ang,
+           z=min((top + ceil) / 2 - 16, top + 24))
+    return m.sector([c, d, e, f], floor=floor + raised, ceil=floor + top, light=light, wall=wall,
+                    ftex=ftex, ctex=ctex, color=color)
 
 
 def sealed(m, si):

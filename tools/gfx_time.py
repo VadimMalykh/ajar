@@ -120,3 +120,53 @@ def make(out):
     for i in range(14):
         ar.rect(32 - (14 - i), 40 + i, 32 + (14 - i), 41 + i, red)
     out["flats/AJARROW.png"] = ar.png()
+    case_pictures(out)
+
+
+def case_pictures(out):
+    """For the glass cases of models of a room solved (ajartime.case,
+    AjarFigure): the plaque over a case that says "later", the numbers of the
+    goes over the selves' heads, and the frames the door figures stand in."""
+    # the plaque: ivory as the time door, a clock face and the wind plate's
+    # two arrowheads pointing right (wind on): "later"
+    pq = Img(64, 32, IVORY)
+    pq.frame(0, 0, 64, 32, shade(IVORY, 0.45), 2)
+    pq.noise(4, 35)
+    dark = (40, 36, 30)
+    pq.disc(16, 16, 12, dark)
+    pq.disc(16, 16, 10, (250, 248, 240))
+    for hx, hy in ((16, 8), (24, 16), (16, 24), (8, 16)):     # the quarters
+        pq.rect(hx - 1, hy - 1, hx + 1, hy + 1, dark)
+    pq.rect(15, 8, 17, 17, dark)                              # the long hand, at twelve
+    pq.rect(15, 15, 22, 17, dark)                             # the short hand, at three
+    for k in range(2):                                        # two arrowheads pointing right
+        x0 = 33 + 14 * k
+        for i in range(13):
+            d = (12 - i) * 10 // 12
+            pq.rect(x0 + i, 16 - d, x0 + i + 1, 16 + d, dark)
+    out["sprites/AJPQA0.png"] = pq.png(grab=(32, 32))
+    # the number of a go, 1 to 3 (frames A to C): an ivory digit with a dark outline
+    for n, fr in ((1, "A"), (2, "B"), (3, "C")):
+        g = Img(25, 35, (0, 0, 0, 0))
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                gfx.digit(g, str(n), 5 + dx, 5 + dy, (24, 22, 20), 5)
+        gfx.digit(g, str(n), 5, 5, (255, 248, 220), 5)
+        out[f"sprites/AJGN{fr}0.png"] = g.png(grab=(12, 35))
+    # a door frame's face, at the door's scale (its opening 64 by 96, as the
+    # door's picture): the brass of a frame that takes one door only, inlaid
+    # with its colour (frames A to F, colours 1 to 6), or plain brass (G)
+    brass = (204, 170, 92)
+    for c, fr in [(c, "ABCDEF"[c - 1]) for c in gfx.DOOR_COLOURS] + [(0, "G")]:
+        f = Img(96, 112, brass)
+        f.noise(5, 36)
+        f.frame(0, 0, 96, 112, shade(brass, 0.55), 2)
+        if c:
+            col = gfx.DOOR_COLOURS[c]
+            f.rect(5, 5, 11, 112, col)                        # the inlay, round the opening
+            f.rect(85, 5, 91, 112, col)
+            f.rect(5, 5, 91, 11, col)
+            f.rect(5, 5, 91, 6, shade(col, 1.3))
+        f.rect(14, 14, 82, 112, shade(brass, 0.5))            # the reveal, in shadow
+        f.rect(16, 16, 80, 112, (44, 42, 46))                 # the opening, dark
+        out[f"sprites/AJFM{fr}0.png"] = f.png(grab=(48, 112))

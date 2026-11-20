@@ -41,8 +41,11 @@
 // glass: args[0] what (1 the player standing, 2 a body: args[1] a Doom
 // editor number, its last death picture; 3 a plate, pressed; 4 a door of
 // colour args[1] as it stands hung; 5 that door leaning; 6 a clock lamp lit
-// green, as when a Pair is joined in time), args[2] its size
-// in percent (0: 100). No behaviour: not solid, not shootable, never
+// green, as when a Pair is joined in time; 7 the player mid-stride; 8 the
+// number args[1] (1 to 3) of a go, over a self's head; 9 a door frame's face,
+// brass inlaid with colour args[1], for a door to stand in; 10 the plaque
+// over a case, a clock and "wind on": later), args[2] its size
+// in percent (0: 100). A plate has a small warm light. No behaviour: not solid, not shootable, never
 // counted, no weight on a plate, and not recorded, replayed or snapped by
 // the go machinery (Counts, RecordFx, Snap leave it out).
 
@@ -155,6 +158,11 @@ class AjarFigure : Actor
 	Spawn:
 		PLAY A -1;
 		Stop;
+	Pictures:       // never entered: so that the engine knows these sprites (GetSpriteIndex)
+		AJGN ABC -1;
+		AJFM ABCDEFG -1;
+		AJPQ A -1;
+		Stop;
 	}
 
 	override void PostBeginPlay()
@@ -185,11 +193,12 @@ class AjarFigure : Actor
 			translation = d.translation;
 			break;
 		}
-		case 3:         // a plate, pressed
+		case 3:         // a plate, pressed, with a small warm light on it
 			bFlatSprite = true;
 			sprite = GetSpriteIndex("AJPL");
 			frame = 1;
 			bBright = true;
+			A_AttachLight('glow', DynamicLight.PointLight, 0xFFC860, int(64 * scale.x), int(64 * scale.x), 0, (0, 0, 12));
 			break;
 		case 4:         // a door, hung (standing open) or leaning (tilted against what is behind it)
 		case 5:
@@ -207,6 +216,26 @@ class AjarFigure : Actor
 			bWallSprite = true;
 			sprite = GetSpriteIndex("AJTW");
 			frame = 2;
+			bBright = true;
+			break;
+		case 7:         // the player mid-stride, in their colours
+			frame = 2;
+			if (players[consoleplayer].mo) translation = players[consoleplayer].mo.translation;
+			break;
+		case 8:         // the number of a go (args[1], 1 to 3), floating over a self's head
+			sprite = GetSpriteIndex("AJGN");
+			frame = clamp(args[1], 1, 3) - 1;
+			bBright = true;
+			break;
+		case 9:         // a door frame's face (brass inlaid with colour args[1]; 0 plain brass), for a door figure to stand in
+			bWallSprite = true;
+			sprite = GetSpriteIndex("AJFM");
+			frame = args[1] >= 1 && args[1] <= 6 ? args[1] - 1 : 6;
+			break;
+		case 10:        // the plaque over a case: a clock and "wind on", that is "later"
+			bWallSprite = true;
+			sprite = GetSpriteIndex("AJPQ");
+			frame = 0;
 			bBright = true;
 			break;
 		}
@@ -374,7 +403,7 @@ extend class AjarTimeHandler
 			}
 			if (t % 35 == 0) Console.Printf("AJARTEST info penFired=%d penOut=%d", penShots.Size(), penOut.Size());
 		}
-		if (t == 3) Check("caseIsThere", Figures(false) == 4 && !Figures(true) && goes && fight == 1);
+		if (t == 3) Check("caseIsThere", Figures(false) == 5 && !Figures(true) && goes && fight == 1);
 
 		// --- room A, go 1: into the pit, out by its time door ---
 		if (shutStep == 0 && goes && g == 1)
