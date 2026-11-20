@@ -6611,3 +6611,142 @@ cannot then fetch YELLOW and bring it through.
   seconds; a leaf taken down by hand while it is joined for a time (the
   code path is `Unhang`'s, as before); a run by hand against the three
   seconds. **Not played by hand.**
+
+## The paradox: touching an earlier self ends the universe (built 2026-11-20)
+
+Agreed with Vadim: in a room of goes the player must not touch a copy of
+themselves. Touching one is a time paradox and the whole universe explodes:
+the level is lost and begins again from its start. Until now the present
+self walked through the copies as through scenery. The engine piece is
+`src/zscript/paradox.zs` (new), hooked into `GoesTick` and `GoTake`
+(plate.zs) and into `WorldTick` and `RenderOverlay` (time.zs); the headers
+of plate.zs and time.zs (the zone contract and `AjarGhost`) say so.
+
+- **Where** (`ParadoxHere`, the one place to change it): a room of goes
+  proper, an `AjarZone` hall with `args[4]` 2, while it is on (`goes`, and
+  not `goesWon`): MAP32's rooms 1, 2 and 5, the labs PLATE, TWOKEY and
+  SHUT's room A. Not in an open fight (MAP31), not in a fight of goes
+  (`args[4]` 3: MAP32's rooms 3 and 4, SHUT's room B, PRESS), and not after
+  such a fight is won and has become a room of goes (`goesWon`).
+- **Touching** is the bodies overlapping: |dx| and |dy| both less than the
+  two radii (16 + 16) and the heights overlapping (`Touching`). Nothing comes
+  before it: no warning, sound, glare or hint.
+- **What counts**: a copy (`ghosts[i]`) while its record runs (`ot` less
+  than its take's length; a copy whose time is up is gone, or runs to its
+  door if that go was killed, and does not count) and while its middle is in
+  the hall (`Where`: this room, box 0). Nothing counts while the player's
+  middle is not in the hall (in the box).
+- **The start of a go** (`parted`, per copy): set the first tic the player
+  does not overlap copy i, wherever the two are (in the box too); cleared in
+  `GoTake`, that is at the start of every go, by begin anew and at a room's
+  first go. A copy can be touched only once it is set. So the selves who
+  start together in the box are safe until they part, and a self who walks
+  a copy's path with it and never parts from it is safe all along (Claude's
+  reading: once parted, the next overlap anywhere in the hall counts).
+- **The touch** (`EndUniverse`): the flag `paradox` and the count
+  `paradoxes`; under `ajar_autotest` a line `AJARTEST info paradox t=<maptime>
+  go=<this go> ot=<its tic> copy=<the copy's go> at=(x,y,z) me=(x,y,z)`. The
+  touched copy is destroyed. The player's cheats (god mode and god mode 2,
+  buddha and buddha 2, frozen) and `bBuddha`, `bInvulnerable` and
+  `bNoDamage` are taken off and they are given `TELEFRAG_DAMAGE` forced
+  (`DMG_FORCED | DMG_NO_ARMOR | DMG_THRUSTLESS`): dead through anything, and
+  gibbed. From that tic `WorldTick` does nothing but `ParadoxTick` and the
+  tests: no `GoesTick` (so no `GoesKilled` into the box), no `Rescue`, no
+  `GoOnAs`, no beginning anew, no copies or doors played; the go's clock is
+  not drawn. The engine begins the level again when the player presses USE,
+  as after any death in Doom (no save or checkpoint of ours). The other
+  copies stand still where they were (Claude's choice: time has stopped, and
+  plates and doors do not change under the dead player).
+- **What is seen and heard** (Claude's choices within the brief): at the
+  touch a white flash over the whole screen (`A_SetBlend` alpha 1, fading
+  over 50 tics), the BFG's blast, a rocket's and a barrel's at full volume
+  heard everywhere (`ATTN_NONE`), the screen shaking (`A_QuakeEx` 6/6/4 for
+  50 tics around the player) and four big explosions where the two met; then
+  for 35 tics a ring of explosions spreads from the point of touch to the
+  farthest corner of the room's zones (3 to 10 a tic, more as it widens),
+  and explosions go off all over what it has reached (random places in the
+  room's zones, up to 8 a tic) for 70 tics, fewer at the end; only where the
+  room is (inside its zones, in a sector with room), with a rocket's sound
+  every 4 tics, fading. The hit's red (`damagecount`) is cleared so that the
+  flash is white, and the body does not slide on. The explosion is the rocket's (`MISL`
+  B to D, bright, added, a little rising, sizes varied), as the Icon of Sin's
+  death has them: `AjarParadoxBlast`, harmless, touches nothing. The
+  message, as the others (`Say`, MidPrint) but each line in red (`\cg`) so
+  that it reads on the white: "PARADOX / You touched your earlier self. /
+  This universe is over.", said again at 90 and 180 tics so that it stays
+  about eight seconds.
+- **The test**: `MAP=PLATE MODE=5` (new: `ParadoxScript` in plate.zs,
+  `tools/smoke_PLATE_5.cfg`, TIMEOUT 170). Go 1 is short; goes 2 and 3 are
+  put on one spot in the box at their tic 1 and walk one path east into the
+  hall: `startTogetherIsSafe` (tic 40 of go 3: overlapping the copy of go 2,
+  both in the hall, no paradox). Begin anew; go 1 is short, go 2 stands at
+  (-300, 256) in the box till 61; go 3 steps 48 clear of it and back into it:
+  `inTheBoxIsSafe` (overlapping, both in the box, parted, no paradox); at 90
+  it stands on the spot where go 2's record ended, at the time door:
+  `afterItsTimeIsSafe`; then it stands at (300, 150) in the hall from 100 to
+  200. Go 4 stands 34 east of that spot; at 120 it is given blue armour and
+  invulnerability; `nearIsSafe` at 125 (34 apart, both in the hall, parted,
+  no paradox); then it walks west at 4 a tic and touches the copy at tic 126:
+  `touchIsParadox` (at the touch: flag set and counted once, the copy of go 3
+  touched, health 0 or less with god mode on, the copy gone, the message
+  said once, four takes; 70 tics later: still dead, still in the hall where
+  it fell (not put in a box, not moved onto a copy), the room still on with
+  four takes and its tic stopped, counted once). The level is not left (the
+  cfg quits), so there is no `levelExited`. Screenshots before and 2, 14, 39 and
+  99 tics after the touch.
+- **The walk-throughs.** A dry build (every touch logged and nothing done,
+  removed again) was run over every walk-through in scope, after the changes
+  found by reading the scripts; it found one more (MAP32 room 5, go 3). What
+  was changed, all in the present self's places and timing:
+  - MAP32 MODE=3 room 2, go 3: waited at B's mouth (3696, 600), where the
+    second self stands to hang b until join2 + 4: now 40 behind it, at
+    (3696, 560), and walks through B from there (the brief's own example).
+  - MAP32 MODE=3 room 5, go 3: went into F1's mouth at tic 5, where the first
+    self stands hanging GREEN till 11 (found by the dry run, at go 3 tic 7):
+    now at 12; and once through it stood where the second self's walk
+    through F1 ends (25 to 39): now it steps aside to (9100, 520) at 28.
+  - MAP32 MODE=3: `noParadox1`, `noParadox2`, `noParadox5` (the count is
+    still 0 at the end of rooms 1, 2 and 5).
+  - MAP32 MODE=4 room 5, go 2: waited at (8232, 240), right where the third
+    self comes in by door 1: now at (8400, 240).
+  - PLATE MODE=3, go 3: walked through RED at 66 on the second self's heels
+    (same spot, same tic, after having parted from it): now through RED at 96
+    and through BLUE at 120 (the second self holds BLUE from 90 to 150);
+    `throughAgain` moved to 112.
+  - PLATE MODE=4: every go walked out by the time door at tic 22, on the
+    heels of the copies that did the same: now go n at 12 + 10n; and go 2,
+    which took RED where the first self takes it at 10, steps away to
+    (150, 380) at 6.
+  - TWOKEY MODE=3, step 1, go 2: came out of A's mouth into the first self,
+    which stands there till 330: now walks through the Pair at 334 instead of
+    314 (it is joined for good); `throughThePair` and the walk out follow.
+  - Not changed: MAP32 room 1, SHUT MODE=3 and MODE=4 (SHUT 4's room of goes
+    is left at once; its room B is a fight of goes).
+  The changes but the room 5 one were found by reading the recorded places;
+  they were not each confirmed by a run without them.
+- **For fights, later**: Vadim agreed that in MAP31's halls a copy standing
+  on the rewind plate or in a box will not count (so that the next copy can
+  use the plate), and that fights are to be decided after he has played the
+  puzzle rooms. Only `ParadoxHere` (and what counts in `ParadoxWatch`) needs
+  to change.
+- **Results** (2026-11-20, full build, each suite alone under the shared
+  lock; counts are the distinct `AJARTEST name=1` lines, `levelExited`
+  included where the level is left): `MAP=PLATE MODE=5` 5 of 5 in each of
+  three runs (no `levelExited`: the cfg quits). `MAP=MAP32 MODE=3
+  TIMEOUT=850`: 70 of 70 and out (67 as before and the three `noParadox`),
+  70 of 70, then 69 of 70 with `myEarlierSelfHurtsThem4=0` (room 4, a fight
+  of goes where the rule is off; no paradox in the run); run twice more: 70 of 70 and out
+  both times (so a flake, 1 in 5 runs; not touched by this change). Once
+  each: MAP32 MODE=4 7, MODE=5 23, MODE=7 18, MODE=8 5; TWOKEY 3 8; SHUT 3
+  20, SHUT 4 7; PLATE 3 23 (22 and out; the raw count of `=1` lines is 33,
+  not 34, because the log repeats a part of itself at the end and the part
+  is a line shorter), PLATE 4 6; PRESS 3 13, PRESS 4 5; MAP31 6 9, MAP31 7
+  15. No paradox in any walk-through.
+- **Not tested**: a touch in MAP32, TWOKEY or SHUT (only in PLATE); a touch
+  where the copy is above or below the player (heights); a crouching
+  player; the copy of a go that was killed (it runs to its door after its
+  time and does not count); what USE does after it (the engine's own
+  restart, as after any death: GZDoom may load its autosave of the level's
+  start); the sounds (the tests run with `-nosound`); several copies touched
+  in one tic (the first in go order counts).
+- **Not played by hand.**

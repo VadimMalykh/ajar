@@ -27,7 +27,11 @@
 //    this go is not done (it mimes it);
 //  * a door in an earlier self's hands is hidden, as in the player's; when
 //    its go is over (it went out by the time door then, and it is gone now)
-//    what it holds is left leaning where it went.
+//    what it holds is left leaning where it went;
+//  * the player must not touch an earlier self (their bodies overlapping) in
+//    the hall, once they have been clear of it in this go: that is a time
+//    paradox, the player is dead for real and the level begins again
+//    (paradox.zs; not in a fight that has become a room of goes).
 // The room is over when the player is out of its zones by a way that is not
 // a time door: its time doors shut, the earlier selves are gone (what they
 // hold is left where they stood), and it does not begin again. A plate on a
@@ -236,6 +240,7 @@ extend class AjarTimeHandler
 		ot = 0;
 		hadClip = mo.CountInv("Clip"); hadShell = mo.CountInv("Shell");
 		shots.Clear();
+		parted.Clear();             // paradox.zs: every go begins inside the copies
 	}
 
 	// `atWin`: a fight that has just been won becomes a room of goes (goes.zs).
@@ -293,6 +298,8 @@ extend class AjarTimeHandler
 		GoWatch(ot);
 		RecordTake(mo);
 		PlayGhosts(mo);
+		ParadoxWatch(mo);           // paradox.zs: touching an earlier self ends the universe
+		if (paradox) return;
 		GhostDoors();
 		GhostPresses();
 		ot++;
@@ -539,12 +546,14 @@ extend class AjarTimeHandler
 			if (o == 3) Go(mo, -240, 256, 0, 0);
 			if (o > 3 && o <= 12) Walk(mo, (8, 0));
 			if (o == 20) Check("twoSelves", GhostsHere() == 2 && red.frame == f1);
-			if (o == 66) Go(mo, 256, 470, 0, 90);
-			if (o > 66 && o <= 80) Walk(mo, (0, 8));
-			if (o == 82) Check("throughAgain", mo.pos.y > 690);
+			// (through RED and BLUE after the second self: it walks through RED at 66, and on the
+			// path behind it this self would touch it, paradox.zs)
 			if (o == 95) Check("mySecondSelfHoldsIt", blue.frame == f2 && p2.pressed && !(l2.flags & Line.ML_BLOCKING));
-			if (o == 100) Go(mo, 470, 960, 0, 0);
-			if (o > 100 && o <= 115) Walk(mo, (8, 0));
+			if (o == 96) Go(mo, 256, 470, 0, 90);
+			if (o > 96 && o <= 110) Walk(mo, (0, 8));
+			if (o == 112) Check("throughAgain", mo.pos.y > 690);
+			if (o == 120) Go(mo, 470, 960, 0, 0);
+			if (o > 120 && o <= 135) Walk(mo, (8, 0));
 		}
 		if (!goes && t > 50 && !plateEnd)
 		{
@@ -582,6 +591,7 @@ extend class AjarTimeHandler
 		{
 			if (o == 3) { Go(mo, 400, 430, 0, 270); red.Used(mo); }
 			if (o == 5) Check("tookFirst", h.carried == red);
+			if (o == 6) Go(mo, 150, 380, 0, 180);      // out of the first self's way to RED (paradox.zs)
 			if (o == 20)
 			{
 				AjarGhost e = ghosts.Size() ? ghosts[0] : null;
@@ -607,8 +617,9 @@ extend class AjarTimeHandler
 				if (w) w.Used(mo);
 				plateStep = 1;
 			}
-			else if (o == 22) Go(mo, 40, 256, 0, 180);
-			else if (o > 22 && o < 45) Walk(mo, (-8, 0));
+			// each go out by the time door 10 tics after the one before: on its heels, it would touch it (paradox.zs)
+			else if (o == 12 + 10 * g) Go(mo, 40, 256, 0, 180);
+			else if (o > 12 + 10 * g && o < 35 + 10 * g) Walk(mo, (-8, 0));
 		}
 		if (plateStep == 1 && g == 1)
 		{
@@ -618,5 +629,133 @@ extend class AjarTimeHandler
 			if (o > 5 && o < 30) Walk(mo, (-8, 0));
 		}
 		if (plateStep == 1 && g == 2 && o == 3) { Check("oneSelfAfter", GhostsHere() == 1); plateStep = 2; }
+	}
+
+	// MODE=5: the paradox (paradox.zs). Three goes that start together, then
+	// begin anew; four goes: in the box, after a copy's time, beside one, and
+	// the touch, which ends it all.
+	int pdxStep, pdxTouch, pdxOt;
+	bool pdxAtTouch;
+	Vector3 pdxFell;
+	const PDX_HX = 300;
+	const PDX_HY = 150;
+
+	bool InHall(Actor a)
+	{
+		int k, b;
+		[k, b] = Where(a.pos.xy);
+		return k == fight && b == 0;
+	}
+
+	bool InBox(Actor a)
+	{
+		int k, b;
+		[k, b] = Where(a.pos.xy);
+		return k == fight && b > 0;
+	}
+
+	void ParadoxScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		int g = goes ? takes.Size() : 0, o = ot;
+		if (t % 35 == 0 || (g && o < 2)) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) goes=%d go=%d ot=%d at=%d selves=%d step=%d paradox=%d health=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, goes, g, o, at, GhostsHere(), pdxStep, paradoxes, mo.health);
+		if (paradox)
+		{
+			if (!pdxTouch)
+			{
+				pdxTouch = t;
+				pdxFell = mo.pos;
+				pdxOt = o;
+				pdxAtTouch = pdxStep == 3 && paradoxes == 1 && paradoxCopy == 3 && mo.health <= 0 && (mo.player.cheats & CF_GODMODE)
+					&& ghosts.Size() > 2 && !ghosts[2] && paradoxSaid == 1 && takes.Size() == 4;
+				Console.Printf("AJARTEST info touched at t=%d o=%d: now=%d health=%d", t, o, pdxAtTouch, mo.health);
+			}
+			if (t == pdxTouch + 70)
+			{
+				Check("touchIsParadox", pdxAtTouch && paradoxes == 1 && mo.health <= 0 && mo.player.health <= 0 && InHall(mo) && at == 0
+					&& (mo.pos.xy - pdxFell.xy).Length() < 64 && goes && takes.Size() == 4 && ot == pdxOt && paradoxSaid >= 1);
+			}
+			return;
+		}
+		// --- before begin anew: go 2 and go 3 walk one path from one start ---
+		if (pdxStep == 0)
+		{
+			if (g == 1)
+			{
+				if (o == 3) Go(mo, 40, 256, 0, 180);
+				if (o > 3 && o < 30) Walk(mo, (-8, 0));
+			}
+			if (g == 2 || g == 3)
+			{
+				if (o == 1) Go(mo, -300, 256, 0, 0);
+				if (o > 1 && o <= 45) Walk(mo, (8, 0));
+				if (g == 3 && o == 40)
+					Check("startTogetherIsSafe", !paradoxes && mo.health > 0 && ghosts.Size() > 1 && ghosts[1] && Touching(mo, ghosts[1])
+						&& InHall(mo) && InHall(ghosts[1]) && mo.pos.x > 60);
+			}
+			if (g == 2)
+			{
+				if (o == 50) Go(mo, 40, 256, 0, 180);
+				if (o > 50 && o < 75) Walk(mo, (-8, 0));
+			}
+			if (g == 3 && o == 46)
+			{
+				Go(mo, -370, 256, 0, 180);
+				AjarAnew w = AjarAnew(ThinkerIterator.Create("AjarAnew").Next());
+				if (w) w.Used(mo);
+				pdxStep = 1;
+			}
+			return;
+		}
+		// --- after it: go 1 is short; go 2 stays where it came in ---
+		if (pdxStep == 1 && g == 1)
+		{
+			if (o == 3) Go(mo, 40, 256, 0, 180);
+			if (o > 3 && o < 30) Walk(mo, (-8, 0));
+		}
+		if (pdxStep == 1 && g == 2)
+		{
+			if (o == 1) Go(mo, -300, 256, 0, 0);
+			if (o == 61) Go(mo, 40, 256, 0, 180);
+			if (o > 61 && o < 85) Walk(mo, (-8, 0));
+		}
+		// go 3: in the box, out of the copy of go 2 and into it again; where it ended; beside where go 4 will be
+		if (pdxStep == 1 && g == 3)
+		{
+			AjarTake two = takes[1];
+			AjarGhost e = ghosts.Size() > 1 ? ghosts[1] : null;
+			if (o == 1) Go(mo, -300, 304, 0, 0);
+			if (o == 6) Go(mo, -300, 256, 0, 0);
+			if (o == 8) Check("inTheBoxIsSafe", !paradoxes && mo.health > 0 && e && Touching(mo, e) && InBox(mo) && InBox(e)
+				&& parted.Size() > 1 && parted[1]);
+			if (o == 10) Go(mo, -370, 200, 0, 0);
+			int n = two.x.Size();
+			if (o == 90) Go(mo, two.x[n - 1], two.y[n - 1], two.z[n - 1], 0);
+			if (o == 92) Check("afterItsTimeIsSafe", !paradoxes && mo.health > 0 && !e && n < 90 && InHall(mo));
+			if (o == 100) Go(mo, PDX_HX, PDX_HY, 0, 90);
+			if (o == 200) Go(mo, 40, 256, 0, 180);
+			if (o > 200 && o < 225) Walk(mo, (-8, 0));
+		}
+		if (pdxStep == 1 && g == 4) pdxStep = 2;
+		// go 4: beside the copy of go 3 (34 apart), armour and invulnerability on; then into it
+		if (pdxStep == 2 && g == 4)
+		{
+			AjarGhost e = ghosts.Size() > 2 ? ghosts[2] : null;
+			if (o == 3) Go(mo, PDX_HX + 34, PDX_HY, 0, 180);
+			if (o == 120) { mo.GiveInventory("BlueArmor", 1); mo.GiveInventory("PowerInvulnerable", 1); }
+			if (o == 125)
+			{
+				Check("nearIsSafe", !paradoxes && mo.health > 0 && e && !Touching(mo, e) && abs(mo.pos.x - e.pos.x) < 35 && abs(mo.pos.y - e.pos.y) < 1
+					&& InHall(mo) && InHall(e) && parted.Size() > 2 && parted[2]);
+				pdxStep = 3;
+			}
+		}
+		if (pdxStep == 3)
+		{
+			if (o > 125 && o < 200) Walk(mo, (-4, 0));
+			if (o == 200) Check("touchIsParadox", false);
+		}
 	}
 }
