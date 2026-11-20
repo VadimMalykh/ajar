@@ -33,6 +33,7 @@ DoomEdNums
 	20048 = AjarTogether
 	20049 = AjarShutter
 	20051 = AjarFigure
+	20052 = AjarFightAnew
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
