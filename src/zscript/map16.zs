@@ -514,29 +514,33 @@ extend class AjarHandler
 	//    the leaf to the den's frame, and stays in the base.
 	//  2 GREEN at the foot, the player in sight: the porter leaves it alone.
 	//    (Not RED: RED's far side is on the gallery, and the baron would come.)
-	//  3 the leaf at the foot again, the player away upstairs: a nailer nails it.
-	//  4 the player in sight again: the porter leaves the nailed leaf alone.
-	//  5 the nailer killed: the nails fall out.
-	//  6 up through the leaf: the player alone on the plate does not open the
+	//  3 the leaf at the foot again, the player in sight: the porter sets off
+	//    for it, and once it is at the hinges GREEN is swapped in for the leaf
+	//    (Vadim, playing: it carried RED off to the den). It leaves GREEN
+	//    hanging, carries nothing, and the den's frame stays empty.
+	//  4 the leaf at the foot again, the player away upstairs: a nailer nails it.
+	//  5 the player in sight again: the porter leaves the nailed leaf alone.
+	//  6 the nailer killed: the nails fall out.
+	//  7 up through the leaf: the player alone on the plate does not open the
 	//    shutter, and the dial comes to rest at a tenth.
-	//  7 the player on the canteen floor, in the baron's sight, RED not hung:
+	//  8 the player on the canteen floor, in the baron's sight, RED not hung:
 	//    it stays on the gallery. Then RED is hung in the canteen's frame and
 	//    the leaf taken down from the foot.
-	//  8 up through RED to the gallery with the leaf, and down through it
+	//  9 up through RED to the gallery with the leaf, and down through it
 	//    again: the baron comes after the player through RED.
-	//  9 RED swapped out of the canteen's frame for the leaf, through the leaf
+	// 10 RED swapped out of the canteen's frame for the leaf, through the leaf
 	//    to the lobby: the baron follows and comes out of the head onto the
 	//    plate.
-	// 10 it is held there while the needle swings up: the dial at the mark,
+	// 11 it is held there while the needle swings up: the dial at the mark,
 	//    the shutter going up. The first time it is let go, walks off the
 	//    plate, the shutter comes down, and it is killed off the plate; the
 	//    second time it is killed on it.
-	// 11 the first killed off the plate: "It lies where nothing weighs it",
+	// 12 the first killed off the plate: "It lies where nothing weighs it",
 	//    and the porter killed too; another baron on the gallery after the
 	//    wait, announced.
-	// 12 back through the leaf to the canteen, the leaf swapped for RED: 8
-	//    to 10 again.
-	// 13 the second killed on the plate: dead weight, settled, the shutter
+	// 13 back through the leaf to the canteen, the leaf swapped for RED: 9
+	//    to 11 again.
+	// 14 the second killed on the plate: dead weight, settled, the shutter
 	//    up and still up later, no more barons; and another porter in the den.
 	// And at the start: the glass case's three figures, and the baron on the gallery.
 	int m16phase, phaseAt, heldAt, offAt, swapAt, round;
@@ -610,7 +614,7 @@ extend class AjarHandler
 				sn && sn.viaStraight, sn && sn.dogged, w.baron.target ? w.baron.target.GetClassName() : 'None',
 				w.baron.InStateSequence(w.baron.CurState, w.baron.SeeState) ? "see" : w.baron.InStateSequence(w.baron.CurState, w.baron.SpawnState) ? "spawn" : "other");
 		}
-		if (m16phase < 11 && thief && thief.health > 0 && (thief.pos.z > 41 || !InBox(thief, -1024, -768, -128, 96))) porterAway = true;
+		if (m16phase < 12 && thief && thief.health > 0 && (thief.pos.z > 41 || !InBox(thief, -1024, -768, -128, 96))) porterAway = true;
 
 		if (t == 20)
 		{
@@ -637,39 +641,73 @@ extend class AjarHandler
 		if (m16phase == 2 && s == 300)
 		{
 			Check("porterLeavesOtherDoors", foot.door == green && thief && !thief.loot);
-			Unhang(foot);                                   // GREEN back to the labs
-			green.carried = false;
-			green.SetOrigin((700, -1400, 256), false);
-			green.Show();
+			Unhang(foot);                                   // GREEN put aside (hidden, carried by nobody)
 			if (carried == leaf) { Pose(mo, -576, -736, 0, 270); foot.Activate(mo); }   // phase 1 failed
 			else Hang(Unhang(den), foot);                   // the leaf from the den to the foot again
-			Pose(mo, 384, -2400, 384, 90);                  // upstairs, out of its sight
-			nailer = Actor.Spawn("AjarNailer", (-640, -700, 0));
+			Pose(mo, -576, -500, 0, 90);                    // still in its sight
 			NextStep(3, t);
 			return;
 		}
-		if (m16phase == 3 && (leaf.nailer || s > 700))
+		if (m16phase == 3)
+		{
+			// The porter sets off for the leaf; once it is at the hinges, GREEN
+			// is swapped in for the leaf under its hands (the leaf put aside).
+			if (!swapAt && thief && thief.jobFrame == foot && thief.InStateSequence(thief.CurState, thief.FindState("Work")))
+			{
+				swapAt = s;
+				Console.Printf("AJARTEST swap s=%d porter=(%d,%d) to the foot=%d", s, thief.pos.x, thief.pos.y, thief.Distance2D(foot));
+				Check("porterGoesForTheLeafAgain", true);
+				Unhang(foot);
+				Hang(green, foot);
+			}
+			if (!swapAt && s == 900) Check("porterGoesForTheLeafAgain", false);
+			if ((swapAt && s == swapAt + 300) || (!swapAt && s == 900))
+			{
+				if (swapAt)
+				{
+					Check("porterLeavesADoorSwappedUnderIt", foot.door == green && thief && !thief.loot);
+					Check("porterHangsNothingInTheDen", !den.door);
+				}
+				if (thief && thief.loot) thief.loot = null;     // (only when it failed)
+				if (green.frame) Unhang(green.frame);           // GREEN back to the labs
+				green.carried = false;
+				green.SetOrigin((700, -1400, 256), false);
+				green.Show();
+				if (foot.door != leaf)
+				{
+					if (leaf.frame) Unhang(leaf.frame);
+					if (foot.door) Unhang(foot);
+					Hang(leaf, foot);                           // the leaf at the foot again
+				}
+				Pose(mo, 384, -2400, 384, 90);                  // upstairs, out of its sight
+				nailer = Actor.Spawn("AjarNailer", (-640, -700, 0));
+				swapAt = 0;
+				NextStep(4, t);
+				return;
+			}
+		}
+		if (m16phase == 4 && (leaf.nailer || s > 700))
 		{
 			Check("nailerNailsTheLeafAtTheFoot", leaf.nailer == nailer && foot.door == leaf);
 			Pose(mo, -576, -500, 0, 90);
-			NextStep(4, t);
-			return;
-		}
-		if (m16phase == 4 && s == 300)
-		{
-			Check("porterLeavesTheNailedLeaf", foot.door == leaf && leaf.nailer && thief && !thief.loot);
-			nailer.DamageMobj(null, null, 1000, 'None');
 			NextStep(5, t);
 			return;
 		}
-		if (m16phase == 5 && s == 30)
+		if (m16phase == 5 && s == 300)
 		{
-			Check("nailsFallWhenTheNailerDies", nailer.health <= 0 && !leaf.nailer && foot.door == leaf);
-			Pose(mo, -576, -740, 0, 270);
+			Check("porterLeavesTheNailedLeaf", foot.door == leaf && leaf.nailer && thief && !thief.loot);
+			nailer.DamageMobj(null, null, 1000, 'None');
 			NextStep(6, t);
 			return;
 		}
-		if (m16phase == 6)
+		if (m16phase == 6 && s == 30)
+		{
+			Check("nailsFallWhenTheNailerDies", nailer.health <= 0 && !leaf.nailer && foot.door == leaf);
+			Pose(mo, -576, -740, 0, 270);
+			NextStep(7, t);
+			return;
+		}
+		if (m16phase == 7)
 		{
 			Forward(mo, t, phaseAt, 10);                    // up through the leaf, alone
 			if (s == 12) Pose(mo, 1100, -2048, 384, 180);   // standing still on the plate
@@ -682,11 +720,11 @@ extend class AjarHandler
 			{
 				Check("dialRestsAtATenth", dial && dial.needle == 1 && !w.up && !TagOpen(617));
 				Pose(mo, 464, -450, 128, 90);               // the canteen floor, under the gallery's eyes
-				NextStep(7, t);
+				NextStep(8, t);
 				return;
 			}
 		}
-		if (m16phase == 7 && s == 300)
+		if (m16phase == 8 && s == 300)
 		{
 			Check("baronStaysUpWithoutRed", OnGallery(w.baron) && w.baron.target == mo);
 			// RED hung in the canteen's frame, the leaf down from the foot (out of the porter's sight)
@@ -696,10 +734,10 @@ extend class AjarHandler
 			carried = Unhang(foot);
 			Check("redHungLeafCarried", canteen.door == red && carried == leaf);
 			round = 1;
-			NextStep(8, t);
+			NextStep(9, t);
 			return;
 		}
-		if (m16phase == 8)
+		if (m16phase == 9)
 		{
 			if (s == 1) Pose(mo, 170, -608, 128, 180);
 			Forward(mo, t, phaseAt + 1, 12);                // up through RED
@@ -721,11 +759,11 @@ extend class AjarHandler
 			{
 				Check("baronComesThroughRed", InCanteen(w.baron) && w.baron.health > 0);
 				offAt = 0;
-				NextStep(9, t);
+				NextStep(10, t);
 				return;
 			}
 		}
-		if (m16phase == 9)
+		if (m16phase == 10)
 		{
 			// RED out, the leaf in; through it to the lobby, and off to its west side
 			// (once it has come away from the frame after the player)
@@ -747,11 +785,11 @@ extend class AjarHandler
 				Check("baronOutOfTheHeadOntoThePlate", w.baron && w.baron.health > 0 && w.OnPlate(w.baron) && w.baron.pos.z == 384);
 				held = w.baron ? w.baron.pos : (0, 0, 0);
 				swapAt = 0;
-				NextStep(10, t);
+				NextStep(11, t);
 				return;
 			}
 		}
-		if (m16phase == 10)
+		if (m16phase == 11)
 		{
 			// held where it stepped onto the plate while the needle swings up
 			if (s < 70 && w.baron && w.baron.health > 0) { w.baron.SetOrigin(held, false); w.baron.vel = (0, 0, 0); }
@@ -762,7 +800,7 @@ extend class AjarHandler
 				if (round == 2)
 				{
 					w.baron.DamageMobj(null, null, 10000, 'None');      // killed on the plate
-					NextStep(13, t);
+					NextStep(14, t);
 					return;
 				}
 			}
@@ -773,12 +811,12 @@ extend class AjarHandler
 				Check("baronOffThePlate", w.baron.health > 0 && !w.OnPlate(w.baron));
 				w.baron.DamageMobj(null, null, 10000, 'None');          // killed off the plate
 				offAt = 0;
-				NextStep(11, t);
+				NextStep(12, t);
 				return;
 			}
-			if (s == 1500) { Check("baronWalksOffThePlate", false); NextStep(11, t); return; }
+			if (s == 1500) { Check("baronWalksOffThePlate", false); NextStep(12, t); return; }
 		}
-		if (m16phase == 11)
+		if (m16phase == 12)
 		{
 			if (s == 10)
 			{
@@ -790,11 +828,11 @@ extend class AjarHandler
 			if (s == 20 * 35 + 60)
 			{
 				Check("anotherOnTheGalleryAnnounced", w.barons == 2 && w.announced == 1 && OnGallery(w.baron));
-				NextStep(12, t);
+				NextStep(13, t);
 				return;
 			}
 		}
-		if (m16phase == 12)
+		if (m16phase == 13)
 		{
 			// back through the leaf from the lobby, carrying RED; the leaf swapped for RED in the canteen
 			if (s == 1) Pose(mo, 1130, -2048, 384, 0);
@@ -806,11 +844,11 @@ extend class AjarHandler
 				canteen.Activate(mo);
 				Check("leafSwappedForRed", carried == leaf && canteen.door == red);
 				round = 2;
-				NextStep(8, t);
+				NextStep(9, t);
 				return;
 			}
 		}
-		if (m16phase == 13)
+		if (m16phase == 14)
 		{
 			if (s == 30) Check("deadWeightSettles", w.settled && w.deadWeight >= w.HEAVY && w.up);
 			if (s == 300) Check("shutterStaysUp", w.IsUp() && TagOpen(617));
@@ -824,7 +862,7 @@ extend class AjarHandler
 				while (th = AjarThief(ti.Next())) if (th != firstPorter && th.health > 0) next = th;
 				if (next) Console.Printf("AJARTEST nextPorter=(%d,%d,%d)", next.pos.x, next.pos.y, next.pos.z);
 				Check("anotherPorterComes", next != null && next.args[2] == 105 && InBox(next, -768, -112, -384, 96));
-				NextStep(14, t);
+				NextStep(15, t);
 				return;
 			}
 		}
