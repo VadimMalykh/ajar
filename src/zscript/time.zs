@@ -48,7 +48,8 @@
 //    (deaf), not set on the player (Hunt leaves it be), no see-sound and no
 //    fog. It wakes as any Doom monster does, when it sees the player or is
 //    hurt. On the demo (a later go) it comes without fog or sound too, and
-//    when the demo is over it is woken idle, as it stands (unless it was hit).
+//    when the demo is over it is woken idle, as it stands (unless the player
+//    hurt it; hurt only by an earlier self, it still wakes idle).
 //    MAP32's room 4: the wings' guards.
 //
 //  * Sector tag and line id 3080 + 100 * fight: the hall's sectors and its
@@ -326,24 +327,34 @@ class AjarDemo play
 }
 
 // Carried by a monster that is on the demo. Only the player hurts it, and
-// that wakes it; its real health is what the demo says (hp) less that (dmg).
-// In a fight of goes (args[4] 3) an earlier self's shots are the player's
-// (shut.zs).
+// that wakes it (hit); its real health is what the demo says (hp) less what
+// was counted (dmg).
+// In a fight of goes (args[4] 3) an earlier self's shot hurts it too, but
+// never wakes it: a hit the demo already has (its recorded health falls
+// within REPLAY_TICS of now: the hit as it went in the last go, fired
+// again) does nothing, the demo carries it; one the demo does not have
+// (MAP32's room 4: rockets through a shutter that was shut in the last go)
+// is counted in dmg (and ghostDmg) and it stays on the demo; when dmg
+// reaches hp it dies then and there, the player's kill (PlayDemo, Fell).
+// MAP31's open fights: an earlier self's shots do nothing to it.
 class AjarRail : Inventory
 {
 	int hp, dmg;
-	bool hit;
+	bool hit;                   // hurt by the player (not by an earlier self): it wakes
+	int ghostDmg;               // of dmg, what earlier selves' shots did that the demo has not (tests)
 	Default { Inventory.MaxAmount 1; +INVENTORY.UNDROPPABLE }
 	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
 	{
 		if (!passive) return;
-		if (source && (source.player || (source is "AjarGhost" && Mixed()))) { dmg += damage; hit = true; newdamage = damage; }
-		else newdamage = 0;
-	}
-	bool Mixed()
-	{
+		newdamage = 0;
+		if (!source) return;
+		if (source.player) { dmg += damage; hit = true; newdamage = damage; return; }
+		if (!(source is "AjarGhost")) return;
 		let th = AjarTimeHandler(EventHandler.Find("AjarTimeHandler"));
-		return th && th.mixed;
+		if (!th || !th.mixed) return;
+		if (th.Replayed(owner)) { th.ghostReplays++; return; }
+		dmg += damage; ghostDmg += damage; newdamage = damage;
+		th.ghostNew++;
 	}
 }
 
@@ -579,7 +590,16 @@ class AjarTimeHandler : EventHandler
 	//  * the player hurts it: it wakes (only the player can hurt it), real
 	//    from where it stands, with the health it had, and after the player;
 	//  * the player walks into it: it wakes;
+	//  * the player trips its sentries (AjarSentry): it wakes;
 	//  * the demo is over, at the tic the last go ended: all wake.
+	// An earlier self's shot never wakes it. In MAP31's open fights it does
+	// nothing to it. In a fight of goes (zone args[4] 3) a hit the demo
+	// already has (the monster's recorded health falls within REPLAY_TICS of
+	// that tic: the same shot, as it went) does nothing, the demo carries it;
+	// one the demo does not have is counted (AjarRail.dmg) and the monster
+	// stays on the demo; when what is counted reaches the health it has, it
+	// dies then and there, the player's kill (Fell); woken later, it has what
+	// is left. Once awake it is hurt by an earlier self's shots as by anyone's.
 	// A monster on the demo is not solid (it walks through what stands in its
 	// way), so it wakes once it stands free; after a second, anyway.
 	// A wave that came in the last go comes when it came then; one that did
@@ -783,6 +803,43 @@ class AjarTimeHandler : EventHandler
 		r.mode = 2;
 	}
 
+	// An earlier self's shot hits `a`, on the demo: does the demo have that
+	// hit? Its recorded health falls within REPLAY_TICS of now. (The record is
+	// written each tic after the thinkers, so a hit in go 1 is at the index of
+	// that tic; fired again by the earlier self from where it was then, the
+	// same shot lands at about the same index, a tic or two either way.)
+	const REPLAY_TICS = 4;
+	int ghostReplays, ghostNew;     // earlier selves' hits on monsters on the demo: the demo had them, it had not (tests)
+	bool Replayed(Actor a)
+	{
+		if (!demo) return false;
+		for (int k = 0; k < demo.roles.Size(); k++)
+		{
+			AjarRole r = demo.roles[k];
+			if (r.actor != a || r.mode != 1) continue;
+			int i = ot - r.born, n = r.hp.Size();
+			for (int j = max(1, i - REPLAY_TICS); j <= i + REPLAY_TICS && j < n; j++)
+				if (r.sf[j] >= 0 && r.sf[j - 1] >= 0 && r.hp[j] < r.hp[j - 1]) return true;
+			return false;
+		}
+		return false;
+	}
+
+	// What earlier selves' shots did to it that the demo has not is its health
+	// now: it dies here, the player's kill, without turning on anyone first.
+	void Fell(AjarRole r, AjarRail rail, Actor mo)
+	{
+		Actor a = r.actor;
+		let d = GetDefaultByType(a.GetClass());
+		Release(r, rail);
+		a.bSolid = d.bSolid;
+		a.bBright = d.bBright;
+		a.vel = (0, 0, 0);
+		a.target = null;
+		a.health = 1;
+		a.DamageMobj(mo, mo, RAIL_HEALTH, 'None', DMG_FORCED | DMG_THRUSTLESS);
+	}
+
 	// The state of its death that has the picture a body shows (its state has
 	// not run on the demo, only its picture was set), or none.
 	State PictureState(Actor a)
@@ -922,7 +979,10 @@ class AjarTimeHandler : EventHandler
 			if (!rail) { r.mode = 2; continue; }
 			// a body that something has really raised is real
 			if (r.dead && a.health > 0) { a.bSolid = GetDefaultByType(a.GetClass()).bSolid; Release(r, rail); continue; }
+			// hurt by the player: it wakes. (An earlier self's shot never wakes it; what one did that the
+			// demo has not, when it is its health, kills it: AjarRail.)
 			if (rail.hit) { r.wakeDue = true; r.wakeIdle = false; }
+			else if (!r.dead && !r.hidden && rail.dmg > 0 && rail.hp - rail.dmg <= 0) { Fell(r, rail, mo); continue; }
 			// a sentry in its pen, tripped by the player (args[3]: it wakes idle)
 			if (watch.Size() && !r.dead && !r.hidden && !r.wakeDue)
 			{
@@ -947,7 +1007,8 @@ class AjarTimeHandler : EventHandler
 				}
 				if (r.dead) { Release(r, rail); FallOn(a); continue; }       // the demo is over: a body
 				if (r.hidden) { r.hidden = false; a.bInvisible = false; a.bShootable = true; }
-				// (a guard at its post, not hit: it stays at its post)
+				// (a guard at its post, not hurt by the player: it stays at its post; one only an earlier
+				// self hurt too, with the health left after it)
 				if (!r.wakeDue && r.cue && r.cue.bAmbush && !rail.hit) r.wakeIdle = true;
 				r.wakeDue = true;
 			}
@@ -1466,6 +1527,7 @@ class AjarTimeHandler : EventHandler
 	override void WorldThingDied(WorldEvent e)
 	{
 		Actor t = e.thing;
+		GsDied(t);                  // map32.zs: MODE=9's tests
 		if (!t || !t.bIsMonster || phase != LIVE) return;
 		int k, b;
 		[k, b] = Where(t.pos.xy);
@@ -2449,6 +2511,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 6 && level.mapname ~== "MAP32") AnewViews32(PlayerPawn(mo));
 		if (mode == 7 && level.mapname ~== "MAP32") TableScript(PlayerPawn(mo));     // map32.zs: room 3's plates, the timetable
 		if (mode == 8 && level.mapname ~== "MAP32") KeyScript(PlayerPawn(mo));       // map32.zs: room 4's key levers
+		if (mode == 9 && level.mapname ~== "MAP32") GhostShotScript(PlayerPawn(mo));     // map32.zs: room 3, an earlier self's shots wake nobody
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
