@@ -5909,3 +5909,12 @@ bait for the self after it.
   room, and the fight is not won till then); the message's wording on screen
   (it is seen in the MODE=2 views). The numbers are a first guess.
   **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
+- **More arms (Vadim, after playing it, 2026-11-20).** He found the two
+  shifts more interesting and asked for a BFG, rockets and more ammunition.
+  In the lobby now also a BFG, a rocket launcher, a second box of rockets and
+  a cell pack; in each box one more box of rockets, and box 3's small cell is
+  a cell pack. Reckoned as before that is 19060 against 31700 of health, 60
+  per cent (it was 34); the generator asserts 50 to 70. The BFG does more
+  with a cell than the reckoning's 22, so in play it is more than that. The
+  amounts are mine, a first guess. `firstKept3` still asks for 17 pick-ups
+  or more.
