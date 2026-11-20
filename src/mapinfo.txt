@@ -31,6 +31,8 @@ DoomEdNums
 	20046 = AjarPress
 	20047 = AjarPressSwitch
 	20048 = AjarTogether
+	20049 = AjarShutter
+	20051 = AjarFigure
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
@@ -379,6 +381,18 @@ map PRESS "Ajar: the press"
 map TWOKEY "Ajar: two keys at once"
 {
 	next = "TWOKEY"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The third goes lab (tools/map_shut.py): the shutter, an earlier self's
+// shots, killed in a room of goes, two rooms in a row, a model in a case.
+// MAP=SHUT ./run.sh
+map SHUT "Ajar: the shutter"
+{
+	next = "SHUT"
 	nointermission
 	nojump
 	nocrouch

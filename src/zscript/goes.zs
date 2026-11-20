@@ -435,7 +435,7 @@ extend class AjarTimeHandler
 	{
 		mixed = false;
 		let mo = players[consoleplayer].mo;
-		if (mo) mo.bBuddha = false;         // (a room of goes rescues nobody)
+		if (mo) mo.bBuddha = false;         // (a room of goes puts the player in its box instead: GoesTick, shut.zs)
 		BeginGoes(fight, true);
 	}
 

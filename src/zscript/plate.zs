@@ -2,7 +2,7 @@
 // the test map PLATE, tools/map_plate.py; MAP=PLATE MODE=3 and 4 tools/smoke.sh).
 //
 // A sprung frame is a frame that a plate on the floor names (AjarPlate,
-// args[0] the frame's id). A door hung in it is a door only while the plate
+// args[0] the frame's id; or args[1] the tag of a shutter, shut.zs). A door hung in it is a door only while the plate
 // is pressed: while the player or an earlier self (AjarGhost) stands on it.
 // Otherwise it is shut, as a Pair's leaf hung alone is: its face on the
 // frame's line and on its far side, and nothing passes it from either side,
@@ -233,6 +233,7 @@ extend class AjarTimeHandler
 		phase = LIVE;
 		DoorBegin();
 		LeanHeld(k);
+		if (!atWin) ShuttersShut();         // (at the win, as the press, it is as it is)
 		GoTake(mo);
 		GoesDoors(true);
 		if (atWin) Say("The fight is won, and its clock door stays: through it you are here again,\nas it is now, and every go of yours from now on with you.");
@@ -257,9 +258,13 @@ extend class AjarTimeHandler
 
 	void GoesTick(PlayerPawn mo)
 	{
+		// killed: into box 1, at the start of a new go (shut.zs)
+		if (stand && --stand == 0) mo.player.cheats &= ~CF_FROZEN;
+		mo.bBuddha = true;
+		if (mo.health <= 1) GoesKilled(mo);
 		int k, b;
 		[k, b] = Where(mo.pos.xy);
-		if (k != fight || b < 0) { EndGoes(); return; }       // out by a way that is not a time door
+		if (k != fight || b < 0) { mo.bBuddha = false; EndGoes(); return; }       // out by a way that is not a time door
 		if (at == 0 && b > 0) NextGo(mo);
 		else if (at > 0 && b == 0) at = 0;
 		GoWatch(ot);
@@ -337,8 +342,9 @@ extend class AjarTimeHandler
 		for (int i = 0; i < dHold.Size(); i++) dHold[i] = -1;
 	}
 
-	// Through the time door: the box, at the start of a new go.
-	void NextGo(PlayerPawn mo)
+	// Through the time door: the box, at the start of a new go. (`killed`:
+	// the player was put there, shut.zs.)
+	void NextGo(PlayerPawn mo, bool killed = false)
 	{
 		GoWatch(ot);                // (the last of what was done)
 		let h = Doors();
@@ -348,13 +354,15 @@ extend class AjarTimeHandler
 		for (int i = 0; i < logs.Size(); i++) { logs[i].next = 0; logs[i].pNext = 0; logs[i].broken.Clear(); }
 		for (int i = 0; i < takes.Size(); i++) takes[i].next = 0;
 		PressesUp();
+		ShuttersShut();
 		GoTake(mo);
 		at = 1;
-		mo.A_SetBlend("white", 1.0, 40);
+		mo.A_SetBlend(killed ? "ff2010" : "white", 1.0, 40);
 		mo.A_StartSound("misc/teleport", CHAN_AUTO);
 		string door = had ? "\nThe " .. had.Label() .. " door does not come through: it is where it was." : "";
 		string first = goesWon ? "as when the fight was won" : "as when you first came in";
-		Say(String.Format("Go %d. It is %s,\nand your earlier selves do again what they did.", takes.Size(), first) .. door);
+		if (killed) Say(String.Format("You were killed. Go %d: it is %s,\nand you are here again.", takes.Size(), first) .. door);
+		else Say(String.Format("Go %d. It is %s,\nand your earlier selves do again what they did.", takes.Size(), first) .. door);
 	}
 
 	// What the earlier selves hold is left leaning where they stand.
@@ -393,6 +401,7 @@ extend class AjarTimeHandler
 		DropGhosts();
 		FirstDoors();
 		PressesUp();
+		ShuttersShut();
 		takes.Clear(); logs.Clear();
 		GoTake(mo);
 		mo.A_SetBlend("a0d0ff", 0.8, 30);

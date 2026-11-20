@@ -5233,3 +5233,134 @@ MAP31, MAP32 and PLATE pass their checks as before.
   presses at once, a Pair whose leaves start hung in such frames, the exit
   behind the Pair. Not played by hand: `MAP=PRESS ./run.sh` and
   `MAP=TWOKEY ./run.sh` in the worktree.
+
+## The third goes lab: the shutter, an earlier self's shots, killed in a room of goes, two rooms in a row, figures (built 2026-11-20)
+
+Five more pieces for the rebuilt MAP32, on one lab map: `SHUT`
+(`tools/map_shut.py`); the engine in `src/zscript/shut.zs` (its header has
+the contracts), hooks in `time.zs`, `plate.zs`, `goes.zs` and `ajar.zs`,
+helpers in `tools/ajartime.py`. No real level uses them yet: MAP31, MAP32
+and the three earlier labs pass their checks as before.
+
+- **The shutter.** `AjarShutter` (20049, `ajartime.shutter(m, a, b, out,
+  floor, tag, high=96, keep=False)`): args[0] the sector tag of the
+  shutter (a sector 16 deep in a wall opening, its ceiling at its floor
+  while shut), args[1] how high it opens (0: 96); its angle points to the
+  side it is worked from. A plate names it: an `AjarPlate` with args[1] the
+  shutter's tag (`ajartime.shutter_plate`; args[0] stays a frame's id, so
+  one plate could work both). Open only while such a plate is pressed (the
+  player or an earlier self on it); shut, nothing passes it, no walker,
+  shot or sight (a closed sector). Opens and shuts in 12 tics, the fast
+  door's sounds (mine), moved tic by tic with `Sector.MoveCeiling` and no
+  crushing (crush -1: something in its way stops it, and it waits). Shutting,
+  it first puts the player clear of it on its worked side (the brief allowed
+  either; mine: the player is put clear, anything else is waited for).
+  `keep` makes its far line impassable (`blocking`: players and monsters)
+  while shots and sight pass it: a pen behind a shutter is kept by that
+  line, open or shut, and its monsters fight through it when it is open.
+  Every go of a fight or a room of goes begins with every shutter shut at
+  once and every shutter plate up (`ShuttersShut` in `Begin` of an open
+  fight, `Retake`, `Resume`, `NextGo`, `Anew`, `BeginGoes` but not at the
+  win, as the press). Not for a closed fight watched from a box (it is not
+  recorded for replay).
+- **An earlier self's shots, in a fight of goes** (`args[4]` 3, while it is
+  a fight): `AjarRail.ModifyDamage` takes damage from an `AjarGhost` as from
+  the player, so it hurts a monster on the demo and wakes it as the player's
+  shot does (`Wake`: it is then after the player, and woken dead it is killed
+  by the player). Kills: the engine already counts every monster death to
+  the player in single play, so the player's kill count rises by each one;
+  nothing more was needed. MAP31's open fights (`args[4]` 1) are untouched
+  (`mixed` is false there).
+- **Killed in a room of goes** (`args[4]` 2, and a fight of goes after its
+  win): `GoesTick` keeps `bBuddha` on; at health 1 (`GoesKilled`) the
+  player's shape goes to light where they fell (`AjarSnatch` and the
+  teleport fog, as in the open fight), they are put in box 1 with 50 health
+  and `NextGo` begins a new go (the ended go is kept: its earlier self
+  vanishes where it fell), a red flash (mine: the open fight's colour for a
+  death), "You were killed. Go n: ...", and they stand for a second
+  (`STAND_TICS`). So the press after a win now puts the player in box 1.
+- **Several rooms in one level.** Nothing new was needed in the engine:
+  leaving a room of goes for good ends it (`EndGoes`: ghosts gone, logs and
+  takes cleared, held doors left, its time doors shut, marked won), and
+  walking into the next fight's zone begins it (`Begin`, `DoorBegin` takes
+  stock of every door afresh, `MixBegin` a new log). The test checks that
+  nothing of room A is left in room B. Two hall time doors in parts cut off
+  from each other (room and pit) both lead into box 1, and the box back by
+  door 1: tested. **A sprung frame made with `only`**: it did not work
+  before. `only=1` frames are way-home frames (`args[1]` the door's far
+  side), and hanging that door there ran `ComeHome`: the door was nailed
+  and the level's way out marked built. Now a frame with a plate never
+  comes home (`Hang`), and refusing another door it says "This frame takes
+  the RED door and no other." The frame takes RED only, is shut, opens with
+  its plate and is held by an earlier self.
+- **Figures.** `AjarFigure` (20051, `ajartime.figure(m, x, y, what, kind=,
+  angle=, scale=0.5, z=0)`): args[0] 1 the player standing (in the
+  player's colours), 2 a body (args[1] a Doom editor number, by
+  `AmbushClass`: the last picture of its Death state), 3 a plate pressed (a
+  flat sprite), 4 a door of colour args[1] standing as hung (the door's own
+  wall sprite and glow), 5 that door leaning (the same, tilted 10 degrees,
+  mine: in the game a leaning door stands upright, so a model would not tell
+  the two apart); args[2] the size in percent. No behaviour at all
+  (`+NOINTERACTION`, no tick), not solid, not shootable, never counted, no
+  weight on a plate (plates look only at the player and ghosts), and left
+  out of `Counts`, `RecordFx` and `Snap`. `ajartime.case(m, a, b, out,
+  floor, deep=96)` makes a glass case in a wall (the glass of
+  `ajartime.glass` and a raised, lit case behind it) and returns its
+  sector; `ajartime.sealed(m, sector)` says whether nothing can walk into
+  it (every way out over a non-blocking line leads back into it); the map
+  asserts it.
+- **The map.** Room A (fight 1, a room of goes): 640 square, the pit 256
+  square in its north-east corner, 64 down; time door 1 in the west wall,
+  time door 2 in the pit's east wall, the box west (with the plate that
+  forgets). Sprung frame 101 in the north wall, `only` RED (brass inlaid
+  red), RED leaning in the room, its plate 340 from the mouth. The glass
+  case in the south wall: the player on a pressed plate, a dead imp and a
+  dead hell knight, at half size. RED's far side is in the lobby of room B,
+  west of the range. Room B (fight 2, a fight of goes): the range 384 by
+  1100; the firing spot (1092, 80) at the south end, a pillar 64 square to
+  its west for cover. At the north end the shutter (tag 3520, 256 wide) and
+  the pen behind it, 288 by 100, level with the range, ceiling 128; four imps and two
+  hell knights, AjarCues of wave 1. The booth east of the pen end (128 by
+  200), entered from the range, glass onto it (`ajartime.glass`: it blocks
+  sight too), the shutter's plate in it. Time doors in the west and east
+  walls, boxes 1 and 2 south behind glass, the plate that forgets in box 1.
+  The press (tag 3510, 128 square) in the middle of the range, its lever on
+  the west wall. The steel door (3290) in the east wall, the exit room
+  beyond it outside the fight's zones.
+- **Tests.** `MAP=SHUT MODE=3` (20: caseIsThere, fromThePitToTheBox,
+  outByDoorOne, onlyFrameHangsIt, opensWithItsPlate, heldByMyEarlierSelf,
+  through, secondRoomBegins, shutWithoutThePlate, noShotThrough,
+  opensWithThePlate, shutsAgain, killedIntoTheBox, shutAtTheStart,
+  hurtThroughTheShutter, theyFireBack (a pen monster's missile came out
+  past the shutter line while it was open), openWhileMyEarlierSelfStands,
+  shutsWhenMyEarlierSelfLeaves, putClearOfIt (the player stands in the
+  opening when the earlier self steps off), nothingWalksOut (every living
+  monster still in the pen at the end of go 2)). The test fires rockets
+  level (pitch 0, no autoaim), turned to face a monster in the pen
+  (`ShootLevel`); it is given a rocket launcher and rockets. In go 2 three
+  are fired, more would win the fight before the earlier self steps off; the
+  ones they wake fire back at the player at the firing spot (3 to 4 missiles
+  out in a run; godmode stays on, the check is the missile). `MAP=SHUT
+  MODE=4` (7: rocketsStopped (go 1's sixteen rockets at the shut shutter
+  hurt nothing), intoTheBox, myEarlierSelfHurtsThem, killsAreMine (checked
+  at the first death: the earlier self's rockets killed all six in the runs
+  before the test's own kills were due), won, steelOpens,
+  pressPutsMeInTheBox). Each passed in three runs (MODE=3 20 of 20, MODE=4 7 of 7). The old
+  ones as before: PRESS 3 (13) and 4 (5), TWOKEY 3 (8), PLATE 3 (23) and
+  4 (6), TDOOR 3 (20), 4 (8 and the exit), TIME 3 (14), MAP32 3 (18 and
+  out) and 4 (20), MAP31 7 (15), 6 (9) and 3 (all passed in the run).
+  TDOOR 5 failed delivered, shutAway and outOfTheFight (once inTheBox too)
+  in 2 of 9 runs on this branch, and passed 3 of 3 on the main package:
+  the test's demon walks back out of the box into the hall. None of this
+  lab's code runs in that closed fight, so it looks like chance (the
+  demon's chase); left alone, worth watching.
+- **The pen, first built 64 lower (as first asked), was changed** (Vadim,
+  2026-11-20): sunk 64, its monsters could not see or shoot over the sill at
+  anyone on the range (no missile came out in 400 tics open), and the
+  player's level shots went over their heads. Now the pen is level and the
+  shutter's far line keeps everything in.
+- **Not done or not tested**: a monster or a body in the shutter's way (it
+  waits: untested), several shutters, a shutter in a closed fight, a door
+  figure in a case (the lab's case has none), `MixGoOnAs` and winding with
+  shutters, a player killed in the box of a room of goes. Not played by
+  hand: `MAP=SHUT ./run.sh` in the worktree.

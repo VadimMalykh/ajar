@@ -23,7 +23,9 @@
 //    open fight that is also a room of goes and becomes one when it is won
 //    (goes.zs: earlier selves do again what they did to doors, plates and
 //    presses; from the win on its time doors lead into box 1, as a room of
-//    goes', from the hall as it is at the win).
+//    goes', from the hall as it is at the win). In a room of goes the player
+//    is never killed: they are in box 1 at the start of a new go (shut.zs).
+//    A level may have several such rooms and fights, one after another.
 //  * Lines 3000 + 100 * fight + j: the hall's time doors, j from 1.
 //    Lines 3050 + 100 * fight + n: the door of box n. All are portal lines
 //    as a door's far side is (ajarmap.recess).
@@ -268,6 +270,8 @@ class AjarDemo play
 
 // Carried by a monster that is on the demo. Only the player hurts it, and
 // that wakes it; its real health is what the demo says (hp) less that (dmg).
+// In a fight of goes (args[4] 3) an earlier self's shots are the player's
+// (shut.zs).
 class AjarRail : Inventory
 {
 	int hp, dmg;
@@ -276,8 +280,13 @@ class AjarRail : Inventory
 	override void ModifyDamage(int damage, Name damageType, out int newdamage, bool passive, Actor inflictor, Actor source, int flags)
 	{
 		if (!passive) return;
-		if (source && source.player) { dmg += damage; hit = true; newdamage = damage; }
+		if (source && (source.player || (source is "AjarGhost" && Mixed()))) { dmg += damage; hit = true; newdamage = damage; }
 		else newdamage = 0;
+	}
+	bool Mixed()
+	{
+		let th = AjarTimeHandler(EventHandler.Find("AjarTimeHandler"));
+		return th && th.mixed;
 	}
 }
 
@@ -608,7 +617,7 @@ class AjarTimeHandler : EventHandler
 		Actor a;
 		while (a = Actor(it.Next()))
 		{
-			if (a.bInvisible) continue;
+			if (a.bInvisible || a is "AjarFigure") continue;        // (a figure: shut.zs)
 			class<Actor> cls = a.GetClass();
 			if (a is "AjarEcho")
 			{
@@ -1047,6 +1056,7 @@ class AjarTimeHandler : EventHandler
 		ClearHall();
 		NewTake(mo);
 		PressesUp();                // goes.zs: each go begins with the presses up
+		ShuttersShut();             // shut.zs: and the shutters shut
 		if (mixed) MixRetake(mo);
 		HallDoors(0);
 		h.Link(BoxLine(fight, at), used, TIME_TEX);
@@ -1305,7 +1315,7 @@ class AjarTimeHandler : EventHandler
 		Actor a;
 		while (a = Actor(it.Next()))
 		{
-			if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarCam" || a.bInvisible) continue;
+			if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarCam" || a is "AjarFigure" || a.bInvisible) continue;
 			let inv = Inventory(a);
 			if (inv && inv.owner) continue;
 			int k, b;
@@ -1563,7 +1573,7 @@ class AjarTimeHandler : EventHandler
 	// every box whose door has opened; else that box alone.
 	bool Counts(Actor a, int box)
 	{
-		if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarDoor" || a.bInvisible) return false;      // a door: timedoor.zs
+		if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarDoor" || a is "AjarFigure" || a.bInvisible) return false;      // a door: timedoor.zs; a figure: shut.zs
 		let inv = Inventory(a);
 		if (inv && inv.owner) return false;
 		int k, b;
@@ -1720,6 +1730,7 @@ class AjarTimeHandler : EventHandler
 		phase = LIVE;
 		DoorBegin();
 		MixBegin(k);                // goes.zs
+		if (open) ShuttersShut();   // shut.zs
 		HallDoors(1);
 		if (!(said & 1)) Say("A door with a clock on it leads out of the fight,\nand back into it where you left.");
 		said |= 1;
@@ -2086,7 +2097,7 @@ class AjarTimeHandler : EventHandler
 		comeBack = false;
 		phase = LIVE;
 		at = 0;
-		if (open) { NewTake(mo); PressesUp(); if (mixed) MixRetake(mo); }
+		if (open) { NewTake(mo); PressesUp(); ShuttersShut(); if (mixed) MixRetake(mo); }
 		else
 		{
 			main = new("AjarTrack");
@@ -2322,6 +2333,8 @@ class AjarTimeHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "PRESS") PressScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "PRESS") PressGoScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "TWOKEY") TwoKeyScript(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "SHUT") ShutScript(PlayerPawn(mo));
+		if (mode == 4 && level.mapname ~== "SHUT") ShotScript(PlayerPawn(mo));
 	}
 
 	// How far the fight that is being watched has got, and when the door opens.

@@ -129,3 +129,88 @@ def anew(m, x, y, angle, z=30):
     """A plate on a wall of a room of goes' box, facing `angle`: USE forgets
     every go (plate.zs, AjarAnew)."""
     m.thing(x, y, ANEW_T, angle=angle, height=float(z))
+
+
+# --- the third goes lab (map SHUT, tools/map_shut.py; src/zscript/shut.zs) -------
+SHUTTER_T = 20049
+FIGURE_T = 20051
+SHUT_HIGH = 96          # how high a shutter opens, over its floor
+
+
+def shutter(m, a, b, out, floor, tag, *, high=SHUT_HIGH, thick=16, keep=False, color=None):
+    """A shutter in a wall: a-b is its face on the side it is worked from
+    (where whoever is in its way is put when it shuts), `out` points through
+    it to the other side. It is a sector `thick` deep (tag `tag`) whose
+    ceiling is at its floor while it is shut, and `high` over it while it is
+    open: open only while a plate that names it is pressed (shutter_plate;
+    shut.zs, AjarShutter). Declare the places on both sides first. `keep`:
+    nothing walks between the shutter and the far side, open or shut (a pen:
+    the line there is impassable to players and monsters, but shots and
+    sight pass it, so what is penned fights through the open shutter)."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=170, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
+             id=tag, color=color)
+    if keep:
+        m.line(c, d, blocking=True)
+    for p, q in ((a, c), (b, d)):
+        m.line(p, q, mid="AJTRIM", dontpegbottom=True)
+    ang = {(0, 1): 270, (0, -1): 90, (1, 0): 180, (-1, 0): 0}[tuple(out)]
+    m.thing((a[0] + d[0]) / 2, (a[1] + d[1]) / 2, SHUTTER_T, angle=ang, args=(tag, high))
+
+
+def shutter_plate(m, x, y, tag):
+    """A plate on the floor at x, y that holds the shutter of `tag` open
+    while the player or an earlier self stands on it (an AjarPlate whose
+    args[1] is the shutter's tag)."""
+    m.thing(x, y, PLATE_T, args=(0, tag))
+
+
+FIGURES = {"me": 1, "body": 2, "plate": 3, "hung": 4, "leaning": 5}
+
+
+def figure(m, x, y, what, *, kind=0, angle=0, scale=0.5, z=0):
+    """A still figure for a model of a puzzle solved (shut.zs, AjarFigure):
+    `what` is "me" (the player standing), "body" (a dead monster of Doom
+    editor number `kind`, as it lies at the end of its death), "plate" (a
+    floor plate, pressed), "hung" (a door of colour `kind` standing open, as
+    in a frame) or "leaning" (that door leaning). `scale` its size. Nothing
+    about it is alive: not solid, not shot, never counted, never recorded
+    and no weight on a plate. `z` over the floor."""
+    m.thing(x, y, FIGURE_T, angle=angle, height=float(z),
+            args=(FIGURES[what], kind, int(round(scale * 100))))
+
+
+def case(m, a, b, out, floor, *, deep=96, raised=16, top=112, light=230, color=None):
+    """A glass case in a wall: a-b is its glass on the room's side (16
+    thick), `out` points from the room into it. Its floor is `raised` over
+    `floor`. Returns the case's sector, for sealed(). Put figures in it."""
+    glass(m, a, b, out, floor, sill=raised, top=top, color=color)
+    c = (a[0] + out[0] * 16, a[1] + out[1] * 16)
+    d = (b[0] + out[0] * 16, b[1] + out[1] * 16)
+    e = (d[0] + out[0] * deep, d[1] + out[1] * deep)
+    f = (c[0] + out[0] * deep, c[1] + out[1] * deep)
+    return m.sector([c, d, e, f], floor=floor + raised, ceil=floor + top, light=light, wall="AJTRIM",
+                    ftex="AJTRIMF", ctex="AJTRIMF", color=color)
+
+
+def sealed(m, si):
+    """Can nothing walk into sector `si` (or out of it)? Every way out of it
+    over a two-sided line that does not block leads only into it again."""
+    import re
+    text = m.textmap()
+    sides = [int(s) for s in re.findall(r"sidedef\{[^}]*?sector=(\d+);", text)]
+    seen, todo = {si}, [si]
+    lines = re.findall(r"linedef\{([^}]*)\}", text)
+    while todo:
+        s = todo.pop()
+        for ld in lines:
+            if "sideback" not in ld or "blocking=true" in ld:
+                continue
+            f = sides[int(re.search(r"sidefront=(\d+);", ld).group(1))]
+            k = sides[int(re.search(r"sideback=(\d+);", ld).group(1))]
+            for p, q in ((f, k), (k, f)):
+                if p == s and q not in seen:
+                    seen.add(q)
+                    todo.append(q)
+    return seen == {si}
