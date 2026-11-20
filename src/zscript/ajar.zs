@@ -16,6 +16,8 @@
 //    chain, ajarmap.way_longer: it is not a way out by itself).
 //    3 if none but a leaf of the Pair whose colour is args[1] (MAP12).
 //    4 if any door but the one whose colour is args[1] (MAP11's archive).
+//    5 if no door but that of args[1] hangs in it, and it is a frame like
+//    any other, no way out (MAP32's).
 //  * AjarFrame args[1]: the far-side line id of the door that turns this
 //    frame into the way out (ajarmap.way_home); lines 590 are its mouths.
 //    Frame 193 is the same for a secret way out (MAP15), and lines 591 its
@@ -739,7 +741,7 @@ class AjarHandler : EventHandler
 			AjarDoor o;
 			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
 			// (a sprung frame made with `only` takes its door and is no way out: shut.zs)
-			if (!f.args[3] && f.args[4] != 2 && f.args[1] && f.args[1] == d.args[0] && !PlateFor(f)) ComeHome(d, f);
+			if (!f.args[3] && f.args[4] != 2 && f.args[4] != 5 && f.args[1] && f.args[1] == d.args[0] && !PlateFor(f)) ComeHome(d, f);
 		}
 		// A Pair leaf leads to the frame its twin hangs in, if it hangs; and
 		// then the twin leads here.
@@ -930,11 +932,11 @@ class AjarHandler : EventHandler
 			Say("This frame is barred to the " .. carried.Label() .. " door.\nAny other will hang in it.");
 			return;
 		}
-		if (carried && f.args[4] == 1 && carried.args[0] != f.args[1])
+		if (carried && (f.args[4] == 1 || f.args[4] == 5) && carried.args[0] != f.args[1])
 		{
-			if (PlateFor(f))
+			if (PlateFor(f) || f.args[4] == 5 || f.args[3])
 			{
-				// a sprung frame that takes one door (shut.zs)
+				// a sprung frame that takes one door (shut.zs), a plain one (MAP32), a brass one of a chain
 				string which = "one";
 				let di = ThinkerIterator.Create("AjarDoor");
 				AjarDoor o;
@@ -1102,6 +1104,8 @@ class AjarHandler : EventHandler
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (mode) Check("levelExited", true);
 		if (mode == 3 && level.mapname ~== "MAP15") Check("outBySecretWayOut", e.NextMap ~== "MAP32");
+		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
+		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1262,6 +1266,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
 		else if (level.mapname ~== "MAP10" && mode == 3) LongWayScript(mo, t);
+		else if (level.mapname ~== "MAP32") return;        // its views are map32.zs's (Views32)
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);
 		else if (level.mapname ~== "MAP05" && mode == 3) LostPropertyStrays(mo, t);

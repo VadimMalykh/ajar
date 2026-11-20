@@ -1,242 +1,470 @@
-// MAP32 "Double Shift" (tools/map_secret2.py): what it adds to stepping out
-// of a fight, and its walk-through (MAP=MAP32 MODE=3 tools/smoke.sh); winding
-// a fight that is watched (MODE=4).
+// MAP32 "Double Shift", rebuilt (tools/map_secret2.py; PLAN.md, "MAP32
+// rebuilt"): five rooms in a row, each needing earlier selves. Nothing new in
+// the engine is needed for it but a plain frame that takes one door (ajar.zs,
+// AjarFrame args[4] 5) and a lamp among the figures (shut.zs). Its tests:
+//   MAP=MAP32 MODE=3 tools/smoke.sh   the whole level solved, room by room
+//   MAP=MAP32 MODE=4 tools/smoke.sh   the dead ends: out of the pit, out of
+//                                     the lock; a door of room 1 refused
+//   MAP=MAP32 MODE=2 tools/smoke.sh   views, for screenshots
+// The coordinates are the generator's.
 
 extend class AjarTimeHandler
 {
-	// A fight can be left unwon here (its wing leads on): it is over when the
-	// player stands in the hall of another. Its time doors are shut.
-	void Quit()
+	const PRESS32 = 3530;       // room 3's press (map_secret2.PRESS3)
+	const SHUT32 = 3540;        // room 4's shutter (map_secret2.SHUT4)
+	const F32 = -96;            // the floor of the pit, of room 4
+	const G32 = -192;           // of room 5
+	const TA32 = 200;           // when the first self hangs leaf a in room 2
+	int dsStep, dsT, dsT2, dsUsed, dsBefore, dsShots, dsOut0;
+	int dsOnFrom;               // walking on, ahead, until the fight that is on is another than this
+	Array<Actor> dsPenShots, dsPenOut;
+	AjarDoor leafA32, leafB32;
+
+	void Ahead(Actor mo) { mo.vel.xy = Actor.AngleToVector(mo.angle, 8); }
+
+	// the plate that forgets, of the box the player is in
+	AjarAnew Anew32(Actor mo)
 	{
-		let h = Doors();
-		if (at) { h.Link(BoxLine(fight, at), 0, TIME_TEX); if (used) h.Link(used, 0, TIME_TEX); }
-		HallDoors(0);
-		DropPuppets(-1);
-		Unfreeze();
-		pending.Clear(); pendingTics.Clear();
-		phase = IDLE;
-		at = 0;
-		open = false;
-		main = null;
-		boxes.Clear();
-		slotCls.Clear();
+		let it = ThinkerIterator.Create("AjarAnew");
+		AjarAnew w, best = null;
+		while (w = AjarAnew(it.Next())) if (!best || mo.Distance2D(w) < mo.Distance2D(best)) best = w;
+		return best;
 	}
 
-	AjarDoor Leaf32(bool east)
+	AjarPlate FloorPlate32(int frame, int shutter)
 	{
-		let it = ThinkerIterator.Create("AjarDoor");
-		AjarDoor d;
-		while (d = AjarDoor(it.Next())) if (d.IsPair() && (d.pos.x > 0) == east) return d;
-		return null;
-	}
-	AjarDoor testA, testB;
-
-	// Is fight k's steel door up?
-	bool SteelUp(int k)
-	{
-		let it = level.CreateSectorTagIterator(3090 + 100 * k);
-		int i = it.Next();
-		return i >= 0 && level.sectors[i].ceilingplane.ZatPoint(level.sectors[i].centerspot) > level.sectors[i].floorplane.ZatPoint(level.sectors[i].centerspot) + 56;
-	}
-
-	AjarDoor Door32(int colour)
-	{
-		let it = ThinkerIterator.Create("AjarDoor");
-		AjarDoor d;
-		while (d = AjarDoor(it.Next())) if (!d.IsPair() && d.args[1] == colour) return d;
+		let it = ThinkerIterator.Create("AjarPlate");
+		AjarPlate p;
+		while (p = AjarPlate(it.Next())) if (p.args[0] == frame && p.args[1] == shutter) return p;
 		return null;
 	}
 
-	// The test's monsters stand still and are not hurt; `kill`: those of fight k die.
-	void Quiet(Actor mo, int kill = 0)
+	bool InPen32(Actor a) { return a.pos.x > 7072 && a.pos.x < 7840 && a.pos.y > 1416 && a.pos.y < 1736; }
+
+	// A rocket fired level at the n-th living monster in room 4's pen, from the west.
+	void ShootPen(PlayerPawn mo, int n)
 	{
+		Array<Actor> pen;
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
 		while (a = Actor(it.Next()))
 		{
-			if (!a.bIsMonster || a.health <= 0) continue;
-			int k, b;
-			[k, b] = Where(a.pos.xy);
-			if (kill && k == kill) { a.bDormant = false; a.DamageMobj(mo, mo, 100000, 'None'); }
-			else a.bDormant = true;
+			if (!a.bIsMonster || a.health <= 0 || !InPen32(a)) continue;
+			int i = 0;
+			while (i < pen.Size() && pen[i].pos.x < a.pos.x) i++;
+			pen.Insert(i, a);
 		}
+		if (pen.Size()) { Actor t = pen[n % pen.Size()]; mo.angle = VectorAngle(t.pos.x - mo.pos.x, t.pos.y - mo.pos.y); }
+		mo.pitch = 0;
+		mo.SpawnPlayerMissile("Rocket", noautoaim: true);
+		mo.TakeInventory("RocketAmmo", 1);
 	}
 
-	void Map32Script(PlayerPawn mo)
+	// Nothing of the room before is left: one go, no earlier selves, nothing written down.
+	bool Fresh(int k)
 	{
+		return fight == k && takes.Size() == 1 && logs.Size() == 1 && !logs[0].tic.Size() && !logs[0].pTic.Size()
+			&& !AllGhosts() && won.Find(k - 1) < won.Size()
+			&& (Doors().FindLine(HallLine(k - 1, 1)).flags & Line.ML_BLOCKING);
+	}
+
+	void Leaves32()
+	{
+		if (leafA32) return;
+		let it = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(it.Next())) if (d.IsPair()) { if (d.pos.x < 2800) leafA32 = d; else leafB32 = d; }
+	}
+
+	// MODE=3: the level solved, room by room.
+	void DoubleShiftScript(PlayerPawn mo)
+	{
+		if (level.totaltime > level.maptime + 10) return;
 		int t = testTic++;
 		mo.player.cheats |= CF_GODMODE;
 		let h = Doors();
-		if (t == 0) { testA = Leaf32(true); testB = Leaf32(false); }
-		AjarDoor a = testA, b = testB, yellow = Door32(4), red = Door32(1), blue = Door32(2);
-		AjarFrame fa = h.FindFrame(111), fb = h.FindFrame(112), fy = h.FindFrame(113), f1 = h.FindFrame(190), f2 = h.FindFrame(191);
-		Line la = h.FindLine(111), lb = h.FindLine(112);
-		Quiet(mo, t >= 365 && t <= 610 && t % 35 == 15 ? 2 : 0);
-		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d fight=%d at=%d trips=%d rt=%d len=%d left=%d chain=%d",
-			t, mo.pos.x, mo.pos.y, mo.pos.z, phase, fight, at, trips, rt, main ? main.first.Size() : 0, phase ? Left() : 0, h.chainLen);
-
-		// --- 1: the leaf on the gallery, down, out; the twin in the wing ---
-		if (t == 10) Go(mo, 300, -120, 64, 270);
-		if (t == 12) { Check("begun1", phase == LIVE && fight == 1); a.Used(mo); }
-		if (t == 16) { Go(mo, 192, -170, 64, 270); fa.Activate(mo); }
-		if (t == 18) Check("leafHung", a.frame == fa && a.Shut());
-		// YELLOW is not for this frame
-		if (t == 20) { Go(mo, 80, -120, 64, 270); yellow.Used(mo); }
-		if (t == 22) { Go(mo, 192, -170, 64, 270); fa.Activate(mo); }
-		if (t == 24) { Check("tealOnly", h.carried == yellow && a.frame == fa); h.carried = null; h.DropDoor(yellow, mo); }
-		if (t == 120) Go(mo, 960, 640, 0, 0);
-		if (t > 120 && t < 150) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (t == 152) Check("out1", phase == REPLAY && at == 1 && mo.pos.x < -16 && !h.carried);
-		if (t == 154) { Go(mo, -340, 450, 64, 90); b.Used(mo); }
-		if (t == 158) { Go(mo, -370, 352, 64, 180); fb.Activate(mo); }
-		if (t == 170) Check("joinedAndHeld", a.frame == fa && b.frame == fb && a.args[0] == 112 && (la.flags & Line.ML_BLOCKEVERYTHING) && (lb.flags & Line.ML_BLOCKEVERYTHING));
-		if (t == 262) { Check("open1", phase == LIVE && !(lb.flags & Line.ML_BLOCKING)); Go(mo, -370, 352, 64, 180); }
-		if (t > 262 && t < 285) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (t == 288) Check("onTheGallery", mo.pos.y < 0 && mo.pos.y > -192 && mo.pos.x > 100 && at == 0);
-		// YELLOW through the Pair into the wing, into its frame, and on
-		if (t == 290) { Go(mo, 192, -150, 64, 270); yellow.Used(mo); }
-		if (t > 290 && t < 316) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (t == 318) Check("yellowInTheWing", mo.pos.x < -16 && h.carried == yellow);
-		if (t == 320) { Go(mo, -176, 200, 64, 270); fy.Activate(mo); }
-		if (t > 320 && t < 348) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (t == 352) Check("inShop2", mo.pos.x > 3000 && yellow.frame == fy);
-
-		// --- 2: the fight is won, the steel door, the doorway ---
-		if (t == 357) Go(mo, 3712, -100, 64, 90);
-		if (t == 360) Check("begun2", phase == LIVE && fight == 2 && (h.FindLine(HallLine(1, 1)).flags & Line.ML_BLOCKING));
-		if (t == 362) Go(mo, 3712, 300, 0, 90);
-		if (t == 640) Check("won2", won.Find(2) < won.Size() && phase == IDLE);
-		if (t == 700) { Check("steelOpen", SteelUp(2)); Go(mo, 4292, 128, 0, 0); }       // in the pit, before the steel door
-		if (t > 700 && t < 738) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (t == 739) Check("inShop3", mo.pos.x > 6000);
-
-		// --- 3: RED on the gallery, down, out; BLUE in the wing; the line ---
-		if (t == 740) Go(mo, 6444, -120, 64, 270);
-		if (t == 742) { Check("begun3", phase == LIVE && fight == 3); red.Used(mo); }
-		if (t == 746) { Go(mo, 6336, -170, 64, 270); f1.Activate(mo); }
-		if (t == 748) Check("redHung", red.frame == f1 && !h.chainLen);
-		if (t == 850) Go(mo, 7360, 896, 0, 0);
-		if (t > 850 && t < 880) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (t == 882) Check("out3", phase == REPLAY && at == 1 && fight == 3);
-		if (t == 884) { Go(mo, 5804, 450, 64, 90); blue.Used(mo); }
-		if (t == 888) { Go(mo, 5774, 352, 64, 180); f2.Activate(mo); }
-		if (t == 900) Check("loopHeld", red.frame == f1 && blue.frame == f2 && h.chainLen == 2 && (h.FindLine(191).flags & Line.ML_BLOCKEVERYTHING));
-		if (t == 1000) { Check("open3", phase == LIVE && h.chainLen == 2 && !(h.FindLine(191).flags & Line.ML_BLOCKING)); Go(mo, 5774, 352, 64, 180); }
-		if (t > 1000) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-	}
-
-	// --- winding a fight that is watched (MODE=4) ---------------------------------
-	// Shop 1, its first go made long: the leaf is carried about for ten
-	// seconds before it is hung, so that winding on from the wing goes past
-	// the moment the earlier self hangs it.
-	AjarWind Plate32(bool on)
-	{
-		let it = ThinkerIterator.Create("AjarWind");
-		AjarWind w;
-		while (w = AjarWind(it.Next()))
+		Leaves32();
+		AjarDoor violet = Door32(5), yellow = Door32(4), green = Door32(3), pink = Door32(6), blue = Door32(2), red = Door32(1);
+		AjarDoor a = leafA32, b = leafB32;
+		AjarFrame f1 = h.FindFrame(101), fa = h.FindFrame(131), fb = h.FindFrame(132), fw = h.FindFrame(133);
+		AjarFrame g1 = h.FindFrame(141), g2 = h.FindFrame(142), home = h.FindFrame(190), home2 = h.FindFrame(191);
+		Line l1 = h.FindLine(101), la = h.FindLine(131), lb = h.FindLine(132), lg1 = h.FindLine(141), lg2 = h.FindLine(142);
+		AjarPlate p1 = FloorPlate32(101, 0), p51 = FloorPlate32(141, 0), p52 = FloorPlate32(142, 0), sp = FloorPlate32(0, SHUT32);
+		AjarPress pr = FindPress(PRESS32);
+		AjarShutter sh = FindShutter(SHUT32);
+		AjarPressSwitch sw = null;
+		let si = ThinkerIterator.Create("AjarPressSwitch");
+		AjarPressSwitch s;
+		while (s = AjarPressSwitch(si.Next())) if (s.args[0] == PRESS32) sw = s;
+		int g = takes.Size(), o = ot, k, bx;
+		[k, bx] = Where(mo.pos.xy);
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) fight=%d phase=%d goes=%d open=%d mixed=%d at=%d go=%d ot=%d selves=%d carried=%s left=%d kills=%d step=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, fight, phase, goes, open, mixed, at, g, o, AllGhosts(), h.carried ? h.carried.Label() : "-",
+			phase ? Left() : -1, level.killed_monsters, dsStep);
+		if (t == 3)
 		{
-			int k, b;
-			[k, b] = Where(w.pos.xy);
-			if (k == fight && b == at && (w.args[0] != 0) == on) return w;
+			Check("begun1", goes && fight == 1 && g == 1 && Figures(false) == 23 && !Figures(true));
+			Check("allThere", violet && yellow && green && pink && blue && red && a && b && f1 && fa && fb && fw && g1 && g2 && home && home2
+				&& p1 && p51 && p52 && sp && pr && sh && sw && red.frame == home && !h.chainLen);
 		}
-		return null;
-	}
-	int testHp, testArm, testLen;
 
-	void Wind32Script(PlayerPawn mo)
-	{
-		int t = testTic++;
-		mo.player.cheats |= CF_GODMODE;
-		let h = Doors();
-		if (t == 0) { testA = Leaf32(true); testB = Leaf32(false); }
-		AjarDoor a = testA, b = testB;
-		AjarFrame fa = h.FindFrame(111), fb = h.FindFrame(112);
-		Line la = h.FindLine(111), lb = h.FindLine(112);
-		Quiet(mo);
-		AjarTrack self = boxes.Size() ? boxes[boxes.Size() - 1] : null;
-		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d at=%d trips=%d rt=%d len=%d self=%d hp=%d arm=%d",
-			t, mo.pos.x, mo.pos.y, mo.pos.z, phase, at, trips, rt, main ? main.first.Size() : 0, self ? self.first.Size() : -1,
-			mo.health, mo.CountInv("BasicArmor"));
+		// on to the next room (a room left is over at once: no go, no tic of its own)
+		if (dsOnFrom && fight == dsOnFrom) Ahead(mo);
+		else dsOnFrom = 0;
 
-		if (t == 1)
+		// === 1: VIOLET hung and held by the plate; through, in the next go ===
+		if (dsStep == 0 && goes && fight == 1 && g == 1)
 		{
-			int n = 0;
-			let it = ThinkerIterator.Create("AjarWind");
-			while (it.Next()) n++;
-			Check("plates", n == 18);
+			if (o == 5) { Go(mo, 560, 460, 0, 270); violet.Used(mo); }
+			if (o == 7) { Go(mo, 192, 480, 0, 90); f1.Activate(mo); }
+			if (o == 9) Check("shutAlone1", violet.frame == f1 && (l1.flags & Line.ML_BLOCKING) && !violet.nailer && !h.wayOutBuilt);
+			if (o == 10) Go(mo, 192, 160, 0, 90);
+			if (o == 14) Check("opensWithThePlate1", p1.pressed && !(l1.flags & Line.ML_BLOCKING));
+			if (o == 300) Go(mo, 40, 128, 0, 180);
+			if (o > 300 && o < 325) Walk(mo, (-8, 0));
 		}
-		// the first go: the leaf taken at once, hung ten seconds later, out
-		if (t == 10) Go(mo, 300, -120, 64, 270);
-		if (t == 12) { Check("begun", phase == LIVE && fight == 1); a.Used(mo); mo.GiveInventoryType("GreenArmor"); }
-		if (t == 400) { Go(mo, 192, -170, 64, 270); fa.Activate(mo); }
-		if (t == 402) Check("leafHung", a.frame == fa && a.Shut());
-		if (t == 480) Go(mo, 960, 640, 0, 0);
-		if (t > 480 && t < 510) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (t == 512) { Check("out", phase == REPLAY && at == 1 && main.first.Size() > 450); testLen = main.first.Size(); }
-		// in the wing: the twin hung; the earlier self still has the leaf in hand
-		if (t == 514) { Go(mo, -340, 450, 64, 90); b.Used(mo); }
-		if (t == 518) { Go(mo, -370, 352, 64, 180); fb.Activate(mo); }
-		if (t == 520) Check("twinHung", b.frame == fb && !a.frame && a.carried);
-		// on: to two seconds before the handover; the leaf hangs, the Pair is joined and held
-		if (t == 522)
+		if (dsStep == 0 && goes && fight == 1 && g == 2)
 		{
-			Go(mo, -60, 256, 64, 0);
-			testHp = mo.health; testArm = mo.CountInv("BasicArmor");
-			let w = Plate32(true);
-			Check("platesInTheWing", w && Plate32(false));
+			if (o == 3) Go(mo, -240, 128, 0, 0);
+			if (o > 3 && o <= 12) Walk(mo, (8, 0));
+			if (o == 30) Check("heldByMyEarlierSelf1", AllGhosts() == 1 && violet.frame == f1 && p1.pressed && !(l1.flags & Line.ML_BLOCKING) && !p1.On(mo));
+			if (o == 32) Go(mo, 192, 470, 0, 90);
+			if (o > 32) Ahead(mo);
+		}
+		// === 2: two keys ===
+		if (dsStep == 0 && goes && fight == 2)
+		{
+			Check("through1", k == 2 && mo.pos.x > 2100 && mo.pos.x < 2300 && mo.pos.y < 120 && won.Find(1) < won.Size() && (l1.flags & Line.ML_BLOCKING)
+				&& (h.FindLine(HallLine(1, 1)).flags & Line.ML_BLOCKING));
+			Check("noLeak2", Fresh(2));
+			dsStep = 1;
+		}
+		// go 1: A, then B 83 tics later: too late; out by the pit's own time door
+		if (dsStep == 1 && goes && g == 1)
+		{
+			if (o == 5) { Go(mo, 2100, 230, 0, 90); a.Used(mo); }
+			if (o == 7) { Go(mo, 2040, 160, 0, 180); fa.Activate(mo); }
+			if (o == 9) Check("itTicks2", a.frame == fa && a.Shut() && h.TickingAge() >= 0);
+			if (o == 60) { Go(mo, 3560, 530, F32, 90); b.Used(mo); }
+			if (o == 90) { Go(mo, 3696, 600, F32, 90); fb.Activate(mo); }
+			if (o == 92) Check("tooLateAlone2", a.frame == fa && b.frame == fb && a.Shut() && b.Shut() && h.Late(b)
+				&& (la.flags & Line.ML_BLOCKING) && (lb.flags & Line.ML_BLOCKING));
+			if (o == 95) Go(mo, 3760, -96, F32, 0);
+			if (o > 95 && o < 115) Walk(mo, (8, 0));
+		}
+		// in the box: begin anew
+		if (dsStep == 1 && goes && g == 2 && o == 3)
+		{
+			Check("pitDoorToTheBox2", at == 1 && bx == 1 && k == 2);
+			Go(mo, 2480, 640, 0, 90);
+			AjarAnew w = Anew32(mo);
 			if (w) w.Used(mo);
-			Check("woundOn", rt == testLen - 70 && self.first.Size() == rt && Selves() == 1);
-			Check("leafHangsAgain", a.frame == fa && b.frame == fb && a.args[0] == 112 && b.args[0] == 111
-				&& (la.flags & Line.ML_BLOCKEVERYTHING) && (lb.flags & Line.ML_BLOCKEVERYTHING));
-			Check("itCosts", mo.health == testHp - 10 && mo.CountInv("BasicArmor") == testArm - 5);
-			Console.Printf("AJARTEST rt=%d len=%d self=%d selves=%d hp=%d arm=%d", rt, testLen, self.first.Size(), Selves(), mo.health, mo.CountInv("BasicArmor"));
+			dsStep = 2;
+			return;
 		}
-		if (t == 530)
+		// the solution: go 1 hangs a at TA32 and goes out by door 1; go 2 hangs b in time,
+		// and brings YELLOW up through the Pair
+		if (dsStep == 2 && goes && fight == 2 && g == 1)
 		{
-			int was = rt;
-			Plate32(true).Used(mo);
-			Check("noFurtherOn", rt == was && mo.health == testHp - 10 && mo.CountInv("BasicArmor") == testArm - 5);
+			if (o == 2) Check("forgotten2", !a.frame && !b.frame && !a.carried && !b.carried && !AllGhosts() && !yellow.frame);
+			if (o == 5) { Go(mo, 2100, 230, 0, 90); a.Used(mo); }
+			if (o == 7) Go(mo, 2040, 160, 0, 180);
+			if (o == TA32) fa.Activate(mo);
+			if (o == TA32 + 4) Go(mo, 2480, 280, 0, 90);
+			if (o > TA32 + 4 && o < TA32 + 25) Walk(mo, (0, 8));
 		}
-		// back: to the start; the leaf leans where it did then, the twin still hangs
-		if (t == 540)
+		if (dsStep == 2 && goes && fight == 2 && g == 2)
 		{
-			Go(mo, -60, 448, 64, 0);
-			Plate32(false).Used(mo);
-			Check("woundBack", rt == 0 && self.first.Size() == 0 && !self.slot.Size());
-			Check("leafAsAtTheStart", !a.frame && !a.carried && Near(a, 300, -150) && !a.bInvisible);
-			Check("myTwinStillHangs", b.frame == fb && h.carried != b);
-			Check("itCostsAgain", mo.health == testHp - 20 && mo.CountInv("BasicArmor") == testArm - 10);
-			Plate32(false).Used(mo);
-			Check("noFurtherBack", rt == 0 && mo.health == testHp - 20);
+			if (o == 3) { Go(mo, 3560, 530, F32, 90); b.Used(mo); }
+			if (o == 5) Go(mo, 3696, 600, F32, 90);
+			if (o == TA32 + 8) fb.Activate(mo);
+			if (o == TA32 + 10)
+				Check("joined2", a.frame == fa && b.frame == fb && a.args[0] == 132 && b.args[0] == 131 && AllGhosts() == 1
+					&& !(la.flags & Line.ML_BLOCKING) && !(lb.flags & Line.ML_BLOCKING));
+			if (o == TA32 + 12) { Go(mo, 3700, -120, F32, 270); yellow.Used(mo); }
+			if (o == TA32 + 14) Go(mo, 3696, 600, F32, 90);
+			if (o > TA32 + 14 && o < TA32 + 34) Ahead(mo);
+			if (o == TA32 + 36)
+				Check("yellowUp2", k == 2 && mo.pos.x < 2400 && mo.pos.z > -1 && h.carried == yellow && a.frame == fa && b.frame == fb);
+			if (o == TA32 + 38) { Go(mo, 2632, 40, 0, 270); fw.Activate(mo); }
+			if (o == TA32 + 40) Check("hungInW2", yellow.frame == fw && !h.carried && !yellow.nailer && !h.wayOutBuilt);
+			if (o == TA32 + 42) { Go(mo, 2632, 40, 0, 270); dsOnFrom = 2; }
 		}
-		if (t == 545)
+		// === 3: the press ===
+		if (dsStep == 2 && fight == 3)
 		{
-			Check("myselfThroughTheGlass", Selves() == 1 && self.first.Size() == rt && rt == 5);
-			Console.Printf("AJARTEST rt=%d self=%d selves=%d", rt, self.first.Size(), Selves());
+			Check("on2", k == 3 && won.Find(2) < won.Size() && (h.FindLine(HallLine(2, 1)).flags & Line.ML_BLOCKING)
+				&& (h.FindLine(HallLine(2, 2)).flags & Line.ML_BLOCKING) && yellow.frame == fw);
+			dsStep = 3;
+			dsT = t;
 		}
-		if (t == 550)
+		if (dsStep == 3 && t == dsT + 6)
 		{
-			int was = rt;
-			mo.health = mo.player.health = 10;
-			Plate32(false).Used(mo);
-			Check("notWithoutTheHealth", rt == was && mo.health == 10);
-			mo.health = mo.player.health = 100;
+			Console.Printf("AJARTEST info left=%d", Left());
+			Check("begun3", phase == LIVE && open && mixed && Left() >= 17 && PressUp(pr));
+			Check("noLeak3", Fresh(3));
 		}
-		// it plays on from the start: the earlier self takes the leaf and hangs it again
-		if (t > 550 && testStep == 0 && phase == REPLAY && rt == testLen - 40)
+		if (dsStep == 3 && open && g == 1)
 		{
-			Check("joinedAgain", a.frame == fa && b.frame == fb && a.args[0] == 112 && (lb.flags & Line.ML_BLOCKEVERYTHING));
-			testStep = 1;
+			if (o == 10) Go(mo, 5768, 1024, 0, 270);
+			if (o > 10 && !dsT2 && (UnderPress(pr) >= 6 || o >= 700)) { dsT2 = o; Console.Printf("AJARTEST info under=%d o=%d", UnderPress(pr), o); }
+			if (dsT2 && o == dsT2 + 40) mo.health = mo.player.health = 1;
 		}
-		// the handover: open, and through to the gallery
-		if (t > 550 && testStep == 1 && phase == LIVE)
+		if (dsStep == 3 && open && g == 2)
 		{
-			Check("open", at == 1 && a.args[0] == 112 && !(lb.flags & Line.ML_BLOCKING) && t >= 540 + testLen);
-			Go(mo, -370, 352, 64, 180);
-			testStep = 2;
-			testN = t;
+			if (o == 2) Check("killedIntoTheBox3", at == 1 && bx == 1 && mo.health == RESCUE_HEALTH && demo != null);
+			if (o == 3) Go(mo, 5768, 48, 0, 270);
+			if (!dsUsed && o > 30 && Demoing() && (UnderPress(pr, 1) >= 4 || o >= demo.len - AjarPress.WARN - AjarPress.DOWN - 10))
+			{
+				Console.Printf("AJARTEST info under=%d onDemo=%d len=%d", UnderPress(pr, 1), Rails(true), demo.len);
+				dsBefore = mo.player.killcount;
+				sw.Used(mo);
+				dsUsed = o;
+			}
+			int down = dsUsed + AjarPress.WARN + AjarPress.DOWN;
+			if (dsUsed && o == down + 5)
+			{
+				int n = 0;
+				for (int i = 0; i < pr.victimDemo.Size(); i++) n += pr.victimDemo[i];
+				Console.Printf("AJARTEST info victims=%d onDemo=%d killed=%d mine=%d", pr.victims.Size(), n, pr.kills, mo.player.killcount - dsBefore);
+				// (the player's count may rise by one more in those tics: a death the demo plays, as in the PRESS lab)
+				Check("pressKills3", n > 0 && pr.kills == pr.victims.Size() && mo.player.killcount - dsBefore >= pr.victims.Size() && !pr.byGhost);
+			}
+			if (dsUsed && o > down + 62 && o % 5 == 0) KillAll(mo);
 		}
-		if (testStep == 2 && t < testN + 22) mo.vel.xy = Actor.AngleToVector(mo.angle, 8);
-		if (testStep == 2 && t == testN + 26) { Check("onTheGallery", mo.pos.y < 0 && mo.pos.y > -192 && mo.pos.x > 100 && at == 0); testStep = 3; }
+		if (dsStep == 3 && goes && fight == 3)
+		{
+			Check("won3", won.Find(3) < won.Size() && !open && !mixed && !Left() && goesWon);
+			dsStep = 4;
+			dsT = t;
+		}
+		if (dsStep == 4 && t == dsT + 40) { Check("steel3", SteelUp(3)); Go(mo, 6500, 160, 0, 0); dsOnFrom = 3; }
+		// === 4: the range ===
+		if (dsStep == 4 && fight == 4 && open)
+		{
+			dsStep = 5;
+			dsT = t;
+			dsT2 = 0;
+		}
+		if (dsStep == 5 && t == dsT + 6)
+		{
+			Console.Printf("AJARTEST info left=%d", Left());
+			Check("begun4", phase == LIVE && open && mixed && Left() >= 9 && sh.IsShut());
+			Check("noLeak4", Fresh(4));
+		}
+		if (dsStep == 5 && open && fight == 4)
+		{
+			let mi = ThinkerIterator.Create("Actor");
+			Actor m;
+			while (m = Actor(mi.Next()))
+			{
+				if (!m.bMissile || !m.target || !m.target.bIsMonster) continue;
+				if (dsPenShots.Find(m) == dsPenShots.Size()) dsPenShots.Push(m);
+				if (m.pos.y < 1390 && dsPenOut.Find(m) == dsPenOut.Size()) dsPenOut.Push(m);
+			}
+		}
+		if (dsStep == 5 && open && g == 1)
+		{
+			if (o == 3) { Go(mo, 7456, 120, F32, 90); mo.GiveInventory("RocketLauncher", 1); mo.GiveInventory("RocketAmmo", 50); }
+			if (o == 5)
+			{
+				FLineTraceData ld;
+				mo.LineTrace(90, 1400, 0, 0, 32, data: ld);
+				Check("shutWithoutThePlate4", sh.IsShut() && !sp.pressed && ld.HitType == TRACE_HitWall && ld.HitLocation.y <= 1401 && ld.HitLocation.y > 1390);
+			}
+			if (o == 10) Go(mo, 7840, 1300, F32, 180);
+			if (o == 30) Check("opensWithThePlate4", sp.pressed && sh.IsOpen());
+			if (o == 500) { Go(mo, 7840, 1150, F32, 180); mo.health = mo.player.health = 1; }
+		}
+		if (dsStep == 5 && open && g == 2)
+		{
+			if (o == 2) Check("killedIntoTheBox4", at == 1 && bx == 1 && mo.health == RESCUE_HEALTH && demo != null && sh.IsShut());
+			if (o == 3) { Go(mo, 7456, 120, F32, 90); dsOut0 = dsPenOut.Size(); }
+			if (o == 40) Check("heldByMyEarlierSelf4", sh.IsOpen() && sp.pressed && AllGhosts() >= 1 && !sp.On(mo));
+			if (o >= 60 && o <= 280 && o % 20 == 0 && sh.IsOpen()) { ShootPen(mo, dsShots * 3); dsShots++; }
+			if (o == 290)
+			{
+				int hurt, dead;
+				[hurt, dead] = DemoHurt();
+				Console.Printf("AJARTEST info hurt=%d dead=%d shots=%d fired=%d out=%d onDemo=%d awake=%d", hurt, dead, dsShots, dsPenShots.Size(),
+					dsPenOut.Size() - dsOut0, Rails(true), Rails(false));
+				Check("hurtThroughTheShutter4", hurt > 0);
+				Check("theyFireBack4", dsPenOut.Size() > dsOut0);
+			}
+			if (o > 300 && o % 5 == 0) KillAll(mo);
+		}
+		if (dsStep == 5 && goes && fight == 4)
+		{
+			Check("won4", won.Find(4) < won.Size() && !open && !mixed && !Left() && goesWon);
+			dsStep = 6;
+			dsT = t;
+		}
+		if (dsStep == 6 && t == dsT + 40) { Check("steel4", SteelUp(4)); Go(mo, 7680, 452, F32, 0); dsOnFrom = 4; }
+		// === 5: the airlock and the way out ===
+		if (dsStep == 6 && fight == 5 && goes)
+		{
+			Check("begun5", goes && mo.pos.x > 8048 && !g1.door && !g2.door && red.frame == home && !home2.door);
+			Check("noLeak5", Fresh(5));
+			dsStep = 7;
+		}
+		// go 1: GREEN in F1, on its plate a good while, out by door 1
+		if (dsStep == 7 && goes && g == 1)
+		{
+			if (o == 5) { Go(mo, 8480, 340, G32, 270); green.Used(mo); }
+			if (o == 7) { Go(mo, 8530, 416, G32, 0); g1.Activate(mo); }
+			if (o == 9) Check("onlyItsPlate5", green.frame == g1 && (lg1.flags & Line.ML_BLOCKING));
+			if (o == 11) Go(mo, 8180, 580, G32, 0);
+			if (o == 300) Go(mo, 8232, 200, G32, 270);
+			if (o > 300 && o < 325) Walk(mo, (0, -8));
+		}
+		// go 2: through F1 while the first self holds it, PINK in F2, on P2, out by L's time door
+		if (dsStep == 7 && goes && g == 2)
+		{
+			if (o == 3) Go(mo, 8296, -90, G32, 90);
+			if (o > 3 && o <= 15) Walk(mo, (0, 8));
+			if (o == 22) Check("outByDoorOne5", at == 0 && bx == 0 && k == 5 && mo.pos.x < 8560 && mo.pos.y > 160);
+			if (o == 25) Go(mo, 8530, 416, G32, 0);
+			if (o > 25 && o < 40) Ahead(mo);
+			if (o == 42) Check("through5a", k == 5 && mo.pos.x > 8800 && mo.pos.x < 9248 && p51.pressed && AllGhosts() == 1);
+			if (o == 44) { Go(mo, 9150, 310, G32, 270); pink.Used(mo); }
+			if (o == 46) { Go(mo, 9218, 416, G32, 0); g2.Activate(mo); }
+			if (o == 50) Go(mo, 8930, 580, G32, 0);
+			if (o == 300) Go(mo, 9032, 200, G32, 270);
+			if (o > 300 && o < 325) Walk(mo, (0, -8));
+		}
+		// go 3: BLUE, through both while the two earlier selves hold them, BLUE opposite RED, the chain
+		if (dsStep == 7 && goes && g == 3)
+		{
+			if (o == 3) { Go(mo, 8300, 600, G32, 90); blue.Used(mo); }
+			if (o == 5) Go(mo, 8530, 416, G32, 0);
+			if (o > 5 && o < 20) Ahead(mo);
+			if (o == 80)
+			{
+				Check("twoEarlierSelves5", AllGhosts() == 2 && p51.pressed && p52.pressed && pink.frame == g2 && green.frame == g1 && h.carried == blue);
+				Go(mo, 9218, 416, G32, 0);
+			}
+			if (o > 80 && o < 95) Ahead(mo);
+			if (o == 97) Check("through5b", k == 5 && mo.pos.x > 9600 && mo.pos.x < 10112 && mo.pos.y > 160 && mo.pos.y < 608 && h.carried == blue);
+			if (o == 99) { Go(mo, 10080, 384, G32, 0); home2.Activate(mo); }
+			if (o == 101) Check("chainClosed5", h.chainLen == 2 && blue.frame == home2 && red.frame == home && !h.carried);
+			if (o == 103) Go(mo, 9640, 384, G32, 180);
+			if (o > 103) Ahead(mo);
+		}
+	}
+
+	// MODE=4: the dead ends. A door of room 1 is refused in room 2; a player in the
+	// pit with nothing joined leaves by the pit's time door; one shut in room 5's
+	// lock by its own.
+	void DeadEndScript(PlayerPawn mo)
+	{
+		if (level.totaltime > level.maptime + 10) return;
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		let h = Doors();
+		Leaves32();
+		AjarDoor violet = Door32(5), green = Door32(3), a = leafA32, b = leafB32;
+		AjarFrame fa = h.FindFrame(131), fb = h.FindFrame(132), fw = h.FindFrame(133), g1 = h.FindFrame(141);
+		Line lg1 = h.FindLine(141);
+		AjarPlate p51 = FloorPlate32(141, 0);
+		int g = takes.Size(), o = ot, k, bx;
+		[k, bx] = Where(mo.pos.xy);
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) fight=%d goes=%d at=%d go=%d ot=%d selves=%d carried=%s step=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, fight, goes, at, g, o, AllGhosts(), h.carried ? h.carried.Label() : "-", dsStep);
+		// VIOLET from room 1, carried into room 2: no frame there takes it
+		if (t == 1) { Go(mo, 560, 460, 0, 270); violet.Used(mo); }
+		if (t == 3) Go(mo, 2300, 160, 0, 90);
+		if (t == 6) { Go(mo, 2632, 40, 0, 270); fw.Activate(mo); }
+		if (t == 7) { Go(mo, 2040, 160, 0, 180); fa.Activate(mo); }
+		if (t == 8) { Go(mo, 3696, 600, F32, 90); fb.Activate(mo); }
+		if (t == 9)
+		{
+			Check("onlyItsOwnDoor", fight == 2 && goes && h.carried == violet && !fw.door && !fa.door && !fb.door && !violet.frame);
+			h.carried = null;
+			h.DropDoor(violet, mo);
+		}
+		// into the pit, nothing joined: out by its own time door, into the box, and up by door 1
+		if (t == 12) Go(mo, 3500, 0, F32, 0);
+		if (t == 14) Check("inThePit", k == 2 && bx == 0 && mo.pos.z < -90 && !a.frame && !b.frame);
+		if (t == 16) Go(mo, 3760, -96, F32, 0);
+		if (t > 16 && t < 34) Walk(mo, (8, 0));
+		if (dsStep == 0 && t > 16 && at == 1)
+		{
+			Check("pitDoorToTheBox", bx == 1 && g == 2);
+			Go(mo, 2480, 520, 0, 270);
+			dsStep = 1;
+			dsT = t;
+		}
+		if (dsStep == 1 && t > dsT && t < dsT + 14) Walk(mo, (0, -8));
+		if (dsStep == 1 && t == dsT + 18)
+		{
+			Check("outOfThePit", at == 0 && k == 2 && bx == 0 && mo.pos.z > -1 && mo.pos.y > 200 && mo.pos.y < 320 && mo.pos.x > 2400 && mo.pos.x < 2560);
+			Go(mo, 8100, 452, G32, 0);           // room 2 is left; room 5 begins
+			dsStep = 2;
+		}
+		// room 5: go 1 holds F1 till 150; go 2 is in L when it shuts, and leaves by L's time door
+		if (dsStep == 2 && goes && fight == 5 && g == 1)
+		{
+			if (o == 5) { Go(mo, 8480, 340, G32, 270); green.Used(mo); }
+			if (o == 7) { Go(mo, 8530, 416, G32, 0); g1.Activate(mo); }
+			if (o == 11) Go(mo, 8180, 580, G32, 0);
+			if (o == 150) Go(mo, 8232, 200, G32, 270);
+			if (o > 150 && o < 175) Walk(mo, (0, -8));
+		}
+		if (dsStep == 2 && goes && fight == 5 && g == 2)
+		{
+			if (o == 3) Go(mo, 8232, 240, G32, 90);
+			if (o == 20) Go(mo, 8530, 416, G32, 0);
+			if (o > 20 && o < 35) Ahead(mo);
+			if (o == 180) Check("shutInTheLock", k == 5 && mo.pos.x > 8800 && mo.pos.x < 9248 && (lg1.flags & Line.ML_BLOCKING) && !p51.pressed);
+			if (o == 182) Go(mo, 9032, 200, G32, 270);
+			if (o > 182 && o < 205) Walk(mo, (0, -8));
+		}
+		if (dsStep == 2 && goes && fight == 5 && g == 3 && o == 2)
+		{
+			Check("lockDoorToTheBox", at == 1 && bx == 1);
+			Go(mo, 8296, -90, G32, 90);
+			dsStep = 3;
+			dsT = t;
+		}
+		if (dsStep == 3 && t > dsT && t < dsT + 14) Walk(mo, (0, 8));
+		if (dsStep == 3 && t == dsT + 18)
+			Check("outOfTheLock", at == 0 && k == 5 && bx == 0 && mo.pos.x > 8048 && mo.pos.x < 8560 && mo.pos.y > 160 && takes.Size() == 3);
+	}
+
+	// MODE=2: views of the level, one every 40 tics (tools/smoke_MAP32_2.cfg
+	// takes a screenshot of each). Before the last two, BLUE is hung opposite RED.
+	void Views32(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		static const double v[] = {
+			320, -150, 0, 90, 0,            // room 1 from the start: the sprung frame, the case
+			480, 400, 0, 90, 0,             // room 1's case
+			2192, 40, 0, 90, 0,             // room 2 as entered: the case in the gallery's wall
+			2300, 200, 0, 0, 0,             // the gallery to the pit
+			3500, 0, -96, 70, 0,            // the pit: B and its lamp
+			4872, 120, 0, 90, 0,            // room 3's lobby: the case
+			5250, 120, 0, 60, 0,            // the hall and the press
+			7000, 176, -96, 0, 0,           // room 4 as entered: the range, the case on its far wall
+			7456, 120, -96, 90, 0,          // the firing spot: the shutter
+			8100, 452, -192, 0, 0,          // room 5 as entered: S, F1 and the case
+			9856, 172, -192, 90, 0,         // E from PINK's far side, wide: the brass frames face each other
+			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
+			9672, 384, -192, 0, 0           // and the other way, into BLUE's
+		};
+		int i = t / 40;
+		if (i >= v.Size() / 5) return;
+		Go(mo, v[i * 5], v[i * 5 + 1], v[i * 5 + 2], v[i * 5 + 3]);
+		mo.pitch = v[i * 5 + 4];
+		mo.player.SetFOV(i == 10 ? 130 : 90);      // wide, for both brass frames at once
+		Quiet(mo);
+		if (t == 11 * 40 - 5)
+		{
+			let h = Doors();
+			AjarDoor blue = Door32(2);
+			blue.Used(mo);
+			h.FindFrame(191).Activate(mo);
+			Console.Printf("AJARTEST info chain=%d", h.chainLen);
+		}
 	}
 }

@@ -2322,8 +2322,11 @@ class AjarTimeHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "TDOOR") DoorScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "TDOOR") ChainScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "TDOOR") HandScript(PlayerPawn(mo));
-		if (mode == 3 && level.mapname ~== "MAP32") Map32Script(PlayerPawn(mo));
-		if (mode == 4 && level.mapname ~== "MAP32") Wind32Script(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "SHIFT") Map32Script(PlayerPawn(mo));     // shift.zs: the first MAP32, a lab now
+		if (mode == 4 && level.mapname ~== "SHIFT") Wind32Script(PlayerPawn(mo));
+		if (mode == 3 && level.mapname ~== "MAP32") DoubleShiftScript(PlayerPawn(mo));      // map32.zs
+		if (mode == 4 && level.mapname ~== "MAP32") DeadEndScript(PlayerPawn(mo));
+		if (mode == 2 && level.mapname ~== "MAP32") Views32(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));

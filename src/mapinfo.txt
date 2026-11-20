@@ -275,7 +275,9 @@ map MAP16 "Watch Your Step"
 }
 
 // The second secret level (tools/map_secret2.py), from MAP15's secret way
-// out. Its way out leads on to MAP16, as MAP15's plain one does.
+// out: five rooms where earlier selves work with you (rebuilt 2026-11-20; the
+// first build is the lab SHIFT). Its way out leads on to MAP16, as MAP15's
+// plain one does.
 map MAP32 "Double Shift"
 {
 	next = "MAP16"
@@ -404,5 +406,16 @@ map TEST "Ajar: test frames"
 {
 	next = "TEST"
 	nointermission
+	music = ""
+}
+
+// The first MAP32 "Double Shift" (tools/map_shift.py), kept as a lab when
+// MAP32 was rebuilt: MAP=SHIFT ./run.sh
+map SHIFT "Ajar: the first Double Shift"
+{
+	next = "SHIFT"
+	nointermission
+	nojump
+	nocrouch
 	music = ""
 }

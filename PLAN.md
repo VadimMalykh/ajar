@@ -5364,3 +5364,145 @@ and the three earlier labs pass their checks as before.
   figure in a case (the lab's case has none), `MixGoOnAs` and winding with
   shutters, a player killed in the box of a room of goes. Not played by
   hand: `MAP=SHUT ./run.sh` in the worktree.
+
+## MAP32 rebuilt: five rooms where earlier selves work with you (built 2026-11-20)
+
+Vadim played the first "Double Shift" and found that nothing in it needed
+two of him and that its exit did not look like one. The new MAP32 is built
+on the three goes labs (PLATE, PRESS and TWOKEY, SHUT). Same name, same place
+(a works), plain textures, no look yet. `tools/map_secret2.py`, the tests in
+`src/zscript/map32.zs`. **The old level is the lab map SHIFT**
+(`tools/map_shift.py`, `src/zscript/shift.zs`, `MAP=SHIFT ./run.sh`); its two
+tests pass as before (`MAP=SHIFT MODE=3`: 18 and out by the line; `MODE=4`:
+20). `next` stays MAP16, MAP15's secret way out still leads here.
+
+Five rooms in a row, each its own fight number with its own box 1 and plate
+that forgets. A room is over for good when it is left by a way that is not a
+time door, so every way on is one way: a sprung door that shuts behind, or a
+drop of 96 whose fight zone starts 16 past the edge (a player on the ledge is
+in no room, one below cannot climb back). Every frame of a puzzle takes its
+own door and no other. Each room has a glass case where it is entered, with
+figures of it solved. Each next room has a little health and ammunition at
+its entrance. Nothing hurts in rooms 1, 2 and 5.
+
+- **1, the plate** (room of goes; 640 by 512 at 0,0, the start in a nook to
+  the south that is part of the room). Sprung frame 101 in the north wall,
+  VIOLET only, VIOLET leaning, the plate 352 from the mouth; time door west,
+  the box behind it. Case (north wall): the player on a pressed plate, VIOLET
+  hanging. Hang it, stand on the plate, out by the time door; the next go
+  walks through while the earlier self holds it. VIOLET's far side is in room 2.
+- **2, two keys** (room of goes). A gallery 1280 by 320 (2000..3280, 0..320)
+  and east of it a pit 512 by 896, 96 down. Frame A (131) in the gallery's
+  west wall, frame B (132) in the pit's north wall, each with a clock lamp,
+  both TEAL only, a leaf leaning by each; 1850 apart on foot (asserted over
+  1400, and over two seconds at the fastest strafe-run, 1652). YELLOW leans
+  in the pit; frame W (133) in the gallery's south wall takes YELLOW only. Time
+  door 1 in the gallery's north wall (the box behind), time door 2 in the
+  pit's east wall. The pit is left only by its time door or the joined Pair.
+  Case: both leaves hung, both lamps green, YELLOW in W. Solution: go 1 hangs
+  a in A at a moment and goes out by door 1; go 2 drops into the pit, hangs b
+  in B within two seconds of it, takes YELLOW through B and out of A, hangs it
+  in W and goes through. One body cannot: A then B is too late, and a door
+  does not go through a time door, so YELLOW comes up only through the Pair.
+- **3, the press** (fight of goes; the hall 1536 by 1280 at 5000,0, floor 0,
+  ceiling 320; the north 512 is the press, three sectors, steel walls and a
+  steel ceiling at 192, a trim floor). The lever on the south wall in the
+  middle. Entered from YELLOW's far side, a ledge 96 over a lobby west of the
+  hall. Four pillars in the south half. Time doors west, east and south,
+  boxes behind glass west, east and south. Wave 1 (at the start): 6 barons,
+  8 hell knights, 6 revenants, 4 mancubi, 10 imps, all in the south and
+  middle; wave 2 (16 left): 2 arch-viles, 4 arachnotrons, 4 cacodemons; wave
+  3 (8 left): 2 cyberdemons. Arch-viles and cyberdemons on every skill, the
+  rest thinned as every AjarCue is. 27800 of health. Supplies: in the lobby a
+  plasma rifle, a box of rockets, two stimpacks; box 1 armour, two medikits,
+  a cell pack, rockets; box 2 armour, a medikit, a cell pack, rockets; box 3
+  two medikits, a cell, rockets. Reckoned at 150 a rocket (a hit and some of
+  its blast), 22 a cell, 70 a shell, 10 a bullet, that is 8720: 31 per cent
+  of the health, asserted between 28 and 40 (what the player brings from
+  MAP15 is not counted). The win opens the steel door (east wall): a corridor
+  and a drop into room 4. Case (the lobby's north wall, a steel ceiling): the
+  player at the lever, a baron, a revenant and a mancubus lying dead.
+  Solution: a go as bait under the press, killed there or out by a time door;
+  the next go at the lever while the monsters go where they went.
+- **4, the range** (fight of goes; 512 by 1400 at 7200,0, floor -96, ceiling
+  256 over it). Entered by a drop from the corridor into a lobby west of the
+  range's south end. The shutter (384 wide, `keep`) in the north wall and the
+  pen behind it, 768 by 320, level with the range: 2 arch-viles, 4 revenants,
+  4 mancubi, 2 barons and a cyberdemon, AjarCues of wave 1 (arch-viles and
+  the cyberdemon on every skill); the generator refuses one with no room. The
+  booth east of the pen end (entered from the range, glass onto it), the
+  shutter's plate in it. The firing spot (7456, 120) at the south end, a
+  pillar either side for cover, clear of the line of fire. Time doors west
+  and east; boxes 1 and 2 south, box 3 west, behind glass. Supplies in the
+  corridor before the drop: a rocket launcher, a backpack, 10 boxes of
+  rockets, 3 cell packs, 2 medikits: 14400 against the pen's 11000 (asserted
+  over 1.2 times; the cyberdemon takes no blast, so it is less than it looks).
+  Boxes: armour, medikit, rockets; armour, medikit, cell pack; two medikits,
+  rockets. Case (the range's east wall, seen from the way in): the player on
+  the plate, another player, a dead cyberdemon and mancubus. Solutions: hold
+  the shutter in one go and shoot from the spot in the next, or shoot at the
+  shut shutter in one go and hold it in the next.
+- **5, the airlock** (room of goes, floor -192). Entered by a drop from the
+  corridor into S (8048..8560, 160..672). F1 (141, GREEN only) in S's east
+  wall, GREEN's far side in L's west wall (L 8800..9248); F2 (142, PINK only)
+  in L's east wall, PINK's far side in E's south wall (E 9600..10112,
+  160..608). GREEN leans in S and its plate is in S (414 from F1); PINK leans
+  in L and its plate is in L (358 from F2); BLUE leans in S. In E the two
+  brass frames face each other across it, west (RED only, RED hung from the
+  start) and east (BLUE only); the night room (`way_through`) is north of E,
+  96 up, a hole in its south wall drops back into E. Time doors in the south
+  walls of S (door 1, the box south of it), L and E; E needs one, as it can
+  be entered without BLUE. Case (S's east wall): BLUE and RED facing each
+  other, a player on each plate. Solution, three goes: hang GREEN and stand
+  on its plate, out by door 1; through F1, hang PINK and stand on its plate,
+  out by L's door; take BLUE, through both, hang it opposite RED, walk the
+  chain. With two bodies one plate is always left empty.
+- **No dead end, asserted**: each room declares the regions a player can
+  stand in, the ways on foot between them that need no earlier self, and its
+  time doors (`ajartime.on_foot`); each region must reach a time door (or the
+  box, which leads to one), and every sector of the room bigger than 64 by 64
+  must lie in a region (`ajartime.covers`; the cases and the pen are
+  exempt). Besides: every monster has room (`ajartime.Crowd`), the plates'
+  distances, the walk from A to B, every case sealed, the supplies.
+- **New in the engine, small**: `AjarFrame` args[4] 5, a plain frame that
+  takes one door and is no way out (W; with args[4] 1 hanging that door ran
+  `ComeHome`); a brass frame with `only` says which door it takes; a figure
+  of a clock lamp lit green (`AjarFigure` args[0] 6, `figure(..., "lamp")`).
+  The level's helpers in `tools/ajartime.py` (`Crowd`, `toughness`,
+  `firepower`, `walk`, `on_foot`, `covers`). After MAP32's walk-through the
+  test switches itself off, so MAP16 is not played as a test after it.
+- **Choices of mine**: room 1's door is VIOLET, not RED (RED is in the chain,
+  and a colour has one far side); F2's door is PINK (the six plain colours
+  are all used: VIOLET, YELLOW, GREEN, PINK, BLUE, RED); the frames that take
+  one door have brass inlaid with its colour, the chain's too; every size,
+  coordinate and supply above; waves 2 and 3 at 16 and 8 left; room 4 has two
+  time doors; the start nook is part of room 1; the night room is part of
+  room 5 (out of it, a player who went through RED alone would end the room).
+- **Tests.** `MAP=MAP32 MODE=3 TIMEOUT=300 tools/smoke.sh` (40 checks):
+  begun1, allThere, shutAlone1, opensWithThePlate1, heldByMyEarlierSelf1,
+  through1; noLeak2, itTicks2, tooLateAlone2, pitDoorToTheBox2, forgotten2
+  (begin anew after the late try), joined2, yellowUp2, hungInW2, on2;
+  begun3, noLeak3, killedIntoTheBox3, pressKills3, won3, steel3; begun4,
+  noLeak4, shutWithoutThePlate4, opensWithThePlate4, killedIntoTheBox4,
+  heldByMyEarlierSelf4, hurtThroughTheShutter4, theyFireBack4, won4, steel4;
+  begun5, noLeak5, onlyItsPlate5, outByDoorOne5, through5a,
+  twoEarlierSelves5, through5b, chainClosed5, levelExited. Godmode; room 3's
+  bait stands under the press until six are under it, the press came down on
+  5 to 8 monsters on the demo in the runs, the rest are killed by the script;
+  in room 4 twelve rockets go through the held shutter, then the rest by the
+  script. `pressKills3` allows the player's kill count to rise by one more
+  than the press killed in those tics (a death the demo plays, as the PRESS
+  lab found). `MAP=MAP32 MODE=4` (7: onlyItsOwnDoor (VIOLET carried into room
+  2 is refused by W, A and B), inThePit, pitDoorToTheBox, outOfThePit,
+  shutInTheLock, lockDoorToTheBox, outOfTheLock). `MAP=MAP32 MODE=2`: views
+  for screenshots (BLUE is hung before the last two). On 2026-11-20 MODE=3
+  passed 40 of 40 three times running, MODE=4 7 of 7 three times; the labs
+  as before (SHIFT 3 and 4, SHUT, PRESS 4, PLATE, TWOKEY, TDOOR, TIME,
+  MAP31 7).
+- **Not tested**: any fight as fought (the test is in godmode, its kills are
+  the script's), the other solution of room 4 (shooting the shut shutter
+  first), a player in E with F2 shut, winding (no wind plates), the press
+  killing the player after room 3 is won (it is then a room of goes: into box
+  1), death in rooms 3 and 4 beyond the rescue the tests use, skills other
+  than the default. The numbers of monsters and supplies are a first guess.
+  **Not played by hand**: `MAP=MAP32 ./run.sh` in the worktree.
