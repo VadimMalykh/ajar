@@ -12,7 +12,13 @@
 //    presses; every earlier self does that again at its tic, by the same
 //    rules (the conflict rule: if the door is not as it found it, that and
 //    the rest of what it did to that door in this go is mimed);
-//  * an earlier self on a plate (AjarPlate) presses it.
+//  * an earlier self on a plate (AjarPlate) presses it;
+//  * an earlier self's shots hurt the monsters on the demo but never wake
+//    one: only the present player does (hurting it, walking into it,
+//    tripping its sentries), or the demo's end. A hit the demo already has
+//    does nothing (the demo carries it); one it has not is counted, and
+//    kills the monster, the player's kill, when it reaches its health
+//    (AjarRail and Fell in time.zs, shut.zs's header).
 // When it is won the steel door opens as for any fight (sector tag 3090 +
 // 100 * fight), and from that moment the hall is a room of goes: its time
 // doors lead into box 1 and it back by time door 1, any number of times; a

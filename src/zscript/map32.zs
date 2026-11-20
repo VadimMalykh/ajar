@@ -10,6 +10,7 @@
 //   MAP=MAP32 MODE=2 tools/smoke.sh   views, for screenshots
 //   MAP=MAP32 MODE=7 tools/smoke.sh   room 3's plates, screen, cage, sentries and the timetable
 //   MAP=MAP32 MODE=8 tools/smoke.sh   room 4's key levers over four goes, and the timetable
+//   MAP=MAP32 MODE=9 tools/smoke.sh   room 3: an earlier self's shots wake nobody
 // The coordinates are the generator's.
 
 extend class AjarTimeHandler
@@ -36,6 +37,7 @@ extend class AjarTimeHandler
 	bool dsLive4, dsAmber4, dsSawA4, dsSawG4;
 	int dsKeyO;
 	int penHitsMe, penHitsGhost;    // hits on a monster in room 4's pen by the player, by an earlier self
+	int penFell;                    // pen monsters on the demo that the earlier selves' hits killed (AjarTimeHandler.Fell: the player's kill)
 	AjarDoor leafA32, leafB32;
 	const PAIR32 = 105;         // room 2's Pair stays joined three seconds (map_secret2.PAIR2)
 	const YX32 = 3600;          // where YELLOW leans in room 2's pit, and where it is taken from (map_secret2.YELLOW_AT)
@@ -115,8 +117,10 @@ extend class AjarTimeHandler
 	override void WorldThingDamaged(WorldEvent e)
 	{
 		Actor a = e.Thing, s = e.DamageSource;
+		GsDamaged(a, s, e.Damage);      // MODE=9
 		if (!a || !s || !a.bIsMonster || e.Damage <= 0 || !InPen32(a)) return;
 		if (s is "AjarGhost") penHitsGhost++;
+		else if (s.player && (e.DamageFlags & DMG_FORCED)) penFell++;      // (Fell: not a shot of mine)
 		else if (s.player) penHitsMe++;
 	}
 
@@ -629,7 +633,7 @@ extend class AjarTimeHandler
 		if (dsStep == 5 && open && g == 2)
 		{
 			AjarKeyLamp lamp = KeyLamp4(2);
-			if (o == 2) { Console.Printf("AJARTEST info go 2: at=%d box=%d demo=%d shut=%d", at, bx, demo != null, sh.IsShut()); penHitsMe = penHitsGhost = 0; }
+			if (o == 2) { Console.Printf("AJARTEST info go 2: at=%d box=%d demo=%d shut=%d", at, bx, demo != null, sh.IsShut()); penHitsMe = penHitsGhost = penFell = 0; }
 			if (o == 3) Go(mo, 7680, 784, F32, 0);
 			if (o == 4)
 			{
@@ -663,10 +667,32 @@ extend class AjarTimeHandler
 				Check("keyedByTwo4", sh.IsOpen() && sh.keyed > 0 && kw.held && ke.held && KeyLamp4(1).frame == AjarLamp.GREEN
 					&& lamp.frame == AjarLamp.GREEN && LampsShow(SHUT32, AjarLamp.GREEN) && (keySaid & 4) && AllGhosts() >= 1);
 			}
+			// the pen monsters the earlier self's rockets hurt (a hit the demo has not: the shutter was shut in
+			// go 1) are still on the demo, and none is after me (PLAN.md, "Fights of goes: an earlier self's
+			// shots wake nobody")
+			if (o == K4P + 300)
+			{
+				int n = 0, onDemo = 0, hurt = 0, after = 0;
+				let it = ThinkerIterator.Create("Actor");
+				Actor a;
+				while (a = Actor(it.Next()))
+				{
+					if (!a.bIsMonster || a.health <= 0 || !InPen32(a)) continue;
+					n++;
+					let rail = AjarRail(a.FindInventory("AjarRail"));
+					if (rail) { onDemo++; if (rail.ghostDmg > 0) hurt++; }
+					if (a.target == mo) after++;
+				}
+				Console.Printf("AJARTEST info pen at o=%d: alive=%d on the demo=%d hurt by the earlier self=%d after me=%d hits=%d/%d demo=%d len=%d",
+					o, n, onDemo, hurt, after, penHitsGhost, penHitsMe, Demoing(), demo ? demo.len : -1);
+				Check("hurtButOnTheDemo4", Demoing() && penHitsGhost > 0 && !penHitsMe && hurt > 0 && onDemo == n && !after);
+			}
 			if (o == K4P + 375)
 			{
-				Console.Printf("AJARTEST info before I fire: hits by the earlier self=%d, mine=%d", penHitsGhost, penHitsMe);
+				Console.Printf("AJARTEST info before I fire: hits by the earlier self=%d, mine=%d, killed on the demo by them=%d", penHitsGhost, penHitsMe, penFell);
 				Check("myEarlierSelfHurtsThem4", penHitsGhost > 0 && !penHitsMe);
+				// what they counted killed one on the demo, the player's kill, before it woke (Fell)
+				Check("killedOnTheDemo4", penFell > 0);
 				Go(mo, 7456, 120, F32, 90);
 			}
 			if (o >= K4P + 380 && o <= K4P + 500 && o % 20 == 0 && sh.IsOpen()) ShootPen(mo, o / 20);
@@ -1318,6 +1344,246 @@ extend class AjarTimeHandler
 				Check("amberBeforeItOpens4", ksAmber && LampsShow(SHUT32, AjarLamp.GREEN));
 			}
 			if (o == keyAt + 60) Console.Printf("AJARTEST info go 4 at o=%d is t=%d (the screenshot is due)", o, t);
+		}
+	}
+}
+
+// MODE=9 (tools/smoke_MAP32_9.cfg): an earlier self's shots wake nobody
+// (PLAN.md, "Fights of goes: an earlier self's shots wake nobody"). Room 3 is
+// entered at its lobby by the script (as MODE=5 and 7), godmode. Go 1 is the
+// bait in the chamber by door 3, as in MODE=3, and it shoots: rockets at the
+// weakest monster in sight until one it hurt is dead, then plasma twice each
+// at two big monsters; out by door 3.
+// Go 2 stays in box 1 and touches nothing: the earlier self's shots fly
+// again and hit again, and no monster wakes before the demo's end; the one it
+// killed dies when it died, once; at the demo's end those it hurt wake with
+// the health the record had (less what was counted of hits the demo has not:
+// the replay is not exact, a shot that missed then can hit now).
+extend class AjarTimeHandler
+{
+	const GS_FIRE = 150;        // go 1 fires from this tic on, every GS_EVERY
+	const GS_EVERY = 8;
+	int gsStep, gsShots, gsBigShots, gsDoneO, gsLeaveO, gsLen, gsKills0;
+	Actor gsBig1, gsBig2;
+	// go 1: the roles the player hurt, the tic of the first hit, the tic it died (-1: alive)
+	Array<AjarRole> gsHurt;
+	Array<int> gsHurtO, gsKilledO;
+	// go 2, of each: deaths, the tic of the last and its mode then, the most dmg counted on its rail,
+	// its health on the tic it was seen awake (-1: not yet), whether it woke before the demo's end
+	Array<int> gsDeaths2, gsDiedO2, gsDiedMode2, gsDmg2, gsWokeHp2, gsEarly2;
+	int gsAwakeMax, gsAfterMax;
+	Array<int> gsNewOff;        // go 2: of each hit of the earlier self that was counted, the record's nearest fall from it
+
+	bool GsOn() { return CVar.GetCVar("ajar_autotest").GetInt() == 9 && level.mapname ~== "MAP32" && open && fight == 3; }
+
+	// (from WorldThingDamaged) go 1: who the player hurt
+	void GsDamaged(Actor a, Actor s, int dmg)
+	{
+		// go 2: a hit of the earlier self that was counted (the demo has not got it): how far the record's
+		// nearest fall of that monster's health is (it must be beyond REPLAY_TICS)
+		if (a && s is "AjarGhost" && a.bIsMonster && dmg > 0 && GsOn() && takes.Size() == 2 && demo && OnDemo(a))
+		{
+			for (int k = 0; k < demo.roles.Size(); k++)
+			{
+				AjarRole q = demo.roles[k];
+				if (q.actor != a) continue;
+				int i = ot - q.born, best = 99999;
+				for (int j = 1; j < q.hp.Size(); j++) if (q.sf[j] >= 0 && q.sf[j - 1] >= 0 && q.hp[j] < q.hp[j - 1] && abs(j - i) < abs(best)) best = j - i;
+				gsNewOff.Push(best);
+				Console.Printf("AJARTEST info go 2: a hit the demo has not, on %s at %d (%d): its record's nearest fall %+d tics away", a.GetClassName(), ot, dmg, best);
+			}
+		}
+		if (!a || !s || !s.player || !a.bIsMonster || dmg <= 0 || takes.Size() != 1 || !rec || !GsOn()) return;
+		AjarRole r = RoleOf(a);
+		if (!r || gsHurt.Find(r) < gsHurt.Size()) return;
+		gsHurt.Push(r); gsHurtO.Push(ot); gsKilledO.Push(-1);
+		gsDeaths2.Push(0); gsDiedO2.Push(-1); gsDiedMode2.Push(-1); gsDmg2.Push(0); gsWokeHp2.Push(-1); gsEarly2.Push(0);
+	}
+
+	// (from WorldThingDied) go 1: when the ones the player hurt died; go 2: their deaths, and when
+	void GsDied(Actor a)
+	{
+		if (!a || !a.bIsMonster || !GsOn()) return;
+		if (takes.Size() == 1)
+		{
+			AjarRole r = rec ? RoleOf(a) : null;
+			int i = r ? gsHurt.Find(r) : gsHurt.Size();
+			if (i < gsHurt.Size() && gsKilledO[i] < 0) gsKilledO[i] = ot;
+			return;
+		}
+		if (takes.Size() != 2) return;
+		for (int i = 0; i < gsHurt.Size(); i++)
+		{
+			if (gsHurt[i].actor != a) continue;
+			gsDeaths2[i]++; gsDiedO2[i] = ot; gsDiedMode2[i] = gsHurt[i].mode;
+		}
+	}
+
+	// a living monster awake in sight, not `but`: the weakest (the nearest of those), or the nearest of 300 health or more
+	Actor GsTarget(Actor mo, bool weakest, Actor but = null)
+	{
+		Actor best = null;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || a.health <= 0 || a == but || OnDemo(a)) continue;
+			if (!weakest && a.health < 300) continue;
+			int k, b;
+			[k, b] = Where(a.pos.xy);
+			if (k != 3 || b != 0 || !mo.CheckSight(a)) continue;
+			if (!best || (weakest && a.health < best.health)
+				|| ((!weakest || a.health == best.health) && mo.Distance2D(a) < mo.Distance2D(best))) best = a;
+		}
+		return best;
+	}
+
+	void GsFire(PlayerPawn mo, Actor t, class<Actor> cls)
+	{
+		mo.angle = VectorAngle(t.pos.x - mo.pos.x, t.pos.y - mo.pos.y);
+		mo.pitch = 0;
+		if (mo.SpawnPlayerMissile(cls)) gsShots++;        // (aimed up or down at it by autoaim; none if it burst at once)
+	}
+
+	void GhostShotScript(PlayerPawn mo)
+	{
+		if (level.totaltime > level.maptime + 10) return;
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		int g = takes.Size(), o = ot, k, bx;
+		[k, bx] = Where(mo.pos.xy);
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) fight=%d phase=%d open=%d mixed=%d at=%d go=%d ot=%d len=%d selves=%d onDemo=%d awake=%d left=%d shots=%d hurt=%d replays=%d new=%d step=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, fight, phase, open, mixed, at, g, o, demo ? demo.len : -1, AllGhosts(), Rails(true), Rails(false),
+			phase ? Left() : -1, gsShots, gsHurt.Size(), ghostReplays, ghostNew, gsStep);
+		if (t == 2) Go(mo, 4872, 100, 0, 90);           // into room 3's lobby: the rooms before are left, and over
+		if (fight != 3 || !open) return;
+
+		// === go 1: the bait by door 3, and it shoots ===
+		if (gsStep == 0 && g == 1)
+		{
+			if (o == 4)
+			{
+				Console.Printf("AJARTEST info left=%d", Left());
+				Check("begun9", phase == LIVE && open && mixed && Left() >= 17);
+			}
+			if (o == 8) Go(mo, 6500, 1040, 0, 180);
+			if (o > 8 && !gsLeaveO && (mo.pos.xy - (6500, 1040)).Length() > 8) Go(mo, 6500, 1040, 0, mo.angle);
+			if (o >= GS_FIRE && !gsDoneO && o % GS_EVERY == 0)
+			{
+				int dead = 0;
+				for (int i = 0; i < gsKilledO.Size(); i++) if (gsKilledO[i] >= 0) dead++;
+				Actor tg = null;
+				if (!dead && gsShots < 40) tg = GsTarget(mo, true);
+				else if (dead && gsBigShots < 4)
+				{
+					if (gsBigShots < 2 && (!gsBig1 || gsBig1.health <= 0 || !mo.CheckSight(gsBig1))) gsBig1 = GsTarget(mo, false);
+					if (gsBigShots >= 2 && (!gsBig2 || gsBig2.health <= 0 || !mo.CheckSight(gsBig2))) gsBig2 = GsTarget(mo, false, gsBig1);
+					tg = gsBigShots < 2 ? gsBig1 : gsBig2;
+					if (tg) gsBigShots++;
+				}
+				else gsDoneO = o;
+				if (tg) GsFire(mo, tg, dead ? "PlasmaBall" : "Rocket");
+				if (!gsDoneO && o >= 900) gsDoneO = o;
+			}
+			// out by door 3, three seconds after the last shot (its deaths are written down)
+			if (gsDoneO && !gsLeaveO && o >= gsDoneO + 105)
+			{
+				int dead = 0, alive = 0;
+				for (int i = 0; i < gsHurt.Size(); i++)
+				{
+					Actor a = gsHurt[i].src;
+					if (gsKilledO[i] >= 0) dead++;
+					else if (a && a.health > 0) alive++;
+					Console.Printf("AJARTEST info go 1 hurt: %s first hit at %d, died at %d, health %d of %d", gsHurt[i].cls.GetClassName(), gsHurtO[i],
+						gsKilledO[i], a ? a.health : -1, a ? a.SpawnHealth() : -1);
+				}
+				Console.Printf("AJARTEST info the bait leaves o=%d shots=%d written down=%d hurt=%d dead=%d alive=%d", o, gsShots,
+					takes[0].evTic.Size(), gsHurt.Size(), dead, alive);
+				Check("baitShoots3", dead >= 1 && alive >= 1 && takes[0].evTic.Size() >= gsShots);
+				gsLeaveO = o;
+				Go(mo, 6510, 1040, 0, 0);
+			}
+			if (gsLeaveO && o > gsLeaveO) Walk(mo, (8, 0));
+		}
+		if (gsStep == 0 && g == 2)
+		{
+			gsStep = 1;
+			gsLen = demo ? demo.len : 0;
+			gsKills0 = mo.player.killcount;
+			ghostReplays = 0;
+			ghostNew = 0;
+		}
+
+		// === go 2: in box 1, still; the earlier self shoots again ===
+		if (gsStep == 1 && g == 2)
+		{
+			mo.vel = (0, 0, 0);
+			if (o == 2) Check("inTheBox9", at == 1 && bx == 1 && demo != null && !takes[0].died && takes[0].door == HallLine(3, 3));
+			if (o >= 2 && o <= gsLen - 1)
+			{
+				// nothing of the hall awake, nothing after me, while the demo plays
+				int awake = 0, after = 0;
+				let it = ThinkerIterator.Create("Actor");
+				Actor a;
+				while (a = Actor(it.Next()))
+				{
+					if (!a.bIsMonster || a.health <= 0) continue;
+					int ak, ab;
+					[ak, ab] = Where(a.pos.xy);
+					if (ak != 3 || ab != 0) continue;
+					if (!OnDemo(a)) awake++;
+					if (a.target == mo) after++;
+				}
+				gsAwakeMax = max(gsAwakeMax, awake);
+				gsAfterMax = max(gsAfterMax, after);
+			}
+			for (int i = 0; i < gsHurt.Size(); i++)
+			{
+				AjarRole r = gsHurt[i];
+				Actor a = r.actor;
+				if (!a) continue;
+				let rail = AjarRail(a.FindInventory("AjarRail"));
+				if (rail) gsDmg2[i] = max(gsDmg2[i], rail.dmg);
+				if (r.mode == 2 && a.health > 0 && gsWokeHp2[i] < 0)
+				{
+					gsWokeHp2[i] = a.health;
+					if (o <= gsLen - 1) gsEarly2[i] = 1;
+				}
+			}
+			if (o == gsLen + 45)
+			{
+				bool none = gsAwakeMax == 0 && gsAfterMax == 0 && ghostReplays > 0, once = true, when = true;
+				int hurtAlive = 0, below = 0, dead = 0;
+				for (int i = 0; i < gsHurt.Size(); i++)
+				{
+					AjarRole r = gsHurt[i];
+					int last = r.hp.Size() ? r.hp[r.hp.Size() - 1] : -1;
+					Console.Printf("AJARTEST info go 2: %s hit at %d died at %d (now %d, %d times, mode %d) dmg=%d woke with %d of the record's %d (spawn %d) early=%d",
+						r.cls.GetClassName(), gsHurtO[i], gsKilledO[i], gsDiedO2[i], gsDeaths2[i], gsDiedMode2[i], gsDmg2[i], gsWokeHp2[i], last,
+						GetDefaultByType(r.cls).health, gsEarly2[i]);
+					if (gsEarly2[i]) none = false;
+					if (gsKilledO[i] >= 0)
+					{
+						dead++;
+						if (gsDeaths2[i] != 1 || abs(gsDiedO2[i] - gsKilledO[i]) > 1 || gsDiedMode2[i] != 1) when = false;
+						continue;
+					}
+					// (what was counted on it can only be hits the demo has not: it wakes with the record's health less that;
+					// if that was all of it, it fell on the demo)
+					if (gsDeaths2[i]) { if (gsDeaths2[i] != 1 || gsDmg2[i] <= 0 || gsDiedMode2[i] != 2) once = false; continue; }
+					hurtAlive++;
+					if (gsWokeHp2[i] != last - gsDmg2[i]) once = false;
+					if (last < GetDefaultByType(r.cls).health) below++;
+				}
+				// a hit the demo had (a fall within REPLAY_TICS) was never counted
+				for (int i = 0; i < gsNewOff.Size(); i++) if (abs(gsNewOff[i]) <= REPLAY_TICS) once = false;
+				Console.Printf("AJARTEST info awake while the demo played=%d after me=%d replays=%d new=%d kills in go 2=%d len=%d",
+					gsAwakeMax, gsAfterMax, ghostReplays, ghostNew, mo.player.killcount - gsKills0, gsLen);
+				Check("myEarlierSelfsShotsWakeNone3", none);
+				Check("hurtOnceNotTwice3", once && hurtAlive > 0 && below > 0);
+				Check("diedWhenItDied3", when && dead > 0);
+				gsStep = 2;
+			}
 		}
 	}
 }
