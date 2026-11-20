@@ -36,6 +36,11 @@ is first taken and nails what hangs there. The weighbridge (AjarWeighbridge,
 map16.zs): when the player first comes into the lobby a baron appears at
 the foot, and another 20 seconds after each that dies; anything as heavy as
 a hell knight crossing the plate opens the test hall's shutter for good.
+Since 2026-11-20 it weighs the total of what stands on it (the player 100,
+monsters by their Mass; 1000 opens it), and a dial on the lobby's east wall
+beside the head shows that total in tenths up to a red mark; each baron is
+announced; and a glass case in the reading room's north wall, by the window,
+shows it solved: a baron on the plate, the dial at the mark.
 
 So: the leaf down, floor by floor, to the foot; the porter carries it to
 the den, and the head opens into the den. By the hole and the cubby up to
@@ -54,6 +59,7 @@ which is what a Pair with one leaf fixed is.
 Secret: the panel on the canteen's gallery.
 """
 import ajarmap
+import ajartime
 import map_institute1 as I1
 from ajarmap import RED, GREEN, VIOLET, TEAL, far_id, HOME
 from map_institute1 import T, dress, tint, over, named, hang, things, frame, LOOK, FACES
@@ -72,7 +78,9 @@ DEN_Z = 40                                  # the den's floor: a step nobody cli
 H = 256                                     # every room's height but those named
 PALE, RUST, COLD, STEEL, DIM, PAPER = 0xDCE8DC, 0xE8C8B0, 0xA8C0D8, 0xC8D0E0, 0xB0B8C8, 0xF0E4C8
 HEAD, FOOT, DEN, LABS, CANTEEN = 110, 104, 105, 102, 101    # frames
-THIEF, NAILER, WEIGHBRIDGE_T = 20003, 20004, 20070
+THIEF, NAILER, WEIGHBRIDGE_T, WEIGH_DIAL_T = 20003, 20004, 20070, 20071
+DIAL_AT = (1166, -1912)                     # the weighbridge's dial: 2 off the lobby's east wall
+BARON = 3003
 ARACHNO = 68
 LEAF = ajarmap.LEAVES[TEAL][1]              # the player's leaf, in the PUZZLE graph
 # sector tags: the lobby, its weighbridge, the test hall's shutter, the bolted
@@ -163,6 +171,8 @@ for x in (768, 784):
 shut((944, -1856), (1008, -1856), (0, 1), Z3, TEST_SHUTTER)
 named((944, -1856), (1008, -1856), (0, 1), "EX", "TEST HALL")
 m.thing(1104, -2048, WEIGHBRIDGE_T, args=(PLATE, TEST_SHUTTER, LOBBY, BARON_SPOT, 20))
+# its dial, on the east wall north of the head: seen from the plate, the door and through the glass
+m.thing(DIAL_AT[0], DIAL_AT[1], WEIGH_DIAL_T, angle=180, height=40.0)
 
 # --- the test hall, and the night room beyond --------------------------------------------------
 PLATFORM = box(Z3, 64, "PT", "PS")
@@ -301,6 +311,19 @@ things(2011, (40, -2400), (720, -2400))
 things(2012, (720, -1800))
 things(2049, (40, -1800), (560, -2120))
 m.thing(200, -2120, 2018)                                                   # green armour
+
+# the glass case in the reading room's north wall, by the window onto the
+# lobby: the weighbridge solved (a baron on the plate, the dial at the mark).
+# No time doors in this level: no plaque, and the glass framed as the window.
+CASE_A, CASE_B, CASE_DEEP = (576, -1664), (736, -1664), 96
+CASE = ajartime.case(m, CASE_A, CASE_B, (0, 1), Z3, deep=CASE_DEEP, light=220, color=tint(STEEL), plaque=False,
+                     trim=("AJTRIM", "AJTRIMF"), **dress(wall="EX", ftex="FE", ctex="KE"))
+CASE_FIGURES = [(648, -1606, "plate", 0, 270), (648, -1606, "standing", BARON, 270), (704, -1554, "dial", 0, 270)]
+for x, y, what, kind, ang in CASE_FIGURES:
+    r = 1 if what == "dial" else 8
+    assert CASE_A[0] + r < x < CASE_B[0] - r and CASE_A[1] + 16 + r < y < CASE_A[1] + 16 + CASE_DEEP - r, (x, y, what)
+    ajartime.figure(m, x, y, what, kind=kind, angle=ang, scale=0.6 if what == "dial" else None)
+assert ajartime.sealed(m, CASE), "the glass case is not sealed"
 
 # --- the test hall: shut in until the shutter goes up -----------------------------------------
 things(REVENANT, (1168, -1808), (1168, -1488), angle=270)                   # on the platforms

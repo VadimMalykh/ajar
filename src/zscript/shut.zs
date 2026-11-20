@@ -55,7 +55,9 @@
 // number args[1] (1 to 3) of a go, over a self's head; 9 a door frame's face,
 // brass inlaid with colour args[1], for a door to stand in; 10 the plaque
 // over a case, a clock and "wind on": later; 11 the press's switch, set
-// off, on a wall), args[2] its size
+// off, on a wall; 12 a live monster standing: args[1] a Doom editor number,
+// the first picture of its Spawn state; 13 MAP16's weighbridge dial, its
+// needle at the red mark and its lamp green), args[2] its size
 // in percent (0: 100). A plate has a small warm light. No behaviour: not solid, not shootable, never
 // counted, no weight on a plate, and not recorded, replayed or snapped by
 // the go machinery (Counts, RecordFx, Snap leave it out).
@@ -251,6 +253,7 @@ class AjarFigure : Actor
 		AJGN ABC -1;
 		AJFM ABCDEFG -1;
 		AJPQ A -1;
+		AJWG K -1;
 		Stop;
 	}
 
@@ -331,6 +334,26 @@ class AjarFigure : Actor
 			bWallSprite = true;
 			sprite = GetSpriteIndex("AJPS");
 			frame = 1;
+			bBright = true;
+			break;
+		case 12:        // a monster standing: the first picture of its Spawn state
+		{
+			class<Actor> cls = AjarHandler.AmbushClass(args[1]);
+			if (!cls) { bInvisible = true; break; }
+			let d = GetDefaultByType(cls);
+			State st = d.FindState("Spawn");
+			for (int n = 0; st && st.sprite == GetSpriteIndex("TNT1") && n < 20; n++) st = st.NextState;
+			if (!st) { bInvisible = true; break; }
+			sprite = st.sprite;
+			frame = st.Frame;
+			scale.x *= d.scale.x; scale.y *= d.scale.y;
+			translation = d.translation;
+			break;
+		}
+		case 13:        // MAP16's weighbridge dial (AjarWeighDial), at the mark, its lamp green
+			bWallSprite = true;
+			sprite = GetSpriteIndex("AJWG");
+			frame = 10;
 			bBright = true;
 			break;
 		}
