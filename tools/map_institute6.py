@@ -10,9 +10,10 @@ is the player's. Hung at the foot, in the base, the stair goes round.
 
 Places. The top: the reading room (the start; the leaf; stacks), and beside
 it the head lobby, sealed: the head, a weighbridge in front of it, and a
-heavy shutter to the test hall (the night room's brass frame, which takes
-VIOLET only). Glass lets the reading room see into the lobby; the door
-between them opens from the lobby's side only. From the test hall a hatch
+heavy shutter to the test hall (off its south-east corner, at floor level,
+the corridor to the night room's brass frame, which takes VIOLET only).
+Glass lets the reading room see into the lobby; the door between them opens
+from the lobby's side only. From the test hall a hatch
 drops to the labs (whoever comes in by VIOLET's far side gets out again).
 The labs (second floor): the room that is its own neighbour. A hall cut in
 two by a trench with bars on both sides: shots and sight cross, nobody
@@ -187,7 +188,7 @@ m.thing(DIAL_AT[0], DIAL_AT[1], WEIGH_DIAL_T, angle=180, height=40.0)
 PLATFORM = box(Z3, 64, "PT", "PS")
 ajarmap.fitted(m, (784, -1840, 1232, -1456), [
     ((960, -1712, 1088, -1584), solid(Z3, "MC")),                            # the machine
-    ((1104, -1840, 1232, -1776), PLATFORM), ((1104, -1520, 1232, -1456), PLATFORM),
+    ((1104, -1776, 1232, -1712), PLATFORM), ((1104, -1520, 1232, -1456), PLATFORM),
 ], floor=Z3, ceil=Z3 + H, light=180, color=tint(STEEL), **dress(wall="EX", ftex="FE", ctex="KE"))
 hang((784, -1776), (784, -1648), "CP")                                       # the desk it was run from
 # the hatch: a drop into the labs, for whoever came in by VIOLET's far side
@@ -335,9 +336,9 @@ for x, y, what, kind, ang in CASE_FIGURES:
 assert ajartime.sealed(m, CASE), "the glass case is not sealed"
 
 # --- the test hall: shut in until the shutter goes up -----------------------------------------
-things(REVENANT, (1168, -1808), (1168, -1488), angle=270)                   # on the platforms
-things(IMP, (830, -1800), (1040, -1800), (880, -1620), (1160, -1640), angle=270)
-things(KNIGHT, (900, -1700), (1150, -1720), angle=270)
+things(REVENANT, (1168, -1744), (1168, -1488), angle=270)                   # on the platforms
+things(IMP, (830, -1800), (1040, -1810), (880, -1620), (1160, -1640), angle=270)
+things(KNIGHT, (900, -1700), (1040, -1760), angle=270)
 m.thing(1024, -1500, CACO, angle=270)
 things(IMP, (830, -1530), (920, -1530), angle=270)
 things(2046, (830, -1700), (1190, -1580))

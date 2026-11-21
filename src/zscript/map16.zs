@@ -334,7 +334,7 @@ extend class AjarHandler
 	// dead on it the shutter stays up. Back through the leaf, RED swapped in
 	// again, the leaf down to the foot; the porter has it to the den; up by
 	// the cubby, through the head into the den; VIOLET through it to the
-	// lobby, the test hall, the brass frame.
+	// lobby, the test hall, on foot into the night room, the brass frame.
 	Actor handBaron;
 	Vector3 handAt;
 	void WatchYourStepScript(Actor mo, int t)
@@ -474,8 +474,23 @@ extend class AjarHandler
 		if (t == 1221) Pose(mo, 976, -1900, 384, 90);
 		Forward(mo, t, 1221, 20);
 		if (t == 1250) Check("intoTheTestHall", violet && InBox(mo, 784, -1840, 1232, -1456));
-		if (t == 1251) { Pose(mo, 1600, -1648, 384, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
-		Forward(mo, t, 1253, 70);
+		// on foot to the night room (Vadim, playing: a platform stood in the
+		// corridor's mouth, 64 up, and the way was shut): east out of the hall's
+		// south-east corner, back into the hall, in again, north into the room
+		if (t == 1251) Pose(mo, 1060, -1816, 384, 0);
+		Forward(mo, t, 1251, 30);
+		if (t == 1300) Check("intoTheCorridorOnFoot", violet && mo.pos.z == 384 && InBox(mo, 1232, -1840, 1440, -1792));
+		if (t == 1301) Pose(mo, mo.pos.x, mo.pos.y, 384, 180);
+		Forward(mo, t, 1301, 30);
+		if (t == 1350) Check("backOutOfTheCorridor", violet && mo.pos.z == 384 && InBox(mo, 784, -1840, 1232, -1456));
+		if (t == 1351) Pose(mo, mo.pos.x, mo.pos.y, 384, 0);
+		Forward(mo, t, 1351, 36);
+		if (t == 1400) Check("inTheCorridorAgain", violet && mo.pos.z == 384 && InBox(mo, 1376, -1840, 1440, -1792));
+		if (t == 1401) Pose(mo, 1408, mo.pos.y, 384, 90);
+		Forward(mo, t, 1401, 14);
+		if (t == 1440) Check("intoTheNightRoomOnFoot", violet && mo.pos.z == 384 && InBox(mo, 1328, -1776, 1648, -1520));
+		if (t == 1441) { Pose(mo, 1600, -1648, 384, 0); FindFrame(190).Activate(mo); Check("wayOutBuilt", wayOutBuilt && !carried); }
+		Forward(mo, t, 1443, 70);
 	}
 
 	// MAP16's tour: MAP=MAP16 MODE=2 tools/smoke.sh (run it with EXTRA=-nomonsters).
@@ -502,6 +517,7 @@ extend class AjarHandler
 			740, -1920, 384, 0, 0,      // through the glass from the reading room: the dial
 			660, -1760, 384, 90, -8,    // the glass case: a baron lying dead on the plate, the dial at the mark
 			1000, -1800, 384, 90, 0,    // the test hall
+			980, -1790, 384, 355, 0,    // the test hall's south-east corner: the platform, the corridor's mouth
 			1360, -1648, 384, 0, 0      // the night room
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
