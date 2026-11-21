@@ -174,6 +174,8 @@ extend class AjarTimeHandler
 	const PDX_ECHO_ALPHA = 0.5;     // (pale on a lit wall is all but unseen: additive)
 	const PDX_ECHO_NEAR = 160;      // within 48 + this of the camera they fade, to nothing at 48 (they fall
 	                                // into the point in front of the eye: 250 there make the screen white)
+	const PDX_SELF_LO = 0.15;       // the two white shapes flicker between these (additive on a lit wall)
+	const PDX_SELF_HI = 0.4;
 	const PDX_WHITE = 60;           // the blast's white fades over so many tics
 	const PDX_ECHO_SOUND = 5;       // the deep echo of the blast, so many tics after it
 	const PDX_SHAKE = 12;           // the shake's strength (twice the old)...
@@ -667,8 +669,9 @@ extend class AjarTimeHandler
 	{
 		if (t < PDX_HOLD)
 		{
-			if (pdxMe) pdxMe.alpha = frandom[AjarParadox](0.45, 0.9);
-			if (pdxIt) pdxIt.alpha = frandom[AjarParadox](0.45, 0.9);
+			// (faint: the copy's stands a step from the eye, and at more it is a white wall before it)
+			if (pdxMe) pdxMe.alpha = frandom[AjarParadox](PDX_SELF_LO, PDX_SELF_HI);
+			if (pdxIt) pdxIt.alpha = frandom[AjarParadox](PDX_SELF_LO, PDX_SELF_HI);
 			return;
 		}
 		if (t == PDX_HOLD)
