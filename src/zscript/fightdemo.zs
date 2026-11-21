@@ -182,6 +182,11 @@ extend class AjarTimeHandler
 			Actor a = fdMon[i];
 			if (a && a.health > 0 && (a.pos.xy - here).Length() < 160 + a.radius && abs(a.pos.z - mo.pos.z) < 64) near.Push(a);
 		}
+		for (int i = 0; i < fdSelves.Size(); i++)
+		{
+			Actor a = fdSelves[i];
+			if (a && (a.pos.xy - here).Length() < 160 + a.radius && abs(a.pos.z - mo.pos.z) < 64) near.Push(a);
+		}
 		if (!near.Size()) { fdWeaveDir = dir; return dir; }
 		double best = -1e9;
 		Vector2 bestDir = dir;
@@ -197,8 +202,9 @@ extend class AjarTimeHandler
 				Vector2 r = a.pos.xy - here;
 				double s = clamp(r dot d, 0, 64);
 				double c = (r - d * s).Length() - a.radius - FD_R;
-				// close is bad, touching worse; a monster on the demo must not be touched at all
-				if (c < 32) score -= (32 - c) * (c < 4 ? 12 : 2) * (OnDemo(a) ? 3 : 1);
+				// close is bad, touching worse; a monster on the demo must not be touched at all, nor an
+				// earlier self (paradox.zs): as much
+				if (c < 32) score -= (32 - c) * (c < 4 ? 12 : 2) * (a is "AjarGhost" || OnDemo(a) ? 3 : 1);
 			}
 			if (score > best) { best = score; bestDir = d; }
 		}
@@ -206,17 +212,27 @@ extend class AjarTimeHandler
 		return bestDir;
 	}
 
-	// the monsters and others' shots near it, this tic
-	Array<Actor> fdMon, fdShots;
+	// the monsters and others' shots near it, this tic; and the earlier selves it must not touch
+	// (paradox.zs: their record still running, in the hall)
+	Array<Actor> fdMon, fdShots, fdSelves;
+	Array<int> fdSelfGo;            // fdSelves[i] is the copy of takes[fdSelfGo[i]]
 	void FdLook(PlayerPawn mo)
 	{
-		fdMon.Clear(); fdShots.Clear();
+		fdMon.Clear(); fdShots.Clear(); fdSelves.Clear(); fdSelfGo.Clear();
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
 		while (a = Actor(it.Next()))
 		{
 			if (a.bIsMonster && a.health > 0) { fdMon.Push(a); continue; }
 			if (a.bMissile && a.target != mo && (a.pos.xy - mo.pos.xy).Length() < 900 && a.vel.xy.Length() > 0.5) fdShots.Push(a);
+		}
+		for (int i = 0; i < takes.Size() - 1 && i < ghosts.Size(); i++)
+		{
+			AjarGhost g = ghosts[i];
+			if (!g || ot >= takes[i].x.Size()) continue;
+			int k, b;
+			[k, b] = Where(g.pos.xy);
+			if (k == fight && b == 0) { fdSelves.Push(g); fdSelfGo.Push(i); }
 		}
 	}
 
@@ -261,6 +277,26 @@ extend class AjarTimeHandler
 				if (len >= keep || len < 0.1) continue;
 				if (abs(a.pos.z - mo.pos.z) > 64) continue;
 				push += d / len * (keep - len) / keep * FD_RUN * 1.5;
+			}
+		}
+		// and off its earlier selves (paradox.zs: a touch ends the universe), as off a monster on the
+		// demo, whether it walks or stands: one may walk into it. Where each will be in the next few
+		// tics is known (it was this player): off the nearest of those places
+		if (!frozen)
+		{
+			for (int i = 0; i < fdSelves.Size(); i++)
+			{
+				Actor a = fdSelves[i];
+				if (!a) continue;
+				Vector2 at = a.pos.xy;
+				AjarTake tk = takes[fdSelfGo[i]];
+				for (int j = ot; j < tk.x.Size() && j <= ot + 6; j++)
+					if (((tk.x[j], tk.y[j]) - mo.pos.xy).Length() < (at - mo.pos.xy).Length()) at = (tk.x[j], tk.y[j]);
+				Vector2 d = mo.pos.xy - at;
+				double len = d.Length(), keep = a.radius + FD_R + 40;
+				if (len >= keep || abs(a.pos.z - mo.pos.z) > 64) continue;
+				if (len < 0.1) { d = (1, 0); len = 0.1; }
+				push += d.Unit() * (keep - len) / keep * FD_RUN * 1.5;
 			}
 		}
 		// --- step aside from what is flying at it
@@ -661,6 +697,47 @@ extend class AjarTimeHandler
 	// where the bait waits: plan 3 hides on the cage's plate (out of sight of the hall), else the screen's
 	Vector2 FdBaitSpot(int plan) { return plan == 5 || plan == 8 ? (6480, 1040) : plan == 3 || plan == 4 ? (FD_CAGE_X, FD_CAGE_Y)
 		: plan == 11 ? (5384, 1190) : (FD_SCREEN_X, FD_SCREEN_Y); }
+	// where it walks to wait there: the spot, or 88 beside it while an earlier self whose time is not
+	// up still stands on it (paradox.zs: the bait before held that spot; touching it ends the universe)
+	Vector2 FdWaitSpot(int plan)
+	{
+		Vector2 s = FdBaitSpot(plan);
+		if (!FdBusy(s, 35)) return s;
+		// beside it, in the chamber, where no earlier self will be for the next two seconds
+		double side = s.x < 6000 ? 1 : -1;
+		static const double off[] = { 96, 0,  160, 0,  96, -128,  160, -128,  224, 0,  224, -128,  288, -64 };
+		for (int i = 0; i < off.Size(); i += 2)
+		{
+			Vector2 p = s + (off[i] * side, off[i + 1]);
+			if (FdRoomy(p) && FdClear(s, p, FD_R) && !FdBusy(p, 70)) return p;
+		}
+		return s + (288 * side, -64);
+	}
+	// where the lever's self stands: at the lever, or while an earlier self is there or will be in the
+	// next second, back along the landing where none will be for the next two (paradox.zs)
+	Vector2 FdLeverSpot()
+	{
+		Vector2 s = (FD_LEVER_X, FD_LEVER_Y);
+		if (!FdBusy(s, 35)) return s;
+		for (int i = 1; i <= 6; i++)
+		{
+			Vector2 p = (FD_LEVER_X - 80 * i, -48);
+			if (!FdBusy(p, 70)) return p;
+		}
+		return (FD_LEVER_X - 480, -48);
+	}
+	// will an earlier self be within 72 of p in the next `ahead` tics? (What it did is known: it
+	// was this player. A self that comes out of a box's door comes out where this one will.)
+	bool FdBusy(Vector2 p, int ahead)
+	{
+		for (int i = 0; i < takes.Size() - 1; i++)
+		{
+			AjarTake tk = takes[i];
+			for (int j = ot; j < tk.x.Size() && j <= ot + ahead; j++)
+				if (((tk.x[j], tk.y[j]) - p).Length() < 72) return true;
+		}
+		return false;
+	}
 	int FdEarly(int plan) { CVar c = CVar.FindCVar("fd_early"); return c ? c.GetInt() : plan >= 10 ? 16 : 8; }
 	bool FdRush(int plan) { return plan == 0 || plan == 1 || plan == 4 || plan == 7 || plan == 8 || plan >= 10; }
 
@@ -738,7 +815,7 @@ extend class AjarTimeHandler
 		{
 			FdSay("Stay alive in here. Everything that follows you in is under the press.",
 				"Standing on this plate lowers a screen before the guards, for the next you.");
-			FdGoTo(FdBaitSpot(plan), 6);
+			FdGoTo(FdWaitSpot(plan), 6);
 			FdBaitFight(mo, plan);
 			fdUnderMax = max(fdUnderMax, UnderPress(pr, -1));
 			if (o % 35 == 0) FdLog(String.Format("holding: %d under the press (%d on the demo), health %d", UnderPress(pr, -1), UnderPress(pr, 1), mo.health));
@@ -774,6 +851,10 @@ extend class AjarTimeHandler
 				// the lever: wait for the shutter (open while the earlier self is under the press), but not
 				// for the demo's end in here (they would come in after me)
 				bool go = fdRole == 2 || sh.IsOpen() || (sh.Held() && o > 20) || o > len - 70;
+				// (not while an earlier self comes out where this one will, or stands there: the same
+				// box door's way out, by the same rule at the same tic; paradox.zs)
+				Line ul = Doors().FindLine(used);
+				if (go && ul && FdBusy((ul.v1.p + ul.v2.p) / 2, 30)) go = false;
 				if (go) FdGoTo(m - n * 60, 0, true);
 				else { FdGoTo(m + n * 50, 6, true); fdFace = true; fdFaceAng = VectorAngle(-n.x, -n.y); }
 			}
@@ -792,7 +873,7 @@ extend class AjarTimeHandler
 		{
 			FdSay("Up the stairs to the lever. The guards wake as you come in.");
 			if (mo.pos.x < 5280) FdGoTo((5300, -56), 0, true);
-			else FdGoTo((FD_LEVER_X, FD_LEVER_Y), 6, true);
+			else FdGoTo(FdLeverSpot(), 6, true);
 			Actor gd = FdTarget(mo, 900);
 			fdAim = gd; fdShoot = gd && mo.pos.x > 5350;
 			if (gd) FdChoose(mo, gd);
@@ -800,7 +881,7 @@ extend class AjarTimeHandler
 		}
 		if (fdPhase == 24 || fdPhase == 26)
 		{
-			FdGoTo((FD_LEVER_X, FD_LEVER_Y), 6, true);
+			FdGoTo(FdLeverSpot(), 6, true);
 			// shoot the guards when they are seen; face the lever otherwise
 			Actor gd = FdTarget(mo, 1500);
 			int under = UnderPress(pr, 1);
@@ -859,7 +940,7 @@ extend class AjarTimeHandler
 			bool safe = PressUp(pr) && (PullIn(PRESS32) < 0 || PullIn(PRESS32) > 140);
 			if (mo.pos.y < 0) FdGoTo((5768, mo.pos.y < -24 && abs(mo.pos.x - 5768) > 24 ? -40 : 60), 4, true);
 			else if (!safe && mo.pos.y < 760) FdGoTo((5768, 640), 24);
-			else FdGoTo(spot, 10);
+			else FdGoTo(FdWaitSpot(plan), 10);
 			if (!Demoing()) FdFight(mo, 1200);
 			if (pr.Under(mo) && o % 35 == 0) FdLog(String.Format("the next bait under the press at o=%d health=%d", o, mo.health));
 			if (FdThere(mo, spot, 20)) FdTo(Demoing() ? 32 : 13, o);
@@ -868,7 +949,7 @@ extend class AjarTimeHandler
 		if (fdPhase == 31)
 		{
 			FdSay("Past them while they go where they went: do not touch them.", "Into the chamber, and wait there to be found.");
-			FdGoTo(FdBaitSpot(plan), 10);
+			FdGoTo(FdWaitSpot(plan), 10);
 			fdAvoid = true;
 			if (Demoing()) { fdShoot = false; fdAim = null; }
 			else FdFight(mo, 1200);
@@ -878,7 +959,7 @@ extend class AjarTimeHandler
 		if (fdPhase == 32)
 		{
 			FdSay("Wait. When the earlier you is gone they wake, and come in after you.", "A shot now would wake one.");
-			FdGoTo(FdBaitSpot(plan), 6);
+			FdGoTo(FdWaitSpot(plan), 6);
 			fdShoot = false; fdAim = null;
 			if (!Demoing()) FdTo(13, o);
 		}
