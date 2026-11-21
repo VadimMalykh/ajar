@@ -670,7 +670,7 @@ extend class AjarTimeHandler
 				pdxFell = mo.pos;
 				pdxOt = o;
 				pdxAtTouch = pdxStep == 3 && paradoxes == 1 && paradoxCopy == 3 && mo.health <= 0 && (mo.player.cheats & CF_GODMODE)
-					&& ghosts.Size() > 2 && !ghosts[2] && paradoxSaid == 1 && takes.Size() == 4;
+					&& ghosts.Size() > 2 && !ghosts[2] && paradoxSaid == 0 && takes.Size() == 4;     // (said at the blast, PDX_HOLD)
 				Console.Printf("AJARTEST info touched at t=%d o=%d: now=%d health=%d", t, o, pdxAtTouch, mo.health);
 			}
 			if (t == pdxTouch + 70)
@@ -678,6 +678,9 @@ extend class AjarTimeHandler
 				Check("touchIsParadox", pdxAtTouch && paradoxes == 1 && mo.health <= 0 && mo.player.health <= 0 && InHall(mo) && at == 0
 					&& (mo.pos.xy - pdxFell.xy).Length() < 64 && goes && takes.Size() == 4 && ot == pdxOt && paradoxSaid >= 1);
 			}
+			// the wave has taken every copy and monster; then the dark (paradox.zs)
+			if (t == pdxTouch + PDX_HOLD + 60) Check("allGoneToLight", ParadoxAllGone() && paradoxes == 1 && mo.health <= 0);
+			if (t == pdxTouch + PDX_HOLD + 180) Check("theDark", ParadoxDark() && paradoxes == 1 && mo.health <= 0 && InHall(mo) && ot == pdxOt);
 			return;
 		}
 		// --- before begin anew: go 2 and go 3 walk one path from one start ---

@@ -1314,6 +1314,7 @@ def make_all():
     import gfx_time                                              # the time door (ajartime)
     gfx_time.make(out)
     gfx_time.fight_anew(out)                                     # the plate that begins a fight anew (anew.zs)
+    gfx_time.paradox(out)                                        # the end of the universe's ring and ball (paradox.zs)
     import gfx_cinema                                            # MAP31's cinema: three looks
     gfx_cinema.make(out)
     import gfx_institute                                         # MAP11's institute: three looks

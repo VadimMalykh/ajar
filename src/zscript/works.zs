@@ -32,6 +32,10 @@
 //    the time handler's recorders skip it by name).
 // Every sector light the look sets is worked out each tic from the state, so
 // none is ever left changed (a go that ends, a hall cleared, begun anew).
+// Once the universe is over (the time handler's `paradox`, paradox.zs) it
+// stands down completely: from that tic it sets no light, texture or sprite
+// and moves nothing (the room's light is the paradox's then; what it lit
+// stays as it was, the textures' own ANIMDEFS frames run on).
 // Its own random numbers (Random[AjarWorks]): the game's are never drawn on.
 // The lights are carriers (+INVISIBLE, +NOBLOCKMAP, +NOINTERACTION): nothing
 // can touch them and the recorders never see them. No moving or coloured light
@@ -366,6 +370,7 @@ class AjarWorks : EventHandler
 	{
 		if (!on) return;
 		if (!th) th = AjarTimeHandler(EventHandler.Find("AjarTimeHandler"));
+		if (th && th.paradox) return;       // the universe is over (paradox.zs): the look stands down
 		dx.Clear(); dy.Clear();
 		let di = ThinkerIterator.Create("AjarDoor");
 		Actor d;

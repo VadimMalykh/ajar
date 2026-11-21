@@ -193,3 +193,30 @@ def case_pictures(out):
         f.rect(14, 14, 82, 112, shade(brass, 0.5))            # the reveal, in shadow
         f.rect(16, 16, 80, 112, (44, 42, 46))                 # the opening, dark
         out[f"sprites/AJFM{fr}0.png"] = f.png(grab=(48, 112))
+
+
+def paradox(out):
+    """The end of the universe (paradox.zs): the ring of light that runs out
+    over the floor from the point of touch (AJPR, a flat sprite, 256 across,
+    the ring at radius 112 of it), and the ball the two white selves flare
+    into (AJPB). Both are drawn additively: black is nothing, white is full."""
+    import math
+    n = 256
+    ring = Img(n, n, (0, 0, 0))
+    ball = Img(n // 2, n // 2, (0, 0, 0))
+    for y in range(n):
+        for x in range(n):
+            d = math.hypot(x + 0.5 - n / 2, y + 0.5 - n / 2)
+            # a bright edge, soft on both sides, with a long pale wake inside it
+            v = math.exp(-((d - 112) / 6.0) ** 2) + 0.35 * math.exp(-((d - 100) / 16.0) ** 2) * (d < 112)
+            v = min(1.0, v)
+            c = int(255 * v)
+            ring.set(x, y, (c, c, min(255, c + 12)))
+    for y in range(n // 2):
+        for x in range(n // 2):
+            d = math.hypot(x + 0.5 - n / 4, y + 0.5 - n / 4) / (n / 4)
+            v = max(0.0, 1 - d) ** 1.6
+            c = int(255 * min(1.0, v * 1.4))
+            ball.set(x, y, (c, c, c))
+    out["sprites/AJPRA0.png"] = ring.png(grab=(n // 2, n // 2))
+    out["sprites/AJPBA0.png"] = ball.png(grab=(n // 4, n // 4))

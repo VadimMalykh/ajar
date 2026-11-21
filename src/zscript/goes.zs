@@ -822,6 +822,9 @@ extend class AjarTimeHandler
 					Check("touchAfterWinIsParadox", paradoxes == 1 && paradoxCopy == 1 && mo.health <= 0 && g == 2 && InHall(mo) && !open
 						&& ghosts.Size() > 0 && !ghosts[0]);
 				}
+				// the wave has taken every copy and monster; then the dark (paradox.zs)
+				if (t == ppgTouch + PDX_HOLD + 60) Check("allGoneToLightAfterWin", ParadoxAllGone() && paradoxes == 1 && mo.health <= 0);
+				if (t == ppgTouch + PDX_HOLD + 180) Check("theDarkAfterWin", ParadoxDark() && paradoxes == 1 && mo.health <= 0 && InHall(mo));
 				return;
 			}
 			if (g == 1 && o == 2) Check("noParadoxFight", !paradoxes && !paradox && won.Find(1) < won.Size());
@@ -897,14 +900,26 @@ extend class AjarTimeHandler
 				ppxFell = mo.pos;
 				ppxOt = o;
 				ppxAtTouch = paradoxes == 1 && paradoxCopy == 1 && mo.health <= 0 && (mo.player.cheats & CF_GODMODE) && ppxBuddha
-					&& ghosts.Size() > 0 && !ghosts[0] && paradoxSaid == 1 && g == 2 && InHall(mo);
+					&& ghosts.Size() > 0 && !ghosts[0] && paradoxSaid == 0 && g == 2 && InHall(mo);     // (said at the blast, PDX_HOLD)
 				Console.Printf("AJARTEST info touched at t=%d o=%d: now=%d health=%d", t, o, ppxAtTouch, mo.health);
 				Check("touchInFightIsParadox", ppxAtTouch);
 			}
 			if (t == ppxTouch + 70)
 				Check("notRescued", paradoxes == 1 && mo.health <= 0 && mo.player.health <= 0 && InHall(mo) && !InBox(mo) && at == 0
 					&& (mo.pos.xy - ppxFell.xy).Length() < 64 && trips == ppxTrips && takes.Size() == 2 && ot == ppxOt && open && phase == LIVE);
+			// the wave has taken every monster; then the dark (paradox.zs); the cfg presses USE after it
+			if (t == ppxTouch + PDX_HOLD + 60) Check("allGoneToLight", ParadoxAllGone() && paradoxes == 1 && mo.health <= 0);
+			if (t == ppxTouch + PDX_HOLD + 180) Check("theDark", ParadoxDark() && paradoxes == 1 && mo.health <= 0 && InHall(mo) && ot == ppxOt
+				&& paradoxSaid == 3);
 			return;
+		}
+		// USE after the dark begins the level again, as after any death (smoke_PRESS_5.cfg presses it)
+		if (t == 5)
+		{
+			Console.Printf("AJARTEST info level t=%d gametic=%d", level.maptime, gametic);
+			// (the game's clock runs on; the level's began again)
+			if (gametic > level.maptime + 100) Check("theLevelAgain", !paradox && !paradoxes && mo.health > 0 && !mo.bInvisible
+				&& players[consoleplayer].camera == mo);
 		}
 		if (t == 1) Go(mo, 512, 40, 0, 90);
 		if (!open || won.Size()) return;
