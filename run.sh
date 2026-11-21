@@ -11,9 +11,11 @@
 # 3 "Resident": the game as designed and the default, 4 "Night shift").
 # The game's output is kept in build/run.log.
 # DEMO=3 ./run.sh plays MAP32's room 3 by itself, the way its fight is meant
-# to be won, with a caption saying what each self does (src/zscript/fightdemo.zs;
-# PLAN.md, "MAP32 room 3: the fight as fought"). Watch it; keys and mouse
-# would play along with it.
+# to be fought (a bait under the press, a later self at the lever), with a
+# caption saying what each self does (src/zscript/fightdemo.zs; PLAN.md, "MAP32
+# room 3: the fight as fought"). It plays honestly and, with the room as it is,
+# does not win: after the fourth go the fight begins anew. Watch it; keys and
+# mouse would play along with it.
 cd "$(dirname "$0")"
 [ -f build/ajar.pk3 ] || ./build.sh
 LOOK='vid_rendermode|vid_gamma|vid_brightness|vid_contrast|vid_saturation|gl_lightmode|gl_tonemap'
