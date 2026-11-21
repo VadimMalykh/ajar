@@ -7061,3 +7061,117 @@ then the next bait, and the fight beginning anew after the fourth go.
   captions' size on other screens; what happens if Vadim touches the keys
   (the bot's moves are added to his); a win (none happened), so
   `FdReport`, the end caption and `steel3` in this mode were never reached.
+
+## MAP32 room 3: an open front, wave 1 in the east, leaving is as good as dying (built 2026-11-21)
+
+Vadim read what the played fight showed (above: few come under the press,
+the first self has no chance, dying pays better than leaving) and agreed to
+three changes. The bot was then run on the changed room to see whether it
+can now be won.
+
+- **An open front** (`tools/map_secret2.py`). `MOUTH3 = (HX + 128, HX + HW -
+  128)`, x 5128..6408: of the wall between hall and chamber only two stubs
+  128 wide are left at the ends. The mouth is still one sector of the
+  press's tag (y 768..800, the chamber's floor, ceiling and trim), and now
+  borders all three of the chamber's sectors (udmf splits the shared edges),
+  so the press begins at the hall's north edge along the whole opening; the
+  hall's higher ceiling leaves the steel lintel over it on the hall's side.
+  The press lamps keep their rule (on the stubs' north faces in the
+  chamber, on the west stub's south face in the hall, each now asserted to
+  be on its stub). Nothing else of the room moved. The asserts made true
+  for the shape: the old one that the mouth lies within the middle sector
+  is now that the stubs are 128 and the mouth spans the middle sector; the
+  walk from the nearest point under the press to the shutter (straight
+  south from x 5144, west of the hall's west slab) is 768 (it was 778 from
+  the old mouth's west end; must be over 600); the plates' walks to the
+  shutter, now through the mouth where it is nearest, are 1371 (the
+  screen's) and 1195 (the cage's). `on_foot`, `covers`,
+  `fight_anew_reached`, `Crowd` and the toughness/firepower ratio pass
+  unchanged.
+- **Wave 1 in the east half.** All 34 at x 5768 or more, in rows, facing
+  north as before: mancubi (5832, 5960, 6088, 6216; y 696) and two barons
+  (6320, 6400; y 696) nearest the press; barons (5800..6040 by 80; y 616)
+  and hell knights (6120..6360; y 616), hell knights (5800..6040; y 536)
+  and revenants (6120..6360; y 536); revenants (5800, 5880; y 456) and
+  imps (5960..6360 by 80; y 456); imps (6120..6360; y 296). Asserted: 34
+  spots, all at x >= HX + 768, x <= 6408 and y >= 160 (clear of box 2's
+  glass, door 2, the steel door and box 3's glass), none within 700 of the
+  lobby's opening (the nearest is 811), and `Crowd`'s room (walls, slabs,
+  each other). Waves 2 and 3 and the pen's guards are where they were.
+- **Leaving is as good as dying** (`src/zscript/time.zs`). Going out of a
+  fight's hall by a time door with less than `RESCUE_HEALTH` (50), the
+  player has 50 in the box; more is kept. One line where the hall's time
+  door is taken (before `Retake` or `Leave`): every fight with boxes,
+  closed or open, MAP31 too; not a room of goes proper (`GoesTick` returns
+  before it). No message, no sound; said at `RESCUE_HEALTH`. Checks:
+  `outWithLittleAsIfKilled3` (mode 9: go 1's bait is put at 20 just before
+  it walks out by door 3, and has 50 in box 1; god mode stays on, it keeps
+  damage off, not health up) and `outWithMoreKeepsIt3` (mode 3: go 1's bait
+  put at 80 before door 3, still 80 in box 1).
+- **The tests of room 3** keep their meaning and pass as they were (their
+  places, 5768 784 in the mouth, 5768 700 out of it, are still right): mode 3
+  had twelve under the press 139 and 160 tics after its bait by door 3 came
+  in (it was 313 to 699), the lever pulled at ten on the demo under it, and
+  the press killed 12 (it was 9 to 12). Its cfg waits were long enough.
+- **The bot** (`fightdemo.zs`, plan 10, now the default): go 1 takes all
+  the lobby's guns (about 45 tics) and goes north along the west wall to
+  the screen's plate, shooting only what comes within 260 (a shot wakes
+  them); the lever's self pulls when 16 are on the demo under the press (if
+  there is time for another) or at the last moment (24 to 4 tics before the
+  earlier self's time is over), then goes out by the window and into the
+  chamber as the next bait once the press is up; a bait stays until 15
+  health (leaving gives no less than dying now). About fifteen tuning runs
+  (holding the lobby, other spots: behind the chamber's west slab was no
+  better; the lever staying in the wing after its pull made the next goes
+  long and drew the monsters south).
+- **Figures from the ten final runs** (full build, `MAP=MAP32 MODE=20
+  TIMEOUT=270 tools/smoke.sh`, each three times through the four goes and a
+  bit, 240 s; the cfg now waits 8000 tics):
+  - The first self reaches the press every time, at its tic 101 to 127,
+    with 100 health (once 84), and is on the plate by about tic 155.
+  - Under the press while it holds (awake, all 39 first goes): none before
+    its tic 140; then a median of 1 at 175, 4 at 210, 7 at 245, 8.5 at
+    280, 13 at 315; at most 18. With the open front they come straight in.
+  - But it lives a median 275 tics (141 to 402), about five seconds on the
+    plate: 35 of 39 killed, 30 of them last hurt by a mancubus. At the end
+    of its time a median of 8 were under the press (at most 18).
+  - Pulls: 51 in the ten runs, killing 0 to 17 each (mean 5.7; 12 or more
+    eight times). A pull at the last moment of a short first go is all
+    there is to pull on.
+  - The lever's self going on as the next bait is killed in the hall 36
+    times in 38 (revenants, hell knights, imps, barons: the demo is over and
+    they are awake). A bait from a box that waits on the screen's plate
+    loses most of its health before the demo ends (75..100 down to 22..33):
+    the monsters' replayed missiles were aimed at the earlier bait on that
+    same spot.
+  - No win. The fewest left in a time through: 10 at best, median about
+    17 (per run 16, 14, 14, 15, 10, 11, 15, 16, 16, 17). Wave 1 is never
+    cleared; wave 2 came only on the clock in long goes (a self last hurt by
+    a cacodemon or an arachnotron three times); wave 3 never came, and no
+    self was ever hurt by a cyberdemon or an arch-vile. After the fourth go
+    the fight begins anew with all 36.
+- **Where it stops**: the first self is now under the press with full
+  health, and the monsters do come under it (a pull can take 17), but the
+  bait does not live long enough to gather them: on the plate it is in the
+  open to the whole hall and the mancubi kill it in about five seconds. So
+  the earlier self's time is short, the lever's self has barely reached the
+  lever when it is over, and each later self meets an awake hall. The bot
+  never got a time through past wave 1.
+- **Results** (2026-11-21, full build, once each; counts are the distinct
+  `AJARTEST name=1` lines): `MAP=MAP32 MODE=3 TIMEOUT=850` 74 of 74 and out
+  (with `outWithMoreKeepsIt3`; MAP16's `baronCalled` after it is printed or
+  not by timing), MODE=4 8, `MODE=5 TIMEOUT=200` 24, `MODE=7 TIMEOUT=400`
+  19, MODE=8 6, MODE=9 8 (with `outWithLittleAsIfKilled3`), MODE=2 ran
+  without errors (the view from 5768, 250 shows the open front as a long
+  dark band of the press's trim floor and low ceiling under the lintel,
+  the hall's slab before it; from the upper room's window the chamber's
+  back wall is seen right across). MODE=20 ten times: as above, no failed
+  check but `won3=0` (and `pulled=0` once: no pull in the first time
+  through). Outside MAP32, for the rule: `MAP=MAP31 MODE=3` (alone) 58,
+  MODE=5 5, MODE=6 10, MODE=7 17; `MAP=PRESS MODE=3` 14, MODE=4 6;
+  `MAP=SHUT MODE=3` 21, MODE=4 8; `MAP=TIME MODE=3` 15; `MAP=TDOOR
+  MODE=3` 21. No check failed.
+- **Not tested**: the room played by hand; a self going out by a time door
+  with less than 50 in MAP31 or a closed fight (the rule is one line for
+  all, checked only in MAP32's open fight); wave 3 and the cyberdemons
+  under the press (never reached); the views at other screen sizes.
