@@ -2910,6 +2910,60 @@ class AjarTimeHandler : EventHandler
 	// there while watching; halls 2 and 3 are open fights, begun again.
 	int testN;
 	Actor testRail, testBump;
+	Vector2 testSpot;               // MAP31 MODE=3, hall 3: where the player steps in while the last go plays
+	double testClear;               // and how far from it the nearest monster on the demo comes
+	double testSpotZ;               // (the floor there: the hall's or a row of seats')
+
+	// Where to step into the hall so that no monster on the demo comes within touch (a touch wakes
+	// it): of spots cx - 400 to cx + 400 in front of the seats and in the walks between their rows
+	// (map_secret1.py rows(): a row every 96 from 192, 32 deep), on a flat floor 40 across and off
+	// the earlier selves' ways (paradox.zs), the one that the monsters stay
+	// farthest from in the next 10 tics of the demo (between the bodies' edges). testClear is that.
+	void StepInSpot(double cx)
+	{
+		testClear = -1;
+		testSpot = (cx, 300);
+		testSpotZ = 0;
+		static const int rowY[] = { 120, 256, 352, 448 };      // before the seats and between their rows
+		for (int row = 0; row < rowY.Size(); row++)
+		for (int dx = -400; dx <= 400; dx += 100)
+		{
+			Vector2 p = (cx + dx, rowY[row]);
+			int k, b;
+			[k, b] = Where(p);
+			if (k != fight || b != 0) continue;
+			double fl = level.PointInSector(p).floorplane.ZAtPoint(p);
+			bool flat = fl <= 24;
+			for (int c = 0; c < 5 && flat; c++)
+			{
+				Vector2 q = p + (c == 1 ? 20 : c == 2 ? -20 : 0, c == 3 ? 20 : c == 4 ? -20 : 0);
+				Sector sec = level.PointInSector(q);
+				flat = level.IsPointInLevel((q, fl + 1)) && sec.floorplane.ZAtPoint(q) == fl && sec.ceilingplane.ZAtPoint(q) >= fl + 64;
+			}
+			if (!flat) continue;
+			bool selves = false;
+			for (int i = 0; i < takes.Size() - 1 && !selves; i++)
+				for (int j = ot; j < takes[i].x.Size() && j <= ot + 10; j++)
+					if (((takes[i].x[j], takes[i].y[j]) - p).Length() < 72) { selves = true; break; }
+			if (selves) continue;
+			double near = 100000;
+			for (int i = 0; i < demo.roles.Size(); i++)
+			{
+				AjarRole r = demo.roles[i];
+				if (!r.actor || r.actor.health <= 0) continue;
+				double edge = r.actor.radius + 16;
+				near = min(near, (r.actor.pos.xy - p).Length() - edge);
+				for (int j = ot - r.born; j < r.x.Size() && j <= ot - r.born + 10; j++)
+					if (j >= 0) near = min(near, ((r.x[j], r.y[j]) - p).Length() - edge);
+			}
+			// and whatever else is alive and awake
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next()))
+				if (a.bIsMonster && a.health > 0 && !OnDemo(a)) near = min(near, (a.pos.xy - p).Length() - a.radius - 16);
+			if (near > testClear) { testClear = near; testSpot = p; testSpotZ = fl; }
+		}
+	}
 	int Rails(bool on)      // monsters of the fight alive, on the demo or awake
 	{
 		int n = 0;
@@ -3026,9 +3080,16 @@ class AjarTimeHandler : EventHandler
 				&& takes.Size() == 2 && takes[0].x.Size() < 60 && abs(mo.pos.x - takes[0].x[takes[0].x.Size() - 1]) < 20 && (mo.pos.xy - (cx, 300)).Length() > 50);
 			if (u == 133) { at = 1; Go(mo, x - 40, cy, 64, 0); }
 			// into the hall while the last go is still playing: nothing wakes for that
+			// (at a spot no monster on the demo comes near in the next 10 tics: one that walks into the
+			// player wakes by the game's own rule, which is not what this checks; StepInSpot)
 			if (u == 299) testN = Rails(true);
-			if (u == 300) { Back(); Go(mo, cx, 300, 0, 90); }
-			if (u == 304) Check("noneWakesAsIStepIn", testN > 5 && !Rails(false) && Rails(true) == testN);
+			if (u == 300)
+			{
+				StepInSpot(cx);
+				Console.Printf("AJARTEST info stepIn at=(%d,%d,%d) clear=%d", testSpot.x, testSpot.y, testSpotZ, testClear);
+				Back(); Go(mo, testSpot.x, testSpot.y, testSpotZ, 90);
+			}
+			if (u == 304) Check("noneWakesAsIStepIn", testN > 5 && testClear >= 100 && !Rails(false) && Rails(true) == testN);
 			if (u == 305)
 			{
 				for (int i = 0; i < demo.roles.Size() && !testRail; i++)
@@ -3042,7 +3103,7 @@ class AjarTimeHandler : EventHandler
 					if (demo.roles[i].mode == 1 && !demo.roles[i].dead && !demo.roles[i].wakeDue) testBump = demo.roles[i].actor;
 				if (testBump) Go(mo, testBump.pos.x, testBump.pos.y, testBump.pos.z, 90);
 			}
-			if (u == 312) Go(mo, cx, 300, 0, 90);
+			if (u == 312) Go(mo, testSpot.x, testSpot.y, testSpotZ, 90);
 			if (u == 350) Check("wokenByATouch", testBump && !OnDemo(testBump) && testBump.tics != -1 && testBump.health > 0 && Rails(true) <= testN - 2);
 			if (u == 345) Check("wokenByAShot", testRail && !OnDemo(testRail) && testRail.tics != -1 && testRail.health > 0
 				&& testRail.health <= testRail.SpawnHealth() - 5);

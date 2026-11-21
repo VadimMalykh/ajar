@@ -7355,16 +7355,23 @@ only where it holds is wider, and `parted` is cleared in more places.
   - TIME MODE=4 fails `followed` on main too, every time, and its other
     three checks some of the times (on main too): not this change, whose
     hall there has no earlier self.
-  - MAP31 MODE=3 fails `noneWakesAsIStepIn` (hall 3: back into the hall
-    at (cx, 300) while the last go plays, no monster on the demo may wake
-    in 4 tics): a Cacodemon on the demo comes within reach of the player
-    there at the 4th tic and wakes. On main's build it failed once in 4
-    runs; on this branch in all 6 (the dry build included). Nothing of
-    this change runs differently there (the fight's first go has no
-    earlier self; the script is changed only after that check), and the
-    demo it plays is a record of a go that differs from run to run, so it
-    is taken for a check that depends on where the demo's monsters went;
-    but the lean to this branch is not explained.
+  - MAP31 MODE=3 `noneWakesAsIStepIn` (hall 3: back into the hall while
+    the last go plays, no monster on the demo may wake in 4 tics) stepped
+    in at (cx, 300), where the demo's crowd often is at that moment; one
+    that walks into the player wakes by the game's own rule, so it failed
+    on main 1 time in 4 and on this branch 6 times in 6 (why the lean, not
+    found). Made robust in the script only (`StepInSpot`, time.zs): of 36
+    spots cx - 400 to cx + 400 in front of the seats and in the walks
+    between their rows, on flat floor and off the earlier selves' records
+    for 10 tics, the one the demo's monsters stay farthest from over their
+    next 10 tics; the check also asks for 100 between the bodies' edges.
+    The walking-into check steps back to the same spot. Five runs: it
+    stepped in at (cx - 400, 120) each time, 257 to 274 clear, and passed.
+  - Two of the same five runs failed other checks of that mode, which
+    failed on main too: run 1 `aLastKillForEveryHall` and
+    `lastScenesOnScreen` (a hall's last kill not kept for the reel), run 5
+    `won3` (likely the race of the last kill burst at u 536 with the win,
+    looked at every 5 tics, and the check at 538). Not looked into.
 
 ### Not tested / not played by hand
 
