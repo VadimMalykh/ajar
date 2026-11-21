@@ -88,7 +88,7 @@ extend class AjarTimeHandler
 	static const double FD_SOLID[] = {
 		5160, 160, 5352, 224,   6184, 160, 6376, 224,   5480, 320, 5672, 384,   5864, 320, 6056, 384,     // the hall's slabs
 		5320, 1008, 5448, 1072,   6088, 1008, 6216, 1072,                                                 // the chamber's
-		4700, 768, 5672, 800,   5864, 768, 6600, 800,                                                     // the wall, but the mouth
+		4700, 768, 5128, 800,   6408, 768, 6600, 800,                                                     // the wall's two stubs, either side of the mouth
 		4600, 320, 5000, 768,   4600, -200, 5000, 64 };                                                   // the lobby's walls
 	const FD_PAD = 30;
 
@@ -116,7 +116,7 @@ extend class AjarTimeHandler
 		double m = FD_R + 2;
 		if (p.x > 5000 + m && p.x < 6536 - m && p.y > m && p.y < 768 - m) return true;
 		if (p.x > 5000 + m && p.x < 6536 - m && p.y > 800 + m && p.y < 1280 - m) return true;
-		if (p.x > 5672 + m && p.x < 5864 - m && p.y > 700 && p.y < 860) return true;
+		if (p.x > 5128 + m && p.x < 6408 - m && p.y > 700 && p.y < 860) return true;
 		if (p.x > 4744 + m && p.x < 5010 && p.y > 64 + m && p.y < 320 - m) return true;
 		return false;
 	}
@@ -633,7 +633,7 @@ extend class AjarTimeHandler
 		int a = -1, z = -1;
 		for (int j = 0; j < t.x.Size(); j++)
 		{
-			bool under = t.y[j] > 768 && t.x[j] > 5000 && t.x[j] < 6536 && (t.y[j] > 800 || (t.x[j] > 5672 && t.x[j] < 5864));
+			bool under = t.y[j] > 768 && t.x[j] > 5000 && t.x[j] < 6536 && (t.y[j] > 800 || (t.x[j] > 5128 && t.x[j] < 6408));
 			if (!under) continue;
 			if (a < 0) a = j;
 			z = j;

@@ -2074,6 +2074,10 @@ class AjarTimeHandler : EventHandler
 	// the start, to come back in by the door they first left by. While that
 	// can happen the player cannot die (bBuddha: health stops at 1). With no
 	// box left, death is death.
+	// Going out of a fight's hall by a time door with less than that, the
+	// player has RESCUE_HEALTH in the box too (more is kept as it is): dying
+	// never pays better than leaving (2026-11-21). Every fight with boxes,
+	// closed or open; not a room of goes proper (nothing hurts there).
 	const RESCUE_HEALTH = 50;
 	const REWIND = 35;          // tics the clock takes to run back
 	bool rescued;               // the trip that is on began with a death
@@ -2451,7 +2455,12 @@ class AjarTimeHandler : EventHandler
 			else DoorWatch(FightTic());
 			if (mo.health > 0 && k == fight)
 			{
-				if (at == 0 && b == trips + 1) { if (open) Retake(mo); else Leave(mo); }
+				if (at == 0 && b == trips + 1)
+				{
+					// out by a time door: no less than a death would give (RESCUE_HEALTH)
+					if (mo.health < RESCUE_HEALTH) mo.health = mo.player.health = RESCUE_HEALTH;
+					if (open) Retake(mo); else Leave(mo);
+				}
 				else if (at > 0 && b == 0) Back();
 			}
 			if (phase == LIVE)

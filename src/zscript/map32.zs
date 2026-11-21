@@ -476,6 +476,7 @@ extend class AjarTimeHandler
 					if (!dsTwelveO) dsTwelveO = o - 35;
 					Console.Printf("AJARTEST info the bait leaves o=%d under=%d", o, UnderPress(pr));
 					Go(mo, 6510, 1040, 0, 0);
+					mo.health = mo.player.health = 80;      // (out with more than RESCUE_HEALTH: it is kept)
 				}
 				else if ((mo.pos.xy - (6500, 1040)).Length() > 8) Go(mo, 6500, 1040, 0, 180);
 			}
@@ -490,6 +491,7 @@ extend class AjarTimeHandler
 			int len = takes[0].x.Size();
 			if (o == 2) Check("outByDoorThree3", at == 1 && bx == 1 && demo != null && !takes[0].died && takes[0].door == HallLine(3, 3)
 				&& used == HallLine(3, 1));
+			if (o == 2) Check("outWithMoreKeepsIt3", mo.health == 80);
 			if (o == 3) Go(mo, 4810, 560, 64, 180);
 			if (o > 3 && !dsOutO)
 			{
@@ -1502,6 +1504,9 @@ extend class AjarTimeHandler
 				Check("baitShoots3", dead >= 1 && alive >= 1 && takes[0].evTic.Size() >= gsShots);
 				gsLeaveO = o;
 				Go(mo, 6510, 1040, 0, 0);
+				// out with less than RESCUE_HEALTH: in the box it has that, as if killed (time.zs). (God mode
+				// stays on: it keeps damage off, not health up, and a hit now would make this a death.)
+				mo.health = mo.player.health = 20;
 			}
 			if (gsLeaveO && o > gsLeaveO) Walk(mo, (8, 0));
 		}
@@ -1519,6 +1524,7 @@ extend class AjarTimeHandler
 		{
 			mo.vel = (0, 0, 0);
 			if (o == 2) Check("inTheBox9", at == 1 && bx == 1 && demo != null && !takes[0].died && takes[0].door == HallLine(3, 3));
+			if (o == 2) Check("outWithLittleAsIfKilled3", mo.health == RESCUE_HEALTH);
 			if (o >= 2 && o <= gsLen - 1)
 			{
 				// nothing of the hall awake, nothing after me, while the demo plays
