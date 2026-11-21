@@ -7175,3 +7175,34 @@ can now be won.
   with less than 50 in MAP31 or a closed fight (the rule is one line for
   all, checked only in MAP32's open fight); wave 3 and the cyberdemons
   under the press (never reached); the views at other screen sizes.
+- **The mancubi moved (the same day, after the ten runs above).** Putting
+  them in the north row was a choice of mine and the bot showed it wrong:
+  70 from the press's edge and facing it, they killed the bait in about
+  five seconds. Wave 1's rows are now: barons (5800..6200 by 80) and two
+  hell knights (6280, 6360) at y 696; hell knights (5800..6200) and two
+  imps at y 616; imps (5800..6360) at y 536; revenants (5800..6200) at
+  y 456; the mancubi farthest from the press, south of the hall's slabs, at
+  (5880, 232), (6040, 232), (6232, 280), (6360, 280), asserted 450 or more
+  from the press's edge. The spots in "Wave 1 in the east half" above and
+  the bot's ten runs are of the layout before this.
+  - On the new layout (full build): `MAP=MAP32 MODE=3 TIMEOUT=850` 74 of
+    74 and out (twelve under the press 121 tics after the bait came in; the
+    pull at 10 killed 13); `MODE=5 TIMEOUT=200` 23, `MODE=7 TIMEOUT=400`
+    18, MODE=9 7, no failed check (these counts are without `levelExited`,
+    which the quit did not print in these runs). MODE=4, 8 and 2 and the
+    other maps were not run again (nothing of them is in room 3's crowd).
+  - The bot, unchanged (plan 10), two runs of MODE=20, seven times through
+    the four goes: no win. The first self lasted 204 to 414 tics (it was
+    141 to 402, median 275), with 4 to 20 under the press at its end. Of
+    16 pulls, 12 killed 10 to 21 (10, 12, 21, 14, 14, 17, 10, 14, 18, 20
+    and two more; the mean of all pulls was 5.7 before) and 4 killed none
+    (a second pull in the same go). The fewest left in a time through: 16,
+    11, 11 and 10, 16, 12. Wave 2 now comes by the count (16 left) after
+    a good pull; wave 3 was still never reached.
+  - Where it stops now: one good pull takes most of wave 1, but the lever's
+    self is killed in the hall on its way to be the next bait (by wave 2's
+    arachnotrons and cacodemons, revenants, mancubi), so the next self is a
+    bait again and a time through has two pulls at most, about 30 of the 54.
+    Then the fight begins anew with all 36. A player who gets the lever's
+    self back under the press would have three pulls. Keeping what was
+    killed when the boxes run out (or more boxes) is the change not made.

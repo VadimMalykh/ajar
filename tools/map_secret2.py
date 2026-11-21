@@ -475,8 +475,9 @@ BOXES3 = (stock(4810, 630, (40, 0), 2018, 2012, 2012, 17, 2046)
 steel(K3, (HX + HW, 128), (HX + HW, 192), (1, 0), 0)
 m.sector(rect(6552, 96, 6872, 224), ceil=128, light=180, color=HALL)
 # the fight: all of it AjarCues; wave 1 in the hall's east half (2026-11-21; it was spread over the south
-# and middle), in rows: the slow ones nearest the press (mancubi and barons north, hell knights in the
-# middle, revenants and imps south), so that the horde comes under the press together
+# and middle), in rows: barons and hell knights nearest the press, imps behind them, revenants behind those,
+# and the mancubi farthest from it, south of the hall's slabs (they stood in the north row at first, 70 from
+# the press's edge and facing it: of 35 baits killed there 30 were last hurt by a mancubus, in about 5 s)
 c3 = ajartime.Crowd(m, K3, [(HX, HY, HX + HW, PY), (HX, CY, HX + HW, HY + HH), PEN3], SLABS3 + CSLABS3, calm=True)
 
 
@@ -484,13 +485,15 @@ def at3(*pts):
     return [(HX + a, HY + b) for a, b in pts]
 
 
-c3.cue(1, 0, 67, *at3((832, 696), (960, 696), (1088, 696), (1216, 696)), angle=90)                  # mancubi
-c3.cue(1, 0, 3003, *at3((1320, 696), (1400, 696), (800, 616), (880, 616), (960, 616), (1040, 616)), angle=90)   # barons
-c3.cue(1, 0, 69, *at3((1120, 616), (1200, 616), (1280, 616), (1360, 616), (800, 536), (880, 536), (960, 536),
-                      (1040, 536)), angle=90)                                                        # hell knights
-c3.cue(1, 0, 66, *at3((1120, 536), (1200, 536), (1280, 536), (1360, 536), (800, 456), (880, 456)), angle=90)   # revenants
-c3.cue(1, 0, 3001, *at3((960, 456), (1040, 456), (1120, 456), (1200, 456), (1280, 456), (1360, 456),
-                        (1120, 296), (1200, 296), (1280, 296), (1360, 296)), angle=90)               # imps
+c3.cue(1, 0, 3003, *at3((800, 696), (880, 696), (960, 696), (1040, 696), (1120, 696), (1200, 696)), angle=90)   # barons
+c3.cue(1, 0, 69, *at3((1280, 696), (1360, 696), (800, 616), (880, 616), (960, 616), (1040, 616), (1120, 616),
+                      (1200, 616)), angle=90)                                                        # hell knights
+c3.cue(1, 0, 3001, *at3((1280, 616), (1360, 616), (800, 536), (880, 536), (960, 536), (1040, 536), (1120, 536),
+                        (1200, 536), (1280, 536), (1360, 536)), angle=90)                            # imps
+c3.cue(1, 0, 66, *at3((800, 456), (880, 456), (960, 456), (1040, 456), (1120, 456), (1200, 456)), angle=90)   # revenants
+MANCUBI3 = at3((880, 232), (1040, 232), (1232, 280), (1360, 280))
+c3.cue(1, 0, 67, *MANCUBI3, angle=90)                                                                # mancubi
+assert all(y <= PY - 450 for x, y in MANCUBI3), "the mancubi start far from the press"
 W1HALL3 = [(x, y) for x, y, _ in c3.placed[1]]
 assert len(W1HALL3) == 34 and all(x >= HX + 768 for x, y in W1HALL3)
 # clear of box 2's glass, door 2 and the steel door (the east wall) and of box 3's glass (the south wall)
