@@ -2551,6 +2551,7 @@ class AjarTimeHandler : EventHandler
 	override void RenderOverlay(RenderEvent e)
 	{
 		FdOverlay(e);              // fightdemo.zs: its caption (ajar_autotest 20)
+		ParadoxOverlay(e);         // paradox.zs: the white of the end, and the black
 		if (reel && reel < 4)
 		{
 			if (caption != "") Screen.DrawText(BigFont, Font.CR_GOLD, 320 - BigFont.StringWidth(caption) / 2, 360, caption, DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
