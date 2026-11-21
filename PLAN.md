@@ -7375,3 +7375,43 @@ one exception, as chosen. Lights per room: at most 12 with what moves
 (room 2 the most: 5 steady, 2 travelling, a stutter, a sweep of up to 4);
 rooms 3 and 4 while their fight is on 6 and 7 steady, none moving but a wave,
 the press's flare and a plate line.
+
+**Left out, or not as asked.**
+- The roof beams over room 3's hall and room 4's range (optional): not
+  built. They need the hall's and range's fitted sectors cut again with a
+  lower ceiling under each beam, which the solver and the covers would have to
+  be shown not to notice; the sky is left open as it is.
+- Room 1 has one steady light, not three: with its frame, leaning leaf,
+  plate and case, no other place on its walls lets a light's reach stay off
+  them. Room 5 has no travelling light: no straight floor conduit in its
+  cells keeps clear of its frames, leaves and plates for most of its length;
+  the corridor before it has one instead.
+- The stutters are where the rule allows, not mid-wall: room 1's east wall,
+  room 2's gallery south wall, room 3's hall south wall at its east end,
+  room 4's range west wall, room 5's middle cell's north wall.
+- The steady lights are dim on purpose (an ice light at about half); in the
+  headless shots (llvmpipe) they barely show. They are there: a test with
+  them red and full showed every one, on the invisible carriers.
+- `AJZSKY` drifts at MAPINFO speed 1; how fast that looks was not seen (the
+  shots are stills).
+
+**Tests** (2026-11-21, quick and full builds with the look on; counts are
+the distinct `AJARTEST name=1` lines, no `=0`, no script errors or
+warnings): `MAP=MAP32 MODE=3 TIMEOUT=1500` 78 on the quick build, 77 on
+the full one (MAP16's `baronCalled` after it, printed or not by timing; five
+time door waves ran by room 3's end) (the 74 before, with
+`worksPressFlare3`, `worksPressBack3` and `worksDone3`: after the press's
+stroke and after room 3 is won every sector's light is what its state says),
+MODE=4 8, MODE=5 24, MODE=7 21 (with `worksPlateLine3` and
+`worksPlateLineGone3`: the line lies while the screen's plate is pressed and
+is gone with it), MODE=8 6, MODE=9 8. MODE=20 (the bot) `honest=1 goes4=1
+pulled=1 won3=0`, as before. The look's random numbers are its own
+(`Random[AjarWorks]`): with the game's, the replays of room 4 went another
+way (`killedOnTheDemo4=0`). The tour (MODE=2, `tools/smoke_MAP32_2.cfg`)
+has 23 more views at its end, a few per room for the look (its time door, a
+frame, the box's glass, the signs, the chamber's back wall, the hatch, a
+corridor), the plate line (a self on the cage's plate), the press's flare
+and room 1 done (`worksTourDone1`); the shots of both, look and
+`AJAR_WORKS=0`, are in `build/board32/works/` and `build/board32/plain/`
+(`view_NN.png`; no JPEGs or contact sheets: the imagemagick image is not on
+this machine).
