@@ -870,7 +870,7 @@ extend class AjarTimeHandler
 			3500, 0, -96, 70, 0,            // the pit: B and its lamp
 			4872, 170, 0, 90, -10,          // room 3's lobby: the case, close
 			4800, 150, 0, 8, 0,             // room 3's hall from the lobby, as the player comes in
-			5768, 250, 0, 90, 0,            // the mouth of the press from the hall
+			5768, 250, 0, 90, 0,            // the press from the hall: its open front (since 2026-11-21) under the lintel
 			5768, 784, 0, 20, 0,            // the chamber from the mouth: its east slab, time door 3
 			5330, 120, 0, 228, 0,           // the wing's shutter shut, its lamp red
 			5330, 120, 0, 228, 0,           // and open: a self in the chamber

@@ -507,9 +507,11 @@ extend class AjarTimeHandler
 	int fdBaitIn, fdBaitOut, fdBaitHp, fdLeverAt, fdPulls, fdWon, fdWonGo;
 	int fdUnderMax;
 	int fdCycleT, fdCycleLow, fdCyclePull0;   // this time through the four goes
-	Array<int> fdPullO, fdPullUnder, fdPullKills;
+	Array<int> fdPullO, fdPullUnder, fdPullKills, fdPullT, fdPullG;
 	int fdPullKill0, fdPullPending;
 	int fdRole;                     // from a box: 1 the lever, 2 the bait
+	int fdUnderNow, fdLeftNow;      // this tic: under the press, left (for the log when the go ends)
+	Name fdBy;                      // what last hurt the player (for the log)
 	bool fdThenBait;                // the lever's self is the bait next (not in the last box)
 	const FD_BAIT_LEAD = 150;       // it leaves the lever this long before the earlier self's time is over
 	bool fdEast;
@@ -559,8 +561,9 @@ extend class AjarTimeHandler
 			else if (g > 1)
 			{
 				AjarTake last = takes[g - 2];
-				FdLog(String.Format("go %d ended at its tic %d: %s by door %d; now go %d, health=%d", g - 1, last.x.Size(),
-					last.died ? "killed" : "out", last.door - HallLine(3, 0), g, mo.health));
+				FdLog(String.Format("go %d ended at its tic %d: %s by door %d (last hurt by %s, %d under the press then, %d left); now go %d, health=%d",
+					g - 1, last.x.Size(), last.died ? "killed" : "out", last.door - HallLine(3, 0), fdBy, fdUnderNow, fdLeftNow, g, mo.health));
+				fdBy = 'None';
 			}
 			fdGoSeen = g;
 			fdGoStart = t;
@@ -572,8 +575,20 @@ extend class AjarTimeHandler
 			fdPullPending = 0;
 		}
 		FdLook(mo);
-		if (o > 10) fdCycleLow = min(fdCycleLow, Left());      // (the monsters are back a few tics into a go)
+		if (mo.player.attacker && mo.player.attacker != mo && mo.player.damagecount) fdBy = mo.player.attacker.GetClassName();
+		if (o > 10) fdCycleLow = min(fdCycleLow, Left());
+		AjarPress prs = FindPress(PRESS32);
+		if (prs && o > 10) { fdUnderNow = UnderPress(prs, -1); fdLeftNow = Left(); }      // (the monsters are back a few tics into a go)
 		FdRoom3(mo, g, o);
+		// what the last pull killed, two seconds on (the press's victims; -1: the go was over before)
+		int np = fdPullT.Size();
+		if (np > fdPullKills.Size() && fdT == fdPullT[np - 1] + 70)
+		{
+			AjarPress pp = FindPress(PRESS32);
+			int v = pp && takes.Size() == fdPullG[np - 1] ? pp.victims.Size() : -1;
+			fdPullKills.Push(v);
+			FdLog(String.Format("pull %d killed %d", np, v));
+		}
 		FdBody(mo);
 		if (t % 35 == 0)
 		{
@@ -619,12 +634,14 @@ extend class AjarTimeHandler
 	// From a box: 20 in the box; the lever: 21 to the shutter, 22 up the stairs, 24 at the lever, 26 after
 	// the demo, in the wing; the bait from a box: 31 to the chamber past them on the demo, 32 waiting on
 	// the plate till the demo is over, then 13. 90 no plan.
-	// The plan played is 7: go 1 runs for the chamber, a bait from a box, the lever's self then the
-	// next bait. The others tried (PLAN.md has their numbers) are kept for whoever goes on with it:
-	// +set fd_plan N. 0, 1, 4: other runs for the chamber; 2, 3, 5, 6, 9: go 1 holds the lobby
+	// The plan played is 10 (the open front, 2026-11-21): go 1 takes all the lobby's guns and goes north
+	// along the west wall to the screen's plate at the back, shooting only what is close; a bait from a
+	// box; the lever's self pulls when 16 are on the demo under the press (+set fd_early N) or at the
+	// last moment, then is the next bait. The others, tried on the old mouth (PLAN.md has their
+	// numbers): +set fd_plan N. 0, 1, 4: other runs for the chamber; 2, 3, 5, 6, 9: go 1 holds the lobby
 	// (3, 4 the bait on the cage's plate, 5 and 8 by door 3, else the screen's plate; 3 and up
 	// shoot only arch-viles and what is close while the bait; 7 and up: the lever's self is the next bait).
-	int FdPlanKnob() { CVar c = CVar.FindCVar("fd_plan"); return c ? c.GetInt() : 7; }
+	int FdPlanKnob() { CVar c = CVar.FindCVar("fd_plan"); return c ? c.GetInt() : 10; }
 
 	// was earlier self i under the press at any tic (from, to: its first and last such tic)?
 	int, int FdUnderSpan(int i)
@@ -642,8 +659,10 @@ extend class AjarTimeHandler
 	}
 
 	// where the bait waits: plan 3 hides on the cage's plate (out of sight of the hall), else the screen's
-	Vector2 FdBaitSpot(int plan) { return plan == 5 || plan == 8 ? (6480, 1040) : plan == 3 || plan == 4 ? (FD_CAGE_X, FD_CAGE_Y) : (FD_SCREEN_X, FD_SCREEN_Y); }
-	bool FdRush(int plan) { return plan == 0 || plan == 1 || plan == 4 || plan == 7 || plan == 8; }
+	Vector2 FdBaitSpot(int plan) { return plan == 5 || plan == 8 ? (6480, 1040) : plan == 3 || plan == 4 ? (FD_CAGE_X, FD_CAGE_Y)
+		: plan == 11 ? (5384, 1190) : (FD_SCREEN_X, FD_SCREEN_Y); }
+	int FdEarly(int plan) { CVar c = CVar.FindCVar("fd_early"); return c ? c.GetInt() : plan >= 10 ? 16 : 8; }
+	bool FdRush(int plan) { return plan == 0 || plan == 1 || plan == 4 || plan == 7 || plan == 8 || plan >= 10; }
 
 	// the bait fights only what is on it (close by) and the arch-viles: what comes in is for the press
 	void FdBaitFight(PlayerPawn mo, int plan)
@@ -707,8 +726,11 @@ extend class AjarTimeHandler
 		}
 		if (fdPhase == 11)
 		{
-			FdGoTo(FdBaitSpot(plan), 10);
-			FdFight(mo, 1200);
+			// (the open front, plan 10 on: north along the west wall, and no shot on the way: a shot wakes them)
+			if (plan >= 10 && mo.pos.y < 660 && mo.pos.x < 5400) FdGoTo((5056, 700), 40);
+			else FdGoTo(FdBaitSpot(plan), 10);
+			if (plan >= 10) FdFight(mo, 260);
+			else FdFight(mo, 1200);
 			if (pr.Under(mo) && !fdBaitIn) { fdBaitIn = o; FdLog(String.Format("the bait is under the press at o=%d health=%d", o, mo.health)); }
 			if (FdThere(mo, FdBaitSpot(plan), 20)) FdTo(13, o);
 		}
@@ -720,7 +742,7 @@ extend class AjarTimeHandler
 			FdBaitFight(mo, plan);
 			fdUnderMax = max(fdUnderMax, UnderPress(pr, -1));
 			if (o % 35 == 0) FdLog(String.Format("holding: %d under the press (%d on the demo), health %d", UnderPress(pr, -1), UnderPress(pr, 1), mo.health));
-			if (mo.health <= FD_LEAVE_HP) FdTo(14, o);
+			if (mo.health <= (plan >= 10 ? 15 : FD_LEAVE_HP)) FdTo(14, o);      // (plan 10: leaving gives no less than dying)
 		}
 		if (fdPhase == 14)
 		{
@@ -785,13 +807,22 @@ extend class AjarTimeHandler
 			int len = demo ? demo.len : 0;
 			bool up = PressUp(pr);
 			bool last = Demoing() && o >= len - 40 && o <= len - 28;
-			bool early = Demoing() && under >= 8 && o + 34 + 139 + 34 <= len;
-			if (fdThenBait)
+			// (plan 10: the earlier self's time may be nearly over when the lever is reached: pull late, as
+			// long as some are under; they wake only when it is over, and the press is down 34 after the pull)
+			if (plan >= 10) last = Demoing() && o >= len - 24 && o <= len - 4;
+			bool early = Demoing() && under >= FdEarly(plan) && o + 34 + 139 + 34 <= len;
+			if (fdThenBait && plan >= 10)
+			{
+				// the open front: the pull at the last moment, when the most are under, then down into the
+				// chamber once the press is up again (phase 25 waits in the hall till then)
+				if (o >= len - 2 && fdPhase == 24 && !fdPullPending) { FdTo(25, o); return; }
+			}
+			else if (fdThenBait)
 			{
 				// it will be the bait next: the last pull early enough that the press is up when it walks in
 				int go = len - FD_BAIT_LEAD;
 				last = Demoing() && o >= go - 100 && o <= go - 80;
-				early = Demoing() && under >= 8 && o + 139 <= go - 100;
+				early = Demoing() && under >= FdEarly(plan) && o + 139 <= go - 100;
 				if (o >= go && fdPhase == 24) { FdTo(25, o); return; }
 			}
 			bool after = !Demoing() && UnderPress(pr, 0) >= 3;
@@ -802,7 +833,8 @@ extend class AjarTimeHandler
 				if (FdPull(mo, sw))
 				{
 					fdPulls++;
-					fdPullO.Push(o); fdPullUnder.Push(under); fdPullKill0 = mo.player.killcount;
+					while (fdPullKills.Size() < fdPullO.Size()) fdPullKills.Push(-1);
+						fdPullO.Push(o); fdPullUnder.Push(under); fdPullT.Push(fdT); fdPullG.Push(takes.Size());
 					FdLog(String.Format("pull %d at o=%d (demo %d): %d on the demo under the press, %d awake", fdPulls, o, len, under, UnderPress(pr, 0)));
 					fdPullPending = 0;
 				}
@@ -813,11 +845,6 @@ extend class AjarTimeHandler
 				fdAim = gd; fdShoot = gd != null;
 				if (gd) FdChoose(mo, gd);
 				else { fdFace = true; fdFaceAng = 90; }
-			}
-			if (fdPullO.Size() > fdPullKills.Size() && o == fdPullO[fdPullO.Size() - 1] + 70)
-			{
-				fdPullKills.Push(mo.player.killcount - fdPullKill0);
-				FdLog(String.Format("pull %d killed %d (victims %d)", fdPullKills.Size(), mo.player.killcount - fdPullKill0, pr.victims.Size()));
 			}
 			if (Demoing()) FdSay("Pull when the chamber is full.", "The press is ready again four seconds after a pull.");
 			else { FdSay("The earlier you is gone, and they are awake.", "The hall's monsters cannot climb in here."); FdTo(26, o); }
@@ -863,7 +890,7 @@ extend class AjarTimeHandler
 	void FdCycle(PlayerPawn mo, int t)
 	{
 		int kills = 0;
-		for (int i = fdCyclePull0; i < fdPullKills.Size(); i++) kills += fdPullKills[i];
+		for (int i = fdCyclePull0; i < fdPullKills.Size(); i++) kills += max(fdPullKills[i], 0);
 		FdLog(String.Format("time through %d: %d goes in %d s, %d pulls killing %d, at fewest %d left",
 			fdAnew, fdGoSeen, (t - fdCycleT) / 35, fdPulls - fdCyclePull0, kills, fdCycleLow));
 		if (fdAnew == 1)
