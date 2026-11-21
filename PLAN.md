@@ -6893,3 +6893,72 @@ of plate.zs and time.zs (the zone contract and `AjarGhost`) say so.
   start); the sounds (the tests run with `-nosound`); several copies touched
   in one tic (the first in go order counts).
 - **Not played by hand.**
+
+## MAP16: the way to the night room was shut by a platform (fixed 2026-11-21)
+
+`tools/map_institute6.py` (the test hall's south-east platform and three of
+its monsters, a phrase of the docstring), `src/zscript/map16.zs` (the
+walkthrough's last stretch, one view), `tools/smoke_MAP16_1.cfg` and
+`_2.cfg` (longer). **Not played by hand.**
+
+**What Vadim found** (2026-11-21, playing): in the test hall with VIOLET and
+no way on. The corridor to the night room, `rect(1232, -1840, 1440, -1792)`
+on the top floor (384), opens off the hall's east wall at its south end, and
+the hall's south-east platform (64 high) stood right in front of that mouth,
+`(1104, -1840, 1232, -1776)`. The level has no jumping and a step is 24 at
+most: nobody got onto the platform from the hall floor, nor back onto it from
+the corridor. So VIOLET could not be carried to the brass frame, and whoever
+came into the night room by VIOLET's far side could not get out to the hatch.
+The PUZZLE graph had both walks (`test`-`night` and back), so the solver was
+happy.
+
+**Why no check caught it**: the walkthrough posed the player from the test
+hall straight into the night room (`Pose(mo, 1600, -1648, ...)`), and
+`itemcheck.py` seeds its walk from every line with an id, so the corridor
+counted as reached from the night room's frame. Nothing walked that stretch.
+
+**The change**: the platform moved 64 north, to `(1104, -1776, 1232, -1712)`;
+the cell in front of the mouth is plain hall floor and the corridor opens at
+floor level both ways (checked in the built map: the line (1232,-1840)-(1232,
+-1792) has floor 384 on both sides). The north-east platform stays. The
+revenant on it went with it, (1168, -1808) to (1168, -1744); the hell knight
+that would have hung over its new edge, (1150, -1720), stands on the hall
+floor at (1040, -1760), and the imp beside it moved 10 south to
+(1040, -1810) to keep clear of it. Same monsters, same kinds, nothing heavy
+left the hall. `fitted()` already had grid lines at -1776 and -1712, so no
+new cuts.
+
+**The walkthrough** now walks it: from the hall floor west of the mouth,
+(1060, -1816) facing east, 30 tics into the corridor
+(`intoTheCorridorOnFoot`), turned round, 30 tics west back onto the hall
+floor (`backOutOfTheCorridor`: the way back was shut too), turned again, 36
+tics east to the corridor's far end (`inTheCorridorAgain`, x 1376..1440),
+turned north and 14 tics through the gap into the night room
+(`intoTheNightRoomOnFoot`); only then the step at the frame as before. Each
+turn is a `Pose` at the spot the player has reached (the last one snaps x to
+1408, from about 1401). `smoke_MAP16_1.cfg` runs 1660 tics (was 1460).
+
+**Checks**: mapcheck 308 sectors, 0 problems; thingcheck 0; itemcheck 0.
+Full `./build.sh`: passes, every level solvable with 0 stuck; MAP16 **10
+door actions, 9529 states, 0 stuck**, as before.
+
+**Tests**:
+- `MAP=MAP16 tools/smoke.sh` (walkthrough): 48 checks (44 before, plus
+  `intoTheCorridorOnFoot`, `backOutOfTheCorridor`, `inTheCorridorAgain`,
+  `intoTheNightRoomOnFoot`), all pass, out by the brass frame
+  (`levelExited`); twice. (Counted as distinct names; the log repeats its
+  first part, so the raw count of `=1` lines is 60.) The first try failed
+  `inTheCorridorAgain`: 30 tics east from where the walk back had stopped
+  ended at x 1364, short of the box; 36 tics end at 1401.
+- `MAP=MAP16 MODE=3 TIMEOUT=1000`: all pass (45 check lines, 38 names: the
+  second round repeats seven), to phase 15 at tic 6125; once.
+- `MAP=MAP16 MODE=2 EXTRA=-nomonsters`: 22 views (21 before). New, view 20:
+  from the hall floor at (980, -1790) facing 355, the moved platform on the
+  left, the corridor running east from the hall's south-east corner at floor
+  level, the walls over the mouth and behind the platform textured as the
+  rest. `smoke_MAP16_2.cfg` takes one more screenshot.
+
+**Open (not done)**: other levels' walkthroughs may also pose the player over
+a stretch nobody walks, as this one did; a check of that kind (for each
+`walk` edge in a PUZZLE graph, a path on foot in the geometry, not seeded
+from frames) is not written.
