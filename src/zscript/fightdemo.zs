@@ -506,6 +506,7 @@ extend class AjarTimeHandler
 	int fdGoStart;                  // fdT at the start of this go
 	int fdBaitIn, fdBaitOut, fdBaitHp, fdLeverAt, fdPulls, fdWon, fdWonGo;
 	int fdUnderMax;
+	int fdCycleT, fdCycleLow, fdCyclePull0;   // this time through the four goes
 	Array<int> fdPullO, fdPullUnder, fdPullKills;
 	int fdPullKill0, fdPullPending;
 	int fdRole;                     // from a box: 1 the lever, 2 the bait
@@ -528,7 +529,7 @@ extend class AjarTimeHandler
 		int t = fdT++;
 		if (mo.player.cheats & (CF_GODMODE | CF_GODMODE2 | CF_BUDDHA | CF_BUDDHA2 | CF_NOCLIP | CF_NOCLIP2) || mo.bInvulnerable
 			|| mo.FindInventory("PowerInvulnerable")) fdBad = true;
-		if (t == 2) Go(mo, 4872, 100, 0, 90);          // into room 3's lobby: the rooms before are left, and over
+		if (t == 2) { Go(mo, 4872, 100, 0, 90); fdCycleLow = 1000; }   // into room 3's lobby: the rooms before are left, and over
 		if (t < 3) return;
 		if (fdWon)
 		{
@@ -552,6 +553,7 @@ extend class AjarTimeHandler
 			if (g < fdGoSeen)
 			{
 				fdAnew++;
+				FdCycle(mo, t);
 				FdLog(String.Format("the fight began anew (%d)", fdAnew));
 			}
 			else if (g > 1)
@@ -570,14 +572,7 @@ extend class AjarTimeHandler
 			fdPullPending = 0;
 		}
 		FdLook(mo);
-		if (g == 1 && o > 0 && o <= 90 && o % 10 == 0 && FdPlanKnob() >= 7)
-		{
-			string near = "";
-			for (int i = 0; i < fdMon.Size(); i++)
-				if (mo.Distance2D(fdMon[i]) < 450) near = near .. String.Format(" %s(%d,%d)", fdMon[i].GetClassName(), fdMon[i].pos.x, fdMon[i].pos.y);
-			FdLog(String.Format("near at o=%d me (%d,%d) v=%.1f wish (%.1f,%.1f) path %d:%s", o, mo.pos.x, mo.pos.y, mo.vel.xy.Length(),
-				fdWeaveDir.x, fdWeaveDir.y, fdPx.Size(), near));
-		}
+		if (o > 10) fdCycleLow = min(fdCycleLow, Left());      // (the monsters are back a few tics into a go)
 		FdRoom3(mo, g, o);
 		FdBody(mo);
 		if (t % 35 == 0)
@@ -624,7 +619,12 @@ extend class AjarTimeHandler
 	// From a box: 20 in the box; the lever: 21 to the shutter, 22 up the stairs, 24 at the lever, 26 after
 	// the demo, in the wing; the bait from a box: 31 to the chamber past them on the demo, 32 waiting on
 	// the plate till the demo is over, then 13. 90 no plan.
-	int FdPlanKnob() { CVar c = CVar.FindCVar("fd_plan"); return c ? c.GetInt() : 0; }
+	// The plan played is 7: go 1 runs for the chamber, a bait from a box, the lever's self then the
+	// next bait. The others tried (PLAN.md has their numbers) are kept for whoever goes on with it:
+	// +set fd_plan N. 0, 1, 4: other runs for the chamber; 2, 3, 5, 6, 9: go 1 holds the lobby
+	// (3, 4 the bait on the cage's plate, 5 and 8 by door 3, else the screen's plate; 3 and up
+	// shoot only arch-viles and what is close while the bait; 7 and up: the lever's self is the next bait).
+	int FdPlanKnob() { CVar c = CVar.FindCVar("fd_plan"); return c ? c.GetInt() : 7; }
 
 	// was earlier self i under the press at any tic (from, to: its first and last such tic)?
 	int, int FdUnderSpan(int i)
@@ -856,6 +856,24 @@ extend class AjarTimeHandler
 			if (!Demoing()) FdTo(13, o);
 		}
 		if (fdPhase == 90 && fdPhaseO == o) FdLog("no plan for this state");
+	}
+
+	// all four goes spent and the fight is as it was at first: what this time through did, and the
+	// smoke test's checks after the first (it is not won: see PLAN.md, "the fight as fought")
+	void FdCycle(PlayerPawn mo, int t)
+	{
+		int kills = 0;
+		for (int i = fdCyclePull0; i < fdPullKills.Size(); i++) kills += fdPullKills[i];
+		FdLog(String.Format("time through %d: %d goes in %d s, %d pulls killing %d, at fewest %d left",
+			fdAnew, fdGoSeen, (t - fdCycleT) / 35, fdPulls - fdCyclePull0, kills, fdCycleLow));
+		if (fdAnew == 1)
+		{
+			FdCheck("honest", !fdBad);
+			FdCheck("goes4", fdGoSeen == BoxCount(3) + 1);
+			FdCheck("pulled", fdPulls > 0);
+			FdCheck("won3", won.Find(3) < won.Size());
+		}
+		fdCycleT = t; fdCycleLow = 1000; fdCyclePull0 = fdPulls;
 	}
 
 	void FdReport(PlayerPawn mo)
