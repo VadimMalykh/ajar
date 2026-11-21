@@ -7607,3 +7607,169 @@ only where it holds is wider, and `parted` is cleared in more places.
 - The touch in a fight of goes that has been won is tested only in PRESS
   (MODE=4); MAP32's rooms 3 and 4 and SHUT's room B only by their
   `noParadox` checks.
+
+## The paradox: a bigger end (built 2026-11-21)
+
+Vadim: "can we make universe explosion (when I touch my past self) more
+epic?" Agreed with him: about six seconds from the touch, in four parts.
+What does not change: nothing warns before the touch; the player is
+really dead at the tic of the touch, as `EndUniverse` did it (every check
+at that tic stands); from that tic nothing of the room or the fight runs;
+USE begins the level again as after any death. Everything is in
+paradox.zs, every time and size a constant at its top (`PDX_...`), and
+only the paradox's own random numbers (`AjarParadox`) are drawn.
+
+- **0 to `PDX_HOLD` (18 tics): the held breath.**
+  - The room stands dead still: every thing of it (a monster, living or
+    dead, awake or on the demo; a copy; a missile; a body; a thing lying
+    about) whose middle is in one of the fight's zones is held by hand
+    each tic (`ParadoxHold`): put back where it was, its speed nought, its
+    `tics` -1 so that no state of it runs (no step, no attack, no
+    animation). A missile fired at the touch is taken in too. The level is
+    not frozen (`level.SetFrozen` is not used), so the dead player's USE
+    works as ever: PRESS MODE=5 presses it and the level begins again
+    (`theLevelAgain`). Things stay held until the ring takes them.
+  - The body and the touched copy are not seen: the body is made
+    invisible, the copy is gone (as before). Where they stood are two white
+    shapes of the player (`AjarParadoxShape`: their sprites at the touch,
+    "AddStencil" white, bright, flickering between 0.45 and 0.9).
+  - Every moment of the player's in the room at once: every
+    `PDX_ECHO_EVERY` (8) tics of every take's record (the earlier selves'
+    and this go's, as far as it went) where that self was in the hall, a
+    pale shape of the player (walking frames, alpha about 0.5: at 0.3
+    they were not seen on PLATE's lit walls; fading as the square from 208
+    to 48 from the camera, since the point they fall into is right before
+    the eye and 250 of them there made the screen white before the blast),
+    at most
+    `PDX_ECHOES` (250, thinned evenly), appearing over the first
+    `PDX_ECHO_IN` (6) tics; all fall into the point of touch along a cube
+    (slow, then fast), arriving at `PDX_HOLD`, where they are gone.
+  - A white flash of 0.6 gone in 8 tics, the BFG's charge at pitch 0.8,
+    heard everywhere. No blast yet.
+  - The view is taken at the touch by a camera at the player's eye
+    (`AjarParadoxCam`, its angle and pitch), which holds still: so the
+    dead player's view does not drop and tilt meanwhile.
+- **`PDX_HOLD`: the blast.** Full white, fading (as the square of what is
+  left) over `PDX_WHITE` (60) tics; the BFG's, the rocket's and the
+  barrel's blasts, everywhere, and `PDX_ECHO_SOUND` (5) tics later the
+  same at half pitch; a shake of 12 (twice the old) for 90 tics, falling
+  off; the two shapes flare into one ball of light (`AjarParadoxBall`,
+  sprite AJPB, scale 0.6 to 3 in 10 tics, fading) and are gone.
+  - **The camera** pulls back and up over `PDX_CAM` (40) tics (easing
+    out), turning from the player's view to look at the point of touch
+    (32 above its floor). Where to, it works out at the touch: of ten ways
+    (the player's side of the touch first, then 30, 60, 90, 135 and 180
+    degrees away from it either way) and every 32 back up to
+    `PDX_CAM_BACK` (384), the farthest back (a little less for a way
+    farther from the player's side) where it is in one of the fight's
+    zones, under the ceiling, no higher above the touch than it is back
+    (at most `PDX_CAM_UP`, 176: the touch is seen from no steeper than
+    about 45 degrees), with a clear line to the touch and from the eye
+    (`ParadoxClear`: every 16 units in the level, between a floor and a
+    ceiling). Where none is found it stays at the eye (it only rises when
+    it cannot go back). In PRESS the player's side was a wall 111 away: it
+    went 384 south instead. The white, the black and the message are drawn
+    in `RenderOverlay` (`Screen.Dim`, `Screen.DrawText`): a player's blend
+    is not shown through another camera, and a midprint is drawn under the
+    overlay (so the black hid it). Seen through the camera in the
+    screenshots: the white, the message; the shake is not seen in a still.
+- **`PDX_HOLD` to `PDX_HOLD + PDX_WAVE` (45): the wave.** A ring of light
+  (`AjarParadoxRing`, a flat sprite AJPR painted in tools/gfx_time.py,
+  `paradox()`: 256 across, a soft bright edge at radius 112 with a pale
+  wake inside) on the floor under the touch, scaled each tic to run out to
+  the farthest corner of the room's zones (`paradoxReach`) in 45 tics,
+  then fading in 12. What it reaches goes to light and is gone: every held
+  thing whose middle it passes (at its end, all that are left), its own
+  shape white and additive, rising and fading as `AjarSnatch`
+  (`AjarParadoxGone`), the thing destroyed (a copy also out of `ghosts`).
+  Not the room's fixtures: doors, frames, plates, lamps, levers, the
+  look's things and other decoration are not held and stay. At most
+  `PDX_GONE_MAX` (160) shapes at once; past that, things just go.
+  Explosions in three waves (the rocket's and, one in three, the barrel's
+  frames, `AjarParadoxBarrel`): with the ring (3 to 10 a tic, sizes 1.5 to
+  3), again `PDX_WAVE2` (20) tics behind it (3 to 7, 1.2 to 2.4), and
+  columns of two or three, 56 apart, up from the floor to 24 under the
+  ceiling, at random places within what the ring has passed (three a tic
+  at first, fewer, none after `PDX_BOOM_END`, 110). At most
+  `PDX_BOOM_PER_TIC` (22) a tic. A rocket's blast every 4 tics, fading.
+- **The dark.** For `PDX_FLICKER` (30) tics after the blast each of the
+  room's sectors (whose middle is in its zones) takes a light between
+  `PDX_DIM` (40) and 255 each tic; then, from when the ring passed its
+  middle (or the end of the flicker), it sinks from its own light to
+  `PDX_LOW` (16) over `PDX_SINK` (40) tics. From `PDX_BLACK_AT` (120)
+  after the blast the screen goes black over `PDX_BLACK` (50) and stays.
+  - MAP32's look (works.zs) stands down once `paradox` is set: its
+    WorldTick returns at once, so it sets no light, texture or sprite and
+    moves nothing more (its header says so). Its dynamic lights stay as
+    they were, and the textures' own ANIMDEFS frames run on.
+- **The message**: the same three red lines, now drawn by the paradox
+  ("PARADOX" in the big font): at the blast and again `PARADOX_AGAIN` (90)
+  tics later, each staying 105 tics and fading in 35; once the screen is
+  black (`PDX_HOLD + 170`), once more with a fourth line, "Press USE to
+  begin again.", which stays. Any hint on the screen at the touch is
+  cleared. `paradoxSaid` counts them (0 at the touch now).
+- **The tests.** Every check at the touch tic stands, but for the message:
+  it is said at the blast now, so `touchIsParadox` (PLATE 5, its value at
+  the touch) and `touchInFightIsParadox` (PRESS 5) ask `paradoxSaid == 0`
+  there (was 1). No check asserted that the other copies stand where they
+  were (only the old header said so: now they go to light). The later
+  checks stand as they were (`touchIsParadox` at touch + 70 in PLATE 5:
+  still dead, where it fell, takes and `ot` as at the touch, said;
+  `notRescued` at touch + 70 in PRESS 5). New:
+  - `allGoneToLight` (PLATE 5, PRESS 5; `allGoneToLightAfterWin` in
+    PRESS 4) at `PDX_HOLD + 60`: no living monster and no copy left whose
+    middle is in the room's zones (`ParadoxAllGone`), still dead.
+  - `theDark` (PLATE 5, PRESS 5; `theDarkAfterWin` in PRESS 4) at
+    `PDX_HOLD + 180`: the overlay black and every one of the room's
+    sectors at `PDX_LOW` (`ParadoxDark`), still dead in the hall, `ot` as
+    at the touch; in PRESS 5 the message said three times.
+  - `theLevelAgain` (PRESS 5): its cfg presses USE (`+use`) at
+    `PDX_HOLD + 201`; the level begins again, and at its tic 5 (the game's
+    `gametic` far ahead of the level's) no paradox, alive, seen, the view
+    the player's own.
+  - Under ajar_autotest the paradox writes `AJARTEST info pdx n` every tic
+    n after the touch, and the cfgs `echo SHOT pdx n` before each
+    screenshot: the screenshots of PLATE 5 and PRESS 5 are at n = 5,
+    `PDX_HOLD - 1`, `+ 3`, `+ 20`, `+ 50`, `+ 100` and `+ 175` (5, 17,
+    21, 38, 68, 118, 193), placed by those lines.
+
+- **The runs on the final build** (exact result lines only): PLATE 3
+  (23), 4 (6), 5 (7); PRESS 3 (15), 4 (10), 5 (7); TWOKEY 3 (8); SHUT 3
+  (21); MAP32 MODE=3 (78), MODE=7 (21): every check 1, no script error;
+  a paradox only in PLATE 5, PRESS 4 and PRESS 5. In those three the
+  room held 0, 10 and 10 things at the touch (copies, the one imp, bodies),
+  the pale shapes were 30, 23 and 32 (their rooms' records are short), the
+  room 13 and 18 sectors, the ring ran 1202 and 1320; the camera went to
+  (506, 482, 176) in PLATE (back on the player's side) and (915, 316,
+  176) in PRESS (384 south: the player's side was a wall).
+- **MAP32 with the look**, a scratch run only (not committed): MAP32
+  MODE=8 with its go 3 put back on the second self at the east lever
+  (where the dry run of "The paradox in fights" found a touch). The touch came at t=614 in fight 4; the room held 41
+  things, 76 pale shapes fell in, 71 sectors went dark over a reach of
+  1714, the camera went 384 back and up to (7488, 1340, 80) under that
+  room's low ceiling; all gone to light and dark (the look stood down: its
+  sectors sank like the others), no script error, and at t=1225 the screen
+  was still black with the four lines.
+
+### Not tested / not played by hand
+
+- None of it has been played by hand or heard: the smoke runs have no
+  sound (`-nosound`), so the charge, the blast, its deep echo at half
+  pitch and the fading rocket blasts are untested; the shake is not seen
+  in a still.
+- The timing and the sizes are as agreed, judged only from screenshots
+  of PLATE 5 and PRESS 5 (and one MAP32 run): whether six seconds feel
+  long or short, the ring's speed, the explosions' sizes near the camera
+  (in a small room a column can stand right in front of it).
+- MAP31's halls (a big room with 90 or more monsters on the demo): the
+  caps were not tried there, nor how it runs with forty monsters awake.
+- A paradox with monsters awake and missiles in the air: held still in
+  the code, not seen in a test (in the tests the room is empty or holds
+  one imp).
+- What the ring takes is by kind (monsters, copies, missiles, bodies,
+  pickups): a decoration of a map that is neither stays, and so do the
+  look's lights (their dynamic lights shine on in the dark).
+- A plate that a copy or a monster stood on is let go when the ring takes
+  it, and a door may move then (fixtures run on; the level ends anyway).
+- USE before the end (during the sequence) begins the level again at
+  once, as after any death; tried only after the dark.
