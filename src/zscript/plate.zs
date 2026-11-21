@@ -31,7 +31,8 @@
 //  * the player must not touch an earlier self (their bodies overlapping) in
 //    the hall, once they have been clear of it in this go: that is a time
 //    paradox, the player is dead for real and the level begins again
-//    (paradox.zs; not in a fight that has become a room of goes).
+//    (paradox.zs; so too in a fight that has become a room of goes, and in
+//    an open fight).
 // The room is over when the player is out of its zones by a way that is not
 // a time door: its time doors shut, the earlier selves are gone (what they
 // hold is left where they stood), and it does not begin again. A plate on a

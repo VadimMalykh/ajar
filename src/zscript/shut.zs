@@ -721,7 +721,10 @@ extend class AjarTimeHandler
 		// --- go 2: at the firing spot; when the earlier self opens it, fire ---
 		if (shutStep == 4 && open && g == 2)
 		{
-			if (o == 3) { Go(mo, FIRE_X, FIRE_Y, 0, 90); shutOut0 = penOut.Size(); }
+			// (at the firing spot once the first self has left it for the plate, at 10: put there at 3, on
+			// the first self who stands there till then, it would touch it, paradox.zs)
+			if (o == 3) shutOut0 = penOut.Size();
+			if (o == 12) Go(mo, FIRE_X, FIRE_Y, 0, 90);
 			// three rockets, level, at a monster each: enough to hurt (and wake), not to win
 			// (the fight must last past the earlier self's step off)
 			if (o >= 116 && o <= 160 && o % 12 == 8 && sh.IsOpen() && shutShots < 3) { ShootLevel(mo, shutShots * 2); shutShots++; }
@@ -746,6 +749,7 @@ extend class AjarTimeHandler
 				Check("putClearOfIt", mo.pos.y < 1100 - mo.radius && mo.pos.y > 1000 && mo.health > 0 && mo.TestMobjLocation());
 				Console.Printf("AJARTEST info left=%d out=%d", Left(), OutOfPen());
 				Check("nothingWalksOut", Left() > 0 && !OutOfPen());
+				Check("noParadox", !paradoxes && !paradox);      // paradox.zs
 				shutStep = 5;
 			}
 		}
@@ -822,6 +826,7 @@ extend class AjarTimeHandler
 		if (shutStep == 2 && goes)
 		{
 			Check("won", won.Find(2) < won.Size() && goesWon && !open && !mixed && !Left() && takes.Size() == 1 && fight == 2);
+			Check("noParadoxFight", !paradoxes && !paradox);      // paradox.zs
 			shutStep = 3;
 		}
 		// --- after the win: the lever, and under the press ---
@@ -836,6 +841,7 @@ extend class AjarTimeHandler
 			Console.Printf("AJARTEST info health=%d at=%d b=%d under=%d press=%d", mo.health, at, b, pr.Under(mo), pr.phase);
 			Check("pressPutsMeInTheBox", mo.health == RESCUE_HEALTH && at == 1 && b == 1 && k == 2 && !pr.Under(mo) && goes && takes.Size() == 2
 				&& mo.player.playerstate == PST_LIVE);
+			Check("noParadox", !paradoxes && !paradox);
 			shutStep = 4;
 		}
 	}

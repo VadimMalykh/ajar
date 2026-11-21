@@ -6771,6 +6771,8 @@ of plate.zs and time.zs (the zone contract and `AjarGhost`) say so.
   SHUT's room A. Not in an open fight (MAP31), not in a fight of goes
   (`args[4]` 3: MAP32's rooms 3 and 4, SHUT's room B, PRESS), and not after
   such a fight is won and has become a room of goes (`goesWon`).
+  Widened on 2026-11-21 to fights and won fights: see "The paradox in
+  fights (built 2026-11-21)" at the end.
 - **Touching** is the bodies overlapping: |dx| and |dy| both less than the
   two radii (16 + 16) and the heights overlapping (`Touching`). Nothing comes
   before it: no warning, sound, glare or hint.
@@ -7422,3 +7424,186 @@ page and kept nowhere else: the tour, `MAP=MAP32 MODE=2`, makes them again).
 The session looked at both contact sheets before merging: the seven leaf
 colours and the lamps read against the steel in every room. Merged with the
 look on by default on 2026-11-21; Vadim has not yet seen it in the game.
+
+## The paradox in fights (built 2026-11-21)
+
+Agreed with Vadim: "I cannot touch past myself" holds in fights too, not
+only in a room of goes. The rule of "The paradox: touching an earlier self
+ends the universe" above is unchanged in what it counts and what it does;
+only where it holds is wider, and `parted` is cleared in more places.
+
+- **Where** (`ParadoxHere`, paradox.zs): wherever an earlier self walks.
+  Any room of goes (`goes`), now including a fight of goes that has been
+  won and become a room of goes (`goesWon`: MAP32's rooms 3 and 4, SHUT's
+  room B and PRESS after their win), and any open fight while it is live
+  (`open && phase == LIVE`): MAP31's halls 2 and 3 (zone `args[4]` 1) and
+  the fights of goes before the win (`args[4]` 3: MAP32's rooms 3 and 4,
+  SHUT's room B, PRESS). A closed fight watched from a box has no earlier
+  selves and nothing changes there.
+- **What counts**, as before: the bodies overlapping (`Touching`); the
+  copy's record still running (`ot` less than its take's length: a copy
+  whose time is up never counts, nor one that was killed then and now runs
+  to its door at `GHOST_RUN`); the copy's middle in the hall (this fight,
+  box 0) and the player's middle in the hall; the player alive; and
+  `parted[i]`: the player has been clear of that copy since the go began.
+  Nothing is shown or heard before it.
+- **`parted` is cleared** whenever a go begins or the selves jump: in
+  `NewTake` (time.zs), which every go of an open fight goes through
+  (`Retake`, `Resume` after a spare box, `Begin` and so begin anew,
+  `WindTo`, whose `MixWound` runs after it), as `GoTake` does in a room of
+  goes; and in `GoOnAs` once the player is put where the earlier self stood
+  (going on as it: whoever overlaps that spot then is safe until they
+  part). `MixGoOnAs` runs inside `GoOnAs` and needs nothing of its own. Not
+  cleared: a frame or a Pair that shuts and puts the player a step clear
+  (`StandClear`, 26 units), as in a room of goes before.
+- **The hook**: in `WorldTick`'s live open-fight branch, `ParadoxWatch`
+  right after `PlayGhosts` (the copies are where they are this tic), as
+  `GoesTick` does. If it ended the universe nothing more of the fight is
+  done in that tic (no `GhostDoors`, `GhostPresses`, `PlayDemo`,
+  `RecordDemo`, `RecordFx`, no `ot++`, no `Cues`, `Win` or `Hunt`, no
+  `Table`); `Tests` still runs. From the next tic `WorldTick` does only
+  `ParadoxTick` and the tests, as before.
+- **The death is real in a fight too**: `EndUniverse` as it was (it takes
+  off god mode, buddha and the fight's own `bBuddha`, and forces the
+  damage). No rescue into a box, no going on as an earlier self, no begin
+  anew, no spare box, no "the show is over": trips, boxes and takes stay as
+  they were, and the level begins again when the player presses USE.
+  Monsters that are awake go on moving (accepted; nothing is frozen). No
+  new message or hint: the PARADOX message as it is.
+- **The new test**: `MAP=PRESS MODE=5` (`PressParadoxScript` in goes.zs,
+  `tools/smoke_PRESS_5.cfg`, it quits at about tic 410, so there is no
+  `levelExited`). Go 1 kills every monster but the imp farthest from the
+  spot S (900, 700), in the press's end of the hall (so that the fight is
+  not won and the demo's crowd is not around S), stands on S from its tic 5
+  to 150 and goes out by time door 1, walking (not killed): `outByATimeDoor`
+  (go 2's tic 2: in box 1, one trip, the take not died, longer than 150,
+  one monster left). Go 2 is put 34 east of S at its tic 3 and stands:
+  `nearIsSafeInFight` at 100 (no paradox, alive, the copy there and not
+  touched, 34 apart, both in the hall, `parted[0]`, `at` 0, the fight's own
+  `bBuddha` on, the copy's record still running). Then it walks west at 4 a
+  tic and touches the copy at its tic 101: `touchInFightIsParadox` (at the
+  touch: `paradoxes` 1, the copy of go 1 touched, health 0 or less with god
+  mode on and `bBuddha` having been on, the copy gone, the message said
+  once, two takes, in the hall); `notRescued` 70 tics later (still dead,
+  in the hall where it fell, not in a box, `at` 0, trips and takes as at
+  the touch, `ot` stopped, counted once, the fight still open and live).
+  Screenshots 2 tics before the touch and 10, 22, 47 and 107 after it.
+- **After the win too**: `MAP=PRESS MODE=4` (`PressGoScript`) now goes on
+  after its last check: in go 3 the player steps into the hall at (800,
+  200), off both copies' ways, and everything is killed; the fight is won
+  (`noParadoxFight` at the won room's tic 2). In the room of goes it has
+  become, go 1 stands on S from 3 to 120 and goes out by time door 1; go 2
+  stands 34 east of it (`nearIsSafeAfterWin` at 60) and walks into it:
+  `touchAfterWinIsParadox`. The cfg waits 910 tics now (790).
+- **No-paradox checks** at the end of each fight of the walk-throughs where
+  earlier selves are in play: MAP32 MODE=3 `noParadox3` and `noParadox4`
+  (at `won3`, `won4`), MODE=5 `noParadoxAnew3` and `noParadoxAnew4` (at
+  `wonAfterAnew`), MODE=7 `noParadox7`, MODE=8 `noParadox8`, MODE=9
+  `noParadox9`; MAP31 MODE=3 `noParadox2` and `noParadox3` (halls 2 and 3,
+  at `won2`, `won3`), MODE=6 and MODE=7 `noParadox`; PRESS MODE=3
+  `noParadoxFight` (at `won`) and `noParadox` (at `through`); SHUT MODE=3
+  `noParadox` (end of room B), MODE=4 `noParadoxFight` (at `won`) and
+  `noParadox` (at the end). Not in MAP32 MODE=4 and 6, MAP31 MODE=5, TWOKEY
+  and PLATE: no earlier self is in a fight there (the rooms of goes proper
+  were under the rule already).
+- **The walk-throughs** (the dry run). A temporary build in which every
+  touch in scope was only logged (`AJARTEST info paradox dry ...`, the
+  copy's `parted` set back so that a long overlap is said once) and nothing
+  was done, run over MAP32 MODE=3 to 9, MAP31 MODE=3, 5, 6 and 7, PRESS 3
+  and 4, SHUT 3 and 4, TWOKEY 3, PLATE 3 and 4. Five touches in four
+  places, all where a script puts the present self (`Go`, a jump) onto the
+  spot an earlier self holds at that moment; each was changed in the
+  present self's place or time only, and the dry switch was then taken
+  out:
+  - SHUT MODE=3, room B, go 2 at its tic 3: put on the firing spot
+    (1092, 80) where the first self stands from 3 to 9 before it goes to
+    the plate. Now put there at 12 (`shutOut0` still taken at 3).
+  - MAP32 MODE=8, room 4, go 3 at its tic 3: put at the east lever
+    (7872, 1340), where the second self stands till `KS_P + 180` (it pulls
+    late at `KS_P + 100`). Now 40 west of it, (7832, 1340), still within
+    reach of the lever (55 from it); the pull at `KS_P + 30` as before.
+  - MAP31 MODE=3, hall 3, go 3 (begun again after the spare box) at its
+    tics 8 and 42: the player was put at (cx, 40), 20 from (cx, 60) where
+    the first self stands early in its go and where the second self stood
+    as it (it went on as the first at that spot). Now at (cx + 150, 40)
+    from that moment (the snatch it leaves when killed is still checked at
+    (cx, 40)).
+  - MAP31 MODE=6, hall 2, go 3 at its tic 300: put at (cx, 300), where the
+    second self stands from its tic 250 till it is killed at 720. Now
+    (cx + 100, 300); going on as an earlier self at 350 is as before.
+  - None in MAP32 MODE=3 to 7 and 9 (rooms 3 and 4 of MODE=3 included),
+    PRESS 3 and 4, SHUT 4, TWOKEY 3, PLATE 3 and 4, MAP31 MODE=5 and 7.
+  Nothing needed two selves on one spot at once.
+- **The bot** (fightdemo.zs, `MAP=MAP32 MODE=20`): it keeps off its
+  earlier selves as off a monster on the demo, and more:
+  - `FdLook` keeps `fdSelves`, the copies whose record runs and whose middle
+    is in the hall (`fdSelfGo`: whose take). `FdWeave` scores against them
+    with the weight of a monster on the demo (3); `FdBody` pushes off them
+    (keep 16 + 16 + 40) whether it walks or stands, off the nearest of the
+    places each will be in the next 6 tics (what it did is known: it was
+    this player).
+  - Its plan put two selves on one spot three times (found by three runs,
+    each a real paradox that ended the run): a bait from a box went to the
+    screen's plate while the earlier bait still held it (and, waiting 88
+    beside it, was walked into by that bait dodging about the plate); the
+    lever's self of go 4 came out of its box at go 2's lever self's very
+    tic and door mouth (both by door 1, both by the same rule: the shutter
+    opens when the first self is under the press); and it waited for the
+    lever on the landing where go 2's self walked to it. Now, by the
+    records (`FdBusy`: will an earlier self be within 72 of a place in the
+    next n tics): a bait waits beside the plate (`FdWaitSpot`: 96 to 288
+    east or south-east of it, in the chamber) where no earlier self will
+    be for two seconds, until none will be on the plate for one; the
+    lever's self does not step out of its box while an earlier self comes
+    out there within 30 tics; and it stands at the lever only while none
+    will be there for a second, else back along the landing, 80 to 480
+    west, where none will be for two (`FdLeverSpot`). The roles, the order
+    and the pulls' rules are as they were.
+  - Three runs of `MODE=20` on the final build: none touched an earlier
+    self and none won, as before (the runs end at the smoke's time, after
+    3, 4 and 3 times through: 4 goes each, 1 or 2 pulls killing 10 to 19,
+    at fewest 6 to 22 left).
+- **The runs on the final build** (no `x=0` line, no script error, unless
+  said): MAP32 MODE=3 (75 checks), 4, 5, 6 (no checks: it only shows), 7,
+  8, 9; MAP31 MODE=5, 6, 7; PRESS 3, 4 and 5; SHUT 3 and 4; TWOKEY 3;
+  PLATE 3, 4 and 5; TIME 3; TDOOR 3, 4 and 5; SHIFT 3 and 4. The paradox
+  is logged only where it is meant to be (PLATE 5, PRESS 4 and 5).
+  - TIME MODE=4 fails `followed` on main too, every time, and its other
+    three checks some of the times (on main too): not this change, whose
+    hall there has no earlier self.
+  - MAP31 MODE=3 `noneWakesAsIStepIn` (hall 3: back into the hall while
+    the last go plays, no monster on the demo may wake in 4 tics) stepped
+    in at (cx, 300), where the demo's crowd often is at that moment; one
+    that walks into the player wakes by the game's own rule, so it failed
+    on main 1 time in 4 and on this branch 6 times in 6 (why the lean, not
+    found). Made robust in the script only (`StepInSpot`, time.zs): of 36
+    spots cx - 400 to cx + 400 in front of the seats and in the walks
+    between their rows, on flat floor and off the earlier selves' records
+    for 10 tics, the one the demo's monsters stay farthest from over their
+    next 10 tics; the check also asks for 100 between the bodies' edges.
+    The walking-into check steps back to the same spot. Five runs: it
+    stepped in at (cx - 400, 120) each time, 257 to 274 clear, and passed.
+  - Two of the same five runs failed other checks of that mode, which
+    failed on main too: run 1 `aLastKillForEveryHall` and
+    `lastScenesOnScreen` (a hall's last kill not kept for the reel), run 5
+    `won3` (likely the race of the last kill burst at u 536 with the win,
+    looked at every 5 tics, and the check at 538). Not looked into.
+
+### Not tested / not played by hand
+
+- Nothing of this has been played by hand: the death in MAP31's halls and
+  in MAP32's rooms 3 and 4 before their win, how it looks and feels there
+  (the explosions spread through the fight's zones, which in MAP31 are a
+  whole hall), and whether a player who means no harm runs into an earlier
+  self in a crowd of the demo more often than is fair.
+- A frame or a Pair that shuts and puts the player a step clear
+  (`StandClear`, 26 units) may put them into a copy; `parted` is not
+  cleared there (as in a room of goes before). Not seen in any test.
+- Vadim's earlier idea, that a copy on MAP31's rewind plate should not
+  count, is not done ("what counts is unchanged").
+- Going on as an earlier self in a fight whose spot another copy holds
+  (`GoOnAs`): safe until they part, by `parted`; tested only as MAP31
+  MODE=3 and 6 walk it, not with a copy standing on that spot.
+- The touch in a fight of goes that has been won is tested only in PRESS
+  (MODE=4); MAP32's rooms 3 and 4 and SHUT's room B only by their
+  `noParadox` checks.

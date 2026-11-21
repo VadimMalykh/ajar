@@ -1,25 +1,35 @@
 // The paradox (PLAN.md, "The paradox: touching an earlier self ends the
-// universe"; the test MAP=PLATE MODE=5 tools/smoke.sh).
+// universe" and "The paradox in fights"; the tests MAP=PLATE MODE=5 and
+// MAP=PRESS MODE=5 tools/smoke.sh).
 //
-// In a room of goes proper (an AjarZone of a hall with args[4] 2: MAP32's
-// rooms 1, 2 and 5, the labs PLATE, TWOKEY and SHUT's room of goes; not an
-// open fight, not a fight of goes, not even one that has been won and become
-// a room of goes: ParadoxHere) the player who touches one of their earlier
-// selves (an AjarGhost) has made a time paradox, and this universe is over:
+// Wherever an earlier self (an AjarGhost) walks (ParadoxHere): in any room
+// of goes (an AjarZone of a hall with args[4] 2: MAP32's rooms 1, 2 and 5,
+// the labs PLATE, TWOKEY and SHUT's room of goes; and a fight of goes that
+// has been won and become a room of goes), and in any open fight while it is
+// live (args[4] 1, MAP31's; args[4] 3, the fights of goes: MAP32's rooms 3
+// and 4, SHUT's room B, PRESS), the player who touches one of their earlier
+// selves has made a time paradox, and this universe is over. (A closed
+// fight watched from a box has no earlier selves.)
 //  * touching is the bodies overlapping: the two boxes (radius 16 each) and
 //    their heights. Nothing is shown or heard before it;
 //  * a copy counts only while its go is still running (its record is not
-//    over) and it stands in the hall; nothing counts while the player is in
-//    the box. Every go begins with the player inside their copies (they all
-//    start in the box at the same tic), so a copy cannot be touched until
-//    the player has once been clear of it in this go (parted, kept per copy
-//    and cleared at the start of every go and by begin anew: GoTake). One
-//    who walks a copy's path with it and never parts from it is safe;
+//    over: one whose time is up, or that was killed then and now runs to its
+//    door, does not) and it stands in the hall; nothing counts while the
+//    player is in a box. In a room of goes every go begins with the player
+//    inside their copies (they all start in the box at the same tic), so a
+//    copy cannot be touched until the player has once been clear of it in
+//    this go (parted, kept per copy). It is cleared whenever a go begins
+//    (GoTake in a room; NewTake in a fight: Retake, Resume, Begin, begin
+//    anew, winding) and when the player goes on as an earlier self (GoOnAs:
+//    whoever overlaps the spot they are put on is safe until they part).
+//    One who walks a copy's path with it and never parts from it is safe;
 //  * the player is dead at once, really (through god mode, buddha, armour and
-//    powers: the damage is forced), and nothing of the room of goes runs any
-//    more (no rescue into the box, no going on as a copy, no beginning anew):
-//    the engine begins the level again as after any death. The touched copy
-//    is gone; the others stand where they were;
+//    powers: the damage is forced), and nothing of the room or the fight runs
+//    any more (no rescue into a box, no going on as a copy, no beginning
+//    anew, no spare box, no "the show is over"; trips, boxes and takes stay
+//    as they were; the monsters that are awake go on as they are): the
+//    engine begins the level again as after any death. The touched copy is
+//    gone; the others stand where they were;
 //  * what is seen and heard: a white flash over the whole screen, a loud
 //    blast, the screen shaking, and explosions that spread from the point of
 //    touch through the room's zones in PARADOX_SPREAD tics and go on all over
@@ -59,10 +69,15 @@ extend class AjarTimeHandler
 	const PARADOX_AGAIN = 90;   // the message is said again after so many tics...
 	const PARADOX_SAYS = 3;     // ... until it has been said so often
 
-	// Where the rule holds. Fights of goes and open fights may come later: here alone.
+	// Where the rule holds: wherever an earlier self walks. Any room of goes
+	// (`goes`: a room of goes proper, and a fight of goes that has been won
+	// and become one, goesWon), and any open fight while it is live (MAP31's
+	// open fights, and the fights of goes before they are won: MAP32's rooms
+	// 3 and 4, SHUT's room B, PRESS). Not a closed fight watched from a box:
+	// it has no earlier selves.
 	bool ParadoxHere()
 	{
-		return goes && !goesWon && goesFights.Find(fight) < goesFights.Size();
+		return goes || (open && phase == LIVE);
 	}
 
 	static bool Touching(Actor a, Actor b)
@@ -72,7 +87,8 @@ extend class AjarTimeHandler
 			&& a.pos.z < b.pos.z + b.height && b.pos.z < a.pos.z + a.height;
 	}
 
-	// Every tic of a room of goes, after the earlier selves are where they are (GoesTick).
+	// Every tic of a room of goes (GoesTick) and of a live open fight (WorldTick),
+	// after the earlier selves are where they are (PlayGhosts).
 	void ParadoxWatch(PlayerPawn mo)
 	{
 		if (paradox || !ParadoxHere() || mo.health <= 0) return;
@@ -175,7 +191,7 @@ extend class AjarTimeHandler
 	}
 
 	// Every tic once the universe is over: the explosions spread, and the
-	// message is said again. Nothing else of the room runs.
+	// message is said again. Nothing else of the room or the fight runs.
 	void ParadoxTick(PlayerPawn mo)
 	{
 		int t = level.maptime - paradoxTic;

@@ -579,6 +579,7 @@ extend class AjarTimeHandler
 			Check("laterGuards3", dsLaterGuards >= 1);
 			Check("noneInTheWing3", !dsHallInWing);
 			Check("won3", won.Find(3) < won.Size() && !open && !mixed && !Left() && goesWon);
+			Check("noParadox3", !paradoxes && !paradox);      // paradox.zs: no self touched an earlier one in the fight
 			dsStep = 4;
 			dsT = t;
 		}
@@ -727,6 +728,7 @@ extend class AjarTimeHandler
 		if (dsStep == 5 && goes && fight == 4)
 		{
 			Check("won4", won.Find(4) < won.Size() && !open && !mixed && !Left() && goesWon);
+			Check("noParadox4", !paradoxes && !paradox);
 			dsStep = 6;
 			dsT = t;
 		}
@@ -1288,6 +1290,7 @@ extend class AjarTimeHandler
 		{
 			Console.Printf("AJARTEST info screen plate steps=%d told=%d, cage plate steps=%d told=%d", sp.steps, sp.told, cp.steps, cp.told);
 			Check("saidOnce3", sp.steps >= 2 && sp.told == 1 && cp.steps >= 2 && cp.told == 1);
+			Check("noParadox7", !paradoxes && !paradox);      // paradox.zs: no self touched an earlier one
 			if (ttMark) ttMark.Destroy();
 			ttStep = 4;
 		}
@@ -1352,7 +1355,9 @@ extend class AjarTimeHandler
 		// go 3: the east lever within JOIN of the first self's: keyed; the second self's late pull finds it down
 		if (g == 3)
 		{
-			if (o == 3) Go(mo, 7872, 1340, F32, 90);
+			// (40 west of where the second self stands at the lever till KS_P + 180, and still within
+			// reach of it: on that spot it would touch it, paradox.zs)
+			if (o == 3) Go(mo, 7832, 1340, F32, 90);
 			if (o > 3 && o < KS_P + 30) mo.vel.xy = (0, 0);
 			if (o == KS_P + 30) { ke.Used(mo); ksKeyO = o; }
 			if (o == KS_P + 32) ksK31 = sh.keyed;
@@ -1399,6 +1404,7 @@ extend class AjarTimeHandler
 				Check("openedByMyEarlierSelves4", sh.IsOpen() && sh.keyed > 0 && kw.held && ke.held && mo.Distance2D(kw) > 500 && mo.Distance2D(ke) > 500
 					&& AllGhosts() >= 2);
 				Check("amberBeforeItOpens4", ksAmber && LampsShow(SHUT32, AjarLamp.GREEN));
+				Check("noParadox8", !paradoxes && !paradox);      // paradox.zs
 			}
 			if (o == keyAt + 60) Console.Printf("AJARTEST info go 4 at o=%d is t=%d (the screenshot is due)", o, t);
 		}
@@ -1643,6 +1649,7 @@ extend class AjarTimeHandler
 				Check("myEarlierSelfsShotsWakeNone3", none);
 				Check("hurtOnceNotTwice3", once && hurtAlive > 0 && below > 0);
 				Check("diedWhenItDied3", when && dead > 0);
+				Check("noParadox9", !paradoxes && !paradox);      // paradox.zs
 				gsStep = 2;
 			}
 		}
