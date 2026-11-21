@@ -6962,3 +6962,102 @@ door actions, 9529 states, 0 stuck**, as before.
 a stretch nobody walks, as this one did; a check of that kind (for each
 `walk` edge in a PUZZLE graph, a path on foot in the geometry, not seeded
 from frames) is not written.
+
+## MAP32 room 3: the fight as fought, a demonstration (2026-11-21)
+
+`DEMO=3 ./run.sh` puts a bot into room 3's lobby and lets it play the fight
+as a player would, with a caption at the bottom saying what each self does
+and why (`src/zscript/fightdemo.zs`, `ajar_autotest 20`; smoke test `MAP=MAP32
+MODE=20 TIMEOUT=200 tools/smoke.sh`). It was also the first real test of the
+fight. **It does not win.** What it shows is the plan working in parts: a
+bait in the chamber, a later self at the lever pulling on them, that self
+then the next bait, and the fight beginning anew after the fourth go.
+
+- **Honest.** At its tic 2 it is put into the lobby with the pistol a fresh
+  start gives (`Go`). After that: no god mode, no `SetOrigin`, no
+  `GiveInventory`, no damage or missiles by script. It moves by thrust as
+  the engine moves a running player (50·Speed·movefactor a tic, so at most
+  about 16.7), turns at most 20° and pitches 8° a tic, picks weapons by
+  `PendingWeapon`, fires by `FireWeapon` when the weapon is ready (and again
+  on the refire frame, as holding the button does), takes things by walking
+  over them and pulls the lever by `Used` from within use range, facing it.
+  It reads the game's state (where the monsters are, the press, the demo).
+  `honest=1` in the log is the check that no cheat flag or invulnerability
+  was ever on.
+- **The plan played** (plan 7; the others tried stay behind `+set fd_plan N`,
+  see the comment at `FdPlanKnob`). Go 1, the bait: plasma rifle, BFG and
+  cell pack from the lobby, then a run for the screen's plate in the
+  chamber. From a box the role is chosen by what the self before did: if it
+  was under the press for over two seconds, this one is the lever, else the
+  bait. The lever: the box's supplies, wait for the shutter (open while the
+  earlier self is under the press), up the stairs, shoot the guards through
+  the bars, pull when 8 are on the demo under the press (if the press can be
+  up again in time) or at the last moment of the earlier self's time; then,
+  150 tics before that time is over, out by the window and down into the
+  chamber as the next bait while the monsters still go where they went. A
+  bait from a box walks past the monsters on the demo without touching them
+  (they are not solid and do not see it) and waits on the plate; when they
+  wake it fights, shooting only arch-viles and what is close, and leaves by
+  door 3 or 4 at 40 health.
+- **What was learned** (about 30 tuning runs of 200 s, each through two or
+  three times the four goes; then the final runs below):
+  - Go 1 is the hard one. It starts with a pistol, the lobby's guns take
+    about 25 tics, and by 60 tics wave 1's imps, revenants and a mancubus
+    stand at the lobby's mouth. Running for the chamber it got there a few
+    times in some forty tries (at its tic 210 to 240, with 37 to 89
+    health); otherwise it is killed in the hall or the lobby's mouth by its
+    tic 70 to 260. Holding the
+    lobby instead it lasts 100 to 380 tics and kills 10 to 15 of the 36.
+  - A bait from a box is easy: past them on the demo every time (no run
+    saw it touch one), on the plate by its tic 160 with the box's armour,
+    then holding out 250 to 1000 tics.
+  - Few come under the press: 6 to 10 at most while a bait holds the
+    screen's plate (by door 3 about the same, on the cage's plate up to 8).
+    Monsters after a target slide along the wall between hall and chamber
+    towards its x (Doom's chase), so they bunch along the wall east or west
+    of the mouth, and those that do come in are shot by the bait.
+  - A pull on that kills 6 to 11 (the count of kills in the two seconds
+    after it). A second pull in the same go gets 1 to 3. The lever's self
+    reaches the lever by its tic 290 to 450 in nearly every try; after the
+    earlier self's time it is killed in the wing within a few seconds, so it
+    leaves before (the window).
+  - The fewest left in a time through the four goes was about 14, usually
+    20 to 30 (with wave 2's 13 come on the clock in the long goes); then the
+    fourth go ends and the fight begins anew with all 36, so nothing carries
+    over. A win needs every monster of all three waves in one time through.
+  - **Dying pays better than leaving**: a self killed goes into the next box
+    with `RESCUE_HEALTH` (50); a self that leaves by door 3 or 4 keeps what
+    it has, which for a bait is 10 to 40. For Vadim to decide whether that
+    is meant.
+  - `i_timescale` (as `+set`, as `+i_timescale`, in the cfg), `-singletics`
+    and a smaller screen gave no speed-up in the docker runs: every run is
+    real time, about 20 s to start.
+- **Final runs** (2026-11-21, full build, `MAP=MAP32 MODE=20 TIMEOUT=200
+  tools/smoke.sh`, five times; each run is about 3500 tics, two times
+  through and a bit). Every run `honest=1`, `goes4=1`, `won3=0`. The first
+  time through the four goes: 58 s, 1 pull killing 10, at fewest 17 left;
+  72 s, 1 pull 10, 12 left; 60 s, no pull, 22 left; 51 s, no pull, 19
+  left; 75 s, 3 pulls killing 27, 15 left. So `pulled=1` in 3 of 5: when
+  the bait from go 2 dies early the next self is a bait again, and no one
+  is at the lever that time through.
+- **The other suites** on the same build, once each: `MODE=3 TIMEOUT=850`
+  74 of 74 and out (won3, won4, steel3, steel4 among them); `MODE=5
+  TIMEOUT=200` 24 of 24; `MODE=9` 7 of 7; `MODE=7 TIMEOUT=400` 18 of 19 with
+  `guardsWakeAsIStepIn3=0` (one guard of two still on the demo 10 tics
+  after the step onto the landing), then 19 of 19 twice: a flake of that
+  test, 1 in 3; mode 20's code does nothing outside mode 20.
+- **The same seed gives the same fight**: two runs with `EXTRA="-rngseed
+  7"` wrote the same log, go for go and tic for tic. The bot does not use
+  the seed; without it every run differs.
+- **What would make it win**, if anything: not found. The way the room
+  is meant to be won needs the press to take most of the 54, which needs
+  20 or more under it at once; a bait draws 6 to 10. Ideas not tried: the
+  bait in the mouth itself (they come at it straight, but it is in the open
+  to the whole hall), a bait that keeps moving east and west along the
+  chamber's south wall, the megasphere behind the cage plate for go 1, the
+  guards killed from the stairs' top before the shutter shuts.
+- **Not tested**: rooms other than 3 under mode 20; `DEMO=3 ./run.sh` on
+  Vadim's screen (only the docker smoke runs, software GL, 1024×640); the
+  captions' size on other screens; what happens if Vadim touches the keys
+  (the bot's moves are added to his); a win (none happened), so
+  `FdReport`, the end caption and `steel3` in this mode were never reached.

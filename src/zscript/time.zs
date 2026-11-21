@@ -2517,6 +2517,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 7 && level.mapname ~== "MAP32") TableScript(PlayerPawn(mo));     // map32.zs: room 3's plates, the timetable
 		if (mode == 8 && level.mapname ~== "MAP32") KeyScript(PlayerPawn(mo));       // map32.zs: room 4's key levers
 		if (mode == 9 && level.mapname ~== "MAP32") GhostShotScript(PlayerPawn(mo));     // map32.zs: room 3, an earlier self's shots wake nobody
+		if (mode == 20 && level.mapname ~== "MAP32") FightDemo(PlayerPawn(mo));     // fightdemo.zs: room 3 played by itself
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
@@ -2534,6 +2535,7 @@ class AjarTimeHandler : EventHandler
 	// How far the fight that is being watched has got, and when the door opens.
 	override void RenderOverlay(RenderEvent e)
 	{
+		FdOverlay(e);              // fightdemo.zs: its caption (ajar_autotest 20)
 		if (reel && reel < 4)
 		{
 			if (caption != "") Screen.DrawText(BigFont, Font.CR_GOLD, 320 - BigFont.StringWidth(caption) / 2, 360, caption, DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
