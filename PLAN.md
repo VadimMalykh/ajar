@@ -7206,3 +7206,47 @@ can now be won.
     Then the fight begins anew with all 36. A player who gets the lever's
     self back under the press would have three pulls. Keeping what was
     killed when the boxes run out (or more boxes) is the change not made.
+
+## Look: MAP32 (started 2026-11-21)
+
+Vadim asked for a look for MAP32 unlike MAP31's: very futuristic, with
+lights that move, as some modern Doom maps have; a page of concepts to
+choose from first; and ideas that explain the press of room 3.
+
+**Step one, the concept page**: https://claude.ai/artifact/3Sa1HfA7JRAWSp3nDf8y8e
+(source `design/map32-concepts.html`). Nothing is built in the game yet. The
+page draws one room four ways on a canvas, with the lights moving (sketches
+by the page, not shots): the time door, a VIOLET leaf under a green lamp, a
+box's glass, a slab, a monster and an earlier self are in each.
+
+- **A, Night Shift**: black glass, neon tubes in electric blue and hot
+  orange, signs, windows onto a lit city; the tubes breathe, one stutters.
+- **B, Clean Room**: white ceramic panels, a lit ceiling, a black gap at the
+  foot of the walls, one orange line and the room's number; a bar of light
+  crosses the room, lights run in two floor lines.
+- **C, Deep Field**: dark plated steel with ice-white lines, no ceiling in
+  the big rooms (trusses and stars); pulses run along conduits to each time
+  door and up its frame.
+- **D, Prism**: polished dark floors between walls of frosted glass whose
+  colour drifts through the spectrum and spills on the floor; a ring of
+  white from the time door each second.
+
+Further choices on the page: how the lights move (breathing, running,
+sweeping, stuttering, colour drift), lights that answer the game (a wave
+from the time door at the start of a go, the press, a room that is done
+goes steady and white, a line from a pressed plate to its door), the fights
+(calmer while a fight is on, Claude's advice, or the full show), and what
+the press is: the door press (it presses time doors; dies of doors on its
+face, a counter), the test bay (load scale, the plates are load cells: the
+only one that explains the shutter that opens while someone is under the
+press), the power stroke (a piston that drives the light pulses to every
+time door), a time door laid flat (the press and the bed are its two ivory
+leaves, half a clock on each).
+
+Held to in every concept (on the page): no room, distance or puzzle thing
+moves; the time doors keep their ivory, the leaves their colours, the lamps
+red, amber and green; MAP32 uses seven leaf colours (VIOLET, TEAL, YELLOW,
+GREEN, PINK, BLUE, RED), so no hue is free for the house lights and every
+leaf and frame stands in plain white light; nothing warns of a paradox. No
+mirror floors and no bloom are counted on (the renderer and Vadim's
+settings). Not chosen yet.

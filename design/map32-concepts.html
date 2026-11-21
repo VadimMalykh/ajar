@@ -1,0 +1,596 @@
+<title>Double Shift Concepts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of four large animated sketches of the same room, each with its notes beside it; the choices and the line to copy at the foot. */
+:root {
+  --bg: #eef0f3; --panel: #ffffff; --fg: #14181f; --muted: #566070; --rule: #cdd3db;
+  --accent: #1b55e8; --accent-fg: #ffffff; --picked: #0d7a4a; --picked-bg: #e2f4ea;
+  --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0d11; --panel: #14181f; --fg: #e8ebf0; --muted: #98a2b1; --rule: #2a313c;
+  --accent: #7ea6ff; --accent-fg: #0b0d11; --picked: #5fd39a; --picked-bg: #12281d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b0d11; --panel: #14181f; --fg: #e8ebf0; --muted: #98a2b1; --rule: #2a313c;
+  --accent: #7ea6ff; --accent-fg: #0b0d11; --picked: #5fd39a; --picked-bg: #12281d; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 700; }
+h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: .01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.lead { display: flex; flex-direction: column; gap: 12px; }
+.lead p { color: var(--fg); }
+.note { color: var(--muted); font-size: .92rem; }
+
+.concept { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px 28px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.concept.is-picked { border-top: 3px solid var(--picked); }
+.scene { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.scene canvas { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; display: block; border-radius: 6px; background: #05070b; }
+.about { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.about .pitch { font-size: 1.08rem; font-weight: 500; }
+.about dl { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.about dt { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.about dd { margin: 2px 0 0; font-size: .95rem; }
+.rooms { margin: 2px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: .92rem; }
+.rooms b { font-family: var(--mono); font-weight: 500; color: var(--muted); margin-right: .5em; }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.swatches span { width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--rule); }
+.swatches em { font-style: normal; font-size: .8rem; color: var(--muted); margin-left: 4px; }
+
+button { font: inherit; cursor: pointer; }
+.pick { align-self: flex-start; font-family: var(--display); font-weight: 600; font-size: 1rem; padding: 9px 18px; border-radius: 6px;
+  border: 2px solid var(--accent); background: transparent; color: var(--accent); }
+.pick[aria-pressed="true"] { background: var(--picked); border-color: var(--picked); color: var(--bg); }
+.pick:focus-visible, .ghost:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ghost { font-size: .88rem; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--rule); background: var(--panel); color: var(--fg); }
+
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 28px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.group { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.group > p { font-size: .92rem; color: var(--muted); }
+.opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; font-size: .95rem; }
+.opt input { margin-top: .3em; width: 16px; height: 16px; accent-color: var(--accent); }
+.opt small { display: block; color: var(--muted); font-size: .85rem; }
+.sw { grid-column: 2; height: 26px; border-radius: 4px; background: #0a0d13; position: relative; overflow: hidden; }
+.sw i { position: absolute; display: block; }
+.sw.breathe i { left: 6%; right: 6%; top: 11px; height: 4px; border-radius: 2px; background: #4f8dff; box-shadow: 0 0 10px #4f8dff; animation: breathe 3.2s ease-in-out infinite; }
+.sw.chase::before { content: ""; position: absolute; left: 0; right: 0; top: 12px; height: 2px; background: #25405c; }
+.sw.chase i { top: 3px; width: 56px; height: 20px; background: radial-gradient(closest-side, #d6efff, rgba(214,239,255,0)); animation: chase 1.7s linear infinite; }
+.sw.sweep i { top: 0; bottom: 0; width: 38%; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.5), rgba(255,255,255,0)); animation: chase 4.2s linear infinite; }
+.sw.flicker i { left: 6%; right: 6%; top: 11px; height: 4px; border-radius: 2px; background: #ff6a2a; box-shadow: 0 0 10px #ff6a2a; animation: flicker 3.4s steps(1) infinite; }
+.sw.drift i { inset: 0; opacity: .85; background: linear-gradient(90deg, #ff4d6d, #ffb020, #3ddc84, #2bb3ff, #b060ff, #ff4d6d, #ffb020, #3ddc84, #2bb3ff, #b060ff, #ff4d6d); background-size: 200% 100%; animation: drift 9s linear infinite; }
+@keyframes breathe { 0%, 100% { opacity: .35 } 50% { opacity: 1 } }
+@keyframes chase { from { left: -40% } to { left: 100% } }
+@keyframes flicker { 0% { opacity: 1 } 41% { opacity: .15 } 43% { opacity: 1 } 47% { opacity: .1 } 49% { opacity: .9 } 52% { opacity: .2 } 54% { opacity: 1 } 88% { opacity: .2 } 90% { opacity: 1 } }
+@keyframes drift { from { background-position: 0 0 } to { background-position: -100% 0 } }
+@media (prefers-reduced-motion: reduce) { .sw i { animation: none !important; } }
+
+.press { padding-top: 28px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 16px; }
+.press > p { color: var(--muted); font-size: .95rem; }
+.ideas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 24px; }
+.idea { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: .93rem; }
+.idea svg { width: 100%; height: auto; display: block; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+.idea .head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+.idea .head input { margin-top: .3em; width: 16px; height: 16px; accent-color: var(--accent); }
+.idea small { color: var(--muted); font-size: .85rem; }
+.st { stroke: var(--fg); fill: none; stroke-width: 1.5; }
+.fl { fill: var(--fg); }
+.mu { stroke: var(--muted); fill: none; stroke-width: 1; }
+.steel { fill: var(--rule); stroke: var(--fg); stroke-width: 1.5; }
+.iv { fill: #e9e1cb; stroke: var(--fg); stroke-width: 1.5; }
+.hot { fill: var(--accent); }
+.hotl { stroke: var(--accent); fill: none; stroke-width: 2; }
+.result { padding-top: 28px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 12px; }
+textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width: 100%; box-sizing: border-box; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--fg); padding: 10px 12px; resize: vertical; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.copy { font-family: var(--display); font-weight: 600; padding: 9px 18px; border-radius: 6px; border: 0; background: var(--accent); color: var(--accent-fg); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 28px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.facts ul { margin: 8px 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 5px; font-size: .93rem; }
+@media (max-width: 820px) { .concept { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header class="lead">
+    <div class="eyebrow">Ajar · MAP32 "Double Shift" · look, step one</div>
+    <h1>Four futures for the works</h1>
+    <p>MAP32 has no look yet: five rooms in plain textures. You asked for something very futuristic, with lights that move, and nothing like MAP31's fleapit cinema. Below is one room of the level drawn four ways. Pick one, tick how the lights should behave, choose what the press in room 3 is, and copy the lines at the foot back to me.</p>
+    <p class="note">These are sketches drawn by this page, not shots from the game. They show the place, its colours and how its lights move. The real board, with the look you pick built into the five rooms and photographed, comes next.</p>
+    <div class="row"><button class="ghost" id="pause" type="button">Stop the lights</button><span class="note">Every sketch has the same things in it: the time door with its clock, a VIOLET leaf in its frame under a green lamp, the glass of a box, a slab, a monster and an earlier self.</span></div>
+  </header>
+
+  <main id="concepts" style="display:flex;flex-direction:column;gap:40px"></main>
+
+  <section class="options" aria-label="How the lights behave">
+    <div class="group">
+      <h2>How the lights move</h2>
+      <p>Each concept has its own way, shown in its sketch. Tick any you want in the level whichever concept you pick.</p>
+      <label class="opt"><input type="checkbox" id="mv-breathe" data-k="moves" value="breathing"><span>Breathing<small>Lights swell and sink slowly, a few seconds a breath.</small></span><span class="sw breathe"><i></i></span></label>
+      <label class="opt"><input type="checkbox" id="mv-chase" data-k="moves" value="running"><span>Running<small>Points of light run along lines in the floor and walls, toward the way on.</small></span><span class="sw chase"><i></i></span></label>
+      <label class="opt"><input type="checkbox" id="mv-sweep" data-k="moves" value="sweeping"><span>Sweeping<small>A wide soft bar of light crosses the whole room now and then.</small></span><span class="sw sweep"><i></i></span></label>
+      <label class="opt"><input type="checkbox" id="mv-flicker" data-k="moves" value="stuttering"><span>Stuttering<small>A lamp here and there fails for a moment and catches again.</small></span><span class="sw flicker"><i></i></span></label>
+      <label class="opt"><input type="checkbox" id="mv-drift" data-k="moves" value="colour drift"><span>Colour drift<small>The light's colour changes slowly, never the same twice.</small></span><span class="sw drift"><i></i></span></label>
+    </div>
+    <div class="group">
+      <h2>Lights that answer the game</h2>
+      <p>The lights can also react to what happens. None of these gives a puzzle away; the last one makes a plate easier to read.</p>
+      <label class="opt"><input type="checkbox" id="ev-door" data-k="events" value="time door wave"><span>The time door<small>When you come out of a box, a wave of light runs from the door through the room: a new go has begun.</small></span></label>
+      <label class="opt"><input type="checkbox" id="ev-press" data-k="events" value="press"><span>The press<small>The hall dims while the press warns and flares when it lands.</small></span></label>
+      <label class="opt"><input type="checkbox" id="ev-won" data-k="events" value="calm when won"><span>A room that is done<small>When a fight is won or a room is left, its lights go steady and white.</small></span></label>
+      <label class="opt"><input type="checkbox" id="ev-plate" data-k="events" value="plate line"><span>A pressed plate<small>While someone stands on a plate, a line of light runs from it to the door it holds.</small></span></label>
+    </div>
+    <div class="group">
+      <h2>In the two fights</h2>
+      <p>Rooms 3 and 4 hold up to forty monsters. They have to be seen, and many moving lights cost frames.</p>
+      <label class="opt"><input type="radio" name="fights" id="ft-calm" data-k="fights" value="calmer while a fight is on" checked><span>Calmer while the fight is on<small>Steady, brighter light during the fight; the full show before it and once it is won. My advice.</small></span></label>
+      <label class="opt"><input type="radio" name="fights" id="ft-full" data-k="fights" value="the full show in fights too"><span>The full show all the time<small>The lights move during the fight as everywhere else.</small></span></label>
+    </div>
+  </section>
+
+  <section class="press" aria-label="What the press is">
+    <h2>What the press in room 3 is</h2>
+    <p>Now it is a steel ceiling that comes down for no reason. Here are four reasons for it, each drawn from the side with the press up. Each gives the lever room, the plates and the lamps a meaning too. Any of them can go with any concept; I say where it sits best.</p>
+    <div class="ideas">
+<label class="idea" for="pr-door"><svg viewBox="0 0 240 110" role="img" aria-label="The door press, seen from the side"><line class="st" x1="10" y1="96" x2="230" y2="96"/><line class="mu" x1="34" y1="10" x2="34" y2="96"/><line class="mu" x1="206" y1="10" x2="206" y2="96"/><rect class="steel" x="40" y="16" width="160" height="26"/><rect class="st" x="52" y="18" width="14" height="22"/><circle class="st" cx="59" cy="25" r="3.2"/><rect class="st" x="88" y="18" width="14" height="22"/><circle class="st" cx="95" cy="25" r="3.2"/><rect class="st" x="124" y="18" width="14" height="22"/><circle class="st" cx="131" cy="25" r="3.2"/><rect class="st" x="160" y="18" width="14" height="22"/><circle class="st" cx="167" cy="25" r="3.2"/><rect class="iv" x="52" y="90" width="14" height="6"/><rect class="iv" x="88" y="90" width="14" height="6"/><rect class="iv" x="124" y="90" width="14" height="6"/><rect class="iv" x="160" y="90" width="14" height="6"/><text class="fl" x="120" y="66" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace">PRESSED TODAY 0000</text></svg>
+<span class="head"><input type="radio" name="press" id="pr-door" data-k="press" value="the door press"><span>The door press</span></span>
+<span>The works makes time doors, and this is where they are pressed. The face of the press and its bed carry the die of a row of doors, each with its round clock. Blanks of ivory lie stacked in the lobby. The room with the lever is the operator's cabin, its window onto the bed. A counter on the wall shows the doors pressed today.</span><small>Sits best in Night Shift and Clean Room. It also says what the whole level is: the place the time doors come from.</small></label><label class="idea" for="pr-test"><svg viewBox="0 0 240 110" role="img" aria-label="The test bay, seen from the side"><line class="st" x1="10" y1="96" x2="230" y2="96"/><line class="mu" x1="34" y1="10" x2="34" y2="96"/><line class="mu" x1="206" y1="10" x2="206" y2="96"/><rect class="steel" x="40" y="16" width="160" height="26"/><path class="hot" d="M44 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M60 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M76 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M92 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M108 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M124 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M140 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M156 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><path class="hot" d="M172 42 l8 0 l-8 -8 l-8 0 z" transform="translate(8 0)"/><line class="st" x1="212" y1="20" x2="222" y2="20"/><line class="st" x1="212" y1="39" x2="218" y2="39"/><line class="st" x1="212" y1="58" x2="222" y2="58"/><line class="st" x1="212" y1="77" x2="218" y2="77"/><line class="st" x1="212" y1="96" x2="222" y2="96"/><text class="fl" x="120" y="70" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace">TEST BAY 3 · 4000 t</text><rect class="hot" x="70" y="93" width="22" height="3"/><rect class="hot" x="148" y="93" width="22" height="3"/></svg>
+<span class="head"><input type="radio" name="press" id="pr-test" data-k="press" value="the test bay"><span>The test bay</span></span>
+<span>Doors are tested here to see what they stand. A load scale up the wall, hazard stripes round the press, the bay's number and its load in tonnes. The two plates in the chamber are its load cells: the cabin opens only when the bed reads a load, which is why someone must stand there.</span><small>Sits best in Clean Room. The only one that explains the shutter that opens while someone is under the press.</small></label><label class="idea" for="pr-stroke"><svg viewBox="0 0 240 110" role="img" aria-label="The power stroke, seen from the side"><line class="st" x1="10" y1="96" x2="230" y2="96"/><line class="mu" x1="34" y1="10" x2="34" y2="96"/><line class="mu" x1="206" y1="10" x2="206" y2="96"/><rect class="steel" x="40" y="16" width="160" height="26"/><rect class="steel" x="104" y="2" width="32" height="14"/><path class="hotl" d="M120 96 v8 h-110 M120 96 v8 h110"/><circle class="hot" cx="62" cy="104" r="3.5"/><circle class="hot" cx="26" cy="104" r="2.5"/><circle class="hot" cx="178" cy="104" r="3.5"/><circle class="hot" cx="214" cy="104" r="2.5"/><path class="st" d="M120 48 v34 m-6 -8 l6 8 l6 -8"/></svg>
+<span class="head"><input type="radio" name="press" id="pr-stroke" data-k="press" value="the power stroke"><span>The power stroke</span></span>
+<span>The press is the plant's piston. Every stroke drives a pulse of light out from under the bed, along the conduits, to every time door in the level: the doors run on it. When it lands, all their clocks flash at once.</span><small>Sits best in Deep Field, and in Prism (the walls flare white on the stroke). It needs "the press" ticked under lights that answer the game.</small></label><label class="idea" for="pr-leaf"><svg viewBox="0 0 240 110" role="img" aria-label="A time door laid flat, seen from the side"><line class="st" x1="10" y1="96" x2="230" y2="96"/><line class="mu" x1="34" y1="10" x2="34" y2="96"/><line class="mu" x1="206" y1="10" x2="206" y2="96"/><rect class="iv" x="40" y="16" width="160" height="26"/><rect class="iv" x="40" y="88" width="160" height="8"/><path class="st" d="M98 42 a22 22 0 0 0 44 0"/><path class="st" d="M98 88 a22 22 0 0 1 44 0"/><line class="st" x1="120" y1="42" x2="120" y2="54"/><line class="st" x1="120" y1="88" x2="132" y2="78"/></svg>
+<span class="head"><input type="radio" name="press" id="pr-leaf" data-k="press" value="a time door laid flat"><span>A time door laid flat</span></span>
+<span>The chamber is the inside of one huge time door on its side. The press and the bed are its two ivory leaves, half a clock face on each; they make one clock when it shuts. What is between them when it shuts is in no time at all. The lever is its handle.</span><small>The strangest, and the nearest to what the game is about. Sits in any concept; in Prism it is the one plain pale thing between the walls of colour.</small></label>
+    </div>
+    <label class="opt"><input type="radio" name="press" id="pr-none" data-k="press" value="no idea picked" checked><span>None of these yet<small>Say what you have in mind in the note below, or leave it for later.</small></span></label>
+  </section>
+
+  <section class="result" aria-label="Your choice">
+    <h2>Your choice</h2>
+    <label class="note" for="more">Anything else: parts of another concept you want mixed in, a colour you do not want, a map you have in mind.</label>
+    <textarea id="more" rows="2" placeholder="Optional"></textarea>
+    <textarea id="out" rows="5" readonly aria-label="The line to send back"></textarea>
+    <div class="row"><button class="copy" id="copy" type="button">Copy</button><span class="note" id="copied" role="status">Paste it into the chat. Your ticks are kept in this browser.</span></div>
+  </section>
+
+  <section class="facts">
+    <div>
+      <h3>The same in all four</h3>
+      <ul>
+        <li>The rooms, every distance and every puzzle thing stay where they are. Only textures, light and things you cannot bump into are added.</li>
+        <li>The time doors keep their ivory and their clock, the leaves their seven colours, the lamps red, amber and green.</li>
+        <li>Every leaf and frame stands in plain white light, so that its colour is never mixed with the room's.</li>
+        <li>Nothing warns of a paradox. The lights do not change near an earlier self.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the game can really do</h3>
+      <ul>
+        <li>Lit textures that stay bright in a dark room, animated textures, the brightness and colour of each part of a room changed by script, and coloured lights that pulse and travel.</li>
+        <li>The soft glow in the sketches is a little more than the game will show: glow of that kind depends on your GZDoom settings, which I do not touch.</li>
+        <li>No mirror floors: your renderer may not draw them, so no concept leans on them.</li>
+        <li>Stills cannot show moving light. You will judge the built look by playing it from its worktree.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var W = 960, H = 540, F = 560, CX = 480, CY = 300, EX = 0.5, EY = 1.9;
+  var RW = 5, RH = 5, ZN = 1.15, ZD = 11;
+
+  var CONCEPTS = [
+    { id: "night", name: "Night Shift", pitch: "The works at night, in a city that never switches off.",
+      sw: ["#06080d", "#141b2b", "#2f7bff", "#ff6020", "#e9e1cb"], swNote: "black glass, blue and orange neon",
+      place: "Black glass and dark steel. The only light is neon: tubes in electric blue round the ceilings, hot orange up the walls, and signs. High windows look onto a city of lit towers.",
+      lights: "The tubes breathe slowly. Here and there one stutters and catches again. The floor under each tube takes its colour. An aircraft's lamp crosses the windows.",
+      rooms: ["A dark vestibule. One blue tube round the ceiling.", "The gallery is a walkway under the city windows. The pit below is darker, lit by its two clock lamps.", "The hall under long ceiling tubes. The press is unlit steel until it comes down.", "A firing lane, orange lines along the floor to the shutter.", "Three small cells, each darker. The way out is the brightest thing in the level."],
+      near: "Auger;Zenith.",
+      watch: "The darkest of the four. Rooms 3 and 4 would get more tubes than this sketch so that monsters are seen." },
+    { id: "clean", name: "Clean Room", pitch: "White panels, even light, one line of colour.",
+      sw: ["#eef1f3", "#c5ccd2", "#1b1f24", "#ff6a00", "#e9e1cb"], swNote: "white ceramic, black gaps, signal orange",
+      place: "A test floor for time doors. White ceramic panels with dark seams, a lit ceiling, a black gap at the foot of every wall. One orange line runs round each room, and each has its number on the wall.",
+      lights: "A soft bar of light crosses the room from end to end every few seconds, like a scanner. Small lights run along two lines in the floor toward the way on.",
+      rooms: ["A small white cell with a 1 on its wall.", "The gallery white, the pit a grey well beneath it.", "The hall white. The press chamber is the only dark steel in the level.", "A white lane. The pen behind the shutter is black inside.", "Three white cells. The way out is a dark doorway."],
+      near: "Closer to the test chambers of Portal than to most Doom maps.",
+      watch: "The furthest from MAP31 and from the rest of the game. Door colours and monsters read best here; blood and bodies show most. White needs careful textures or it looks flat." },
+    { id: "deep", name: "Deep Field", pitch: "A plant hung in space. Power runs through it to the time doors.",
+      sw: ["#0b0e14", "#1b2330", "#9fd8ff", "#ff8a30", "#e9e1cb"], swNote: "plated steel, ice-white lines, stars",
+      place: "Dark plated steel with thin lines of ice-white light. The big rooms have no ceiling: trusses, and the stars beyond. Conduits run along the floors from room 1 to the way out.",
+      lights: "Pulses of light race along the conduits to each time door and climb its frame. Each lights the floor it passes over. The stars turn slowly. A beacon blinks.",
+      rooms: ["A low plated cell. One conduit to its time door.", "The gallery is a bridge. The pit's far end is open to the stars.", "The hall under open trusses. The press comes down out of the dark.", "A lane with conduits to the shutter. The pen is lit orange.", "An airlock in earnest. The way out is a lit hatch."],
+      near: "The void maps of Sunlust and Stardate 20X6, in colder colours.",
+      watch: "The most work: a sky, trusses, and lights timed along the conduits. In the fights it would run with fewer moving lights." },
+    { id: "prism", name: "Prism", pitch: "Dark rooms between walls of slowly changing coloured light.",
+      sw: ["#08090b", "#17191d", "#ff4d6d", "#3ddc84", "#2bb3ff"], swNote: "polished dark floors, walls of light",
+      place: "Polished dark floors and walls of frosted glass with light behind them. No lamp is seen anywhere: the walls are the lamps.",
+      lights: "Colour drifts along the walls through the whole spectrum and spills over the floor and over whoever stands on it. Every second, with the time door's clock, a faint ring of white crosses the floor.",
+      rooms: ["A small cell whose four walls change colour together.", "The gallery's long wall is one slow wave of colour. The pit takes its light from above.", "The hall between two walls of light. The press is a black block against them.", "A lane of colour. The pen behind the shutter is dark.", "Three cells, each wall of light narrower than the last."],
+      near: "The colour of Ancient Aliens, with the lighting tricks of Elementalism.",
+      watch: "Every door colour is also a wall colour at some moment, so each leaf stands in a plain niche under white light, as drawn. The riskiest for reading a puzzle, and the most of a show." }
+  ];
+
+  // ---------- drawing helpers ----------
+  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+  function P(x, y, z) { var k = F / z; return [CX + (x - EX) * k, CY - (y - EY) * k]; }
+  function trace(c, pts) {
+    c.beginPath();
+    for (var i = 0; i < pts.length; i++) { var q = P(pts[i][0], pts[i][1], pts[i][2]); if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }
+    c.closePath();
+  }
+  function quad(c, pts, fill) { trace(c, pts); c.fillStyle = fill; c.fill(); }
+  function line(c, a, b, col, w, alpha, glow) {
+    var n = 10;
+    for (var i = 0; i < n; i++) {
+      var t0 = i / n, t1 = Math.min(1, (i + 1) / n + 0.02);
+      var p0 = [a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0, a[2] + (b[2] - a[2]) * t0];
+      var p1 = [a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1, a[2] + (b[2] - a[2]) * t1];
+      var s0 = P(p0[0], p0[1], p0[2]), s1 = P(p1[0], p1[1], p1[2]);
+      var lw = Math.max(0.7, w * F / ((p0[2] + p1[2]) / 2));
+      if (glow) { c.strokeStyle = rgba(col, alpha * 0.16); c.lineWidth = lw * 5; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s1[0], s1[1]); c.stroke(); }
+      c.strokeStyle = rgba(col, alpha); c.lineWidth = lw; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s1[0], s1[1]); c.stroke();
+    }
+  }
+  function glow(c, p, r, col, a) {
+    var s = P(p[0], p[1], p[2]), R = r * F / p[2];
+    var g = c.createRadialGradient(s[0], s[1], 0, s[0], s[1], R);
+    g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+    c.fillStyle = g; c.fillRect(s[0] - R, s[1] - R, 2 * R, 2 * R);
+  }
+  var FLOOR = [[-RW, 0, ZN], [RW, 0, ZN], [RW, 0, ZD], [-RW, 0, ZD]];
+  var CEIL = [[-RW, RH, ZN], [RW, RH, ZN], [RW, RH, ZD], [-RW, RH, ZD]];
+  var LEFT = [[-RW, 0, ZN], [-RW, RH, ZN], [-RW, RH, ZD], [-RW, 0, ZD]];
+  var RIGHT = [[RW, 0, ZN], [RW, RH, ZN], [RW, RH, ZD], [RW, 0, ZD]];
+  var BACK = [[-RW, 0, ZD], [RW, 0, ZD], [RW, RH, ZD], [-RW, RH, ZD]];
+  function band(c, z, th, col, a, parts) {
+    var z0 = Math.max(ZN, z), z1 = Math.min(ZD, z + th);
+    if (z1 <= z0) return;
+    var f = rgba(col, a);
+    if (parts.indexOf("f") >= 0) quad(c, [[-RW, 0, z0], [RW, 0, z0], [RW, 0, z1], [-RW, 0, z1]], f);
+    if (parts.indexOf("c") >= 0) quad(c, [[-RW, RH, z0], [RW, RH, z0], [RW, RH, z1], [-RW, RH, z1]], f);
+    if (parts.indexOf("w") >= 0) {
+      quad(c, [[-RW, 0, z0], [-RW, RH, z0], [-RW, RH, z1], [-RW, 0, z1]], f);
+      quad(c, [[RW, 0, z0], [RW, RH, z0], [RW, RH, z1], [RW, 0, z1]], f);
+    }
+  }
+  function shell(c, pal) {
+    var yF = P(0, 0, ZD)[1], yC = P(0, RH, ZD)[1], xL = P(-RW, 0, ZD)[0], xR = P(RW, 0, ZD)[0], g;
+    g = c.createLinearGradient(0, yF, 0, H); g.addColorStop(0, pal.floor[0]); g.addColorStop(1, pal.floor[1]); quad(c, FLOOR, g);
+    g = c.createLinearGradient(0, yC, 0, 0); g.addColorStop(0, pal.ceil[0]); g.addColorStop(1, pal.ceil[1]); quad(c, CEIL, g);
+    g = c.createLinearGradient(xL, 0, 0, 0); g.addColorStop(0, pal.wall[0]); g.addColorStop(1, pal.wall[1]); quad(c, LEFT, g);
+    g = c.createLinearGradient(xR, 0, W, 0); g.addColorStop(0, pal.wall[0]); g.addColorStop(1, pal.wall[1]); quad(c, RIGHT, g);
+    quad(c, BACK, pal.back);
+  }
+  function path(pts) {
+    var len = [0];
+    for (var i = 1; i < pts.length; i++) {
+      var d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]);
+      len.push(len[i - 1] + d);
+    }
+    return { pts: pts, len: len, total: len[len.length - 1] };
+  }
+  function at(pa, u) {
+    var d = Math.max(0, Math.min(1, u)) * pa.total, i = 1;
+    while (i < pa.len.length - 1 && pa.len[i] < d) i++;
+    var a = pa.pts[i - 1], b = pa.pts[i], seg = pa.len[i] - pa.len[i - 1], k = seg ? (d - pa.len[i - 1]) / seg : 0;
+    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  }
+  function pulse(c, pa, u, col, size) {
+    for (var j = 7; j >= 0; j--) {
+      var p = at(pa, u - j * 0.012);
+      if (u - j * 0.012 < 0) continue;
+      glow(c, p, size * (j ? 0.55 : 1), col, j ? 0.5 * (1 - j / 8) : 0.95);
+    }
+    return at(pa, u);
+  }
+
+  // ---------- the things that are the same in every sketch ----------
+  var IVORY = "#e9e1cb", VIOLET = "#b060ff";
+  function timeDoor(c, t, trim) {
+    var z = ZD - 0.01;
+    quad(c, [[-1.28, 0, z], [1.28, 0, z], [1.28, 3.5, z], [-1.28, 3.5, z]], trim);
+    quad(c, [[-1.1, 0, z], [1.1, 0, z], [1.1, 3.3, z], [-1.1, 3.3, z]], IVORY);
+    var o = P(0, 2.35, z), r = 0.55 * F / z;
+    c.fillStyle = "#f7f2e2"; c.beginPath(); c.arc(o[0], o[1], r, 0, 6.2832); c.fill();
+    c.strokeStyle = "#2a2620"; c.lineWidth = 1.6; c.beginPath(); c.arc(o[0], o[1], r, 0, 6.2832); c.stroke();
+    for (var i = 0; i < 12; i++) {
+      var a = i * 0.5236;
+      c.beginPath(); c.moveTo(o[0] + Math.sin(a) * r * 0.82, o[1] - Math.cos(a) * r * 0.82); c.lineTo(o[0] + Math.sin(a) * r * 0.94, o[1] - Math.cos(a) * r * 0.94); c.stroke();
+    }
+    var s = Math.floor(t) % 60 * 0.10472, m = 2.2;
+    c.lineWidth = 2.4; c.beginPath(); c.moveTo(o[0], o[1]); c.lineTo(o[0] + Math.sin(m) * r * 0.6, o[1] - Math.cos(m) * r * 0.6); c.stroke();
+    c.strokeStyle = "#b3261e"; c.lineWidth = 1.3; c.beginPath(); c.moveTo(o[0], o[1]); c.lineTo(o[0] + Math.sin(s) * r * 0.82, o[1] - Math.cos(s) * r * 0.82); c.stroke();
+    c.strokeStyle = "rgba(42,38,32,.35)"; c.lineWidth = 1; var d0 = P(0, 0, z), d1 = P(0, 1.6, z);
+    c.beginPath(); c.moveTo(d0[0], d0[1]); c.lineTo(d1[0], d1[1]); c.stroke();
+  }
+  function leaf(c, niche) {
+    var x = RW - 0.01;
+    quad(c, [[x, 0, 5.95], [x, 3.6, 5.95], [x, 3.6, 7.85], [x, 0, 7.85]], niche);
+    quad(c, [[x, 0, 6.1], [x, 3.25, 6.1], [x, 3.25, 7.7], [x, 0, 7.7]], "#8a6a2a");
+    quad(c, [[x, 0, 6.22], [x, 3.12, 6.22], [x, 3.12, 7.58], [x, 0, 7.58]], VIOLET);
+    quad(c, [[x, 1.45, 6.32], [x, 1.62, 6.32], [x, 1.62, 6.5], [x, 1.45, 6.5]], "#e8d9a0");
+    c.globalCompositeOperation = "lighter";
+    line(c, [x, 3.42, 6.1], [x, 3.42, 7.7], [255, 255, 255], 0.05, 0.9, true);
+    glow(c, [x, 2.0, 5.72], 0.32, [64, 224, 96], 0.95);
+    c.globalCompositeOperation = "source-over";
+    quad(c, [[x, 1.93, 5.66], [x, 2.07, 5.66], [x, 2.07, 5.78], [x, 1.93, 5.78]], "#8dffaa");
+  }
+  function glass(c, frame, tint) {
+    var x = -RW + 0.01;
+    quad(c, [[x, 1.0, 6.7], [x, 3.3, 6.7], [x, 3.3, 9.7], [x, 1.0, 9.7]], frame);
+    quad(c, [[x, 1.15, 6.8], [x, 3.15, 6.8], [x, 3.15, 9.6], [x, 1.15, 9.6]], tint);
+    quad(c, [[x, 2.5, 6.8], [x, 3.15, 6.8], [x, 3.15, 8.3], [x, 2.9, 8.3]], "rgba(255,255,255,.07)");
+  }
+  function slab(c, front, side) {
+    quad(c, [[-2.0, 0, 7.6], [-2.0, 2.3, 7.6], [-2.0, 2.3, 8.6], [-2.0, 0, 8.6]], side);
+    quad(c, [[-3.4, 0, 7.6], [-2.0, 0, 7.6], [-2.0, 2.3, 7.6], [-3.4, 2.3, 7.6]], front);
+  }
+  function figure(c, x, z, h, monster, fill, rim, alpha) {
+    var b = P(x, 0, z), u = h * F / z;
+    c.save(); c.translate(b[0], b[1]); c.globalAlpha = alpha;
+    c.beginPath();
+    if (monster) {
+      c.moveTo(-0.17 * u, 0); c.lineTo(-0.2 * u, -0.42 * u); c.lineTo(-0.3 * u, -0.5 * u); c.lineTo(-0.34 * u, -0.3 * u); c.lineTo(-0.42 * u, -0.32 * u);
+      c.lineTo(-0.36 * u, -0.72 * u); c.lineTo(-0.14 * u, -0.8 * u); c.lineTo(-0.16 * u, -0.98 * u); c.lineTo(-0.07 * u, -0.9 * u); c.lineTo(0.07 * u, -0.9 * u);
+      c.lineTo(0.16 * u, -0.98 * u); c.lineTo(0.14 * u, -0.8 * u); c.lineTo(0.36 * u, -0.72 * u); c.lineTo(0.42 * u, -0.32 * u); c.lineTo(0.34 * u, -0.3 * u);
+      c.lineTo(0.3 * u, -0.5 * u); c.lineTo(0.2 * u, -0.42 * u); c.lineTo(0.17 * u, 0); c.lineTo(0.04 * u, 0); c.lineTo(0, -0.3 * u); c.lineTo(-0.04 * u, 0);
+    } else {
+      c.moveTo(-0.13 * u, 0); c.lineTo(-0.14 * u, -0.46 * u); c.lineTo(-0.2 * u, -0.5 * u); c.lineTo(-0.24 * u, -0.78 * u); c.lineTo(-0.1 * u, -0.84 * u);
+      c.lineTo(-0.1 * u, -0.96 * u); c.lineTo(0, -1.0 * u); c.lineTo(0.1 * u, -0.96 * u); c.lineTo(0.1 * u, -0.84 * u); c.lineTo(0.24 * u, -0.78 * u);
+      c.lineTo(0.2 * u, -0.5 * u); c.lineTo(0.34 * u, -0.56 * u); c.lineTo(0.34 * u, -0.5 * u); c.lineTo(0.14 * u, -0.42 * u); c.lineTo(0.13 * u, 0);
+      c.lineTo(0.03 * u, 0); c.lineTo(0, -0.4 * u); c.lineTo(-0.03 * u, 0);
+    }
+    c.closePath(); c.fillStyle = fill; c.fill();
+    if (rim) { c.strokeStyle = rim; c.lineWidth = 1.6; c.stroke(); }
+    c.restore();
+  }
+  function shadow(c, x, z, r, a) {
+    var b = P(x, 0, z), k = F / z;
+    c.fillStyle = "rgba(10,14,20," + a + ")"; c.beginPath(); c.ellipse(b[0], b[1], r * k, r * k * 0.22, 0, 0, 6.2832); c.fill();
+  }
+
+  // ---------- fixed random things ----------
+  function rnd(seed) { var s = seed; return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+  var r1 = rnd(7), CITY = [], STARS = [];
+  for (var i = 0; i < 150; i++) CITY.push([-4.3 + r1() * 8.6, 3.78 + Math.pow(r1(), 1.8) * 0.74, r1() < 0.7 ? [255, 196, 120] : [150, 200, 255], 0.3 + r1() * 0.7]);
+  for (i = 0; i < 230; i++) STARS.push([r1() * W, r1() * 230, 0.4 + r1() * 1.1, r1() * 6.28]);
+
+  // ---------- the four ----------
+  var SCENES = {
+    night: function (c, t) {
+      var BLUE = [47, 123, 255], OR = [255, 96, 32];
+      shell(c, { floor: ["#0b0f17", "#05070b"], ceil: ["#080b11", "#040508"], wall: ["#0c111b", "#05070b"], back: "#0a0e16" });
+      for (var z = 2.5; z < ZD; z += 1.5) { line(c, [-RW, 0, z], [-RW, RH, z], [70, 90, 130], 0.012, 0.3); line(c, [RW, 0, z], [RW, RH, z], [70, 90, 130], 0.012, 0.3); }
+      quad(c, [[-4.4, 3.7, ZD - 0.01], [4.4, 3.7, ZD - 0.01], [4.4, 4.6, ZD - 0.01], [-4.4, 4.6, ZD - 0.01]], "#02030a");
+      for (var i = 0; i < CITY.length; i++) { var d = P(CITY[i][0], CITY[i][1], ZD); c.fillStyle = rgba(CITY[i][2], CITY[i][3]); c.fillRect(d[0], d[1], 2, 2); }
+      var ax = -4.3 + ((t * 0.7) % 8.6), ap = P(ax, 4.42, ZD);
+      if (Math.floor(t * 2) % 2) { c.fillStyle = "#ff3a2a"; c.fillRect(ap[0], ap[1], 3, 3); }
+      timeDoor(c, t, "#12161f"); leaf(c, "#11151d"); glass(c, "#1a2130", "rgba(40,70,120,.35)");
+      var br = 0.8 + 0.2 * Math.sin(t * 0.9), st = (Math.sin(t * 37) + Math.sin(t * 59.3) > 1.25) ? 0.12 : 1;
+      c.globalCompositeOperation = "lighter";
+      // the floor takes each tube's colour
+      quad(c, [[-RW, 0, ZN], [-RW + 1.6, 0, ZN], [-RW + 1.6, 0, ZD], [-RW, 0, ZD]], rgba(BLUE, 0.07 * br));
+      quad(c, [[RW, 0, ZN], [RW - 1.6, 0, ZN], [RW - 1.6, 0, ZD], [RW, 0, ZD]], rgba(BLUE, 0.07 * br));
+      var tubes = [[-RW, 10.3, 1], [-RW, 6.2, st], [RW, 5.6, 1], [RW, 8.7, 1], [RW, 10.2, 1]];
+      for (i = 0; i < tubes.length; i++) {
+        var X = tubes[i][0], Z = tubes[i][1], A = tubes[i][2];
+        glow(c, [X * 0.9, 0.02, Z], 1.5, OR, 0.22 * A);
+        line(c, [X * 0.995, 0.3, Z], [X * 0.995, 4.0, Z], OR, 0.07, 0.95 * A, true);
+      }
+      line(c, [-RW * 0.99, 4.72, ZN], [-RW * 0.99, 4.72, ZD], BLUE, 0.07, br, true);
+      line(c, [RW * 0.99, 4.72, ZN], [RW * 0.99, 4.72, ZD], BLUE, 0.07, br, true);
+      line(c, [-RW, 4.72, ZD - 0.02], [RW, 4.72, ZD - 0.02], BLUE, 0.07, br, true);
+      var sp = P(-3.05, 2.75, ZD);
+      c.font = "600 " + Math.round(0.58 * F / ZD) + "px 'Chakra Petch', sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+      c.shadowColor = rgba(OR, 0.9); c.shadowBlur = 14; c.fillStyle = rgba([255, 150, 90], 0.95); c.fillText("SHIFT 2", sp[0], sp[1]); c.shadowBlur = 0;
+      c.globalCompositeOperation = "source-over";
+      slab(c, "#0d121b", "#131a27");
+      c.globalCompositeOperation = "lighter"; line(c, [-3.4, 2.3, 7.59], [-2.0, 2.3, 7.59], BLUE, 0.03, 0.55 * br, true); c.globalCompositeOperation = "source-over";
+      figure(c, 2.3, 9.4, 2.7, true, "#0a0c12", rgba(OR, 0.75), 1);
+      figure(c, -0.6, 6.3, 1.9, false, "#141c2c", rgba(BLUE, 0.9), 0.8);
+    },
+    clean: function (c, t) {
+      var OR = [255, 106, 0];
+      shell(c, { floor: ["#b4bcc4", "#ccd3d9"], ceil: ["#e3e8ec", "#f1f4f6"], wall: ["#bfc7ce", "#d9dee3"], back: "#c9d0d6" });
+      for (var z = 1.75; z < ZD; z += 1.25) {
+        line(c, [-RW, 0.3, z], [-RW, RH, z], [40, 50, 60], 0.014, 0.4); line(c, [RW, 0.3, z], [RW, RH, z], [40, 50, 60], 0.014, 0.4);
+        line(c, [-RW, RH, z], [RW, RH, z], [120, 132, 144], 0.014, 0.5);
+      }
+      for (var x = -3.75; x < RW; x += 1.25) { line(c, [x, RH, ZN], [x, RH, ZD], [120, 132, 144], 0.014, 0.5); line(c, [x, 0.3, ZD], [x, RH, ZD], [40, 50, 60], 0.014, 0.3); }
+      line(c, [-RW, 2.6, ZN], [-RW, 2.6, ZD], [40, 50, 60], 0.014, 0.4); line(c, [RW, 2.6, ZN], [RW, 2.6, ZD], [40, 50, 60], 0.014, 0.4);
+      // the black gap at the foot of the walls, and the one line of colour
+      quad(c, [[-RW, 0, ZN], [-RW, 0.3, ZN], [-RW, 0.3, ZD], [-RW, 0, ZD]], "#171b20");
+      quad(c, [[RW, 0, ZN], [RW, 0.3, ZN], [RW, 0.3, ZD], [RW, 0, ZD]], "#171b20");
+      quad(c, [[-RW, 0, ZD], [RW, 0, ZD], [RW, 0.3, ZD], [-RW, 0.3, ZD]], "#171b20");
+      quad(c, [[-RW, 1.3, ZN], [-RW, 1.42, ZN], [-RW, 1.42, ZD], [-RW, 1.3, ZD]], rgba(OR, 1));
+      quad(c, [[RW, 1.3, ZN], [RW, 1.42, ZN], [RW, 1.42, ZD], [RW, 1.3, ZD]], rgba(OR, 1));
+      quad(c, [[-RW, 1.3, ZD], [RW, 1.3, ZD], [RW, 1.42, ZD], [-RW, 1.42, ZD]], rgba(OR, 1));
+      var np = P(-3.2, 3.25, ZD);
+      c.font = "700 " + Math.round(1.9 * F / ZD) + "px 'Chakra Petch', sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillStyle = rgba(OR, 1); c.fillText("3", np[0], np[1]);
+      for (z = 2.6; z < ZD; z += 2) quad(c, [[-3, RH, z], [3, RH, z], [3, RH, z + 0.3], [-3, RH, z + 0.3]], "#ffffff");
+      line(c, [-1.3, 0, ZN], [-1.3, 0, ZD], [90, 100, 112], 0.03, 0.8); line(c, [1.3, 0, ZN], [1.3, 0, ZD], [90, 100, 112], 0.03, 0.8);
+      timeDoor(c, t, "#20252b"); leaf(c, "#e6eaed"); glass(c, "#20252b", "rgba(30,44,58,.55)");
+      // the scanner bar, and the lights running in the floor
+      var zs = ZN - 1.5 + ((t * 2.4) % (ZD - ZN + 6));
+      c.globalCompositeOperation = "lighter";
+      band(c, zs, 0.5, [255, 255, 255], 0.14, "fwc"); band(c, zs + 0.5, 0.6, [255, 255, 255], 0.3, "fwc"); band(c, zs + 1.1, 0.5, [255, 255, 255], 0.14, "fwc");
+      c.globalCompositeOperation = "source-over";
+      for (var k = 0; k < 4; k++) {
+        var zp = ZN + ((t * 1.6 + k * 2.6) % (ZD - ZN));
+        quad(c, [[-1.36, 0, zp], [-1.24, 0, zp], [-1.24, 0, zp + 0.5], [-1.36, 0, zp + 0.5]], rgba(OR, 1));
+        quad(c, [[1.24, 0, zp], [1.36, 0, zp], [1.36, 0, zp + 0.5], [1.24, 0, zp + 0.5]], rgba(OR, 1));
+      }
+      shadow(c, -2.7, 7.55, 1.0, 0.22); slab(c, "#e2e6ea", "#b9c1c8");
+      shadow(c, 2.3, 9.4, 0.9, 0.3); figure(c, 2.3, 9.4, 2.7, true, "#3a1a14", null, 1);
+      shadow(c, -0.6, 6.3, 0.55, 0.22); figure(c, -0.6, 6.3, 1.9, false, "#3d4a3a", null, 0.72);
+    },
+    deep: function (c, t) {
+      var ICE = [159, 216, 255], OR = [255, 138, 48];
+      shell(c, { floor: ["#121821", "#0a0d12"], ceil: ["#05060d", "#05060d"], wall: ["#151b25", "#0b0e14"], back: "#131923" });
+      // no ceiling: the stars, slowly turning, behind trusses
+      c.save(); trace(c, CEIL); c.clip();
+      var g = c.createRadialGradient(620, 60, 10, 620, 60, 420); g.addColorStop(0, "rgba(70,90,170,.35)"); g.addColorStop(0.5, "rgba(120,60,40,.12)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, 320);
+      for (var i = 0; i < STARS.length; i++) {
+        var sx = (STARS[i][0] + t * 3) % W, a = 0.55 + 0.45 * Math.sin(t * 1.3 + STARS[i][3]);
+        c.fillStyle = "rgba(225,235,255," + a.toFixed(2) + ")"; c.fillRect(sx, STARS[i][1], STARS[i][2], STARS[i][2]);
+      }
+      c.restore();
+      for (var z = 2.5; z < ZD; z += 2) line(c, [-RW, RH, z], [RW, RH, z], [28, 36, 50], 0.22, 1);
+      line(c, [-2, RH, ZN], [-2, RH, ZD], [28, 36, 50], 0.16, 1); line(c, [2, RH, ZN], [2, RH, ZD], [28, 36, 50], 0.16, 1);
+      for (z = 3; z < ZD; z += 2) { line(c, [-RW, 0, z], [-RW, RH, z], [120, 150, 190], 0.012, 0.22); line(c, [RW, 0, z], [RW, RH, z], [120, 150, 190], 0.012, 0.22); }
+      timeDoor(c, t, "#0c1017"); leaf(c, "#10151d"); glass(c, "#1c2533", "rgba(40,70,110,.35)");
+      c.globalCompositeOperation = "lighter";
+      line(c, [-RW, 3.7, ZN], [-RW, 3.7, ZD], ICE, 0.03, 0.55, true); line(c, [RW, 3.7, ZN], [RW, 3.7, 5.9], ICE, 0.03, 0.55, true); line(c, [RW, 3.7, 7.9], [RW, 3.7, ZD], ICE, 0.03, 0.55, true);
+      var runs = [path([[-1.7, 0.01, ZN], [-1.7, 0.01, ZD - 0.03], [-1.7, 3.85, ZD - 0.03], [0, 3.85, ZD - 0.03]]),
+                  path([[1.7, 0.01, ZN], [1.7, 0.01, ZD - 0.03], [1.7, 3.85, ZD - 0.03], [0, 3.85, ZD - 0.03]])];
+      var top = 0;
+      for (var r = 0; r < 2; r++) {
+        var pa = runs[r];
+        for (i = 1; i < pa.pts.length; i++) line(c, pa.pts[i - 1], pa.pts[i], ICE, 0.035, 0.38, true);
+        for (var k = 0; k < 3; k++) {
+          var u = (t * 0.2 + k / 3 + r * 0.04) % 1, p = pulse(c, pa, u, ICE, 0.42);
+          if (p[1] < 0.1) glow(c, [p[0], 0.01, p[2]], 2.2, ICE, 0.16);
+          if (u > 0.9) top = Math.max(top, (u - 0.9) * 10);
+        }
+      }
+      glow(c, [0, 3.85, ZD - 0.03], 1.6, ICE, 0.25 + 0.6 * top);
+      quad(c, [[-1.28, 0, ZD - 0.02], [1.28, 0, ZD - 0.02], [1.28, 3.5, ZD - 0.02], [-1.28, 3.5, ZD - 0.02]], rgba(ICE, 0.05 + 0.12 * top));
+      var bl = Math.pow(Math.max(0, Math.sin(t * 2.1)), 6);
+      glow(c, [-RW + 0.05, 4.3, 5.9], 0.5 + 1.4 * bl, OR, 0.35 + 0.6 * bl);
+      band(c, 5.2, 1.6, OR, 0.07 * bl, "f");
+      c.globalCompositeOperation = "source-over";
+      slab(c, "#161d28", "#1e2836");
+      c.globalCompositeOperation = "lighter"; line(c, [-3.4, 2.3, 7.59], [-2.0, 2.3, 7.59], OR, 0.03, 0.8, true); line(c, [-3.4, 0.05, 7.59], [-2.0, 0.05, 7.59], OR, 0.03, 0.5, true); c.globalCompositeOperation = "source-over";
+      figure(c, 2.3, 9.4, 2.7, true, "#07090d", rgba(ICE, 0.7), 1);
+      figure(c, -0.6, 6.3, 1.9, false, "#16202c", rgba(ICE, 0.9), 0.8);
+    },
+    prism: function (c, t) {
+      shell(c, { floor: ["#111318", "#08090b"], ceil: ["#0d0e12", "#07080a"], wall: ["#14161a", "#0a0b0d"], back: "#15171b" });
+      function hue(z, side) { return 200 + 80 * Math.sin(z * 0.45 - t * 0.38) + 55 * Math.sin(z * 0.21 + t * 0.25 + side * 1.7); }
+      c.globalCompositeOperation = "lighter";
+      for (var side = -1; side <= 1; side += 2) {
+        var X = side * RW * 0.999;
+        for (var z = ZN; z < ZD - 0.2; z += 1.4) {
+          var z1 = Math.min(ZD - 0.05, z + 1.28);
+          if (side > 0 && z1 > 5.8 && z < 7.95) continue;        // the leaf's plain niche
+          var h = hue(z, side), col = "hsla(" + h.toFixed(0) + ",88%,58%,", dim = "hsla(" + h.toFixed(0) + ",88%,45%,";
+          quad(c, [[X, 0.25, z], [X, 1.3, z], [X, 1.3, z1], [X, 0.25, z1]], dim + "0.42)");
+          quad(c, [[X, 1.3, z], [X, 3.6, z], [X, 3.6, z1], [X, 1.3, z1]], col + "0.85)");
+          quad(c, [[X, 3.6, z], [X, 4.75, z], [X, 4.75, z1], [X, 3.6, z1]], dim + "0.42)");
+          quad(c, [[X, 0, z], [X - side * 1.3, 0, z], [X - side * 1.3, 0, z1], [X, 0, z1]], col + "0.17)");
+          quad(c, [[X, 0, z], [X - side * 3.1, 0, z], [X - side * 3.1, 0, z1], [X, 0, z1]], col + "0.11)");
+          quad(c, [[X, RH, z], [X - side * 1.6, RH, z], [X - side * 1.6, RH, z1], [X, RH, z1]], col + "0.08)");
+        }
+      }
+      line(c, [0, RH - 0.01, ZN], [0, RH - 0.01, ZD], [255, 255, 255], 0.04, 0.5, true);
+      // with the clock: a faint ring of white across the floor
+      var fr = t % 1;
+      band(c, ZD - 0.4 - fr * 6.5, 0.35, [255, 255, 255], 0.2 * (1 - fr), "f");
+      c.globalCompositeOperation = "source-over";
+      timeDoor(c, t, "#0c0d10"); leaf(c, "#191b20"); glass(c, "#0c0d10", "rgba(10,12,16,.72)");
+      slab(c, "#0c0d10", "#17191e");
+      var hm = hue(9.4, 1), hs = hue(6.3, -1);
+      figure(c, 2.3, 9.4, 2.7, true, "#08090b", "hsla(" + hm.toFixed(0) + ",88%,62%,.8)", 1);
+      figure(c, -0.6, 6.3, 1.9, false, "#15181d", "hsla(" + hs.toFixed(0) + ",88%,66%,.9)", 0.82);
+    }
+  };
+
+  // ---------- the page ----------
+  var store = { get: function () { try { return JSON.parse(localStorage.getItem("map32-concept") || "{}"); } catch (e) { return {}; } },
+                set: function (v) { try { localStorage.setItem("map32-concept", JSON.stringify(v)); } catch (e) {} } };
+  var picks = store.get();
+  var host = document.getElementById("concepts"), canv = [];
+  CONCEPTS.forEach(function (k, n) {
+    var s = document.createElement("section");
+    s.className = "concept"; s.id = "c-" + k.id;
+    s.innerHTML =
+      '<div class="scene"><canvas width="' + W + '" height="' + H + '" role="img" aria-label="Sketch of a room in the look ' + k.name + '"></canvas>' +
+      '<div class="swatches">' + k.sw.map(function (x) { return '<span style="background:' + x + '"></span>'; }).join("") + '<em>' + k.swNote + '</em></div></div>' +
+      '<div class="about"><div class="eyebrow">Concept ' + "ABCD".charAt(n) + '</div><h2>' + k.name + '</h2><p class="pitch">' + k.pitch + '</p><dl>' +
+      '<div><dt>The place</dt><dd>' + k.place + '</dd></div>' +
+      '<div><dt>What the lights do</dt><dd>' + k.lights + '</dd></div>' +
+      '<div><dt>Room by room</dt><dd><ul class="rooms">' + k.rooms.map(function (r, i) { return '<li><b>' + (i + 1) + '</b>' + r + '</li>'; }).join("") + '</ul></dd></div>' +
+      '<div><dt>Near to</dt><dd>' + k.near + '</dd></div>' +
+      '<div><dt>To weigh</dt><dd>' + k.watch + '</dd></div></dl>' +
+      '<button class="pick" type="button" id="pick-' + k.id + '" aria-pressed="false">Pick ' + k.name + '</button></div>';
+    host.appendChild(s);
+    var cv = s.querySelector("canvas"), dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = W * dpr; cv.height = H * dpr;
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canv.push({ id: k.id, cv: cv, ctx: ctx, seen: true });
+    s.querySelector(".pick").addEventListener("click", function () { picks.concept = picks.concept === k.id ? "" : k.id; sync(); });
+  });
+
+  var out = document.getElementById("out"), more = document.getElementById("more"), inputs = document.querySelectorAll("input[data-k]");
+  function sync() {
+    CONCEPTS.forEach(function (k) {
+      var on = picks.concept === k.id, b = document.getElementById("pick-" + k.id);
+      b.setAttribute("aria-pressed", on ? "true" : "false"); b.textContent = on ? "Picked: " + k.name : "Pick " + k.name;
+      document.getElementById("c-" + k.id).classList.toggle("is-picked", on);
+    });
+    var moves = [], events = [], fights = "", press = "";
+    inputs.forEach(function (i) {
+      if (!i.checked) return;
+      if (i.dataset.k === "moves") moves.push(i.value); else if (i.dataset.k === "events") events.push(i.value); else if (i.dataset.k === "press") press = i.value; else fights = i.value;
+    });
+    picks.checked = []; inputs.forEach(function (i) { if (i.checked) picks.checked.push(i.id); });
+    picks.more = more.value;
+    var name = ""; CONCEPTS.forEach(function (k) { if (k.id === picks.concept) name = k.name; });
+    out.value = "MAP32 look. Concept: " + (name || "(none picked yet)") + ".\n" +
+      "Lights move: " + (moves.length ? moves.join(", ") : "as the concept has them") + ".\n" +
+      "Lights answer the game: " + (events.length ? events.join(", ") : "nothing") + ".\n" +
+      "In the fights: " + fights + ".\n" +
+      "The press: " + press + "." + (more.value.trim() ? "\nAlso: " + more.value.trim() : "");
+    store.set(picks);
+  }
+  if (picks.checked) inputs.forEach(function (i) { if (i.type === "checkbox") i.checked = picks.checked.indexOf(i.id) >= 0; else if (picks.checked.indexOf(i.id) >= 0) i.checked = true; });
+  if (picks.more) more.value = picks.more;
+  inputs.forEach(function (i) { i.addEventListener("change", sync); });
+  more.addEventListener("input", sync);
+  sync();
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var note = document.getElementById("copied");
+    function fallback() { out.focus(); out.select(); note.textContent = "Selected: press Ctrl+C to copy."; }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(out.value).then(function () { note.textContent = "Copied. Paste it into the chat."; }, fallback);
+    else fallback();
+  });
+
+  // ---------- the lights ----------
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches, running = !still, t0 = performance.now(), held = 3.4;
+  var pause = document.getElementById("pause");
+  function label() { pause.textContent = running ? "Stop the lights" : "Run the lights"; }
+  pause.addEventListener("click", function () { running = !running; if (running) { t0 = performance.now() - held * 1000; requestAnimationFrame(frame); } label(); });
+  label();
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { canv.forEach(function (k) { if (k.cv === e.target) k.seen = e.isIntersecting; }); }); }, { rootMargin: "80px" });
+    canv.forEach(function (k) { io.observe(k.cv); });
+  }
+  function draw(t, all) {
+    canv.forEach(function (k) {
+      if (!all && !k.seen) return;
+      var c = k.ctx;
+      c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; c.shadowBlur = 0; c.lineCap = "butt";
+      c.fillStyle = "#05070b"; c.fillRect(0, 0, W, H);
+      try { SCENES[k.id](c, t); } catch (e) { c.globalCompositeOperation = "source-over"; }
+    });
+  }
+  var last = 0;
+  function frame(now) {
+    if (!running) return;
+    if (now - last > 30) { last = now; held = (now - t0) / 1000; draw(held, false); }
+    requestAnimationFrame(frame);
+  }
+  draw(held, true);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!running) draw(held, true); });
+  if (running) requestAnimationFrame(frame);
+})();
+</script>
