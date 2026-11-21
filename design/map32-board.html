@@ -1,0 +1,99 @@
+<title>Double Shift Look Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the level room by room, each a short note over a grid of shots from the game; what to tell me at the foot. */
+:root {
+  --bg: #eef0f3; --panel: #ffffff; --fg: #14181f; --muted: #566070; --rule: #cdd3db; --accent: #1b55e8; --accent-fg: #ffffff;
+  --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0d11; --panel: #14181f; --fg: #e8ebf0; --muted: #98a2b1; --rule: #2a313c; --accent: #7ea6ff; --accent-fg: #0b0d11; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #0b0d11; --panel: #14181f; --fg: #e8ebf0; --muted: #98a2b1; --rule: #2a313c; --accent: #7ea6ff; --accent-fg: #0b0d11; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 700; }
+h2 { font-size: clamp(1.25rem, 3vw, 1.6rem); font-weight: 700; }
+p { margin: 0; max-width: 70ch; }
+.eyebrow { font-family: var(--mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.lead { display: flex; flex-direction: column; gap: 12px; }
+.note { color: var(--muted); font-size: .92rem; }
+code { font-family: var(--mono); font-size: .88em; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+section.room { display: flex; flex-direction: column; gap: 14px; padding-top: 24px; border-top: 1px solid var(--rule); }
+.shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+figure img { width: 100%; height: auto; display: block; border-radius: 5px; background: #05070b; aspect-ratio: 819 / 480; object-fit: cover; }
+figcaption { font-size: .86rem; color: var(--muted); }
+figcaption b { color: var(--fg); font-weight: 600; }
+ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 5px; font-size: .95rem; max-width: 72ch; }
+textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width: 100%; box-sizing: border-box; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--fg); padding: 10px 12px; resize: vertical; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+button { font: inherit; cursor: pointer; font-family: var(--display); font-weight: 600; padding: 9px 18px; border-radius: 6px; border: 0; background: var(--accent); color: var(--accent-fg); }
+button:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header class="lead">
+    <div class="eyebrow">Ajar · MAP32 "Double Shift" · look, as built</div>
+    <h1>Deep Field, in the game</h1>
+    <p>This is the look you picked, built into the five rooms and photographed by the level's tour. These are shots from the game, taken by a test run without a graphics card, so the lights are a little flatter than on your screen.</p>
+    <p>Stills cannot show what moves. The dashes on the conduits run, the high lines breathe, a wave of light crosses a room now and then, and here and there a line stutters. To see that, play it: <code>MAP=MAP32 ./run.sh</code>. The plain level is still there with <code>AJAR_WORKS=0 ./build.sh</code>.</p>
+    <p class="note">Monsters stand in some shots: the later waves come even when the tour asks for none.</p>
+  </header>
+  <main id="rooms" style="display:flex;flex-direction:column;gap:36px"></main>
+  <section class="room">
+    <h2>What I would look at first</h2>
+    <ul>
+      <li>Whether the ice-white lines are bright enough on your screen, and whether rooms 1, 2 and 5 are too dark.</li>
+      <li>Room 3 from the lobby: the sign over the press, the stars, the slabs.</li>
+      <li>The press: the hall dims as it warns and flares as it lands.</li>
+      <li>A room going white and steady once it is done.</li>
+      <li>Not built: roof beams under the stars in rooms 3 and 4. The sky there is open.</li>
+    </ul>
+    <label class="note" for="notes">Your notes, room by room or as they come:</label>
+    <textarea id="notes" rows="5" placeholder="Room 3: ..."></textarea>
+    <div class="row"><button id="copy" type="button">Copy</button><span class="note" id="copied" role="status">Paste it into the chat. Your notes are kept in this browser.</span></div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var W = "board32/works/view_", P = "board32/plain/view_";
+  var ROOMS = [
+    { name: "Room 1, the plate", note: "A low plated cell. TEST BAY 1 over the nook. The leaf's frame stands in a pale surround under a white strip, as every frame in the level does.",
+      shots: [[W, "00", "As you come in", "the sprung frame, the case, the conduit in the floor"], [W, "33", "The time door", "lit lines climb its sides and cross its top; the door itself is as it was"], [W, "34", "A frame", "plain pale steel round it, white light over it"], [W, "55", "Done", "the room once it is over: the lines plain white and steady, a little brighter"]] },
+    { name: "Room 2, two keys", note: "The gallery is a bridge under lit ceiling lines; the pit is open to the stars.",
+      shots: [[W, "05", "The gallery", "dashes run in the floor and along the walls toward the pit"], [P, "05", "The same, plain", "as the level was"], [W, "06", "The pit", "frame B and its lamp, the stars overhead"], [W, "37", "Time door 1", "TEST BAY 2 beside it"]] },
+    { name: "Room 3, the test bay", note: "The press is the bay's load test. Its sign and stripes are over the mouth, a load scale runs up the chamber's walls, the two plates are load cells A and B, and the room with the lever is the control cabin. While the fight is on, nothing here moves but the press's dim and flare, the wave from a time door and the plate lines.",
+      shots: [[W, "08", "From the lobby", "the hall under the stars, the slabs with their orange edge"], [P, "08", "The same, plain", "as the level was"], [W, "54", "The press, landing", "TEST BAY 3, LOAD 4000 t; the flare"], [W, "10", "The chamber from the mouth", "hazard stripes, the scale, time door 3"], [W, "41", "The back wall", "the load scale and load cell A"], [W, "53", "A plate line", "an earlier self on load cell B: white dashes run from the plate to what it works"], [W, "42", "By the wing's shutter", "CABIN OPENS UNDER LOAD"], [W, "14", "The control cabin", "the lever at the end, the window, the pen's bars"]] },
+    { name: "Room 4, the range", note: "A lane under the stars. The pen behind the shutter is lit a dull orange.",
+      shots: [[W, "22", "As you come in", "the range from the lobby"], [W, "26", "The shutter", "with its lamps"], [W, "46", "The lobby", "TEST BAY 4"], [W, "45", "Time door 1", ""]] },
+    { name: "Room 5, the airlock", note: "Three plated cells. The way out is the brightest thing in the level.",
+      shots: [[W, "28", "As you come in", "S, F1 and the case"], [W, "52", "F1 with its leaf", ""], [W, "48", "The entrance", "TEST BAY 5"], [W, "50", "The way out", "a hatch lit all round"]] },
+    { name: "Between the rooms", note: "",
+      shots: [[W, "44", "The corridor to room 4", "one travelling light runs along its conduit"]] }
+  ];
+  var host = document.getElementById("rooms");
+  ROOMS.forEach(function (r) {
+    var s = document.createElement("section"); s.className = "room";
+    s.innerHTML = "<h2>" + r.name + "</h2>" + (r.note ? "<p>" + r.note + "</p>" : "") + '<div class="shots">' + r.shots.map(function (x) {
+      return '<figure><img loading="lazy" src="' + x[0] + x[1] + '.jpg" alt="' + x[2] + '"><figcaption><b>' + x[2] + "</b>" + (x[3] ? ": " + x[3] : "") + "</figcaption></figure>";
+    }).join("") + "</div>";
+    host.appendChild(s);
+  });
+  var notes = document.getElementById("notes"), said = document.getElementById("copied");
+  try { notes.value = localStorage.getItem("map32-board-notes") || ""; } catch (e) {}
+  notes.addEventListener("input", function () { try { localStorage.setItem("map32-board-notes", notes.value); } catch (e) {} });
+  document.getElementById("copy").addEventListener("click", function () {
+    var text = "MAP32 look, Deep Field, my notes:\n" + (notes.value.trim() || "(none)");
+    function fallback() { notes.focus(); notes.select(); said.textContent = "Selected: press Ctrl+C to copy."; }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { said.textContent = "Copied. Paste it into the chat."; }, fallback);
+    else fallback();
+  });
+})();
+</script>

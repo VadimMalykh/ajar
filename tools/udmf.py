@@ -29,6 +29,10 @@ class Map:
         self.things = []
         self.cuts = set()      # extra vertices that split the edges they lie on
         self.align = set()     # textures laid by world position, not from each line's start
+        # a look's last word on each line (MAP32's: tools/works32.py): called with the
+        # line, the sides, the edge a-b of the front sector si, the back sector (or
+        # None) and the textures the line was given; it may change the line and its sides
+        self.line_hook = None
 
     def sector(self, poly, floor=0, ceil=192, light=200, wall="AJWALL",
                ftex="AJFLOOR", ctex="AJCEIL", color=None, side=None, id=0, special=0, raw=None, lift=0):
@@ -242,6 +246,8 @@ class Map:
                 if v:
                     ld[f"arg{i}"] = v
             ld.update(p)
+            if self.line_hook:
+                self.line_hook(ld, sides, a, b, si, other, dict(mid=mid, upper=upper, lower=lower))
             lines.append(ld)
 
         def val(v):
