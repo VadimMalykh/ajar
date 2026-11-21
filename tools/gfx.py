@@ -1329,6 +1329,12 @@ def make_all():
     gfx_institute.weigh_dial(out, map_institute1.LOOK)           # MAP16's weighbridge dial, in the build's look
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
                            + "cameratexture AJREEL 512 224\n").encode()
+    import gfx_works                                             # MAP32's look, Deep Field (works32.py)
+    import map_secret2                                           # ... and the signs it asks for
+    works = gfx_works.make(out, map_secret2.SIGNS)
+    out["animdefs.txt"] += works["animdefs"].encode()
+    out["textures.txt"] = works["textures"].encode()
+    out["gldefs.txt"] = works["gldefs"].encode()
     import gfx_institute2                                        # MAP13's and MAP14's own props and pictures
     gfx_institute2.make(out)
     import gfx_lift                                              # the lift's buttons (MAP12)

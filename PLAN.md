@@ -7250,3 +7250,128 @@ GREEN, PINK, BLUE, RED), so no hue is free for the house lights and every
 leaf and frame stands in plain white light; nothing warns of a paradox. No
 mirror floors and no bloom are counted on (the renderer and Vadim's
 settings). Not chosen yet.
+
+**Vadim's choice, 2026-11-21** (corrected the same day: "lights answer the
+game" became all four):
+
+```
+MAP32 look. Concept: Deep Field.
+Lights move: breathing, running, sweeping, stuttering.
+Lights answer the game: time door wave, press, calm when won, plate line.
+In the fights: calmer while a fight is on.
+The press: the test bay.
+```
+
+### Deep Field as built (2026-11-21; not played by hand)
+
+The place: a plant in space where time doors are tested, five test bays.
+Dark plated steel, ice-white lines (159, 216, 255), orange (255, 138, 48)
+for hazard, signs and the pens' light, and no other hue.
+
+**The switch.** `AJAR_WORKS` unset or 1 builds the look (the default);
+`AJAR_WORKS=0` builds the plain level, byte for byte the map main had
+(checked: the TEXTMAP of `AJAR_WORKS=0` is identical to one made from the
+generator before the look). The look is laid on by `tools/works32.py` after
+every check of `map_secret2.py` (asserts, solver, covers), through a hook in
+`udmf.py` (`Map.line_hook`, None for every other map) that gives each line
+its last textures; it moves no wall, floor, ceiling or thing of the puzzle,
+adds no sector, and only cuts some walls into pieces that wear their own
+picture. Its pictures are `tools/gfx_works.py` (prefix AJZ; TEXTURES
+composites over a few patches, ANIMDEFS, brightmaps in GLDEFS); its lights
+and moving textures `src/zscript/works.zs` (handler `AjarWorks`, which does
+nothing in a level without `AjarWorksRoom` things, so in any other map and in
+the plain MAP32).
+
+**Walls.** Plates 128 wide (families `AJZW<h>`, one per height of wall, the
+letter the height: A 96 ... H 320), a high ice line three quarters up and a
+conduit 24 up with bright dashes, both lit whatever the room's light
+(brightmaps). Each family has variants: `M` and `L` (16 frames, the line
+breathing, the dashes running one way or the other: each wall gets the one
+that runs toward its room's way on), `S` steady, `W` plain white, `D` the
+line out (the stutter). Round each time door the conduit climbs both sides
+and runs over the top (`AJZV`/`AJZY` strips 32 wide beside the mouth, `AJZU`
+over it, `AJZXD` in the chamber where the door hangs from the press's
+ceiling); the door's ivory, trim and clock are untouched. Every frame (and
+far side, where a leaf comes out) stands in a pale neutral steel surround,
+64 each side (`AJZN`), with a white lit strip over it (`AJZO`). Floors: tread
+plate (`AJZFT`); rooms 1, 2, 5 and the corridors a floor conduit every 256,
+running east (`AJZCF`). Ceilings: steel with light lines (`AJZKC`), sky over
+room 2's pit, room 3's hall and room 4's range (heights unchanged): a
+painted starfield (`AJZSKY`, a faint blue nebula with a touch of orange),
+drifting slowly (MAPINFO `sky1 = "AJZSKY", 1`).
+
+**Room by room.** Room 1: TEST BAY 1 over the nook by the entrance, its one
+floor conduit runs to the time door. Room 2: TEST BAY 2 on the gallery's
+north wall by its time door, the pit open to the stars. Room 3, the test
+bay: over the chamber's mouth, on the hall side of the lintel, TEST BAY 3
+and LOAD 4000 t between hazard stripes (`AJZTH`, one 1280 picture); hazard
+on the stubs' ends and round the chamber's floor; the press's face (the
+chamber's ceiling) a ribbed platen (`AJZPLT`); the bed scored steel with a
+grid (`AJZBED`, one 2048x512 flat panned to the chamber); a load scale up
+the chamber's walls (ticks every 16, numbers every 64, `AJZPD`); the plates
+are load cells: a painted square round each on the bed, LOAD CELL A (the
+screen's), LOAD CELL B (the cage's). The wing is the control cabin: CONTROL
+over the upper room by the lever, CABIN OPENS UNDER LOAD by the shutter in
+the hall's south wall. The hall's four slabs are plated blocks with an
+orange line along the top edge (`AJZQ`); pen and cage plain plate (`AJZR`),
+the pen lit dull orange (steady). Room 4: the range under the stars, its
+walls' conduits running toward the shutter, TEST BAY 4 in the lobby, the pen
+behind the shutter lit orange (steady), the wings plated. Room 5, the
+airlock: three plated cells with steel ceilings, TEST BAY 5 at the entrance;
+the way out (the night room's mouth) is the brightest thing in it, a hatch
+with an ice border lit all round (`AJZHA`/`AJZHB`/`AJZHC`/`AJZHD`) and a
+light before it. Lettering is the game's (gfx.DIGITS, with t, K, W, X
+added).
+
+**The four movements.** Breathing: the high lines' 16 frames swell and sink
+over 112 tics (3.2 s), and the steady ice lights of the room the player is
+in breathe with them. Running: the dashes of the conduits move toward the
+room's way on (up the door strips, east on the floors); in rooms 1 and 2 and
+the two corridors small ice lights travel along a floor conduit toward the
+time door (8 s a run), fading out near anything of the puzzle. Sweeping:
+now and then (20 to 30 s, at random, in the player's room only) two to four
+large pale lights abreast cross a big room along its long axis in 3 s.
+Stuttering: one stretch of high line per room (a 128 piece, line id 4300 +
+room) fails and catches at random times, with a small light that flickers
+with it, far from every lamp.
+
+**Lights that answer the game** (and nothing else; nothing shows an earlier
+self near the player):
+- *The time door wave*: the time handler's `Where` of the player goes from
+  a box of fight k to its hall, alive: a wave (the sweep's lights) runs from
+  where they came out along the room, once. An earlier self never sets it
+  off (only the player's own position is read).
+- *The press*: `AjarPress.phase` (so an earlier self's pull too). While it
+  warns and comes down the hall's and chamber's light (sector tag 4131) sinks
+  by 48; at the moment it is down they go to full light and a white light
+  flashes in the chamber, both falling back over 20 tics.
+- *Calm when won*: a room in the handler's `won` (a fight won by `Win`, a
+  room of goes left otherwise than by a time door by `EndGoes`) turns plain
+  white and steady (W variants, white steady lights), nothing moves there,
+  its light up by 24. Rooms 3 and 4 are calm while their fight is on
+  (`fight` is theirs, `phase` not IDLE): steady variants, no breathing,
+  running, sweeping or stuttering; only a wave, the press and a plate line
+  move.
+- *The plate line*: while anyone stands on a plate (`AjarPlate.pressed`) a
+  line of white dashes lies on the floor from the plate to what it works (its
+  frame, by the frame's id, or its shutter, by tag), brightness running along
+  it toward that; flat additive sprites (`AjarWorksTrace`), not lights, which
+  the time handler's recorders (RecordFx, Snap, Record's count) skip by name.
+
+Every sector light the look sets is worked out each tic from the rooms'
+states and the press, so none is ever left changed (a go that ends, a hall
+cleared, a fight begun anew).
+
+**Light levels.** Rooms of goes 1, 2, 5, the corridors and lobbies 152;
+boxes 170 (steady); rooms 3 and 4 (hall, chamber, wing, range, wings, pens)
+184; the cases keep theirs. A room done: +24.
+
+**The puzzle in plain white light.** Every light of the look is an
+invisible carrier (+INVISIBLE +NOBLOCKMAP +NOINTERACTION, the recorders skip
+it). No steady light is placed where its reach would touch a frame, leaf,
+plate, lamp or lever; travelling and sweeping lights fade out before theirs
+would; the stutters are at least 256 from every lamp. The plate line is the
+one exception, as chosen. Lights per room: at most 12 with what moves
+(room 2 the most: 5 steady, 2 travelling, a stutter, a sweep of up to 4);
+rooms 3 and 4 while their fight is on 6 and 7 steady, none moving but a wave,
+the press's flare and a plate line.

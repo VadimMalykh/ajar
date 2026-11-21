@@ -714,7 +714,7 @@ class AjarTimeHandler : EventHandler
 		Actor a;
 		while (a = Actor(it.Next()))
 		{
-			if (a.bInvisible || a is "AjarFigure") continue;        // (a figure: shut.zs)
+			if (a.bInvisible || a is "AjarFigure" || a is "AjarWorksTrace") continue;        // (a figure: shut.zs; a plate line's dash: works.zs)
 			class<Actor> cls = a.GetClass();
 			if (a is "AjarEcho")
 			{
@@ -1497,7 +1497,7 @@ class AjarTimeHandler : EventHandler
 		Actor a;
 		while (a = Actor(it.Next()))
 		{
-			if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarCam" || a is "AjarFigure" || a.bInvisible) continue;
+			if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarCam" || a is "AjarFigure" || a is "AjarWorksTrace" || a.bInvisible) continue;
 			let inv = Inventory(a);
 			if (inv && inv.owner) continue;
 			int k, b;
@@ -1756,7 +1756,7 @@ class AjarTimeHandler : EventHandler
 	// every box whose door has opened; else that box alone.
 	bool Counts(Actor a, int box)
 	{
-		if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarDoor" || a is "AjarFigure" || a.bInvisible) return false;      // a door: timedoor.zs; a figure: shut.zs
+		if (a is "AjarEcho" || a is "AjarZone" || a is "AjarCue" || a is "AjarDoor" || a is "AjarFigure" || a is "AjarWorksTrace" || a.bInvisible) return false;      // a door: timedoor.zs; a figure: shut.zs; a plate line's dash: works.zs
 		let inv = Inventory(a);
 		if (inv && inv.owner) return false;
 		int k, b;
