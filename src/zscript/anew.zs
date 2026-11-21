@@ -562,6 +562,7 @@ extend class AjarTimeHandler
 		if (faStep == 5 && goes && fight == R)
 		{
 			Check(String.Format("wonAfterAnew%d", R), won.Find(R) < won.Size() && !open && !Left() && goesWon);
+			Check(String.Format("noParadoxAnew%d", R), !paradoxes && !paradox);      // paradox.zs
 			faStep = 6;
 			faT = t;
 		}

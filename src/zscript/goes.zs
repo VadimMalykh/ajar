@@ -18,7 +18,9 @@
 //    tripping its sentries), or the demo's end. A hit the demo already has
 //    does nothing (the demo carries it); one it has not is counted, and
 //    kills the monster, the player's kill, when it reaches its health
-//    (AjarRail and Fell in time.zs, shut.zs's header).
+//    (AjarRail and Fell in time.zs, shut.zs's header);
+//  * touching an earlier self is a paradox (paradox.zs), before the win as
+//    in any open fight and after it as in any room of goes.
 // When it is won the steel door opens as for any fight (sector tag 3090 +
 // 100 * fight), and from that moment the hall is a room of goes: its time
 // doors lead into box 1 and it back by time door 1, any number of times; a
@@ -739,6 +741,7 @@ extend class AjarTimeHandler
 		{
 			pressStep = 3;
 			Check("won", won.Find(1) < won.Size() && !open && !mixed && !Left() && !Rails(true) && takes.Size() == 1 && !GhostsHere());
+			Check("noParadoxFight", !paradoxes && !paradox);      // paradox.zs
 		}
 		if (pressStep == 3 && goes && g == 1)
 		{
@@ -788,6 +791,7 @@ extend class AjarTimeHandler
 			pressStep = 4;
 			pressT = t;
 			Check("through", mo.pos.x > 1200 && won.Find(1) < won.Size());
+			Check("noParadox", !paradoxes && !paradox);
 		}
 		if (pressStep == 4 && t > pressT && t < pressT + 60) Walk(mo, (8, 0));
 	}
@@ -806,7 +810,43 @@ extend class AjarTimeHandler
 		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d) phase=%d open=%d at=%d go=%d ot=%d press=%d/%.2f ghost=%d under=%d",
 			t, mo.pos.x, mo.pos.y, phase, open, at, g, o, p ? p.phase : -1, p ? p.Lowered() : -1, p && p.byGhost, p ? UnderPress(p) : -1);
 		if (t == 1) Go(mo, 320, 48, 0, 270);
+		// won in go 3 (below): in the room of goes it has become, go 1 stands on a spot and goes out by
+		// time door 1; go 2 stands beside it and walks into it: a paradox, after the win too (paradox.zs)
+		if (goes && goesWon)
+		{
+			if (paradox)
+			{
+				if (!ppgTouch)
+				{
+					ppgTouch = t;
+					Check("touchAfterWinIsParadox", paradoxes == 1 && paradoxCopy == 1 && mo.health <= 0 && g == 2 && InHall(mo) && !open
+						&& ghosts.Size() > 0 && !ghosts[0]);
+				}
+				return;
+			}
+			if (g == 1 && o == 2) Check("noParadoxFight", !paradoxes && !paradox && won.Find(1) < won.Size());
+			if (g == 1)
+			{
+				if (o == 3) Go(mo, PPX_X, PPX_Y, 0, 180);
+				if (o > 3 && o < 120) mo.vel.xy = (0, 0);
+				if (o == 120) Go(mo, 40, 128, 0, 180);
+				if (o > 120 && o < 150) Walk(mo, (-8, 0));
+			}
+			if (g == 2)
+			{
+				if (o == 3) Go(mo, PPX_X + 34, PPX_Y, 0, 180);
+				if (o > 3 && o < 60) mo.vel.xy = (0, 0);
+				if (o == 60) Check("nearIsSafeAfterWin", !paradoxes && mo.health > 0 && ghosts.Size() > 0 && ghosts[0] && !Touching(mo, ghosts[0])
+					&& InHall(mo) && InHall(ghosts[0]));
+				if (o > 60 && o < 100) Walk(mo, (-4, 0));
+				if (o == 100) Check("touchAfterWinIsParadox", false);
+			}
+			return;
+		}
 		if (!open) return;
+		// go 3 into the hall (off both copies' ways) and everything killed: won, for the room of goes after it
+		if (g == 3 && o == 3) Go(mo, 800, 200, 0, 90);
+		if (g == 3 && o >= 5 && o <= 60 && o % 5 == 0) KillAll(mo);
 		if (g == 1)
 		{
 			// at about tic 200, when nothing is under it
@@ -828,6 +868,86 @@ extend class AjarTimeHandler
 		}
 		if (g == 3 && o == 2)
 			Check("upAtTheStartAgain", PressUp(p) && at == 2 && logs.Size() == 3 && logs[0].pTic.Size() == 1 && !logs[1].pTic.Size());
+	}
+
+	// MODE=5: the paradox in a fight (paradox.zs). Go 1 thins the fight to one
+	// imp, stands on a spot in the press's end of the hall and goes out by
+	// time door 1; go 2 stands beside the copy on that spot, then walks into
+	// it: the universe is over, in a fight as in a room, and nothing of the
+	// fight's rescue spares the player.
+	const PPX_X = 900;          // the spot (in the hall, in the press's end: far from where the monsters come)
+	const PPX_Y = 700;
+	int ppxTouch, ppxOt, ppxTrips;
+	int ppgTouch;               // MODE=4: the touch after the win
+	bool ppxAtTouch, ppxBuddha;
+	Vector3 ppxFell;
+
+	void PressParadoxScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		int g = takes.Size(), o = ot;
+		if (t % 35 == 0 || (open && o < 2)) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) phase=%d open=%d mixed=%d at=%d trips=%d go=%d ot=%d left=%d paradox=%d health=%d buddha=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, phase, open, mixed, at, trips, g, o, Left(), paradoxes, mo.health, mo.bBuddha);
+		if (paradox)
+		{
+			if (!ppxTouch)
+			{
+				ppxTouch = t;
+				ppxFell = mo.pos;
+				ppxOt = o;
+				ppxAtTouch = paradoxes == 1 && paradoxCopy == 1 && mo.health <= 0 && (mo.player.cheats & CF_GODMODE) && ppxBuddha
+					&& ghosts.Size() > 0 && !ghosts[0] && paradoxSaid == 1 && g == 2 && InHall(mo);
+				Console.Printf("AJARTEST info touched at t=%d o=%d: now=%d health=%d", t, o, ppxAtTouch, mo.health);
+				Check("touchInFightIsParadox", ppxAtTouch);
+			}
+			if (t == ppxTouch + 70)
+				Check("notRescued", paradoxes == 1 && mo.health <= 0 && mo.player.health <= 0 && InHall(mo) && !InBox(mo) && at == 0
+					&& (mo.pos.xy - ppxFell.xy).Length() < 64 && trips == ppxTrips && takes.Size() == 2 && ot == ppxOt && open && phase == LIVE);
+			return;
+		}
+		if (t == 1) Go(mo, 512, 40, 0, 90);
+		if (!open || won.Size()) return;
+		// --- go 1: all but the farthest imp killed; on the spot from 5 to 150; out by time door 1 ---
+		if (g == 1)
+		{
+			if (o == 4)
+			{
+				Actor keep = null;
+				let it = ThinkerIterator.Create("Actor");
+				Actor a;
+				while (a = Actor(it.Next()))
+					if (a.bIsMonster && a.health > 0 && (!keep || (a.pos.xy - (PPX_X, PPX_Y)).Length() > (keep.pos.xy - (PPX_X, PPX_Y)).Length())) keep = a;
+				it = ThinkerIterator.Create("Actor");
+				while (a = Actor(it.Next()))
+					if (a.bIsMonster && a.health > 0 && a != keep) a.DamageMobj(mo, mo, 100000, 'None', DMG_THRUSTLESS);
+				Console.Printf("AJARTEST info kept %s at (%d,%d), left=%d", keep ? keep.GetClassName() : 'none', keep ? keep.pos.x : 0, keep ? keep.pos.y : 0, Left());
+			}
+			if (o == 5) Go(mo, PPX_X, PPX_Y, 0, 180);
+			if (o > 5 && o < 150) mo.vel.xy = (0, 0);
+			if (o == 150) Go(mo, 40, 128, 0, 180);
+			if (o > 150 && o < 180) Walk(mo, (-8, 0));
+		}
+		// --- go 2: out of box 1 beside the copy on the spot (34 east of it), then into it ---
+		if (g == 2)
+		{
+			AjarGhost e = ghosts.Size() > 0 ? ghosts[0] : null;
+			if (o == 2)
+			{
+				ppxTrips = trips;
+				Check("outByATimeDoor", at == 1 && trips == 1 && !takes[0].died && takes[0].x.Size() > 150 && Left() >= 1);
+			}
+			if (o == 3) Go(mo, PPX_X + 34, PPX_Y, 0, 180);
+			if (o > 3 && o < 100) mo.vel.xy = (0, 0);
+			if (o == 100)
+			{
+				ppxBuddha = mo.bBuddha;     // (the fight's own rescue: on while the fight is live)
+				Check("nearIsSafeInFight", !paradoxes && mo.health > 0 && e && !Touching(mo, e) && abs(mo.pos.x - e.pos.x) < 35 && abs(mo.pos.y - e.pos.y) < 1
+					&& InHall(mo) && InHall(e) && parted.Size() > 0 && parted[0] && at == 0 && ppxBuddha && o < takes[0].x.Size());
+			}
+			if (o > 100 && o < 140) Walk(mo, (-4, 0));
+			if (o == 140) Check("touchInFightIsParadox", false);
+		}
 	}
 
 	// MODE=3 on TWOKEY: two frames that join a Pair only if both leaves are hung within two seconds.

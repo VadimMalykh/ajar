@@ -25,8 +25,9 @@
 //    presses; from the win on its time doors lead into box 1, as a room of
 //    goes', from the hall as it is at the win). In a room of goes the player
 //    is never killed: they are in box 1 at the start of a new go (shut.zs);
-//    but in a room of goes proper (2) touching an earlier self is a paradox,
-//    and that death is real (paradox.zs).
+//    but wherever earlier selves walk (any room of goes, and an open fight,
+//    1 or 3, while it is live) touching one is a paradox, and that death is
+//    real (paradox.zs).
 //    A level may have several such rooms and fights, one after another.
 //  * Lines 3000 + 100 * fight + j: the hall's time doors, j from 1.
 //    Lines 3050 + 100 * fight + n: the door of box n. All are portal lines
@@ -266,8 +267,8 @@ class AjarClip play
 
 // An earlier self in an open fight: it goes where the player went and its
 // shots are real. It cannot be hurt, but what it shoots turns on it. The
-// player walks through it; in a room of goes proper, touching it ends the
-// universe (paradox.zs).
+// player walks through it, but touching it while its time runs ends the
+// universe, in a fight as in a room of goes (paradox.zs).
 class AjarGhost : Actor
 {
 	Default { Radius 16; Height 56; +SHOOTABLE +NODAMAGE +NOBLOOD +NOGRAVITY +DONTTHRUST +NOTELEPORT }
@@ -1196,7 +1197,7 @@ class AjarTimeHandler : EventHandler
 		rec.fx = new("AjarTrack");
 		rec.fx.fx = true;
 		mshots.Clear(); bornA.Clear(); bornC.Clear();
-
+		parted.Clear();             // paradox.zs: a go begins (Retake, Resume, Begin, WindTo): no copy is parted from yet
 	}
 
 	// The player has gone out of an open fight (or been killed in it): it
@@ -2151,6 +2152,7 @@ class AjarTimeHandler : EventHandler
 		t.x.Resize(ot);             // PlayGhosts goes by its length
 		t.died = false;
 		mo.SetOrigin(p, false);
+		parted.Clear();             // paradox.zs: put where that self stood, whoever overlaps it there is safe until they part
 		mo.vel = (0, 0, 0);
 		mo.health = mo.player.health = RESCUE_HEALTH;
 		mo.A_SetBlend("ff2010", 1.0, 40);
@@ -2473,6 +2475,9 @@ class AjarTimeHandler : EventHandler
 				{
 					RecordTake(PlayerPawn(mo));
 					PlayGhosts(mo);
+					// paradox.zs: touching an earlier self ends the universe; nothing more of the fight in this tic
+					ParadoxWatch(PlayerPawn(mo));
+					if (paradox) { Tests(mo); return; }
 					if (mixed) { GhostDoors(); GhostPresses(); }      // goes.zs
 					PlayDemo(mo); RecordDemo(); RecordFx(rec.fx); ot++;
 				}
@@ -2536,6 +2541,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 5 && level.mapname ~== "PLATE") ParadoxScript(PlayerPawn(mo));     // paradox.zs
 		if (mode == 3 && level.mapname ~== "PRESS") PressScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "PRESS") PressGoScript(PlayerPawn(mo));
+		if (mode == 5 && level.mapname ~== "PRESS") PressParadoxScript(PlayerPawn(mo));     // goes.zs: the paradox in a fight
 		if (mode == 3 && level.mapname ~== "TWOKEY") TwoKeyScript(PlayerPawn(mo));
 		if (mode == 3 && level.mapname ~== "SHUT") ShutScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "SHUT") ShotScript(PlayerPawn(mo));
@@ -2840,7 +2846,12 @@ class AjarTimeHandler : EventHandler
 				mo.health = mo.player.health = 50;
 				testStep = 19;
 			}
-			if (testStep == 19 && ot == demo.len + 60) { Check("awakeAtItsEnd", !Rails(true) && Rails(false) > 5); testStep = 20; }
+			if (testStep == 19 && ot == demo.len + 60)
+			{
+				Check("awakeAtItsEnd", !Rails(true) && Rails(false) > 5);
+				Check("noParadox", !paradoxes && !paradox);      // paradox.zs
+				testStep = 20;
+			}
 		}
 	}
 	int testStep;
@@ -2879,7 +2890,8 @@ class AjarTimeHandler : EventHandler
 		{
 			if (ot == 4) Check("go3", at == 2 && demo && demo.len > 500);
 			// into the hall, and killed there: on as an earlier self
-			if (ot == 300) { Back(); Go(mo, cx, 300, 0, 90); }
+			// (100 east of the second self, which stands at (cx, 300) from its tic 250: paradox.zs)
+			if (ot == 300) { Back(); Go(mo, cx + 100, 300, 0, 90); }
 			// (with nothing left: the earlier self has its bullets and shells still, and no armour to give)
 			if (ot == 340) { mo.TakeInventory("Clip", 1000); mo.TakeInventory("Shell", 1000); mo.GiveInventory("Cell", 7); mo.GiveInventoryType("GreenArmor"); }
 			if (ot == 350) mo.health = mo.player.health = 1;
@@ -2887,7 +2899,7 @@ class AjarTimeHandler : EventHandler
 			if (ot == 354) Check("withWhatItCarried", mo.CountInv("Clip") >= 50 && mo.CountInv("Cell") == 7 && mo.CountInv("BasicArmor") == 100);
 			if (ot == 400) Check("onTheDemo3", Demoing() && Rails(true) > 5);
 			if (ot == demo.len + 60) Check("awakeAfterGo2", !Demoing() && !Rails(true) && Rails(false) > 5 && Stopped(true) == 0);
-			if (ot == demo.len + 200) Check("stillAwake", Stopped(true) == 0);
+			if (ot == demo.len + 200) { Check("stillAwake", Stopped(true) == 0); Check("noParadox", !paradoxes && !paradox); }      // paradox.zs
 			if (ot == demo.len + 100) Check("noneStoppedInItsFall", MidFall() == 0);
 		}
 	}
@@ -3056,7 +3068,9 @@ class AjarTimeHandler : EventHandler
 			if (u == 268) { let ci = ThinkerIterator.Create("AjarSnatch"); Actor c = Actor(ci.Next()); Check("goneToLight", c && abs(c.pos.x - cx) < 2 && abs(c.pos.y - 40) < 2 && c.alpha < 1); }
 			if (u == 268) Check("killedIntoASpareBox", phase == IDLE && comeBack && spare.Size() == 2 && spareOut == 13 && !Left()
 				&& mo.pos.x > 960 && mo.pos.x < 1300 && mo.pos.y < hh[0] && mo.health == RESCUE_HEALTH);
-			if (u == 269) Go(mo, cx, 40, 0, 90);
+			// (150 east of where it was killed: both earlier selves come to (cx, 60) early in the go,
+			// the first by the way in and the second as the first; there it would touch them, paradox.zs)
+			if (u == 269) Go(mo, cx + 150, 40, 0, 90);
 			if (u == 275) Check("begunOver", phase == LIVE && !comeBack && FightTic() < 12 && !Left() && ShowLight(3, true));
 		}
 		if (u >= 270 && u <= 536 && (u % 20 == 10 || (u > 440 && u % 4 == 0)))
@@ -3070,6 +3084,7 @@ class AjarTimeHandler : EventHandler
 			let si = level.CreateSectorTagIterator(3190 + 100 * k);
 			int i = si.Next();
 			Check("won" .. n, phase == IDLE && won.Size() == k + 1 && i >= 0 && level.sectors[i].CenterCeiling() > level.sectors[i].CenterFloor() + 60);
+			if (k > 0) Check("noParadox" .. n, !paradoxes && !paradox);      // paradox.zs (halls 2 and 3: open fights)
 		}
 	}
 }
