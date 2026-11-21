@@ -196,9 +196,15 @@ ajartime.covers(m, "room 2", FIRST, REGIONS[2], zone=(1928, PIT2[1] - 72, 3864, 
 
 # === 3. the press: a fight of goes ===========================================
 # The hall (5000..6536, 0..768) and north of it the press, a chamber
-# (5000..6536, 800..1280) of steel behind a solid wall 32 thick with one mouth
-# in its middle, 192 wide (the mouth is part of the press: whatever stands in
-# it when the press comes down is under it). Two shifts: the bait fights in
+# (5000..6536, 800..1280) of steel, open onto the hall along most of its
+# width: of the wall between only two stubs 128 wide are left at the west and
+# east ends, and the mouth between them is 1280 wide (it is part of the press:
+# whatever stands in it when the press comes down is under it, so the press
+# begins at the hall's north edge; the hall's higher ceiling leaves a steel
+# lintel over the opening). It was a mouth 192 wide until 2026-11-21: monsters
+# after a bait slid along the wall towards its x and bunched there, and a pull
+# took 6 to 11; now whatever walks at a bait at the back is under the press for
+# the last 500 of its way. Two shifts: the bait fights in
 # the chamber, behind two slabs of its own, and leaves by time door 3 (east)
 # or 4 (west), which are out only (the next go comes out by door 1, not into
 # the crowd in the chamber). The lever is in the wing south of the hall: a
@@ -206,10 +212,15 @@ ajartime.covers(m, "room 2", FIRST, REGIONS[2], zone=(1928, PIT2[1] - 72, 3864, 
 # earlier self is under the press, a landing, stairs up east, an upper room
 # with the lever beside a window onto the hall (the way out, a drop of 96),
 # and south of the upper room the pen of the guards, behind bars. So one
-# body is never the bait and at the lever. Four slabs in the hall to hide
+# body is never the bait and at the lever (the shutter, not the wall, keeps
+# them apart). Four slabs in the hall to hide
 # behind. Entered from YELLOW's far side, a ledge 96 over the lobby
 # (south-west), which is part of the fight from 16 past the ledge's edge: so
 # a player on the ledge is in no room, and one in the lobby cannot climb back.
+# Wave 1 starts in the hall's east half, the slow ones nearest the press, 700
+# or more from the lobby (since 2026-11-21: from a pistol start the first self
+# takes the lobby's guns and goes north along the west wall under the press
+# before the horde is on it).
 FIRST = len(m.polys)
 K3 = 3
 HX, HY, HW, HH = 5000, 0, 1536, 1280
@@ -220,9 +231,9 @@ CAGE3 = 3537            # the cage's shutter (map32.zs: CAGE3)
 PENTAG3 = 3538          # the pen's sector: where the sentries stand (time.zs, AjarSentry)
 WING3TAG = 3539         # the wing's walkable sectors that have no tag of their own: what trips them
 PY = HY + 768           # the hall's north wall
-CY = PY + 32            # the chamber's south wall (the wall between is solid but for the mouth)
+CY = PY + 32            # the chamber's south side (the wall between is two stubs at the ends; the rest is the mouth)
 WY = HY + HH            # the chamber's north wall
-MOUTH3 = (HX + 672, HX + 864)
+MOUTH3 = (HX + 128, HX + HW - 128)     # the opening between the two stubs
 CSLABS3 = [(HX + 320, CY + 208, HX + 448, CY + 272), (HX + 1088, CY + 208, HX + 1216, CY + 272)]   # the chamber's
 DOORS3 = (CY + 208, CY + 272)       # time doors 3 (east) and 4 (west): in the chamber's walls, out only
 # the wing, south of the hall (all of it the fight's hall)
@@ -239,16 +250,18 @@ LEVER3 = (HX + 856, HY - 18)        # on that wall just east of the window
 PEN3 = (HX + 464, HY - 432, HX + 880, HY - 176)      # the guards, behind bars along the upper room's south side
 SLABS3 = [(HX + x, HY + y, HX + x + 192, HY + y + 64) for x, y in ((160, 160), (1184, 160), (480, 320), (864, 320))]
 ajarmap.fitted(m, (HX, HY, HX + HW, PY), [(s, dict(floor=320)) for s in SLABS3], ceil=320, light=200, color=HALL)
-# the chamber, in three sectors of the press's tag (and the slabs in two of them, of no tag: they stay up)
+# the chamber, in three sectors of the press's tag (and the slabs in two of them, of no tag: they stay up);
+# the mouth, one more of the press's tag, borders all three (udmf splits the shared edges)
 for x1, x2 in ((HX, HX + 512), (HX + 512, HX + 1024), (HX + 1024, HX + HW)):
     ajarmap.fitted(m, (x1, CY, x2, WY), [(s, dict(floor=192, id=0)) for s in CSLABS3 if x1 <= s[0] and s[2] <= x2],
                    ceil=192, light=185, color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF", id=PRESS3)
 m.sector(rect(MOUTH3[0], PY, MOUTH3[1], CY), ceil=192, light=185, color=HALL, wall="AJBOLT", ftex="AJTRIMF",
          ctex="AJTRIMF", id=PRESS3)
-assert HX + 512 <= MOUTH3[0] and MOUTH3[1] <= HX + 1024
+assert MOUTH3[0] - HX == 128 and HX + HW - MOUTH3[1] == 128 and MOUTH3[0] < HX + 512 and HX + 1024 < MOUTH3[1]
 ajartime.press(m, HX + 768, HY + 1024, PRESS3)
-# the press's lamps: two in the chamber on its south wall, either side of the mouth; one in the hall on its
-# north wall beside the mouth
+# the press's lamps: two in the chamber on the stubs' north faces, either side of the mouth; one in the hall
+# on the west stub's south face
+assert HX < MOUTH3[0] - 32 - 16 and MOUTH3[1] + 32 + 16 < HX + HW     # (each on its stub)
 ajartime.press_lamp(m, MOUTH3[0] - 32, CY + 2, 90, PRESS3)
 ajartime.press_lamp(m, MOUTH3[1] + 32, CY + 2, 90, PRESS3)
 ajartime.press_lamp(m, MOUTH3[0] - 32, PY - 2, 270, PRESS3)
@@ -281,8 +294,9 @@ for pl in (SCREEN_PLATE3, CAGE_PLATE3):
         assert gap(pl, sl) >= r + 64, ("a plate by a slab", pl, sl)
     for dx in (HX, HX + HW):        # the time doors' way in: their mouths in the chamber's side walls
         assert gap(pl, (dx, DOORS3[0], dx, DOORS3[1])) >= r + 64, ("a plate by a time door", pl)
-    # one body is never on a plate and in the wing
-    w = walk(pl, ((MOUTH3[0] + MOUTH3[1]) / 2, CY), ((MOUTH3[0] + MOUTH3[1]) / 2, PY), (SHUTTER3[1], HY))
+    # one body is never on a plate and in the wing (south through the mouth where it is nearest)
+    mx = min(max(pl[0], MOUTH3[0] + 16), MOUTH3[1] - 16)
+    w = walk(pl, (mx, CY), (mx, PY), (SHUTTER3[1], HY))
     assert w > 600, (pl, w)
 # the wing: the shutter (open while someone is under the press; nothing of the hall's walks or flies past
 # its face), the landing, the stairs, the upper room, the window and the lever, the pen
@@ -344,7 +358,10 @@ spots(17, (HX + 150, HY - 140))             # a cell pack and a medikit on the l
 spots(2012, (HX + 230, HY - 140))
 WING3 = [17, 2012]
 # one body is never the bait and at the lever: from the nearest point under the press to the shutter
-WALK3 = walk((MOUTH3[0], PY), (SHUTTER3[1], HY))
+# (straight south from the mouth's west end: the west slab of the hall's south row is east of that line)
+NEAR3 = max(MOUTH3[0], SHUTTER3[0]) + 16
+assert NEAR3 + 16 <= SLABS3[0][0] and SHUTTER3[0] <= NEAR3 <= SHUTTER3[1]
+WALK3 = walk((NEAR3, PY), (NEAR3, HY))
 assert WALK3 > 600, WALK3
 
 
@@ -457,7 +474,10 @@ BOXES3 = (stock(4810, 630, (40, 0), 2018, 2012, 2012, 17, 2046)
 # the steel door the win opens, east, and the corridor on to room 4 (no fight's)
 steel(K3, (HX + HW, 128), (HX + HW, 192), (1, 0), 0)
 m.sector(rect(6552, 96, 6872, 224), ceil=128, light=180, color=HALL)
-# the fight: all of it AjarCues; wave 1 in the south and middle, to be drawn north
+# the fight: all of it AjarCues; wave 1 in the hall's east half (2026-11-21; it was spread over the south
+# and middle), in rows: barons and hell knights nearest the press, imps behind them, revenants behind those,
+# and the mancubi farthest from it, south of the hall's slabs (they stood in the north row at first, 70 from
+# the press's edge and facing it: of 35 baits killed there 30 were last hurt by a mancubus, in about 5 s)
 c3 = ajartime.Crowd(m, K3, [(HX, HY, HX + HW, PY), (HX, CY, HX + HW, HY + HH), PEN3], SLABS3 + CSLABS3, calm=True)
 
 
@@ -465,13 +485,21 @@ def at3(*pts):
     return [(HX + a, HY + b) for a, b in pts]
 
 
-c3.cue(1, 0, 3001, *at3((120, 150), (220, 110), (420, 150), (520, 150), (1016, 150), (1116, 150),
-                        (1316, 110), (1416, 150), (620, 250), (916, 250)), angle=90)                  # imps, the south
-c3.cue(1, 0, 67, *at3((140, 330), (560, 460), (976, 460), (1396, 330)), angle=90)                   # mancubi
-c3.cue(1, 0, 66, *at3((440, 200), (1096, 200), (220, 470), (768, 330), (1316, 470), (700, 520)), angle=90)   # revenants
-c3.cue(1, 0, 69, *at3((120, 520), (440, 560), (560, 560), (976, 560), (1096, 560), (1416, 520),
-                      (400, 690), (1136, 690)), angle=90)                                             # hell knights
-c3.cue(1, 0, 3003, *at3((180, 680), (300, 680), (680, 680), (856, 680), (1236, 680), (1356, 680)), angle=90)  # barons
+c3.cue(1, 0, 3003, *at3((800, 696), (880, 696), (960, 696), (1040, 696), (1120, 696), (1200, 696)), angle=90)   # barons
+c3.cue(1, 0, 69, *at3((1280, 696), (1360, 696), (800, 616), (880, 616), (960, 616), (1040, 616), (1120, 616),
+                      (1200, 616)), angle=90)                                                        # hell knights
+c3.cue(1, 0, 3001, *at3((1280, 616), (1360, 616), (800, 536), (880, 536), (960, 536), (1040, 536), (1120, 536),
+                        (1200, 536), (1280, 536), (1360, 536)), angle=90)                            # imps
+c3.cue(1, 0, 66, *at3((800, 456), (880, 456), (960, 456), (1040, 456), (1120, 456), (1200, 456)), angle=90)   # revenants
+MANCUBI3 = at3((880, 232), (1040, 232), (1232, 280), (1360, 280))
+c3.cue(1, 0, 67, *MANCUBI3, angle=90)                                                                # mancubi
+assert all(y <= PY - 450 for x, y in MANCUBI3), "the mancubi start far from the press"
+W1HALL3 = [(x, y) for x, y, _ in c3.placed[1]]
+assert len(W1HALL3) == 34 and all(x >= HX + 768 for x, y in W1HALL3)
+# clear of box 2's glass, door 2 and the steel door (the east wall) and of box 3's glass (the south wall)
+assert all(x <= HX + HW - 128 and y >= HY + 160 for x, y in W1HALL3)
+# none within 700 of the lobby's opening onto the hall (x = HX, y 64..320)
+assert all(((x - HX) ** 2 + (y - min(max(y, 64), 320)) ** 2) ** 0.5 >= 700 for x, y in W1HALL3)
 c3.cue(2, 16, 64, *at3((200, 720), (1336, 720)), angle=90, always=True)                             # arch-viles
 c3.cue(2, 16, 68, *at3((500, 600), (1036, 600), (500, 230), (1036, 230)), angle=90)                # arachnotrons
 c3.cue(2, 16, 3005, *at3((768, 600), (200, 300), (1336, 300), (768, 200)), angle=90)               # cacodemons

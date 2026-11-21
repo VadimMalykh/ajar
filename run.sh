@@ -13,9 +13,10 @@
 # DEMO=3 ./run.sh plays MAP32's room 3 by itself, the way its fight is meant
 # to be fought (a bait under the press, a later self at the lever), with a
 # caption saying what each self does (src/zscript/fightdemo.zs; PLAN.md, "MAP32
-# room 3: the fight as fought"). It plays honestly and, with the room as it is,
-# does not win: after the fourth go the fight begins anew. Watch it; keys and
-# mouse would play along with it.
+# room 3: the fight as fought" and "an open front"). It plays honestly and, on
+# the room with its open front (2026-11-21), does not win: in ten runs of three
+# times through the four goes it never got below 10 left, and after the fourth
+# go the fight begins anew. Watch it; keys and mouse would play along with it.
 cd "$(dirname "$0")"
 [ -f build/ajar.pk3 ] || ./build.sh
 LOOK='vid_rendermode|vid_gamma|vid_brightness|vid_contrast|vid_saturation|gl_lightmode|gl_tonemap'
