@@ -7415,3 +7415,10 @@ and room 1 done (`worksTourDone1`); the shots of both, look and
 `AJAR_WORKS=0`, are in `build/board32/works/` and `build/board32/plain/`
 (`view_NN.png`; no JPEGs or contact sheets: the imagemagick image is not on
 this machine).
+
+**The board, as built**: https://claude.ai/artifact/FsRcs2FtNDD65bsutEHCkE (source
+`design/map32-board.html`; 25 of the tour's shots as JPEGs, published with the
+page and kept nowhere else: the tour, `MAP=MAP32 MODE=2`, makes them again).
+The session looked at both contact sheets before merging: the seven leaf
+colours and the lamps read against the steel in every room. Merged with the
+look on by default on 2026-11-21; Vadim has not yet seen it in the game.
