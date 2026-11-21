@@ -1,7 +1,7 @@
 gameinfo
 {
 	StatusBarClass = "AjarStatusBar"
-	AddEventHandlers = "AjarHandler", "AjarTimeHandler"
+	AddEventHandlers = "AjarHandler", "AjarTimeHandler", "AjarWorks"
 }
 
 DoomEdNums
@@ -40,6 +40,8 @@ DoomEdNums
 	20055 = AjarSentry
 	20056 = AjarKeyLever
 	20057 = AjarKeyLamp
+	20080 = AjarWorksSpot             // MAP32's look (works.zs): a light
+	20081 = AjarWorksRoom             // ... and a rectangle of a room
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
@@ -292,6 +294,7 @@ map MAP32 "Double Shift"
 	nojump
 	nocrouch
 	music = ""
+	sky1 = "AJZSKY", 1             // the look's stars (gfx_works.py), drifting; the plain level has no sky
 }
 
 // The Pair door's demo (tools/map_lab.py): MAP=LAB ./run.sh
