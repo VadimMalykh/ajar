@@ -8802,6 +8802,28 @@ version wears MAP11's); the secret (candidates: all three lanes in one loop,
 which needs a coloured door's far side in the hall; a second shutter that
 wants the short lane's time).
 
+#### After the first version was built (Claude, 2026-11-22; none of it played)
+
+What the build and the two labs settled, for the tasks that follow:
+
+- **The short lane alone is never an answer** (106 tics, and no way is under
+  about 120 with no frame within 1000 of a lever or the shutter). It stays:
+  it is the lane that shows the rule at a glance, and it joins with the
+  others (1+3, 2+3). The outline's "short lane and a very good track" is
+  withdrawn; the fast answer is the middle lane with RED (209 tics for a
+  way of about 163).
+- **RED is the best link, not GREEN**: the car sent to the basement first,
+  then RED hung in the yard. It stays so: the moving room is the better
+  thing to be rewarded for.
+- **LAPS stays 4** until Vadim has run it: both Pairs in lanes 1 and 2 and
+  the whole way on foot leaves about 61 tics in a scripted run.
+- **The one-sided doorways** (task `map18-oneside`): the three sites, each
+  with `blind` and a fence monsters do not cross, since monsters' sight and
+  missiles fired at the face do not follow the picture ("The one-sided
+  doorway lab"); no one-way sight in a fight. The sign is a plate on the
+  wall beside the odd face, both sides of the opening. The automap shows the
+  building as it is built and so gives the trick away: left so.
+
 ## The clock lab (built 2026-11-22)
 
 `tools/map_clock.py`, `src/zscript/clock.zs`; `MAP=CLOCK ./run.sh`,
