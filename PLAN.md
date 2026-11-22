@@ -8618,6 +8618,272 @@ windows in play; a crate held by a door taken while it is in the doorway
 (`CratesClear`, from the lab, not run here); the level from MAP16's way out
 by a real exit. Not played by hand.
 
+## MAP18: the clock department, a big building to make geometries in (2026-11-22, outline; nothing built)
+
+Vadim and Claude. **Nothing here is built. Of the engine, only what "The
+first tests, run" says is known**; two labs were started the same day (map
+CLOCK, task `clock-lab`; map ONESIDE, task `oneside-lab`) and their results
+go in sections of their own at the end of this file.
+
+**Vadim** (2026-11-22):
+- MAP18 should be bigger: "previous several maps are not quite big (and
+  frankly there's no really big maps yet in the whole game)". Measured that
+  day: MAP11 to 16 have 186 to 308 sectors, 1760 to 3264 units on the long
+  side, 86 to 176 monsters with ambushes; MAP17 133 sectors and 73; MAP06 to
+  09 have 690 to 1219 sectors and 148 to 175 monsters; MAP10 956 sectors
+  over 13772 x 8304 (districts far apart).
+- The clock idea, yes, and "metronome could be interesting".
+- "Maybe we could make it consist of a lot of areas, connected naturally
+  (normal doors, stairs, lift) as well as having frames, so you can build
+  your own geometry from it. Here also one-sided portals could exist to make
+  it more confusing."
+- "Not so much puzzle-heavy (only that timer/metronome related for the
+  exit), but mostly to enjoy different spatial paradoxes."
+
+**Claude's reading of it, to argue over** (none of it agreed yet):
+
+- **It is the "kit of rooms" of the second round with one measure: the
+  stopwatch.** That note's difficulty was that a geometry the player builds
+  has to be read by something, or building it is routing again. Here time
+  reads it, twice: the metronome reads the length of a loop, the run reads
+  the length of a way. Everything else is free.
+- **Everything is reached on foot.** No keys, no thief, no nailer, no room
+  whose only way in is a door (a room may have a door as its only way *in*
+  if it has a way out on foot). So a door is never needed, only wanted, and
+  nothing can be lost by construction: any door can always be fetched. The
+  solver does not search arrangements for stuck states; it checks that the
+  building is one piece on foot and that the run can be made.
+- **Why anyone hangs a door, with no lock asking for it**: the building is
+  big and the doors are the shortcuts (the size is the reason); each area's
+  frames are placed so that the obvious hanging makes that area's paradox;
+  and each paradox pays in the fight or with a cache that is otherwise the
+  long way round. No paradox is a lock.
+- **The doors**: mostly Pairs, since a Pair joins any two frames: TEAL and
+  ORANGE, perhaps a third. Two or three coloured doors with far sides in
+  places worth coming back to (the court, the lift's car, the head of the
+  stair).
+- **The areas** (ten or so, each an ordinary part of the building with one
+  paradox ready in its frames): the long gallery (frames at its ends and
+  along it: the endless corridor, the corridor of chosen length); the
+  stairwell (foot and head: the endless stair, free this time); the lift
+  with a frame in its car (the moving room); the rotunda (frames all round,
+  a pillar: round the pillar; the arena); the six-sided hall (the
+  honeycomb); the square room with frames on three walls and a far side on
+  the fourth (the room that is its own neighbour); the court with the
+  inside-out booth, fixed (the hall with no size); and plain ones between
+  (canteen, cloakroom, offices, a yard).
+- **One-sided doorways** (Vadim's idea of 2026-11-20): fixed parts of the
+  building, two or three, each marked on its face (the plan's rule: know
+  where a door leads before stepping through), each one paradox: the way
+  back that is longer than the way there, the room bigger inside than its
+  walls, the turn-round. In a timed run a doorway with a direction matters
+  by itself. Always a way round on foot. Not "more confusing" without a
+  sign: confusion with no rule to find is only noise.
+- **The way out, two steps, both the same lesson (distance is time):**
+  1. *The metronome.* A pulse fired down the long gallery. With a Pair hung
+     in two of the gallery's frames it laps for ever through the endless
+     corridor, and strikes a contact every lap; the nearer the two frames,
+     the faster the beat. A gate stays up while the beat is fast enough.
+     The Pair that keeps the beat is then not free for the run.
+  2. *The relay run.* Behind the gate, the lever; at the other end of the
+     building, the night room's shutter, up for some seconds after the
+     pull, far too few on foot. Lay the track of doors, pull, run. Several
+     tracks work; a run that fails is pulled again.
+- **Left out**: the timetable (shutters that open by the clock, the booth's
+  faces turning). It is the puzzle-heavy one and the only one that puts time
+  into the solver's state. The run is a shortest way through an arrangement,
+  which the solver can measure without a clock.
+- **Size**: 600 to 800 sectors, about 8000 units on the long side, 200 to
+  250 monsters, one building.
+- **Name**: "Time and Motion" (Claude's candidate, not agreed).
+- **Before it can be built** (the two labs): a pulse lapping through hung
+  doors and a Pair, what its beat is at each distance, a gate held by the
+  beat, what happens when a leaf is taken or something stands in the way;
+  a doorway that leads one way from one face and another from the other,
+  for walking, sight, shots, monsters and sound.
+
+## The clock lab (built 2026-11-22)
+
+`tools/map_clock.py`, `src/zscript/clock.zs`; `MAP=CLOCK ./run.sh`,
+`MAP=CLOCK MODE=1..7 tools/smoke.sh` (MODE=2 plays about 220 seconds:
+`TIMEOUT=300`). An engine test for MAP18's two clocks (nothing of MAP18 is
+built): does a pulse lap for ever through a hung Pair, what is its beat,
+can a gate be held by it, and what does a relay lever do? **The pulse laps
+exactly and for as long as it was watched, at every distance and speed
+tried; the gate follows the beat every tic.** Run headless only: **not
+played by hand.**
+
+- **How it is made.** `AjarPulse`: a projectile of its own, radius 6,
+  height 8, +THRUACTORS (it passes through every thing and hurts nothing),
+  Doom's plasma sprite as a placeholder. `AjarRipPulse`: the same with
+  +RIPPER instead, 3 damage a hit. `AjarPulseEmitter` (20110, args[0] the
+  speed, 0 for 20; args[1] 1 for the ripper): Thing_Activate on it (a
+  button) fires one pulse along its angle, 40 above its floor, with no
+  shooter (so `AjarShotWatch` leaves it alone). **One pulse to an emitter:
+  pulling again calls the running pulse back** (it bursts where it is) and
+  fires anew; so a pulse lost in a loop that has no contact never locks the
+  emitter. The contact is a line across the gallery with `missilecross` and
+  Thing_Activate on the tid of an `AjarContact` (20111; args the gate's
+  sector tag, the hold time in tics, the lamp's sector tag): the engine
+  hands it the projectile itself, and only an `AjarPulse` counts. The
+  contact makes the level's `AjarMetronome`, a thinker that keeps the tics
+  of the last two beats and the period between them, and **moves the gate
+  itself every tic** (`Sector.MoveCeiling`, 8 units a tic, up to 4 below the
+  lowest ceiling beside it, down to its floor, never crushing): up while the
+  last beat is no older than the hold time, down otherwise. No `Door_Raise`
+  (ENG showed it misses beats). A lamp (a lit niche) flashes 6 tics a beat.
+  The relay is MAP08's, unchanged: `ajarmap.lever` and `ajarmap.shutter`
+  (`Door_Raise` on tag 600, speed 64, N x 35 tics) and the count that
+  `AjarHandler.ShutterTick` puts on the screen. `ajarmap.py` is not touched;
+  `ajar.zs` has one line more (CLOCK in the test dispatch).
+- **The map.** The gallery: one hall 2048 long (x 0..2048), 384 wide, two
+  lanes along it. **Frames on one line are walls to each other**: a frame
+  facing along the gallery stands in the line of every longer loop on that
+  line. So the nearer frames stand on piers. Lane A (y 32..96): frame 111 in
+  the west end wall, a pier at x 880..1024 with frame 112 on its west face
+  and 113 on its east face (their stubs 16 apart), frame 114 in the east end
+  wall. Lane B (y 192..256): frame 115 on a pier's east face at x 1536,
+  frame 116 in the east end wall. The three loops: **512** (115 and 116; the
+  pulse flies 544 a lap, portal line to portal line), **1024** (113 and 114;
+  1056), **2048** (111 and 114 with the other Pair hung in 112 and 113, so
+  that the pier is something the pulse flies through: 2080 less the 112
+  between the pier's two portal lines, 1968). The contact line at x 1800
+  crosses the whole hall (it is in all three loops); the emitters stand at
+  x 1700 in each lane, their buttons on the south wall. The gate (16 thick,
+  in the north wall at x 600, 124 high when up) opens into the lever room
+  with the relay lever (5 seconds); the relay shutter is in the north wall at
+  x 1600, before the night room. RED's far side is at the west end of the
+  range (south of the hall, 1024 long). Both Pairs and RED lean at the west
+  end. Laps are measured at a mark (x 1900, going east) to a fraction of a
+  tic; one beat between two marks is one beat a lap.
+
+**What the runs showed** (MODE=1 to 7):
+
+A. **It laps for ever, exactly.** The leaves hung by the handler as the
+   player would. 20 laps at each distance and speed, every lap the same to
+   4 decimals and exactly the way over the speed: speed 20: 1024 loop 52.8000
+   tics, 512 loop 27.2000, 2048 loop 98.4000; speed 10: 105.6000, 54.4000,
+   196.8000 (the longest run: 20 laps of 196.8, 3936 tics). At the mark the
+   pulse was on the lane's middle (y 64.0000 or 224.0000) and at z 40.0000
+   every lap, at its speed to 4 decimals: no drift, no slowing. One beat
+   every lap, none missed, in every run (`..._beatEveryLap`). Faster, on the
+   512 loop: 40, 60, 100 and 200 a tic, 13.6000, 9.0667, 5.4400 and 2.7200
+   tics a lap, exact, one beat a lap; at 200 a tic it goes through the east
+   frame and past the mark in one tic, and that is still exact. No limit
+   was found up to 200; faster than the loop is long (544) and slower than
+   10 were not tried. ENG's fireball (10 a tic, 544 loop, 54 or 55 tics) is
+   the same rule counted to whole tics.
+B. **A coloured door: the pulse keeps its line.** RED in 114, the pulse
+   fired east in lane A: it comes out of RED's far side at (0.000, -192.000,
+   40.000), velocity (20, 0, 0), angle 0, flies 200.000 straight on in 10
+   tics, and bursts on the range's east wall at x 1016.
+C. **The gate: right every tic.** Hold 70, speed 20 (the gate takes 16 tics
+   to go up or down). Each segment watched from the gate's first full rise.
+   512 loop: 380 tics, never let down, fully up every tic. 1024 loop: 496
+   tics, the same. 2048 loop: let down once every lap (11 in 11 laps): fully
+   up 55 tics, fully down 13 or 14, not wanted 28 or 29, every lap alike.
+   The 2048 loop with hold 100: 496 tics, never let down. In all four not
+   one tic in which the gate moved against what the metronome wanted
+   (`..._neverMovesAgainstTheBeat`). **A beat falls on a whole tic**: at
+   98.4 tics a lap the periods are 98, 98, 99, ...; at 52.8, 52 and 53; at
+   27.2, 27 and 28. A hold time has to be over the longer of the two. The
+   gate starts down in the tic after the hold is over.
+D. **A leaf taken in flight.** 1024 loop, three beats, then the leaf behind
+   the pulse (113) taken with the pulse at x 1112 flying east: it struck the
+   contact once more and burst on 114's leaf (a shut door now) at x 2056, 14
+   tics after its last beat. The metronome had no more beats; the gate stayed
+   up until the hold was over and was fully down 20 tics after
+   (`gateDownAfterTheHold`). Fired again with the loop still broken: the new
+   pulse bursts at the same place. The leaf hung again in 113 and fired: it
+   laps, period 53, the gate up (`recovers`). The far leaf (114) taken with
+   the pulse at x 1120: it bursts on the empty frame, x 2056. The emitter
+   always fires again.
+E. **A nearer loop by one move.** The 2048 loop (TEAL in 111 and 114,
+   ORANGE in the pier); with the pulse at x 1116 flying east, the TEAL leaf
+   from 111 hung in 113 (the ORANGE leaf there comes off; its twin in 112 is
+   a shut door now, behind the loop): the pulse flew on, through 114, out of
+   113, and lapped the 1024 loop without being fired again. Periods beat by
+   beat: 98, 98, 99, 53, 52, 53.
+F. **The worst tic, in the doorway.** The pulse put in a doorway (SetOrigin,
+   so not as play would bring it there) and the leaf taken in the same tic:
+   its middle in 114's recess, its box clear of the line (x 2050): burst the
+   next tic at 2058, on line 114; its box over the line (2061): burst there;
+   its middle 0.1 short of the line (2063.9): burst there; just out of 113,
+   its box over 113's line behind it (1011), and 113's leaf taken: it flew on
+   east and burst on 114's shut leaf at 2055. Each time one burst, in the
+   level; nothing left flying, nothing stuck (`..._burstsInTheLevel`,
+   `allAccountedFor`).
+G. **In the way: the beat survives.** On lane A of the 1024 loop: the player
+   (x 1200), a zombie (1300), an imp (1400), a demon (1500), an ORANGE leaf
+   leaning at 1600, all on the pulse's line. The plain pulse: 10 laps of
+   52.8000, one beat a lap, nobody hurt, nothing moved. The ripper: the same
+   laps and beats, and it hurts what it passes every pass: the player 9 (3
+   hits), the zombie 9 (dead in the 3rd pass), the imp 9 or 12 (dead in the
+   6th), the demon 12 or 15 (dead in the 12th). The leaning door is not
+   solid: both pass it. Nobody woke or moved (the pulse has no shooter, and
+   the player was `notarget`). **The plain pulse is the default**: the
+   ripper makes the loop a grinder and a trap for the player.
+H. **The lever pulled twice: the first pulse is called back.** Pulled again
+   10 tics after the first: the first burst where it was (x 1920), one pulse
+   flying, lapping as before (5 laps of 52.8000). A rocket fired across the
+   contact beside the lanes: the contact was set off by it and did not count
+   it (`aRocketIsNoBeat`).
+I. **The relay lever (5 seconds).** Pulled: the shutter goes up the next
+   tic, is fully up 16 tics later (124 high), stays at the top 175 tics
+   (exactly 5 seconds), comes down in 15: from first rise to shut 206 tics,
+   passable (56 high or more) 193 tics. The count on the screen starts at
+   5.3 (187 tics) and shows 0.0 four tics before the shutter starts down
+   (`ShutterTick` reckons 12 tics for the rise; here it takes 16). **Pulled
+   again while it is up: nothing changes** (the count runs on, 88 then 87;
+   `Door_Raise` leaves a door that is already moving or waiting alone).
+   Pulled after it fell: up again the same. **The player put under it as it
+   came down** (84 high): it stopped on the player's head at 60 for a tic and
+   went back up; no damage, the player not moved; then it **stayed up a full
+   175 tics again** before it came down (passable 385 tics in that cycle),
+   **with 0.0 on the screen all that time**. The player then walked on into
+   the night room; the shutter shut and the count went.
+
+**For MAP18**, from the above:
+- **The corridor of chosen length** ("frames at its ends and along it"):
+  frames along one line block each other, so each length is a line of its
+  own (the lab's lanes), or a pier with a frame on each face that a second
+  Pair makes transparent (the lab's 2048 loop). With the pier, the shorter
+  loop is one move away and the beat follows at the next lap; but both Pairs
+  are then tied up in the beat, and the run has none.
+- The pulse is exact, does not decay, and any speed from 10 to 200 works.
+  The beat falls on whole tics: give the hold time a margin over the longest
+  period that should pass (at speed 20: 28, 53, 99 tics for the three
+  loops; with hold 70, 512 and 1024 hold the gate, 2048 does not; at speed
+  10 only 512 does).
+- The hold time is also how long the gate stays up after the Pair that keeps
+  the beat is taken down: 2 seconds at 70.
+- One emitter for the level: two loops through one contact were not tried,
+  and would beat twice. The second pull calling the first back keeps the
+  emitter from locking up.
+- The relay as MAP08 made it: a second pull does not stretch the time; a
+  shutter that comes down on the player goes back up and **waits its full
+  time again**, while the count on the screen says 0.0; the count's text
+  ("Across the loading dock a shutter goes up") is MAP08's and wants its own
+  for MAP18; one such shutter to a level (tag 600).
+
+**Runs** (2026-11-22, on the full `./build.sh` with the solver, which
+succeeded): `MAP=CLOCK MODE=1` 12 checks, `MODE=2` 12 (with `TIMEOUT=300`),
+`MODE=3` 27, `MODE=4` 24, `MODE=5` 13, `MODE=6` 10, `MODE=7` 7, all passed;
+`MAP=BELT MODE=1` 13 and `MAP=LAB MODE=1` 13 passed; `MAP=ENG MODE=2` as
+before (fireball, plasma, rocket alive after 10, 13 and 10 laps). Every other entry of the package (2774:
+the other 33 maps' wads and every graphic) built byte for byte as from the
+branch's base `2365571`, but `mapinfo.txt`, `zscript.zs` and `zscript/ajar.zs`;
+new: `maps/CLOCK.wad`, `zscript/clock.zs`.
+
+**Not tested / not played by hand.** The game by hand (`MAP=CLOCK ./run.sh`
+in the worktree): the buttons, the lamp, how the pulse and the gate look and
+sound; two loops or two emitters through one contact; a loop turned (frames
+in side walls, a Pair round a corner) or with a lift car in it; awake
+monsters in the loop (an imp shooting, a demon walking into the pulse's
+line); a thief taking a leaf of the beat; the ripper against barrels and
+crates; the gate coming down on a monster or the player; speeds under 10 or
+over 200; save and load.
+
 ## MAP17: the way out round the line, and three secrets (built 2026-11-22)
 
 Vadim played the first version and liked it, with two complaints: once order
