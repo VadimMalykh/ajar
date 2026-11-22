@@ -26,6 +26,8 @@ DoomEdNums
 	20096 = AjarHopper                // MAP17 (map17.zs): the hopper that issues crates
 	20097 = AjarChecker               // ... a checker that reads a crate's stamps against an order
 	20098 = AjarCheckLamp             // ... and its lamp
+	20110 = AjarPulseEmitter          // the clock lab (clock.zs): fires a pulse along a gallery
+	20111 = AjarContact               // ... the contact a pulse sets off, and its metronome
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -341,6 +343,16 @@ map LIFT "Ajar: the lift"
 map BELT "Ajar: the belt"
 {
 	next = "BELT"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The clock lab (tools/map_clock.py): MAP=CLOCK ./run.sh
+map CLOCK "Ajar: the clock"
+{
+	next = "CLOCK"
 	nointermission
 	nojump
 	nocrouch
