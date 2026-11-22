@@ -14,11 +14,17 @@ Textures:
   AJDGANT  64x256 labelling's gantry
   AJDNP1, AJDNK2  64x112  the notes of orders 1 and 2 on their boards (the
            board's top at 112)
-  map_dispatch.NOTES: a note on a room's wall (the secret's, in the press's
-           cell), and the bay's shutter with order 3's note on it
+  map_dispatch.NOTES: a note on a room's wall (the hidden order's, in the
+           press's cell, and the blank crate's, in the hall: each the lower
+           part of a sheet torn across, no pin), the bay's shutter with order
+           3's note on it, and the two panels by the shutter, each with the
+           stub of one of those sheets pinned to it (the top strip, the pin,
+           the torn edge that matches)
+  AJDSTOR  64x64  crates stacked in the store behind the hopper; AJDSTOF their lids (a flat)
   AJR<s><c> 64x128  a panel of the dispatcher's board (ajarmap.route_board;
            AjarHandler.BoardTick): s is the outlet (H the hopper's 101, P the
-           press's 102, K the kiln's 103, L labelling's 104, D the bay's 105),
+           press's 102, K the kiln's 103, L labelling's 104, D the bay's 105,
+           X the night room's brass frame),
            c the colour of what hangs there (0 nothing; 1..6 the doors, 7 a
            Stray door, 8 TEAL, 9 ORANGE)
 Sprites:
@@ -37,7 +43,8 @@ from gfx import Img, shade, text, digit, DOOR_COLOURS, PAIR_COLOURS
 from gfx_bus import blend
 from gfx_cinema import paste
 
-ORDERS = {"press": (1,), "kiln": (1, 3), "bay": (3, 2, 1), "secret": (2, 1, 3)}     # what each note wants
+ORDERS = {"press": (1,), "kiln": (1, 3), "bay": (3, 2, 1), "secret": (2, 1, 3), "blank": ()}  # what each note wants
+TORN = {"secret": 1, "blank": 2}                                                    # the sheets torn across: their tears
 BAND = {1: (214, 44, 34), 3: (46, 176, 66), 2: (52, 92, 222)}                      # RED, GREEN, BLUE
 GREY = (150, 150, 146)
 CARD = (172, 128, 78)
@@ -45,7 +52,7 @@ STEEL = (120, 128, 136)
 INK = (28, 26, 26)
 HAZ = ((224, 182, 40), (34, 32, 30))
 NAMES = {"H": ("HOPPER", "101"), "P": ("PRESS", "102"), "K": ("KILN", "103"), "L": ("LABELS", "104"),
-         "D": ("BAY", "105")}
+         "D": ("BAY", "105"), "X": ("WAY OUT", "")}
 COLOUR_NAMES = {1: "RED", 2: "BLUE", 3: "GREEN", 4: "YELLOW", 5: "VIOLET", 6: "PINK", 7: "STRAY", 8: "TEAL",
                 9: "ORANGE"}
 
@@ -278,8 +285,20 @@ def lamps(out):
 
 
 # === the notes ======================================================================
-def paper(seq, w=40, h=56, seed=0, tilt=0):
-    """A sheet with the crate as it is wanted on it."""
+def tear(w, at, seed):
+    """Where a sheet w wide is torn across, about `at` from its top: a row for each column."""
+    rnd = random.Random(1750 + seed)
+    ys, y = [], at
+    for _ in range(w):
+        y = max(at - 3, min(at + 3, y + rnd.choice((-1, 0, 0, 1))))
+        ys.append(y)
+    return ys
+
+
+def paper(seq, w=40, h=56, seed=0, tilt=0, torn=0, part=None):
+    """A sheet with the crate as it is wanted on it. `torn` (a tear's number)
+    and `part`: the sheet torn across under its pin, and "stub" the strip
+    above the tear (the pin in it), "rest" what is below."""
     im = Img(w, h, (236, 232, 214))
     rnd = random.Random(1730 + seed)
     for y in range(h):
@@ -290,6 +309,14 @@ def paper(seq, w=40, h=56, seed=0, tilt=0):
     im.rect(w // 2 - 2, 2, w // 2 + 2, 6, (180, 40, 34))           # a pin
     for x in range(4, w - 4):                                       # a ruled line under it
         im.set(x, h - 4, (150, 150, 170))
+    if part:
+        ys = tear(w, 9, torn)
+        for x in range(w):
+            for y in range(h):
+                if (y > ys[x]) if part == "stub" else (y <= ys[x]):
+                    im.px[y * w + x] = [0, 0, 0, 0]
+            edge = ys[x] if part == "stub" else ys[x] + 1           # the torn edge: paper's white fibres
+            im.set(x, edge, (252, 250, 244))
     if tilt:                                                         # pinned askew: shear it by a pixel a step
         sh = Img(w + 4, h, (0, 0, 0, 0))
         for y in range(h):
@@ -309,11 +336,32 @@ def note_board(seq, seed):
     return im
 
 
-def note_on_wall(n, part, shift, seq, seed):
+def note_on_wall(n, part, shift, seq, seed, torn=0, piece=None):
     im = GI.on_wall(n, part, 64, shift)
-    p = paper(seq, 36, 50, seed, tilt=1)
+    p = paper(seq, 36, 50, seed, tilt=1, torn=torn, part=piece)
     paste(im, p, 12, im.h - 120)
     return im
+
+
+def stub(n, part, shift, what):
+    """A panel in the wall (laid from the ceiling, as the wall is) with the
+    stub of the sheet `what` pinned to it, where the whole sheet would be."""
+    if n:
+        return note_on_wall(n, part, shift, ORDERS[what], 4, TORN[what], "stub")
+    im = Img(64, 256, (188, 184, 176))                              # (the plain level: as its notes are drawn)
+    paste(im, paper(ORDERS[what], torn=TORN[what], part="stub"), 12, im.h - 120)
+    return im
+
+
+def stacked():
+    """Crates stacked in the store: four to a 64, as they ride the belt, unstamped."""
+    side, lid = Img(64, 64), Img(64, 64)
+    box = crate([])
+    for x in (0, 32):
+        for y in (0, 32):
+            paste(side, box, x, y)
+            paste(lid, box, x, y)
+    return side, lid
 
 
 def shutter_note(n, part, shift):
@@ -345,6 +393,9 @@ def panel(s, c):
     lit = colour(c)
     im.disc(31.5, 66, 16, (16, 16, 18))
     im.disc(31.5, 66, 14, lit)
+    if not num:                                                      # the night room's brass frame
+        im.rect(18, 24, 46, 28, (200, 160, 70))
+        im.rect(18, 28, 46, 29, (120, 92, 40))
     if c:
         im.disc(27, 61, 4, shade(lit, 1.35))
         word = COLOUR_NAMES[c]
@@ -378,9 +429,16 @@ def make(out, notes={}, look=None):
     for name, (part, shift, what) in notes.items():
         if what == "shutter":
             put("textures", name, shutter_note(n, part, shift))
+        elif what.startswith("stub:"):
+            put("textures", name, stub(n, part, shift, what[5:]))
         else:
-            im = note_on_wall(n, part, shift, ORDERS[what], 4) if n else paper(ORDERS[what])
+            t = TORN.get(what, 0)
+            im = note_on_wall(n, part, shift, ORDERS[what], 4, t, "rest" if t else None) if n else \
+                paper(ORDERS[what], torn=t, part="rest" if t else None)
             put("textures", name, im)
+    side, lid = stacked()
+    put("textures", "AJDSTOR", side)
+    put("flats", "AJDSTOF", lid)
     for s in NAMES:
         for c in range(10):
             put("textures", f"AJR{s}{c}", panel(s, c))

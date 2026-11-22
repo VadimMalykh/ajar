@@ -26,6 +26,7 @@ DoomEdNums
 	20096 = AjarHopper                // MAP17 (map17.zs): the hopper that issues crates
 	20097 = AjarChecker               // ... a checker that reads a crate's stamps against an order
 	20098 = AjarCheckLamp             // ... and its lamp
+	20099 = AjarRing                  // ... and the way out that comes round the line
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
