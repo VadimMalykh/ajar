@@ -6146,7 +6146,9 @@ protected from nothing. Now they wake for whoever comes into the wing.
     wing's zone reaches east over it; `on_foot` has it as a region with a way
     out to the wing only. A fight begun anew puts the megasphere back
     (`Pickup` in anew.zs now counts a `Megasphere`: it is a CustomInventory,
-    none of the classes there).
+    none of the classes there). Since 2026-11-22 every new go does too: it
+    is an `AjarSphereEachGo` (see "MAP32 room 3: the megasphere lies there
+    again in every go").
   - Press lamps: two in the chamber on its south wall either side of the
     mouth (5640 and 5896, 802), facing north; one in the hall on its north
     wall west of the mouth (5640, 766), facing south.
@@ -6739,7 +6741,8 @@ begins anew by itself (`Rescue`, `FightAnew(mo, true)`) and it is back. Begun
 anew by the plate twice in a row, taken before each: back each time. All pass.
 The one path that loses it: once the fight is WON, the same plate is the room
 of goes' (`UseFightAnew` -> plate.zs `Anew`), which forgets goes and puts the
-doors back but no pick-ups; taken after the win (or before it), it does not
+doors back but no pick-ups; taken after the win (or before it; since
+2026-11-22: in the go that wins), it does not
 come back for the rest of the level (a scratch check `backAfterTheWinsPlate`
 failed, as the code says). A fresh start of the level (`map MAP32`, the new
 game, the show's end's `ChangeLevel`: there is no hub in mapinfo) has it. Not
@@ -7773,3 +7776,75 @@ only the paradox's own random numbers (`AjarParadox`) are drawn.
   it, and a door may move then (fixtures run on; the level ends anyway).
 - USE before the end (during the sequence) begins the level again at
   once, as after any death; tried only after the dark.
+
+## MAP32 room 3: the megasphere lies there again in every go (built 2026-11-22)
+
+Vadim asked: "when the first fight restarts, can we put mega back?", and
+answered "every new go". Until now the megasphere in room 3's cage, once any
+self took it, was gone for every later go; it came back only when the fight
+began anew (the plate, or death after the last box: `FightAnew` ->
+`PickupsBack`, from the list `KeepFirst` keeps in `AjarFirstEntry first`).
+
+**The rule as built.** A new go of an open fight from its start, out by a time
+door or killed into the next box (`Retake`), or back in the hall of a fight
+that was put back (`Resume`), puts back, after the hall is cleared, every
+pick-up of the fight that is marked "each go" and is not lying where it lay at
+the first entry: same place, same angle, at rest (`EachGoBack` in anew.zs).
+The mark is a class: `AjarSphereEachGo`, a plain subclass of `Megasphere`
+(same sprite, same pick-up), editor number 20058 in mapinfo.txt. MAP32's
+generator (map_secret2.py) places it at `MEGA3` (5940, -72) instead of 83, and
+nowhere else; like every thing that is not a monster it has skill1 to skill5
+(udmf.py `_skills`). One put back for a later go is not counted again
+(`ClearCounters`): the level's item total does not grow with the goes, and
+taking it again does not raise the found count, which never passes the total.
+`first.pick` is made to point at the one that lies there now, so begin anew
+keeps it (no extra, no double) and counts it again as at the first entry
+(`PickupsBack` sets its `bCountItem` as its class has it; `FightAnew` then
+sets the level's counts as then). The earlier selves pick nothing up (an
+`AjarGhost` has no PICKUP): one that took it in its own go leaves it lying for
+the present self. One megasphere per go.
+
+**Not changed.** Winding (`WindTo`) and going on as an earlier self (`GoOnAs`)
+are not a new go from the start: nothing is put back there. The plate after
+the fight is WON (plate.zs `Anew`) still puts back no pick-ups. Every other
+megasphere of the game (map_secret1.py's three in MAP31, map_institute5.py's,
+map_shift.py's in the SHIFT lab) is a plain 83
+and does not come back. `Pickup()` (a `Megasphere` subclass passes) and
+`MegaThere33()` (iterates `Megasphere`, subclasses included) work unchanged.
+
+**Tests** (2026-11-22, full build; counts are the distinct `AJARTEST name=1`
+lines, no `=0` line, no script errors or warnings):
+- `MAP=MAP32 MODE=7` 27 (21 + 6). Go 3 (begun by going out by the window and
+  door 2) at its tic 2: `megasphereBackNextGo3`, the one go 2 took lies in the
+  cage again, one of it, not counted, the item total and found count as when
+  go 2 had taken it. At begin anew: `megasphereCountedAnew3`, one lies there,
+  counted, the counts as at the first entry. Then, after every earlier check
+  (the timings before are untouched), the begun-anew fight: go 1 steps into
+  the shut cage from behind (as MODE=5 does) at health 100 and takes it
+  (`megasphereAfterAnew3`: health 200, found one more, total the same), goes
+  out by door 3; go 2 finds it there again, not counted (`megasphereEveryGo3`),
+  leaves box 1 at once (go 1's self comes in by door 3), takes it too at
+  health 100 (`megasphereTakenAgain3`: 200, found not raised, total the same,
+  found not past total) and has touched no earlier self (`noParadoxEachGo3`).
+  Its cfg quits 100 tics later (the script ends at about t=2020 of 2100).
+  The quick build gave the same 27.
+- `MODE=5` 26 (25 + 1): `megasphereBackAfterDeath3` (go 1 took it and was
+  killed into box 1: in go 2 it lies there again, uncounted). `pickedUp3`
+  now asks one pick-up fewer gone in go 2 (`faPicks - 4`, was 5): the
+  megasphere lies there again. `asAtTheFirstEntry3` also asks one megasphere
+  there, counted; `AsAtFirst` (both rooms) asks the level's found and total
+  items as at the first entry.
+- `MODE=3 TIMEOUT=1500` 78, `MODE=4` 7, `MODE=8` 6, `MODE=9` 8: the same
+  MAP32 checks as main's build (run on this machine the same day: MODE=3 the
+  same 78 for MAP32, MODE=4 7, MODE=5 25). The counts written on 2026-11-21
+  (MODE=4 8, MODE=5 24) were counted another way; the checks are the same.
+  MAP16's `baronCalled`, `baronOnTheGalleryAtTheStart` and `caseIsThere`
+  after MODE=3 were not reached by the timeout in this run (it shared the
+  machine with other runs); main's build printed them.
+
+**Not tested / not played by hand.** `Resume` (back in a fight that was put
+back) is not run by any test. A megasphere moved off its place while still
+lying (it is put back to its place) is not seen in a test. The look of it
+coming back (it simply lies there at the start of the go, without a flash)
+and the game have not been played by hand: `MAP=MAP32 ./run.sh` in the
+worktree.
