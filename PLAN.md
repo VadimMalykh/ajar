@@ -8980,3 +8980,167 @@ monsters in the loop (an imp shooting, a demon walking into the pulse's
 line); a thief taking a leaf of the beat; the ripper against barrels and
 crates; the gate coming down on a monster or the player; speeds under 10 or
 over 200; save and load.
+
+## MAP18 "Time and Motion": the first playable version (built 2026-11-22)
+
+Built as decided in "MAP18: the clock department" above (its subsection
+"The first version, as decided"), on branch `map18`. `MAP=MAP18 ./run.sh`
+in the worktree plays it; MAP17's way out now leads to it, and its own way
+out starts it again.
+
+**What is where.** About 8000 x 4000; basement -256, ground 0, upper 256.
+785 sectors, 408 things (198 monsters placed, 31 ambush spots).
+- `tools/map_clockdept.py`: the level. Ground, west to east: the yard (open,
+  the city sky; the porter's hut, frames 119 west wall and 120 south wall);
+  the regulator room (the three levers on its west wall in the lanes'
+  order, four lamps between the first two, glass onto the hall, its only
+  door to the yard); the delay hall (lanes at y 1440, 1664, 1888: the long
+  lane's frames 101/102 in the hall's west and east walls, the middle's
+  103/104 and the short's 105/106 with the west frames on piers; an emitter
+  near each east end firing east and a bright band, the contact, just west
+  of it); the north corridor (128); the stair hall, the foot (107, facing
+  up the flight), one straight flight of 16 steps, the head (108, facing
+  down it). The porch, the entrance hall (the start, both TEAL leaves, 118),
+  the cloakroom, the way east. The court (open; the clock tower in the
+  middle, BLUE's far side on its north wall, 127 on its south wall). The
+  corridor court to rotunda. The rotunda (eight-sided, a pillar, a stub
+  from it to the south wall; 109 north, 110 east, 111 west, 112 and 113 in
+  the stub's faces); the lift (car 192 square, RED's far side in its south
+  wall; landings basement east, ground west, upper north; a button for
+  each floor in the car and a call button at each landing). The canteen,
+  the kitchen (121 in the canteen's south wall), the kitchen's steps down
+  (16 steps). Basement: the stores (GREEN's far side, 122, 123), the cellar,
+  the corridor under the lift, the boiler room, the shutter (64 wide, in the
+  boiler room's north wall, four lamps beside it), the night room
+  (`way_out`, now with `floor`). Upper: the spine (704..7936), the drawing
+  office, the hall with no size, the workshop, four offices (124 in the
+  second), the archive, the timekeepers (125), the six-sided hall (114
+  north, 115 south), the room that is its own neighbour (116 east, 117
+  west), the regulator store (both ORANGE leaves, 126). 28 frames.
+- The measure (in the same file, run whenever the level is built; the build
+  fails if a rule is broken): a waypoint graph over 45 convex areas (328
+  nodes: the middles of openings, 32 in front of each frame and far side,
+  the levers, the shutter, the corners round each obstacle kept 24 off),
+  straight lines inside an area unless they cross an obstacle grown by the
+  player's radius, stairs measured flat, the lift's ride 4 units a tic with
+  the car waiting, a hung door 32. Shortest ways by Dijkstra; "everything
+  hung" by a search over (where, doors used). It prints its figures after
+  the solver's and puts the two ways it found into the level as MapSpots
+  (way A 1861 on, its doors on 1860 and 1859; way B 1901 on) for the tests.
+- `src/zscript/clock.zs`: an emitter with args[2] a lane calls back every
+  lane's pulse when fired; `AjarLaneContact` (20130, args[0] the lane)
+  counts only its lane's pulse; `AjarDelayShutter` (20131: the shutter's
+  tag, the lamps' first tag, LAPS) moves the shutter as the metronome moves
+  the clock lab's gate (8 a tic, to 4 under the lowest ceiling beside it,
+  never crushing) up while a lane's pulse lives and down otherwise; lamps
+  lit = laps left; a tick (`switches/normbutn`, no attenuation) and "Tick. 3
+  to go." at every lap, "Tick. The pulse has burnt out." at the last, "The
+  pulse burst on the end of its lane." when it hits a wall. The clock lab's
+  classes are otherwise unchanged.
+- `src/zscript/map18.zs`: the smoke tests. `ajar.zs`: ambush cause 50 (a
+  lane's pulse has made its first lap); MAP18's scripts; MAP18's way out
+  ends a scripted run (the autotest is switched off as it restarts).
+
+**The rules as built.** `LAPS = 4`, `SPEED = 20` (the two named constants at
+the top of the generator). A pulse lives from the pull to its fourth pass
+of its own lane's contact: the long lane 413 tics, the middle 209, the
+short 106; lanes 1+2 joined 625, 1+3 522, 2+3 317 (laps 104, 52.8, 27.2,
+156.8, 131.2, 80.0). With no loop it bursts on the lane's east end in 8
+tics. Pulling any lever calls back the pulse alive in the hall (one in the
+hall at a time) and starts the count again; the shutter stays up across
+the pull.
+
+**The ways** (the generator's measure, at 16.7 a tic): lever to shutter on
+foot 9078 (544 tics); best with ORANGE only 3202 (192), RED only 2367 (142:
+RED in 119 in the yard, the car waiting in the basement), GREEN only 3496
+(209), BLUE only 6458 (387); with everything the search finds nothing
+better than RED alone (2367). So: the long lane alone with nothing on the
+track is not enough (the way is 1.31 of its time); both Pairs joining lanes
+1 and 2 and the way on foot: 81 tics spare; the long lane and RED: 272 tics
+spare. The nearest frame or far side is 1125 on foot from a lever, 1211
+from the shutter. How good the measure is: the scripted runs below walked
+its ways at 16.7 a tic and took 163 tics for way A (measured 142) and 564
+for way B (544): the turns, the doors and the car's start cost some 20
+tics the graph does not see. The real spare is so 251 and 61 tics.
+
+**Fights.** Skill 3: 229 monsters (imp 84, sergeant 31, zombie 25,
+chaingunner 16, spectre 15, demon 14, knight 14, revenant 14, cacodemon 9,
+mancubus 3, lost soul 3, baron 1), hit points 29840, ammunition 59950
+(x2.01; MAP15 x2.08, MAP16 x1.64); skill 1: 116 (x3.54). Weapons as MAP15
+to MAP17: shotgun at the start, chaingun and a backpack in the cloakroom,
+the super shotgun in the court, the rocket launcher in the rotunda, the
+plasma rifle in the regulator store. Ambushes on the first take of a TEAL
+leaf, an ORANGE leaf, RED, GREEN and BLUE, and the first lap of a pulse
+(the yard, the canteen and the basement fill). Caches for the paradoxes:
+the long lane's west end, the stair's foot (seen from the head), blue
+armour riding in the car, a megasphere by the stub, cells in the six-sided
+hall, a soul sphere in the room that is its own neighbour, the super
+shotgun in the court (seen from the hall with no size).
+
+**The one-sided sites** (`# ONESIDE site n` in the generator): 1, the
+corridor from the court to the rotunda, with free ground north of it (x
+4992..5440, y 2368..2944) for the longer way; 2, the porter's hut (256
+square, a plain door from the yard), its inside to go in the free ground
+south of the yard (x 256..1280, y -1088..-320); 3, the cloakroom's doorway
+off the entrance hall. All plain for now.
+
+**Checks** (2026-11-22, the full `./build.sh` with the solver):
+- The build: every solver result as before; MAP18's figures as above.
+- thingcheck, itemcheck, mapcheck on `map_clockdept`: 0 problems each.
+- `MAP=MAP18 MODE=1`: 8 checks and `levelExited`: TEAL in 101/102, RED in
+  119 and the car sent to the basement (the generator's best track), the
+  long lever, way A at 16.7 a tic; through the shutter 163 tics after the
+  pull (the pulse alive, one lap made), out by the night room.
+- `MODE=2`: 8 checks and `levelExited`: TEAL in 102/103, ORANGE in 104/101,
+  the long lever, way B on foot (the lift ridden ground to basement) at
+  16.7: at the shutter after 564 tics, the pulse alive with 3 laps; a lap of
+  the joined loop 157 tics.
+- `MODE=3`: 15 checks: nothing hung, the pulse bursts on 102's wall after 8
+  tics (the shutter up 56) and the shutter is down 7 tics later; the long
+  lane alone, way B on foot: burnt out after 414 tics, 4 laps, the player
+  then at the canteen's far end, and held at the shut shutter; a leaf taken
+  from 102 after the first lap: the pulse bursts there, 1 lap; a second pull
+  calls the first back (one pulse in the hall, the count from 0, the
+  shutter held up); the middle lane's lever calls the long lane's pulse back
+  and its own bursts.
+- `MODE=4`: 15 checks: laps of the long lane 104, 104, 104 tics, the middle
+  52, 53, 53, the short 27, 27, 28, lanes 1+2 157, 156, 157 (as their
+  lengths say); 4 counted each; the lamps (8, at the levers and the
+  shutter) count down; the shutter full up 21 tics after the pull and down
+  21 after the pulse went; the first lap's 9 ambushers came.
+- `MODE=5`: 24 checks: the long lane both ways; the endless stair both ways
+  (down the flight into 107, out of 108 at the head, 256 up; and up); RED in
+  128 into the car at each floor and back out; round the pillar (east and
+  west through the stub; north wall into the west wall); the six-sided hall
+  both ways; the room that is its own neighbour both ways; each of the hall
+  with no size's four walls out of the tower's face, outwards; and into the
+  tower from the court, into the hall.
+- `MODE=6`: 35 views of every area and paradox, looked at; fixed after the
+  first look: the sky (none was set: SKY2 now), the basement's light.
+- `MAP=CLOCK MODE=1..7`: 12, 12, 27, 24, 13, 10 and 7 checks, all passed
+  (as in "The clock lab"); `MAP=BELT MODE=1` 13 (one run had `impOnPBelt=0`,
+  the next passed all 13), `MAP=LAB MODE=1` 13, `MAP=MAP17 MODE=1` 42 and
+  `levelExited`, `MAP=MAP16 MODE=1` 50 and `levelExited`.
+- Every other map's wad and every graphic `gfx.make_all` makes (2744
+  entries) built byte for byte as from the branch's base `8aa288c`; the
+  only new entry is MAP18's wad. No new art.
+
+**Departures.** The short lane is no answer at LAPS 4: with no frame nearer
+than 1000 to a lever or the shutter, any way is at least 2000 (120 tics),
+more than the short lane's 106. The best single link is RED (a frame in the
+yard to the car in the basement), not GREEN as the outline guessed (GREEN's
+far side in the stores is 3496 against RED's 2367), and everything hung at
+once does no better than RED alone. The lamps are plain lit niches and the
+levers MAP11's lever picture (no signs, no new art); the tick is Doom's
+switch click. The ways are measured with the car waiting where it is
+needed (the player sends it first). The six-sided hall needed no fallback:
+its two other slanted walls are doorways through short necks.
+
+**Not tested / not played by hand.** The fights (the scripts remove the
+monsters; only the first lap's ambush was made to come); a monster or the
+player under the shutter as it comes down (it never crushes, as the clock
+lab's gate); the lift with monsters in it; the timings with real input
+(the runs set the player's speed); a pulse and a door taken from the far
+side of a Pair while it is in the doorway; the look in the hardware
+renderer; the level from MAP17's way out by a real exit. Not played by
+hand.
