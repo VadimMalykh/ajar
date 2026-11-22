@@ -12,6 +12,11 @@
 // (each time through it gains or loses a little, so ON is not enough); when it has more than MOST stamps (a ring);
 // or when it is off the line (args[0], args[1]: the tags of the line's
 // sectors). That is all a reject is.
+// It issues none while the player or a monster stands under the chute or in
+// the store's mouth behind it (GUARD: the box from BACK behind the hopper to
+// AHEAD before it, SIDE either side of the belt's middle): the wait starts
+// again once they are gone. (The store behind the hopper is reached by
+// walking up the belt against it, MAP17's third secret.)
 class AjarHopper : Actor
 {
 	const STILL = 350;
@@ -20,9 +25,15 @@ class AjarHopper : Actor
 	const ON = 8;
 	const FAR = 64;
 	const LATE = 35;
+	const BACK = 64;
+	const AHEAD = 64;
+	const SIDE = 48;
 	AjarCrate crate;
 	Array<int> line;
 	int wait, issued, takenBack, issuedAt, takenAt, markTic, farTic;
+	int heldAt, holds;
+	Vector2 takenFrom;          // where the last was taken back
+	int crateCame;              // the tic the crate last came into another sector          // the last tic someone in the way held the next crate back, and how many tics in all
 	double progress, mark, farMark;
 	Vector2 last;
 	string why;                 // why the last was taken back
@@ -61,6 +72,7 @@ class AjarHopper : Actor
 		if (!crate)
 		{
 			if (paused) return;
+			if (InTheWay()) { wait = AGAIN; heldAt = level.maptime; holds++; return; }
 			if (wait > 0) { wait--; return; }
 			Issue();
 			return;
@@ -76,6 +88,27 @@ class AjarHopper : Actor
 		else if (level.maptime - markTic >= STILL) w = "still";
 		else if (level.maptime - farTic >= STILL + LATE) w = "rocking";
 		if (w != "") TakeBack(w);
+	}
+
+	// the player or a living monster under the chute or in the store's mouth
+	bool InTheWay()
+	{
+		let it = BlockThingsIterator.CreateFromPos(pos.x, pos.y, pos.z, 64, BACK + AHEAD, false);
+		while (it.Next())
+		{
+			Actor a = it.thing;
+			if (!a || !(a.player || a.bIsMonster) || a.health <= 0) continue;
+			if (a.pos.x + a.radius > pos.x - BACK && a.pos.x - a.radius < pos.x + AHEAD && abs(a.pos.y - pos.y) < SIDE + a.radius)
+				return true;
+		}
+		return false;
+	}
+
+	// its crate came into another sector (AjarCrate.Tick): off the line, it goes now
+	void Arrived()
+	{
+		crateCame = level.maptime;
+		if (crate && !crate.bDestroyed && !OnLine(crate)) TakeBack("off");
 	}
 
 	void Issue()
@@ -97,6 +130,7 @@ class AjarHopper : Actor
 	void TakeBack(string w)
 	{
 		why = w;
+		takenFrom = crate.pos.xy;
 		stampsTaken = crate.StampList();
 		takenBack++;
 		takenAt = level.maptime;
@@ -117,15 +151,18 @@ class AjarHopper : Actor
 // it opens (Door_Open) when a crate comes stamped exactly so; args[2] and
 // args[3] a second order and what that opens (the bay's hidden one), or 0;
 // args[4] which it is (1 the press's checker, 2 the kiln's scale, 3 the
-// bay's). Filled, an order stays filled; a checker whose orders are filled
-// says nothing more. Until then a crate that matches none is refused: its
-// lamp (AjarCheckLamp) flashes red, a clunk, and a line saying what it
-// wanted and what came. It does not stop the crate: refusing is all it does.
+// bay's), plus ten times the tag a crate with no stamps at all opens (the
+// bay's blank one; none if 0). Filled, an order stays filled; a checker
+// whose orders are filled says nothing more. Until then a crate that matches
+// none is refused: its lamp (AjarCheckLamp) flashes red, a clunk, and a line
+// saying what it wanted and what came, or, once only hidden orders are left,
+// that it has no order for that. It does not stop the crate: refusing is all
+// it does.
 class AjarChecker : Actor
 {
 	Sector home;
-	bool filled, filled2;
-	int refusedAt, filledAt, filledAt2, reads, refusals;
+	bool filled, filled2, filled3;
+	int refusedAt, filledAt, filledAt2, filledAt3, reads, refusals;
 	string lastRead, lastSaid;
 
 	Default
@@ -175,8 +212,10 @@ class AjarChecker : Actor
 		return code;
 	}
 
-	string Name() { return args[4] == 1 ? "The press's checker" : args[4] == 2 ? "The kiln's scale" : "The bay's scale"; }
-	bool Done() { return filled && (!args[2] || filled2); }
+	int Which() { return args[4] % 10; }
+	int BlankTag() { return args[4] / 10; }
+	string Name() { return Which() == 1 ? "The press's checker" : Which() == 2 ? "The kiln's scale" : "The bay's scale"; }
+	bool Done() { return filled && (!args[2] || filled2) && (!BlankTag() || filled3); }
 
 	void Say(string msg)
 	{
@@ -185,7 +224,7 @@ class AjarChecker : Actor
 		if (h) h.Say(msg);
 	}
 
-	void Open(int tag) { if (tag) level.ExecuteSpecial(11 /* Door_Open */, null, null, false, tag, args[4] == 3 ? 16 : 32); }
+	void Open(int tag) { if (tag) level.ExecuteSpecial(11 /* Door_Open */, null, null, false, tag, Which() == 3 ? 16 : 32); }
 
 	void Read(AjarCrate c)
 	{
@@ -202,7 +241,7 @@ class AjarChecker : Actor
 			c.A_StartSound("switches/exitbutn", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
 			static const string opens[] = { "", "The steel door from the hall slides open.", "The steel door to the dispatch wing slides open.",
 				"The shutter beyond it rolls up: the way out." };
-			Say(String.Format("%s passes the crate: %s, as ordered.\n%s", Name(), Wanted(args[0]), opens[clamp(args[4], 0, 3)]));
+			Say(String.Format("%s passes the crate: %s, as ordered.\n%s", Name(), Wanted(args[0]), opens[clamp(Which(), 0, 3)]));
 			result = "filled";
 		}
 		else if (args[2] && !filled2 && code == args[2])
@@ -211,8 +250,17 @@ class AjarChecker : Actor
 			filledAt2 = level.maptime;
 			Open(args[3]);
 			c.A_StartSound("misc/secret", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
-			Say(String.Format("%s passes the crate: %s.\nNobody ordered that here, but a panel in the bay's wall slides open.", Name(), Wanted(args[2])));
+			Say(String.Format("%s passes the crate: %s.\nNobody ordered that here, but a panel south of the shutter slides open.", Name(), Wanted(args[2])));
 			result = "filled2";
+		}
+		else if (BlankTag() && !filled3 && !c.stamps.Size())
+		{
+			filled3 = true;
+			filledAt3 = level.maptime;
+			Open(BlankTag());
+			c.A_StartSound("misc/secret", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
+			Say(String.Format("%s passes the crate: unstamped.\nNobody ordered a blank one, but a panel north of the shutter slides open.", Name()));
+			result = "filled3";
 		}
 		else
 		{
@@ -220,11 +268,12 @@ class AjarChecker : Actor
 			refusals++;
 			c.A_StartSound("plats/pt1_stop", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NORM);
 			if (!filled) Say(String.Format("%s wants %s. This one came %s.", Name(), Wanted(args[0]), Came(c)));
+			else if (!c.stamps.Size()) Say(String.Format("%s has no order for an unstamped crate.", Name()));
 			else Say(String.Format("%s has no order for a crate stamped %s.", Name(), Came(c)));
 			result = "refused";
 		}
 		if (AjarHopper.Testing())
-			Console.Printf("AJARTEST checker=%d read=%s result=%s t=%d", args[4], lastRead.Length() ? lastRead : "-", result, level.maptime);
+			Console.Printf("AJARTEST checker=%d read=%s result=%s t=%d", Which(), lastRead.Length() ? lastRead : "-", result, level.maptime);
 	}
 }
 
@@ -274,14 +323,110 @@ class AjarCheckLamp : Actor
 	}
 }
 
+// The way out (20099), a thing in the middle of the night room: args[0] and
+// args[1] half the room's size along x and y (with its two doors' recesses),
+// args[2] the brass frame's line id, args[3] the colour of the door whose far
+// side is in the room (VIOLET). The brass frame does not take that door
+// (ajarmap.way_home(barred=)); the way out has to come round the line.
+// For the player a station is a room from its door's far side to its outlet
+// frame: the kiln (GREEN, outlet 103) and labelling (BLUE, outlet 104); the
+// press is none (its cell is a dead end). The ring is closed when the brass
+// frame holds the door of a station whose outlet holds VIOLET, or holds the
+// other station's door, whose outlet holds VIOLET. Each time it becomes
+// closed it says so. While it is closed, the player coming into the night
+// room through either of its doors (out of the brass frame, or out of
+// VIOLET's far side: a step through a portal, not a walk) ends the level;
+// by the corridor ends nothing, and leaving ends nothing. Nothing is
+// nailed: a door of the ring taken down opens it again.
+class AjarRing : Actor
+{
+	const CAUSE = 9;            // ambush cause 40 + CAUSE: the ring closed for the first time
+	bool closed, wasIn, exited;
+	int closings, closedAt, openedAt;
+	Vector2 last;
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE +NOSECTOR
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+
+	// the outlet of the station a door opens onto, for the player; 0 if none
+	static int Outlet(AjarDoor d)
+	{
+		if (!d || d.IsPair()) return 0;
+		return d.args[1] == 3 ? 103 : d.args[1] == 2 ? 104 : 0;
+	}
+
+	bool Closes(AjarHandler h)
+	{
+		AjarFrame brass = h.FindFrame(args[2]);
+		AjarDoor d = brass ? brass.door : null;
+		for (int i = 0; i < 2; i++)
+		{
+			int o = Outlet(d);
+			if (!o) return false;
+			AjarFrame f = h.FindFrame(o);
+			d = f ? f.door : null;
+			if (d && !d.IsPair() && d.args[1] == args[3]) return true;
+		}
+		return false;
+	}
+
+	bool InRoom(Vector2 p) { return abs(p.x - pos.x) < args[0] && abs(p.y - pos.y) < args[1]; }
+
+	override void Tick()
+	{
+		let h = AjarHandler(EventHandler.Find("AjarHandler"));
+		if (!h || exited) return;
+		bool now = Closes(h);
+		if (now != closed)
+		{
+			closed = now;
+			if (now)
+			{
+				closings++;
+				closedAt = level.maptime;
+				h.Say("The line runs round through the way out.\nGo round.");
+			}
+			else openedAt = level.maptime;
+			if (AjarHopper.Testing()) Console.Printf("AJARTEST ring%s n=%d t=%d", now ? "Closed" : "Opened", closings, level.maptime);
+		}
+		Actor mo = players[consoleplayer].mo;
+		if (!mo) return;
+		bool inside = InRoom(mo.pos.xy);
+		if (closed && inside && !wasIn && (mo.pos.xy - last).Length() > 64 && mo.health > 0)
+		{
+			exited = true;
+			if (AjarHopper.Testing())
+				Console.Printf("AJARTEST ringOut by=%s at (%.0f,%.0f) t=%d", mo.pos.x > pos.x ? "brass" : "violet", mo.pos.x, mo.pos.y, level.maptime);
+			level.ExecuteSpecial(243 /* Exit_Normal */, mo, null, false, 0);
+		}
+		last = mo.pos.xy;
+		wasIn = inside;
+	}
+}
+
 extend class AjarHandler
 {
-	// ajarmap.ambush's cause 40 + a tag: the order whose checker opens that tag is filled
+	// ajarmap.ambush's cause 40 + a tag: the order whose checker opens that tag
+	// is filled; 40 + AjarRing.CAUSE: the way out's ring has been closed
 	bool CheckerOpened(int tag)
 	{
+		if (tag == AjarRing.CAUSE)
+		{
+			let r = AjarRing(ThinkerIterator.Create("AjarRing").Next());
+			return r && r.closings > 0;
+		}
 		let it = ThinkerIterator.Create("AjarChecker");
 		AjarChecker k;
-		while (k = AjarChecker(it.Next())) if ((k.filled && k.args[1] == tag) || (k.filled2 && k.args[3] == tag)) return true;
+		while (k = AjarChecker(it.Next()))
+			if ((k.filled && k.args[1] == tag) || (k.filled2 && k.args[3] == tag) || (k.filled3 && k.BlankTag() == tag)) return true;
 		return false;
 	}
 
@@ -291,9 +436,11 @@ extend class AjarHandler
 	{
 		let it = ThinkerIterator.Create("AjarChecker");
 		AjarChecker k;
-		while (k = AjarChecker(it.Next())) if (k.args[4] == which) return k;
+		while (k = AjarChecker(it.Next())) if (k.Which() == which) return k;
 		return null;
 	}
+
+	AjarRing Ring() { return AjarRing(ThinkerIterator.Create("AjarRing").Next()); }
 
 	// --- the smoke tests: MAP=MAP17 MODE=1..5 tools/smoke.sh ---------------------
 	// The scripts go in steps: each waits for what it needs (a crate to come
@@ -329,6 +476,14 @@ extend class AjarHandler
 	bool InLabel(Actor a) { return InBox(a, 768, 576, 1600, 960); }
 	bool InWing(Actor a) { return InBox(a, 1728, -448, 2176, 960); }
 	bool InBay(Actor a) { return InBox(a, 1728, 0, 2176, 128); }
+	bool InNight(Actor a) { return InBox(a, 2352, 128, 2704, 384); }
+	bool InStore(Actor a) { return InBox(a, -208, 160, -16, 352); }
+	bool InCloset2(Actor a) { return InBox(a, 2192, 128, 2288, 320); }
+
+	// what a lamp of the dispatcher's boards (line id) shows now
+	string LampTex(int id) { Line l = FindLine(id); return l ? TexMan.GetName(l.sidedef[0].GetTexture(Side.mid)) : ""; }
+	int AmbushersCame(int cause) { return ambushShown[cause] + ambushHid[cause]; }
+	const RING_SAID = "The line runs round through the way out.\nGo round.";
 
 	// a walk: posed at x, y facing ang (on a step's first tic), then forward
 	// for `tics`; true a few tics after
@@ -498,14 +653,177 @@ extend class AjarHandler
 		case 24:
 			MtoWait(t, "shutterUp", TagOpen(3), 200);
 			break;
-		case 25:    // out by the shutter, to the night room, and into its brass doorway
+		case 25:    // out by the shutter, to the night room
 			if (MtoWalk(mo, t, 2120, 64, 0, 20)) { Check("throughTheShutter", mo.pos.x > 2192); MtoNext(t); }
 			break;
 		case 26:
-			if (MtoWalk(mo, t, 2528, 64, 90, 12)) { Check("intoTheNightRoom", InBox(mo, 2368, 128, 2688, 384)); MtoNext(t); }
+			if (MtoWalk(mo, t, 2528, 64, 90, 12)) { Check("intoTheNightRoom", InNight(mo)); MtoNext(t); }
 			break;
-		case 27:
-			MtoWalk(mo, t, 2440, 256, 180, 30);
+		default:
+			MtoWayOut(mo, t);
+			break;
+		}
+	}
+
+	// MODE=1 from the night room on: the way out round the line. First what
+	// is refused or closes nothing, by script hands (BeltHang) where walking
+	// adds nothing; then the solver's route, walked: VIOLET into 103 from the
+	// kiln, GREEN into the brass frame; the corridor in; a door of the ring
+	// taken down and in by a door; closed again, and round it.
+	void MtoWayOut(Actor mo, int t)
+	{
+		AjarRing ring = Ring();
+		AjarFrame brass = FindFrame(190);
+		AjarDoor red = DoorOf(1), green = DoorOf(3), blue = DoorOf(2), violet = DoorOf(5), la = Leaf(0), lb = Leaf(1);
+		switch (mtoStep)
+		{
+		case 27:    // VIOLET, leaning in the night room
+			if (MtoIn(t) == 1)
+			{
+				Pose(mo, 2528, 320, 0, 90);
+				TakeDoor(mo, violet);
+				Check("tookViolet", carried == violet && !ring.closed);
+				MtoNext(t);
+			}
+			break;
+		case 28:    // VIOLET tried in the brass frame: refused
+			if (MtoIn(t) == 1)
+			{
+				Pose(mo, 2660, 256, 0, 0);
+				brass.Activate(mo);
+				Console.Printf("AJARTEST info the brass frame said: %s", said);
+				Check("violetRefusedInBrass", !brass.door && carried == violet &&
+					said == "The way out will not open onto itself here.\nIt has to come round the line.");
+				MtoNext(t);
+			}
+			break;
+		case 29:    // RED in the brass frame and VIOLET in 102: no ring
+			if (MtoIn(t) == 1)
+			{
+				BeltHang(mo, violet, 102);
+				BeltHang(mo, red, 190);
+				Pose(mo, 2600, 256, 0, 0);
+			}
+			if (MtoIn(t) == 12)
+			{
+				Check("redInBrassVioletIn102", brass.door == red && FindFrame(102).door == violet && !carried);
+				Console.Printf("AJARTEST info the boards: 102 %s, the brass frame %s", LampTex(702), LampTex(790));
+				Check("boardsShowVioletAndBrass", LampTex(702) == "AJRP5" && LampTex(790) == "AJRX1");
+				Check("redAndVioletIn102CloseNothing", !ring.closed && ring.closings == 0);
+				MtoNext(t);
+			}
+			break;
+		case 30:    // through RED from the brass frame into the press's cell, and back against its belt
+			if (MtoWalk(mo, t, 2600, 256, 0, 25)) { Check("throughRedFromBrassToTheCell", InCell(mo)); MtoNext(t); }
+			break;
+		case 31:
+			if (MtoWalk(mo, t, 850, 256, 180, 40)) { Check("backInByTheBrassFrameNothingEnds", InNight(mo) && !ring.exited); MtoNext(t); }
+			break;
+		case 32:    // all back as the solver has it, VIOLET in hand
+			if (MtoIn(t) == 1)
+			{
+				BeltTake(mo, 190);
+				BeltHang(mo, red, 104);
+				BeltHang(mo, la, 102);
+				Pose(mo, 2528, 320, 0, 90);
+				TakeDoor(mo, violet);
+				Check("asTheSolverHasIt", green.frame == FindFrame(101) && la.frame == FindFrame(102) && blue.frame == FindFrame(103) &&
+					red.frame == FindFrame(104) && lb.frame == FindFrame(105) && !brass.door && carried == violet);
+				MtoNext(t);
+			}
+			break;
+		case 33:    // by the corridor to the wing, the press hall, the hall
+			if (MtoWalk(mo, t, 2528, 200, 270, 20)) MtoNext(t);
+			break;
+		case 34:
+			if (MtoWalk(mo, t, 2400, 64, 180, 40)) { Check("backToTheWing", InWing(mo)); MtoNext(t); }
+			break;
+		case 35:
+			if (MtoWalk(mo, t, 1760, 432, 180, 30)) MtoNext(t);
+			break;
+		case 36:
+			if (MtoWalk(mo, t, 800, 432, 180, 30)) { Check("backToTheHall", InHall(mo) && carried == violet); MtoNext(t); }
+			break;
+		case 37:    // through GREEN to the kiln; swap BLUE for VIOLET in 103
+			if (MtoWalk(mo, t, 560, 256, 0, 20)) { Check("throughGreenWithViolet", InKiln(mo) && carried == violet); MtoNext(t); }
+			break;
+		case 38:
+			if (MtoIn(t) == 1)
+			{
+				Pose(mo, 1560, -180, 0, 0);
+				FindFrame(103).Activate(mo);
+				Check("violetIn103", violet.frame == FindFrame(103) && carried == blue && !ring.closed);
+				MtoNext(t);
+			}
+			break;
+		case 39:    // out through GREEN against the belt; swap GREEN for BLUE in 101
+			if (MtoWalk(mo, t, 820, -256, 180, 25)) { Check("outOfTheKilnByGreen2", InHall(mo)); MtoNext(t); }
+			break;
+		case 40:
+			if (MtoIn(t) == 1)
+			{
+				Pose(mo, 600, 180, 0, 0);
+				FindFrame(101).Activate(mo);
+				Check("blueSwappedForGreenIn101", blue.frame == FindFrame(101) && carried == green);
+				MtoNext(t);
+			}
+			break;
+		case 41:    // to the night room with GREEN
+			if (MtoWalk(mo, t, 600, 432, 0, 30)) MtoNext(t);
+			break;
+		case 42:
+			if (MtoWalk(mo, t, 1560, 432, 0, 30)) MtoNext(t);
+			break;
+		case 43:
+			if (MtoWalk(mo, t, 2120, 64, 0, 40)) MtoNext(t);
+			break;
+		case 44:
+			if (MtoWalk(mo, t, 2528, 64, 90, 12)) { Check("intoTheNightRoomWithGreen", InNight(mo) && carried == green); MtoNext(t); }
+			break;
+		case 45:    // GREEN into the brass frame: the ring is closed (GREEN, the kiln, 103 VIOLET)
+			if (MtoIn(t) == 1) { Pose(mo, 2660, 256, 0, 0); brass.Activate(mo); }
+			if (MtoIn(t) == 4)
+			{
+				Console.Printf("AJARTEST info said: %s", said);
+				Check("ringClosed", brass.door == green && ring.closed && ring.closings == 1 && said == RING_SAID);
+				MtoNext(t);
+			}
+			break;
+		case 46:    // out to the corridor and in again by it: nothing ends
+			if (MtoWalk(mo, t, 2528, 200, 270, 15)) { Check("outToTheCorridor", !InNight(mo) && mo.pos.y < 128); MtoNext(t); }
+			break;
+		case 47:
+			if (MtoWalk(mo, t, 2528, 80, 90, 15)) { Check("inByTheCorridorEndsNothing", InNight(mo) && !ring.exited); MtoNext(t); }
+			break;
+		case 48:    // GREEN taken down: the ring is open
+			if (MtoIn(t) == 1) { Pose(mo, 2660, 256, 0, 0); brass.Activate(mo); }
+			if (MtoIn(t) == 4) { Check("ringOpened", !ring.closed && carried == green && ring.openedAt > ring.closedAt); MtoNext(t); }
+			break;
+		case 49:    // into VIOLET's far side: the kiln at 103; back through 103: in by a door, and nothing ends
+			if (MtoWalk(mo, t, 2440, 256, 180, 15)) { Check("throughVioletToTheKiln", InKiln(mo)); MtoNext(t); }
+			break;
+		case 50:
+			if (MtoWalk(mo, t, 1540, -256, 0, 20)) { Check("inByVioletOpenEndsNothing", InNight(mo) && !ring.exited); MtoNext(t); }
+			break;
+		case 51:    // closed again
+			if (MtoIn(t) == 1) { Pose(mo, 2660, 256, 0, 0); brass.Activate(mo); }
+			if (MtoIn(t) == 4)
+			{
+				Check("closedAgain", brass.door == green && ring.closed && ring.closings == 2 && !carried);
+				Console.Printf("AJARTEST info ambushers: VIOLET taken %d, the ring closed %d", AmbushersCame(15), AmbushersCame(49));
+				Check("violetsCompanyCame", AmbushersCame(15) == 3);
+				Check("theRingsCompanyCame", AmbushersCame(49) == 6);
+				MtoNext(t);
+			}
+			break;
+		case 52:    // round it: into the brass frame, GREEN's far side in the kiln...
+			if (MtoWalk(mo, t, 2600, 256, 0, 20)) { Check("throughGreenFromBrassToTheKiln", InKiln(mo) && mo.pos.x < 1000); MtoNext(t); }
+			break;
+		case 53:    // ... round the tunnel, and out through VIOLET in 103: in by a door, the ring closed
+			if (MtoWalk(mo, t, 900, -140, 0, 60)) MtoNext(t);
+			break;
+		case 54:
+			if (MtoWalk(mo, t, 1540, -256, 0, 30)) { Check("stillHere", false); MtoNext(t); }
 			break;
 		}
 	}
@@ -516,10 +834,12 @@ extend class AjarHandler
 	{
 		AjarChecker press = Checker(1), kiln = Checker(2), bay = Checker(3);
 		AjarDoor red = DoorOf(1), green = DoorOf(3), blue = DoorOf(2), la = Leaf(0), lb = Leaf(1);
+		MtoNoneInTheStore(t);
+		if (t < 800) { MtoStore(mo, t); return; }
 		switch (mtoStep)
 		{
 		case 0:
-			if (MtoIn(t) == 5) { Pose(mo, 600, 180, 0, 0); TakeDoor(mo, red); FindFrame(101).Activate(mo); MtoNext(t); }
+			if (t == 800) { Pose(mo, 600, 180, 0, 0); TakeDoor(mo, red); FindFrame(101).Activate(mo); MtoNext(t); }
 			break;
 		case 1:
 			MtoWait(t, "order1FilledDoorAOpen", press.filled && TagOpen(1), 1300);
@@ -591,12 +911,110 @@ extend class AjarHandler
 			if (MtoWalk(mo, t, 2120, -96, 0, 20)) MtoNext(t);
 			break;
 		case 18:
-			MtoWait(t, "secretFound", level.found_secrets == 1 && level.total_secrets == 1, 60);
+			MtoWait(t, "secretFound", level.found_secrets == 2 && level.total_secrets == 3, 60);     // (the store, then this)
 			break;
 		case 19:    // and the bay answers what comes next as it should: the main order is still open
 			if (MtoWait(t, "theBayStillAnswers", bay.refusals > 0 && bay.lastSaid.IndexOf("wants GREEN, BLUE, RED") >= 0, 1600))
 				Console.Printf("AJARTEST info the bay said: %s", bay.lastSaid);
 			break;
+		case 20:    // the blank crate: a leaf in 101 (from 103), its twin still in 105; the player in the bay
+			if (MtoIn(t) == 1)
+			{
+				BeltTake(mo, 103);
+				BeltHang(mo, la, 101);
+				Pose(mo, 1840, 230, 0, 280);
+				Check("leavesIn101And105", la.frame == FindFrame(101) && lb.frame == FindFrame(105) && la.args[0] == 105);
+				MtoNext(t);
+			}
+			break;
+		case 21:
+			if (MtoWait(t, "blankOrderFilled", bay.filled3, 1500))
+			{
+				Console.Printf("AJARTEST info the bay said: %s", bay.lastSaid);
+				Check("blankReadUnstamped", bay.lastRead == "" && bay.lastSaid.IndexOf("panel north of the shutter") >= 0);
+				Check("theShutterStaysShut2", !bay.filled && !TagOpen(3));
+			}
+			break;
+		case 22:
+			MtoWait(t, "panel2Opens", TagOpen(5), 200);
+			break;
+		case 23:    // into the closet behind it
+			if (MtoWalk(mo, t, 2120, 224, 0, 20)) MtoNext(t);
+			break;
+		case 24:
+			MtoWait(t, "secondSecretFound", InCloset2(mo) && level.found_secrets == 3, 60);
+			break;
+		case 25:    // all three; and the bay, with only its main order left, still asks for it
+			if (MtoIn(t) == 1)
+			{
+				Console.Printf("AJARTEST info secrets %d of %d", level.found_secrets, level.total_secrets);
+				Check("secretsThreeOfThree", level.found_secrets == 3 && level.total_secrets == 3);
+				mtoN = bay.refusals;
+			}
+			if (MtoIn(t) > 1 && MtoWait(t, "theBayAsksForItsOrder", bay.refusals > mtoN && bay.lastSaid.IndexOf("wants GREEN, BLUE, RED") >= 0, 1600))
+			{
+				Console.Printf("AJARTEST info the bay said: %s", bay.lastSaid);
+				Check("noCrateEverInTheStore", mtoFails == 0);
+			}
+			break;
+		}
+	}
+
+	// no crate ever comes into the store behind the hopper (MODE=2 and 3)
+	void MtoNoneInTheStore(int t)
+	{
+		let it = ThinkerIterator.Create("AjarCrate");
+		Actor c;
+		while (c = Actor(it.Next()))
+			if (c.pos.x < 0) { mtoFails++; Console.Printf("AJARTEST info a crate behind the hopper at (%.1f,%.1f) t=%d", c.pos.x, c.pos.y, t); }
+	}
+
+	// MODE=2, before the orders: the store behind the hopper, by the player's
+	// own walking up the belt against it (tools/smoke_MAP17_2.cfg holds
+	// +forward down from about t=60, cl_run 0); then the hopper's guard: no
+	// crate while the player, or a monster, is under the chute, and the wait
+	// starts again once they are gone.
+	void MtoStore(Actor mo, int t)
+	{
+		AjarHopper h = Hopper();
+		if (t == 2) { h.paused = true; if (h.crate) h.crate.Destroy(); }
+		// on the hall's belt facing the chute, held there until the key is down
+		if (t >= 20 && !walkFrom)
+		{
+			if (mo.player.cmd.forwardmove > 0) { walkFrom = t; Console.Printf("AJARTEST info the key is down at t=%d", t); }
+			else Pose(mo, 300, 256, 0, 180);
+		}
+		if (walkFrom && !mtoT1 && mo.pos.x < 96) { mtoT1 = t; Console.Printf("AJARTEST info under the chute at t=%d: 204 against the belt in %d tics (%.2f a tic)", t, t - walkFrom, 204. / (t - walkFrom)); }
+		if (walkFrom && !mtoT2 && InStore(mo))
+		{
+			mtoT2 = t;
+			Console.Printf("AJARTEST info in the store at t=%d (%.1f,%.1f), secrets %d", t, mo.pos.x, mo.pos.y, level.found_secrets);
+		}
+		if (t == 280)
+		{
+			Check("walkedUpTheBeltIntoTheStore", mtoT1 > 0 && mtoT2 > 0 && InStore(mo));
+			Check("theStoreIsASecret", level.found_secrets == 1);
+			Check("noCrateWhileWalking", h.issued == 1);
+			h.paused = false;                     // no crate on the line; and the player under the chute
+		}
+		if (t >= 280 && t < 420) Pose(mo, 64, 256, 0, 180);
+		if (t == 419) { Check("noCrateWithThePlayerUnderTheChute", h.issued == 1 && !h.crate && h.holds >= 135); mtoN = h.holds; }
+		if (t == 420) { Pose(mo, 300, 120, 0, 90); mtoX = level.maptime; }
+		if (t == 420 + 75)
+		{
+			Console.Printf("AJARTEST info the player gone at %d, the next issued %d tics later", int(mtoX), h.issuedAt - int(mtoX));
+			Check("issuedTwoSecondsAfterThePlayerWent", h.issued == 2 && h.issuedAt - mtoX >= 70 && h.issuedAt - mtoX <= 72);
+			h.TakeBack("script");
+			mtoBlock = Actor.Spawn("ZombieMan", (64, 256, 0));
+			mtoBlock.angle = 0;
+		}
+		if (t > 495 && t < 640 && mtoBlock) mtoBlock.SetOrigin((64, 256, 0), false);
+		if (t == 639) Check("noCrateWithAMonsterUnderTheChute", h.issued == 2 && !h.crate);
+		if (t == 640) { mtoBlock.ClearCounters(); mtoBlock.Destroy(); mtoX = level.maptime; }
+		if (t == 640 + 75)
+		{
+			Console.Printf("AJARTEST info the zombie gone at %d, the next issued %d tics later", int(mtoX), h.issuedAt - int(mtoX));
+			Check("issuedTwoSecondsAfterTheMonsterWent", h.issued == 3 && h.issuedAt - mtoX >= 70 && h.issuedAt - mtoX <= 72);
 		}
 	}
 
@@ -622,6 +1040,7 @@ extend class AjarHandler
 			if ((c.pos.xy - mtoRestPos).Length() >= 8) { mtoRest = t; mtoRestPos = c.pos.xy; }
 		}
 		bool still = c && t - mtoRest > 10;
+		MtoNoneInTheStore(t);
 		switch (mtoStep)
 		{
 		case 0:     // GREEN in 101: the crate goes to the kiln stamped GREEN only
@@ -778,7 +1197,37 @@ extend class AjarHandler
 			if (MtoWait(t, "theHopperGoesOn", h.issuedAt > h.takenAt && h.crate != null, 100))
 				Check("noneLost", mtoFails == 0);
 			break;
-		case 14:    // and nothing has been left anywhere: one crate, the hopper's
+		case 14:    // VIOLET in 101: a crate goes through it into the night room, off the line: taken back at once
+		case 15:    // a leaf in 101, its twin in the night room's brass frame: the same
+		{
+			if (MtoIn(t) == 1)
+			{
+				BeltTake(mo, 101);
+				if (mtoStep == 14) BeltHang(mo, DoorOf(5), 101);
+				else { BeltHang(mo, la, 101); BeltHang(mo, lb, 190); }
+				if (c) h.TakeBack("script");
+				mtoN = h.takenBack;
+				Pose(mo, 300, 100, 0, 90);
+			}
+			string by = mtoStep == 14 ? "Violet" : "ALeaf";
+			if (MtoIn(t) > 1 && MtoWait(t, "crateThrough" .. by .. "TakenBack", h.takenBack > mtoN, 400))
+			{
+				Console.Printf("AJARTEST info taken back (why %s) at (%.1f,%.1f) t=%d, came there t=%d", h.why, h.takenFrom.x, h.takenFrom.y, h.takenAt, h.crateCame);
+				Check("offInTheNightRoomThrough" .. by, h.why == "off" && h.takenFrom.x > 2352 && h.takenFrom.x < 2704 && h.takenFrom.y > 128 && h.takenFrom.y < 384);
+				Check("takenBackTheTicItCameThrough" .. by, h.takenAt == h.crateCame);
+			}
+			break;
+		}
+		case 16:    // all as it was, GREEN in 101
+			if (MtoIn(t) == 1)
+			{
+				BeltTake(mo, 101); BeltTake(mo, 190);
+				BeltHang(mo, green, 101);
+				Check("noRingOfThat", Ring().closings == 0);
+			}
+			MtoWait(t, "theHopperGoesOnAgain", h.crate != null && h.issuedAt > h.takenAt, 120);
+			break;
+		case 17:    // and nothing has been left anywhere: one crate, the hopper's
 			if (MtoIn(t) == 1)
 			{
 				int n = 0;
@@ -865,7 +1314,20 @@ extend class AjarHandler
 			1780, -370, 0, 180, 0,      // 12 through the window into the kiln
 			1780, 896, 0, 180, 0,       // 13 through the window into labelling
 			1250, 100, 0, 180, 0,       // 14 the press hall: the cell, the press and its belt
-			2080, 64, 0, 0, 0           // 15 the bay's note, close
+			2080, 64, 0, 0, 0,          // 15 the bay's note, close
+			2528, 140, 0, 90, 0,        // 16 the night room from the way in: VIOLET against the north wall
+			2420, 256, 0, 0, 0,         // 17 the brass frame down the room
+			2600, 256, 0, 180, 0,       // 18 VIOLET's far side
+			1960, -96, 0, 0, 0,         // 19 the panel south of the shutter, its stub
+			1960, 224, 0, 0, 0,         // 20 the panel north of the shutter, its stub
+			1110, 330, 0, 180, 0,       // 21 the cell's torn note, from the press hall through the glass
+			880, 440, 0, 235, 0,        // 22 ... and from north of the cell
+			280, 160, 0, 180, 0,        // 23 the blank crate's torn note in the hall
+			260, 320, 0, 194, 5,        // 24 the store's mouth, from the hall
+			-24, 256, 0, 180, 0,        // 25 in the store
+			400, 300, 0, 90, 0,         // 26 the hall's board: VIOLET in 102, GREEN in the brass frame
+			1280, 300, 0, 90, 0,        // 27 the press hall's board
+			1980, 704, 0, 0, 0          // 28 the wing's board
 		};
 		if (t == 2)
 		{
@@ -883,6 +1345,7 @@ extend class AjarHandler
 			}
 		}
 		mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+		if (t == 26 * 40 - 20) { BeltHang(mo, DoorOf(5), 102); BeltHang(mo, DoorOf(3), 190); }
 		int i = t / 40;
 		if (i >= views.Size() / 5) return;
 		Pose(mo, views[i * 5], views[i * 5 + 1], views[i * 5 + 2], views[i * 5 + 3]);

@@ -26,6 +26,7 @@ DoomEdNums
 	20096 = AjarHopper                // MAP17 (map17.zs): the hopper that issues crates
 	20097 = AjarChecker               // ... a checker that reads a crate's stamps against an order
 	20098 = AjarCheckLamp             // ... and its lamp
+	20099 = AjarRing                  // ... and the way out that comes round the line
 	20110 = AjarPulseEmitter          // the clock lab (clock.zs): fires a pulse along a gallery
 	20111 = AjarContact               // ... the contact a pulse sets off, and its metronome
 	20130 = AjarLaneContact           // MAP18 (clock.zs): a delay lane's contact, counting its own pulse's laps
@@ -371,6 +372,17 @@ map CLOCK "Ajar: the clock"
 	nojump
 	nocrouch
 	music = ""
+}
+
+// The one-sided doorway lab (tools/map_oneside.py): MAP=ONESIDE ./run.sh
+map ONESIDE "Ajar: one-sided doorways"
+{
+	next = "ONESIDE"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "OneSideTest"
 }
 
 // Sight lines (tools/map_optics.py): MAP=OPT ./run.sh

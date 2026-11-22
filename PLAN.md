@@ -5809,6 +5809,9 @@ Not decided: how the halves are told apart and which is played first, what
 the crossing fights are, what the thing done together is, what happens when
 the second go spoils what the first one did. No checks asked for yet.
 
+Taken further on 2026-11-22: see "Idea for a map of 21 to 30: the whole map in
+three goes, two switches and a door", near the end of this file.
+
 ## Idea: one-sided portals (Vadim, 2026-11-20; a note, nothing built or checked)
 
 Not for any particular map. Vadim: a portal that is one-sided. From one side
@@ -8980,6 +8983,586 @@ monsters in the loop (an imp shooting, a demon walking into the pulse's
 line); a thief taking a leaf of the beat; the ripper against barrels and
 crates; the gate coming down on a monster or the player; speeds under 10 or
 over 200; save and load.
+## MAP17: the way out round the line, and three secrets (built 2026-11-22)
+
+Vadim played the first version and liked it, with two complaints: once order
+3 raised the shutter the way out was simply there (walk into the night room
+and out), and he found no secret (the hidden order's note in the press's cell
+was tied to nothing). Built from a brief settled on Fable (branch
+`map17-exit`); the making on Opus. Not played by hand.
+
+**What is where.**
+- *The night room* stays at (2368, 128), the corridor from the shutter
+  joining its south wall, but is now the unjoined kind:
+  `ajarmap.way_home(m, 2368, 128, VIOLET, barred=True)`. VIOLET's far side
+  in its west end, an empty brass frame (190, plain brass) in its east end.
+  `barred` (new, MAP17 only) makes the frame `only=4` with `home` = VIOLET's
+  colour: any door but VIOLET hangs there, and `Hang` never calls
+  `ComeHome` for it (its args[1] is a colour, never a far side's line id).
+  VIOLET leans against the north wall facing the corridor's mouth (2528,
+  360). Two medikits, a box of shells and a box of rockets in the room.
+  An `AjarRing` thing (20099, map17.zs) stands in its middle.
+- *Two panels in the wing's east wall*, either side of the shutter: the old
+  one (tag 4, y -128..-64) and its mirror (tag 5, y 192..256), each with a
+  closet behind it (secret sectors). The second closet is (2192, 128, 2288,
+  320): 32 short of the mirror's 2320, since VIOLET's far side's stub reaches
+  west to 2304. In it a soul sphere, a box of rockets, a cell pack.
+- *The store behind the hopper*: the hall's west wall under the chute opens
+  over the belt's width (y 224..288), 64 high, a 16-deep mouth (dark: the
+  hopper's texture's dark foot shows over it), into a room (-208, 160, -16,
+  352; a secret sector, light 104) with crates stacked against its north,
+  west and south walls (sectors 32, 64 and 96 high, `AJDSTOR`/`AJDSTOF`:
+  four of the crate sprite's plain boxes to a 64). A backpack, a box of
+  shells, four armour bonuses. Not on the line (no belt tag).
+- *The notes, torn.* The hidden order's note in the press's cell (`AJDN00`,
+  same place, west wall y 288..352) is now the lower part of a sheet torn
+  across, no pin; its stub (the top strip, the pin, the matching torn edge)
+  is pinned to the south panel (`AJDNS1`), where the whole sheet would hang.
+  The blank crate's note (`AJDNH0`: a bare crate, torn top) hangs on the
+  hall's west wall at y 128..192, south of the chute, in sight from the
+  start; its stub is on the north panel (`AJDNS2`). Seen in the views: the
+  cell's note is made out from the press hall's floor north of the cell
+  (880, 440) through the north glass, and, smaller, from (1110, 330) through
+  the east glass; not moved.
+- *The dispatcher's boards* have a sixth panel, "WAY OUT" with a brass bar
+  for a number (`AJRX0`..`AJRX9`), for frame 190: the hall's board now runs
+  160..544, the press hall's 1088..1472, the wing's 896 down to 512. Nothing
+  else moved. VIOLET in an outlet already showed (the panels have every
+  colour); checked.
+
+**The rules as built.**
+- VIOLET tried in the brass frame: refused, `The way out will not open onto
+  itself here.\nIt has to come round the line.` (ajar.zs `UseFrame`, the
+  `only=4` branch for frame 190; MAP11's archive keeps its text).
+- *The ring* (`AjarRing.Closes`): a station for the player is the kiln
+  (GREEN, outlet 103) and labelling (BLUE, outlet 104). Closed when the
+  brass frame holds GREEN or BLUE and that station's outlet holds VIOLET, or
+  holds the other of the two whose outlet holds VIOLET: the four
+  arrangements. RED, a TEAL leaf, or nothing closes nothing. Read every tic.
+- Each time it becomes closed: `The line runs round through the way
+  out.\nGo round.` (said after whatever the hanging said).
+- While closed, the player coming into the night room by a step through a
+  portal (a jump of more than 64 in a tic into the room's box, recesses
+  included), i.e. out of the brass frame or out of VIOLET's far side, ends
+  the level (Exit_Normal). By the corridor, or leaving, nothing. Nothing is
+  nailed; a door of the ring taken down opens it.
+- AJARTEST lines: `ringClosed n= t=`, `ringOpened n= t=`, `ringOut
+  by=brass|violet at (x,y) t=`.
+- *Crates off the line*: a crate that comes out of a door into the night room
+  (VIOLET in an outlet, or a leaf whose twin hangs in the brass frame) is
+  taken back the tic it gets there: the crate tells the hopper when it
+  changes sector (`AjarHopper.Arrived`, called from `AjarCrate.Tick`), and
+  the hopper's "off" rule takes it then rather than on its own next tick.
+- *The bay's checker* has a third order: a crate with no stamps (args[4] is
+  now 3 + 10 x the tag it opens: 53). Filled: `The bay's scale passes the
+  crate: unstamped.\nNobody ordered a blank one, but a panel north of the
+  shutter slides open.` The hidden order now says "a panel south of the
+  shutter". Refusals: while the main order is open, `The bay's scale wants
+  GREEN, BLUE, RED. This one came ...` as before; once only hidden orders
+  are left, `has no order for a crate stamped ...` (or `for an unstamped
+  crate.`); silent when all three are filled.
+- *The hopper's guard*: no crate is issued while the player or a living
+  monster overlaps the box from 64 behind the hopper to 64 before it, 48
+  either side of the belt's middle (under the chute and in the store's
+  mouth); each tic someone is there the two-second wait starts again.
+- Ambushes: VIOLET's first take (cause 15): a hell knight and two imps in
+  the wing by the shutter. The ring's first closing (cause 49, 40 +
+  `AjarRing.CAUSE` 9, read by `CheckerOpened`): a revenant and two imps in
+  the kiln, a hell knight and two imps in labelling, none on a belt.
+- MAP17's tests now switch `ajar_autotest` off when the level ends (its way
+  out leads into MAP17 again).
+
+**Budget** (`budget.py`, skill 3, secrets counted): 82 monsters, hp 10270,
+ammunition x2.29 (was 73, 8610, x1.93); without the secrets' ammunition
+about x1.75 (was about x1.87). Health 290 (was 140; 100 of it the soul
+sphere).
+
+**Checks** (2026-11-22, on the full `./build.sh` with the solver):
+- Solver: MAP17 solvable in 16 door actions, 134055 states, 0 stuck,
+  nothing that can be lost (was 12, 7521). The PUZZLE: VIOLET home and
+  leaning in "night", frame 190 in "night" with `only` every door but
+  VIOLET, the shutter "wing" to "night" both ways (key x), "exit" from
+  "night" by sight "y" (at "night", the four arrangements), sight "t" (at
+  "wing", a leaf in 101 and the other in 105) opening "blank", and "store"
+  joined to "hall" both ways. The solution after order 3: VIOLET from the
+  night room, through GREEN (101) into the kiln, swap BLUE for VIOLET in
+  103, out through GREEN, swap GREEN for BLUE in 101, to the night room,
+  GREEN into the brass frame, round. Every other map as before.
+- thingcheck, itemcheck, mapcheck on `map_dispatch`: 0 problems each (138
+  sectors, 155 things, 3 secret sectors).
+- `MAP=MAP17 MODE=1`: 61 checks, all passed, and `levelExited`. Orders at t=270,
+  542, 2436 as before; then VIOLET taken, refused in the brass frame; RED in
+  the brass frame and VIOLET in 102 (script hands): the boards show `AJRP5`
+  and `AJRX1`, no ring; walked through RED into the cell and back out
+  against its belt into the night room: nothing ends. Then the solver's
+  route walked: ring closed at t=2918 with the text; out to the corridor and
+  in by it: nothing; GREEN taken down (ringOpened), through VIOLET's far side
+  into the kiln and back through 103 into the night room: nothing; closed
+  again at 3011; VIOLET's 3 and the ring's 6 ambushers came; into the brass
+  frame, GREEN's far side, the kiln, out through VIOLET in 103: `ringOut
+  by=violet` at t=3115, `levelExited`.
+- `MODE=2`: 31 checks, all passed. First the store, by the player's own
+  walking (`+forward` from the cfg, `cl_run 0`) up the hall's belt from x
+  300: under the chute 58 tics after the key went down (3.52 a tic against
+  the belt), in the store at t=144, secret 1. The guard: with the player held
+  under the chute 140 tics no crate, the next 70 tics after they went; the
+  same with a zombie. Then the hidden order as before (panel, closet, secret
+  2 of 3), then a leaf from 103 into 101 (its twin in 105): the blank order
+  filled, the north panel open, the closet entered: secrets 3 of 3; the bay
+  then refuses an unstamped crate with "wants GREEN, BLUE, RED"; no crate
+  ever behind the hopper (watched every tic).
+- `MODE=3`: 39 checks, all passed (the first version's 31, the store watch,
+  and): VIOLET in 101: a crate taken back "off" at (2353.3, 256) the tic it
+  came there; a leaf in 101, its twin in the brass frame: taken back "off"
+  at (2702.7, 256) the tic it came there; no ring from either; one crate in
+  the level at the end.
+- `MODE=4`: 8 lines `name=1` (the first version's 7 and `theFirstCrateIsIssued`), as from the base: walking
+  7.98 a tic, out of the cell, the kiln and labelling at 3.15, 3.29 and 3.96 a tic against the belts.
+- `MODE=5`: 29 views (the old 16 and: the night room from the way in, the
+  brass frame down the room, VIOLET's far side, both panels with their
+  stubs, the cell's note through the glass from east and north, the blank
+  note in the hall, the store's mouth from the hall, inside the store, the
+  three boards with VIOLET in 102 and GREEN in the brass frame), looked at.
+- `MAP=BELT MODE=1..6`: 13, 7, 3, 17, 5 and 4 checks, all passed, as before. MAP16's walk-through:
+  49 checks and `levelExited`, the same lines as the base's pk3 run the same day (only the order in which
+  ambushers came differs).
+- Every other map's wad and every graphic `gfx.make_all` made before built
+  byte for byte as from the branch's base `a594308` (2774 entries compared,
+  the base built with `AJAR_QUICK=1` from `git archive`). Changed: MAP17's
+  wad, `AJDN00` (the torn note), `mapinfo.txt`, `ajar.zs`, `belt.zs`,
+  `map17.zs`. New (15): `AJDNH0`, `AJDNS1`, `AJDNS2`, `AJDSTOR`, flat
+  `AJDSTOF`, `AJRX0`..`AJRX9`.
+
+**Choices and departures.**
+- The brass frame's refusal is `only=4`'s branch keyed on frame 190, not a
+  new `only` value. The ring is a thing with its own `Tick`, not a handler
+  hook. The stations of the ring (GREEN 103, BLUE 104) are constants in
+  `AjarRing`, not map data.
+- "Coming in by a door" is told by a jump of more than 64 in one tic into
+  the room: a script's `Pose` into the room from outside would count too
+  (the tests never do it while the ring is closed).
+- The blank order is coded into the checker's args[4] (3 + 10 x tag): the
+  thing had no free argument.
+- The guard's box includes the store's mouth; a player deep in the store
+  does not hold the hopper.
+- The crate taken back the same tic needed `AjarCrate.Tick` to call the
+  hopper; on the belt lab's map there is no hopper and nothing changes.
+- The views of the panels and the hall's note are taken from 200 off: the
+  notes hang at 70..120 up, as the first version put them, above the
+  middle of a view from close by.
+
+**Not tested / not played by hand.** The fights (the scripts remove
+monsters, the ambushers only say they came); whether the stubs and torn
+edges are read as one sheet by someone who has not been told (they are
+small: 36 by 10; since the review at 70..80 up, their pins level with the
+pin of the bay's note on the shutter between them, so that the three read
+as a row of sheets, two torn off: `gfx_dispatch.stub`, seen in MODE=5 on
+a quick build); the ring closed with BLUE (labelling) or
+through both stations (only the GREEN, 103 arrangement was walked; the
+others are the same code); a crate coming round the ring into the night
+room while the player walks it; the level as a whole by hand.
+
+## Idea for a map of 21 to 30: the whole map in three goes, two switches and a door (Vadim, 2026-11-22; a note, nothing built or checked)
+
+Vadim, while MAP17's way out was being built: "just for memory", to come back
+to when work on MAP21 starts. It takes up "Idea for maps 20 to 30: one map,
+two halves, two of you" (2026-11-20, above) and gives it an end. What is under
+"As Vadim put it" is his; "Open" is his too, as questions he asked himself;
+"Claude's notes" are Claude's, not agreed and not checked against the engine.
+
+**As Vadim put it.**
+- The map has two parts. The player goes through the first one in the normal
+  way. At its end he sees a switch, another switch, and a clear sign that the
+  two have to be pressed at the same moment.
+- In the same place he sees a time room, which he knows from the secret
+  levels (MAP31, MAP32). He goes in and starts the map again, in parallel
+  with his first go, but through the other part.
+- On the way he sees his earlier battles from time to time. Perhaps he even
+  takes part in them; but then something has to send him the right way, so
+  that he ends at the second switch. Or, if the second switch is in the same
+  room as the first, perhaps the two of him simply fight together. Not sure.
+- When the second copy has come to the end too and presses its switch at the
+  same moment as the first, both see a door open. It shuts again as soon as
+  they step away from the switches (or by a timer).
+- So now the player understands that a third copy is needed, the one that
+  walks through that door. He does it all once more: into the time room, the
+  map again as the third copy, and through the door.
+
+**Open (Vadim: "there are some things to think about").**
+- **The timing.** The first copy does not know about timing when it gets to
+  the switch. It has to press it and then wait there for some time, long
+  enough for the second copy to press too and for the third to go through. It
+  is the same thing as MAP32's room 2, but to get there the player has had to
+  play the whole map. How is he made aware of it, or helped to do the right
+  thing?
+- **One room or several.** Are the two switches and the door in one room, or
+  in different rooms with something transparent between them? If in different
+  rooms, the player has to be led so that all three copies end in the right
+  places.
+- **Taking part in the earlier fights**: yes or no, and if yes, how the
+  second copy is still brought to its own switch.
+
+**Claude's notes (not agreed, nothing checked).**
+- The costly mistake is the first copy leaving the switch too soon: it is
+  found out a whole map later. So the first go should not be able to end
+  wrongly. Ways to that, any of which may do:
+  - Not a switch that is pressed but a plate that is stood on (MAP16 taught
+    that a weight has to stay), and the time room's way in opens only while
+    the plate is held or is reached from the plate itself. Then every go ends
+    with its copy standing where it must stand, and "a go that ended there
+    stays there" does the waiting for the player. To check against the goes
+    labs: what an earlier self does after its go's last tic.
+  - The sign at the switches shows three figures: one on each switch and one
+    walking through the door. Then the need for a third go is read at the
+    first visit and not found out by a door that shuts in the face; Vadim's
+    version, where the shutting door teaches it, is the stronger moment but
+    costs one go more if the second copy also leaves too soon.
+  - A clock that is seen from everywhere in the map (MAP18 is the clock
+    department, so by 21 clocks are known), and at the switches a dial that
+    marks when each was pressed in the earlier goes. A later copy then knows
+    how long it has, and the parts can be made so that the second and third
+    are shorter than the first.
+- One room or several: glass between three small rooms answers "who goes
+  where" by the building itself (part one ends at switch one and nowhere
+  else, part two at switch two, the third way at the door), and all three
+  see each other at the end, which is the picture the level is for. One
+  shared room is better only if the copies are to fight together there.
+- Taking part in the earlier fights changes them, and MAP32 has rules for
+  that already (the paradox; an earlier self's shots; a fight as fought). A
+  safe first version: the parts cross only at windows, so the earlier fights
+  are seen and not touched, and one shared fight at most, at the end.
+- The length: three goes of a whole map is long. The second and third ways
+  could be short cuts through what the first go opened.
+- Before it is built: a lab, as for the belt and the clock, with a go that
+  lasts minutes and not seconds (how long a go the recording holds, what an
+  earlier self does when its go is over, two selves holding two plates while
+  a third walks through).
+
+## The one-sided doorway lab (built 2026-11-22)
+
+`tools/map_oneside.py`, `src/zscript/oneside.zs`; `MAP=ONESIDE ./run.sh`,
+`MAP=ONESIDE MODE=1..5 tools/smoke.sh`. An engine test for Vadim's idea
+("Idea: one-sided portals") and for MAP18's outline: a doorway that is
+ordinary from one side and leads elsewhere from the other. **It works for
+walking, the view, shots, things and monsters' walking; monsters' sight and
+sound go by the building as it is, not by what the doorway shows.** Run
+headless only (docker, software GL): **not played by hand**, and the look on
+the real machine (the GLES backend) is not checked. The ZDoom wiki could not
+be reached from here (zdoom.org dropped every connection that day), so
+nothing below is taken from documentation: all of it is measured on GZDoom
+4.12.2.
+
+- **How it is made.** `ajarmap.oneside(m, a, b, out, floor, line_id,
+  target, *, thick=16, mouth_id=0, blind=False, ...)`: an opening through a
+  wall `thick` deep, a-b its mouth on the plain side, `out` the way from
+  there through the wall. The far edge of the opening (the odd face) is a
+  two-sided line with `Line_SetPortal` (156: target, 0, type 1, aligned to
+  the floor), its front side to the room beyond and the opening's sector
+  behind it. The engine draws a line portal, and moves what crosses it, only
+  for its front side: what crosses from the back walks on as through any
+  opening. So the direct way works and no fallback was built (a thin sector
+  with a teleport line, a second portal "straight on" from the plain face).
+  The far end is a gate as map ENG's (a recess 16 deep, a stub 48 behind its
+  portal line), whose portal names the odd face back: what comes out of it
+  comes out of the odd face into the room beyond. No stub is needed behind
+  the odd face: the opening and the plain room are the space behind it.
+  `mouth_id` gives the plain mouth an id so that a portal elsewhere can name
+  it (a portal's target need not be a portal itself): what comes through
+  comes out of the doorway into the plain room, as if it had walked through
+  it backwards (bay 3). `blind=True` puts `blocksight` on the odd face.
+  `udmf.py` has one new line property for it, `back=<sector>`: the side of
+  the line that faces that sector is its back (until now a line's front was
+  whichever of its two sectors was declared first). Other maps are not
+  touched by it (their wads are byte for byte as before, below).
+- **The map.** Bays off one corridor, each room told apart by its walls,
+  floor, tint and light. 1 (and 2): A (STARTAN3, green), B north of it
+  (BRICK7, blue floor), C far off (MARBLE1); from A the doorway (x 160..224,
+  wall y 352..368) is a plain way into B, from B it shows and leads into C
+  through the opening in C's north wall, facing south into C; C's opening
+  leads back out of the odd face into B (B's face and C's opening are a
+  normal pair; only A's side is odd). C2 (TANROCK2), its opening in its west
+  wall, is used once with the odd face pointed at it. B has a way back to
+  the corridor on foot. 3: P, a corridor 256 long east, the doorway at its
+  end, Q; coming back west from Q the doorway leads into X (752 long, far
+  off), whose west end puts you out of the doorway's plain mouth heading
+  west. 4: a booth 160 square in a hall (walls 16 thick, inside 128 square,
+  a plain opening at its back); its front, from the hall, shows and leads
+  into R, 768 square; R's opening leads back out to the hall. 5: PL (the
+  player's room) and MR (the monsters'): from PL the doorway shows MR, from
+  MR it shows and leads into E; `blind=True`; MR has a way round on foot.
+  Five imps and zombies stand in MR for play by hand. A sealed room is the
+  control for the sound test.
+
+**What the runs showed** (MODE=1 to 5; every "lands right" below means: the
+place where the tic's move would have ended, carried through by the
+engine's rule `dst.v2 + R(p - src.v1)` (as `AjarSight.ImageThrough`),
+matched to 0.000, the facing and the direction of motion turned by the
+portal's turn to 0.000 degrees, and the speed after the crossing the same
+fraction of the speed given as on a plain tic, 0.9063, the friction):
+
+A. **Walking (MODE=1, 31 checks).** A to B through the plain face, walking
+   (8.33 a tic), running (16.67) and at 30 degrees: no crossing, nothing
+   odd (`plainAToB_walk`, `_run`, `_slant`). B back through the doorway:
+   lands right in C, walking, running, at 30 degrees, backing through
+   (facing B's far wall), running at 30 degrees (`walkBToC`, `runBToC`,
+   `slantBToC`, `backBToC`, `runSlantBToC`). C out of its opening: lands
+   right in B, walking and running (`walkCToB`, `runCToB`). The turn-round
+   in one go, A into B, turn, back: in C (`turnRound_inB`, `_inC`). The odd
+   face pointed at C2 by `Line_SetPortalTarget` while the map runs (as a
+   hung door is joined): B to C2 lands right turned 90 degrees, also running
+   at a slant, C2 back to B turned -90, and pointed back at C, B to C again
+   (`turnedBToC2`, `turnedRunSlantBToC2`, `turnedC2ToB`,
+   `pointedBackBToC`). **On the line**: posed exactly on the odd face,
+   nothing happens for 35 tics; stepping off it south (1 a tic) puts you in
+   C, north leaves you in B (`standOnTheLine`, `offTheLineSouthToC`,
+   `offTheLineNorthStaysInB`). Astride it with the middle in the opening
+   (the box 8 over the face): nothing; walking on, into B, no crossing.
+   Astride with the middle in B: nothing; walking south, lands right in C
+   (`astride...`).
+B. **The longer way back: works.** At 8 a tic, x 960 to 1216 going east 32
+   tics (256 units, no crossing); coming back west from the odd face (x
+   1216) to x 960, 128 tics (1024 units), two crossings, both landing right
+   (Q's odd face into X; X's west end out of the doorway's plain mouth into
+   the corridor, heading west) (`longWayEast`, `longWayWest`).
+C. **Bigger inside: works.** The hall into R and R out to the hall land
+   right (`hallIntoR`, `rOutToHall`); walking round the booth's west and
+   north sides, no crossing; in by its back opening, inside a room 128
+   square; on out of its front from inside, a plain walk into the hall
+   (`roundTheBooth_west`, `_north`, `intoTheBoothFromBehind`,
+   `boothFrontPlainFromInside`).
+D. **The view (MODE=2: 28 views and the automap,** in the order of
+   `Views` in oneside.zs; `MAP=ONESIDE MODE=2 tools/smoke.sh` takes them again). From A the doorway
+   shows B (straight, at a slant, close); from B it shows C (straight, at a
+   slant, close, 12 to half a unit off the line); from C its opening shows
+   B (also from 10 inside C's wall, where it fills the screen); from Q the doorway
+   shows X's long corridor going away, from the corridor east it shows Q;
+   from X's west end its opening shows the corridor and P; from the hall the
+   booth's face shows R (also at a slant), from R its opening the hall; from
+   behind, the booth is a small blue room whose front shows the hall; from
+   PL the doorway shows MR and an imp, from MR it shows E. No hall of
+   mirrors and no missing wall in any of them, and off the line no seam. **Exactly on the line
+   the view is wrong**: posed on the odd face looking at it, the doorway
+   shows A (the plain side's room) instead of C; at a slant on the line the
+   picture is split, C on the left, A on the right. Half a unit off, it is
+   C again. Above the opening each face shows the opening's own wall
+   texture (the same both ways): there is no sign of which face is odd.
+E. **Shots: go where the view says, but not when fired from right at the
+   odd face (MODE=3, 21 checks).** A dummy in each room; each shot hit only
+   the dummy the view points at, never the one in the room physically
+   behind the odd face (in A, in the booth). Hitscan B to C (the puff at
+   (192, 1316)), A to B, C to B, B to C at 30 degrees (a dummy put where the
+   line goes on in C: hit, puff (31.5, 1257.6)); a rocket and an imp's
+   fireball B to C, A to B, C to B, a rocket B to C at 30 degrees; hitscan
+   PL to MR through the plain face; hitscan and a fireball from MR's side to
+   E; hitscan and a rocket from the hall into R. (These missiles were put
+   20 ahead of the shooter by the script.) **Thrown by the engine's own
+   spawning** (an imp's `SpawnMissile`, the player's `SpawnPlayerMissile`),
+   a missile is put half a step ahead of the shooter at once (5 for an
+   imp's fireball, 10 for a rocket, as the spawn positions show), and that
+   step does not go through the portal: from 32 off the odd face the
+   fireball and the rocket go to C (`impThrowsFrom32`,
+   `playerRocketFrom32`); **from 4 off it they are put beyond the line in
+   the opening and fly on into A**, the room the picture does not show
+   (`impThrowsFrom4_intoA`, `playerRocketFrom4_intoA`: both hit A's dummy).
+   A hitscan from 4 off goes to C (`hitscanFrom4`). Where the far side of
+   a doorway is a stub (every hung door), such a missile only bursts in the
+   stub; here it goes into a real room. It happened by itself once in six
+   runs of MODE=4 (F below): the imp in B going for the player in A threw
+   from close to the face and the fireball hit the player in A (9 damage).
+   A fix would be the game's: a missile spawned across an odd face from its
+   front is carried through (not built).
+F. **Monsters (MODE=4, 15 checks).**
+   - **The engine's sight does not go by the doorway's picture**: it looks
+     through the two-sided line as through a hole. An imp in B facing the
+     doorway does not see the player standing in C in plain view through it
+     (`impInBSeesPlayerInC`: 0 of 1 woke, no sight); the same imp sees and
+     wakes for a player in A, behind the odd face, though B's view of the
+     doorway shows C (`impInBSeesPlayerInA`: 1 of 1). An imp in A sees the
+     player in B through the plain face (right); an imp in C facing its
+     opening does not see the player in B shown in it (0 of 1). The game's
+     own sight through doors (`AjarSight.DoorImage`) knows only hung doors
+     and does nothing here.
+   - **One-way sight: works with `blocksight`.** Three imps in MR facing the
+     doorway, the player in PL in view of them: with the odd face blind, 0
+     of 3 see or wake (`oneWaySight_blind`); without, 3 of 3
+     (`oneWaySight_withoutBlocksight`). Left to fight without it (220 tics,
+     the player unhurtable but counted; monsters' choices differ from run to
+     run): in six runs the imps threw 0 to 2 fireballs, which burst in E or
+     in MR (on another imp, or the doorway's edge), none in PL, the player
+     not hurt; two or three of the three walked into the doorway and were in
+     E at the end, the rest in MR (`oneWaySight_theyWalkIntoE`: at least
+     one in E, none in PL). With it, the
+     player shot the middle imp (5 damage): it woke, alone, threw nothing in
+     300 tics, walked to the doorway and into E; the other two slept on in
+     MR (`oneWaySight_shotImpGoesIntoE`).
+   - **Walking through each face** (an imp moved 8.33 a tic as the player
+     is): B to C, C to B and the hall into R land right, A to B is a plain
+     walk (`impWalks...`). Asleep astride the odd face (its middle 8 in B)
+     or exactly on it, it stays put (40 tics).
+   - **Left to itself**: an imp in B told of the player standing in A just
+     beyond the plain face (it has the engine's sight of him) walks at him,
+     into the doorway, and is in C after 300 tics, every time in six runs
+     (`chaseFromB_endsInC`). It threw 0 to 3 fireballs a run, which burst
+     in C, except once: thrown from close to the face, one went into A and
+     hit the player (see E).
+G. **Sound: goes through both faces and the portal (MODE=5).** A shot's
+   alarm (`SoundAlert`, what a weapon does): in B it wakes an imp in A
+   (through the opening) and in C (through the portal); in C it wakes B; in
+   A it wakes B and C; in PL it wakes MR (blocksight does not stop sound)
+   and E. The sealed room is not reached (the control). The imps stood
+   where they had no sight of the player, and B's and MR's ways round on
+   foot block sound at both ends of their necks, so what A and MR heard came
+   through the doorway. The engine carries sound through this kind of
+   portal (type 1) both ways. (Run with `-nosound`: what is heard by ear is
+   not checked.)
+H. **Things on the line (MODE=5).** An imp killed astride the odd face (its
+   middle 4 in B): the corpse stays put; pushed south (6 a tic) it goes
+   through and lands right in C (`corpseAstrideStays`,
+   `corpsePushedIntoC`). A clip tossed from B through the odd face lands in
+   C, from A through the plain face in B (`itemTossed...`). A clip lying
+   across the line (its middle 1 in B) is picked up by the player walking at
+   it from B, who stays in B (`itemAstrideLinePickedUpFromB`).
+I. **The automap** (the last view, with the computer map given) draws the
+   building as it is: A and B side by side with an ordinary gap between
+   them, C and the other far rooms apart and unconnected, their openings as
+   notches in their walls. Nothing marks the odd face, and anyone who reads
+   the map sees that B's doorway cannot lead to C.
+
+**What a level may do with it**, from the above:
+- Put `ajarmap.oneside` in a straight wall between two real rooms, its far
+  end a gate anywhere (`gate` in map_oneside.py, as map ENG's), turned as it
+  likes; point it elsewhere while the level runs (`Line_SetPortalTarget`);
+  name the plain mouth (`mouth_id`) as the far end of another portal (the
+  longer way back). The player, monsters, corpses, things, hitscans,
+  rockets and fireballs all go where the picture says.
+- One-way sight needs `blind=True`. It works both ways (the flag is on the
+  line), so monsters on the plain side do not see through it either (not
+  measured, the flag's nature). Monsters that know of the player beyond the
+  plain face walk at him and are sent by the odd face to its far room: a
+  doorway that drains a fight. Without `blind`, the monsters see the player
+  through the odd face and walk into it all the same, and their fireballs
+  go to the far room.
+- Noise is not stopped by either face: a shot wakes both the room behind
+  the odd face and its far room.
+**What it may not**: count on monsters' sight following the picture
+without `blind`; leave the faces unmarked (nothing tells them apart now:
+MAP18's "a sign on each face" is still to be made, e.g. per-face lintels,
+which `udmf`'s `upper` cannot do, since it sets both sides); expect the
+automap to keep the secret; trust the view of a player standing exactly on
+the odd face; let monsters fight at an odd face whose plain room holds the
+player, until a missile thrown from right at the face is carried through
+(E): such a fireball goes to the room behind, the one the picture hides.
+
+**Runs** (2026-11-22, on the full `./build.sh` with the solver, which
+succeeded; the proofs of the levels came from `build/proofs.json`, their
+puzzles unchanged): `MAP=ONESIDE MODE=1` 31 checks, `MODE=3` 21, `MODE=4`
+15, `MODE=5` 13, all passed, each ending with its `...Done=1`; `MODE=2` 28
+views and the automap, looked at; `MAP=ENG MODE=1` 6 of 6; `MAP=LAB MODE=1`
+13 of 13. Every other map's wad is byte for byte as built from the branch's
+base (a quick build of the base commit, 2365571, and the final build: the
+sha1 of each of the 33 `maps/*.wad` the same, ONESIDE.wad the only new one).
+
+**Not tested / not played by hand.** The game by hand (`MAP=ONESIDE
+./run.sh` in the worktree); the look on the real machine (GLES backend);
+the hardware renderer only through llvmpipe; a carried door or frame
+anywhere near such a doorway, and what the game's door code (the thief,
+lodgers, `OpticsTick`) makes of it; floors at different heights either
+side, a doorway not 64 wide, a wall not 16 thick; portal types other than
+1 (2 and 3 not tried); hitscan monsters (zombies) and other kinds than the
+imp, homing missiles; monsters finding their way over long runs; whether
+the plain side's monsters are blind with `blind` (not measured); sound by
+ear; a player crossing the odd face during a lift or on a belt; savegames;
+the fallbacks (not needed).
+
+**For MAP18**, what these results say about the outline: the three uses it
+names (the way back longer than the way there, the room bigger inside, the
+turn-round) work as built here. In doubt: (1) the "one-sided doorways ...
+always a way round on foot" and the solver's "the building is one piece on
+foot": with doorways that lead one way from one face, "one piece" means
+every room can be reached from every other going the ways the faces lead
+(a walk link per face, not a link both ways); (2) the automap shows the
+trick; (3) a fight near an odd face behaves by the building, not the
+picture: without `blind` monsters see through it; with it they still hear
+through it and come, and are sent to the far room; and a monster throwing
+from right at the face hits the plain room, so "one-way sight in a fight"
+(the outline's and the idea's) wants the missile fix before it is built
+into a level.
+
+## MAP31: the reel is watched from a room apart (built 2026-11-22)
+
+Vadim, after playing the end of MAP31: "when I watch final movie, for
+action in yellow auditorium, monsters are also walking there (like demo is
+played right here). Can we remove it, so I see everything on the screen
+only?" (it was under Known in "MAP31: the reel": a clip of hall 1 was played
+round the seated player). **Not played by hand.**
+
+- **Why a second room**: a clip is staged with puppets in the hall where it
+  happened, before a camera. The engine cannot show a thing to a camera and
+  hide it from the player, so the player no longer sits in hall 1. The seat
+  and the big screen are in **the screening room**, a copy of hall 1's front
+  4096 north of it (`map_secret1.py`, `screening_room()`; x -192 to 960, y
+  4096 to 4544, the corridor of the way in south of it to 3776). It is in no
+  zone, far from every hall, box and lobby; nothing in it but its sectors'
+  tag 3071 (`ajartime.REEL_ROOM`), the screen (sector tag 3070, `AJREEL`
+  face) and the seat (thing 14, tid 3070, 420 from the screen, facing south).
+  Its lines are not drawn on the automap (`dontdraw`, through the map's
+  `line_hook`). The last way out's teleport (`special 70`, tid 3070) is
+  unchanged and now leads there. **Hall 1 has neither screen nor seat now.**
+- **What it copies**: the part of `Hall.__init__` that lays a hall's floor
+  is a helper now, `front()` (bands of light, rows of seats, pillars and
+  banks in the hall's colour, cut off `upto` north of the south wall), and
+  `way_in()` (the step down and the lit screen over it); both halls and the
+  room use them. MAP31 built with the helper and the old layout was byte for
+  byte the old map. The room is hall 1 from its south wall to 448 (a wall in
+  the hall's texture 28 behind the seat), its full width: the same floor,
+  ceiling height and textures, light bands, the first three rows, both
+  pillars, the screen over the way in as a won fight leaves it (`Q0`), and on
+  the west wall time door 1 shut (its dark surround and lintel, the door's
+  face at the back of the 16-deep recess; no portal, no line id).
+  Not copied: the way in is a corridor that ends in a wall where hall 1's
+  opens into the foyer (seen only while the screen comes down: it is behind
+  the screen once that is down); the two box windows that begin at y 400 on
+  the side walls (right beside the seat, out of the view); everything north
+  of 448 (behind the player, who cannot turn).
+- **The trigger** (`time.zs`, `WorldTick`): every fight won, idle, and the
+  player within 48 of the seat (`Seat()`, the thing with tid 3070); no
+  longer "in hall 1's zone".
+- **The lights**: the room's sectors are kept with the halls' show sectors
+  under their own `showFight` (`SCREENING`, -1), so no fight's show and no
+  `HouseLights(k)` touches them; at load they are put up (232) as hall 1's
+  are, and `StartReel` puts them down at once (`HouseLights(SCREENING, 0)`:
+  the map's light of each, as hall 1's own, bands included), as it did hall
+  1's. Hall 1 is left lit, as a won hall, so a clip of it is lit as the
+  others' are.
+- **The camera** waits until the first clip in hall 1, where the seat would
+  be there (the room's offset from hall 1 found from their sectors' corners,
+  `TagBox`), looking back over the hall as before: while the screen comes
+  down it shows hall 1's rows, lit; never the room. `Aim`, `Stage` and the
+  rest of the reel are unchanged; `StartReel` still hides hall 1's bodies and
+  what was dropped there, and makes the player unseen.
+- **Not changed**: halls 2 and 3, the fights, zones and boxes; what is seen
+  from the seat (the hall's front, the lights going down, the screen coming
+  down, captions, USE for the next, THE END, the level ending), but that
+  nothing walks in the room any more.
+
+Tests (`SecretScript`, `MAP=MAP31 MODE=3 TIMEOUT=300`): the walk now goes by
+the last way out's own line (its teleport) instead of being put at the seat.
+New checks: `seatedApart` (the player at the seat, in the room, in no zone;
+the camera in hall 1), `hall1OnScreenOnly` (the clip of hall 1's last to
+fall is held 70 tics; 40 in, every puppet seen is in hall 1 and none near
+the room, which holds nothing seen but the seat and the unseen player: 51
+and 53 puppets in the two runs), `lightsDownThere` (the room down, hall 1 up);
+`theReelBegins` checks the room's light down and hall 1's up. The skipping
+of the other clips, `lastScenesOnScreen` and `theEnd` were moved to fit the
+hold. Two runs: 62 checks each, none failed (59 of the old ones, of which
+PLAN last recorded 58; and the 3 new). `smoke_MAP31_3.cfg` takes 17 pictures
+now: the 15th is the screen coming down (hall 1's rows on it, the corridor
+under it), the 16th a clip of hall 2, the 17th the clip of hall 1
+(`build/smoke31_3b/` in the worktree: the room dark with the screen down,
+the clip on it, nobody in the room; the old pictures of 2026-11-18 framed
+the same). Also run, alone each: `MAP=MAP31 MODE=5` 4, `MODE=6` 10, `MODE=7`
+16, `MAP=TIME MODE=3` 14, none failed. `mapcheck` 0 problems; `thingcheck`
+the same 2 as the old map gives (two of hall 2's things on one spot); `itemcheck` 0.
 
 ## MAP18 "Time and Motion": the first playable version (built 2026-11-22)
 
