@@ -1416,7 +1416,7 @@ spots(ROUTE_B, route_b, dy=1)
 TEST_WAYS = {2000: walk_spots(S1_WEST, S1_EAST), 2040: walk_spots(S1_EAST, S1_WEST), 2060: walk_spots(CLOAK_IN, START)}
 for first, way in TEST_WAYS.items():
     assert len(way) < 40 if first == 2060 else len(way) < 20, (first, len(way))
-    spots(first, way, dy=2)
+    spots(first, way, dy=2 + (first - 2000) // 20)       # each way its own spots: none on another's
 MEASURE.append(f"    the ways as MapSpots: A {len(route_a)} spots (tid {ROUTE_A + 1} on), B {len(route_b)} ({ROUTE_B + 1} on); "
                f"RED's car at {red_floor}; the doorways' tests: " + ", ".join(f"{len(w)} ({k + 1} on)" for k, w in TEST_WAYS.items()))
 I1.m = _theirs

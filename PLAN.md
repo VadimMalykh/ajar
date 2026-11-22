@@ -9594,7 +9594,8 @@ in the worktree plays it; MAP17's way out now leads to it, and its own way
 out starts it again.
 
 **What is where.** About 8000 x 4000; basement -256, ground 0, upper 256.
-785 sectors, 408 things (198 monsters placed, 31 ambush spots).
+785 sectors, 408 things (198 monsters placed, 31 ambush spots). (2026-11-22,
+with the one-sided doorways: 874 sectors, 449 things, 203 monsters placed.)
 - `tools/map_clockdept.py`: the level. Ground, west to east: the yard (open,
   the city sky; the porter's hut, frames 119 west wall and 120 south wall);
   the regulator room (the three levers on its west wall in the lanes'
@@ -9658,7 +9659,8 @@ the pull.
 **The ways** (the generator's measure, at 16.7 a tic): lever to shutter on
 foot 9078 (544 tics); best with ORANGE only 3202 (192), RED only 2367 (142:
 RED in 119 in the yard, the car waiting in the basement), GREEN only 3496
-(209), BLUE only 6458 (387); with everything the search finds nothing
+(209), BLUE only 6458 (387; 2026-11-22, with the one-sided doorways: 7540,
+451); with everything the search finds nothing
 better than RED alone (2367). So: the long lane alone with nothing on the
 track is not enough (the way is 1.31 of its time); both Pairs joining lanes
 1 and 2 and the way on foot: 81 tics spare; the long lane and RED: 272 tics
@@ -9687,7 +9689,10 @@ corridor from the court to the rotunda, with free ground north of it (x
 4992..5440, y 2368..2944) for the longer way; 2, the porter's hut (256
 square, a plain door from the yard), its inside to go in the free ground
 south of the yard (x 256..1280, y -1088..-320); 3, the cloakroom's doorway
-off the entrance hall. All plain for now.
+off the entrance hall. All plain for now. (2026-11-22: no longer plain: all
+three are one-sided doorways now, see "MAP18: the one-sided doorways" at the
+end; the hut's door from the yard leads into the archive, and the hut has a
+plain door at the back.)
 
 **Checks** (2026-11-22, the full `./build.sh` with the solver):
 - The build: every solver result as before; MAP18's figures as above.
