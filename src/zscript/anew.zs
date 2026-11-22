@@ -21,6 +21,17 @@
 //
 // What the first entry was is kept when the fight begins (Begin, KeepFirst):
 // AjarFirstEntry.
+//
+// A pick-up marked "each go" (AjarSphereEachGo: MAP32 room 3's megasphere in
+// the cage) lies where it lay at the first entry again at the start of every
+// new go of its open fight, though an earlier self took it (EachGoBack). It
+// is not counted again then; beginning anew counts it as at the first entry.
+
+// A megasphere that lies there again in every go of an open fight (EachGoBack;
+// MAP32 room 3's cage, map_secret2.MEGA3). Otherwise a megasphere.
+class AjarSphereEachGo : Megasphere
+{
+}
 
 class AjarFightAnew : Actor
 {
@@ -235,10 +246,48 @@ extend class AjarTimeHandler
 			{
 				if ((p.pos - at).Length() > 0) p.SetOrigin(at, false);
 				p.vel = (0, 0, 0);
+				// (one put back for a later go was not counted, EachGoBack: as at the first entry it is;
+				// the level's counts are set as then by FightAnew)
+				if (EachGo(first.pickCls[i])) p.bCountItem = GetDefaultByType(first.pickCls[i]).bCountItem;
 				continue;
 			}
 			p = Inventory(Actor.Spawn(first.pickCls[i], at));
 			if (!p) continue;
+			p.angle = first.pa[i];
+			p.vel = (0, 0, 0);
+			first.pick[i] = p;
+		}
+	}
+
+	// Does a pick-up of this class lie there again in every go (AjarSphereEachGo)?
+	static bool EachGo(class<Inventory> cls)
+	{
+		return (class<AjarSphereEachGo>)(cls) != null;
+	}
+
+	// A new go of the open fight from its start (Retake, Resume; not WindTo, not
+	// GoOnAs): every pick-up of it marked "each go" that is not lying where it
+	// lay at the first entry is put back there, at rest, as it lay then. It is
+	// not counted again (the level's item total does not grow with the goes,
+	// and what is found never passes it). An earlier self picks nothing up: one
+	// that took it in its own go leaves it lying for this go's self.
+	void EachGoBack()
+	{
+		if (!open || !first || first.fight != fight) return;
+		for (int i = 0; i < first.pick.Size(); i++)
+		{
+			if (!EachGo(first.pickCls[i])) continue;
+			Inventory p = first.pick[i];
+			Vector3 spot = (first.px[i], first.py[i], first.pz[i]);
+			if (p && !p.owner && p.bSpecial)
+			{
+				if ((p.pos - spot).Length() > 0) p.SetOrigin(spot, false);
+				p.vel = (0, 0, 0);
+				continue;
+			}
+			p = Inventory(Actor.Spawn(first.pickCls[i], spot));
+			if (!p) continue;
+			p.ClearCounters();
 			p.angle = first.pa[i];
 			p.vel = (0, 0, 0);
 			first.pick[i] = p;
@@ -313,6 +362,7 @@ extend class AjarTimeHandler
 	int faStep, faT, faRoom, faTotal, faLeft, faPicks, faDeaths;
 	bool faShut3;               // room 3: the wing's shutter was opening, the player under the press, when the plate was used
 	bool faMega;                // room 3: go 1 took the megasphere
+	int faItems, faFound;       // room 3: the level's item total and found count once it had
 	bool faLive4;               // room 4: the first self's west lever was live when the plate was used
 	AjarFightAnew faPlate;
 
@@ -392,14 +442,16 @@ extend class AjarTimeHandler
 		bool inv = mo.CountInv("RocketAmmo") == CountFirst("RocketAmmo") && mo.CountInv("Cell") == CountFirst("Cell")
 			&& mo.CountInv("Clip") == CountFirst("Clip") && (mo.FindInventory("PlasmaRifle") != null) == (CountFirst("PlasmaRifle") > 0)
 			&& (mo.FindInventory("RocketLauncher") != null) == (CountFirst("RocketLauncher") > 0) && (!arm || arm.Amount == first.armAmt);
-		Console.Printf("AJARTEST info anew%d fight=%d phase=%d open=%d mixed=%d takes=%d trips=%d at=%d ghosts=%d demo=%d doors=%d picks=%d/%d of %d inv=%d health=%d/%d pos=(%d,%d,%d)/(%d,%d,%d) ang=%d/%d kills=%d/%d level=%d/%d bodies=%d over=%d",
+		Console.Printf("AJARTEST info anew%d fight=%d phase=%d open=%d mixed=%d takes=%d trips=%d at=%d ghosts=%d demo=%d doors=%d picks=%d/%d of %d inv=%d health=%d/%d pos=(%d,%d,%d)/(%d,%d,%d) ang=%d/%d kills=%d/%d level=%d/%d bodies=%d over=%d items=%d/%d of %d/%d",
 			k, fight, phase, open, mixed, takes.Size(), trips, at, AllGhosts(), demo != null, doors, picks, placed, first.pick.Size(), inv,
 			mo.health, first.health, mo.pos.x, mo.pos.y, mo.pos.z, first.pos.x, first.pos.y, first.pos.z, mo.angle, first.angle,
-			mo.player.killcount, first.kills, level.killed_monsters, first.levelKilled, BodiesIn(k), over);
+			mo.player.killcount, first.kills, level.killed_monsters, first.levelKilled, BodiesIn(k), over,
+			level.found_items, level.total_items, first.levelFound, first.levelItems);
 		return fight == k && phase == LIVE && open && mixed && !goes && takes.Size() == 1 && trips == 0 && at == 0 && !AllGhosts() && !demo
 			&& doors && picks == first.pick.Size() && placed == picks && inv && mo.health == first.health
 			&& Near(mo, first.pos.x, first.pos.y) && abs(mo.pos.z - first.pos.z) < 1 && mo.angle == first.angle && mo.vel.Length() < 1
-			&& mo.player.killcount == first.kills && level.killed_monsters == first.levelKilled && !BodiesIn(k) && !over;
+			&& mo.player.killcount == first.kills && level.killed_monsters == first.levelKilled && !BodiesIn(k) && !over
+			&& level.found_items == first.levelFound && level.total_items == first.levelItems;
 	}
 
 	int CountFirst(class<Inventory> cls)
@@ -450,7 +502,11 @@ extend class AjarTimeHandler
 			if (r3 && o > 16 && o < 20) Walk(mo, (0, 8));
 			if (!r3 && o == 5) { mo.GiveInventory("RocketLauncher", 1); mo.GiveInventory("RocketAmmo", 20); }
 			if (r3 && o == 20) KillTwo(mo);
-			if (r3 && o == 29) faMega = !MegaThere33() && mo.health >= 200;
+			if (r3 && o == 29)
+			{
+				faMega = !MegaThere33() && mo.health >= 200;
+				faItems = level.total_items; faFound = level.found_items;
+			}
 			if (r3 && o == 30) mo.health = mo.player.health = 1;
 			// (room 4: the west lever pulled, what lies by it taken, rockets fired at the shut shutter)
 			if (!r3 && o == 6) Go(mo, 7040, 1340, -96, 90);
@@ -467,6 +523,15 @@ extend class AjarTimeHandler
 		{
 			double x0 = r3 ? 4810 : 7240, y0 = r3 ? 600 : -150, dy = r3 ? 8 : -8;
 			if (o == 2) Check(String.Format("killedIntoTheBox%dx", R), at == 1 && bx == 1 && BodiesIn(R) == 0);
+			// (room 3: the megasphere go 1 took lies in the cage again, once, not counted again: EachGoBack)
+			if (r3 && o == 2)
+			{
+				int megas, counted;
+				[megas, counted] = MegasThere33();
+				Console.Printf("AJARTEST info go 2: megaspheres=%d counted=%d items=%d/%d (taken in go 1: %d/%d)", megas, counted,
+					level.found_items, level.total_items, faFound, faItems);
+				Check("megasphereBackAfterDeath3", faMega && megas == 1 && !counted && level.total_items == faItems && level.found_items == faFound);
+			}
 			if (o == 3) mo.health = mo.player.health = 40;
 			for (int i = 0; i < 3; i++)
 			{
@@ -478,7 +543,8 @@ extend class AjarTimeHandler
 				int picks, placed;
 				[picks, placed] = PicksIn(R);
 				Console.Printf("AJARTEST info room=%d picks=%d health=%d armour=%d", R, picks, mo.health, mo.CountInv("BasicArmor"));
-				Check(String.Format("pickedUp%d", R), picks <= faPicks - (r3 ? 5 : 3) && mo.CountInv("BasicArmor") > 0);
+				// (room 3: the megasphere go 1 took lies in the cage again in this go, EachGoBack: one fewer gone)
+				Check(String.Format("pickedUp%d", R), picks <= faPicks - (r3 ? 4 : 3) && mo.CountInv("BasicArmor") > 0);
 			}
 			// out into the hall, two more killed, and to the plate
 			if (o == 34) { Go(mo, r3 ? 5100 : 7300, r3 ? 200 : 100, r3 ? 0 : -96, 90); }
@@ -508,10 +574,14 @@ extend class AjarTimeHandler
 			bool rest = true;
 			if (r3)
 			{
-				// room 3: the screen open, the cage shut, the megasphere (taken in go 1) back
+				// room 3: the screen open, the cage shut, the megasphere (taken in go 1, put back for go 2) back,
+				// one, counted as at the first entry
 				AjarShutter scr = FindShutter(SCREEN3), cage = FindShutter(CAGE3);
-				rest = scr.IsOpen() && cage.IsShut() && MegaThere33();
-				Console.Printf("AJARTEST info room 3 at rest: screen=%.2f cage=%.2f megasphere=%d took=%d", scr.Opened(), cage.Opened(), MegaThere33(), faMega);
+				int megas, counted;
+				[megas, counted] = MegasThere33();
+				rest = scr.IsOpen() && cage.IsShut() && MegaThere33() && megas == 1 && counted == 1;
+				Console.Printf("AJARTEST info room 3 at rest: screen=%.2f cage=%.2f megasphere=%d took=%d megaspheres=%d counted=%d",
+					scr.Opened(), cage.Opened(), MegaThere33(), faMega, megas, counted);
 			}
 			else
 			{

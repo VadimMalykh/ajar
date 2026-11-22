@@ -987,6 +987,7 @@ extend class AjarTimeHandler
 	const TT_OUT1 = 700;
 	const TT_PULL = 560;
 	int ttStep, ttT, ttOutO, ttLandO, ttUpO, ttPull;
+	int ttItems, ttFound;       // the level's item total and found count once the megasphere is taken
 	// go 1 as it went, live: the first tic of each hold, and the tic after its last (wing shutter, screen, cage)
 	int ttFrom[3], ttTo[3];
 	bool ttAmber, ttNoneSee;
@@ -1059,6 +1060,21 @@ extend class AjarTimeHandler
 		Inventory a;
 		while (a = Inventory(it.Next())) if (!a.owner && abs(a.pos.x - 5940) < 1 && abs(a.pos.y + 72) < 1) return true;
 		return false;
+	}
+
+	// ... how many lie there (one: no double), and of them how many count as an item to be found
+	int, int MegasThere33()
+	{
+		int n = 0, counted = 0;
+		let it = ThinkerIterator.Create("Megasphere");
+		Inventory a;
+		while (a = Inventory(it.Next()))
+		{
+			if (a.owner || !a.bSpecial || abs(a.pos.x - 5940) >= 1 || abs(a.pos.y + 72) >= 1) continue;
+			n++;
+			if (a.bCountItem) counted++;
+		}
+		return n, counted;
 	}
 
 	void TableScript(PlayerPawn mo)
@@ -1216,6 +1232,7 @@ extend class AjarTimeHandler
 			{
 				Console.Printf("AJARTEST info in the cage at (%d,%d,%d) health=%d", mo.pos.x, mo.pos.y, mo.pos.z, mo.health);
 				Check("megasphere3", mo.health == 200 && !MegaThere33() && mo.pos.x > 5896);
+				ttItems = level.total_items; ttFound = level.found_items;
 			}
 			if (o == TT_CAGE_OFF + AjarShutter.TICS + 4)
 			{
@@ -1248,6 +1265,13 @@ extend class AjarTimeHandler
 				Console.Printf("AJARTEST info pulls=%d first=%d (tag %d, self %d) P=%d at=%d", n, n ? tb.pTic[0] : -1, n ? tb.pTag[0] : -1, n ? tb.pSelf[0] : -1, ttPull, at);
 				Check("pullOnTheTimetable3", tb.on && n == 1 && tb.pTic[0] == ttPull && tb.pTag[0] == PRESS32 && tb.pSelf[0] == 1);
 				ttAmber = true;
+				// the megasphere taken in go 2 lies in the cage again, once, not counted again
+				int megas, counted;
+				[megas, counted] = MegasThere33();
+				Console.Printf("AJARTEST info go 3: megaspheres=%d counted=%d items=%d/%d (taken in go 2: %d/%d)", megas, counted,
+					level.found_items, level.total_items, ttFound, ttItems);
+				Check("megasphereBackNextGo3", MegaThere33() && megas == 1 && !counted && level.total_items == ttItems
+					&& level.found_items == ttFound && level.found_items <= level.total_items);
 			}
 			if (o == 3) Go(mo, 6600, 560, 64, 180);         // in box 2, looking into the hall
 			// the guards alive now are on the demo, though the second self is in the wing
@@ -1280,6 +1304,12 @@ extend class AjarTimeHandler
 		{
 			let tn = Table();
 			Check("restAnew3", scr.IsOpen() && cage.IsShut() && MegaThere33() && !tn.on && tn.Empty() && takes.Size() == 1 && open);
+			// (the megasphere put back for go 3 lay there: it is the one, counted as at the first entry)
+			int megas, counted;
+			[megas, counted] = MegasThere33();
+			Console.Printf("AJARTEST info anew: megaspheres=%d counted=%d items=%d/%d, at the first entry %d/%d", megas, counted,
+				level.found_items, level.total_items, first.levelFound, first.levelItems);
+			Check("megasphereCountedAnew3", megas == 1 && counted == 1 && level.total_items == first.levelItems && level.found_items == first.levelFound);
 		}
 		// each plate's message is said once a level: on both again
 		if (ttStep == 3 && t == ttT + 3) Go(mo, 5768, 1216, 0, 90);
@@ -1293,6 +1323,54 @@ extend class AjarTimeHandler
 			Check("noParadox7", !paradoxes && !paradox);      // paradox.zs: no self touched an earlier one
 			if (ttMark) ttMark.Destroy();
 			ttStep = 4;
+		}
+
+		// === begun anew: the megasphere in every go (PLAN.md, "MAP32 room 3: the megasphere lies there
+		// again in every go"). Go 1 takes it (counted, as at the first entry), stepping into the cage from
+		// behind its shut shutter, and goes out by door 3; go 2 finds it there again, not counted again,
+		// leaves box 1 at once (go 1's self comes in by door 3), and takes it too ===
+		if (ttStep == 4 && open && g == 1)
+		{
+			if (o == 20)
+			{
+				ttItems = level.total_items; ttFound = level.found_items;
+				mo.health = mo.player.health = 100;
+				Go(mo, 5940, -120, 96, 90);
+			}
+			if (o > 20 && o <= 26) Walk(mo, (0, 8));
+			if (o == 30)
+			{
+				Console.Printf("AJARTEST info anew, go 1: health=%d items=%d/%d (before %d/%d)", mo.health, level.found_items, level.total_items, ttFound, ttItems);
+				Check("megasphereAfterAnew3", mo.health == 200 && !MegaThere33() && level.found_items == ttFound + 1 && level.total_items == ttItems);
+			}
+			if (o == 32) Go(mo, 6500, 1040, 0, 0);
+			if (o > 32) Walk(mo, (8, 0));
+		}
+		if (ttStep == 4 && open && g == 2) { ttStep = 5; Console.Printf("AJARTEST info anew, go 2 begins at t=%d", t); }
+		if (ttStep == 5 && open && g == 2)
+		{
+			if (o == 2)
+			{
+				int megas, counted;
+				[megas, counted] = MegasThere33();
+				Console.Printf("AJARTEST info anew, go 2: megaspheres=%d counted=%d items=%d/%d at=%d", megas, counted, level.found_items, level.total_items, at);
+				Check("megasphereEveryGo3", MegaThere33() && megas == 1 && !counted && level.total_items == ttItems && level.found_items == ttFound + 1);
+			}
+			if (o == 3) Go(mo, 5100, 200, 0, 90);
+			if (o == 60)
+			{
+				mo.health = mo.player.health = 100;
+				Go(mo, 5940, -120, 96, 90);
+			}
+			if (o > 60 && o <= 66) Walk(mo, (0, 8));
+			if (o == 70)
+			{
+				Console.Printf("AJARTEST info anew, go 2: health=%d items=%d/%d", mo.health, level.found_items, level.total_items);
+				Check("megasphereTakenAgain3", mo.health == 200 && !MegaThere33() && level.found_items == ttFound + 1
+					&& level.total_items == ttItems && level.found_items <= level.total_items);
+				Check("noParadoxEachGo3", !paradoxes && !paradox);
+				ttStep = 6;
+			}
 		}
 	}
 }
