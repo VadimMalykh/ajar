@@ -1,6 +1,7 @@
 // The paradox (PLAN.md, "The paradox: touching an earlier self ends the
-// universe", "The paradox in fights" and "The paradox: a bigger end"; the
-// tests MAP=PLATE MODE=5, MAP=PRESS MODE=4 and MODE=5 tools/smoke.sh).
+// universe", "The paradox in fights", "The paradox: a bigger end" and "The
+// paradox: a self that wound time is pale"; the tests MAP=PLATE MODE=5,
+// MAP=PRESS MODE=4 and MODE=5, MAP=MAP31 MODE=8 tools/smoke.sh).
 //
 // Wherever an earlier self (an AjarGhost) walks (ParadoxHere): in any room
 // of goes (an AjarZone of a hall with args[4] 2: MAP32's rooms 1, 2 and 5,
@@ -23,6 +24,11 @@
 //    anew, winding) and when the player goes on as an earlier self (GoOnAs:
 //    whoever overlaps the spot they are put on is safe until they part).
 //    One who walks a copy's path with it and never parts from it is safe;
+//  * a copy that began its go by winding time (a wind plate; AjarTake.wound)
+//    does not count through the stretch it wound over: it stands pale at the
+//    plate, so that the next self can use the plate too. It is "not parted
+//    from" all that while, so one who stands in it at the tic it wound to is
+//    safe until they part;
 //  * the player is dead at once, really (through god mode, buddha, armour and
 //    powers: the damage is forced), and nothing of the room or the fight runs
 //    any more (no rescue into a box, no going on as a copy, no beginning
@@ -249,6 +255,9 @@ extend class AjarTimeHandler
 			while (parted.Size() <= i) parted.Push(false);
 			AjarGhost g = ghosts[i];
 			if (!g || ot >= takes[i].x.Size()) continue;
+			// it wound time and is not there yet (pale: GhostLook, time.zs); and
+			// whoever stands in it when it is, is safe until they part
+			if (ot < takes[i].wound) { parted[i] = false; continue; }
 			if (!Touching(mo, g)) { parted[i] = true; continue; }
 			if (!parted[i] || !inHall) continue;
 			int gk, gb;

@@ -293,6 +293,11 @@ class AjarTake play
 	Array<int> kindAmt;
 	Array<int> carTic, carKind, carAmt;
 	Array<double> carPct;
+	// It began by winding time (WindTo): its first `wound` tics were never
+	// lived, the record only has the player standing at the plate through
+	// them. As an earlier self it is pale until then and is not there to be
+	// touched or shot (AjarTimeHandler.GhostLook; paradox.zs).
+	int wound;
 }
 
 // A monster in one go at an open fight: where it was, how it looked and its
@@ -1082,6 +1087,18 @@ class AjarTimeHandler : EventHandler
 		ghosts.Clear();
 	}
 
+	// An earlier self that wound time is pale through the stretch it wound
+	// over (AjarTake.wound): it stands at the plate it used, seen through,
+	// and nothing meets it, neither the player (no paradox: ParadoxWatch)
+	// nor a shot. From the tic it wound to it is as any earlier self.
+	const PALE_ALPHA = 0.35;
+	void GhostLook(AjarGhost g, AjarTake t)
+	{
+		bool pale = ot < t.wound;       // (names are not case-sensitive: a constant PALE would be this)
+		g.A_SetRenderStyle(pale ? PALE_ALPHA : 1.0, pale ? STYLE_Translucent : STYLE_Normal);
+		g.bShootable = !pale;
+	}
+
 	void PlayGhosts(Actor mo)
 	{
 		for (int i = 0; i < takes.Size() - 1; i++)
@@ -1124,6 +1141,7 @@ class AjarTimeHandler : EventHandler
 			g.pitch = t.pit[ot];
 			g.sprite = t.sf[ot] >> 8;
 			g.frame = t.sf[ot] & 127;
+			GhostLook(g, t);
 			for (; t.next < t.evTic.Size() && t.evTic[t.next] <= ot; t.next++)
 			{
 				int e = t.next, kind = t.evKind[e];
@@ -1262,7 +1280,9 @@ class AjarTimeHandler : EventHandler
 	//    a box left over from an earlier fight). The go begins over, at that
 	//    moment of the last one: the hall is cleared and everything in it is
 	//    as it was then; this go's record up to then is the last go's, with
-	//    the player standing where they stand. From the hall it winds only
+	//    the player standing where they stand (as an earlier self it is pale
+	//    there until that moment, and no touch counts: GhostLook, paradox.zs).
+	//    From the hall it winds only
 	//    while the fight is still as it went (nothing is awake); from a box,
 	//    always. MAP31's halls, and MAP32's fights of goes (rooms 3 and 4):
 	//    there besides the earlier selves are where their records put them
@@ -1409,6 +1429,7 @@ class AjarTimeHandler : EventHandler
 		NewTake(mo);
 		// this go so far: the player has stood here
 		AjarTake t = takes[takes.Size() - 1];
+		t.wound = to;               // as an earlier self it is pale until then (GhostLook)
 		int sf = (int(mo.sprite) << 8) | (mo.frame & 127);
 		for (int i = 0; i < to; i++)
 		{
@@ -2201,7 +2222,7 @@ class AjarTimeHandler : EventHandler
 			mo.player.cheats |= CF_TOTALLYFROZEN;
 			mo.A_SetBlend("black", 1.0, 200);
 			mo.A_StartSound("*death", CHAN_VOICE);
-			Say("No box is left.\nThe show is over.");
+			Say("No boxes left.\nWe couldn't save you, sorry.");
 			return false;
 		}
 		int sk = own ? fight : spare[0] / 10, sn = own ? trips + 1 : spare[0] % 10;
@@ -2546,6 +2567,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
 		if (mode == 6 && level.mapname ~== "MAP31") ThirdGoScript(PlayerPawn(mo));
 		if (mode == 7 && level.mapname ~== "MAP31") WindScript(PlayerPawn(mo));
+		if (mode == 8 && level.mapname ~== "MAP31") WindPaleScript(PlayerPawn(mo));     // a self that wound time is pale (paradox.zs)
 		if (mode == 3 && level.mapname ~== "PLATE") PlateScript(PlayerPawn(mo));
 		if (mode == 4 && level.mapname ~== "PLATE") GoesScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "PLATE") ParadoxScript(PlayerPawn(mo));     // paradox.zs
@@ -2866,6 +2888,104 @@ class AjarTimeHandler : EventHandler
 		}
 	}
 	int testStep;
+
+	// A self that wound time is pale (MAP=MAP31 MODE=8 tools/smoke.sh;
+	// paradox.zs): hall 2. A short first go, killed into box 1. In the second
+	// the player steps into the hall at P, by the hall's "on" plate, and winds
+	// on from there (Wind: two seconds before the first go's end), stands on P
+	// a while after and is killed into box 2. In the third the player stands
+	// on P from the start, inside the second self: it is pale until the tic it
+	// wound to and does not count, even after a step clear and back; once it
+	// is solid the player inside it is safe until they part; then a touch is a
+	// paradox. smoke_MAP31_8.cfg takes a screenshot of it pale and of it solid.
+	const PALE_X = 2752 + 768 - 176;       // the "on" plate of hall 2 (map_secret1.py), and 40 out from its wall
+	const PALE_Y = 40;
+	int paleW;
+	void WindPaleScript(PlayerPawn mo)
+	{
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		double cx = 2752 + 768;
+		int pk, pb;
+		[pk, pb] = Where(mo.pos.xy);
+		bool pale1 = ghosts.Size() > 1 && ghosts[1] && ghosts[1].alpha < 1;
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d phase=%d at=%d trips=%d ot=%d len=%d takes=%d wound=%d onDemo=%d awake=%d paradox=%d pale1=%d pos=(%d,%d) where=%d/%d",
+			t, phase, at, trips, ot, demo ? demo.len : -1, takes.Size(), takes.Size() > 1 ? takes[1].wound : -1, Rails(true), Rails(false),
+			paradoxes, pale1, mo.pos.x, mo.pos.y, pk, pb);
+		if (paradox)
+		{
+			if (testStep == 9)
+			{
+				Check("thenItCounts", paradoxes == 1 && paradoxCopy == 2 && takes.Size() == 3 && ot > paleW && ot < takes[1].x.Size());
+				Console.Printf("AJARTEST info paradox at ot=%d wound=%d its record=%d", ot, paleW, takes[1].x.Size());
+				testStep = 10;
+			}
+			return;
+		}
+		Vector2 p = (PALE_X, PALE_Y), clear = (PALE_X, PALE_Y + 100);
+		// go 1: into the hall, and killed there after 300 tics
+		if (t == 1) Go(mo, cx, 60, 0, 90);
+		if (t == 300) mo.health = mo.player.health = 1;
+		if (t == 304) Check("go2", open && at == 1 && takes.Size() == 2 && demo && demo.len > 250);
+		if (takes.Size() == 2 && testStep < 3)
+		{
+			// out of box 1 to P while the first go plays and nothing is awake, and wound on from there
+			if (ot == 15 && testStep == 0) { Back(); Go(mo, p.x, p.y, 0, 270); testStep = 1; }
+			else if (ot == 20 && testStep == 1)
+			{
+				int was = mo.health, len = demo.len;
+				bool asleep = Demoing() && !Awake();
+				Wind(mo, 1);
+				paleW = ot;
+				Check("woundFromTheHall", asleep && pk == fight && pb == 0 && at == 0 && takes.Size() == 2 && takes[1].wound == ot
+					&& ot == len - 70 && ot > 100 && takes[1].x.Size() == ot && mo.health == was - WIND_HEALTH);
+				Console.Printf("AJARTEST info wound from the hall to %d (len %d), health %d -> %d", ot, len, was, mo.health);
+				testStep = 2;
+			}
+			// it stands on P until 80 tics after then (put back each tic: a shot may push), and is killed
+			else if (testStep == 2)
+			{
+				if (ot < paleW + 84) Go(mo, p.x, p.y, 0, 270);
+				if (ot == paleW + 84) { mo.health = mo.player.health = 1; testStep = 3; }
+			}
+		}
+		if (takes.Size() == 3 && testStep >= 3)
+		{
+			AjarGhost g = ghosts.Size() > 1 ? ghosts[1] : null;
+			if (ot == 4 && testStep == 3)
+			{
+				Check("go3", at == 2 && takes[1].wound == paleW && takes[1].x.Size() >= paleW + 84 && demo.len == takes[1].x.Size());
+				testStep = 4;
+			}
+			// on P from early on, inside the second self
+			if (testStep == 4 && ot == 10) { Back(); Go(mo, p.x, p.y, 0, 270); testStep = 5; }
+			if (testStep == 5)
+			{
+				int gk = -1, gb = -1;
+				if (g) { [gk, gb] = Where(g.pos.xy); }
+				if (ot == 40)
+					Check("paleIsSafe", !paradoxes && g && Touching(mo, g) && pk == fight && pb == 0 && gk == fight && gb == 0
+						&& abs(g.alpha - PALE_ALPHA) < 0.01 && g.GetRenderStyle() == STYLE_Translucent && !g.bShootable && !parted[1]);
+				// clear of it, looking at it, then back on it, all while it is pale
+				if (ot >= 50 && ot < 80) Go(mo, clear.x, clear.y, 0, 270);
+				if (ot == 60) Console.Printf("AJARTEST info clear t=%d ot=%d apart=%d alpha=%.2f", t, ot, g ? int(mo.Distance2D(g)) : -1, g ? g.alpha : -1);
+				if (ot >= 80 && ot < paleW + 5) Go(mo, p.x, p.y, 0, 270);
+				if (ot == 85) Check("paleStaysSafe", !paradoxes && g && Touching(mo, g) && g.alpha < 1 && !parted[1]);
+				if (ot == paleW + 3)
+				{
+					Check("solidNotParted", !paradoxes && g && g.alpha == 1 && g.GetRenderStyle() == STYLE_Normal && g.bShootable
+						&& Touching(mo, g) && !parted[1]);
+					Console.Printf("AJARTEST info solid t=%d ot=%d", t, ot);
+				}
+				// clear of it once it is solid, then back into it while its record runs
+				if (ot >= paleW + 5 && ot < paleW + 25) Go(mo, clear.x, clear.y, 0, 270);
+				if (ot == paleW + 20) Check("parted", parted[1] && g && g.alpha == 1 && !Touching(mo, g));
+				if (ot == paleW + 25) { Go(mo, p.x, p.y, 0, 270); testStep = 9; }
+			}
+			if (testStep == 9 && ot == paleW + 35) { Check("thenItCounts", false); testStep = 10; }
+		}
+	}
+
 	int RailsDead()
 	{
 		int n = 0;

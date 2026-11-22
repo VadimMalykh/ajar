@@ -9390,3 +9390,95 @@ through it and come, and are sent to the far room; and a monster throwing
 from right at the face hits the plain room, so "one-way sight in a fight"
 (the outline's and the idea's) wants the missile fix before it is built
 into a level.
+
+## The paradox: a self that wound time is pale (built 2026-11-22)
+
+Vadim: "if one my copy click rewind, it kind of frozen near that button, so
+my next copy cannot rewind, it just goes to paradox. ... when rewinding my
+copy becomes semi-transparent or something, and another one can touch it".
+
+Why it happened: `WindTo` begins the go over with a record that has the
+player standing at the plate for tics 0 to `to` - 1 (the stretch that was
+wound over and never lived). In the next go that earlier self stood there,
+solid, all that time, and the next self who walked to the plate to wind
+touched it: the universe was over.
+
+- **The rule.** `AjarTake.wound` (time.zs): `WindTo` sets it to `to`. As an
+  earlier self, while `ot < wound`, that copy is **pale**: `GhostLook`
+  (time.zs, called from `PlayGhosts` and from `GhostsAt` in goes.zs) draws
+  it `STYLE_Translucent` at alpha `PALE_ALPHA` (0.35) and takes away
+  `bShootable` (shots go through it). From tic `wound` on it is as any
+  earlier self: `STYLE_Normal`, alpha 1, shootable. In `ParadoxWatch`
+  (paradox.zs) a pale copy does not count, and its `parted` is held false
+  all that while: whoever stands inside it at the tic it turns solid is
+  safe until they have once been clear of it (the "safe until they part"
+  rule of the start of a go and of `GoOnAs`). After they part, a touch is a
+  paradox as always. A step clear and back while it is pale does not part
+  them (that is what `parted` alone would not give).
+- **Where.** Everywhere a go is wound (`Wind` -> `WindTo`): MAP31's halls 2
+  and 3, from their boxes and from the hall's two plates; MAP32's rooms 3
+  and 4 (fights of goes; `MixWound`'s `GhostsAt` gives the same look).
+- **Not changed, on purpose:** `GoOnAs` (a player killed in the hall may go
+  on as a copy that is still pale: they are put where it stood, as before);
+  plates and shutters held by copies (a pale copy on a floor plate still
+  holds it); the paradox's echo shapes (they fall in from every moment of
+  every take, the wound stretch included).
+- **The last death in MAP31** (no box of any kind left, `Rescue`) now says
+  "No boxes left. / We couldn't save you, sorry." in place of "No box is
+  left. / The show is over." (Vadim's words).
+- **A ZScript trap met on the way:** names are not case-sensitive, so a
+  constant `PALE` beside a local `bool pale` was the local (true, 1): the
+  copy was translucent at alpha 1. The constant is `PALE_ALPHA`.
+
+**The test**: `MAP=MAP31 MODE=8 tools/smoke.sh` (`WindPaleScript`, time.zs;
+`tools/smoke_MAP31_8.cfg`, 1100 tics, about 40 seconds; the paradox at the
+end kills the player and the cfg quits, so there is no `levelExited`).
+Hall 2; P is (3344, 40), 40 out from the hall's "on" plate (cx - 176).
+- Go 1 stands at (cx, 60) and is killed at 300 into box 1 (its record 298).
+  `go2`.
+- Go 2: out of box 1 onto P at its tic 15, and at 20 the real `Wind(mo, 1)`
+  from the hall while nothing is awake: `woundFromTheHall` (to 228, the
+  first go's 298 less 70; `takes[1].wound` 228, the record 228 long, 10
+  health paid). It stands on P to 228 + 84 and is killed into box 2.
+- Go 3 (the second self stands pale on P to 228): `go3`; on P from its tic
+  10, inside the second self; `paleIsSafe` at 40 (no paradox, touching,
+  both in the hall, alpha 0.35, translucent, not shootable, not parted);
+  100 north of P 50 to 79, back on P at 80: `paleStaysSafe` at 85; on P
+  through 228: `solidNotParted` at 231 (alpha 1, normal, shootable, still
+  touching, no paradox, not parted); 100 clear 233 to 252: `parted` at 248;
+  back onto P at 253: `thenItCounts` (the paradox at 253, copy 2, its record
+  312 long).
+- Screenshots (cfg at 470 and 648): the second self pale before its plate,
+  seen from 100 away, and the same self solid after 228 (a pinky of the
+  demo behind it).
+
+**Runs** (2026-11-22, on the full `./build.sh` with the solver, one at a
+time; every check named here was 1 unless said):
+- `MAP=MAP31 MODE=8` (new): 8 of 8 (`go2`, `woundFromTheHall`, `go3`,
+  `paleIsSafe`, `paleStaysSafe`, `solidNotParted`, `parted`,
+  `thenItCounts`), the paradox logged once, where meant; also 8 of 8 on
+  the quick build before.
+- `MAP=MAP31 MODE=7` 16 (16 recorded in "MAP32: winding the fights of
+  goes"), `MODE=6` 10 (10), `MODE=5` 4 (`theShowIsOver`, `beganAgain`,
+  `andCanWalk`, `levelExited`: all it has; 5 recorded once before),
+  `MODE=3 TIMEOUT=400` 59, out (`noParadox2`, `noParadox3` among them; its
+  three "followers=0" lines are information, not checks; earlier records
+  58 to 62).
+- `MAP=PRESS MODE=5` 7 (7), `MODE=4` 9 on the first run and 10 (10) on a
+  re-run: the first run's `theDarkAfterWin` was never asked, not failed (a
+  monster under the press put go 1's pull off to about 280, the touch
+  after the win came at t=870, and the cfg quits at 1050, before touch +
+  198; on the re-run the touch was at 695). `MAP=PLATE MODE=5` 7 (7).
+- `MAP=MAP32 MODE=10` 34 (34), `MODE=3 TIMEOUT=1300` 78, out (78).
+- No check 0, no script error or warning in any log; a paradox only in
+  MAP31 8, PLATE 5, PRESS 4 and 5.
+
+**Not tested / not played by hand.** None of it has been played by hand:
+how pale reads in the real game (GLES backend, the hall's light), whether
+0.35 is too faint or too strong. Winding from a box (the copy then stands
+pale at the box's plate, inside the box, where the paradox does not count
+anyway) and winding in MAP32's rooms 3 and 4 are run only by the existing
+tests (MAP31 MODE=7, MAP32 MODE=10), which check no paleness. Two selves
+that both wound, one inside the other, and a copy pale on a floor plate,
+are not run. A shot from a monster at a pale copy passes through it (not
+shootable): not seen in a test.
