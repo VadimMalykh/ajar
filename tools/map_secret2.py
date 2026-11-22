@@ -829,10 +829,12 @@ ajartime.covers(m, "room 5", FIRST, REGIONS[5], zone=(SX + 16, -240, EX + 584, N
 # a fight of goes whose boxes are spent is never a dead end: its plate that begins it anew is reached on foot
 ajartime.fight_anew_reached(m, {K3: "room 3", K4: "room 4"})
 
-# === the look: "Deep Field" (tools/works32.py; PLAN.md, "Look: MAP32") =========
-# AJAR_WORKS unset or 1: the look (Vadim chose it, 2026-11-21); 0: the plain
-# level, untouched. The look is laid on after every check above, and moves
-# nothing. SIGNS: what gfx_works.make draws for it.
+# === the look (tools/works32.py; PLAN.md, "Look: MAP32") ===========================
+# AJAR_WORKS unset or 1: the look (Vadim chose it, 2026-11-21, "Deep Field"; its
+# lights since 2026-11-22 still orange wall lamps, "on walls only, something more
+# still like orange glow, not white on black"); 0: the plain level, untouched.
+# The look is laid on after every check above, and moves nothing. SIGNS: what
+# gfx_works.make draws for it.
 WORKS = int(os.environ.get("AJAR_WORKS") or "1")
 SIGNS = []
 if WORKS:

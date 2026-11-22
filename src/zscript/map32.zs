@@ -585,9 +585,8 @@ extend class AjarTimeHandler
 		}
 		if (dsStep == 4 && t == dsT + 40)
 		{
-			let wk = AjarWorks.Get();          // the look: room 3 done, plain white and steady, its light up
-			if (wk && wk.on) Console.Printf("AJARTEST info the look: time door waves so far %d", wk.waves);
-			if (wk && wk.on) Check("worksDone3", wk.StateOf(3) == AjarWorks.DONE && wk.SidesShow(3, "W") && wk.Wrong() == 0 && wk.PressLit() == 0);
+			let wk = AjarWorks.Get();          // the look: room 3 done, its light up
+			if (wk && wk.on) Check("worksDone3", wk.StateOf(3) == AjarWorks.DONE && wk.Wrong() == 0 && wk.PressLit() == 0);
 		}
 		if (dsStep == 4 && t == dsT + 40) { Check("steel3", SteelUp(3)); Go(mo, 6500, 160, 0, 0); dsOnFrom = 3; }
 		// === 4: the range: two keys under fire ===
@@ -909,30 +908,30 @@ extend class AjarTimeHandler
 			9856, 172, -192, 90, 0,         // E from PINK's far side, wide: the brass frames face each other
 			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
 			9672, 384, -192, 0, 0,          // and the other way, into BLUE's
-			// the look, Deep Field (works.zs; PLAN.md, "Look: MAP32"): what it puts on each room
-			180, 128, 0, 180, 0,            // room 1: its time door, the conduit round it
-			192, 330, 0, 90, 0,             // a frame with its leaf in white light
-			-300, 128, 0, 0, 0,             // from the box, through its glass
+			// the look (works.zs; PLAN.md, "Look: MAP32"): what it puts on each room, its orange wall lamps
+			180, 128, 0, 180, 0,            // room 1: its time door, the lamp over it; a wall lamp beside
+			192, 330, 0, 90, 0,             // a frame with its leaf, its pale surround
+			-300, 128, 0, 0, 0,             // from the box, through its glass: the room's time door and its lamp
 			320, 300, 0, 270, 0,            // TEST BAY 1 over the nook
-			2480, 120, 0, 90, 0,            // room 2: its time door, TEST BAY 2
+			2480, 120, 0, 90, 0,            // room 2: its time door with its lamp, TEST BAY 2
 			2200, 160, 0, 180, 0,           // frame A with its lamp
 			2480, 560, 0, 270, 0,           // from the box, through its glass
-			5200, 720, 0, 180, 0,           // room 3: time door 1
-			5768, 880, 0, 90, 15,           // the chamber's back wall: the scale, load cell A
+			5200, 720, 0, 180, 0,           // room 3: time door 1, its lamp
+			5768, 880, 0, 90, 15,           // the chamber's back wall: the scale, a wall lamp, load cell A
 			5064, 250, 0, 270, 0,           // CABIN OPENS UNDER LOAD by the wing's shutter
 			4880, 520, 0, 0, 0,             // from box 1, through its glass
-			6600, 160, 0, 0, 0,             // the corridor to room 4
-			7400, 432, -96, 180, 0,         // room 4: time door 1
+			6600, 160, 0, 0, 0,             // the corridor to room 4: a wall lamp each side
+			7400, 432, -96, 180, 0,         // room 4: time door 1, its lamp
 			7120, 120, -96, 90, 0,          // TEST BAY 4 in the lobby
 			7288, -150, -96, 90, 0,         // from box 1, through its glass
-			8160, 330, -192, 90, 0,         // room 5: TEST BAY 5
-			8232, 400, -192, 270, 0,        // its time door
-			9856, 250, -192, 90, 0,         // the way out: the hatch, lit all round
+			8160, 330, -192, 90, 0,         // room 5: TEST BAY 5, a wall lamp beside it
+			8232, 400, -192, 270, 0,        // its time door with its lamp
+			9856, 250, -192, 90, 0,         // the way out: the hatch, lit orange all round
 			8296, -150, -192, 90, 0,        // from the box, through its glass
 			8300, 400, -192, 0, 0,          // F1 with its leaf
 			5250, 1000, 0, 130, 25,         // the plate line: a self on the cage's plate
 			5768, 400, 0, 90, 0,            // the press down: the flare
-			320, -150, 0, 90, 0             // room 1 done: plain white, steady
+			320, -150, 0, 90, 0             // room 1 done: its light up
 		};
 		int WIDE = 30, OPEN3 = 12, SHUT3V = 19, LINE3 = 53, FLARE3 = 54, DONE1 = 55;
 		if (t == LINE3 * 40 - 25) dsGhost = Actor.Spawn("AjarGhost", (5096, 1184, 0));        // on the cage's plate
@@ -947,7 +946,7 @@ extend class AjarTimeHandler
 		if (t == DONE1 * 40 + 20)
 		{
 			let wk = AjarWorks.Get();
-			if (wk && wk.on) Check("worksTourDone1", wk.StateOf(1) == AjarWorks.DONE && wk.SidesShow(1, "W") && wk.Wrong() == 0);
+			if (wk && wk.on) Check("worksTourDone1", wk.StateOf(1) == AjarWorks.DONE && wk.Wrong() == 0);
 		}
 		int i = t / 40;
 		if (t == OPEN3 * 40 - 15) dsGhost = Actor.Spawn("AjarGhost", (5768, 1000, 0));
