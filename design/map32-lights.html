@@ -54,6 +54,7 @@ button { font: inherit; cursor: pointer; }
 .pick:focus-visible, .ghost:focus-visible, input:focus-visible, textarea:focus-visible, .copy:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .ghost { font-size: .88rem; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--rule); background: var(--panel); color: var(--fg); }
 .ghost[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.ghost:disabled { opacity: .45; border-color: var(--rule); color: var(--muted); font-weight: 400; cursor: default; }
 
 .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 32px 28px; padding-top: 28px; border-top: 1px solid var(--rule); }
 .options > h2 { grid-column: 1 / -1; }
@@ -81,6 +82,7 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
     <h1>Five ways to light the same steel</h1>
     <p>You played Deep Field and did not like its lights: too busy, or the wrong mood. This page is about the light only. The plated steel, the signs and the rooms stay as they are, unless you say otherwise in the note at the foot.</p>
     <p>Below is last time's room again, lit five ways. Pick one, or two: the first you pick is your first choice, the second is the runner-up. Click a picked one again to unpick it. Then set the choices under the sketches and copy the lines at the foot back to me.</p>
+    <p><strong>Added after your question:</strong> a sixth card at the foot of the five mixes Deep Field with Starlight. Its buttons switch Deep Field's parts on and off.</p>
     <p class="lesson">A lesson from last time: the sketch was kinder than the game. These are drawings made by this page, not shots. They show where the light falls and what moves, at the speed it would move in the game. They do not promise how it will look on your screen.</p>
     <div class="row"><button class="ghost" id="pause" type="button">Stop the lights</button><span class="note">Every sketch has the same things in it: the time door with its clock, a VIOLET leaf in its frame under a green lamp, the glass of a box, a plate, a slab, a monster and an earlier self.</span></div>
   </header>
@@ -156,7 +158,7 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
 
   <section class="facts">
     <div>
-      <h3>The same in all five</h3>
+      <h3>The same in all of them</h3>
       <ul>
         <li>No room, distance or puzzle thing moves.</li>
         <li>The time doors keep their ivory, the leaves their seven colours (VIOLET, TEAL, YELLOW, GREEN, PINK, BLUE, RED), the lamps red, amber and green.</li>
@@ -219,7 +221,15 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
       moves: "Nothing.",
       answers: "A room that is done has its ceiling at half: this bay is closed.",
       fights: "As bright as every other room.",
-      risk: "The least dramatic. \"Futuristic lights that move\", as you first asked, is given up for it." }
+      risk: "The least dramatic. \"Futuristic lights that move\", as you first asked, is given up for it." },
+    { id: "mix", name: "Deep Field by Starlight", eyebrow: "A mix · added on your question", pitch: "Starlight's calm room, with Deep Field's lit lines in it.",
+      speed: "Real speed: a patch takes about two minutes to cross; x10 speeds the patches only. The lines are always at real speed: a breath takes 6.4&nbsp;s, a pulse reaches the time door every 10&nbsp;s.", x10: true,
+      toggles: [["lines", "Lit lines"], ["breathe", "Lines breathe"], ["pulses", "Pulses to the door"]],
+      lights: "Starlight as it is: a dim blue-grey room (about 120), cold barred patches from the open roof or the slot windows, small warm lamps where hands work. On the walls Deep Field's ice-white lines stay lit: the high line along each wall, and the conduit that runs along the floor and climbs round each time door. In a room this dim they show as they did in the first sketch. Today's rooms are too evenly bright for them.",
+      moves: "The patches creep, as in Starlight. The lines are steady, or breathe slowly (twice as slowly as today): your choice with the button. Pulses run along the conduit to the time door, one every 10 s, or not: your choice. Gone in any case: the sweeps, the stutter, the running dashes on every wall, the lights that travel along the floors.",
+      answers: "The press's white flash, as in Starlight. The others as you tick below.",
+      fights: "As Starlight. While a fight is on the lines are steady and no pulse runs.",
+      risk: "It is two ideas in one room. The more of Deep Field you switch on, the nearer it comes to what you did not like. And the lines only show if the rooms are really this dim, which makes a fight harder to read." }
   ];
 
   // ---------- drawing helpers (as on the first page) ----------
@@ -494,6 +504,26 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
     if (on) bulb(c, [x, y - 0.05, z], 0.13, col, 2.4);
   }
 
+  function starLight(t) {
+      var PATCH = [0.6, 0.68, 0.84], v = 0.1;            // about 12 units in 120 s
+      var x0 = -9 + ((t * v) % 9);
+      var S = { amb: [0.2, 0.225, 0.29], sky: true, stars: true, lights: [
+        spot(-2.1, 3.0, 5.6, 4.0, 1.1, [1, 0.72, 0.42], 30, 12),   // the warm lamp at the plate
+        point(-4.4, 2.0, 8.2, 1.8, 0.5, [1, 0.75, 0.48])           // the warm lamp in the box
+      ], extra: function (x, y, z, k, acc) {
+        if (k !== 0 && k !== 2 && k !== 3) return;           // patches lie on the floor and climb the walls; they light no figure
+        var ex = k === 0 ? x : (k === 3 ? RW + y * 0.8 : -RW - y * 0.8);
+        var f = 0;
+        for (var n = 0; n < 3; n++) { var dx = Math.abs(ex - (x0 + n * 9)); f = Math.max(f, smooth(1.9, 0.9, dx)); }
+        if (f <= 0) return;
+        var zz = z - 0.9 - y * 0.25, bar = 1;               // the trusses' bars, cast at a slant
+        for (var b = 0; b < TRUSS_Z.length; b++) bar = Math.min(bar, smooth(0.1, 0.3, Math.abs(zz - TRUSS_Z[b])));
+        var zf = smooth(4.3, 5.4, z);                        // the open roof begins over the first truss
+        f *= bar * zf * 0.85;
+        acc[0] += PATCH[0] * f; acc[1] += PATCH[1] * f; acc[2] += PATCH[2] * f;
+      } };
+      return S;
+  }
   var WARM = [1.0, 0.86, 0.66], NEUTRAL = [1, 1, 1], GREEN = [64, 224, 96], RED = [255, 60, 40];
   var SCENES = {
     // ---- 0. today, as built: the first page's Deep Field sketch ----
@@ -582,27 +612,43 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
 
     // ---- C. Starlight: light from outside, one slow movement ----
     star: function (c, t, lm) {
-      var PATCH = [0.6, 0.68, 0.84], v = 0.1;            // about 12 units in 120 s
-      var x0 = -9 + ((t * v) % 9);
-      var S = { amb: [0.2, 0.225, 0.29], sky: true, stars: true, lights: [
-        spot(-2.1, 3.0, 5.6, 4.0, 1.1, [1, 0.72, 0.42], 30, 12),   // the warm lamp at the plate
-        point(-4.4, 2.0, 8.2, 1.8, 0.5, [1, 0.75, 0.48])           // the warm lamp in the box
-      ], extra: function (x, y, z, k, acc) {
-        if (k !== 0 && k !== 2 && k !== 3) return;           // patches lie on the floor and climb the walls; they light no figure
-        var ex = k === 0 ? x : (k === 3 ? RW + y * 0.8 : -RW - y * 0.8);
-        var f = 0;
-        for (var n = 0; n < 3; n++) { var dx = Math.abs(ex - (x0 + n * 9)); f = Math.max(f, smooth(1.9, 0.9, dx)); }
-        if (f <= 0) return;
-        var zz = z - 0.9 - y * 0.25, bar = 1;               // the trusses' bars, cast at a slant
-        for (var b = 0; b < TRUSS_Z.length; b++) bar = Math.min(bar, smooth(0.1, 0.3, Math.abs(zz - TRUSS_Z[b])));
-        var zf = smooth(4.3, 5.4, z);                        // the open roof begins over the first truss
-        f *= bar * zf * 0.85;
-        acc[0] += PATCH[0] * f; acc[1] += PATCH[1] * f; acc[2] += PATCH[2] * f;
-      } };
+      var S = starLight(t);
       base(c, t, { roof: "open" });
       lightRoom(c, S, lm);
       trusses(c, [14, 17, 24]);
       glassLight(c, [255, 190, 120], 0.38);
+      things(c, S);
+      workLamp(c, -2.1, 3.0, 5.6, [255, 200, 140], true);
+      lampBulb(c, GREEN, 0.22);
+    },
+
+    // ---- the mix: Starlight's room with Deep Field's lit lines (t: the patches' time, rt: real time) ----
+    mix: function (c, t, lm, rt) {
+      var S = starLight(t), o = picks.mix, i;
+      base(c, t, { roof: "open" });
+      lightRoom(c, S, lm);
+      trusses(c, [14, 17, 24]);
+      glassLight(c, [255, 190, 120], 0.38);
+      if (o.lines) {
+        c.globalCompositeOperation = "lighter";
+        var br = o.breathe ? 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(rt * 6.2832 / 6.4)) : 0.85;
+        line(c, [-RW, 3.7, ZN], [-RW, 3.7, ZD], ICE, 0.03, 0.6 * br, true);
+        line(c, [RW, 3.7, ZN], [RW, 3.7, 5.9], ICE, 0.03, 0.6 * br, true); line(c, [RW, 3.7, 7.9], [RW, 3.7, ZD], ICE, 0.03, 0.6 * br, true);
+        var runs = [path([[-1.7, 0.01, ZN], [-1.7, 0.01, ZD - 0.03], [-1.7, 3.85, ZD - 0.03], [0, 3.85, ZD - 0.03]]),
+                    path([[1.7, 0.01, ZN], [1.7, 0.01, ZD - 0.03], [1.7, 3.85, ZD - 0.03], [0, 3.85, ZD - 0.03]])];
+        var top = 0;
+        for (var r = 0; r < 2; r++) {
+          var pa = runs[r];
+          for (i = 1; i < pa.pts.length; i++) line(c, pa.pts[i - 1], pa.pts[i], ICE, 0.035, 0.34, true);
+          if (o.pulses) {
+            var u = (rt * 0.1) % 1, p = pulse(c, pa, u, ICE, 0.36);
+            if (p[1] < 0.1) glow(c, [p[0], 0.01, p[2]], 1.6, ICE, 0.1);
+            if (u > 0.9) top = Math.max(top, (u - 0.9) * 10);
+          }
+        }
+        if (o.pulses) glow(c, [0, 3.85, ZD - 0.03], 1.4, ICE, 0.12 + 0.5 * top);
+        c.globalCompositeOperation = "source-over";
+      }
       things(c, S);
       workLamp(c, -2.1, 3.0, 5.6, [255, 200, 140], true);
       lampBulb(c, GREEN, 0.22);
@@ -654,12 +700,13 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
   var picks = store.get();
   if (!Array.isArray(picks.order)) picks.order = [];
   if (!picks.x10 || typeof picks.x10 !== "object") picks.x10 = {};
+  if (!picks.mix || typeof picks.mix !== "object") picks.mix = { lines: true, breathe: false, pulses: true };
   var host = document.getElementById("concepts"), canv = [], dpr = Math.min(2, window.devicePixelRatio || 1);
   function makeLM() { var cv = document.createElement("canvas"); cv.width = LW; cv.height = LH; var x = cv.getContext("2d"); return { cv: cv, x: x, img: x.createImageData(LW, LH) }; }
   function addCanvas(id, cv) {
     cv.width = W * dpr; cv.height = H * dpr;
     var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    var k = { id: id, cv: cv, ctx: ctx, seen: true, t: 3.4, mult: 1, lm: makeLM() };
+    var k = { id: id, cv: cv, ctx: ctx, seen: true, t: 3.4, rt: 3.4, mult: 1, lm: makeLM() };
     canv.push(k); return k;
   }
   addCanvas("today", document.getElementById("cv-today"));
@@ -668,8 +715,9 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
     s.className = "concept"; s.id = "c-" + k.id;
     s.innerHTML =
       '<div class="scene"><canvas role="img" aria-label="Sketch of the room lit as ' + k.name + '"></canvas>' +
-      '<div class="speed"><span>' + k.speed + '</span>' + (k.x10 ? '<button class="ghost" type="button" id="x10-' + k.id + '" aria-pressed="false">x10</button>' : '') + '</div></div>' +
-      '<div class="about"><div class="eyebrow">Concept ' + "ABCDE".charAt(n) + '</div><h2>' + k.name + '</h2><p class="pitch">' + k.pitch + '</p><dl>' +
+      '<div class="speed"><span>' + k.speed + '</span>' + (k.x10 ? '<button class="ghost" type="button" id="x10-' + k.id + '" aria-pressed="false">x10</button>' : '') + '</div>' +
+      (k.toggles ? '<div class="speed">' + k.toggles.map(function (g) { return '<button class="ghost" type="button" id="tg-' + g[0] + '" aria-pressed="false">' + g[1] + '</button>'; }).join("") + '</div>' : '') + '</div>' +
+      '<div class="about"><div class="eyebrow">' + (k.eyebrow || "Concept " + "ABCDE".charAt(n)) + '</div><h2>' + k.name + '</h2><p class="pitch">' + k.pitch + '</p><dl>' +
       '<div><dt>What lights the room</dt><dd>' + k.lights + '</dd></div>' +
       '<div><dt>What moves</dt><dd>' + k.moves + '</dd></div>' +
       '<div><dt>What answers the game</dt><dd>' + k.answers + '</dd></div>' +
@@ -691,6 +739,17 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
       b.addEventListener("click", function () { picks.x10[k.id] = !picks.x10[k.id]; setX(); store.set(picks); if (!running) draw(true); });
       setX();
     }
+    var setTs = [];
+    (k.toggles || []).forEach(function (g) {
+      var tb = s.querySelector("#tg-" + g[0]);
+      var setT = function () {
+        tb.setAttribute("aria-pressed", picks.mix[g[0]] ? "true" : "false"); tb.textContent = g[1] + (picks.mix[g[0]] ? ": on" : ": off");
+        tb.disabled = g[0] !== "lines" && !picks.mix.lines;
+      };
+      setTs.push(setT);
+      tb.addEventListener("click", function () { picks.mix[g[0]] = !picks.mix[g[0]]; setTs.forEach(function (f) { f(); }); sync(); if (!running) draw(true); });
+    });
+    setTs.forEach(function (f) { f(); });
   });
 
   var out = document.getElementById("out"), more = document.getElementById("more"), bother = document.getElementById("bother"), inputs = document.querySelectorAll("input[data-k]");
@@ -715,6 +774,10 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
     else first += " First choice: (none picked yet).";
     if (picks.order[1]) first += " Runner-up: " + nameOf(picks.order[1]) + ".";
     lines.push(first);
+    if (picks.order.indexOf("mix") >= 0) {
+      var mx = picks.mix;
+      lines.push("The mix: " + (!mx.lines ? "no lit lines (so it is Starlight)." : "lit lines " + (mx.breathe ? "that breathe slowly" : "steady") + ", " + (mx.pulses ? "pulses to the time door" : "no pulses") + "."));
+    }
     var dw = [];
     if (v.dark) dw.push("Dark: " + v.dark + ".");
     if (v.white) dw.push("White: " + v.white + ".");
@@ -768,7 +831,7 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
       var c = k.ctx;
       c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; c.shadowBlur = 0; c.lineCap = "butt";
       c.fillStyle = "#05070b"; c.fillRect(0, 0, W, H);
-      try { SCENES[k.id](c, k.t, k.lm); }
+      try { SCENES[k.id](c, k.t, k.lm, k.rt); }
       catch (e) { c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; if (window.console) console.error("sketch " + k.id + ": " + e.message); }
     });
   }
@@ -778,7 +841,7 @@ textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width
     if (!last) last = now;
     if (now - last > 30) {
       var dt = Math.min(0.2, (now - last) / 1000); last = now;
-      canv.forEach(function (k) { if (k.seen) k.t += dt * k.mult; });
+      canv.forEach(function (k) { if (k.seen) { k.t += dt * k.mult; k.rt += dt; } });
       draw(false);
     }
     requestAnimationFrame(frame);

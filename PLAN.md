@@ -7468,6 +7468,19 @@ worktree, walked in the game before anything is merged: Claude's advice,
 since last round's sketch was kinder than the game); and what bothered him
 most in today's light.
 
+Vadim, on seeing the page, 2026-11-22: "Can we combine Deep Field and
+Starlight?" Yes, and a sixth card was added for it, **Deep Field by
+Starlight**: Starlight's dim room and creeping patches, with Deep Field's lit
+ice lines in it (high on the walls, and up round the time door). Deep
+Field's lines read better in a dim room than in today's evenly lit one. The
+card has three buttons, so he can see how much of Deep Field he wants back:
+the lit lines (off makes it plain Starlight), whether they breathe (6.4 s a
+breath; off by default), and pulses running to the time door (one every
+10 s). Gone in any case: the sweeps, the stutter, the running dashes on
+every wall, the travelling floor lights. In the fights the lines hold steady
+and no pulse runs. When the mix is picked, the choice text carries a line
+"The mix: ..." with the state of the three buttons.
+
 Source `design/map32-lights.html`.
 **The page**: https://claude.ai/artifact/1MGMoqEhfqKASpvs5zqfei
 
