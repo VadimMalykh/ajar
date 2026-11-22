@@ -43,6 +43,9 @@ DoomEdNums
 	20056 = AjarKeyLever
 	20057 = AjarKeyLamp
 	20058 = AjarSphereEachGo          // a megasphere that lies there again in every go (anew.zs)
+	20059 = AjarBackpackEachGo        // ... and beside it a backpack,
+	20063 = AjarRocketBoxEachGo       // ... a box of rockets
+	20064 = AjarCellPackEachGo        // ... and a cell pack, the same
 	20080 = AjarWorksSpot             // MAP32's look (works.zs): a light
 	20081 = AjarWorksRoom             // ... and a rectangle of a room
 	20011 = AjarKey1

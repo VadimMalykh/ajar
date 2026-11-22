@@ -8063,6 +8063,39 @@ coming back (it simply lies there at the start of the go, without a flash)
 and the game have not been played by hand: `MAP=MAP32 ./run.sh` in the
 worktree.
 
+**2026-11-22, the cage's supplies.** Vadim: "could we put backpack and more
+ammo (rockets and cells) in room with mega? So if I managed to open it, I will
+have more chance to win." Beside the megasphere (unmoved, (5940, -72)) lie a
+backpack at (5944, -108), boxes of rockets at (5920, -136) and (5960, -136),
+cell packs at (5920, -112) and (5956, -76) (map_secret2.py `SUPPLIES3`):
+`AjarBackpackEachGo` 20059, `AjarRocketBoxEachGo` 20063, `AjarCellPackEachGo`
+20064, plain subclasses of `Backpack`, `RocketBox`, `CellPack`, none counted
+as an item. `EachGo()` is true for them and the megasphere: the rule is the
+megasphere's, word for word (every new go, begin anew, not winding or going
+on as an earlier self, earlier selves pick nothing up). Each is 24 or more
+from the cage's west wall: the first layout had a cell pack 16 from it, whose
+box reached into the shutter's sector, and the shutter shutting took it away
+(seen in MODE=7). None stands between the glass and the megasphere; from the
+shutter's doorway each is seen (staggered in depth and across). They are not
+in `FIRE3` (the fight's reckoned ammunition, 0.60 of `HARD3`; with them it
+would be 0.79): they are a prize for holding the cage open, given again each
+go. One fix came with them: begin anew now takes away a backpack the player
+did not have at the first entry (`KeepFirst` keeps a `BackpackItem`,
+`PlayerBack` removes one gained; the limits are set as then), so taking it
+again doubles the limits again; `AsAtFirst` asks the backpacks and the rocket
+and cell limits as then. A second backpack in a later go gives its ammunition
+only (the engine's rule), the limits stay doubled. Tests (quick build): MODE=7
+34 (27 + 7: `suppliesStayAsItShuts3`, `suppliesTaken3` (+11 rockets, +220
+cells, one item found: the megasphere), `suppliesBackNextGo3`, `suppliesAnew3`,
+`suppliesAfterAnew3`, `suppliesEveryGo3`, `suppliesTakenAgain3`); MODE=5 27
+(26 + 1: `suppliesBackAfterDeath3`; `asAtTheFirstEntry3` asks the five back
+too; `pickedUp3` stays `faPicks - 4`: go 1 took the five and they lie there
+again in go 2); `MODE=3 TIMEOUT=1500` 78, `MODE=9` 8, `MODE=20` (the bot)
+without script errors (it did not win room 3, as it need not). The full build
+gave MODE=7 the same 34. The scripted player walks over all five on its way
+to the megasphere in every cage walk; none changes health or the found count,
+so the megasphere's checks mean what they meant. Not played by hand.
+
 ## The belt lab (built 2026-11-22)
 
 `tools/map_belt.py`, `src/zscript/belt.zs`; `MAP=BELT ./run.sh`,
