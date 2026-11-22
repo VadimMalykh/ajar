@@ -7466,7 +7466,7 @@ since last round's sketch was kinder than the game); and what bothered him
 most in today's light.
 
 Source `design/map32-lights.html`.
-**The page**: (link to come)
+**The page**: https://claude.ai/artifact/1MGMoqEhfqKASpvs5zqfei
 
 Nothing chosen yet, nothing built.
 
