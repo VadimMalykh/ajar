@@ -9390,3 +9390,79 @@ through it and come, and are sent to the far room; and a monster throwing
 from right at the face hits the plain room, so "one-way sight in a fight"
 (the outline's and the idea's) wants the missile fix before it is built
 into a level.
+
+## MAP31: the reel is watched from a room apart (built 2026-11-22)
+
+Vadim, after playing the end of MAP31: "when I watch final movie, for
+action in yellow auditorium, monsters are also walking there (like demo is
+played right here). Can we remove it, so I see everything on the screen
+only?" (it was under Known in "MAP31: the reel": a clip of hall 1 was played
+round the seated player). **Not played by hand.**
+
+- **Why a second room**: a clip is staged with puppets in the hall where it
+  happened, before a camera. The engine cannot show a thing to a camera and
+  hide it from the player, so the player no longer sits in hall 1. The seat
+  and the big screen are in **the screening room**, a copy of hall 1's front
+  4096 north of it (`map_secret1.py`, `screening_room()`; x -192 to 960, y
+  4096 to 4544, the corridor of the way in south of it to 3776). It is in no
+  zone, far from every hall, box and lobby; nothing in it but its sectors'
+  tag 3071 (`ajartime.REEL_ROOM`), the screen (sector tag 3070, `AJREEL`
+  face) and the seat (thing 14, tid 3070, 420 from the screen, facing south).
+  Its lines are not drawn on the automap (`dontdraw`, through the map's
+  `line_hook`). The last way out's teleport (`special 70`, tid 3070) is
+  unchanged and now leads there. **Hall 1 has neither screen nor seat now.**
+- **What it copies**: the part of `Hall.__init__` that lays a hall's floor
+  is a helper now, `front()` (bands of light, rows of seats, pillars and
+  banks in the hall's colour, cut off `upto` north of the south wall), and
+  `way_in()` (the step down and the lit screen over it); both halls and the
+  room use them. MAP31 built with the helper and the old layout was byte for
+  byte the old map. The room is hall 1 from its south wall to 448 (a wall in
+  the hall's texture 28 behind the seat), its full width: the same floor,
+  ceiling height and textures, light bands, the first three rows, both
+  pillars, the screen over the way in as a won fight leaves it (`Q0`), and on
+  the west wall time door 1 shut (its dark surround and lintel, the door's
+  face at the back of the 16-deep recess; no portal, no line id).
+  Not copied: the way in is a corridor that ends in a wall where hall 1's
+  opens into the foyer (seen only while the screen comes down: it is behind
+  the screen once that is down); the two box windows that begin at y 400 on
+  the side walls (right beside the seat, out of the view); everything north
+  of 448 (behind the player, who cannot turn).
+- **The trigger** (`time.zs`, `WorldTick`): every fight won, idle, and the
+  player within 48 of the seat (`Seat()`, the thing with tid 3070); no
+  longer "in hall 1's zone".
+- **The lights**: the room's sectors are kept with the halls' show sectors
+  under their own `showFight` (`SCREENING`, -1), so no fight's show and no
+  `HouseLights(k)` touches them; at load they are put up (232) as hall 1's
+  are, and `StartReel` puts them down at once (`HouseLights(SCREENING, 0)`:
+  the map's light of each, as hall 1's own, bands included), as it did hall
+  1's. Hall 1 is left lit, as a won hall, so a clip of it is lit as the
+  others' are.
+- **The camera** waits until the first clip in hall 1, where the seat would
+  be there (the room's offset from hall 1 found from their sectors' corners,
+  `TagBox`), looking back over the hall as before: while the screen comes
+  down it shows hall 1's rows, lit; never the room. `Aim`, `Stage` and the
+  rest of the reel are unchanged; `StartReel` still hides hall 1's bodies and
+  what was dropped there, and makes the player unseen.
+- **Not changed**: halls 2 and 3, the fights, zones and boxes; what is seen
+  from the seat (the hall's front, the lights going down, the screen coming
+  down, captions, USE for the next, THE END, the level ending), but that
+  nothing walks in the room any more.
+
+Tests (`SecretScript`, `MAP=MAP31 MODE=3 TIMEOUT=300`): the walk now goes by
+the last way out's own line (its teleport) instead of being put at the seat.
+New checks: `seatedApart` (the player at the seat, in the room, in no zone;
+the camera in hall 1), `hall1OnScreenOnly` (the clip of hall 1's last to
+fall is held 70 tics; 40 in, every puppet seen is in hall 1 and none near
+the room, which holds nothing seen but the seat and the unseen player: 51
+and 53 puppets in the two runs), `lightsDownThere` (the room down, hall 1 up);
+`theReelBegins` checks the room's light down and hall 1's up. The skipping
+of the other clips, `lastScenesOnScreen` and `theEnd` were moved to fit the
+hold. Two runs: 62 checks each, none failed (59 of the old ones, of which
+PLAN last recorded 58; and the 3 new). `smoke_MAP31_3.cfg` takes 17 pictures
+now: the 15th is the screen coming down (hall 1's rows on it, the corridor
+under it), the 16th a clip of hall 2, the 17th the clip of hall 1
+(`build/smoke31_3b/` in the worktree: the room dark with the screen down,
+the clip on it, nobody in the room; the old pictures of 2026-11-18 framed
+the same). Also run, alone each: `MAP=MAP31 MODE=5` 4, `MODE=6` 10, `MODE=7`
+16, `MAP=TIME MODE=3` 14, none failed. `mapcheck` 0 problems; `thingcheck`
+the same 2 as the old map gives (two of hall 2's things on one spot); `itemcheck` 0.
