@@ -9754,3 +9754,165 @@ lab's gate); the lift with monsters in it; the timings with real input
 side of a Pair while it is in the doorway; the look in the hardware
 renderer; the level from MAP17's way out by a real exit. Not played by
 hand.
+
+## MAP18: the one-sided doorways (built 2026-11-22)
+
+The three sites of "MAP18 'Time and Motion': the first playable version"
+made one-sided, as "The first version, as decided" asked, on branch
+`map18-oneside`: `tools/map_clockdept.py` (`# ONESIDE site n`), the sign in
+a new `tools/gfx_clockdept.py`, the tests in `src/zscript/map18.zs` (MODE=7
+and 8), and a game-code fix for missiles at an odd face,
+`src/zscript/oddfaces.zs`. No new DoomEdNums.
+
+**What is where.**
+- **Site 1, the longer way east.** The corridor from the court to the
+  rotunda is now 192 wide (y 2112..2304). Its doorway is a 16-deep opening
+  at x 5200..5216, 64 wide, in a cross wall. Walking west through it
+  is plain. Walking east, its odd face (x 5200, facing west) leads into the
+  stretch: a corridor 96 wide, of five legs (up, east, down, east, up) in the
+  free ground north of the corridor (x 5008..5424, y 2400..2704), 1024 long
+  on foot. Its west end is a gate at (5024..5088, 2400) and its east end
+  a gate at (5344..5408, 2704); out of that one the player comes out
+  of the plain mouth into the rotunda's side (x 5216, facing east), as if he
+  had walked through. Look: the corridors' (CO), light 150, three pools of
+  light.
+- **Site 2, the porter's hut, bigger inside.** The hut (1344..1600 x
+  448..704) has its door in the north wall (x 1440..1504) to the yard.
+  From the yard, the door's odd face shows and leads into the archive
+  (256..1280 x -1088..-320, south of the yard: 1024 x 768, ceiling 256). The
+  archive's door, a gate in its north wall (736..800, -320), puts the player
+  out of the hut's door into the yard, facing north. The inside of the hut is
+  reached by a plain door in its south wall (x 1440..1504, from the yard's
+  south part), and from inside the hut its north door is a plain way out.
+  The archive: four shelf stacks (SK, 64 x 448), a reading table, card
+  indexes (CI) on the walls, the AR/FR/KA look, light 156 with a 4 x 2 grid
+  of pools. Its cache (an early detour off the yard, before the court): a
+  berserk pack behind the table, two boxes of shells, two medikits, four
+  armour bonuses. Its monsters: two imps among the stacks, two sergeants at
+  the south wall, a spectre in the middle (none within 112 of the
+  door). The hut's zombie moved to (1520, 560), off the face. The green
+  armour stays in the hut.
+- **Site 3, the turn-round.** The cloakroom's doorway off the entrance hall
+  (x 3392..3456, 64 deep) is plain from the hall. From the cloakroom its odd
+  face (x 3456, facing west) shows and leads to the last upper office
+  (office 3): out of a gate in that office's north wall (2720..2784, 3968),
+  facing south, a desk ahead. That gate, seen from the office, shows the
+  cloakroom and leads back into it, out of the doorway's odd face, facing
+  west. On foot the way back from the cloakroom to the hall is round by the
+  offices, the spine and the stairs: 3947 (the measure), 271 tics in the
+  test at 16.7 a tic. The cloakroom is reached plainly from the hall and
+  left by the office, so nothing in it (the chaingun, the backpack) is
+  stranded, and nothing needed is beyond a way that cannot be walked back.
+- **The fences.** Each odd face and gate has a line with `blockmonsters`
+  48 in front of it on both sides (on the plain side, the mouth's own line
+  where the opening is deep enough: the cloakroom's), so that no monster
+  stands or fires within 48 of it; all faces are `blind` (blocksight). No
+  monster is placed within 112 of a face (the generator checks: 0). No fight
+  is built on a doorway.
+- **The sign.** `AJIY<look><nn>` (`gfx_clockdept.py`): the wall beside it,
+  as laid there, with a 32 x 32 plate in MAP11's sign colours. On the plate
+  is a doorway with an arrow that goes straight into it and comes out of its
+  far side turned upward, to somewhere else. No words. It is hung on the odd
+  side only, on both sides of the opening, 68 under the ceiling: the
+  corridor's west part (CO, ceiling 192), the yard's face of the hut (PU,
+  ceiling 384: the texture twice over, the plate on the lower copy), the
+  cloakroom (CK, ceiling 160). The gates (the stretch's two, the archive's
+  door, the office's) have no sign. They are the far ends, and they lead
+  back the way they look. Three textures in all, AJIY300..302.
+
+**How the doorways are made.** `ajarmap.oneside(..., blind=True,
+mouth_id=...)` for the three doorways (the mouth's id lets a gate name it:
+the stretch's east gate names site 1's mouth). `gate()` in the generator is a
+16-deep AJTRIM recess whose back line is the portal (Line_SetPortal type
+1, floor-aligned), with its fence. Site 3's portals span floors: the
+office is 256 up, and the alignment carries the player up and down.
+
+**The measure.** The walk graph now has one-way links (`Walk.arc`) for each
+face, and "every area and every frame reached on foot from every other" is
+checked forward and back from one node (a directed graph: one piece both
+ways). The distances to the shutter come from a reverse Dijkstra over the same
+graph. 52 areas (45), 364 nodes (328), 10 one-way links.
+New figures beside the old:
+- the way on foot lever to shutter 9078 (544 tics), as before;
+- ORANGE only 3202 (192), RED only 2367 (142), GREEN only 3496 (209), as
+  before; BLUE only 7540 (451), was 6458 (387): its way through site 1
+  eastward is now the long one;
+- everything hung: 2367 (RED alone), as before; the long lane alone 1.31 of
+  the way's time; spares 81 and 272 tics, as before (way B goes by the
+  canteen, not through site 1);
+- the nearest frame or far side 1125 on foot from a lever, 1211 from the
+  shutter, as before (over 1000);
+- the longer way east 1316 (79 tics), back west 260 (16); the stretch
+  alone 1024; the cloakroom back to the start on foot 3947;
+- way A 10 spots, way B 20 (19 before).
+No rule needed the stretch shortened, and no way round by the canteen was
+needed.
+
+**The missile at the face.** `AjarOddFaces` (oddfaces.zs, in gameinfo's
+AddEventHandlers): the engine puts a new missile half a step ahead of its
+shooter by setting it there. A missile thrown from closer than that to an
+odd face's front was put beyond the face without crossing it, and flew on
+into the plain room ("The one-sided doorway lab", impThrowsFrom4_intoA). The
+handler finds the two-sided line portals at load (the odd faces only: door
+and gate portals are on one-sided lines). For each new missile it notes
+where its shooter stood. At the next tic, if the way from the shooter to
+where the missile was put crosses an odd face from its front, it moves the
+missile to where the portal would have put it, turned with the portal, with
+the floors' difference in height. This costs one tic of flight before the
+carry (the spawning event comes before the missile's speed is certain).
+`off` switches it off for tests.
+
+**Checks** (2026-11-22):
+- The full `./build.sh` with the solver: built; every other solver result
+  as before; MAP18's figures as listed above.
+- thingcheck, itemcheck, mapcheck on `map_clockdept`: 0 problems each (874
+  sectors, 449 things, 203 monsters).
+- `MAP=MAP18 MODE=7` (new): 27 checks: site 1 east into the stretch, west
+  plain, the stretch walked through and out of the mouth, back out west
+  through its west gate; the way east 138 tics at 10 a tic against 30 west;
+  the hut's door into the archive, the archive's door out of the hut, the
+  hut's door plain from inside, into the hut from behind and round it both
+  ways; the hall into the cloakroom plain, the cloakroom's doorway into the
+  office (z 256), the office's gate into the cloakroom; the cloakroom back to
+  the start on foot (271 tics); eight fence cases, an imp woken beside each
+  face (both sides) with the player beyond, and driven at it where its own
+  chase would not: none crossed, nearest 68..86 to a face. Every landing
+  matched the portal's mapping to 0.000 in place and angle.
+- `MODE=8` (new): 18 views of the three sites from both sides, looked at.
+  Fixed after the first look: the office's gate moved from the east wall (it
+  looked onto a bare wall) to the north wall; the hut's yard face is 384
+  high and its wall texture repeats, so its sign texture is now two copies
+  of the wall high with the plate on the lower one only.
+- `MAP=MAP18 MODE=1..6`: 8, 8, 15, 15, 24 and 2 check lines, levelExited
+  among the 8 of MODE 1 and 2 (way A 163 tics, way B 565, was 564), none
+  failed; MODE 6's 35 views taken. MODE 7 and 1 again on the full build:
+  27 and 8.
+- `MAP=ONESIDE MODE=3`: 24 checks (the 21 as before, the two "_intoA" with
+  the handler off; new: impThrowsFrom4_carried and playerRocketFrom4_carried
+  hit C, impThrowsFromBehindTheFace hits B, plain). `MODE=1` 31, `MODE=4` 15,
+  `MODE=5` 13, each with its done line. `MAP=CLOCK MODE=1` 12, `MAP=LAB
+  MODE=1` 13, `MAP=MAP17 MODE=1` 45 (with levelExited).
+- Every other map's wad and every earlier graphic byte for byte as from the
+  branch's base `3371856` (2795 entries): changed only `maps/MAP18.wad`,
+  `mapinfo.txt`, `zscript.zs`, `zscript/map18.zs`, `zscript/oneside.zs`;
+  new `zscript/oddfaces.zs` and `textures/AJIY300..302.png`.
+
+**Departures.**
+- Site 1's corridor is widened to 192 (the doorway wall needs room for both
+  plates and the fences 48 off on both sides).
+- The hut has a second door (south) so that its inside, still in the level,
+  is reachable. Through the north door from the yard it is the archive.
+- The office's gate is in office 3's north wall, not its east wall (the views:
+  from the cloakroom, the east-wall gate showed a bare wall).
+- Site 3's plain-side fence is the mouth line itself (64 deep opening: the
+  mouth is 64 from the face).
+- The missile fix carries the missile after its first step, a tic late (it
+  can hit something in that tic on the wrong side: only within a step of the
+  face, which the fences keep monsters out of; the player can do it).
+
+**Not tested / not played by hand.** Fights at the doorways (none are
+built; the fence cases are single imps); the archive's fight; the fix in
+MAP18 itself (tested in ONESIDE only); the fix with a missile that hits
+something in its first step; monsters through the portals of their own
+will (blocked by the fences); the signs in the hardware renderer; the
+automap gives the trick away (left so, as decided). Not played by hand.
