@@ -7,6 +7,7 @@ TIME = 10           # the time door's colour number: textures AJDR10, AJTR10, AJ
 
 
 REEL_TAG = 3070     # the big screen's sector, and the tid of the seat before it
+REEL_ROOM = 3071    # the sectors of the room the reel is watched from, whose lights it puts down
 
 
 def hall_line(k, j):
