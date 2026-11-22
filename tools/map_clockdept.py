@@ -403,7 +403,7 @@ ODD2, ARCH_GATE, MOUTH2 = 1875, 1876, 1877                # 2: the porter's hut,
 ODD3, OFFICE_GATE, MOUTH3 = 1878, 1879, 1880              # 3: the turn-round (the cloakroom to the offices)
 FENCE = 48          # no monster stands or fires nearer than this to an odd face or a gate: a blockmonsters line
 ODD_LINES = []      # (a, b): every odd face and gate, for the check that no monster is placed near one
-SIGNPLATES = {}     # (look, wall, shift, top row): name; gfx_clockdept.make draws them
+SIGNPLATES = {}     # (look, wall, shift, top row, times the wall's height): name; gfx_clockdept.make draws them
 SIGN_TOP = 68       # the plate's top is this high over the floor (32 high: eye height in the middle)
 
 
@@ -448,8 +448,8 @@ def sign(a, b, look_out, part, ceil):
     if not LOOK:
         return
     h = gfx_institute.HEIGHT.get(part, 256)
-    top = (ceil - SIGN_TOP) % h
-    key = (LOOK, part, I1._shift(a, b, look_out), top)
+    reps = -(-ceil // h)                    # the wall's texture over and over to the ceiling: the plate on the lowest only
+    key = (LOOK, part, I1._shift(a, b, look_out), ceil - SIGN_TOP, reps)
     m.cut(a, b)
     m.line(a, b, mid=SIGNPLATES.setdefault(key, f"AJIY{LOOK}{len(SIGNPLATES):02d}"), exact=True)
 
@@ -606,7 +606,7 @@ gap((2400, 3008), (2464, 3008), (0, 1), U, "EX", "CO", "workshop", "spine")
 
 # --- four offices north of the spine -----------------------------------------------------------------
 OFFICES = [(704, 1216), (1280, 1792), (1856, 2368), (2432, 2880)]
-OFFICE_FENCE = (2832, 3456, 2880, 3648)     # before the gate in the last office's east wall (ONESIDE site 3)
+OFFICE_FENCE = (2672, 3920, 2832, 3968)     # before the gate in the last office's north wall (ONESIDE site 3)
 for k, (x1, x2) in enumerate(OFFICES):
     desks = [((x1 + 64, 3392, x1 + 192, 3456), block(40, "DT", "DS")), ((x2 - 192, 3648, x2 - 64, 3712), block(40, "DT", "DS"))]
     fit((x1, 3264, x2, 3968), grid((x1, 3264, x2, 3968), 1, 2, 200, 96) + desks + ([(OFFICE_FENCE, dict(id=0))] if k == 3 else []),
@@ -615,10 +615,11 @@ for k, (x1, x2) in enumerate(OFFICES):
     cx = (x1 + x2) // 2 // 64 * 64
     gap((cx, 3200), (cx + 64, 3200), (0, 1), U, "CO", "AR", "spine", f"office{k}")
 frame((1504, 3968), (1568, 3968), (0, 1), 124, U, "office1")
-# ONESIDE site 3's far end: a gate in the last office's east wall, out of the cloakroom's doorway
-gate((2880, 3520), (2880, 3584), (1, 0), U, OFFICE_GATE, ODD3, "AR")
-fence((2880, 3456), (2832, 3456), (2832, 3648), (2880, 3648))
-OFFICE_DOOR = W.node(2872, 3552, "the offices' gate", "office3")
+# ONESIDE site 3's far end: a gate in the last office's north wall, out of the cloakroom's doorway;
+# from the cloakroom it shows the office looking south, a desk ahead
+gate((2784, 3968), (2720, 3968), (0, 1), U, OFFICE_GATE, ODD3, "AR")
+fence((2672, 3968), (2672, 3920), (2832, 3920), (2832, 3968))
+OFFICE_DOOR = W.node(2752, 3960, "the offices' gate", "office3")
 
 # --- the north wing: the archive of clocks and the timekeepers' office ------------------------------
 stacks = [((x, 3392, x + 64, 3840), solid("SK", U + 192)) for x in (3200, 3456, 3712)]
@@ -670,7 +671,7 @@ CLOAK_HALL = W.node(3464, 736, "the cloakroom's door, the hall", "entrance")
 CLOAK_IN = W.node(3384, 736, "the cloakroom's door, inside", "cloak")
 W.arc(CLOAK_HALL, CLOAK_IN, 80)                                             # into the cloakroom: plain
 W.arc(CLOAK_IN, OFFICE_DOOR, 32, portal=0)                                  # its doorway from inside: into the office
-W.arc(OFFICE_DOOR, CLOAK_IN, 32, portal=0)                                  # the office's gate: out into the cloakroom
+W.arc(OFFICE_DOOR, CLOAK_IN, 32, portal=90)                                 # the office's gate: out into the cloakroom
 START = W.node(4000, 480, "the start", "entrance")
 fit((4544, 512, 5056, 640), **look("CO", "FC", "KC", 176, 160, MINT))     # the way east to the canteen
 W.area("eastway", (4544, 512, 5056, 640), G)

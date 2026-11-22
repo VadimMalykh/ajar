@@ -682,7 +682,9 @@ extend class AjarHandler
 
 	// A monster woken beside a face with the player beyond it: in `tics` it
 	// comes no nearer to the face than its fence lets it, and crosses nothing.
-	bool TamFenceCase(Actor mo, int t, double ix, double iy, double px, double py, double pz, int face, double keep, string what)
+	// `push`: an angle the imp is also driven at (8 a tic) all the while, where its own way to the player
+	// would not take it to the face.
+	bool TamFenceCase(Actor mo, int t, double ix, double iy, double px, double py, double pz, int face, double keep, string what, double push = -1)
 	{
 		int k = TamIn(t);
 		if (k == 1)
@@ -702,6 +704,7 @@ extend class AjarHandler
 		if (!tamImp) { Check(what, false); return true; }
 		if ((tamImp.pos.xy - tamFrom).Length() > 64) tamJumps++;
 		tamFrom = tamImp.pos.xy;
+		if (push >= 0 && k < 150) tamImp.vel.xy = Actor.AngleToVector(push, 8);
 		tamMinDist = min(tamMinDist, TamToLine(tamImp.pos.xy, face));
 		if (k < 160) return false;
 		Console.Printf("AJARTEST info %s: the imp from (%.0f,%.0f) is at (%.0f,%.0f), came %.1f near the face (kept off %.0f), %d jumps, its target %s",
@@ -770,7 +773,7 @@ extend class AjarHandler
 			if (TamGo(mo, t, 3300, 736, 0, 15)) { Check("cloakroomDoorIntoTheOffice", TamLanded(ODD3, OFFICE_GATE, "cloakroomDoorIntoTheOffice") && InBox(mo, 2432, 3264, 2880, 3968) && abs(mo.pos.z - 256) < 1); TamNext(t); }
 			break;
 		case 14:
-			if (TamGo(mo, t, 2780, 3552, 0, 15)) { Check("officeGateIntoTheCloakroom", TamLanded(OFFICE_GATE, ODD3, "officeGateIntoTheCloakroom") && InBox(mo, 3008, 512, 3392, 1024) && abs(mo.pos.z) < 1); TamNext(t); }
+			if (TamGo(mo, t, 2752, 3880, 90, 15)) { Check("officeGateIntoTheCloakroom", TamLanded(OFFICE_GATE, ODD3, "officeGateIntoTheCloakroom") && InBox(mo, 3008, 512, 3392, 1024) && abs(mo.pos.z) < 1); TamNext(t); }
 			break;
 		case 15:    // the way back from the cloakroom to the start on foot, at 16.7 (MapSpots 2061 on)
 			if (TamIn(t) == 1) { TamPose(mo, 3384, 736, 180); TamStartRun(t); }
@@ -786,10 +789,10 @@ extend class AjarHandler
 		case 17: if (TamFenceCase(mo, t, 5360, 2208, 5060, 2208, 0, ODD1, FENCE + 20, "fence1_plainSide")) TamNext(t); break;
 		case 18: if (TamFenceCase(mo, t, 1472, 900, 1472, 600, 0, ODD2, FENCE + 20, "fence2_yard")) TamNext(t); break;
 		case 19: if (TamFenceCase(mo, t, 1472, 560, 1472, 900, 0, ODD2, FENCE + 20, "fence2_insideTheHut")) TamNext(t); break;
-		case 20: if (TamFenceCase(mo, t, 768, -520, 1472, 900, 0, ARCH_GATE, FENCE + 20, "fence2_archiveDoor")) TamNext(t); break;
+		case 20: if (TamFenceCase(mo, t, 768, -520, 1472, 900, 0, ARCH_GATE, FENCE + 20, "fence2_archiveDoor", 90)) TamNext(t); break;
 		case 21: if (TamFenceCase(mo, t, 3250, 736, 3600, 736, 0, ODD3, FENCE + 20, "fence3_cloakroom")) TamNext(t); break;
 		case 22: if (TamFenceCase(mo, t, 3560, 736, 3200, 736, 0, ODD3, 64 + 20, "fence3_hall")) TamNext(t); break;
-		case 23: if (TamFenceCase(mo, t, 2700, 3552, 3100, 3600, 256, OFFICE_GATE, FENCE + 20, "fence3_officeGate")) TamNext(t); break;
+		case 23: if (TamFenceCase(mo, t, 2752, 3820, 3200, 736, 0, OFFICE_GATE, FENCE + 20, "fence3_officeGate", 90)) TamNext(t); break;
 		case 24:
 			Console.Printf("AJARTEST oneSidedDone=1");
 			TamNext(t);
@@ -816,8 +819,9 @@ extend class AjarHandler
 			3720, 736, 180, 0,      // 12 the cloakroom's doorway from the entrance hall: plain, no sign
 			3150, 736, 0, 0,        // 13 the doorway from inside the cloakroom: the office in it, and the signs
 			3120, 920, 340, 0,      // 14 ... at a slant
-			2560, 3552, 0, 0,       // 15 the office's gate: the cloakroom in it
-			2500, 3830, 330, 0      // 16 the office and its gate at a slant
+			2752, 3640, 90, 0,      // 15 the office's gate: the cloakroom in it
+			2540, 3700, 45, 0,      // 16 the office and its gate at a slant
+			3250, 736, 0, 0         // 17 the doorway from inside the cloakroom, nearer
 		};
 		int i = t / 40;
 		if (i >= views.Size() / 4) return;
