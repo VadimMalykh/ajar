@@ -1270,6 +1270,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "LIFT" && mode == 2) LiftCompanyScript(mo, t);
 		else if (level.mapname ~== "LIFT") LiftScript(mo, t);
 		else if (level.mapname ~== "BELT") BeltScript(mo, t, mode);
+		else if (level.mapname ~== "CLOCK") ClockScript(mo, t, mode);       // the clock lab (clock.zs)
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "MAP12" && mode == 1) GoingUpScript(mo, t);
 		else if (level.mapname ~== "MAP13" && mode == 1) SightUnseenScript(mo, t);
