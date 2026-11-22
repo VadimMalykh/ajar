@@ -24,6 +24,7 @@ import map_institute4
 import map_institute5
 import map_institute6
 import map_dispatch
+import map_clockdept
 import map_test
 import map_lab
 import map_eng
@@ -43,7 +44,7 @@ import map_secret2
 import map_shift
 import solve
 
-MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "MAP10": map_hinges10, "MAP11": map_institute1, "MAP12": map_institute2, "MAP13": map_institute3, "MAP14": map_institute4, "MAP15": map_institute5, "MAP16": map_institute6, "MAP17": map_dispatch, "TEST": map_test, "LAB": map_lab, "ENG": map_eng, "LIFT": map_lift, "BELT": map_belt, "CLOCK": map_clock, "OPT": map_optics, "MIR": map_mirror, "TIME": map_time, "TDOOR": map_timedoor, "PLATE": map_plate, "PRESS": map_press, "TWOKEY": map_twokey, "SHUT": map_shut, "SHIFT": map_shift, "MAP31": map_secret1, "MAP32": map_secret2}
+MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "MAP10": map_hinges10, "MAP11": map_institute1, "MAP12": map_institute2, "MAP13": map_institute3, "MAP14": map_institute4, "MAP15": map_institute5, "MAP16": map_institute6, "MAP17": map_dispatch, "MAP18": map_clockdept, "TEST": map_test, "LAB": map_lab, "ENG": map_eng, "LIFT": map_lift, "BELT": map_belt, "CLOCK": map_clock, "OPT": map_optics, "MIR": map_mirror, "TIME": map_time, "TDOOR": map_timedoor, "PLATE": map_plate, "PRESS": map_press, "TWOKEY": map_twokey, "SHUT": map_shut, "SHIFT": map_shift, "MAP31": map_secret1, "MAP32": map_secret2}
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
@@ -94,6 +95,9 @@ for name, mod in MAPS.items():
         with open(kept_at, "w") as f:
             json.dump(kept, f)
     print("\n".join(kept[name]["lines"]))
+for name, mod in MAPS.items():                  # a level checked another way prints its own figures (MAP18: the stopwatch)
+    if hasattr(mod, "MEASURE"):
+        print("\n".join(mod.MEASURE))
 
 # AJAR_OUT=build/mine.pk3 ./build.sh: another file, so that two sessions building at once do not write over each other
 out = os.path.join(root, os.environ.get("AJAR_OUT") or os.path.join("build", "ajar.pk3"))

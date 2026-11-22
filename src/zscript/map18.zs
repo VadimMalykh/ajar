@@ -1,0 +1,602 @@
+// MAP18 "Time and Motion" (tools/map_clockdept.py): the smoke tests.
+// The level's own workings are the clock lab's (clock.zs): the lanes'
+// emitters, AjarLaneContact and AjarDelayShutter.
+//
+// MAP=MAP18 MODE=1..6 tools/smoke.sh:
+//   1  the winning run: TEAL in the long lane, the doors on the track the
+//      generator found best, the lever, then the measured way (MapSpots
+//      1861 on) walked at 16.7 a tic; through the shutter and out
+//   2  both Pairs joining the two longest lanes, and the way on foot
+//      (MapSpots 1901 on, the lift ridden) at 16.7 a tic
+//   3  the failures: nothing hung; the long lane alone on foot; a leaf taken
+//      while the pulse laps; a second pull
+//   4  each lane's laps, and the two longest joined: the lap's tics, the
+//      laps counted, the lamps, how long the shutter is up
+//   5  the paradoxes walked
+//   6  views (tools/smoke_MAP18_6.cfg takes a screenshot of each)
+// The player is god-moded and unseen, and every monster is gone.
+
+extend class AjarHandler
+{
+	const TAM_RUN = 16.7;
+	const TAM_LEVER = 1840;
+	const TAM_WAY_A = 1860;
+	const TAM_WAY_B = 1900;
+	int tamStep, tamAt;
+	int tamI, tamThrough, tamT0, tamArrive, tamCase, tamSeen;
+	double tamAng, tamLastX, tamLastY, tamLastZ, tamRideZ;
+	bool tamRiding, tamRideSent, tamJumped, tamFlag;
+	double tamJumpX, tamJumpY, tamJumpZ;
+
+	void TamNext(int t) { tamStep++; tamAt = t; }
+	int TamIn(int t) { return t - tamAt; }
+	bool TamWait(int t, string what, bool ok, int limit)
+	{
+		if (!ok && TamIn(t) < limit) return false;
+		Check(what, ok);
+		if (!ok) Console.Printf("AJARTEST info %s: gave up after %d tics", what, TamIn(t));
+		TamNext(t);
+		return true;
+	}
+
+	AjarDelayShutter Delay() { return AjarDelayShutter.Find(); }
+	Actor TamSpot(int tid) { return level.CreateActorIterator(tid).Next(); }
+
+	void TamPose(Actor mo, double x, double y, double ang)
+	{
+		Sector s = level.PointInSector((x, y));
+		Pose(mo, x, y, s.floorplane.ZatPoint((x, y)), ang);
+		mo.vel = (0, 0, 0);
+		mo.pitch = 0;
+		tamLastX = x;
+		tamLastY = y;
+		tamLastZ = mo.pos.z;
+	}
+
+	// A lane's lever, used as the player would (from in front of it).
+	void TamPull(Actor mo, int lane)
+	{
+		TamPose(mo, 96, lane == 1 ? 1440 : lane == 2 ? 1664 : 1888, 180);
+		Line l = FindLine(TAM_LEVER + lane);
+		if (l) l.Activate(mo, 0, SPAC_Use);
+	}
+
+	void TamClearOut()
+	{
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bIsMonster) { a.ClearCounters(); a.Destroy(); }
+		it = ThinkerIterator.Create("AjarAmbush");
+		while (a = Actor(it.Next())) a.Destroy();
+	}
+
+	// Every door down and back where it leant.
+	void TamTakeAll(Actor mo)
+	{
+		let it = ThinkerIterator.Create("AjarFrame");
+		AjarFrame f;
+		while (f = AjarFrame(it.Next())) if (f.door) BeltTake(mo, f.args[0]);
+	}
+
+	double TamOpen() { let d = Delay(); return d && d.shutter ? d.shutter.CenterCeiling() - d.shutter.CenterFloor() : 0; }
+
+	int TamLampsLit()
+	{
+		int n = 0;
+		for (int k = 0; k < 8; k++)
+		{
+			let it = level.CreateSectorTagIterator(1830 + k);
+			int i;
+			while ((i = it.Next()) >= 0) if (level.sectors[i].lightlevel == 255) n++;
+		}
+		return n;
+	}
+
+	// A jump of more than 128 in one tic: the player went through a portal.
+	void TamWatchJump(Actor mo, int t)
+	{
+		double d = (mo.pos.xy - (tamLastX, tamLastY)).Length();
+		if (d > 128)
+		{
+			tamJumped = true;
+			tamJumpX = mo.pos.x;
+			tamJumpY = mo.pos.y;
+			tamJumpZ = mo.pos.z;
+			Console.Printf("AJARTEST info t=%d through a portal: (%.0f,%.0f,%.0f) to (%.0f,%.0f,%.0f)", t, tamLastX, tamLastY, tamLastZ, mo.pos.x, mo.pos.y, mo.pos.z);
+		}
+		tamLastX = mo.pos.x;
+		tamLastY = mo.pos.y;
+		tamLastZ = mo.pos.z;
+	}
+
+	// The way of MapSpots first + 1, first + 2, ... at `speed` a tic, as the
+	// generator measured it: true when it is past the last spot.
+	bool TamRun(Actor mo, int t, int first, double speed)
+	{
+		Actor s = TamSpot(first + 1 + tamI);
+		if (!s) { mo.vel.xy = (0, 0); return true; }
+		Vector2 at = mo.pos.xy;
+		bool jump = (at - (tamLastX, tamLastY)).Length() > 128;
+		tamLastX = at.x;
+		tamLastY = at.y;
+		if (tamThrough > 0)
+		{
+			if (jump)
+			{
+				Console.Printf("AJARTEST info t=%d through a door to (%.0f,%.0f,%.0f)", t, at.x, at.y, mo.pos.z);
+				tamThrough = 0;
+				tamI++;
+			}
+			else if (--tamThrough == 0)
+			{
+				Check("throughTheDoorAtSpot" .. (first + 1 + tamI), false);
+				tamI++;
+			}
+			else mo.vel.xy = Actor.AngleToVector(tamAng, speed);
+			return false;
+		}
+		if (tamRiding)
+		{
+			mo.vel.xy = (0, 0);
+			if (!tamRideSent) { LiftSend(LIFT_TAG, int(tamRideZ)); tamRideSent = true; }
+			else if (!LiftMoving() && LiftAt() == tamRideZ)
+			{
+				Console.Printf("AJARTEST info t=%d rode the car to %.0f", t, tamRideZ);
+				tamRiding = false;
+				tamI++;
+			}
+			return false;
+		}
+		Vector2 d = s.pos.xy - at;
+		double len = d.Length();
+		if (s.args[0] == 2)
+		{
+			tamRiding = true;
+			tamRideSent = false;
+			tamRideZ = s.args[1] - 512;
+			mo.vel.xy = d;
+			return false;
+		}
+		if (len <= speed + 0.5)
+		{
+			mo.vel.xy = d;
+			if (s.args[0] == 1) { tamThrough = 12; tamAng = s.args[1]; }
+			else tamI++;
+		}
+		else mo.vel.xy = d / len * speed;
+		return false;
+	}
+
+	void TamStartRun(int t)
+	{
+		tamI = 0;
+		tamThrough = 0;
+		tamRiding = false;
+		tamT0 = t;
+		tamArrive = 0;
+	}
+
+	// While a run goes on: the tic the player is in the shutter's doorway.
+	void TamWatchShutter(Actor mo, int t, bool want)
+	{
+		if (tamArrive || mo.pos.y < 2596 || mo.pos.x < 7744 || mo.pos.x > 7808 || mo.pos.z > -200) return;
+		tamArrive = t;
+		let d = Delay();
+		int life = d.Live() ? 0 : d.goneAt - d.firedAt;
+		Console.Printf("AJARTEST info the way took %d tics (lever pulled at %d); the pulse fired at %d is %s, %d laps; the shutter open %.0f",
+			t - tamT0, tamT0, d.firedAt, d.Live() ? "alive" : "gone", d.pulse ? d.pulse.laps : -1, TamOpen());
+		if (want) Check("theShutterIsUpWhenThere", d.Live() && TamOpen() >= 56);
+	}
+
+	void TimeAndMotionScript(Actor mo, int t, int mode)
+	{
+		if (t == 1)
+		{
+			mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+			tamAt = 1;
+			TamClearOut();
+			let d = Delay();
+			Check("theShutterIsThere", d && d.shutter && d.lamps.Size() == 2 * d.args[2]);
+			Check("theShutterIsDown", d && d.Down() && !d.Live());
+		}
+		if (t < 2) return;
+		if (mode == 1) TamWinningRun(mo, t);
+		else if (mode == 2) TamOnFoot(mo, t);
+		else if (mode == 3) TamFailures(mo, t);
+		else if (mode == 4) TamLaps(mo, t);
+		else if (mode == 5) TamParadoxes(mo, t);
+		else if (mode == 6) TamViews(mo, t);
+	}
+
+	// MODE=1: TEAL in the long lane, the rest as the generator's best track.
+	void TamWinningRun(Actor mo, int t)
+	{
+		Actor doors = TamSpot(TAM_WAY_A), car = TamSpot(TAM_WAY_A - 1);
+		switch (tamStep)
+		{
+		case 0:
+			BeltHang(mo, LabLeaf(8, 0), 101);
+			BeltHang(mo, LabLeaf(8, 1), 102);
+			if (doors.args[0]) { BeltHang(mo, LabLeaf(9, 0), doors.args[0]); BeltHang(mo, LabLeaf(9, 1), doors.args[1]); }
+			if (doors.args[2]) BeltHang(mo, DoorOf(1), doors.args[2]);
+			if (doors.args[3]) BeltHang(mo, DoorOf(3), doors.args[3]);
+			if (doors.args[4]) BeltHang(mo, DoorOf(2), doors.args[4]);
+			Console.Printf("AJARTEST info the track: ORANGE %d %d, RED %d (the car at %d), GREEN %d, BLUE %d",
+				doors.args[0], doors.args[1], doors.args[2], car.args[0] - 512, doors.args[3], doors.args[4]);
+			Check("tealInTheLongLane", LabLeaf(8, 0).frame == FindFrame(101) && LabLeaf(8, 1).frame == FindFrame(102));
+			if (doors.args[2]) LiftSend(LIFT_TAG, car.args[0] - 512);
+			TamNext(t);
+			break;
+		case 1:
+			TamWait(t, "theCarWaits", !LiftMoving() && LiftAt() == (doors.args[2] ? car.args[0] - 512 : LiftAt()), 400);
+			break;
+		case 2:
+			TamPull(mo, 1);
+			Check("theLeverFiresTheLongLane", Delay().Live() && Delay().pulse.lane == 1);
+			TamStartRun(t);
+			TamNext(t);
+			break;
+		case 3:
+			TamWatchShutter(mo, t, true);
+			if (TamRun(mo, t, TAM_WAY_A, TAM_RUN) || TamIn(t) > 1500)
+			{
+				Check("theWayIsWalked", tamArrive > 0);
+				TamNext(t);
+			}
+			break;
+		case 4:
+			mo.vel.xy = (TAM_RUN, 0);
+			if (TamIn(t) > 60) { Check("outByTheNightRoom", false); TamNext(t); }
+			break;
+		}
+	}
+
+	// MODE=2: TEAL in 102 and 103, ORANGE in 104 and 101: one loop of both lanes; the way on foot.
+	void TamOnFoot(Actor mo, int t)
+	{
+		let d = Delay();
+		switch (tamStep)
+		{
+		case 0:
+			BeltHang(mo, LabLeaf(8, 0), 102);
+			BeltHang(mo, LabLeaf(8, 1), 103);
+			BeltHang(mo, LabLeaf(9, 0), 104);
+			BeltHang(mo, LabLeaf(9, 1), 101);
+			Check("bothPairsJoinTheLanes", LabLeaf(9, 1).frame == FindFrame(101) && LabLeaf(8, 1).frame == FindFrame(103));
+			Check("theCarIsOnTheGround", LiftAt() == 0);
+			TamNext(t);
+			break;
+		case 1:
+			TamPull(mo, 1);
+			TamStartRun(t);
+			TamNext(t);
+			break;
+		case 2:
+			TamWatchShutter(mo, t, true);
+			if (TamRun(mo, t, TAM_WAY_B, TAM_RUN) || TamIn(t) > 1500)
+			{
+				Check("theWayIsWalked", tamArrive > 0);
+				if (d.lapAt.Size() >= 2)
+				{
+					int lap = d.lapAt[1] - d.lapAt[0];
+					Console.Printf("AJARTEST info the joined loop: a lap %d tics (%.1f by its length)", lap, 3136.0 / d.PulseSpeed());
+					Check("theJoinedLapIsBothLanes", abs(lap - 3136.0 / d.PulseSpeed()) <= 1.5);
+				}
+				TamNext(t);
+			}
+			break;
+		case 3:
+			mo.vel.xy = (TAM_RUN, 0);
+			if (TamIn(t) > 60) { Check("outByTheNightRoom", false); TamNext(t); }
+			break;
+		}
+	}
+
+	// MODE=3: what fails.
+	void TamFailures(Actor mo, int t)
+	{
+		let d = Delay();
+		switch (tamStep)
+		{
+		case 0:     // nothing hung: the pulse bursts on the lane's end
+			TamPull(mo, 1);
+			TamNext(t);
+			break;
+		case 1:
+			if (TamWait(t, "nothingHungItBursts", d.gone == 2, 200))
+				Console.Printf("AJARTEST info nothing hung: the pulse lived %d tics, the shutter opened to %.0f", d.goneAt - d.firedAt, d.shutter.CenterCeiling() - d.bottom);
+			break;
+		case 2:
+			if (TamWait(t, "andTheShutterComesDown", d.Down(), 100))
+				Console.Printf("AJARTEST info down again %d tics after it burst", d.downAt - d.goneAt);
+			break;
+		case 3:     // the long lane alone, on foot: the shutter is down before the player is there
+			BeltHang(mo, LabLeaf(8, 0), 101);
+			BeltHang(mo, LabLeaf(8, 1), 102);
+			TamPull(mo, 1);
+			TamStartRun(t);
+			TamNext(t);
+			break;
+		case 4:
+			TamWatchShutter(mo, t, false);
+			TamRun(mo, t, TAM_WAY_B, TAM_RUN);
+			if (d.gone && !tamFlag)
+			{
+				tamFlag = true;
+				tamCase = t;
+				Console.Printf("AJARTEST info the long lane alone: the pulse burnt out after %d tics, %d laps; the player %d tics into the way, at (%.0f,%.0f,%.0f)",
+					d.goneAt - d.firedAt, d.lapAt.Size(), t - tamT0, mo.pos.x, mo.pos.y, mo.pos.z);
+				Check("theLongLaneAloneBurnsOut", d.gone == 1 && d.lapAt.Size() == d.args[2]);
+			}
+			if (tamFlag && t - tamCase > 200)
+			{
+				Check("theLongLaneAloneIsNotEnough", !tamArrive && mo.pos.y < 2592);
+				Console.Printf("AJARTEST info the player waits at (%.0f,%.0f,%.0f), the shutter down", mo.pos.x, mo.pos.y, mo.pos.z);
+				TamNext(t);
+			}
+			break;
+		case 5:     // a leaf taken while the pulse laps: it bursts where the leaf was
+			mo.vel.xy = (0, 0);
+			TamPull(mo, 1);
+			TamNext(t);
+			break;
+		case 6:
+			if (d.lapAt.Size() >= 1)
+			{
+				BeltTake(mo, 102);
+				Check("theLeafIsTaken", !FindFrame(102).door);
+				TamNext(t);
+			}
+			else if (TamIn(t) > 200) { Check("aLapBeforeTheLeafIsTaken", false); TamNext(t); }
+			break;
+		case 7:
+			if (TamWait(t, "takenLeafItBursts", d.gone == 2, 150))
+			{
+				Check("afterOneLap", d.pulse && d.pulse.laps == 1);
+				BeltHang(mo, LabLeaf(8, 1), 102);
+			}
+			break;
+		case 8:
+			TamWait(t, "theShutterDownAgain", d.Down(), 100);
+			break;
+		case 9:     // a second pull: the first pulse is called back, one pulse in the hall
+			TamPull(mo, 1);
+			tamFlag = false;
+			TamNext(t);
+			break;
+		case 10:
+			if (TamIn(t) == 60)
+			{
+				let old = d.pulse;
+				TamPull(mo, 1);
+				Check("theFirstIsCalledBack", old && old.recalled && !old.bMissile);
+				Check("oneInTheHall", ClockAlive() == 1 && d.pulse != old && d.pulse.laps == 0);
+				Check("theShutterHeld", d.Live() && d.Up());
+			}
+			if (TamIn(t) == 100)
+			{
+				let old = d.pulse;
+				TamPull(mo, 2);                 // the middle lane, with nothing in it
+				Check("anotherLaneCallsItBack", old.recalled && ClockAlive() == 1 && d.pulse.lane == 2);
+				TamNext(t);
+			}
+			break;
+		case 11:
+			TamWait(t, "theMiddleLaneAloneBursts", d.gone == 2, 100);
+			break;
+		}
+	}
+
+	// MODE=4: each lane, then the two longest joined.
+	void TamLaps(Actor mo, int t)
+	{
+		static const int lanes[] = { 1, 2, 3, 1 };
+		static const double lens[] = { 2080, 1056, 544, 3136 };
+		static const string names[] = { "long", "middle", "short", "joined" };
+		let d = Delay();
+		int c = tamStep / 2;
+		if (c >= 4) return;
+		if (tamStep % 2 == 0)
+		{
+			TamTakeAll(mo);
+			if (c == 0) { BeltHang(mo, LabLeaf(8, 0), 101); BeltHang(mo, LabLeaf(8, 1), 102); }
+			if (c == 1) { BeltHang(mo, LabLeaf(8, 0), 103); BeltHang(mo, LabLeaf(8, 1), 104); }
+			if (c == 2) { BeltHang(mo, LabLeaf(8, 0), 105); BeltHang(mo, LabLeaf(8, 1), 106); }
+			if (c == 3) { BeltHang(mo, LabLeaf(8, 0), 102); BeltHang(mo, LabLeaf(8, 1), 103); BeltHang(mo, LabLeaf(9, 0), 104); BeltHang(mo, LabLeaf(9, 1), 101); }
+			TamPull(mo, lanes[c]);
+			tamSeen = 0;
+			tamFlag = true;
+			TamNext(t);
+			return;
+		}
+		if (TamIn(t) % 35 == 1)
+			Console.Printf("AJARTEST info t=%d live=%d gone=%d laps=%d open=%.0f pulse=%s at (%.0f,%.0f,%.0f) alive=%d", t, d.Live(), d.gone, d.lapAt.Size(), TamOpen(),
+				d.pulse ? "yes" : "no", d.pulse ? d.pulse.pos.x : 0., d.pulse ? d.pulse.pos.y : 0., d.pulse ? d.pulse.pos.z : 0., ClockAlive());
+		// the lamps: as many lit as laps are left, two tics after each lap
+		if (d.lapAt.Size() > tamSeen && t >= d.lapAt[d.lapAt.Size() - 1] + 2)
+		{
+			tamSeen = d.lapAt.Size();
+			int left = d.args[2] - tamSeen;
+			if (TamLampsLit() != 2 * left) tamFlag = false;
+		}
+		if (d.gone && d.Down())
+		{
+			double want = lens[c] / d.PulseSpeed();
+			string laps = "";
+			bool even = true;
+			for (int i = 1; i < d.lapAt.Size(); i++)
+			{
+				int lap = d.lapAt[i] - d.lapAt[i - 1];
+				laps.AppendFormat("%s%d", i > 1 ? "," : "", lap);
+				if (abs(lap - want) > 1.5) even = false;
+			}
+			Console.Printf("AJARTEST info the %s lane: laps at %s tics (%.1f by its length), %d counted, first after %d; it lived %d tics; the shutter up %d tics after the pull, down %d after it went",
+				names[c], laps, want, d.lapAt.Size(), d.lapAt.Size() ? d.lapAt[0] - d.firedAt : -1, d.goneAt - d.firedAt, d.upAt - d.firedAt, d.downAt - d.goneAt);
+			Check(names[c] .. "LapsEven", even && d.lapAt.Size() > 1);
+			Check(names[c] .. "LapsCounted", d.lapAt.Size() == d.args[2] && d.gone == 1);
+			Check(names[c] .. "LampsCountDown", tamFlag && TamLampsLit() == 0);
+			TamNext(t);
+		}
+		else if (TamIn(t) > 1200) { Check(names[c] .. "Ends", false); TamNext(t); }
+	}
+
+	// A walk at 10 a tic: posed on its first tic, then on at its angle.
+	bool TamWalk(Actor mo, int t, double x, double y, double ang, int tics)
+	{
+		int k = TamIn(t);
+		if (k == 1) { TamPose(mo, x, y, ang); tamJumped = false; return false; }
+		TamWatchJump(mo, t);
+		if (k <= tics + 1) mo.vel.xy = (cos(mo.angle), sin(mo.angle)) * 10;
+		else mo.vel.xy = (0, 0);
+		return k == tics + 4;
+	}
+
+	// MODE=5: the paradoxes, each walked.
+	void TamParadoxes(Actor mo, int t)
+	{
+		switch (tamStep)
+		{
+		case 0:     // the endless corridor: TEAL in the long lane
+			if (TamIn(t) == 1) { BeltHang(mo, LabLeaf(8, 0), 101); BeltHang(mo, LabLeaf(8, 1), 102); }
+			if (TamWalk(mo, t, 2420, 1440, 0, 30)) { Check("laneEastComesInWest", tamJumped && mo.pos.x < 1000); TamNext(t); }
+			break;
+		case 1:
+			if (TamWalk(mo, t, 560, 1440, 180, 30)) { Check("laneWestComesInEast", tamJumped && mo.pos.x > 2000); TamNext(t); }
+			break;
+		case 2:     // the endless stair: TEAL in 107 (the foot) and 108 (the head)
+			if (TamIn(t) == 1) { TamTakeAll(mo); BeltHang(mo, LabLeaf(8, 0), 107); BeltHang(mo, LabLeaf(8, 1), 108); }
+			if (TamWalk(mo, t, 544, 3080, 270, 80)) { Check("downTheStairComesInAtTheHead", tamJumped && tamJumpY > 3000 && tamJumpZ > 250); TamNext(t); }
+			break;
+		case 3:
+			if (TamWalk(mo, t, 544, 2420, 90, 80)) { Check("upTheStairComesInAtTheFoot", tamJumped && tamJumpY < 2500 && tamJumpZ < 5); TamNext(t); }
+			break;
+		case 4:     // the moving room: RED in 128 (the north corridor), the car at each floor
+		case 7:
+		case 10:
+			if (TamIn(t) == 1)
+			{
+				TamTakeAll(mo);
+				BeltHang(mo, DoorOf(1), 128);
+				TamPose(mo, 2272, 2200, 90);
+				LiftSend(LIFT_TAG, tamStep == 4 ? -256 : tamStep == 7 ? 0 : 256);
+			}
+			if (TamIn(t) > 130 && !LiftMoving()) TamNext(t);
+			break;
+		case 5:
+		case 8:
+		case 11:
+			if (TamWalk(mo, t, 2272, 2200, 90, 20))
+			{
+				Check("intoTheCarAt" .. (LiftAt() < 0 ? "Basement" : LiftAt() > 0 ? "Upper" : "Ground"), tamJumped && InBox(mo, 6720, 1920, 6912, 2112) && abs(mo.pos.z - LiftAt()) < 2);
+				TamNext(t);
+			}
+			break;
+		case 6:
+		case 9:
+		case 12:
+			if (TamWalk(mo, t, 6816, 2040, 270, 20))
+			{
+				Check("outOfTheCarAt" .. (LiftAt() < 0 ? "Basement" : LiftAt() > 0 ? "Upper" : "Ground"), tamJumped && InBox(mo, 448, 2112, 2944, 2288));
+				TamNext(t);
+			}
+			break;
+		case 13:    // round the pillar: TEAL in the stub's two faces
+			if (TamIn(t) == 1) { TamTakeAll(mo); BeltHang(mo, LabLeaf(8, 0), 112); BeltHang(mo, LabLeaf(8, 1), 113); }
+			if (TamWalk(mo, t, 5860, 1792, 0, 15)) { Check("eastThroughTheStub", tamJumped && mo.pos.x > 6096); TamNext(t); }
+			break;
+		case 14:
+			if (TamWalk(mo, t, 6170, 1792, 180, 15)) { Check("westThroughTheStub", tamJumped && mo.pos.x < 5936); TamNext(t); }
+			break;
+		case 15:    // ... and the north wall to the west wall
+			if (TamIn(t) == 1) { TamTakeAll(mo); BeltHang(mo, LabLeaf(8, 0), 109); BeltHang(mo, LabLeaf(8, 1), 111); }
+			if (TamWalk(mo, t, 6016, 2660, 90, 15)) { Check("northComesInWest", tamJumped && mo.pos.x < 5700 && mo.pos.y < 2100); TamNext(t); }
+			break;
+		case 16:    // the six-sided hall: its north-east wall is its south-west wall
+			if (TamWalk(mo, t, 5952, 3616, 30, 40)) { Check("northEastComesInSouthWest", tamJumped && tamJumpX < 5800 && (mo.pos.xy - (5952, 3616)).Length() < 280); TamNext(t); }
+			break;
+		case 17:
+			if (TamWalk(mo, t, 5952, 3616, 210, 40)) { Check("southWestComesInNorthEast", tamJumped && tamJumpX > 6100 && (mo.pos.xy - (5952, 3616)).Length() < 280); TamNext(t); }
+			break;
+		case 18:    // the room that is its own neighbour
+			if (TamWalk(mo, t, 6848, 3584, 90, 30)) { Check("northComesInSouth", tamJumped && tamJumpY < 3450 && InBox(mo, 6656, 3392, 7040, 3776)); TamNext(t); }
+			break;
+		case 19:
+			if (TamWalk(mo, t, 6848, 3584, 270, 30)) { Check("southComesInNorth", tamJumped && tamJumpY > 3700 && InBox(mo, 6656, 3392, 7040, 3776)); TamNext(t); }
+			break;
+		case 20:    // the inside-out booth: each wall of the hall with no size is a face of the tower, outwards
+		case 21:
+		case 22:
+		case 23:
+		{
+			static const double angs[] = { 90, 0, 270, 180 };
+			int n = tamStep - 20;
+			if (TamWalk(mo, t, 1728, 2800, angs[n], 30))
+			{
+				bool inCourt = InBox(mo, 3008, 1344, 4992, 2944) && !InBox(mo, 3880, 2024, 4120, 2264);
+				Vector2 dir = Actor.AngleToVector(angs[n], 1);
+				bool away = (mo.pos.xy - (4000, 2144)) dot dir > 100;
+				Check("hallWall" .. (n + 1) .. "IsTheTowersFace", tamJumped && inCourt && away);
+				TamNext(t);
+			}
+			break;
+		}
+		case 24:    // ... and back in from the court
+			if (TamWalk(mo, t, 4000, 2340, 270, 30)) { Check("intoTheTowerIsIntoTheHall", tamJumped && InBox(mo, 1536, 2608, 1920, 2992) && mo.pos.z > 250); TamNext(t); }
+			break;
+		}
+	}
+
+	// MODE=6: views of every area and paradox.
+	void TamViews(Actor mo, int t)
+	{
+		static const double views[] = {
+			4000, 416, 90, 0,       // 0 the start: the entrance hall
+			4450, 1200, 225, 0,     // 1 the entrance hall from the north-east
+			3300, 980, 200, 0,      // 2 the cloakroom
+			2860, 384, 180, 0,      // 3 the yard from the porch
+			1900, 300, 150, 0,      // 4 the yard and the porter's hut
+			320, 1480, 180, 0,      // 5 the regulator room: the levers and the lamps
+			2420, 1320, 150, 0,     // 6 the delay hall from the south-east
+			2420, 1440, 180, 0,     // 7 down the long lane: the endless corridor (TEAL in 101, 102)
+			560, 1760, 180, 0,      // 8 the glass onto the regulator room
+			2860, 2200, 180, 0,     // 9 the north corridor
+			544, 2420, 90, -10,     // 10 the stair from the foot
+			544, 3100, 270, 10,     // 11 the stair from the head: the endless stair (ORANGE in 107, 108)
+			760, 3136, 0, 0,        // 12 the spine
+			1728, 2680, 90, 0,      // 13 the hall with no size, looking north: the court
+			1728, 2900, 0, 0,       // 14 ... looking east
+			4000, 1420, 90, 0,      // 15 the court and the clock tower
+			3700, 2144, 0, 0,       // 16 the tower's west face
+			5560, 2560, 315, 0,     // 17 the rotunda
+			5860, 1792, 0, 0,       // 18 the stub's west face (GREEN: the basement stores)
+			6640, 2016, 0, 0,       // 19 the lift's car (RED's far side)
+			5120, 400, 45, 0,       // 20 the canteen
+			6450, 700, 0, 0,        // 21 the kitchen
+			7120, 1400, 0, -10,     // 22 the kitchen's steps down
+			7100, 500, 0, 0,        // 23 the stores
+			7480, 1300, 60, 0,      // 24 the cellar
+			7250, 2250, 30, 0,      // 25 the boiler room and the shutter
+			7700, 2680, 0, 0,       // 26 the night room
+			5700, 3616, 0, 0,       // 27 the six-sided hall
+			6848, 3450, 90, 0,      // 28 the room that is its own neighbour
+			7600, 3400, 90, 0,      // 29 the regulator store (ORANGE)
+			1000, 3300, 90, 0,      // 30 an office
+			3100, 3300, 60, 0,      // 31 the archive
+			4200, 3300, 45, 0,      // 32 the timekeepers
+			1000, 2720, 30, 0,      // 33 the drawing office
+			2100, 2720, 30, 0       // 34 the workshop
+		};
+		if (t == 2)
+		{
+			BeltHang(mo, LabLeaf(8, 0), 101); BeltHang(mo, LabLeaf(8, 1), 102);
+			BeltHang(mo, LabLeaf(9, 0), 107); BeltHang(mo, LabLeaf(9, 1), 108);
+			BeltHang(mo, DoorOf(3), 112);
+			BeltHang(mo, DoorOf(1), 128);
+		}
+		int i = t / 40;
+		if (i >= views.Size() / 4) return;
+		TamPose(mo, views[i * 4], views[i * 4 + 1], views[i * 4 + 2]);
+		mo.pitch = views[i * 4 + 3];
+		if (t % 40 == 0) Console.Printf("AJARTEST view=%d at (%.0f,%.0f)", i, views[i * 4], views[i * 4 + 1]);
+	}
+}
