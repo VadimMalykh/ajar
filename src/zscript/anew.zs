@@ -22,15 +22,35 @@
 // What the first entry was is kept when the fight begins (Begin, KeepFirst):
 // AjarFirstEntry.
 //
-// A pick-up marked "each go" (AjarSphereEachGo: MAP32 room 3's megasphere in
-// the cage) lies where it lay at the first entry again at the start of every
-// new go of its open fight, though an earlier self took it (EachGoBack). It
-// is not counted again then; beginning anew counts it as at the first entry.
+// A pick-up marked "each go" (EachGo: MAP32 room 3's cage, its megasphere and
+// beside it a backpack, two boxes of rockets and two cell packs) lies where it
+// lay at the first entry again at the start of every new go of its open
+// fight, though an earlier self took it (EachGoBack). It is not counted again
+// then; beginning anew counts it as at the first entry. A backpack taken in
+// the fight is gone again at begin anew (PlayerBack), as everything gained.
 
 // A megasphere that lies there again in every go of an open fight (EachGoBack;
 // MAP32 room 3's cage, map_secret2.MEGA3). Otherwise a megasphere.
 class AjarSphereEachGo : Megasphere
 {
+}
+
+// Beside it (map_secret2.SUPPLIES3), the same: a backpack, a box of rockets, a
+// cell pack (20059, 20063, 20064). Otherwise each is what its parent is; none
+// counts as an item.
+class AjarBackpackEachGo : Backpack
+{
+	Default { -COUNTITEM }
+}
+
+class AjarRocketBoxEachGo : RocketBox
+{
+	Default { -COUNTITEM }
+}
+
+class AjarCellPackEachGo : CellPack
+{
+	Default { -COUNTITEM }
 }
 
 class AjarFightAnew : Actor
@@ -123,7 +143,7 @@ extend class AjarTimeHandler
 				f.armPct = arm.SavePercent; f.armType = arm.ArmorType;
 				continue;
 			}
-			if (!(it is "Weapon" || it is "Ammo" || it is "Powerup")) continue;
+			if (!(it is "Weapon" || it is "Ammo" || it is "Powerup" || it is "BackpackItem")) continue;
 			f.invCls.Push(it.GetClass()); f.invAmt.Push(it.Amount); f.invMax.Push(it.MaxAmount);
 		}
 		f.kills = mo.player.killcount; f.items = mo.player.itemcount;
@@ -259,10 +279,12 @@ extend class AjarTimeHandler
 		}
 	}
 
-	// Does a pick-up of this class lie there again in every go (AjarSphereEachGo)?
+	// Does a pick-up of this class lie there again in every go (AjarSphereEachGo, and the backpack, the box
+	// of rockets and the cell pack beside it)?
 	static bool EachGo(class<Inventory> cls)
 	{
-		return (class<AjarSphereEachGo>)(cls) != null;
+		return (class<AjarSphereEachGo>)(cls) || (class<AjarBackpackEachGo>)(cls) || (class<AjarRocketBoxEachGo>)(cls)
+			|| (class<AjarCellPackEachGo>)(cls);
 	}
 
 	// A new go of the open fight from its start (Retake, Resume; not WindTo, not
@@ -297,14 +319,15 @@ extend class AjarTimeHandler
 	// The player as at the first entry.
 	void PlayerBack(PlayerPawn mo)
 	{
-		// weapons, ammunition and powers they had then and have not now
+		// weapons, ammunition, powers and a backpack they had then and have not now
 		for (int i = 0; i < first.invCls.Size(); i++)
 			if (!mo.FindInventory(first.invCls[i])) mo.GiveInventoryType(first.invCls[i]);
-		// and what they have now and had not then
+		// and what they have now and had not then (a backpack too: the next one taken doubles the limits
+		// again; how much ammunition they may carry is set as then below)
 		Array<Inventory> extra;
 		for (Inventory it = mo.Inv; it; it = it.Inv)
 		{
-			if (!(it is "Weapon" || it is "Powerup")) continue;
+			if (!(it is "Weapon" || it is "Powerup" || it is "BackpackItem")) continue;
 			if (first.invCls.Find(it.GetClass()) == first.invCls.Size()) extra.Push(it);
 		}
 		for (int i = 0; i < extra.Size(); i++) extra[i].Destroy();
@@ -350,8 +373,10 @@ extend class AjarTimeHandler
 	// --- the tests: MAP=MAP32 MODE=5 TIMEOUT=300 tools/smoke.sh -----------------
 	// Rooms 3 and 4, each entered at its lobby (the rooms before are left at
 	// once, so each begins as at the first entry). In each: go 1 picks up
-	// what is in the lobby (room 3) and kills two monsters, and is killed into
-	// box 1; go 2 picks up box 1's three things and uses the plate: all is as
+	// what is in the lobby (room 3; and the megasphere, the backpack, the
+	// rockets and the cells in the cage, which lie there again in go 2) and
+	// kills two monsters, and is killed into box 1; go 2 picks up box 1's
+	// three things and uses the plate: all is as
 	// at the first entry. Then every box is used and the player killed after
 	// the last: it begins anew again (not the level). Then the fight is won,
 	// as before: the steel door opens. Room 3's go 2 stands under the press
@@ -362,6 +387,7 @@ extend class AjarTimeHandler
 	int faStep, faT, faRoom, faTotal, faLeft, faPicks, faDeaths;
 	bool faShut3;               // room 3: the wing's shutter was opening, the player under the press, when the plate was used
 	bool faMega;                // room 3: go 1 took the megasphere
+	bool faSup;                 // ... and the backpack, the rockets and the cells beside it
 	int faItems, faFound;       // room 3: the level's item total and found count once it had
 	bool faLive4;               // room 4: the first self's west lever was live when the plate was used
 	AjarFightAnew faPlate;
@@ -441,12 +467,15 @@ extend class AjarTimeHandler
 		let arm = BasicArmor(mo.FindInventory("BasicArmor"));
 		bool inv = mo.CountInv("RocketAmmo") == CountFirst("RocketAmmo") && mo.CountInv("Cell") == CountFirst("Cell")
 			&& mo.CountInv("Clip") == CountFirst("Clip") && (mo.FindInventory("PlasmaRifle") != null) == (CountFirst("PlasmaRifle") > 0)
-			&& (mo.FindInventory("RocketLauncher") != null) == (CountFirst("RocketLauncher") > 0) && (!arm || arm.Amount == first.armAmt);
-		Console.Printf("AJARTEST info anew%d fight=%d phase=%d open=%d mixed=%d takes=%d trips=%d at=%d ghosts=%d demo=%d doors=%d picks=%d/%d of %d inv=%d health=%d/%d pos=(%d,%d,%d)/(%d,%d,%d) ang=%d/%d kills=%d/%d level=%d/%d bodies=%d over=%d items=%d/%d of %d/%d",
+			&& (mo.FindInventory("RocketLauncher") != null) == (CountFirst("RocketLauncher") > 0) && (!arm || arm.Amount == first.armAmt)
+			// (a backpack taken in the fight is gone, and with it the doubled limits: room 3's cage)
+			&& Backpacks(mo) == BackpacksFirst() && MaxOf(mo, "RocketAmmo") == MaxFirst("RocketAmmo") && MaxOf(mo, "Cell") == MaxFirst("Cell");
+		Console.Printf("AJARTEST info anew%d fight=%d phase=%d open=%d mixed=%d takes=%d trips=%d at=%d ghosts=%d demo=%d doors=%d picks=%d/%d of %d inv=%d health=%d/%d pos=(%d,%d,%d)/(%d,%d,%d) ang=%d/%d kills=%d/%d level=%d/%d bodies=%d over=%d items=%d/%d of %d/%d backpacks=%d/%d max rockets=%d/%d cells=%d/%d",
 			k, fight, phase, open, mixed, takes.Size(), trips, at, AllGhosts(), demo != null, doors, picks, placed, first.pick.Size(), inv,
 			mo.health, first.health, mo.pos.x, mo.pos.y, mo.pos.z, first.pos.x, first.pos.y, first.pos.z, mo.angle, first.angle,
 			mo.player.killcount, first.kills, level.killed_monsters, first.levelKilled, BodiesIn(k), over,
-			level.found_items, level.total_items, first.levelFound, first.levelItems);
+			level.found_items, level.total_items, first.levelFound, first.levelItems, Backpacks(mo), BackpacksFirst(),
+			MaxOf(mo, "RocketAmmo"), MaxFirst("RocketAmmo"), MaxOf(mo, "Cell"), MaxFirst("Cell"));
 		return fight == k && phase == LIVE && open && mixed && !goes && takes.Size() == 1 && trips == 0 && at == 0 && !AllGhosts() && !demo
 			&& doors && picks == first.pick.Size() && placed == picks && inv && mo.health == first.health
 			&& Near(mo, first.pos.x, first.pos.y) && abs(mo.pos.z - first.pos.z) < 1 && mo.angle == first.angle && mo.vel.Length() < 1
@@ -458,6 +487,32 @@ extend class AjarTimeHandler
 	{
 		int j = first.invCls.Find(cls);
 		return j < first.invCls.Size() ? first.invAmt[j] : 0;
+	}
+
+	// how much of it they could carry at the first entry, and now
+	int MaxFirst(class<Inventory> cls)
+	{
+		int j = first.invCls.Find(cls);
+		return j < first.invCls.Size() ? first.invMax[j] : GetDefaultByType(cls).MaxAmount;
+	}
+	static int MaxOf(Actor mo, class<Inventory> cls)
+	{
+		let it = mo.FindInventory(cls);
+		return it ? it.MaxAmount : GetDefaultByType(cls).MaxAmount;
+	}
+
+	// how many backpacks they had at the first entry (none or one), and have now
+	int BackpacksFirst()
+	{
+		int n = 0;
+		for (int i = 0; i < first.invCls.Size(); i++) if ((class<BackpackItem>)(first.invCls[i])) n++;
+		return n;
+	}
+	static int Backpacks(Actor mo)
+	{
+		int n = 0;
+		for (Inventory it = mo.Inv; it; it = it.Inv) if (it is "BackpackItem") n++;
+		return n;
 	}
 
 	void FightAnewScript(PlayerPawn mo)
@@ -506,6 +561,7 @@ extend class AjarTimeHandler
 			{
 				faMega = !MegaThere33() && mo.health >= 200;
 				faItems = level.total_items; faFound = level.found_items;
+				faSup = SuppliesTaken33(mo);        // (and what lies beside it: walked over on the way)
 			}
 			if (r3 && o == 30) mo.health = mo.player.health = 1;
 			// (room 4: the west lever pulled, what lies by it taken, rockets fired at the shut shutter)
@@ -531,6 +587,9 @@ extend class AjarTimeHandler
 				Console.Printf("AJARTEST info go 2: megaspheres=%d counted=%d items=%d/%d (taken in go 1: %d/%d)", megas, counted,
 					level.found_items, level.total_items, faFound, faItems);
 				Check("megasphereBackAfterDeath3", faMega && megas == 1 && !counted && level.total_items == faItems && level.found_items == faFound);
+				// (and the five beside it; the backpack go 1 took is still theirs, the limits doubled)
+				Check("suppliesBackAfterDeath3", faSup && SuppliesLie33() && Backpacks(mo) == 1 && MaxOf(mo, "RocketAmmo") == 100
+					&& MaxOf(mo, "Cell") == 600);
 			}
 			if (o == 3) mo.health = mo.player.health = 40;
 			for (int i = 0; i < 3; i++)
@@ -543,7 +602,8 @@ extend class AjarTimeHandler
 				int picks, placed;
 				[picks, placed] = PicksIn(R);
 				Console.Printf("AJARTEST info room=%d picks=%d health=%d armour=%d", R, picks, mo.health, mo.CountInv("BasicArmor"));
-				// (room 3: the megasphere go 1 took lies in the cage again in this go, EachGoBack: one fewer gone)
+				// (room 3: the megasphere go 1 took lies in the cage again in this go, EachGoBack: one fewer gone;
+				// so do the five beside it, which go 1 took too: they are neither in faPicks's four nor gone)
 				Check(String.Format("pickedUp%d", R), picks <= faPicks - (r3 ? 4 : 3) && mo.CountInv("BasicArmor") > 0);
 			}
 			// out into the hall, two more killed, and to the plate
@@ -575,11 +635,11 @@ extend class AjarTimeHandler
 			if (r3)
 			{
 				// room 3: the screen open, the cage shut, the megasphere (taken in go 1, put back for go 2) back,
-				// one, counted as at the first entry
+				// one, counted as at the first entry; the five beside it too, one each, none counted
 				AjarShutter scr = FindShutter(SCREEN3), cage = FindShutter(CAGE3);
 				int megas, counted;
 				[megas, counted] = MegasThere33();
-				rest = scr.IsOpen() && cage.IsShut() && MegaThere33() && megas == 1 && counted == 1;
+				rest = scr.IsOpen() && cage.IsShut() && MegaThere33() && megas == 1 && counted == 1 && SuppliesLie33();
 				Console.Printf("AJARTEST info room 3 at rest: screen=%.2f cage=%.2f megasphere=%d took=%d megaspheres=%d counted=%d",
 					scr.Opened(), cage.Opened(), MegaThere33(), faMega, megas, counted);
 			}
@@ -591,7 +651,7 @@ extend class AjarTimeHandler
 				rest = faLive4 && kw && ke && kw.Up() && ke.Up() && sh.IsShut() && !sh.keyed;
 				Console.Printf("AJARTEST info room 4 at rest: was live=%d up=%d/%d shutter=%.2f keyed=%d", faLive4, kw && kw.Up(), ke && ke.Up(), sh.Opened(), sh.keyed);
 			}
-			Check(String.Format("asAtTheFirstEntry%d", R), AsAtFirst(mo, R) && rest && (!r3 || faMega));
+			Check(String.Format("asAtTheFirstEntry%d", R), AsAtFirst(mo, R) && rest && (!r3 || faMega && faSup));
 			if (r3)
 			{
 				AjarShutter sh3 = FindShutter(SHUT33);
