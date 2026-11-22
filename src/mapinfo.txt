@@ -353,6 +353,12 @@ map BELT "Ajar: the belt"
 map CLOCK "Ajar: the clock"
 {
 	next = "CLOCK"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
 // The one-sided doorway lab (tools/map_oneside.py): MAP=ONESIDE ./run.sh
 map ONESIDE "Ajar: one-sided doorways"
 {
