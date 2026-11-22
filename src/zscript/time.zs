@@ -1264,7 +1264,12 @@ class AjarTimeHandler : EventHandler
 	//    as it was then; this go's record up to then is the last go's, with
 	//    the player standing where they stand. From the hall it winds only
 	//    while the fight is still as it went (nothing is awake); from a box,
-	//    always.
+	//    always. MAP31's halls, and MAP32's fights of goes (rooms 3 and 4):
+	//    there besides the earlier selves are where their records put them
+	//    then and what they did before then that lasts is in effect (doors,
+	//    key levers, plates and shutters held: MixWound, goes.zs; PLAN.md,
+	//    "MAP32: winding the fights of goes"). After the win a fight of goes
+	//    is a room of goes, and nothing is playing.
 	//  * A fight that is being watched from a box (MAP32): from that box. What
 	//    is seen through the glass and the doors are as they were at that
 	//    moment of the fight (WindWatched); the player is not wound, and what
@@ -1414,6 +1419,9 @@ class AjarTimeHandler : EventHandler
 			for (takes[i].next = 0; takes[i].next < takes[i].evTic.Size() && takes[i].evTic[takes[i].next] < to; takes[i].next++) {}
 		// the monsters' records up to then
 		for (int i = 0; i < demo.roles.Size(); i++) demo.roles[i].twin = null;
+		// a cue whose monster came before then has come (ClearHall made it due again): one PlayDemo does
+		// not bring in (it was dead and gone, or unseen) must not come again, real, from its cue
+		for (int i = 0; i < demo.roles.Size(); i++) if (demo.roles[i].cue && demo.roles[i].born < to) demo.roles[i].cue.special1 = 1;
 		for (int i = 0; i < demo.roles.Size(); i++)
 		{
 			AjarRole r = demo.roles[i];
@@ -2532,6 +2540,7 @@ class AjarTimeHandler : EventHandler
 		if (mode == 7 && level.mapname ~== "MAP32") TableScript(PlayerPawn(mo));     // map32.zs: room 3's plates, the timetable
 		if (mode == 8 && level.mapname ~== "MAP32") KeyScript(PlayerPawn(mo));       // map32.zs: room 4's key levers
 		if (mode == 9 && level.mapname ~== "MAP32") GhostShotScript(PlayerPawn(mo));     // map32.zs: room 3, an earlier self's shots wake nobody
+		if (mode == 10 && level.mapname ~== "MAP32") Wind32FightScript(PlayerPawn(mo));      // map32.zs: winding the fights of goes
 		if (mode == 20 && level.mapname ~== "MAP32") FightDemo(PlayerPawn(mo));     // fightdemo.zs: room 3 played by itself
 		if (mode == 3 && level.mapname ~== "MAP31") SecretScript(PlayerPawn(mo));
 		if (mode == 5 && level.mapname ~== "MAP31") OverScript(PlayerPawn(mo));
