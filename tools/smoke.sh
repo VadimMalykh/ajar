@@ -13,6 +13,9 @@ IWAD="${IWAD:-$HOME/.config/gzdoom/doom2.wad}"
 MAP="${MAP:-MAP01}"
 MODE="${MODE:-1}"
 mkdir -p "$OUT"
+# The image may be gone: another project's clean-up removes every image no container uses when the system drive is
+# short of room (seen 2026-11-22). Its layers stay in the build cache, so this takes seconds. As in build.sh.
+docker image inspect ajar-tools >/dev/null 2>&1 || docker build -q -t ajar-tools tools >/dev/null
 docker run --rm -v "$PWD":/work:ro -v /opt/gzdoom:/opt/gzdoom:ro -v "$IWAD":/iwad/doom2.wad:ro \
   -v "$OUT":/out -e HOME=/tmp/home -e LD_LIBRARY_PATH=/opt/gzdoom -e LIBGL_ALWAYS_SOFTWARE=1 \
   -e PK3="${PK3:-build/ajar.pk3}" -e MAP="$MAP" -e MODE="$MODE" -e EXTRA="$EXTRA" -e TIMEOUT="${TIMEOUT:-170}" ajar-tools \

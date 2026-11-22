@@ -648,6 +648,40 @@ def opening(m, a, b, out, floor, *, thick=16, color=None):
              ftex="AJTRIMF", ctex="AJTRIMF", color=color)
 
 
+BELT_W, CURB_W, CURB_H = 64, 16, 16     # a belt is a door wide; its curbs
+BELT_SPEED = 8      # Scroll_Floor's speed in units a tic (what rides it goes a little slower: PLAN.md, "The belt lab")
+BELT_TAG = 900      # 900 + n: the sectors of one belt (one direction), see belt()
+
+
+def belt(m, a, b, tag, *, floor=0, speed=BELT_SPEED, scroll=True, curbs=(True, True), light=200, color=None):
+    """A straight run of conveyor belt (a scrolling floor that carries what
+    stands on it) from a to b, the middles of its two ends; a-b runs along x
+    or y and the belt carries from a towards b. It is BELT_W wide, with a
+    curb CURB_W wide and CURB_H high on either side (`curbs`: left, right,
+    looking from a to b) that a carried crate cannot climb and the player
+    steps over. Every sector with `tag` carries the same way: give the
+    recesses at its ends the tag too (recess(tag=)), so that the belt runs
+    right up to a portal line and starts right at one. `scroll`: this call
+    puts the Scroll_Floor line for the tag (one per tag, or it carries twice
+    as fast); further runs in the same direction pass scroll=False."""
+    d = ((b[0] > a[0]) - (b[0] < a[0]), (b[1] > a[1]) - (b[1] < a[1]))
+    assert abs(d[0]) + abs(d[1]) == 1, "a belt runs along x or y"
+    n = (-d[1], d[0])                                          # to the left
+    def at(p, s):
+        return (p[0] + n[0] * s, p[1] + n[1] * s)
+    h = BELT_W // 2
+    m.sector([at(a, h), at(b, h), at(b, -h), at(a, -h)], floor=floor, ftex="FLAT20", light=light, color=color, id=tag)
+    for side, s in ((0, 1), (1, -1)):
+        if curbs[side]:
+            m.sector([at(a, s * h), at(b, s * h), at(b, s * (h + CURB_W)), at(a, s * (h + CURB_W))],
+                     floor=floor + CURB_H, ftex="STEP1", side="METAL", light=light, color=color)
+    if scroll:
+        # Scroll_Floor(tag, no control sector, the texture and what stands on it, x, y): speeds are 128 + 32 a unit
+        p, q = at(a, h), at((a[0] + d[0] * 8, a[1] + d[1] * 8), h)
+        m.cut(p, q)
+        m.line(p, q, special=223, args=(tag, 0, 2, 128 + 32 * speed * d[0], 128 + 32 * speed * d[1]), exact=True)
+
+
 def bolted(m, a, b, out, floor, tag, *, thick=16, line_id=0):
     """A steel door bolted on its far side: a-b is its mouth on the side it
     cannot be opened from, `out` points to the side with the bolt. It opens
