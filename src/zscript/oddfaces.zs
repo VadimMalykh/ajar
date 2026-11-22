@@ -11,8 +11,11 @@
 // would have turned. (The spawning event sees it already put, but before its
 // speed is certain, so it is not moved there.)
 //
-// An odd face is a two-sided line portal (ajarmap.oneside); the doors' and
-// the gates' portals are on one-sided lines and are not touched.
+// Only odd faces (ajarmap.oneside) are touched. Every portal line here is
+// two-sided; what tells an odd face is its back: a doorway's thickness, open
+// at its other end (the mouth). A frame's or a gate's back is its stub, with
+// no other way out of it, and a missile put there bursts on the stub's wall
+// as it always has (the same quirk at every hung door; not changed here).
 class AjarOddFaces : EventHandler
 {
 	bool off;                    // tests: the engine's own way (ONESIDE MODE=3's first cases)
@@ -26,7 +29,11 @@ class AjarOddFaces : EventHandler
 		for (int i = 0; i < level.lines.Size(); i++)
 		{
 			Line l = level.lines[i];
-			if (l.backsector && l.isLinePortal()) faces.Push(l);
+			if (!l.backsector || !l.isLinePortal()) continue;
+			int open = 0;                // two-sided lines round its back: 1 a stub, more a doorway's thickness
+			for (int j = 0; j < l.backsector.lines.Size(); j++)
+				if (l.backsector.lines[j].backsector) open++;
+			if (open > 1) faces.Push(l);
 		}
 	}
 
