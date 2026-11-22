@@ -461,6 +461,14 @@ m.sector(rect(6100, -216, 6356, -16), floor=BOXF, ceil=192, light=210, color=BOX
 ajartime.glass(m, (6164, HY), (6292, HY), (0, -1), BOXF)
 ajartime.box_door(m, K3, 3, (6196, -216), (6260, -216), (0, -1), BOXF, color=BOX)
 ajartime.zone(m, K3, 3, 6100, -280, 6356, -16)
+# the plates that wind the fight (Vadim, 2026-11-22: "rewind buttons on fight rooms like we have in
+# map31"; time.zs, AjarWind): in each box beside the glass, back on the left of one who looks out through
+# it and on on the right, 2 off the wall; in the hall either side of the lobby's mouth, back on the left of
+# one who faces the wall. WIND32: (x, y, angle, on), checked at the end against everything near them.
+WIND32 = [(4982, 640, 180, False), (4982, 480, 180, True),          # box 1, looking out east
+          (6554, 480, 0, False), (6554, 640, 0, True),              # box 2, west
+          (6148, -18, 270, False), (6308, -18, 270, True),          # box 3, north
+          (HX + 2, 32, 0, False), (HX + 2, 352, 0, True)]           # the hall's west wall, by the lobby
 
 
 def stock(x, y, along, *kinds):
@@ -470,7 +478,8 @@ def stock(x, y, along, *kinds):
     return list(kinds)
 
 
-BOXES3 = (stock(4810, 630, (40, 0), 2018, 2012, 2012, 17, 2046)
+# (box 1's row is 32 apart, not 40: its last would lie under the plate that winds back)
+BOXES3 = (stock(4810, 630, (32, 0), 2018, 2012, 2012, 17, 2046)
           + stock(6600, 630, (40, 0), 2018, 2012, 17, 2046)
           + stock(6130, -190, (40, 0), 2012, 2012, 17, 2046)
           + stock(4810, 500, (40, 0), 2046) + stock(6600, 500, (40, 0), 2046) + stock(6130, -60, (40, 0), 2046))
@@ -734,6 +743,14 @@ m.sector(rect(6992, 500, 7184, 680), floor=F4 + 64, ceil=F4 + 192, light=210, co
 ajartime.glass(m, (RX, 540), (RX, 640), (-1, 0), F4 + 64)
 ajartime.box_door(m, K4, 3, (6992, 560), (6992, 624), (-1, 0), F4 + 64, color=BOX)
 ajartime.zone(m, K4, 3, 6928, 500, 7184, 680)
+# the plates that wind the fight, as room 3's (WIND32): beside each box's glass, and either side of the
+# lobby's mouth in the range's west wall (south of it the 32 to the corner, north of it short of time door 1)
+WIND32 += [(7216, -18, 270, False), (7360, -18, 270, True),         # box 1, looking out north
+           (7552, -18, 270, False), (7696, -18, 270, True),         # box 2, north
+           (7182, 656, 180, False), (7182, 524, 180, True),         # box 3, east
+           (RX + 2, 16, 0, False), (RX + 2, 344, 0, True)]          # the range's west wall, by the lobby
+for wx, wy, wa, won in WIND32:
+    ajartime.wind(m, wx, wy, wa, won)
 BOXES4 = (stock(7240, -180, (40, 0), 2018, 2012, 2046) + stock(7576, -180, (40, 0), 2018, 2012, 17)
           + stock(7020, 520, (0, 40), 2012, 2012, 2046))
 # the case in the range's east wall, seen from the way in: self 1 at a lever on the case's south wall, self 2
@@ -838,6 +855,11 @@ SIGNS = []
 if WORKS:
     import works32
     SIGNS = works32.dress(sys.modules[__name__])
+# the plates that wind rooms 3 and 4 have nothing within 40 of them (the look's things too)
+for wx, wy, wa, won in WIND32:
+    for t in m.things:
+        if t["type"] != ajartime.WIND_T:
+            assert ((t["x"] - wx) ** 2 + (t["y"] - wy) ** 2) ** 0.5 >= 40, ("a thing by a plate that winds", (wx, wy), t)
 
 if __name__ == "__main__":
     sys.stdout.write(m.textmap())
