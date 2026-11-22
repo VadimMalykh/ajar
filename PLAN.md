@@ -3810,6 +3810,86 @@ MAP16, and its secret one leads to MAP32.
   whether the beam's way round the periscope room reads; the frame rate
   with mirrors and hung doors in one view (headless only so far).
 
+### MAP17: the goods dispatch (2026-11-22, agreed in outline; nothing built)
+
+Vadim and Claude. It takes up "MAP17 and MAP18: a kit of rooms and orders to
+fill" (the second round, above) and narrows it. Vadim: "your proposal above
+sounds good, let's go with it", to the outline and to the way out below. The
+way out as a puzzle is his wish: the way out of the latest levels was
+straightforward (11, 12, 13, 15 and 16 all end with VIOLET carried to one
+brass frame), so "return to some ideas with several doors/colors combined
+for the exit". Everything else is Claude's proposal. **Nothing here is built,
+and the engine has not been asked** (see "Before it can be built").
+
+- **One reader: the crate on the belt.** Of the second round's table of
+  what can measure a shape, 17 uses one line: the order of rooms, read by a
+  crate on a belt. The beam has carried MAP13 and MAP15 already. Where a
+  belt ends at a frame, the crate goes through whatever door hangs there and
+  comes out on the belt at that door's far side.
+- **The place**: the goods dispatch of the institute. A hopper where the
+  crate starts, stations (the press, the kiln, labelling), the dispatch bay
+  with its scale.
+- **A small kit**: four modules, not six to eight. Vadim's verdict on the
+  first MAP16 was that the puzzle hid among keys and stores. No keys.
+- **A station**: its own colour's far side at the inlet, a belt through it,
+  an empty frame at the outlet. So a door hung in a station's outlet says
+  what comes after it: GREEN in the press's outlet is "after the press, the
+  kiln". The player writes the order of rooms with the doors. Each station
+  stamps the crate with its colour as it passes.
+- **The belt goes where the player cannot**: through low hatches and under
+  bars. Building the line is not walking it. The stations are joined for
+  the player by the building, some of them only by their own door or by
+  riding the line; which, is for the solver to tune.
+- **Nothing is lost**: a crate that arrives wrongly stamped comes back down
+  a reject chute with its stamps shown, so the player reads what they built;
+  a crate that is stuck is issued again at the hopper.
+- **Three orders, the three steps of 11 to 13.**
+  1. See it. One door: the crate has to reach a place the player sees and
+     cannot send it to on foot.
+  2. Use it. Two doors, and their order matters: one station before the
+     other. It ends on a scale (MAP16 taught weight): the crate's weight
+     opens the way on.
+  3. The way out, below.
+- **The way out: the last order is a ring through every station.** The
+  dispatch bay's shutter carries a consignment note: three coloured seals in
+  a row (say BLUE, RED, GREEN). A crate that comes onto the bay's scale
+  stamped in that order opens the way out. It needs all three colours hung
+  at once, each in the right outlet. The bay has no colour of its own, only
+  a frame: the last link is the TEAL Pair, one leaf in the last station's
+  outlet and its twin in the bay. Why it is more than four hangs: the
+  earlier orders leave the doors in another arrangement, one door is
+  carried at a time, and the order of building matters where a station is
+  reached only through the line.
+- **The secret** (no secret way out here: those are 15, 20 and 30): a second
+  note hidden in the level, with another order of seals. A crate stamped
+  that way opens the secret room, as PINK's longer loop does in MAP10.
+  Second candidate, if its test is ever run: Vadim's one-sided portal.
+- **The fight only this level can have**: the line the player built
+  delivers. Monsters come by belt to wherever the doors send them; barrels
+  and monsters can be sent through the press.
+- **The plan table** as the dispatcher's board: a lamp for each outlet,
+  showing what follows what now. Claude: the level does not work without it.
+- **Name**: "Made to Order" (Claude's candidate, not agreed).
+- **Left for MAP18**: everything with a clock (the metronome, the relay run,
+  the timetable), and the inside-out room.
+- **Not taken**: the jigsaw wall as the way out (six far sides side by
+  side, the right order of colours makes one wide window). The best to look
+  at; it needs something wider than one door to pass two neighbouring
+  openings, the one thing on the lists still untested.
+- **Before it can be built**: a thing carried by a scrolling floor crossing
+  a hung door and a Pair (a crate, a barrel, a monster, the player), through
+  a hatch, waiting at an empty frame, round a ring, and its stamps read in
+  the order hung. The lab for it (map BELT, task `belt-lab`) was started the
+  same day: its results are in "The belt lab", at the end of this file, once
+  it is merged. If a belt does not carry a thing through a door, the
+  fallback is that the player walks the ring and the lock reads the order of
+  rooms they came through (`LoopLen` already counts a closed loop through
+  the way out's room; reading the order would be new).
+- **Not decided**: the building's plan; which stations are reached only by
+  the line; what order 1's place is; how the note and the stamps are drawn;
+  the solver's crate (a token with a place, moved by the arrangement); the
+  size of the fights.
+
 ## Look: MAP11 (started 2026-11-19)
 
 Board: https://claude.ai/artifact/Au3vTbXEAfHzH9bbVMmALm (source `design/map11-board.html`, images in
