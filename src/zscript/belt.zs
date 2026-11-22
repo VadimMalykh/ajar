@@ -101,6 +101,11 @@ class AjarCrate : Actor
 			readBy.Push(k);
 			k.Read(self);
 		}
+		// MAP17: come off the line (out of a door into the night room), it is
+		// taken back the tic it gets there, not the next (AjarHopper.Arrived)
+		let hi = ThinkerIterator.Create("AjarHopper");
+		AjarHopper hp;
+		while (hp = AjarHopper(hi.Next())) if (hp.crate == self) { hp.Arrived(); return; }
 	}
 }
 

@@ -839,8 +839,10 @@ class AjarHandler : EventHandler
 		d.Show();
 	}
 
+	string said;                // what was said last (the smoke tests read it)
 	void Say(string msg)
 	{
+		said = msg;
 		Console.MidPrint(smallfont, msg);
 	}
 
@@ -943,8 +945,10 @@ class AjarHandler : EventHandler
 		}
 		if (carried && f.args[4] == 4 && !carried.IsPair() && carried.args[1] == f.args[1])
 		{
-			// MAP11's archive: a frame that one door is kept out of
-			Say("This frame is barred to the " .. carried.Label() .. " door.\nAny other will hang in it.");
+			// MAP11's archive: a frame that one door is kept out of; MAP17's night room, whose
+			// brass frame does not take the door whose far side faces it (ajarmap.way_home(barred=))
+			if (f.args[0] == 190) Say("The way out will not open onto itself here.\nIt has to come round the line.");
+			else Say("This frame is barred to the " .. carried.Label() .. " door.\nAny other will hang in it.");
 			return;
 		}
 		if (carried && (f.args[4] == 1 || f.args[4] == 5) && carried.args[0] != f.args[1])
@@ -1121,6 +1125,8 @@ class AjarHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "MAP15") Check("outBySecretWayOut", e.NextMap ~== "MAP32");
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
+		// MAP17's way out leads into MAP17 again: its tests end with the level
+		if (level.mapname ~== "MAP17") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
