@@ -19,12 +19,28 @@
 //    to 4 below the lowest ceiling beside it) while the last beat is no
 //    older than the hold time, and down otherwise. It never crushes: a gate
 //    coming down onto something stops there until it is free.
+//
+// MAP18's delay lanes (tools/map_clockdept.py; PLAN.md, "MAP18: the clock
+// department"): the pulse is the stopwatch for a run.
+//  * An emitter with args[2] a lane (1, 2, 3) is a lane's: firing it calls
+//    back every pulse of any lane still alive (one pulse in the hall at a
+//    time), and the new pulse belongs to that lane.
+//  * AjarLaneContact thing (20130): args[0] its lane. Only a pulse of that
+//    lane counts on it: each pass is a lap; at the last the pulse burns out.
+//  * AjarDelayShutter thing (20131): args[0] the shutter's sector tag,
+//    args[1] the first of the lamps' tags (one a lap: lamp k lit while more
+//    than k laps are left), args[2] the laps a pulse lives for. The shutter
+//    goes up (8 units a tic, to 4 below the lowest ceiling beside it, never
+//    crushing) while a lane's pulse lives, and down when it does not. Every
+//    lap ticks, wherever the player is, with a word on the screen.
 
 class AjarPulse : Actor
 {
 	AjarPulseEmitter from;
 	int beats;                  // contacts it has set off
 	bool recalled;              // called back by its emitter's next shot
+	int lane, laps;             // MAP18: its lane (0: none), the passes of that lane's contact
+	bool burnt;                 // ... it lived its laps out
 
 	Default
 	{
@@ -100,6 +116,19 @@ class AjarPulseEmitter : Actor
 			pulse.recalled = true;
 			pulse.ExplodeMissile();
 		}
+		if (args[2])                                    // a lane's: every lane's pulse is called back
+		{
+			let it = ThinkerIterator.Create("AjarPulse");
+			AjarPulse p;
+			while (p = AjarPulse(it.Next()))
+			{
+				if (p.lane && p.bMissile)
+				{
+					p.recalled = true;
+					p.ExplodeMissile();
+				}
+			}
+		}
 		double speed = args[0] ? args[0] : 20;
 		pulse = AjarPulse(Spawn(args[1] ? "AjarRipPulse" : "AjarPulse", pos + (AngleToVector(angle, 20), 40)));
 		pulse.from = self;
@@ -107,6 +136,12 @@ class AjarPulseEmitter : Actor
 		pulse.speed = speed;
 		pulse.Vel3DFromAngle(speed, angle, 0);
 		pulse.A_StartSound("weapons/plasmaf", CHAN_VOICE);
+		if (args[2])
+		{
+			pulse.lane = args[2];
+			let d = AjarDelayShutter.Find();
+			if (d) d.Fired(pulse);
+		}
 		return pulse;
 	}
 }
@@ -216,6 +251,168 @@ class AjarMetronome : Thinker
 	bool GateDown() { return gate && gate.CenterCeiling() <= gateBottom + 0.01; }
 }
 
+class AjarLaneContact : Actor
+{
+	int others;                 // set off by what is not this lane's pulse
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+
+	override void Activate(Actor activator)
+	{
+		let p = AjarPulse(activator);
+		if (!p || p.lane != args[0] || !p.bMissile)
+		{
+			others++;
+			return;
+		}
+		p.laps++;
+		let d = AjarDelayShutter.Find();
+		if (d) d.Lap(p);
+	}
+}
+
+class AjarDelayShutter : Actor
+{
+	const SPEED = 8;
+	const LIT = 255;
+	AjarPulse pulse;            // the lane's pulse last fired
+	bool wasLive;
+	Sector shutter;
+	double top, bottom;
+	Array<int> lamps;           // the lamps: every sector tagged args[1] + k (sector numbers)
+	Array<int> lampOf;          // ... and which k
+	int dark;
+	// what the tests read: when the last pulse was fired and went, how, and its laps' tics
+	int firedAt, goneAt, gone;  // gone: 0 alive, 1 burnt out, 2 burst, 3 called back
+	int upAt, downAt;           // the tics the shutter was last full up and last back down
+	Array<int> lapAt;
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+
+	static AjarDelayShutter Find()
+	{
+		return AjarDelayShutter(ThinkerIterator.Create("AjarDelayShutter").Next());
+	}
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		let it = level.CreateSectorTagIterator(args[0]);
+		int i = it.Next();
+		if (i >= 0)
+		{
+			shutter = level.sectors[i];
+			bottom = shutter.CenterFloor();
+			top = shutter.FindLowestCeilingSurrounding() - 4;
+		}
+		for (int k = 0; k < args[2]; k++)
+		{
+			it = level.CreateSectorTagIterator(args[1] + k);
+			while ((i = it.Next()) >= 0)
+			{
+				lamps.Push(i);
+				lampOf.Push(k);
+				dark = level.sectors[i].lightlevel;
+			}
+		}
+		upAt = downAt = -1;
+	}
+
+	double PulseSpeed()
+	{
+		let it = ThinkerIterator.Create("AjarPulseEmitter");
+		Actor e;
+		while (e = Actor(it.Next())) if (e.args[2]) return e.args[0] ? e.args[0] : 20;
+		return 20;
+	}
+
+	bool Live() { return pulse && pulse.bMissile; }
+	int Left() { return Live() ? args[2] - pulse.laps : 0; }
+	bool Up() { return shutter && shutter.CenterCeiling() >= top - 0.01; }
+	bool Down() { return shutter && shutter.CenterCeiling() <= bottom + 0.01; }
+
+	void Fired(AjarPulse p)
+	{
+		pulse = p;
+		firedAt = level.maptime;
+		goneAt = -1;
+		gone = 0;
+		lapAt.Clear();
+	}
+
+	void Lap(AjarPulse p)
+	{
+		lapAt.Push(level.maptime);
+		let h = AjarHandler(EventHandler.Find("AjarHandler"));
+		if (h) h.delayFirstLap = true;
+		int left = args[2] - p.laps;
+		let mo = players[consoleplayer].mo;
+		if (mo) mo.A_StartSound("switches/normbutn", CHAN_AUTO, CHANF_DEFAULT, 1.0, ATTN_NONE);
+		if (left <= 0)
+		{
+			p.burnt = true;
+			p.ExplodeMissile();
+		}
+		if (h) h.Say(left > 0 ? String.Format("Tick. %d to go.", left) : "Tick. The pulse has burnt out.");
+	}
+
+	override void Tick()
+	{
+		Super.Tick();
+		bool live = Live();
+		if (wasLive && !live)
+		{
+			goneAt = level.maptime;
+			gone = !pulse ? 2 : pulse.burnt ? 1 : pulse.recalled ? 3 : 2;
+			if (gone == 2)
+			{
+				let h = AjarHandler(EventHandler.Find("AjarHandler"));
+				if (h) h.Say("The pulse burst on the end of its lane.");
+			}
+		}
+		wasLive = live;
+		if (shutter)
+		{
+			double c = shutter.CenterCeiling();
+			if (live && c < top)
+			{
+				shutter.MoveCeiling(SPEED, top, -1, 1, false);
+				if (Up()) upAt = level.maptime;
+			}
+			else if (!live && c > bottom)
+			{
+				shutter.MoveCeiling(SPEED, bottom, -1, -1, false);
+				if (Down()) downAt = level.maptime;
+			}
+		}
+		int left = Left();
+		for (int i = 0; i < lamps.Size(); i++)
+		{
+			int want = lampOf[i] < left ? LIT : dark;
+			Sector s = level.sectors[lamps[i]];
+			if (s.lightlevel != want) s.SetLightLevel(want);
+		}
+	}
+}
+
 // --- the checks: MAP=CLOCK MODE=1..7 tools/smoke.sh -----------------------
 // A pulse is watched as it passes a mark (x 1900, in every loop of the
 // gallery, going east): the tic it passed, to a fraction of a tic, where it
@@ -237,6 +434,7 @@ extend class AjarHandler
 {
 	const CLOCK_MARK = 1900;
 	AjarClockWatch clockW;
+	bool delayFirstLap;         // MAP18: a lane's pulse has made a lap (the ambushes of cause 50)
 	int clockRun, clockRunFrom, clockPhase, clockT1, clockT2, clockT3, clockCase, clockN;
 	int clockDeaths, clockDeathTic, clockDeathLine;
 	Vector3 clockDeathPos;

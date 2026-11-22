@@ -478,7 +478,11 @@ class AjarHandler : EventHandler
 			int g = a.args[0];
 			if (!a.armed)
 			{
-				if (g > 40)                                     // MAP17: the order that opens tag g - 40 is filled
+				if (g == 50)                                    // MAP18: the first lap a pulse has made (clock.zs)
+				{
+					if (!delayFirstLap) continue;
+				}
+				else if (g > 40)                                // MAP17: the order that opens tag g - 40 is filled
 				{
 					if (!CheckerOpened(g - 40)) continue;
 				}
@@ -1125,8 +1129,9 @@ class AjarHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "MAP15") Check("outBySecretWayOut", e.NextMap ~== "MAP32");
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
-		// MAP17's way out leads into MAP17 again: its tests end with the level
+		// MAP17's and MAP18's tests end with the level: the next map must not take the test up
 		if (level.mapname ~== "MAP17") CVar.FindCVar("ajar_autotest").SetInt(0);
+		if (level.mapname ~== "MAP18" && e.NextMap ~== "MAP18") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1291,6 +1296,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
 		else if (level.mapname ~== "MAP10" && mode == 3) LongWayScript(mo, t);
 		else if (level.mapname ~== "MAP17") MadeToOrderScript(mo, t, mode);
+		else if (level.mapname ~== "MAP18") TimeAndMotionScript(mo, t, mode);     // map18.zs
 		else if (level.mapname ~== "MAP32") return;        // its views are map32.zs's (Views32)
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);

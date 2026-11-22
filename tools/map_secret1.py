@@ -22,6 +22,11 @@ once; what is in a box is all that a trip gives. See src/zscript/time.zs and too
   rocket launcher, BFG), hall 2 a cyberdemon early.
 - A hall is entered by a step down that cannot be climbed, and left by a
   steel door that opens when nothing in it is left alive.
+- When all three are won the last way out leads back to the first hall, to
+  a seat: the lights go down, a screen comes down, and on it are the
+  player's deaths (time.zs, "the reel"). The seat is in fact in the
+  screening room, a copy of hall 1's front off the map, so that what is
+  played in hall 1 for the camera is not seen round the seat.
 """
 import os
 
@@ -179,6 +184,49 @@ def spots(kind, *at):
         m.thing(x, y, kind)
 
 
+def front(k, x, y, w, h, blocks, ceil, light, tag, *, upto=None, screen=False):
+    """Hall k's floor as fitted() lays it, x, y its south-west corner: with
+    a look the bands of light the screen throws before it and the rows of
+    seats, and its pillars and banks (`blocks`, relative to the corner, in
+    its colour); every sector tagged `tag`. `upto`: only the part of it so
+    far north of its south wall, a wall of its own there (the screening
+    room); what reaches past it is cut off there. `screen`: the big screen
+    for the reel before the way in (time.zs): a slice 8 deep and 512 wide,
+    sector tag REEL_TAG, whose ceiling comes down; its north face is the
+    camera's view, AJREEL. Returns the hall's light (the lights down)."""
+    cx = x + w // 2
+    W = "G" if ceil > 256 else "H"                  # the hall's wall is as tall as the hall
+    seats = []
+    if LOOK:
+        # the lights are down: the hall is dark but for what the screen
+        # throws on the floor before it; then the seats
+        light = gfx_cinema.LIGHT[LOOK] - (gfx_cinema.HALL_DIM.get(k, 0) if LOOK == gfx_cinema.HALL_LOOK else 0)
+        seats = [((x, y, x + w, y + 96), dict(light=light + 40)),
+                 ((x, y + 96, x + w, y + 192), dict(light=light + 20))] + rows(k, x, y, w, h)
+    if screen:
+        seats = seats + [((cx - 256, y, cx + 256, y + 8), dict(id=ajartime.REEL_TAG))]
+        m.line((cx - 256, y + 8), (cx + 256, y + 8), upper="AJREEL", exact=True, lit=255)
+    feats = seats + [((x + a, y + b, x + c, y + d), dict(floor=ceil, **dress(side=W)) if look.get("pillar") else look)
+                     for (a, b, c, d), look in blocks]
+    top = y + h
+    if upto is not None:
+        top = y + upto
+        feats = [((a, b, c, min(d, top)), look) for (a, b, c, d), look in feats if b < top]
+    ajarmap.fitted(m, (x, y, x + w, top), feats, ceil=ceil, light=light, id=tag, **dress(wall=W, ftex="HF", ctex="HC"))
+    return light
+
+
+def way_in(cx, y, ceil, *, deep=320, screen_id=0):
+    """The way into a hall whose south wall is at y: a step down (from a
+    corridor `deep` long), and over it the screen, lit, on which time.zs
+    counts down (line id `screen_id`: with it, the hall has a show)."""
+    m.sector(rect(cx - 128, y - deep, cx + 128, y), floor=UP, ceil=160, light=170,
+             **dress(wall="W", side="SP", ftex="FF", ctex="FC"))
+    if LOOK:
+        m.line((cx - 128, y), (cx + 128, y), upper=tx("R0" if ceil > 256 else "Q0"), exact=True, lit=255,
+               **({"id": screen_id} if screen_id else {}))
+
+
 class Hall:
     def __init__(self, k, x, y, w, h, blocks, *, ceil=256, light=190, last=False, open=False):
         global HALL
@@ -189,33 +237,15 @@ class Hall:
             blocks = [(r, {p: gfx_cinema.hall_name(v, k) if isinstance(v, str) else v for p, v in look.items()})
                       for r, look in blocks]
         self.solid = [(x + a, y + b, x + c, y + d) for (a, b, c, d), _ in blocks]      # pillars and banks
+        self.blocks, self.ceil, self.light = blocks, ceil, light       # for screening_room()
         cx, cy = self.cx, self.cy = x + w // 2, y + h // 2
         W = "G" if ceil > 256 else "H"                  # the hall's wall is as tall as the hall
-        seats = []
-        if LOOK:
-            # the lights are down: the hall is dark but for what the screen
-            # throws on the floor before it; then the seats
-            light = gfx_cinema.LIGHT[LOOK] - (gfx_cinema.HALL_DIM.get(k, 0) if LOOK == gfx_cinema.HALL_LOOK else 0)
-            seats = [((x, y, x + w, y + 96), dict(light=light + 40)),
-                     ((x, y + 96, x + w, y + 192), dict(light=light + 20))] + rows(k, x, y, w, h)
-        if k == 1:
-            # the big screen, for the reel when all is over (time.zs): a slice
-            # of the hall before the way in whose ceiling comes down, 512 wide;
-            # what a camera sees is on its face. Until then it is not there.
-            seats = seats + [((cx - 256, y, cx + 256, y + 8), dict(id=ajartime.REEL_TAG))]
-            m.line((cx - 256, y + 8), (cx + 256, y + 8), upper="AJREEL", exact=True, lit=255)
-            m.thing(cx, y + 420, 14, angle=270, id=ajartime.REEL_TAG)        # where the last way out leads: a seat for it
-        ajarmap.fitted(m, (x, y, x + w, y + h), seats +
-                       [((x + a, y + b, x + c, y + d), dict(floor=ceil, **dress(side=W)) if look.get("pillar") else look)
-                        for (a, b, c, d), look in blocks],
-                       ceil=ceil, light=light, id=ajartime.show_tag(k), **dress(wall=W, ftex="HF", ctex="HC"))
+        # (the big screen and the seat for the reel are not here but in the
+        # screening room, a copy of hall 1's front: screening_room())
+        light = front(k, x, y, w, h, blocks, ceil, light, ajartime.show_tag(k))
         ajartime.zone(m, k, 0, x, y, x + w, y + h, grow=72, open=open)
-        # the way in: a step down
-        m.sector(rect(cx - 128, y - 320, cx + 128, y), floor=UP, ceil=160, light=170,
-                 **dress(wall="W", side="SP", ftex="FF", ctex="FC"))
-        if LOOK:                                        # over the way in: the screen, lit; time.zs counts down on it
-            m.line((cx - 128, y), (cx + 128, y), upper=tx("R0" if ceil > 256 else "Q0"), exact=True, lit=255,
-                   id=ajartime.show_tag(k))
+        # the way in: a step down; over it the screen, lit; time.zs counts down on it
+        way_in(cx, y, ceil, screen_id=ajartime.show_tag(k))
         ajartime.zone(m, k, 0, cx - 128, y - 128, cx + 128, y)
         # the time doors
         # the time doors: in a look their surround is dark, and so is a
@@ -286,7 +316,8 @@ class Hall:
             over((cx - 32, y - 320), (cx + 32, y - 320), "W")
         if last:
             m.cut(*self.on)
-            # the way out leads back to the first hall, for the reel; the level ends after it
+            # the way out leads back to the first hall (as the player sees it:
+            # to the screening room), for the reel; the level ends after it
             m.line(*self.on, special=70, args=(ajartime.REEL_TAG,), playeruse=True, repeatspecial=True, mid="AJEXIT", exact=True)
         HALL = 0
 
@@ -315,6 +346,58 @@ class Hall:
 # half of the last is still alive, so that they are in each other's fire and
 # fight each other. (A fight that is long is long to watch again from a box.)
 h1 = Hall(1, -192, 0, 1152, 960, pillar(256, 352) + pillar(832, 352) + platform(192, 576) + platform(768, 576))
+
+
+# === the screening room: where the reel is watched =========================
+# Vadim (2026-11-22): in the reel, a clip of hall 1 had its monsters walking
+# round the seat, as if the demo played in the room. The engine cannot show a
+# thing to a camera and hide it from the player, so the player does not sit
+# in hall 1: the last way out leads here, to a copy of hall 1's front far
+# north of everything (in no zone of time.zs: no fight, box or lobby is near),
+# and hall 1 itself is only filmed. From the seat, looking at the screen, it
+# is hall 1: its floor, rows, bands of light and pillars, its walls and
+# ceiling in its colour, the way in with the step down (a corridor that ends
+# in a wall, where hall 1's leads to the foyer: it is behind the screen once
+# that is down) and the screen over it as a won fight leaves it, time door 1
+# shut in the west wall (its dark surround and lintel; no portal, no line
+# id). It has no zone, no time door, no box, no glass and nothing of a
+# show: only its sectors' tag REEL_ROOM, whose lights the reel puts down
+# (time.zs), and the reel's screen and seat. Its lines are not on the map.
+ROOM_DY = 4096      # how far north of hall 1 (a multiple of 64: walls and flats lie as there)
+ROOM_DEEP = 448     # how much of hall 1's front: the seat is 420 from the screen, a wall 28 behind it
+ROOM = set()        # its sectors
+
+
+def screening_room(h, dy):
+    global HALL
+    HALL = h.k
+    first = len(m.sectors)
+    x, y, w = h.x, h.y + dy, h.w
+    cx = x + w // 2
+    W = "G" if h.ceil > 256 else "H"
+    front(h.k, x, y, w, h.h, h.blocks, h.ceil, h.light, ajartime.REEL_ROOM, upto=ROOM_DEEP, screen=True)
+    m.thing(cx, y + 420, 14, angle=270, id=ajartime.REEL_TAG)        # where the last way out leads: a seat for it
+    way_in(cx, y, h.ceil)
+    # time door 1, shut, as ajartime.hall_door makes it but for the portal:
+    # a recess 16 deep in the door's surround, the door's face at its back
+    a, b = (x, y + 96), (x, y + 160)
+    c, d = (x - ajarmap.DEPTH, y + 96), (x - ajarmap.DEPTH, y + 160)
+    trim, flat = (tx("TT"), tx("TT")) if LOOK else (f"AJTR{ajartime.TIME}", f"AJTF{ajartime.TIME}")
+    m.sector([a, b, d, c], floor=0, ceil=ajarmap.DOOR_H, light=176, wall=trim, ftex=flat, ctex=flat)
+    m.line(c, d, mid=f"AJDR{ajartime.TIME}")
+    over(a, b, "T" + W)
+    HALL = 0
+    ROOM.update(range(first, len(m.sectors)))
+
+
+def unmapped(ld, sides, a, b, si, other, tex):
+    """The screening room's lines are not drawn on the automap."""
+    if si in ROOM or other in ROOM:
+        ld["dontdraw"] = True
+
+
+screening_room(h1, ROOM_DY)
+m.line_hook = unmapped
 if LOOK:
     # the foyer: a runner from the street doors to the way in, lamps, the box
     # office (shut) on the west wall, a bench on the east, posters of the

@@ -8705,6 +8705,103 @@ go in sections of their own at the end of this file.
   a doorway that leads one way from one face and another from the other,
   for walking, sight, shots, monsters and sound.
 
+### The first version, as decided (2026-11-22, after the clock lab)
+
+Vadim, the same evening, to the outline above: yes; "some sign maybe would
+be useful" on the one-sided doorways; the name "Time and Motion" "is ok".
+What follows is Claude's, settled so that a first version can be built;
+none of it has been played. The clock lab's results are in "The clock lab";
+the one-sided doorway lab was still running, so the three doorways below are
+sites kept free, built in a task after it.
+
+**One change from the outline: the pulse is the run's clock.** The outline
+had two steps (a gate held by the beat, then a lever with seconds). The lab
+showed that frames on one line along a corridor are walls to each other, so
+"the nearer the frames, the faster the beat" needs a lane for each length;
+and a gate that only asks for a fast beat is one hanging. So instead:
+
+- **The delay hall** has three delay lines, lanes 2048, 1024 and 512 long,
+  each with a frame in its west end and one in its east end facing it, an
+  emitter and a lever. A pulled lever fires that lane's pulse and **raises
+  the night room's shutter at the other end of the building. The shutter
+  stays up while the pulse lives.** A pulse lives for LAPS passes of its own
+  lane's contact (4 to begin with) and then burns out; with no loop it
+  bursts on the lane's end and the shutter is hardly up at all.
+- So the time for the run is the length of the loop: a Pair in the long
+  lane gives about 11 seconds (4 laps of 98 tics at speed 20), in the short
+  one 3. **Two lanes joined by both Pairs** (the east end of one to the west
+  end of the other, and back) make one loop of both lengths: about 17
+  seconds.
+- **The doors are one budget for two uses**: a door in the delay hall makes
+  the clock longer, a door on the track makes the way shorter. Both Pairs in
+  the lines and the whole way run on foot; one Pair in the long lane and the
+  other on the track; the short lane and a very good track: each is an
+  answer, and the stopwatch is the only judge. Pulling again calls the
+  pulse back and starts again; nothing is used up.
+- What is shown: the beats left, counted down with a tick at every lap
+  wherever the player is, and as lamps at the levers and at the shutter.
+- No frame nearer than about 1000 units on foot to the levers or to the
+  shutter, and no far side either, so no single door is the whole track.
+- Tuning (numbers from the generator's own measure of the ways, on foot at
+  16.7 units a tic, a plain run): with nothing hung on the track the long
+  lane alone must not be enough (the way takes about a third longer than
+  its time); both Pairs in two lanes must be enough for a clean run on
+  foot; the long lane with one good link must leave a few seconds spare.
+
+**The doors**: both TEAL leaves (in the entrance hall, at the start), both
+ORANGE leaves (the far east, upper floor), RED (far side in the lift's car:
+the moving room), GREEN (far side in the basement stores, the best end for
+a track, the door itself the furthest find), BLUE (far side on the court's
+north wall, the middle of everything).
+
+**The building**, about 8000 x 4000, the court in the middle; floors are
+areas at their own heights (basement -256, ground 0, upper 256), joined by
+the stair, the lift and the canteen's steps:
+- *Entrance hall and cloakroom* (start, south of the court). Frame.
+- *The court*: open sky, the clock tower in its middle is the inside-out
+  booth: four fixed faces, onto the four walls of the hall with no size.
+- *The yard* (south-west, open): the long way round to the delay hall.
+- *The delay hall* (west, ground): the three lanes, the levers at its west
+  end.
+- *The stairwell* (north-west): one straight flight up to the upper west
+  floor, a frame at its foot facing up the flight and one at its head
+  facing down: the endless stair.
+- *Upper west*: the clockmakers' offices and the hall with no size (its
+  four openings show the court north, east, south and west from the tower).
+- *The rotunda* (east of the court): eight-sided, frames in its north, east
+  and west walls, a pillar with a stub of wall to the south wall and a
+  frame in each face of the stub (round the pillar). The arena.
+- *The lift* (further east): basement, ground, upper east; RED's far side in
+  the car.
+- *Upper east*: the six-sided hall (two slanted walls joined to each other
+  for good, so it is already an endless row; frames in the two straight
+  walls, and a Pair there makes it a honeycomb; the last two walls are its
+  doorways) and the square room that is its own neighbour (north joined to
+  south for good, frames east and west).
+- *The canteen and kitchen* (south-east), steps down to the basement.
+- *The basement*: stores (GREEN's far side), the boiler room, and at its
+  east end the night room behind the shutter.
+- **Three sites for one-sided doorways**, built later: between the court and
+  the rotunda (the way east is longer than the way back west: it is the
+  run's direction); a porter's hut in the yard (bigger inside: the archive);
+  the cloakroom's doorway (the turn-round: looking back from the cloakroom
+  it shows the upper west offices). Each with a sign on the odd face.
+
+**No solver PUZZLE**: five doors and some twenty-five frames with nothing
+locked are too many arrangements to search and none can be stuck. The
+generator checks instead, in the build: every area and every frame reached
+on foot from every other with no door hung; the ways and times above.
+
+**Fights**: 200 to 250 with ambushes, the usual kind, thickest in the
+rotunda, the court and the basement; company when each door is first taken
+and the first time a pulse makes a full lap. Each paradox has something in
+it worth the hanging (a fight that goes better, a cache seen from there).
+
+**Left for later tasks**: the one-sided doorways; the look (the first
+version wears MAP11's); the secret (candidates: all three lanes in one loop,
+which needs a coloured door's far side in the hall; a second shutter that
+wants the short lane's time).
+
 ## The clock lab (built 2026-11-22)
 
 `tools/map_clock.py`, `src/zscript/clock.zs`; `MAP=CLOCK ./run.sh`,
@@ -9390,6 +9487,246 @@ through it and come, and are sent to the far room; and a monster throwing
 from right at the face hits the plain room, so "one-way sight in a fight"
 (the outline's and the idea's) wants the missile fix before it is built
 into a level.
+
+## MAP31: the reel is watched from a room apart (built 2026-11-22)
+
+Vadim, after playing the end of MAP31: "when I watch final movie, for
+action in yellow auditorium, monsters are also walking there (like demo is
+played right here). Can we remove it, so I see everything on the screen
+only?" (it was under Known in "MAP31: the reel": a clip of hall 1 was played
+round the seated player). **Not played by hand.**
+
+- **Why a second room**: a clip is staged with puppets in the hall where it
+  happened, before a camera. The engine cannot show a thing to a camera and
+  hide it from the player, so the player no longer sits in hall 1. The seat
+  and the big screen are in **the screening room**, a copy of hall 1's front
+  4096 north of it (`map_secret1.py`, `screening_room()`; x -192 to 960, y
+  4096 to 4544, the corridor of the way in south of it to 3776). It is in no
+  zone, far from every hall, box and lobby; nothing in it but its sectors'
+  tag 3071 (`ajartime.REEL_ROOM`), the screen (sector tag 3070, `AJREEL`
+  face) and the seat (thing 14, tid 3070, 420 from the screen, facing south).
+  Its lines are not drawn on the automap (`dontdraw`, through the map's
+  `line_hook`). The last way out's teleport (`special 70`, tid 3070) is
+  unchanged and now leads there. **Hall 1 has neither screen nor seat now.**
+- **What it copies**: the part of `Hall.__init__` that lays a hall's floor
+  is a helper now, `front()` (bands of light, rows of seats, pillars and
+  banks in the hall's colour, cut off `upto` north of the south wall), and
+  `way_in()` (the step down and the lit screen over it); both halls and the
+  room use them. MAP31 built with the helper and the old layout was byte for
+  byte the old map. The room is hall 1 from its south wall to 448 (a wall in
+  the hall's texture 28 behind the seat), its full width: the same floor,
+  ceiling height and textures, light bands, the first three rows, both
+  pillars, the screen over the way in as a won fight leaves it (`Q0`), and on
+  the west wall time door 1 shut (its dark surround and lintel, the door's
+  face at the back of the 16-deep recess; no portal, no line id).
+  Not copied: the way in is a corridor that ends in a wall where hall 1's
+  opens into the foyer (seen only while the screen comes down: it is behind
+  the screen once that is down); the two box windows that begin at y 400 on
+  the side walls (right beside the seat, out of the view); everything north
+  of 448 (behind the player, who cannot turn).
+- **The trigger** (`time.zs`, `WorldTick`): every fight won, idle, and the
+  player within 48 of the seat (`Seat()`, the thing with tid 3070); no
+  longer "in hall 1's zone".
+- **The lights**: the room's sectors are kept with the halls' show sectors
+  under their own `showFight` (`SCREENING`, -1), so no fight's show and no
+  `HouseLights(k)` touches them; at load they are put up (232) as hall 1's
+  are, and `StartReel` puts them down at once (`HouseLights(SCREENING, 0)`:
+  the map's light of each, as hall 1's own, bands included), as it did hall
+  1's. Hall 1 is left lit, as a won hall, so a clip of it is lit as the
+  others' are.
+- **The camera** waits until the first clip in hall 1, where the seat would
+  be there (the room's offset from hall 1 found from their sectors' corners,
+  `TagBox`), looking back over the hall as before: while the screen comes
+  down it shows hall 1's rows, lit; never the room. `Aim`, `Stage` and the
+  rest of the reel are unchanged; `StartReel` still hides hall 1's bodies and
+  what was dropped there, and makes the player unseen.
+- **Not changed**: halls 2 and 3, the fights, zones and boxes; what is seen
+  from the seat (the hall's front, the lights going down, the screen coming
+  down, captions, USE for the next, THE END, the level ending), but that
+  nothing walks in the room any more.
+
+Tests (`SecretScript`, `MAP=MAP31 MODE=3 TIMEOUT=300`): the walk now goes by
+the last way out's own line (its teleport) instead of being put at the seat.
+New checks: `seatedApart` (the player at the seat, in the room, in no zone;
+the camera in hall 1), `hall1OnScreenOnly` (the clip of hall 1's last to
+fall is held 70 tics; 40 in, every puppet seen is in hall 1 and none near
+the room, which holds nothing seen but the seat and the unseen player: 51
+and 53 puppets in the two runs), `lightsDownThere` (the room down, hall 1 up);
+`theReelBegins` checks the room's light down and hall 1's up. The skipping
+of the other clips, `lastScenesOnScreen` and `theEnd` were moved to fit the
+hold. Two runs: 62 checks each, none failed (59 of the old ones, of which
+PLAN last recorded 58; and the 3 new). `smoke_MAP31_3.cfg` takes 17 pictures
+now: the 15th is the screen coming down (hall 1's rows on it, the corridor
+under it), the 16th a clip of hall 2, the 17th the clip of hall 1
+(`build/smoke31_3b/` in the worktree: the room dark with the screen down,
+the clip on it, nobody in the room; the old pictures of 2026-11-18 framed
+the same). Also run, alone each: `MAP=MAP31 MODE=5` 4, `MODE=6` 10, `MODE=7`
+16, `MAP=TIME MODE=3` 14, none failed. `mapcheck` 0 problems; `thingcheck`
+the same 2 as the old map gives (two of hall 2's things on one spot); `itemcheck` 0.
+
+## MAP18 "Time and Motion": the first playable version (built 2026-11-22)
+
+Built as decided in "MAP18: the clock department" above (its subsection
+"The first version, as decided"), on branch `map18`. `MAP=MAP18 ./run.sh`
+in the worktree plays it; MAP17's way out now leads to it, and its own way
+out starts it again.
+
+**What is where.** About 8000 x 4000; basement -256, ground 0, upper 256.
+785 sectors, 408 things (198 monsters placed, 31 ambush spots).
+- `tools/map_clockdept.py`: the level. Ground, west to east: the yard (open,
+  the city sky; the porter's hut, frames 119 west wall and 120 south wall);
+  the regulator room (the three levers on its west wall in the lanes'
+  order, four lamps between the first two, glass onto the hall, its only
+  door to the yard); the delay hall (lanes at y 1440, 1664, 1888: the long
+  lane's frames 101/102 in the hall's west and east walls, the middle's
+  103/104 and the short's 105/106 with the west frames on piers; an emitter
+  near each east end firing east and a bright band, the contact, just west
+  of it); the north corridor (128); the stair hall, the foot (107, facing
+  up the flight), one straight flight of 16 steps, the head (108, facing
+  down it). The porch, the entrance hall (the start, both TEAL leaves, 118),
+  the cloakroom, the way east. The court (open; the clock tower in the
+  middle, BLUE's far side on its north wall, 127 on its south wall). The
+  corridor court to rotunda. The rotunda (eight-sided, a pillar, a stub
+  from it to the south wall; 109 north, 110 east, 111 west, 112 and 113 in
+  the stub's faces); the lift (car 192 square, RED's far side in its south
+  wall; landings basement east, ground west, upper north; a button for
+  each floor in the car and a call button at each landing). The canteen,
+  the kitchen (121 in the canteen's south wall), the kitchen's steps down
+  (16 steps). Basement: the stores (GREEN's far side, 122, 123), the cellar,
+  the corridor under the lift, the boiler room, the shutter (64 wide, in the
+  boiler room's north wall, four lamps beside it), the night room
+  (`way_out`, now with `floor`). Upper: the spine (704..7936), the drawing
+  office, the hall with no size, the workshop, four offices (124 in the
+  second), the archive, the timekeepers (125), the six-sided hall (114
+  north, 115 south), the room that is its own neighbour (116 east, 117
+  west), the regulator store (both ORANGE leaves, 126). 28 frames.
+- The measure (in the same file, run whenever the level is built; the build
+  fails if a rule is broken): a waypoint graph over 45 convex areas (328
+  nodes: the middles of openings, 32 in front of each frame and far side,
+  the levers, the shutter, the corners round each obstacle kept 24 off),
+  straight lines inside an area unless they cross an obstacle grown by the
+  player's radius, stairs measured flat, the lift's ride 4 units a tic with
+  the car waiting, a hung door 32. Shortest ways by Dijkstra; "everything
+  hung" by a search over (where, doors used). It prints its figures after
+  the solver's and puts the two ways it found into the level as MapSpots
+  (way A 1861 on, its doors on 1860 and 1859; way B 1901 on) for the tests.
+- `src/zscript/clock.zs`: an emitter with args[2] a lane calls back every
+  lane's pulse when fired; `AjarLaneContact` (20130, args[0] the lane)
+  counts only its lane's pulse; `AjarDelayShutter` (20131: the shutter's
+  tag, the lamps' first tag, LAPS) moves the shutter as the metronome moves
+  the clock lab's gate (8 a tic, to 4 under the lowest ceiling beside it,
+  never crushing) up while a lane's pulse lives and down otherwise; lamps
+  lit = laps left; a tick (`switches/normbutn`, no attenuation) and "Tick. 3
+  to go." at every lap, "Tick. The pulse has burnt out." at the last, "The
+  pulse burst on the end of its lane." when it hits a wall. The clock lab's
+  classes are otherwise unchanged.
+- `src/zscript/map18.zs`: the smoke tests. `ajar.zs`: ambush cause 50 (a
+  lane's pulse has made its first lap); MAP18's scripts; MAP18's way out
+  ends a scripted run (the autotest is switched off as it restarts).
+
+**The rules as built.** `LAPS = 4`, `SPEED = 20` (the two named constants at
+the top of the generator). A pulse lives from the pull to its fourth pass
+of its own lane's contact: the long lane 413 tics, the middle 209, the
+short 106; lanes 1+2 joined 625, 1+3 522, 2+3 317 (laps 104, 52.8, 27.2,
+156.8, 131.2, 80.0). With no loop it bursts on the lane's east end in 8
+tics. Pulling any lever calls back the pulse alive in the hall (one in the
+hall at a time) and starts the count again; the shutter stays up across
+the pull.
+
+**The ways** (the generator's measure, at 16.7 a tic): lever to shutter on
+foot 9078 (544 tics); best with ORANGE only 3202 (192), RED only 2367 (142:
+RED in 119 in the yard, the car waiting in the basement), GREEN only 3496
+(209), BLUE only 6458 (387); with everything the search finds nothing
+better than RED alone (2367). So: the long lane alone with nothing on the
+track is not enough (the way is 1.31 of its time); both Pairs joining lanes
+1 and 2 and the way on foot: 81 tics spare; the long lane and RED: 272 tics
+spare. The nearest frame or far side is 1125 on foot from a lever, 1211
+from the shutter. How good the measure is: the scripted runs below walked
+its ways at 16.7 a tic and took 163 tics for way A (measured 142) and 564
+for way B (544): the turns, the doors and the car's start cost some 20
+tics the graph does not see. The real spare is so 251 and 61 tics.
+
+**Fights.** Skill 3: 229 monsters (imp 84, sergeant 31, zombie 25,
+chaingunner 16, spectre 15, demon 14, knight 14, revenant 14, cacodemon 9,
+mancubus 3, lost soul 3, baron 1), hit points 29840, ammunition 59950
+(x2.01; MAP15 x2.08, MAP16 x1.64); skill 1: 116 (x3.54). Weapons as MAP15
+to MAP17: shotgun at the start, chaingun and a backpack in the cloakroom,
+the super shotgun in the court, the rocket launcher in the rotunda, the
+plasma rifle in the regulator store. Ambushes on the first take of a TEAL
+leaf, an ORANGE leaf, RED, GREEN and BLUE, and the first lap of a pulse
+(the yard, the canteen and the basement fill). Caches for the paradoxes:
+the long lane's west end, the stair's foot (seen from the head), blue
+armour riding in the car, a megasphere by the stub, cells in the six-sided
+hall, a soul sphere in the room that is its own neighbour, the super
+shotgun in the court (seen from the hall with no size).
+
+**The one-sided sites** (`# ONESIDE site n` in the generator): 1, the
+corridor from the court to the rotunda, with free ground north of it (x
+4992..5440, y 2368..2944) for the longer way; 2, the porter's hut (256
+square, a plain door from the yard), its inside to go in the free ground
+south of the yard (x 256..1280, y -1088..-320); 3, the cloakroom's doorway
+off the entrance hall. All plain for now.
+
+**Checks** (2026-11-22, the full `./build.sh` with the solver):
+- The build: every solver result as before; MAP18's figures as above.
+- thingcheck, itemcheck, mapcheck on `map_clockdept`: 0 problems each.
+- `MAP=MAP18 MODE=1`: 8 checks and `levelExited`: TEAL in 101/102, RED in
+  119 and the car sent to the basement (the generator's best track), the
+  long lever, way A at 16.7 a tic; through the shutter 163 tics after the
+  pull (the pulse alive, one lap made), out by the night room.
+- `MODE=2`: 8 checks and `levelExited`: TEAL in 102/103, ORANGE in 104/101,
+  the long lever, way B on foot (the lift ridden ground to basement) at
+  16.7: at the shutter after 564 tics, the pulse alive with 3 laps; a lap of
+  the joined loop 157 tics.
+- `MODE=3`: 15 checks: nothing hung, the pulse bursts on 102's wall after 8
+  tics (the shutter up 56) and the shutter is down 7 tics later; the long
+  lane alone, way B on foot: burnt out after 414 tics, 4 laps, the player
+  then at the canteen's far end, and held at the shut shutter; a leaf taken
+  from 102 after the first lap: the pulse bursts there, 1 lap; a second pull
+  calls the first back (one pulse in the hall, the count from 0, the
+  shutter held up); the middle lane's lever calls the long lane's pulse back
+  and its own bursts.
+- `MODE=4`: 15 checks: laps of the long lane 104, 104, 104 tics, the middle
+  52, 53, 53, the short 27, 27, 28, lanes 1+2 157, 156, 157 (as their
+  lengths say); 4 counted each; the lamps (8, at the levers and the
+  shutter) count down; the shutter full up 21 tics after the pull and down
+  21 after the pulse went; the first lap's 9 ambushers came.
+- `MODE=5`: 24 checks: the long lane both ways; the endless stair both ways
+  (down the flight into 107, out of 108 at the head, 256 up; and up); RED in
+  128 into the car at each floor and back out; round the pillar (east and
+  west through the stub; north wall into the west wall); the six-sided hall
+  both ways; the room that is its own neighbour both ways; each of the hall
+  with no size's four walls out of the tower's face, outwards; and into the
+  tower from the court, into the hall.
+- `MODE=6`: 35 views of every area and paradox, looked at; fixed after the
+  first look: the sky (none was set: SKY2 now), the basement's light.
+- `MAP=CLOCK MODE=1..7`: 12, 12, 27, 24, 13, 10 and 7 checks, all passed
+  (as in "The clock lab"); `MAP=BELT MODE=1` 13 (one run had `impOnPBelt=0`,
+  the next passed all 13), `MAP=LAB MODE=1` 13, `MAP=MAP17 MODE=1` 42 and
+  `levelExited`, `MAP=MAP16 MODE=1` 50 and `levelExited`.
+- Every other map's wad and every graphic `gfx.make_all` makes (2744
+  entries) built byte for byte as from the branch's base `8aa288c`; the
+  only new entry is MAP18's wad. No new art.
+
+**Departures.** The short lane is no answer at LAPS 4: with no frame nearer
+than 1000 to a lever or the shutter, any way is at least 2000 (120 tics),
+more than the short lane's 106. The best single link is RED (a frame in the
+yard to the car in the basement), not GREEN as the outline guessed (GREEN's
+far side in the stores is 3496 against RED's 2367), and everything hung at
+once does no better than RED alone. The lamps are plain lit niches and the
+levers MAP11's lever picture (no signs, no new art); the tick is Doom's
+switch click. The ways are measured with the car waiting where it is
+needed (the player sends it first). The six-sided hall needed no fallback:
+its two other slanted walls are doorways through short necks.
+
+**Not tested / not played by hand.** The fights (the scripts remove the
+monsters; only the first lap's ambush was made to come); a monster or the
+player under the shutter as it comes down (it never crushes, as the clock
+lab's gate); the lift with monsters in it; the timings with real input
+(the runs set the player's speed); a pulse and a door taken from the far
+side of a Pair while it is in the doorway; the look in the hardware
+renderer; the level from MAP17's way out by a real exit. Not played by
+hand.
 
 ## The paradox: a self that wound time is pale (built 2026-11-22)
 

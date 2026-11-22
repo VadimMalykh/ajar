@@ -536,6 +536,41 @@ class AjarTimeHandler : EventHandler
 			}
 			HouseLights(k, 1);
 		}
+		// the reel's screening room (MAP31): its lights are as hall 1's, up
+		// until the reel puts them down. No fight's show touches them.
+		let it = level.CreateSectorTagIterator(REEL_ROOM);
+		int i;
+		while ((i = it.Next()) >= 0)
+		{
+			showSec.Push(i); showFight.Push(SCREENING); showDown.Push(level.sectors[i].lightlevel);
+		}
+		HouseLights(SCREENING, 1);
+		[reelLo, reelHi] = TagBox(REEL_ROOM);
+		Vector2 hi;
+		[reelHall, hi] = TagBox(ShowTag(1));
+	}
+
+	// The corners (south-west, north-east) of the sectors tagged `tag`; with
+	// none, the first is north-east of the second.
+	Vector2, Vector2 TagBox(int tag)
+	{
+		Vector2 lo = (1e9, 1e9), hi = (-1e9, -1e9);
+		let it = level.CreateSectorTagIterator(tag);
+		int i;
+		while ((i = it.Next()) >= 0)
+		{
+			Sector s = level.sectors[i];
+			for (int j = 0; j < s.lines.Size(); j++)
+			{
+				for (int e = 0; e < 2; e++)
+				{
+					Vector2 p = e ? s.lines[j].v2.p : s.lines[j].v1.p;
+					lo = (min(lo.x, p.x), min(lo.y, p.y));
+					hi = (max(hi.x, p.x), max(hi.y, p.y));
+				}
+			}
+		}
+		return lo, hi;
 	}
 
 	// up: 0 the lights are down, 1 they are up; over: a flash.
@@ -1505,12 +1540,31 @@ class AjarTimeHandler : EventHandler
 	// (stills: every thing's place and picture). A death keeps a copy. For
 	// the reel each is played with puppets in the hall where it happened,
 	// now empty, before a camera whose view is the screen's texture (AJREEL,
-	// animdefs.txt). The player is unseen meanwhile, so that a clip of the
-	// hall they sit in does not have them in it.
+	// animdefs.txt).
+	// Where the player sits is not hall 1 (2026-11-22, Vadim: in a clip of
+	// hall 1 the monsters walked round the seat): the engine cannot show a
+	// thing to the camera and hide it from the player, so the seat (tid
+	// REEL_TAG) and the screen (sector tag REEL_TAG) are in the screening
+	// room, a copy of hall 1's front far off the map (map_secret1.py), in no
+	// zone, its sectors tagged REEL_ROOM. Its lights go down for the reel;
+	// hall 1 itself is only filmed, lit as the other halls are. The reel
+	// begins when every fight is won and the player is at the seat. The
+	// player is unseen meanwhile all the same.
 	const REEL_LEN = 70;
 	const REEL_SLOW = 3;
 	const REEL_FALL = 12;       // tics to a frame of the fall (7 frames)
 	const REEL_TAG = 3070;
+	const REEL_ROOM = 3071;     // the screening room's sectors (ajartime.REEL_ROOM)
+	const SCREENING = -1;       // their showFight: no fight's
+	Vector2 reelLo, reelHi;     // the screening room's corners (none: lo is north-east of hi)
+	Vector2 reelHall;           // the south-west corner of hall 1, of which it is a copy
+
+	bool InReelRoom(Vector2 p, double grow = 0)
+	{
+		return p.x >= reelLo.x - grow && p.x <= reelHi.x + grow && p.y >= reelLo.y - grow && p.y <= reelHi.y + grow;
+	}
+
+	Actor Seat() { return level.CreateActorIterator(REEL_TAG).Next(); }
 	Array<AjarStill> recent;
 	Array<AjarClip> clips;
 	int reel;                   // 0 not yet, 1 the screen comes down, 2 clips, 3 the end, 4 over
@@ -1640,8 +1694,8 @@ class AjarTimeHandler : EventHandler
 		mo.bInvisible = true;
 		mo.vel = (0, 0, 0);
 		mo.pitch = -8;
-		// nothing lies between the seat and the screen (nor in a clip of this
-		// hall): the bodies of its fight and what they dropped are unseen
+		// a clip of hall 1 has nothing in it twice: the bodies of its fight
+		// and what they dropped are unseen (its puppets show them as they were)
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
 		while (a = Actor(it.Next()))
@@ -1652,9 +1706,16 @@ class AjarTimeHandler : EventHandler
 			[k, b] = Where(a.pos.xy);
 			if (k == 1 && b == 0) a.bInvisible = true;
 		}
-		HouseLights(1, 0);
+		// the lights go down where the player sits (the screening room, at
+		// once, as hall 1's did); hall 1 is filmed as it is, lit as a won hall
+		HouseLights(SCREENING, 0);
 		level.ExecuteSpecial(40 /* Ceiling_LowerByValue */, null, null, false, REEL_TAG, 16, 224);
-		cam = AjarCam(Actor.Spawn("AjarCam", mo.pos + (0, 0, 40)));
+		// until the first clip the camera is in hall 1, where the seat would
+		// be there, looking back over the hall: what the screen shows while it
+		// comes down is hall 1, never the screening room
+		Vector2 off = (0, 0);
+		if (reelLo.x <= reelHi.x) off = reelHall - reelLo;
+		cam = AjarCam(Actor.Spawn("AjarCam", mo.pos + (off, 40)));
 		cam.angle = mo.angle + 180;
 		TexMan.SetCameraToTexture(cam, "AJREEL", 55);
 		if (!clips.Size()) clips.Copy(kills);
@@ -2465,8 +2526,9 @@ class AjarTimeHandler : EventHandler
 		Rescue(PlayerPawn(mo));
 		int k, b;
 		[k, b] = Where(mo.pos.xy);
-		if (!reel && phase == IDLE && !comeBack && k == 1 && b == 0 && won.Size() >= Fights() && Fights() > 1
-			&& level.CreateSectorTagIterator(REEL_TAG).Next() >= 0)
+		Actor seat = reel ? null : Seat();
+		if (!reel && seat && phase == IDLE && !comeBack && won.Size() >= Fights() && Fights() > 1
+			&& mo.Distance2D(seat) < 48 && level.CreateSectorTagIterator(REEL_TAG).Next() >= 0)
 		{
 			StartReel(PlayerPawn(mo));
 			Tests(mo);
@@ -3109,6 +3171,48 @@ class AjarTimeHandler : EventHandler
 			if (showFight[i] == k && level.sectors[showSec[i]].lightlevel != (up ? SHOW_UP : showDown[i])) return false;
 		return HasShow(k);
 	}
+	bool RoomLight(bool up)             // is the screening room's light as it should be?
+	{
+		int n = 0;
+		for (int i = 0; i < showSec.Size(); i++)
+		{
+			if (showFight[i] != SCREENING) continue;
+			if (level.sectors[showSec[i]].lightlevel != (up ? SHOW_UP : showDown[i])) return false;
+			n++;
+		}
+		return n > 0;
+	}
+	int testHold;                   // MAP31 MODE=3: when the clip of hall 1 came on the screen
+	// While a clip of hall 1 is on: what is staged for it is in hall 1, and
+	// in the screening room nothing is seen but its fixtures.
+	bool OnScreenOnly(PlayerPawn mo)
+	{
+		int seen = 0;
+		for (int i = 0; i < puppets.Size(); i++)
+		{
+			AjarEcho e = puppets[i];
+			if (!e || e.bInvisible) continue;
+			seen++;
+			int k, b;
+			[k, b] = Where(e.pos.xy);
+			if (k != 1 || InReelRoom(e.pos.xy, 400)) { Console.Printf("AJARTEST info a puppet at (%d,%d), zone %d", e.pos.x, e.pos.y, k); return false; }
+		}
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		int there = 0;
+		while (a = Actor(it.Next()))
+		{
+			if (!InReelRoom(a.pos.xy, 400)) continue;
+			there++;
+			if (a.bInvisible || a.bNoSector || a is "TeleportDest") continue;      // the seat; the player, unseen
+			Console.Printf("AJARTEST info seen in the screening room: %s at (%d,%d)", a.GetClassName(), a.pos.x, a.pos.y);
+			return false;
+		}
+		int ck, cb;
+		[ck, cb] = Where(cam.pos.xy);
+		Console.Printf("AJARTEST info hall 1's clip: %d puppets seen, %d things in the screening room, the camera in zone %d,%d", seen, there, ck, cb);
+		return seen > 3 && ck == 1 && !InReelRoom(cam.pos.xy, 400) && there >= 2;
+	}
 	void SecretScript(PlayerPawn mo)
 	{
 		static const int hx[] = { -192, 2752, 5696 };
@@ -3125,11 +3229,33 @@ class AjarTimeHandler : EventHandler
 		{
 			int v = t - 3 * (540 + 2 * D);
 			if (v == 0) Check("secrets", level.total_secrets == 1);
-			// the reel: by the last way out to the seat in hall 1; two deaths in halls were kept
-			if (v == 6) Go(mo, 384, 420, 0, 270);
+			// the reel: by the last way out (its own teleport) to the seat, which is in the screening
+			// room; two deaths in halls were kept
+			if (v == 6)
+			{
+				for (int i = 0; i < level.lines.Size(); i++)
+					if (level.lines[i].special == 70 && level.lines[i].args[0] == REEL_TAG)
+					{
+						level.ExecuteSpecial(70, mo, level.lines[i], false, REEL_TAG);
+						break;
+					}
+			}
+			if (v == 10)
+			{
+				int sk, sb, ck, cb;
+				[sk, sb] = Where(mo.pos.xy);
+				Vector2 cp = (0, 0);
+				if (cam) cp = cam.pos.xy;
+				[ck, cb] = Where(cp);
+				Actor seat = Seat();
+				Console.Printf("AJARTEST info seated at=(%d,%d) zone=%d,%d cam=(%d,%d) zone=%d,%d", mo.pos.x, mo.pos.y, sk, sb, cp.x, cp.y, ck, cb);
+				// and the camera waits in hall 1 until the first clip, not in the room
+				Check("seatedApart", reel == 1 && seat && mo.Distance2D(seat) < 48 && InReelRoom(mo.pos.xy) && !sk && sb < 0
+					&& cam && ck == 1 && cb == 0 && !InReelRoom(cp, 400));
+			}
 			if (v == 10) Check("bigDeathsKept", kills.Size() == 3 && kills[0].big >= BIG && kills[0].stills.Size() > 10 && kills[0].what != "");
 			if (v == 10) Console.Printf("AJARTEST lastKills=%d clips=%d", lastKills.Size(), clips.Size());
-			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 3 + lastKills.Size() && mo.bInvisible && ShowLight(1, false));
+			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 3 + lastKills.Size() && mo.bInvisible && RoomLight(false) && ShowLight(1, true));
 			if (v == 10) Check("aLastKillForEveryHall", lastKills.Size() == Fights() && lastKills[0].fight == 1 && lastKills[0].stills.Size() > 10 && clips[clips.Size() - 1].last);
 			if (v == 150)
 			{
@@ -3141,9 +3267,22 @@ class AjarTimeHandler : EventHandler
 				Check("aDeathInHall2", ck == 2 && clips[0].fight == 2 && clips[1].fight == 3 && clips[2].fight == 3);
 			}
 			if (v == 420) Check("goneToLightOnScreen", reel == 2 && reelClip == 0 && fallen && !fallen.bInvisible && fallen.alpha < 1);
-			if (v >= 440 && v <= 490 && v % 10 == 0 && reel == 2) { reelTic = 100000; }      // the rest, quickly
-			if (v == 485) Check("lastScenesOnScreen", reel == 2 && clips[reelClip].last && caption.IndexOf("the last to fall") > 0);
-			if (v == 500) Check("theEnd", reel == 3);
+			// the rest, quickly, but for the first clip of hall 1 (its last to fall), which is held
+			// for 70 tics: what is on the screen then is in hall 1, and nothing is round the seat
+			if (reel == 2 && !testHold && clips[reelClip].fight == 1 && reelTic > 0)
+			{
+				testHold = v;
+				Console.Printf("AJARTEST info hall 1's clip from v=%d t=%d: %s", v, t, caption);
+			}
+			if (v >= 440 && v <= 590 && v % 10 == 0 && reel == 2 && !(clips[reelClip].fight == 1 && testHold && v < testHold + 70)) { reelTic = 100000; }
+			if (testHold && v == testHold + 40)
+			{
+				Check("hall1OnScreenOnly", reel == 2 && clips[reelClip].fight == 1 && OnScreenOnly(mo));
+				Check("lightsDownThere", reel == 2 && RoomLight(false) && ShowLight(1, true));
+			}
+			if (v == 600 && !testHold) Check("hall1OnScreenOnly", false);
+			if (testHold && v == testHold + 85) Check("lastScenesOnScreen", reel == 2 && clips[reelClip].last && caption.IndexOf("the last to fall") > 0);
+			if (v == 610) Check("theEnd", reel == 3);
 			return;
 		}
 		double x = hx[k], cx = x + hw[k] / 2, cy = hh[k] / 2;

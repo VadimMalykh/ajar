@@ -199,7 +199,7 @@ def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=Non
 WAY_OUT = 9         # the doorway number of every level's way out
 
 
-def way_out(m, x, y, colour):
+def way_out(m, x, y, colour, *, floor=0):
     """The way out, the same in every level: far sides have a colour, the
     way out has none. A night room (ink walls and ceiling with gold stars,
     dark floor with brass inlay, gold runner), 320 by 256 with its south-west
@@ -214,14 +214,16 @@ def way_out(m, x, y, colour):
     plain wall, and the caller makes the way in (a room touching it there
     opens onto it).
 
-    It uses doorway number WAY_OUT (line ids 159 and 259)."""
+    It uses doorway number WAY_OUT (line ids 159 and 259). `floor`: the
+    room's floor, where it is not 0 (MAP18's is in the basement)."""
     room(m, [x, x + 128, x + 192, x + 320], [y, y + 96, y + 160, y + 256],
          lambda i, j: j == 1 or (i == 1 and j == 0),
-         ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
+         ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
+         **(dict(floor=floor) if floor else {}))
     if colour:
-        recess(m, (x + 128, y), (x + 192, y), (0, -1), 0, far_id(colour), 150 + WAY_OUT, far_colour=colour)
-    doorway(m, WAY_OUT, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0,
-            (x, y + 96), (x, y + 160), (-1, 0), 0, trim=("AJXA", "AJXAF"))
+        recess(m, (x + 128, y), (x + 192, y), (0, -1), floor, far_id(colour), 150 + WAY_OUT, far_colour=colour)
+    doorway(m, WAY_OUT, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor,
+            (x, y + 96), (x, y + 160), (-1, 0), floor, trim=("AJXA", "AJXAF"))
     for xx in (x, x + 320):
         m.line((xx, y + 96), (xx, y + 160), special=243, args=(), playeruse=False, repeatspecial=False,
                playercross=True)
