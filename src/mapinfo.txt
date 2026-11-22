@@ -347,6 +347,17 @@ map BELT "Ajar: the belt"
 	music = ""
 }
 
+// The one-sided doorway lab (tools/map_oneside.py): MAP=ONESIDE ./run.sh
+map ONESIDE "Ajar: one-sided doorways"
+{
+	next = "ONESIDE"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "OneSideTest"
+}
+
 // Sight lines (tools/map_optics.py): MAP=OPT ./run.sh
 map OPT "Ajar: sight lines"
 {
