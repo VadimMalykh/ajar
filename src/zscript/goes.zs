@@ -5,8 +5,9 @@
 // A FIGHT THAT BECOMES A ROOM OF GOES (an AjarZone of a hall with args[4] 3,
 // time.zs). Until it is won it is an open fight (time.zs, "the open fight":
 // its boxes, ghosts whose shots are real, the last go's monsters on the
-// demo, the rescue at death, winding), and besides, as in a room of goes
-// (plate.zs):
+// demo, the rescue at death, winding: the plates of MAP32's rooms 3 and 4,
+// MixWound below and PLAN.md, "MAP32: winding the fights of goes"; MAP=MAP32
+// MODE=10 tools/smoke.sh), and besides, as in a room of goes (plate.zs):
 //  * at the start of each go every door that has been touched is as at the
 //    first entry, and each go writes down what the player did to doors and
 //    presses; every earlier self does that again at its tic, by the same
@@ -378,6 +379,7 @@ extend class AjarHandler
 	{
 		if (!Together(f) && !Together(tw.frame)) return true;
 		bool ok = abs(d.hungAt - tw.hungAt) <= TOGETHER_TICS;
+		if (hangBack) return ok;        // (a winding doing it at once: unheard)
 		f.A_StartSound(ok ? "misc/p_pkup" : "plats/pt1_stop", CHAN_AUTO);
 		if (!ok) Say(LateText(d));
 		return ok;
@@ -398,6 +400,9 @@ extend class AjarHandler
 	// --- a Pair joined for a time ---------------------------------------------------
 	int pairSaid;               // its messages said in this level (bits 1: the first join for a time, 2: the first shut)
 	int pairSaidAt;             // the tic (+ 1) the first was said (SayHung says nothing over it)
+	// a fight of goes wound (MixWound): the earlier selves' hangings before then are done at once, each
+	// as if this many tics ago (Hang's hungAt, JoinFor's joinEnds); 0 at any other time
+	int hangBack;
 
 	// How many seconds a Pair hung in frames fa and fb stays joined (0: for good): the
 	// smallest of their lamps' args[1] that is not 0.
@@ -415,8 +420,8 @@ extend class AjarHandler
 	void JoinFor(AjarDoor d, AjarDoor tw, int tics)
 	{
 		d.joinTics = tw.joinTics = tics;
-		d.joinEnds = tw.joinEnds = tics ? level.maptime + tics : 0;
-		if (!tics || (pairSaid & 1)) return;
+		d.joinEnds = tw.joinEnds = tics ? level.maptime - hangBack + tics : 0;
+		if (!tics || (pairSaid & 1) || hangBack) return;
 		pairSaid |= 1;
 		pairSaidAt = level.maptime + 1;
 		Say(String.Format("Both leaves of the %s pair hang: each frame opens onto the other,\nbut only for %d seconds. Then both shut again.", d.Label(), tics / 35));
@@ -520,23 +525,104 @@ extend class AjarTimeHandler
 		}
 	}
 
-	// Time was wound (WindTo): this go is begun over at `ot`. The doors are as
-	// at the first entry with what the earlier selves did up to then done at
-	// once; what the player did in this go so far is forgotten.
+	// Time was wound (WindTo): this go is begun over at `ot` (T), as if it had
+	// been played up to T with the player standing still where they stand
+	// (PLAN.md, "MAP32: winding the fights of goes"). What the player did in
+	// this go so far is forgotten, and nothing is put back for them. What the
+	// earlier selves did before T with a lasting effect is in effect:
+	//  * the doors are as at the first entry with every door action of theirs
+	//    before T done at once, tic by tic in order, as GhostDoors did them
+	//    then (a door held by one whose go ended before T leans where it went;
+	//    a Pair's leaf is hung at its own tic, AjarHandler.hangBack, so that it
+	//    joins, or not, and for the time, as it did);
+	//  * the key levers are as their pulls before T left them (KeysAt): a
+	//    shutter keyed then is keyed for what is left of its time, a lever
+	//    live then is live for what is left of JOIN;
+	//  * a press is up and ready (one in mid-stroke at T too);
+	//  * they stand where their records put them at T (GhostsAt), and every
+	//    plate and shutter is at once as that holds it (HeldAt; a shutter that
+	//    was moving at T is where it was going).
+	// What they do at T and after is done at its tic, as in any go.
 	void MixWound(Actor mo)
 	{
+		int to = ot;
 		logs.Pop();
 		FirstDoors();
 		PressesUp();
+		ShuttersShut();             // shut.zs: the shutters at rest, the key levers up, the plates of shutters up
 		for (int i = 0; i < logs.Size(); i++)
 		{
 			AjarGoLog lg = logs[i];
 			lg.next = 0; lg.broken.Clear();
-			for (lg.pNext = 0; lg.pNext < lg.pTic.Size() && lg.pTic[lg.pNext] < ot; lg.pNext++) {}
-			for (lg.kNext = 0; lg.kNext < lg.kTic.Size() && lg.kTic[lg.kNext] < ot; lg.kNext++) {}
+			for (lg.pNext = 0; lg.pNext < lg.pTic.Size() && lg.pTic[lg.pNext] < to; lg.pNext++) {}
+			for (lg.kNext = 0; lg.kNext < lg.kTic.Size() && lg.kTic[lg.kNext] < to; lg.kNext++) {}
 		}
 		logs.Push(new("AjarGoLog"));
-		GhostDoors();
+		// (unheard: the ghosts are not there yet)
+		let h = Doors();
+		for (ot = 0; ot < to; ot++) { h.hangBack = to - ot - 1; GhostDoors(); }
+		h.hangBack = 0;
+		ot = to;
+		KeysAt(to);
+		GhostsAt(mo);
+		HeldAt();
+	}
+
+	// Every earlier self whose go runs at `ot` where its record puts it then
+	// (as PlayGhosts, without firing anything).
+	void GhostsAt(Actor mo)
+	{
+		for (int i = 0; i < takes.Size() - 1; i++)
+		{
+			AjarTake t = takes[i];
+			while (ghosts.Size() <= i) ghosts.Push(null);
+			if (ot >= t.x.Size()) continue;
+			Vector3 p = (t.x[ot], t.y[ot], t.z[ot]);
+			AjarGhost g = ghosts[i];
+			if (!g)
+			{
+				g = AjarGhost(Actor.Spawn("AjarGhost", p));
+				g.translation = mo.translation;
+				ghosts[i] = g;
+			}
+			g.SetOrigin(p, true);
+			g.angle = t.ang[ot];
+			g.pitch = t.pit[ot];
+			g.sprite = t.sf[ot] >> 8;
+			g.frame = t.sf[ot] & 127;
+		}
+	}
+
+	// Every plate pressed as whoever stands on it now presses it, and every
+	// shutter at once where that (and its keys) hold it: unheard, nothing
+	// moving.
+	void HeldAt()
+	{
+		let mo = players[consoleplayer].mo;
+		let h = Doors();
+		let pi = ThinkerIterator.Create("AjarPlate");
+		AjarPlate p;
+		while (p = AjarPlate(pi.Next()))
+		{
+			bool now = p.On(mo);
+			let gi = ThinkerIterator.Create("AjarGhost");
+			Actor g;
+			while (!now && (g = Actor(gi.Next()))) now = p.On(g);
+			if (now == p.pressed) continue;
+			p.pressed = now;
+			if (now) p.SetStateLabel("Down");
+			else p.SetStateLabel("Spawn");
+			AjarFrame f = p.args[0] ? h.FindFrame(p.args[0]) : null;
+			if (f) h.Spring(f);
+		}
+		let it = ThinkerIterator.Create("AjarShutter");
+		AjarShutter s;
+		while (s = AjarShutter(it.Next()))
+		{
+			s.Know();
+			s.want = s.Held() != s.Screen();
+			s.Move(s.High());
+		}
 	}
 
 	// The fight is won (Win): the hall is a room of goes from now on.

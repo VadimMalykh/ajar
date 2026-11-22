@@ -8330,6 +8330,190 @@ taken through by a door that a thief takes; the look of a belt (FLAT20, the
 curbs STEP1 and METAL are Doom II's, placeholders) and of the crate; the
 game by hand: `MAP=BELT ./run.sh` in the worktree.
 
+## MAP32: winding the fights of goes (built 2026-11-22)
+
+Vadim asked: "we need rewind buttons on fight rooms like we have in map31".
+MAP32's fights of goes, rooms 3 and 4, now have MAP31's plates that wind the
+fight half a minute back or on (`AjarWind`, 20043, `ajartime.wind`), with
+MAP31's price, refusals and messages unchanged (`Wind` in time.zs: 10 health
+and 5 armour; not with 10 health or less; on no further than two seconds
+before the end of the last go's record; from the hall only while the fight
+is as it went, nothing awake; "Nothing is playing." when no fight is played,
+and so after the win, when the hall is a room of goes). Winding in a fight
+of goes had been written (`MixWound`) but never played or tested, and it was
+wrong in places (below).
+
+**The rule.** After winding to tic T, the hall is as if this go had been
+played up to T with the present self standing still where they stand now:
+- the monsters, their shots and what else is seen come from the last go's
+  record at T (as in MAP31: `WindTo`);
+- the earlier selves are where their records put them at T; what they fired
+  before T is not fired again;
+- the doors are as at the first entry with every door action of the earlier
+  selves before T done at once, in the order of their tics;
+- everything else they did before T that lasts is in effect: key levers
+  pulled, and the shutter they keyed, for what is left of its time; a lever
+  live, for what is left of its two seconds; a Pair joined (for what is left
+  of its time); a plate pressed, a shutter or screen held, by whoever stands
+  there at T;
+- what is in mid-course is put at rest: a press mid-stroke is up and ready;
+  a shutter that was moving at T is at once where it was going;
+- the present self's doings in this go are forgotten, but nothing is put
+  back for them: pick-ups stay as they are (the megasphere is not put back),
+  health and ammunition are theirs. `parted` is cleared (`NewTake`), so the
+  player standing inside an earlier self is no paradox until they part;
+- what the earlier selves do at T and after is done at its tic. The
+  timetable is a forecast from their records, and is right for T as it is.
+A wound go is a go like any other: it can be won, left by a time door, end
+in death and rescue, or be begun anew; the next go's earlier self of it
+stands still where the player wound from up to T and then does what was
+done.
+
+**The plates** (map_secret2.py, `WIND32`; z 30 over the floor, 2 off the
+wall, facing into the room; back on the left of one who looks out through
+the glass, or who faces the wall in the hall; nothing within 40 of any, the
+look's things included, asserted at the end of the generator):
+- room 3 box 1 (looks out east): back (4982, 640), on (4982, 480);
+- room 3 box 2 (west): back (6554, 480), on (6554, 640);
+- room 3 box 3 (north): back (6148, -18), on (6308, -18);
+- room 3's hall, its west wall either side of the lobby's mouth: back
+  (5002, 32), on (5002, 352);
+- room 4 box 1 (north): back (7216, -18), on (7360, -18);
+- room 4 box 2 (north): back (7552, -18), on (7696, -18);
+- room 4 box 3 (east): back (7182, 656), on (7182, 524);
+- room 4's range, its west wall either side of the lobby's mouth: back
+  (7202, 16) (the 32 to the corner), on (7202, 344) (short of time door 1's
+  strip).
+Room 3 box 1's row of supplies by the glass is now 32 apart instead of 40
+(x 4810 to 4938, y 630): its last lay 16 from the back plate. Nothing else
+moved; no line or sector changed. The nearest things: 45 (box 1's rockets),
+45 (room 4's lobby light at (7240, 40)), 46 (box 3's medikit), 47, 48 (a
+figure in the lobby's case, behind the wall), the rest 50 or more.
+
+**What was wrong, and what changed.**
+- `MixWound` (goes.zs) only skipped the earlier selves' key pulls before T:
+  a shutter they had keyed stayed shut, and the levers stayed as the present
+  go had left them (no `ShuttersShut`, no `KeysUp`). Now it calls
+  `ShuttersShut` and then `KeysAt(T)` (keys.zs, new): their pulls before T in
+  the order of their tics, by the rules `GhostKeys` and the levers keep (a
+  pull only on a lever that is up and whose shutter is not keyed; down until
+  JOIN has run out, or while keyed; all of a set live at once keys it); at T
+  the shutter keyed for what is left (`keyed`), its levers held, a lever live
+  with `pulledAt` set back so that it is live for what is left of JOIN.
+- The door actions were all done at once at tic T: a Pair's leaves both had
+  `hungAt` now, so a pair hung too late would join, and a joined-for-a-time
+  Pair got its whole time again; and `GhostDoors` leaves a held door leaning
+  only at the exact tic its go ends, so a door held by an earlier self whose
+  go ended before T stayed in its hands. Now `MixWound` runs `GhostDoors` tic
+  by tic from 0 to T - 1, each tic's hangings dated that many tics back
+  (`AjarHandler.hangBack`, used by `Hang` for `hungAt` and by `JoinFor` for
+  `joinEnds`; `InTime` and `JoinFor` are silent while it is set).
+- The plates and shutters started from rest and the earlier selves were
+  only placed in the next tic: a screen held at T came down (with its
+  sounds) after winding, a plate flickered. Now `GhostsAt` places the
+  earlier selves at T at once (no shots) and `HeldAt` sets every plate as
+  whoever stands on it presses it and every shutter at once where that and
+  its keys hold it (silent).
+- `WindTo` (time.zs; MAP31's winding too): `ClearHall` makes every cue of
+  the fight due again, and only a monster `PlayDemo` brings back in marks its
+  cue as come. One whose role it does not bring in (dead and gone by then, or
+  unseen at its birth) would come again from its cue, real and awake, a
+  monster the record does not have. Now every cue whose role was born before
+  T is marked as come. (Found while reading for the arachnotron below; no
+  run was seen to need it.)
+- The header comments of goes.zs, keys.zs and time.zs's winding block say
+  so.
+
+**Small choices.** A press pull of an earlier self after T that the record
+had refused (the press still busy from one before T) is now done, since the
+press is up at T. A shutter keyed at T is set one tic long (its own Tick
+counts it down once before tic T). A joined-for-a-time Pair whose time ran
+out before T shuts again in the first tic after winding, with its sound and
+message (the earlier selves' hangings are not told otherwise). The plates'
+spacing and sides as above. The test takes the megasphere by touching it from
+box 1 (`Touch`), not by walking into the cage: that would leave the box.
+
+**Tests** (2026-11-22; counts are the `AJARTEST name=1` lines, no `=0`
+line, no script error or warning). `MAP=MAP32 MODE=10 tools/smoke.sh`
+(`Wind32FightScript`, map32.zs; `tools/smoke_MAP32_10.cfg`, 9030 tics,
+TIMEOUT=900, about 4.5 minutes): 34 checks.
+- `plates10`: eight in each room, one back and one on in each box and hall,
+  the back on the left, the same facing.
+- Room 3, go 1: `nothingToWindYet10` (the hall's back plate: no change, no
+  price); it waits in the lobby, stands on the screen's plate 950 to 1120
+  (`screenByMe10`), on the cage's 1130 to 1190 (put back on the plate each
+  tic: a monster that comes under the player lifts them off it, and the
+  record would not have the plate held), pulls the press at 1205, out by
+  door 2 (its record is 1217 long).
+- Go 2, from box 1 with a green armour: wound on at 30 to 1080
+  (`woundOn10`, `itCosts10`: 90 health, 95 armour; `screenHeldAtOnce10`: the
+  screen shut, its plate pressed by the first self where its record has it,
+  the wing's shutter open, the cage shut, the press up, all in the same tic);
+  `asTheRecordHasItAtT10` (every monster on the demo where its record says,
+  none awake); the first self lets go of the screen and steps on the cage's
+  plate at their tics (`screenLetGoAtItsTic10`, `cageAtItsTic10`); the
+  megasphere taken (`megasphereTaken10`, 200); at 1235, with the first self's
+  press coming down, wound back (to 1217 - 1050 = 167: `woundBack10`;
+  `pressUpAtOnce10`; `asItWasThen10`; `megasphereNotPutBack10`;
+  `monstersAsThen10`); `notWithoutTheHealth10`; into the hall and on from
+  there while nothing is awake (`fromTheHall10`), to 1147, two seconds before
+  the end (`onToTwoSecondsBeforeItsEnd10`; `cageHeldAtOnce10`: the first self
+  is on the cage's plate then), and no further (`noFurther10`); a monster hurt
+  awake, and refused (`notFromTheHallOnceAwake10`); onto the screen's plate,
+  out by door 2.
+- Go 3: `theWoundGoIsAGo10` (the second self's record stands still where it
+  wound from for its first 1147 tics, then goes on; the demo is that go's),
+  `standingStillUpToT10`, `thenWhatWasDone10` (it steps on the screen's
+  plate and the screen comes down), `noParadox10`.
+- Room 4, go 1 pulls the west lever at 200 and the east at 230
+  (`keyedInGo1_10`) and leaves at 1200. Go 2, from box 1: on to 1080
+  (`keyedAtOnce10`: keyed with 200 left, open at once, both levers down;
+  `stillKeyed10`), back to 40 (`notYetPulled10`: both up, not keyed, shut);
+  `liveAtItsTic10` (201), `keyedAtItsTic10` (232), `noParadoxRoom4_10`; then
+  the range is won (KillAll) and both plates say nothing plays
+  (`nothingPlaysOnceWon10`: no price, no go).
+The script also prints, once each, every monster of room 3's hall that is
+real while the demo plays ("woke at"): in the final runs only the baron go 2
+hurts.
+
+**Why the hall winds before wave 2 is due.** In earlier versions of the test
+go 2 wound on from box 1 to 1147 and then from the hall: in five of eleven
+runs the hall refused. In the three looked into, a wave 2 arachnotron (or a
+cacodemon) stood real and awake at its cue a few tics after winding to
+1080 or 1147, with no role on the demo. Its
+cue had not come in go 1 (someone stood on its spot until the end), so it
+comes now, real, in any later go once its wave is due, wound or not: the
+rule of an open fight, not of winding. From the hall a fight that far on
+may then not wind; from a box it always does. The test now winds from the
+hall at 181, before the wave is due.
+
+**Runs** (2026-11-22, on the final full `./build.sh` with the solver, which
+succeeded; the machine was shared with another worker): `MAP=MAP32 MODE=10`
+34 and 34 (two runs); `MODE=3 TIMEOUT=1500` 78 (all of MAP32's and
+`levelExited`; MAP16's `baronCalled` after it was not reached by the timeout
+in this run, as before); `MODE=4` 7; `MODE=5` 26; `MODE=7` 27 on a re-run
+(the first run's `guardsWakeAsIStepIn3=0`: one guard still on the demo ten
+tics after the landing, a wake that waits for room; it passed in four other
+runs of today's builds); `MODE=8` 6; `MODE=9` 8 on a re-run (the first run's
+`baitShoots3=0` and `diedWhenItDied3=0`: go 1's rockets killed none in time,
+the fight's own chance); `MAP=MAP31 MODE=7` 16, `MODE=6` 10; `MAP=PRESS
+MODE=3` 15, `MODE=4` 10 on a re-run (the first run's `cameDownOnNothing=0`),
+`MODE=5` 7; `MAP=SHUT MODE=3` 21, `MODE=4` 9; `MAP=TWOKEY MODE=3` 8;
+`MAP=PLATE MODE=3` 33, `MODE=4` 6, `MODE=5` 7. The quick builds before gave
+the same counts. MAP32's generator asserts pass (with the plates' 40 clear).
+
+**Not tested / not played by hand.** No door is carried or hung in rooms 3
+and 4, and no fight of goes has a Pair: the door actions done tic by tic and
+`hangBack` (a Pair hung before T, joined or late, for a time) run in no test.
+A door held by an earlier self whose go ended before T is not seen. A lever
+live at T but not keyed (pulled within two seconds before T) is not seen;
+only keyed and up. A shutter worked by keys from rooms of goes, or winding
+in PRESS or SHUT's room B, is not run. Winding in boxes 2 and 3 of either
+room, and death and rescue or begin anew in a wound go, are not run (the
+plates and the paths are the same). The look of the plates in MAP32 (the
+same AJWD wall sprites as MAP31's, no light of their own) and the game have
+not been played by hand: `MAP=MAP32 ./run.sh` in the worktree.
+
 ## MAP17 "Made to Order": the first playable version (built 2026-11-22)
 
 Built as decided in "MAP17: the goods dispatch" above (its subsection "The

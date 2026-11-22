@@ -11,6 +11,7 @@
 //   MAP=MAP32 MODE=7 tools/smoke.sh   room 3's plates, screen, cage, sentries and the timetable
 //   MAP=MAP32 MODE=8 tools/smoke.sh   room 4's key levers over four goes, and the timetable
 //   MAP=MAP32 MODE=9 tools/smoke.sh   room 3: an earlier self's shots wake nobody
+//   MAP=MAP32 MODE=10 tools/smoke.sh  winding the fights of goes, rooms 3 and 4
 // The coordinates are the generator's.
 
 extend class AjarTimeHandler
@@ -1820,6 +1821,355 @@ extend class AjarTimeHandler
 				Check("noParadox9", !paradoxes && !paradox);      // paradox.zs
 				gsStep = 2;
 			}
+		}
+	}
+}
+
+// MODE=10 (tools/smoke_MAP32_10.cfg): winding the fights of goes (PLAN.md,
+// "MAP32: winding the fights of goes"). The plates: eight in each of rooms 3
+// and 4, back on the left, on on the right. Room 3, entered at its lobby by the
+// script, godmode. Go 1: nothing to wind yet; it waits in the lobby, stands on
+// the screen's plate from WF_S0 to WF_S1 and on the cage's from WF_C0 to
+// WF_C1, pulls the press at WF_P and goes out by door 2. Go 2, from box 1:
+// wound on to WF_W1 + half a minute (the screen held at once by the first
+// self, the monsters and it where the record has them, the price paid); the
+// first self lets go of the screen and steps on the cage's plate at its tic;
+// the megasphere taken; wound back while the first self's press comes down
+// (the press up, the megasphere not put back); refused at 10 health; into the
+// hall and on from there while nothing is awake, to two seconds before the
+// end, and no further; not once something is awake; on the screen's plate,
+// out by door 2. Go 3: the second self stands where it wound from up to then,
+// and then does what was done. Room 4: go 1 pulls both key levers; go 2 winds
+// on past the pulls (keyed at once, for what is left), back before them (up),
+// and they are pulled at their tics. Then room 4 is won, and its plates say
+// nothing plays.
+extend class AjarTimeHandler
+{
+	const WF_W1 = 30;           // go 2 winds on from here
+	const WF_S0 = 950;          // go 1 on the screen's plate
+	const WF_S1 = 1120;
+	const WF_C0 = 1130;         // on the cage's plate
+	const WF_C1 = 1190;
+	const WF_P = 1205;          // pulls the press
+	const WF_OUT = 1210;        // out by door 2
+	const WK_W = 200;           // room 4, go 1: the west lever
+	const WK_E = 230;           // the east one
+	const WK_OUT = 1200;
+	int wfStep, wfT1, wfT3, wfLen2, wfH, wfA, wfPhase, wfT;
+	Vector3 wfSpot;
+	Array<Actor> wfSeen;        // (the awake ones already told of)
+	bool wfOk;
+
+	// the plate that winds (`on`) in box b of room k (0: its hall)
+	AjarWind Wind32(int k, int b, bool on)
+	{
+		let it = ThinkerIterator.Create("AjarWind");
+		AjarWind w;
+		while (w = AjarWind(it.Next()))
+		{
+			int wk, wb;
+			[wk, wb] = Where(w.pos.xy);
+			if (wk == k && wb == b && (w.args[0] != 0) == on) return w;
+		}
+		return null;
+	}
+
+	// rooms 3 and 4: one back and one on in each box and the hall, eight in each; back on the left of one
+	// who faces the wall they are on
+	bool Plates32()
+	{
+		int n3 = 0, n4 = 0;
+		let it = ThinkerIterator.Create("AjarWind");
+		AjarWind w;
+		while (w = AjarWind(it.Next()))
+		{
+			int wk, wb;
+			[wk, wb] = Where(w.pos.xy);
+			if (wk == 3) n3++;
+			if (wk == 4) n4++;
+		}
+		bool ok = n3 == 8 && n4 == 8;
+		for (int k = 3; k <= 4; k++)
+		{
+			for (int b = 0; b <= 3; b++)
+			{
+				AjarWind back = Wind32(k, b, false), on = Wind32(k, b, true);
+				if (!back || !on) { ok = false; continue; }
+				double left = (back.pos.xy - on.pos.xy) dot Actor.AngleToVector(back.angle + 270);
+				Console.Printf("AJARTEST info room %d box %d: back (%d,%d) on (%d,%d) facing %d, back to the left by %d", k, b,
+					back.pos.x, back.pos.y, on.pos.x, on.pos.y, back.angle, left);
+				if (left <= 0 || back.angle != on.angle) ok = false;
+			}
+		}
+		return ok;
+	}
+
+	int Armour(Actor mo) { let a = mo.FindInventory("BasicArmor"); return a ? a.Amount : 0; }
+
+	// earlier self i stands where its record puts it at tic o
+	bool SelfAt(int i, int o)
+	{
+		if (i >= takes.Size() - 1 || i >= ghosts.Size() || !ghosts[i] || o >= takes[i].x.Size()) return false;
+		return ghosts[i].pos.x == takes[i].x[o] && ghosts[i].pos.y == takes[i].y[o];
+	}
+
+	void Wind32FightScript(PlayerPawn mo)
+	{
+		if (level.totaltime > level.maptime + 10) return;
+		int t = testTic++;
+		mo.player.cheats |= CF_GODMODE;
+		AjarShutter sh3 = FindShutter(SHUT33), scr = FindShutter(SCREEN3), cage = FindShutter(CAGE3), sh4 = FindShutter(SHUT32);
+		AjarPlate sp = FloorPlate32(0, SCREEN3), cp = FloorPlate32(0, CAGE3);
+		AjarPress pr = FindPress(PRESS32);
+		AjarKeyLever kw = FindKeyLever(SHUT32, 1), ke = FindKeyLever(SHUT32, 2);
+		int g = takes.Size(), o = ot, k, bx;
+		[k, bx] = Where(mo.pos.xy);
+		if (t % 35 == 0) Console.Printf("AJARTEST t=%d pos=(%d,%d,%d) fight=%d phase=%d open=%d mixed=%d at=%d go=%d ot=%d len=%d selves=%d onDemo=%d awake=%d health=%d screen=%.2f cage=%.2f wing=%.2f press=%d shutter4=%.2f keyed=%d step=%d",
+			t, mo.pos.x, mo.pos.y, mo.pos.z, fight, phase, open, mixed, at, g, o, demo ? demo.len : -1, AllGhosts(), Rails(true), Rails(false), mo.health,
+			scr ? scr.Opened() : -1, cage ? cage.Opened() : -1, sh3 ? sh3.Opened() : -1, pr ? pr.phase : -1, sh4 ? sh4.Opened() : -1, sh4 ? sh4.keyed : -1, wfStep);
+		if (t == 2) Go(mo, 4872, 100, 0, 90);           // into room 3's lobby: the rooms before are left, and over
+		// (any monster of room 3's hall that is real while the demo plays, told once: what, where, and its
+		// role on the demo if it has one; only the one go 2 hurts is expected)
+		if (open && Demoing() && fight == 3 && demo)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next()))
+			{
+				if (!a.bIsMonster || a.health <= 0 || OnDemo(a) || wfSeen.Find(a) < wfSeen.Size()) continue;
+				int ak, ab;
+				[ak, ab] = Where(a.pos.xy);
+				if (ak != fight || ab != 0) continue;
+				wfSeen.Push(a);
+				string why = "no role";
+				for (int i = 0; i < demo.roles.Size(); i++)
+				{
+					AjarRole r = demo.roles[i];
+					if (r.actor != a && r.src != a) continue;
+					why = String.Format("role %d born=%d size=%d lag=%d mode=%d dead=%d hidden=%d wakeDue=%d cue=%d", i, r.born, r.x.Size(), r.lag, r.mode, r.dead, r.hidden,
+						r.wakeDue, r.cue ? 1 : 0);
+				}
+				Console.Printf("AJARTEST info woke at ot=%d: %s at (%d,%d) health %d: %s", ot, a.GetClassName(), a.pos.x, a.pos.y, a.health, why);
+			}
+		}
+
+		// === room 3, go 1: the plates; nothing to wind; the screen, the cage, the press; out by door 2 ===
+		if (wfStep == 0 && fight == 3 && open && g == 1)
+		{
+			if (o == 4) Check("plates10", Plates32());
+			if (o == 5)
+			{
+				int h = mo.health;
+				Wind32(3, 0, false).Used(mo);
+				Check("nothingToWindYet10", ot == o && mo.health == h && takes.Size() == 1);
+			}
+			if (o > 5 && o < WF_S0) mo.vel.xy = (0, 0);
+			// on the plates (put back on each tic: a monster that comes under the player lifts them off)
+			if (o >= WF_S0 && o < WF_S1) Go(mo, 5768, 1216, 0, 90);
+			if (o == WF_S0 + AjarShutter.TICS + 4) Check("screenByMe10", scr.IsShut() && sp.pressed && sh3.IsOpen());
+			if (o == WF_S1) Go(mo, 5768, 1120, 0, 270);
+			if (o >= WF_C0 && o < WF_C1) Go(mo, 5096, 1184, 0, 90);
+			if (o == WF_C1) Go(mo, 5096, 1080, 0, 0);
+			if (o == WF_P - 10) Go(mo, 5856, -50, 96, 90);
+			if (o == WF_P)
+			{
+				AjarPressSwitch sw = null;
+				let si = ThinkerIterator.Create("AjarPressSwitch");
+				AjarPressSwitch s;
+				while (s = AjarPressSwitch(si.Next())) if (s.args[0] == PRESS32) sw = s;
+				sw.Used(mo);
+				Console.Printf("AJARTEST info go 1 pulled the press at %d: phase=%d", o, pr.phase);
+			}
+			if (o == WF_OUT) Go(mo, 6500, 720, 0, 0);
+			if (o > WF_OUT) Walk(mo, (8, 0));
+		}
+		if (wfStep == 0 && fight == 3 && open && g == 2) wfStep = 1;
+
+		// === go 2: from box 1 ===
+		if (wfStep == 1 && fight == 3 && open && g == 2)
+		{
+			if (o == 2)
+			{
+				Check("inBox1_10", at == 1 && bx == 1 && demo != null);
+				mo.health = mo.player.health = 100;
+				mo.GiveInventoryType("GreenArmor");
+			}
+			if (o == 3) Go(mo, 4900, 560, 64, 0);
+			if (o > 3) mo.vel.xy = (0, 0);
+			// on, half a minute: the first self on the screen's plate at once
+			if (o == WF_W1)
+			{
+				wfH = mo.health; wfA = Armour(mo);
+				Wind32(3, 1, true).Used(mo);
+				wfT1 = ot;
+				Console.Printf("AJARTEST info wound on from %d to %d: health %d armour %d (were %d, %d) screen=%.2f wing=%.2f selves=%d",
+					o, ot, mo.health, Armour(mo), wfH, wfA, scr.Opened(), sh3.Opened(), AllGhosts());
+				Check("woundOn10", wfT1 == WF_W1 + WIND_TICS && takes.Size() == 2 && takes[1].x.Size() == wfT1 && wound && !parted.Size());
+				Check("itCosts10", mo.health == wfH - WIND_HEALTH && Armour(mo) == wfA - WIND_ARMOUR);
+				Check("screenHeldAtOnce10", scr.IsShut() && sp.pressed && !sp.On(mo) && sh3.IsOpen() && cage.IsShut() && !cp.pressed
+					&& pr.Ready() && SelfAt(0, wfT1));
+			}
+			if (wfT1 && ot == wfT1 + 1 && o == ot)
+			{
+				Console.Printf("AJARTEST info at %d: on the demo %d, awake %d, the first self at (%d,%d)", wfT1, Rails(true), Rails(false),
+					ghosts.Size() && ghosts[0] ? ghosts[0].pos.x : 0, ghosts.Size() && ghosts[0] ? ghosts[0].pos.y : 0);
+				Check("asTheRecordHasItAtT10", AsTheyWent() && Rails(true) > 0 && !Awake() && SelfAt(0, wfT1));
+			}
+			// after T, at their tics: the first self lets go of the screen, steps on the cage's plate
+			if (wfT1 && o == WF_S1 + AjarShutter.TICS + 4) Check("screenLetGoAtItsTic10", scr.IsOpen() && !sp.pressed);
+			if (wfT1 && o == WF_C0 + AjarShutter.TICS + 4) Check("cageAtItsTic10", cage.IsOpen() && cp.pressed && !cp.On(mo));
+			// the megasphere, taken (from here)
+			if (wfT1 && o == WF_C0 + 20)
+			{
+				let it = ThinkerIterator.Create("Megasphere");
+				Inventory a, mega = null;
+				while (a = Inventory(it.Next())) if (!a.owner && abs(a.pos.x - 5940) < 1 && abs(a.pos.y + 72) < 1) mega = a;
+				if (mega) mega.Touch(mo);
+			}
+			if (wfT1 && o == WF_C0 + 22)
+			{
+				int megas, counted;
+				[megas, counted] = MegasThere33();
+				Check("megasphereTaken10", mo.health == 200 && !MegaThere33() && !megas);
+			}
+			// back, while the first self's press comes down
+			if (wfT1 && o == WF_P + 30)
+			{
+				wfH = mo.health; wfA = Armour(mo); wfPhase = pr.phase;
+				Wind32(3, 1, false).Used(mo);
+				Console.Printf("AJARTEST info wound back from %d to %d: press phase %d, now %d lowered %.2f; health %d armour %d (were %d, %d)",
+					o, ot, wfPhase, pr.phase, pr.Lowered(), mo.health, Armour(mo), wfH, wfA);
+				Check("woundBack10", ot == min(o, demo.len) - WIND_TICS && takes[1].x.Size() == ot && mo.health == wfH - WIND_HEALTH && Armour(mo) == wfA - WIND_ARMOUR);
+				Check("pressUpAtOnce10", wfPhase > 0 && pr.Ready() && pr.Lowered() < 0.01);
+				Check("asItWasThen10", scr.IsOpen() && !sp.pressed && cage.IsShut() && !cp.pressed && sh3.IsShut() && SelfAt(0, ot));
+				int megas, counted;
+				[megas, counted] = MegasThere33();
+				Check("megasphereNotPutBack10", !MegaThere33() && !megas && wfH == 200);
+				wfStep = 2;
+				wfT = ot;
+			}
+		}
+		if (wfStep == 2 && fight == 3 && open && g == 2)
+		{
+			if (o == wfT + 1) Check("monstersAsThen10", AsTheyWent() && Rails(true) > 0 && !Rails(false) && SelfAt(0, wfT));
+			if (o == wfT + 5)
+			{
+				mo.health = mo.player.health = 10;
+				Wind32(3, 1, false).Used(mo);
+				Check("notWithoutTheHealth10", ot == o && mo.health == 10);
+				mo.health = mo.player.health = 100;
+			}
+			if (o == wfT + 10) Go(mo, 5040, 60, 0, 180);      // into the hall, by its plates
+			// on from the hall, while nothing is awake: to two seconds before the end, and no further
+			// (before wave 2 is due: a monster of it that did not come in the last go comes now, real)
+			if (o == wfT + 14)
+			{
+				Console.Printf("AJARTEST info in the hall: at=%d awake=%d demoing=%d", at, Awake(), Demoing());
+				wfSpot = mo.pos;
+				Wind32(3, 0, true).Used(mo);
+				wfT3 = ot;
+				Console.Printf("AJARTEST info on from %d to %d (the demo is %d long); cage=%.2f", o, ot, demo.len, cage.Opened());
+				Check("fromTheHall10", at == 0 && mo.health == 90 && SelfAt(0, wfT3));
+				Check("onToTwoSecondsBeforeItsEnd10", wfT3 == demo.len - 70 && o + WIND_TICS > wfT3);
+				Check("cageHeldAtOnce10", wfT3 > WF_C0 && wfT3 < WF_C1 && cage.IsOpen() && cp.pressed && SelfAt(0, wfT3));
+				Wind32(3, 0, true).Used(mo);
+				Check("noFurther10", ot == wfT3 && mo.health == 90);
+				wfStep = 4;
+			}
+		}
+		if (wfStep == 4 && fight == 3 && open && g == 2)
+		{
+			if (o > wfT3 && o < wfT3 + 20) mo.vel.xy = (0, 0);
+			if (o == wfT3 + 5) Hurt(mo, 1, 20);
+			if (o == wfT3 + 10)
+			{
+				Wind32(3, 0, false).Used(mo);
+				Check("notFromTheHallOnceAwake10", ot == o && Awake() && mo.health == 90);
+			}
+			// what is done after: on the screen's plate (the first self is on the cage's), out by door 2
+			if (o >= wfT3 + 20 && o < wfT3 + 40) Go(mo, 5768, 1216, 0, 90);
+			if (o == wfT3 + 50) Go(mo, 6500, 720, 0, 0);
+			if (o > wfT3 + 50) Walk(mo, (8, 0));
+		}
+		if (wfStep == 4 && fight == 3 && open && g == 3) { wfStep = 5; wfLen2 = takes[1].x.Size(); }
+
+		// === go 3: the wound go's self ===
+		if (wfStep == 5 && fight == 3 && open && g == 3)
+		{
+			if (o == 2)
+			{
+				bool still = takes[1].x.Size() > wfT3 + 50;
+				for (int i = 0; still && i < wfT3; i++) still = takes[1].x[i] == wfSpot.x && takes[1].y[i] == wfSpot.y && takes[1].z[i] == wfSpot.z;
+				Console.Printf("AJARTEST info go 3: the second self's record %d long, wound at %d, the demo %d long", wfLen2, wfT3, demo ? demo.len : -1);
+				Check("theWoundGoIsAGo10", still && at == 2 && demo && abs(demo.len - wfLen2) <= 2);
+			}
+			if (o == wfT3 - 20) Check("standingStillUpToT10", SelfAt(1, o - 1) && ghosts[1].pos.xy == wfSpot.xy && AsTheyWent());
+			if (o == wfT3 + 36) Check("thenWhatWasDone10", SelfAt(1, o - 1) && sp.On(ghosts[1]) && sp.pressed && scr.IsShut());
+			if (o == wfT3 + 45)
+			{
+				Check("noParadox10", !paradoxes && !paradox);
+				Go(mo, 6950, 176, F32, 0);         // on to room 4's lobby: room 3 is left
+				wfStep = 6;
+			}
+		}
+
+		// === room 4, go 1: both key levers; out by door 1 ===
+		if (wfStep == 6 && fight == 4 && open && g == 1)
+		{
+			if (o == 5) Go(mo, 7040, 1340, F32, 90);
+			if (o > 5) mo.vel.xy = (0, 0);
+			if (o == WK_W) kw.Used(mo);
+			if (o == WK_W + 5) Go(mo, 7872, 1340, F32, 90);
+			if (o == WK_E) ke.Used(mo);
+			if (o == WK_E + 3) Check("keyedInGo1_10", sh4.keyed > 0 && kw.held && ke.held);
+			if (o == WK_OUT) Go(mo, 7240, 432, F32, 180);
+			if (o > WK_OUT) Walk(mo, (-8, 0));
+		}
+		if (wfStep == 6 && fight == 4 && open && g == 2) { wfStep = 7; wfT = 0; }
+		if (wfStep == 7 && fight == 4 && open && g == 2)
+		{
+			if (o == 3) Go(mo, 7288, -112, F32 + 64, 90);
+			if (o > 3) mo.vel.xy = (0, 0);
+			if (o == WF_W1)
+			{
+				wfH = mo.health;
+				Wind32(4, 1, true).Used(mo);
+				int kt = logs[0].kTic.Size() == 2 ? logs[0].kTic[1] : -1, left = kw.Tics() - (ot - kt);
+				Console.Printf("AJARTEST info room 4 wound on to %d: keyed=%d (the pull that keyed it at %d: %d left) open=%.2f held=%d/%d",
+					ot, sh4.keyed, kt, left, sh4.Opened(), kw.held, ke.held);
+				Check("keyedAtOnce10", ot == WF_W1 + WIND_TICS && kt > 0 && abs(sh4.keyed - left) <= 2 && sh4.IsOpen() && kw.held && ke.held
+					&& mo.health == wfH - WIND_HEALTH);
+				wfT = ot;
+			}
+			if (wfT && o == wfT + 1) Check("stillKeyed10", sh4.IsOpen() && sh4.keyed > 0 && kw.held && ke.held && SelfAt(0, o - 1));
+			if (wfT && o == wfT + 10)
+			{
+				Wind32(4, 1, false).Used(mo);
+				Console.Printf("AJARTEST info room 4 wound back to %d: keyed=%d open=%.2f up=%d/%d", ot, sh4.keyed, sh4.Opened(), kw.Up(), ke.Up());
+				Check("notYetPulled10", ot == wfT + 10 - WIND_TICS && kw.Up() && ke.Up() && !sh4.keyed && sh4.IsShut());
+				wfStep = 8;
+			}
+		}
+		if (wfStep == 8 && fight == 4 && open && g == 2)
+		{
+			if (o == WK_W + 1) Check("liveAtItsTic10", kw.Live() && ke.Up() && !sh4.keyed);
+			if (o == WK_E + 2)
+			{
+				Check("keyedAtItsTic10", sh4.keyed > 0 && kw.held && ke.held);
+				Check("noParadoxRoom4_10", !paradoxes && !paradox);
+				Go(mo, 7456, 900, F32, 90);        // into the range: win it
+			}
+			if (o > WK_E + 2 && o % 5 == 0) KillAll(mo);
+		}
+		if (wfStep == 8 && fight == 4 && goes) { wfStep = 9; wfT = t; }
+		// === won: the plates say nothing plays ===
+		if (wfStep == 9 && t == wfT + 5)
+		{
+			int h = mo.health, n = takes.Size();
+			Wind32(4, 0, true).Used(mo);
+			Wind32(4, 1, false).Used(mo);
+			Check("nothingPlaysOnceWon10", won.Find(4) < won.Size() && !open && mo.health == h && takes.Size() == n);
+			wfStep = 10;
 		}
 	}
 }

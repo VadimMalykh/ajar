@@ -22,7 +22,9 @@
 //    AjarTogether's "too late" sound.
 //  * Every go begins with every key lever up and every keyed shutter at rest
 //    (KeysUp, called by ShuttersShut: Begin, Retake, Resume, NextGo, Anew, a
-//    fight begun anew, BeginGoes). After a fight's win the levers work the
+//    fight begun anew, BeginGoes). A fight of goes wound to a tic begins there
+//    with them as the earlier selves' pulls before then left them (KeysAt,
+//    from MixWound in goes.zs). After a fight's win the levers work the
 //    same, in the room of goes it has become.
 //  * Three messages, each once a level: the player's first pull that finds no
 //    other lever of its set live; the first time a lever the player pulled runs
@@ -245,6 +247,88 @@ extend class AjarTimeHandler
 		let si = ThinkerIterator.Create("AjarShutter");
 		AjarShutter s;
 		while (s = AjarShutter(si.Next())) s.keyed = 0;
+	}
+
+	// A fight of goes wound to tic `to` (MixWound, goes.zs; after ShuttersShut): the levers and shutters
+	// as the earlier selves' pulls before then left them. Their pulls in the order of their tics, by the
+	// rules GhostKeys and the levers keep: a pull is done if the lever is up and its shutter not keyed;
+	// a lever pulled is down until JOIN has run out (it comes up in the tic after), or while the shutter
+	// it keyed is keyed; every lever of a set live at once keys it for the set's time. At `to`: a shutter
+	// keyed then for what is left of its time, its levers down; a lever live then for what is left of
+	// JOIN. Unheard. (WorldTick at `to` is the level's next tic.)
+	void KeysAt(int to)
+	{
+		Array<AjarKeyLever> lev;
+		Array<int> live, held;      // of each lever: the tic of its pull that is down (-1: none); down while keyed
+		let it = ThinkerIterator.Create("AjarKeyLever");
+		AjarKeyLever k;
+		while (k = AjarKeyLever(it.Next())) { lev.Push(k); live.Push(-1); held.Push(0); }
+		if (!lev.Size()) return;
+		Array<int> tags, keyedAt;   // of each set: the tic it was keyed (-1: not)
+		for (int q = 0; q < lev.Size(); q++) if (tags.Find(lev[q].args[0]) == tags.Size()) { tags.Push(lev[q].args[0]); keyedAt.Push(-1); }
+		// the pulls before `to`, in the order of their tics (the same tic: by the order of the takes)
+		Array<int> pt, pq;
+		for (int i = 0; i < takes.Size() - 1 && i < logs.Size(); i++)
+		{
+			AjarGoLog lg = logs[i];
+			for (int e = 0; e < lg.kTic.Size() && lg.kTic[e] < to; e++)
+			{
+				int q = 0;
+				while (q < lev.Size() && (lev[q].args[0] != lg.kTag[e] || lev[q].args[2] != lg.kNum[e])) q++;
+				if (q == lev.Size()) continue;
+				int j = 0;
+				while (j < pt.Size() && pt[j] <= lg.kTic[e]) j++;
+				pt.Insert(j, lg.kTic[e]); pq.Insert(j, q);
+			}
+		}
+		for (int e = 0; e <= pt.Size(); e++)
+		{
+			int t = e < pt.Size() ? pt[e] : to;
+			// a set whose time is up: its levers up
+			for (int s = 0; s < tags.Size(); s++)
+			{
+				if (keyedAt[s] < 0 || t - keyedAt[s] < KeyTics(tags[s])) continue;
+				keyedAt[s] = -1;
+				for (int r = 0; r < lev.Size(); r++) if (lev[r].args[0] == tags[s]) { held[r] = 0; live[r] = -1; }
+			}
+			// a lever whose JOIN has run out: up
+			for (int r = 0; r < lev.Size(); r++) if (!held[r] && live[r] >= 0 && t - live[r] > AjarKeyLever.JOIN + 1) live[r] = -1;
+			if (e == pt.Size()) break;
+			int q = pq[e], s = tags.Find(lev[q].args[0]);
+			if (held[q] || live[q] >= 0 || keyedAt[s] >= 0) continue;
+			live[q] = t;
+			bool all = true;
+			for (int r = 0; r < lev.Size(); r++)
+				if (lev[r].args[0] == tags[s] && (held[r] || live[r] < 0 || t - live[r] > AjarKeyLever.JOIN)) all = false;
+			if (!all) continue;
+			keyedAt[s] = t;
+			for (int r = 0; r < lev.Size(); r++) if (lev[r].args[0] == tags[s]) held[r] = 1;
+		}
+		// as it is at `to`
+		for (int s = 0; s < tags.Size(); s++)
+		{
+			if (keyedAt[s] < 0) continue;
+			AjarShutter sh = FindShutter(tags[s]);
+			// (its Tick counts it down once before then)
+			if (sh) sh.keyed = KeyTics(tags[s]) - (to - keyedAt[s]) + 1;
+		}
+		for (int r = 0; r < lev.Size(); r++)
+		{
+			if (live[r] < 0) continue;
+			lev[r].pulledAt = level.maptime + 1 - (to - live[r]);
+			lev[r].held = held[r] != 0;
+			lev[r].byPlayer = false;
+			lev[r].frame = 1;
+		}
+	}
+
+	// The time a set of key levers keys its shutter for.
+	int KeyTics(int tag)
+	{
+		let it = ThinkerIterator.Create("AjarKeyLever");
+		AjarKeyLever k;
+		while (k = AjarKeyLever(it.Next())) if (k.args[0] == tag) return k.Tics();
+		return 0;
 	}
 
 	// Tics until an earlier self's next pull of a lever of the set `tag` other than number n (-1: none).

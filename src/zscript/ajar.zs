@@ -756,7 +756,7 @@ class AjarHandler : EventHandler
 		if (d.IsPair())
 		{
 			// (two frames that are hung "together" join only leaves hung close in time: goes.zs)
-			d.hungAt = level.maptime;
+			d.hungAt = level.maptime - hangBack;        // (hangBack: a fight of goes wound, goes.zs)
 			d.args[0] = tw && tw.frame && InTime(d, f, tw) ? tw.frame.args[0] : 0;
 			d.joinEnds = d.joinTics = 0;
 			if (d.args[0])
