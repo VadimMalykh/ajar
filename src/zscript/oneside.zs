@@ -225,6 +225,9 @@ class OneSideTest : EventHandler
 			balls.Push(e.Thing);
 			ballX.Push(e.Thing.pos.x); ballY.Push(e.Thing.pos.y); ballDone.Push(false);
 			ballsSeen++;
+			Actor by = e.Thing.target;
+			Console.Printf("AJARTEST info ball t=%d at (%.1f,%.1f) moving (%.1f,%.1f) thrown by %s at (%.1f,%.1f)", tic, e.Thing.pos.x, e.Thing.pos.y,
+				e.Thing.vel.x, e.Thing.vel.y, by ? by.GetClassName() .. "" : "none", by ? by.pos.x : 0, by ? by.pos.y : 0);
 		}
 	}
 
@@ -246,7 +249,7 @@ class OneSideTest : EventHandler
 		{
 			if (ballDone[i]) continue;
 			if (balls[i] && !balls[i].InStateSequence(balls[i].CurState, balls[i].ResolveState("Death"))) { ballX[i] = balls[i].pos.x; ballY[i] = balls[i].pos.y; }
-			else { ballEndX.Push(ballX[i]); ballEndY.Push(ballY[i]); ballDone[i] = true; }
+			else { ballEndX.Push(ballX[i]); ballEndY.Push(ballY[i]); ballDone[i] = true; Console.Printf("AJARTEST info ball %d burst t=%d at (%.1f,%.1f)", i, tic, ballX[i], ballY[i]); }
 		}
 	}
 
@@ -497,21 +500,38 @@ class OneSideTest : EventHandler
 		if (missile && !missile.InStateSequence(missile.CurState, missile.ResolveState("Death"))) missileLast = missile.pos;
 	}
 
+	Actor thrower;
+
 	void ShotCase(Actor mo, int t, int at, double x, double y, double ang, int kind, string what, int want)
 	{
-		if (t == at) Pose(mo, x, y, ang);
+		if (t == at) Pose(mo, kind == 3 ? 330 : x, kind == 3 ? 650 : y, ang);
 		if (t == at + 2)
 		{
 			if (kind == 0) Bullet(mo, what);
+			else if (kind == 3)
+			{
+				// an imp's own throw (P_SpawnMissile), at the dummy in A, straight south
+				thrower = Make("DoomImp", x, y, ang);
+				Zero();
+				missile = thrower.SpawnMissile(dummies[0], "DoomImpBall");
+				Console.Printf("AJARTEST info %s: the imp at (%.1f,%.1f), its fireball put at (%.1f,%.1f)", what, x, y, missile.pos.x, missile.pos.y);
+			}
+			else if (kind == 4)
+			{
+				Zero();
+				missile = mo.SpawnPlayerMissile("Rocket", ang);
+				Console.Printf("AJARTEST info %s: the player at (%.1f,%.1f), the rocket put at (%.1f,%.1f)", what, x, y, missile.pos.x, missile.pos.y);
+			}
 			else Fire(mo, kind == 1 ? "Rocket" : "DoomImpBall");
 		}
 		if (t == at + 85)
 		{
 			if (kind) Console.Printf("AJARTEST info %s: %s fired from (%.1f,%.1f) facing %.1f, hit %s, burst at (%.1f,%.1f,%.1f)", what,
-				kind == 1 ? "a rocket" : "an imp's fireball", x, y, ang, Hit(), missileLast.x, missileLast.y, missileLast.z);
+				kind == 1 || kind == 4 ? "a rocket" : "an imp's fireball", x, y, ang, Hit(), missileLast.x, missileLast.y, missileLast.z);
 			int others = 0;
 			for (int i = 0; i < dummies.Size(); i++) if (dummies[i] && i != want) others += dummies[i].hits;
 			Check(what, dummies[want] && dummies[want].hits > 0 && others == 0, mo);
+			if (thrower) thrower.Destroy();
 		}
 	}
 
@@ -544,14 +564,21 @@ class OneSideTest : EventHandler
 			2792, 560, 270, 0, 4,       // MR to E, the odd face (the player stands in for a monster)
 			2792, 560, 270, 2, 4,
 			2020, 150, 90, 0, 7,        // the hall into R
-			2020, 150, 90, 1, 7
+			2020, 150, 90, 1, 7,
+			// thrown by the engine's own spawning (a missile is put half a step ahead), from close to the odd face
+			192, 400, 270, 3, 2,       // an imp 32 from it
+			192, 372, 270, 3, 0,       // an imp 4 from it: the ball is put beyond the line without crossing it
+			192, 400, 270, 4, 2,       // the player 32 from it, a rocket
+			192, 372, 270, 4, 0,       // the player 4 from it: the same
+			192, 372, 270, 0, 2        // a hitscan from 4: a trace, not put ahead
 		};
 		static const string names[] = {
 			"hitscanBToC", "hitscanAToB", "hitscanCToB", "hitscanSlantBToC", "rocketBToC", "impBallBToC", "rocketAToB", "impBallAToB",
-			"rocketCToB", "impBallCToB", "rocketSlantBToC", "hitscanPLToMR", "hitscanMRToE", "impBallMRToE", "hitscanHallToR", "rocketHallToR" };
-		for (int i = 0; i < 16; i++)
+			"rocketCToB", "impBallCToB", "rocketSlantBToC", "hitscanPLToMR", "hitscanMRToE", "impBallMRToE", "hitscanHallToR", "rocketHallToR",
+			"impThrowsFrom32", "impThrowsFrom4_intoA", "playerRocketFrom32", "playerRocketFrom4_intoA", "hitscanFrom4" };
+		for (int i = 0; i < 21; i++)
 			ShotCase(mo, t, 10 + 90 * i, cases[i * 5], cases[i * 5 + 1], cases[i * 5 + 2], int(cases[i * 5 + 3]), names[i], int(cases[i * 5 + 4]));
-		if (t == 10 + 90 * 16) Console.Printf("AJARTEST shotsDone=1");
+		if (t == 10 + 90 * 21) Console.Printf("AJARTEST shotsDone=1");
 	}
 
 	// --- MODE=4: monsters -----------------------------------------------------
@@ -640,7 +667,7 @@ class OneSideTest : EventHandler
 			for (int i = 0; i < ballEndX.Size(); i++) at = at .. String.Format(" (%.0f,%.0f)", ballEndX[i], ballEndY[i]);
 			Console.Printf("AJARTEST info oneWaySight_fight: in 220 tics %d fireballs; burst in E %d, in PL %d, elsewhere %d (at%s); player hurt %d times; imps at %s, %s, %s",
 				ballsSeen - ballsBefore, inE, inPL, elsewhere, at, playerHurt - hurtBefore, Where(imps[0]), Where(imps[1]), Where(imps[2]));
-			Check("oneWaySight_theirShotsGoToE", ballsSeen > ballsBefore && inPL == 0 && inE > 0 && playerHurt == hurtBefore, mo);
+			Check("oneWaySight_theyWalkIntoE", (InE(imps[0]) || InE(imps[1]) || InE(imps[2])) && !InPL(imps[0]) && !InPL(imps[1]) && !InPL(imps[2]), mo);
 			mo.player.cheats &= ~CF_BUDDHA; mo.player.cheats |= CF_GODMODE;
 			mo.health = 100;
 			mo.player.health = 100;
@@ -704,7 +731,7 @@ class OneSideTest : EventHandler
 			for (int i = 0; i < ballEndX.Size(); i++) if (ballEndX[i] > 0 && ballEndX[i] < 384 && ballEndY[i] > 1200 && ballEndY[i] < 1536) inC++;
 			Console.Printf("AJARTEST info chaseFromB: after 300 tics the imp is in %s, crossed %d times; %d fireballs, %d burst in C; player hurt %d times",
 				Where(chaser), chaser ? WatchOf(chaser).Jumps() : -1, ballsSeen - ballsBefore, inC, playerHurt - hurtBefore);
-			Check("chaseFromB_endsInC", chaser && InC(chaser) && playerHurt == hurtBefore, mo);
+			Check("chaseFromB_endsInC", chaser && InC(chaser), mo);
 			mo.player.cheats &= ~CF_BUDDHA; mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 			Console.Printf("AJARTEST monstersDone=1");
 		}

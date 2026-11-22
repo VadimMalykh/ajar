@@ -8701,3 +8701,253 @@ go in sections of their own at the end of this file.
   beat, what happens when a leaf is taken or something stands in the way;
   a doorway that leads one way from one face and another from the other,
   for walking, sight, shots, monsters and sound.
+
+## The one-sided doorway lab (built 2026-11-22)
+
+`tools/map_oneside.py`, `src/zscript/oneside.zs`; `MAP=ONESIDE ./run.sh`,
+`MAP=ONESIDE MODE=1..5 tools/smoke.sh`. An engine test for Vadim's idea
+("Idea: one-sided portals") and for MAP18's outline: a doorway that is
+ordinary from one side and leads elsewhere from the other. **It works for
+walking, the view, shots, things and monsters' walking; monsters' sight and
+sound go by the building as it is, not by what the doorway shows.** Run
+headless only (docker, software GL): **not played by hand**, and the look on
+the real machine (the GLES backend) is not checked. The ZDoom wiki could not
+be reached from here (zdoom.org dropped every connection that day), so
+nothing below is taken from documentation: all of it is measured on GZDoom
+4.12.2.
+
+- **How it is made.** `ajarmap.oneside(m, a, b, out, floor, line_id,
+  target, *, thick=16, mouth_id=0, blind=False, ...)`: an opening through a
+  wall `thick` deep, a-b its mouth on the plain side, `out` the way from
+  there through the wall. The far edge of the opening (the odd face) is a
+  two-sided line with `Line_SetPortal` (156: target, 0, type 1, aligned to
+  the floor), its front side to the room beyond and the opening's sector
+  behind it. The engine draws a line portal, and moves what crosses it, only
+  for its front side: what crosses from the back walks on as through any
+  opening. So the direct way works and no fallback was built (a thin sector
+  with a teleport line, a second portal "straight on" from the plain face).
+  The far end is a gate as map ENG's (a recess 16 deep, a stub 48 behind its
+  portal line), whose portal names the odd face back: what comes out of it
+  comes out of the odd face into the room beyond. No stub is needed behind
+  the odd face: the opening and the plain room are the space behind it.
+  `mouth_id` gives the plain mouth an id so that a portal elsewhere can name
+  it (a portal's target need not be a portal itself): what comes through
+  comes out of the doorway into the plain room, as if it had walked through
+  it backwards (bay 3). `blind=True` puts `blocksight` on the odd face.
+  `udmf.py` has one new line property for it, `back=<sector>`: the side of
+  the line that faces that sector is its back (until now a line's front was
+  whichever of its two sectors was declared first). Other maps are not
+  touched by it (their wads are byte for byte as before, below).
+- **The map.** Bays off one corridor, each room told apart by its walls,
+  floor, tint and light. 1 (and 2): A (STARTAN3, green), B north of it
+  (BRICK7, blue floor), C far off (MARBLE1); from A the doorway (x 160..224,
+  wall y 352..368) is a plain way into B, from B it shows and leads into C
+  through the opening in C's north wall, facing south into C; C's opening
+  leads back out of the odd face into B (B's face and C's opening are a
+  normal pair; only A's side is odd). C2 (TANROCK2), its opening in its west
+  wall, is used once with the odd face pointed at it. B has a way back to
+  the corridor on foot. 3: P, a corridor 256 long east, the doorway at its
+  end, Q; coming back west from Q the doorway leads into X (752 long, far
+  off), whose west end puts you out of the doorway's plain mouth heading
+  west. 4: a booth 160 square in a hall (walls 16 thick, inside 128 square,
+  a plain opening at its back); its front, from the hall, shows and leads
+  into R, 768 square; R's opening leads back out to the hall. 5: PL (the
+  player's room) and MR (the monsters'): from PL the doorway shows MR, from
+  MR it shows and leads into E; `blind=True`; MR has a way round on foot.
+  Five imps and zombies stand in MR for play by hand. A sealed room is the
+  control for the sound test.
+
+**What the runs showed** (MODE=1 to 5; every "lands right" below means: the
+place where the tic's move would have ended, carried through by the
+engine's rule `dst.v2 + R(p - src.v1)` (as `AjarSight.ImageThrough`),
+matched to 0.000, the facing and the direction of motion turned by the
+portal's turn to 0.000 degrees, and the speed after the crossing the same
+fraction of the speed given as on a plain tic, 0.9063, the friction):
+
+A. **Walking (MODE=1, 31 checks).** A to B through the plain face, walking
+   (8.33 a tic), running (16.67) and at 30 degrees: no crossing, nothing
+   odd (`plainAToB_walk`, `_run`, `_slant`). B back through the doorway:
+   lands right in C, walking, running, at 30 degrees, backing through
+   (facing B's far wall), running at 30 degrees (`walkBToC`, `runBToC`,
+   `slantBToC`, `backBToC`, `runSlantBToC`). C out of its opening: lands
+   right in B, walking and running (`walkCToB`, `runCToB`). The turn-round
+   in one go, A into B, turn, back: in C (`turnRound_inB`, `_inC`). The odd
+   face pointed at C2 by `Line_SetPortalTarget` while the map runs (as a
+   hung door is joined): B to C2 lands right turned 90 degrees, also running
+   at a slant, C2 back to B turned -90, and pointed back at C, B to C again
+   (`turnedBToC2`, `turnedRunSlantBToC2`, `turnedC2ToB`,
+   `pointedBackBToC`). **On the line**: posed exactly on the odd face,
+   nothing happens for 35 tics; stepping off it south (1 a tic) puts you in
+   C, north leaves you in B (`standOnTheLine`, `offTheLineSouthToC`,
+   `offTheLineNorthStaysInB`). Astride it with the middle in the opening
+   (the box 8 over the face): nothing; walking on, into B, no crossing.
+   Astride with the middle in B: nothing; walking south, lands right in C
+   (`astride...`).
+B. **The longer way back: works.** At 8 a tic, x 960 to 1216 going east 32
+   tics (256 units, no crossing); coming back west from the odd face (x
+   1216) to x 960, 128 tics (1024 units), two crossings, both landing right
+   (Q's odd face into X; X's west end out of the doorway's plain mouth into
+   the corridor, heading west) (`longWayEast`, `longWayWest`).
+C. **Bigger inside: works.** The hall into R and R out to the hall land
+   right (`hallIntoR`, `rOutToHall`); walking round the booth's west and
+   north sides, no crossing; in by its back opening, inside a room 128
+   square; on out of its front from inside, a plain walk into the hall
+   (`roundTheBooth_west`, `_north`, `intoTheBoothFromBehind`,
+   `boothFrontPlainFromInside`).
+D. **The view (MODE=2: 28 views and the automap,** in the order of
+   `Views` in oneside.zs; `MAP=ONESIDE MODE=2 tools/smoke.sh` takes them again). From A the doorway
+   shows B (straight, at a slant, close); from B it shows C (straight, at a
+   slant, close, 12 to half a unit off the line); from C its opening shows
+   B (also from 10 inside C's wall, where it fills the screen); from Q the doorway
+   shows X's long corridor going away, from the corridor east it shows Q;
+   from X's west end its opening shows the corridor and P; from the hall the
+   booth's face shows R (also at a slant), from R its opening the hall; from
+   behind, the booth is a small blue room whose front shows the hall; from
+   PL the doorway shows MR and an imp, from MR it shows E. No hall of
+   mirrors and no missing wall in any of them, and off the line no seam. **Exactly on the line
+   the view is wrong**: posed on the odd face looking at it, the doorway
+   shows A (the plain side's room) instead of C; at a slant on the line the
+   picture is split, C on the left, A on the right. Half a unit off, it is
+   C again. Above the opening each face shows the opening's own wall
+   texture (the same both ways): there is no sign of which face is odd.
+E. **Shots: go where the view says, but not when fired from right at the
+   odd face (MODE=3, 21 checks).** A dummy in each room; each shot hit only
+   the dummy the view points at, never the one in the room physically
+   behind the odd face (in A, in the booth). Hitscan B to C (the puff at
+   (192, 1316)), A to B, C to B, B to C at 30 degrees (a dummy put where the
+   line goes on in C: hit, puff (31.5, 1257.6)); a rocket and an imp's
+   fireball B to C, A to B, C to B, a rocket B to C at 30 degrees; hitscan
+   PL to MR through the plain face; hitscan and a fireball from MR's side to
+   E; hitscan and a rocket from the hall into R. (These missiles were put
+   20 ahead of the shooter by the script.) **Thrown by the engine's own
+   spawning** (an imp's `SpawnMissile`, the player's `SpawnPlayerMissile`),
+   a missile is put half a step ahead of the shooter at once (5 for an
+   imp's fireball, 10 for a rocket, as the spawn positions show), and that
+   step does not go through the portal: from 32 off the odd face the
+   fireball and the rocket go to C (`impThrowsFrom32`,
+   `playerRocketFrom32`); **from 4 off it they are put beyond the line in
+   the opening and fly on into A**, the room the picture does not show
+   (`impThrowsFrom4_intoA`, `playerRocketFrom4_intoA`: both hit A's dummy).
+   A hitscan from 4 off goes to C (`hitscanFrom4`). Where the far side of
+   a doorway is a stub (every hung door), such a missile only bursts in the
+   stub; here it goes into a real room. It happened by itself once in six
+   runs of MODE=4 (F below): the imp in B going for the player in A threw
+   from close to the face and the fireball hit the player in A (9 damage).
+   A fix would be the game's: a missile spawned across an odd face from its
+   front is carried through (not built).
+F. **Monsters (MODE=4, 15 checks).**
+   - **The engine's sight does not go by the doorway's picture**: it looks
+     through the two-sided line as through a hole. An imp in B facing the
+     doorway does not see the player standing in C in plain view through it
+     (`impInBSeesPlayerInC`: 0 of 1 woke, no sight); the same imp sees and
+     wakes for a player in A, behind the odd face, though B's view of the
+     doorway shows C (`impInBSeesPlayerInA`: 1 of 1). An imp in A sees the
+     player in B through the plain face (right); an imp in C facing its
+     opening does not see the player in B shown in it (0 of 1). The game's
+     own sight through doors (`AjarSight.DoorImage`) knows only hung doors
+     and does nothing here.
+   - **One-way sight: works with `blocksight`.** Three imps in MR facing the
+     doorway, the player in PL in view of them: with the odd face blind, 0
+     of 3 see or wake (`oneWaySight_blind`); without, 3 of 3
+     (`oneWaySight_withoutBlocksight`). Left to fight without it (220 tics,
+     the player unhurtable but counted; monsters' choices differ from run to
+     run): in six runs the imps threw 0 to 2 fireballs, which burst in E or
+     in MR (on another imp, or the doorway's edge), none in PL, the player
+     not hurt; two or three of the three walked into the doorway and were in
+     E at the end, the rest in MR (`oneWaySight_theyWalkIntoE`: at least
+     one in E, none in PL). With it, the
+     player shot the middle imp (5 damage): it woke, alone, threw nothing in
+     300 tics, walked to the doorway and into E; the other two slept on in
+     MR (`oneWaySight_shotImpGoesIntoE`).
+   - **Walking through each face** (an imp moved 8.33 a tic as the player
+     is): B to C, C to B and the hall into R land right, A to B is a plain
+     walk (`impWalks...`). Asleep astride the odd face (its middle 8 in B)
+     or exactly on it, it stays put (40 tics).
+   - **Left to itself**: an imp in B told of the player standing in A just
+     beyond the plain face (it has the engine's sight of him) walks at him,
+     into the doorway, and is in C after 300 tics, every time in six runs
+     (`chaseFromB_endsInC`). It threw 0 to 3 fireballs a run, which burst
+     in C, except once: thrown from close to the face, one went into A and
+     hit the player (see E).
+G. **Sound: goes through both faces and the portal (MODE=5).** A shot's
+   alarm (`SoundAlert`, what a weapon does): in B it wakes an imp in A
+   (through the opening) and in C (through the portal); in C it wakes B; in
+   A it wakes B and C; in PL it wakes MR (blocksight does not stop sound)
+   and E. The sealed room is not reached (the control). The imps stood
+   where they had no sight of the player, and B's and MR's ways round on
+   foot block sound at both ends of their necks, so what A and MR heard came
+   through the doorway. The engine carries sound through this kind of
+   portal (type 1) both ways. (Run with `-nosound`: what is heard by ear is
+   not checked.)
+H. **Things on the line (MODE=5).** An imp killed astride the odd face (its
+   middle 4 in B): the corpse stays put; pushed south (6 a tic) it goes
+   through and lands right in C (`corpseAstrideStays`,
+   `corpsePushedIntoC`). A clip tossed from B through the odd face lands in
+   C, from A through the plain face in B (`itemTossed...`). A clip lying
+   across the line (its middle 1 in B) is picked up by the player walking at
+   it from B, who stays in B (`itemAstrideLinePickedUpFromB`).
+I. **The automap** (the last view, with the computer map given) draws the
+   building as it is: A and B side by side with an ordinary gap between
+   them, C and the other far rooms apart and unconnected, their openings as
+   notches in their walls. Nothing marks the odd face, and anyone who reads
+   the map sees that B's doorway cannot lead to C.
+
+**What a level may do with it**, from the above:
+- Put `ajarmap.oneside` in a straight wall between two real rooms, its far
+  end a gate anywhere (`gate` in map_oneside.py, as map ENG's), turned as it
+  likes; point it elsewhere while the level runs (`Line_SetPortalTarget`);
+  name the plain mouth (`mouth_id`) as the far end of another portal (the
+  longer way back). The player, monsters, corpses, things, hitscans,
+  rockets and fireballs all go where the picture says.
+- One-way sight needs `blind=True`. It works both ways (the flag is on the
+  line), so monsters on the plain side do not see through it either (not
+  measured, the flag's nature). Monsters that know of the player beyond the
+  plain face walk at him and are sent by the odd face to its far room: a
+  doorway that drains a fight. Without `blind`, the monsters see the player
+  through the odd face and walk into it all the same, and their fireballs
+  go to the far room.
+- Noise is not stopped by either face: a shot wakes both the room behind
+  the odd face and its far room.
+**What it may not**: count on monsters' sight following the picture
+without `blind`; leave the faces unmarked (nothing tells them apart now:
+MAP18's "a sign on each face" is still to be made, e.g. per-face lintels,
+which `udmf`'s `upper` cannot do, since it sets both sides); expect the
+automap to keep the secret; trust the view of a player standing exactly on
+the odd face; let monsters fight at an odd face whose plain room holds the
+player, until a missile thrown from right at the face is carried through
+(E): such a fireball goes to the room behind, the one the picture hides.
+
+**Runs** (2026-11-22, on the full `./build.sh` with the solver, which
+succeeded; the proofs of the levels came from `build/proofs.json`, their
+puzzles unchanged): `MAP=ONESIDE MODE=1` 31 checks, `MODE=3` 21, `MODE=4`
+15, `MODE=5` 13, all passed, each ending with its `...Done=1`; `MODE=2` 28
+views and the automap, looked at; `MAP=ENG MODE=1` 6 of 6; `MAP=LAB MODE=1`
+13 of 13. Every other map's wad is byte for byte as built from the branch's
+base (a quick build of the base commit, 2365571, and the final build: the
+sha1 of each of the 33 `maps/*.wad` the same, ONESIDE.wad the only new one).
+
+**Not tested / not played by hand.** The game by hand (`MAP=ONESIDE
+./run.sh` in the worktree); the look on the real machine (GLES backend);
+the hardware renderer only through llvmpipe; a carried door or frame
+anywhere near such a doorway, and what the game's door code (the thief,
+lodgers, `OpticsTick`) makes of it; floors at different heights either
+side, a doorway not 64 wide, a wall not 16 thick; portal types other than
+1 (2 and 3 not tried); hitscan monsters (zombies) and other kinds than the
+imp, homing missiles; monsters finding their way over long runs; whether
+the plain side's monsters are blind with `blind` (not measured); sound by
+ear; a player crossing the odd face during a lift or on a belt; savegames;
+the fallbacks (not needed).
+
+**For MAP18**, what these results say about the outline: the three uses it
+names (the way back longer than the way there, the room bigger inside, the
+turn-round) work as built here. In doubt: (1) the "one-sided doorways ...
+always a way round on foot" and the solver's "the building is one piece on
+foot": with doorways that lead one way from one face, "one piece" means
+every room can be reached from every other going the ways the faces lead
+(a walk link per face, not a link both ways); (2) the automap shows the
+trick; (3) a fight near an odd face behaves by the building, not the
+picture: without `blind` monsters see through it; with it they still hear
+through it and come, and are sent to the far room; and a monster throwing
+from right at the face hits the plain room, so "one-way sight in a fight"
+(the outline's and the idea's) wants the missile fix before it is built
+into a level.
