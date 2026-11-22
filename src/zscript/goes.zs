@@ -590,6 +590,7 @@ extend class AjarTimeHandler
 			g.pitch = t.pit[ot];
 			g.sprite = t.sf[ot] >> 8;
 			g.frame = t.sf[ot] & 127;
+			GhostLook(g, t);        // time.zs: pale while it winds
 		}
 	}
 
