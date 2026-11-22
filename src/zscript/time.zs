@@ -1217,6 +1217,7 @@ class AjarTimeHandler : EventHandler
 		NewTake(mo);
 		PressesUp();                // goes.zs: each go begins with the presses up
 		ShuttersShut();             // shut.zs: and the shutters shut
+		EachGoBack();               // anew.zs: and what lies there in every go lies there
 		if (mixed) MixRetake(mo);
 		HallDoors(0);
 		h.Link(BoxLine(fight, at), used, TIME_TEX);
@@ -2291,7 +2292,7 @@ class AjarTimeHandler : EventHandler
 		comeBack = false;
 		phase = LIVE;
 		at = 0;
-		if (open) { NewTake(mo); PressesUp(); ShuttersShut(); if (mixed) MixRetake(mo); }
+		if (open) { NewTake(mo); PressesUp(); ShuttersShut(); EachGoBack(); if (mixed) MixRetake(mo); }
 		else
 		{
 			main = new("AjarTrack");

@@ -339,7 +339,7 @@ m.line((UPPER3[2], CAGEDOOR3[1]), (UPPER3[2] + 16, CAGEDOOR3[1]), mid=None, dont
 assert CAGE3BOX[0] == UPPER3[2] + 16 and CAGEDOOR3[0] == CAGE3BOX[1] and CAGEDOOR3[1] - CAGEDOOR3[0] == 64
 assert CAGE3BOX[3] - CAGEDOOR3[1] == 32 and UPPER3[1] < CAGE3BOX[1] and CAGE3BOX[3] < UPPER3[3]
 MEGA3 = (HX + 940, HY - 72)
-spots(83, MEGA3)
+spots(20058, MEGA3)     # AjarSphereEachGo: a megasphere that lies there again in every new go (anew.zs, EachGoBack)
 assert CAGE3BOX[0] + 24 < MEGA3[0] < CAGE3BOX[2] - 24 and CAGEDOOR3[1] <= MEGA3[1] <= CAGE3BOX[3] - 16
 ajartime.shut_lamp(m, UPPER3[2] - 2, HY - 36, 180, CAGE3)
 ajartime.shutter(m, (SHUTTER3[0], HY), (SHUTTER3[1], HY), (0, -1), HY, SHUT3, under=PRESS3, nomonsters=True,
