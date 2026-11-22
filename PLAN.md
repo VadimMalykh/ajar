@@ -7428,6 +7428,51 @@ The session looked at both contact sheets before merging: the seven leaf
 colours and the lamps read against the steel in every room. Merged with the
 look on by default on 2026-11-21; Vadim has not yet seen it in the game.
 
+### Light, round two (started 2026-11-22)
+
+Vadim played Deep Field. His verdict on the lights, 2026-11-22: too busy or
+the wrong mood, "don't like them in general. Let's prepare another design
+page to check other options." The plated steel, the signs and the rooms stay
+unless he says otherwise on the page.
+
+A second page offers five ways to light the same steel, drawn as light (a
+dark wash, pools, glows), with today's Deep Field small above them for
+comparison. He picks one, or two (first choice and runner-up):
+
+- **A, Lamp Row**: a dark room (about 100), round work lamps in a row along
+  its axis and one over each puzzle thing, warm-white pools on the floor;
+  nothing moves; a room done lifts the dark, the press dips the lamps.
+- **B, Door Light**: the darkest (about 88); only the puzzle gives light (the
+  time door's ivory, each leaf's own colour, the lamps on their walls, a
+  box's glass); white floods in the fights; gives up "every leaf in plain
+  white light".
+- **C, Starlight**: cold patches through the roof trusses, barred by them,
+  creeping across the floor (one crossing in about two minutes), slot
+  windows in rooms with ceilings, dim blue-grey (about 120), warm lamps where
+  hands work; only the press's flash answers.
+- **D, Shift Clock**: evenly dim (about 128), neutral; a row of small lamps
+  along one wall at eye height, one lit lamp stepping one a second from the
+  start of every go, the same in every go.
+- **E, White Room**: bright and even (about 200) from lit ceiling panels, no
+  lines, nothing moves; the puzzle's are the only colours; a room done has its
+  ceiling at half.
+
+Further choices on the page: how dark between the lights (dark, dim, as the
+concept says); the white (ice, neutral, warm, as the concept says); what is
+kept from today (the lit lines steady, the running dashes, the stars, the
+orange of signs and pens, the stutter); lights that answer the game (the
+four of 2026-11-21, or as the concept says); the fights (as the room, or
+brighter and plainer: Claude's advice); how to judge it (build the first
+choice and merge, or the first choice and the runner-up behind a switch in a
+worktree, walked in the game before anything is merged: Claude's advice,
+since last round's sketch was kinder than the game); and what bothered him
+most in today's light.
+
+Source `design/map32-lights.html`.
+**The page**: https://claude.ai/artifact/1MGMoqEhfqKASpvs5zqfei
+
+Nothing chosen yet, nothing built.
+
 ## The paradox in fights (built 2026-11-21)
 
 Agreed with Vadim: "I cannot touch past myself" holds in fights too, not

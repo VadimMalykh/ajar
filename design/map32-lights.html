@@ -1,0 +1,790 @@
+<title>Double Shift Light</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column; today's light small at the top, then five large lit sketches of the same room, each with its notes beside it; the choices and the lines to copy at the foot. */
+:root {
+  --bg: #eef0f3; --panel: #ffffff; --fg: #14181f; --muted: #566070; --rule: #cdd3db;
+  --accent: #1b55e8; --accent-fg: #ffffff; --picked: #0d7a4a; --picked-bg: #e2f4ea; --runner: #8a5a00; --runner-bg: #f7ecd6;
+  --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0d11; --panel: #14181f; --fg: #e8ebf0; --muted: #98a2b1; --rule: #2a313c;
+  --accent: #7ea6ff; --accent-fg: #0b0d11; --picked: #5fd39a; --picked-bg: #12281d; --runner: #f0b85a; --runner-bg: #2a2112; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0b0d11; --panel: #14181f; --fg: #e8ebf0; --muted: #98a2b1; --rule: #2a313c;
+  --accent: #7ea6ff; --accent-fg: #0b0d11; --picked: #5fd39a; --picked-bg: #12281d; --runner: #f0b85a; --runner-bg: #2a2112; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 700; }
+h2 { font-size: clamp(1.35rem, 3vw, 1.8rem); font-weight: 700; letter-spacing: .01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.lead { display: flex; flex-direction: column; gap: 12px; }
+.note { color: var(--muted); font-size: .92rem; }
+.lesson { border-left: 3px solid var(--runner); padding: 2px 0 2px 12px; max-width: 68ch; }
+
+.concept { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px 28px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.concept.is-first { border-top: 3px solid var(--picked); }
+.concept.is-second { border-top: 3px solid var(--runner); }
+.today { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); align-items: start; }
+.today .scene { max-width: 520px; }
+.scene { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.scene canvas { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; display: block; border-radius: 6px; background: #05070b; }
+.speed { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: .86rem; color: var(--muted); }
+.speed span { min-width: 0; flex: 1 1 14em; }
+.about { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.about .pitch { font-size: 1.08rem; font-weight: 500; }
+.about dl { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.about dt { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.about dd { margin: 2px 0 0; font-size: .95rem; }
+.about dd.risk { font-weight: 500; }
+
+button { font: inherit; cursor: pointer; }
+.pick { align-self: flex-start; font-family: var(--display); font-weight: 600; font-size: 1rem; padding: 9px 18px; border-radius: 6px;
+  border: 2px solid var(--accent); background: transparent; color: var(--accent); }
+.is-first .pick { background: var(--picked); border-color: var(--picked); color: var(--bg); }
+.is-second .pick { background: var(--runner); border-color: var(--runner); color: var(--bg); }
+.pick:focus-visible, .ghost:focus-visible, input:focus-visible, textarea:focus-visible, .copy:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ghost { font-size: .88rem; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--rule); background: var(--panel); color: var(--fg); }
+.ghost[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+.options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 32px 28px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.options > h2 { grid-column: 1 / -1; }
+.group { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.group > p { font-size: .92rem; color: var(--muted); }
+.opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; font-size: .95rem; }
+.opt input { margin-top: .3em; width: 16px; height: 16px; accent-color: var(--accent); }
+.opt small { display: block; color: var(--muted); font-size: .85rem; }
+.chip { display: inline-block; width: 1.6em; height: .9em; border-radius: 3px; border: 1px solid var(--rule); vertical-align: -.08em; margin-left: .4em; }
+.text-in { font: inherit; font-size: .95rem; width: 100%; box-sizing: border-box; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--fg); padding: 8px 10px; }
+
+.result { padding-top: 28px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 12px; }
+textarea { font-family: var(--mono); font-size: .88rem; line-height: 1.45; width: 100%; box-sizing: border-box; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--fg); padding: 10px 12px; resize: vertical; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.row .note { min-width: 0; flex: 1 1 16em; }
+.copy { font-family: var(--display); font-weight: 600; padding: 9px 18px; border-radius: 6px; border: 0; background: var(--accent); color: var(--accent-fg); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 28px; padding-top: 28px; border-top: 1px solid var(--rule); }
+.facts ul { margin: 8px 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 5px; font-size: .93rem; }
+@media (max-width: 820px) { .concept, .today { grid-template-columns: minmax(0, 1fr); } .today .scene { max-width: none; } }
+</style>
+
+<div class="wrap">
+  <header class="lead">
+    <div class="eyebrow">Ajar · MAP32 "Double Shift" · light, round two</div>
+    <h1>Five ways to light the same steel</h1>
+    <p>You played Deep Field and did not like its lights: too busy, or the wrong mood. This page is about the light only. The plated steel, the signs and the rooms stay as they are, unless you say otherwise in the note at the foot.</p>
+    <p>Below is last time's room again, lit five ways. Pick one, or two: the first you pick is your first choice, the second is the runner-up. Click a picked one again to unpick it. Then set the choices under the sketches and copy the lines at the foot back to me.</p>
+    <p class="lesson">A lesson from last time: the sketch was kinder than the game. These are drawings made by this page, not shots. They show where the light falls and what moves, at the speed it would move in the game. They do not promise how it will look on your screen.</p>
+    <div class="row"><button class="ghost" id="pause" type="button">Stop the lights</button><span class="note">Every sketch has the same things in it: the time door with its clock, a VIOLET leaf in its frame under a green lamp, the glass of a box, a plate, a slab, a monster and an earlier self.</span></div>
+  </header>
+
+  <section class="concept today" id="c-today" aria-label="Today, as built">
+    <div class="scene"><canvas id="cv-today" width="960" height="540" role="img" aria-label="Sketch of the room as built: Deep Field"></canvas>
+      <div class="speed"><span>Real speed: the lines breathe every 3.2 s, the dashes run, a sweep crosses every 20 s, one line stutters.</span></div></div>
+    <div class="about">
+      <div class="eyebrow">Today, as built · for comparison, not to pick</div>
+      <h2>Deep Field</h2>
+      <p>This is the first page's Deep Field sketch: breathing lines, running dashes, a sweep, a stutter. It is what was built, and it is what is being replaced.</p>
+      <p class="note">In the game the rooms are evenly lit, at 152 to 184 of 255, and the moving lights are faint in them. The sketch made it look darker and more lit up than it is.</p>
+    </div>
+  </section>
+
+  <main id="concepts" style="display:flex;flex-direction:column;gap:40px"></main>
+
+  <section class="options" aria-label="Further choices">
+    <h2>Whichever you pick</h2>
+    <div class="group">
+      <h3>How dark between the lights</h3>
+      <label class="opt"><input type="radio" name="dark" id="dk-dark" data-k="dark" value="dark"><span>Dark<small>You see shapes.</small></span></label>
+      <label class="opt"><input type="radio" name="dark" id="dk-dim" data-k="dark" value="dim"><span>Dim<small>You see everything; the pools still stand out.</small></span></label>
+      <label class="opt"><input type="radio" name="dark" id="dk-concept" data-k="dark" value="as the concept says" checked><span>As the concept says<small>The level given on its card.</small></span></label>
+    </div>
+    <div class="group">
+      <h3>The white</h3>
+      <label class="opt"><input type="radio" name="white" id="wh-ice" data-k="white" value="ice"><span>Ice <i class="chip" style="background:#cfe9ff"></i><small>Cold, as now.</small></span></label>
+      <label class="opt"><input type="radio" name="white" id="wh-neutral" data-k="white" value="neutral"><span>Neutral <i class="chip" style="background:#f1f1ee"></i></span></label>
+      <label class="opt"><input type="radio" name="white" id="wh-warm" data-k="white" value="warm"><span>Warm <i class="chip" style="background:#ffdcae"></i></span></label>
+      <label class="opt"><input type="radio" name="white" id="wh-concept" data-k="white" value="as the concept says" checked><span>As the concept says</span></label>
+    </div>
+    <div class="group">
+      <h3>Kept from today</h3>
+      <p>Nothing of today's look is kept unless you tick it.</p>
+      <label class="opt"><input type="checkbox" id="kp-lines" data-k="kept" value="lit lines, steady"><span>The lit lines on the walls, steady</span></label>
+      <label class="opt"><input type="checkbox" id="kp-dashes" data-k="kept" value="running dashes"><span>The running dashes in the conduits</span></label>
+      <label class="opt"><input type="checkbox" id="kp-stars" data-k="kept" value="stars"><span>The stars over the big rooms</span></label>
+      <label class="opt"><input type="checkbox" id="kp-orange" data-k="kept" value="orange signs"><span>The orange of the signs and pens</span></label>
+      <label class="opt"><input type="checkbox" id="kp-stutter" data-k="kept" value="stutter"><span>The stutter</span></label>
+    </div>
+    <div class="group">
+      <h3>Lights that answer the game</h3>
+      <p>On 2026-11-21 you chose all four, and they were built with Deep Field.</p>
+      <label class="opt"><input type="checkbox" id="ev-door" data-k="events" value="time door wave"><span>A wave from the time door<small>When you step out of a box.</small></span></label>
+      <label class="opt"><input type="checkbox" id="ev-press" data-k="events" value="press"><span>The press<small>The hall dims, then a flash when it lands.</small></span></label>
+      <label class="opt"><input type="checkbox" id="ev-done" data-k="events" value="room done"><span>A room that is done changes its light</span></label>
+      <label class="opt"><input type="checkbox" id="ev-plate" data-k="events" value="plate line"><span>The line from a pressed plate to what it works</span></label>
+      <label class="opt"><input type="checkbox" id="ev-concept" data-k="events" value="as the concept says" checked><span>As the concept says<small>What its card says under "What answers the game".</small></span></label>
+    </div>
+    <div class="group">
+      <h3>In the two fights</h3>
+      <p>Rooms 3 and 4 are the fights, with dozens of monsters at once.</p>
+      <label class="opt"><input type="radio" name="fights" id="ft-room" data-k="fights" value="as the room"><span>As the room</span></label>
+      <label class="opt"><input type="radio" name="fights" id="ft-bright" data-k="fights" value="brighter and plainer" checked><span>Brighter and plainer than the rooms<small>My advice: a fight needs sight.</small></span></label>
+    </div>
+    <div class="group">
+      <h3>How to judge it</h3>
+      <label class="opt"><input type="radio" name="judge" id="jg-merge" data-k="judge" value="build the first choice and merge it"><span>Build my first choice and merge it</span></label>
+      <label class="opt"><input type="radio" name="judge" id="jg-both" data-k="judge" value="both behind a switch, walked before merging" checked><span>Build my first choice and the runner-up behind a switch in a worktree; I walk both in the game before anything is merged<small>My advice: last time the sketch was kinder than the game.</small></span></label>
+    </div>
+  </section>
+
+  <section class="result" aria-label="Your choice">
+    <h2>Your choice</h2>
+    <label class="note" for="bother">What bothered you most in today's light?</label>
+    <input class="text-in" type="text" id="bother" placeholder="Optional">
+    <label class="note" for="more">Anything else: the steel, the signs, parts of two concepts mixed.</label>
+    <textarea id="more" rows="2" placeholder="Optional"></textarea>
+    <textarea id="out" rows="7" readonly aria-label="The lines to send back"></textarea>
+    <div class="row"><button class="copy" id="copy" type="button">Copy</button><span class="note" id="copied" role="status">Paste it into the chat. Your picks are kept in this browser.</span></div>
+  </section>
+
+  <section class="facts">
+    <div>
+      <h3>The same in all five</h3>
+      <ul>
+        <li>No room, distance or puzzle thing moves.</li>
+        <li>The time doors keep their ivory, the leaves their seven colours (VIOLET, TEAL, YELLOW, GREEN, PINK, BLUE, RED), the lamps red, amber and green.</li>
+        <li>Nothing warns of a paradox. Nothing shows an earlier self near the player.</li>
+        <li>The plated steel, the signs and the test bay stay.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What the game can really do</h3>
+      <ul>
+        <li>A light here has no shadow and shines through thin walls. Your renderer is GZDoom's GLES one, which has no shadow maps. So pools are kept small and away from thin walls.</li>
+        <li>No bloom and no mirror floors. Light shows where it lands, not as a haze in the air, so the sketches draw almost none round a lamp.</li>
+        <li>A lamp is a picture plus a light.</li>
+        <li>Patches of light on a floor are flat pictures laid on it. They do not light what stands in them.</li>
+        <li>A room's own light can be set per room, and coloured.</li>
+        <li>The sketches are drawings by this page, not shots of the game. Last round's sketch was kinder than the game.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var W = 960, H = 540, F = 560, CX = 480, CY = 300, EX = 0.5, EY = 1.9;
+  var RW = 5, RH = 5, ZN = 1.15, ZD = 11;
+
+  var CONCEPTS = [
+    { id: "lamp", name: "Lamp Row", pitch: "A plant at night with the night shift's lamps on. Still pools of light in the dark.",
+      speed: "Nothing moves, ever. Only the door's clock ticks.",
+      lights: "The room is dark (about 100 of 255). Plain round work lamps hang in a row along the room's middle. Each throws a warm-white pool on the floor, soft at the edge; between the pools it is nearly dark. Each thing of the puzzle has a lamp of its own: the time door, each frame and leaf, each plate, the lever. A box's glass is lit from inside. The lit lines on the walls are off.",
+      moves: "Nothing, ever.",
+      answers: "Twice only. A room that is done has all its lamps at full and the dark between them lifted. While the press comes down, the hall's lamps dip, then come back.",
+      fights: "The floor is lighter (about 130), so monsters between the pools are still seen.",
+      risk: "A monster or an earlier self between two pools is a shape, not a figure. In the sketch the monster by the door is one." },
+    { id: "door", name: "Door Light", pitch: "A dark theatre where each door is a stage. The doors are the lamps.",
+      speed: "Real speed: the lamp turns every 8 s, the time door flares every 13 s. In the game they happen only when the game does it.",
+      lights: "The darkest (about 88). Nothing lights the room but the puzzle's own things. The time door's ivory spills on the floor before it. Every leaf throws a soft glow of its own colour on the floor and the wall round it. The red, amber and green lamps colour the wall they hang on. A box's glass glows pale. A few steps from any door the walls go to black.",
+      moves: "Only what the game moves. A leaf that is carried carries its glow. A lamp that turns from red to green turns its wall. The time door flares for a moment when someone steps out of it.",
+      answers: "All of it: every light here is a thing of the game.",
+      fights: "The hall also has plain white floods from above. A fight needs sight.",
+      risk: "The rule held so far, \"every leaf and frame stands in plain white light\", is given up. Seven leaf colours stand near each other in places and their glows would mix, so each glow is kept small." },
+    { id: "star", name: "Starlight", pitch: "Calm, vast, far from anywhere. Light from outside, one slow movement.",
+      speed: "Real speed: a patch takes about two minutes to cross the room. Too slow to see here; press x10.", x10: true,
+      lights: "The big rooms have no ceiling (room 2's pit, room 3's hall, room 4's range). Cold pale light falls through the roof trusses and lies on the floor as long soft patches, with the trusses' dark bars across them. Rooms with ceilings (1, 5, the corridors, the boxes) get the same patches through slot windows high in one wall. The rest is a dim blue-grey (about 120). Small warm lamps only where hands work: at a plate, at the lever, in a box.",
+      moves: "The patches creep across the floor as the plant turns, one crossing in about two minutes. Nothing else moves.",
+      answers: "The press's white flash only.",
+      fights: "Nothing of its own: both fights are in rooms under the open roof, so they have the patches. The choice below sets how much brighter they are.",
+      risk: "The patches are painted light laid on the floor: the game has no real shadows here. A figure standing in a patch is not shadowed by a truss. The windows of rooms 1 and 5 are new pictures on walls that do not move." },
+    { id: "clock", name: "Shift Clock", pitch: "Quiet and exact, like an instrument. The light keeps time.",
+      speed: "Real speed: one lamp a second. Here a go lasts 20 s, so the row begins again every 20 s; in the game the row is as long as a go.",
+      lights: "The room is evenly dim (about 128), neutral white and still. Along one long wall, at eye height, runs a row of small lamps like a ruler. One of them is lit, and it throws a small pool on the floor.",
+      moves: "The lit lamp steps along the row, one lamp a second. It begins again at the same end at the start of every go, the same in every go. So the light is a clock the player and the earlier selves share: \"I stepped on the plate when the light was at the seventh lamp.\"",
+      answers: "The start of a go sends it back to the first lamp. A room that is done has the whole row lit and steady.",
+      fights: "The row counts the fight's time in the same way.",
+      risk: "It never stops, and it is one more thing to look at. It tells time that today only the case's figures and the lamps tell." },
+    { id: "white", name: "White Room", pitch: "A laboratory under inspection. Bright and calm, the opposite mood.",
+      speed: "Nothing moves. Only the door's clock ticks.",
+      lights: "Even, shadowless white from lit ceiling panels (rooms at about 200). The steel is a lighter grey in it. No lit lines, no dashes. The dark is only in the corridors and beyond the open roofs. The only colours in a room are the puzzle's: seven leaves, the lamps, the ivory.",
+      moves: "Nothing.",
+      answers: "A room that is done has its ceiling at half: this bay is closed.",
+      fights: "As bright as every other room.",
+      risk: "The least dramatic. \"Futuristic lights that move\", as you first asked, is given up for it." }
+  ];
+
+  // ---------- drawing helpers (as on the first page) ----------
+  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+  function P(x, y, z) { var k = F / z; return [CX + (x - EX) * k, CY - (y - EY) * k]; }
+  function trace(c, pts) {
+    c.beginPath();
+    for (var i = 0; i < pts.length; i++) { var q = P(pts[i][0], pts[i][1], pts[i][2]); if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }
+    c.closePath();
+  }
+  function quad(c, pts, fill) { trace(c, pts); c.fillStyle = fill; c.fill(); }
+  function line(c, a, b, col, w, alpha, glow) {
+    var n = 10;
+    for (var i = 0; i < n; i++) {
+      var t0 = i / n, t1 = Math.min(1, (i + 1) / n + 0.02);
+      var p0 = [a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0, a[2] + (b[2] - a[2]) * t0];
+      var p1 = [a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1, a[2] + (b[2] - a[2]) * t1];
+      var s0 = P(p0[0], p0[1], p0[2]), s1 = P(p1[0], p1[1], p1[2]);
+      var lw = Math.max(0.7, w * F / ((p0[2] + p1[2]) / 2));
+      if (glow) { c.strokeStyle = rgba(col, alpha * 0.16); c.lineWidth = lw * 5; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s1[0], s1[1]); c.stroke(); }
+      c.strokeStyle = rgba(col, alpha); c.lineWidth = lw; c.beginPath(); c.moveTo(s0[0], s0[1]); c.lineTo(s1[0], s1[1]); c.stroke();
+    }
+  }
+  function glow(c, p, r, col, a) {
+    var s = P(p[0], p[1], p[2]), R = r * F / p[2];
+    var g = c.createRadialGradient(s[0], s[1], 0, s[0], s[1], R);
+    g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+    c.fillStyle = g; c.fillRect(s[0] - R, s[1] - R, 2 * R, 2 * R);
+  }
+  var FLOOR = [[-RW, 0, ZN], [RW, 0, ZN], [RW, 0, ZD], [-RW, 0, ZD]];
+  var CEIL = [[-RW, RH, ZN], [RW, RH, ZN], [RW, RH, ZD], [-RW, RH, ZD]];
+  var LEFT = [[-RW, 0, ZN], [-RW, RH, ZN], [-RW, RH, ZD], [-RW, 0, ZD]];
+  var RIGHT = [[RW, 0, ZN], [RW, RH, ZN], [RW, RH, ZD], [RW, 0, ZD]];
+  var BACK = [[-RW, 0, ZD], [RW, 0, ZD], [RW, RH, ZD], [-RW, RH, ZD]];
+  function band(c, z, th, col, a, parts) {
+    var z0 = Math.max(ZN, z), z1 = Math.min(ZD, z + th);
+    if (z1 <= z0) return;
+    var f = rgba(col, a);
+    if (parts.indexOf("f") >= 0) quad(c, [[-RW, 0, z0], [RW, 0, z0], [RW, 0, z1], [-RW, 0, z1]], f);
+    if (parts.indexOf("c") >= 0) quad(c, [[-RW, RH, z0], [RW, RH, z0], [RW, RH, z1], [-RW, RH, z1]], f);
+    if (parts.indexOf("w") >= 0) {
+      quad(c, [[-RW, 0, z0], [-RW, RH, z0], [-RW, RH, z1], [-RW, 0, z1]], f);
+      quad(c, [[RW, 0, z0], [RW, RH, z0], [RW, RH, z1], [RW, 0, z1]], f);
+    }
+  }
+  function shell(c, pal) {
+    var yF = P(0, 0, ZD)[1], yC = P(0, RH, ZD)[1], xL = P(-RW, 0, ZD)[0], xR = P(RW, 0, ZD)[0], g;
+    g = c.createLinearGradient(0, yF, 0, H); g.addColorStop(0, pal.floor[0]); g.addColorStop(1, pal.floor[1]); quad(c, FLOOR, g);
+    g = c.createLinearGradient(0, yC, 0, 0); g.addColorStop(0, pal.ceil[0]); g.addColorStop(1, pal.ceil[1]); quad(c, CEIL, g);
+    g = c.createLinearGradient(xL, 0, 0, 0); g.addColorStop(0, pal.wall[0]); g.addColorStop(1, pal.wall[1]); quad(c, LEFT, g);
+    g = c.createLinearGradient(xR, 0, W, 0); g.addColorStop(0, pal.wall[0]); g.addColorStop(1, pal.wall[1]); quad(c, RIGHT, g);
+    quad(c, BACK, pal.back);
+  }
+  function path(pts) {
+    var len = [0];
+    for (var i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1], pts[i][2] - pts[i - 1][2]));
+    return { pts: pts, len: len, total: len[len.length - 1] };
+  }
+  function at(pa, u) {
+    var d = Math.max(0, Math.min(1, u)) * pa.total, i = 1;
+    while (i < pa.len.length - 1 && pa.len[i] < d) i++;
+    var a = pa.pts[i - 1], b = pa.pts[i], seg = pa.len[i] - pa.len[i - 1], k = seg ? (d - pa.len[i - 1]) / seg : 0;
+    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  }
+  function pulse(c, pa, u, col, size) {
+    for (var j = 7; j >= 0; j--) {
+      if (u - j * 0.012 < 0) continue;
+      glow(c, at(pa, u - j * 0.012), size * (j ? 0.55 : 1), col, j ? 0.5 * (1 - j / 8) : 0.95);
+    }
+    return at(pa, u);
+  }
+
+  // ---------- the things that are the same in every sketch ----------
+  var IVORY = "#e9e1cb", VIOLET = "#b060ff";
+  function timeDoor(c, t, trim) {
+    var z = ZD - 0.01;
+    quad(c, [[-1.28, 0, z], [1.28, 0, z], [1.28, 3.5, z], [-1.28, 3.5, z]], trim);
+    quad(c, [[-1.1, 0, z], [1.1, 0, z], [1.1, 3.3, z], [-1.1, 3.3, z]], IVORY);
+    var o = P(0, 2.35, z), r = 0.55 * F / z;
+    c.fillStyle = "#f7f2e2"; c.beginPath(); c.arc(o[0], o[1], r, 0, 6.2832); c.fill();
+    c.strokeStyle = "#2a2620"; c.lineWidth = 1.6; c.beginPath(); c.arc(o[0], o[1], r, 0, 6.2832); c.stroke();
+    for (var i = 0; i < 12; i++) {
+      var a = i * 0.5236;
+      c.beginPath(); c.moveTo(o[0] + Math.sin(a) * r * 0.82, o[1] - Math.cos(a) * r * 0.82); c.lineTo(o[0] + Math.sin(a) * r * 0.94, o[1] - Math.cos(a) * r * 0.94); c.stroke();
+    }
+    var s = Math.floor(t) % 60 * 0.10472, m = 2.2;
+    c.lineWidth = 2.4; c.beginPath(); c.moveTo(o[0], o[1]); c.lineTo(o[0] + Math.sin(m) * r * 0.6, o[1] - Math.cos(m) * r * 0.6); c.stroke();
+    c.strokeStyle = "#b3261e"; c.lineWidth = 1.3; c.beginPath(); c.moveTo(o[0], o[1]); c.lineTo(o[0] + Math.sin(s) * r * 0.82, o[1] - Math.cos(s) * r * 0.82); c.stroke();
+    c.strokeStyle = "rgba(42,38,32,.35)"; c.lineWidth = 1; var d0 = P(0, 0, z), d1 = P(0, 1.6, z);
+    c.beginPath(); c.moveTo(d0[0], d0[1]); c.lineTo(d1[0], d1[1]); c.stroke();
+  }
+  // the leaf in its frame; the green lamp is drawn apart (lampBulb), since it gives light
+  function leafFrame(c, niche) {
+    var x = RW - 0.01;
+    quad(c, [[x, 0, 5.95], [x, 3.6, 5.95], [x, 3.6, 7.85], [x, 0, 7.85]], niche);
+    quad(c, [[x, 0, 6.1], [x, 3.25, 6.1], [x, 3.25, 7.7], [x, 0, 7.7]], "#8a6a2a");
+    quad(c, [[x, 0, 6.22], [x, 3.12, 6.22], [x, 3.12, 7.58], [x, 0, 7.58]], VIOLET);
+    quad(c, [[x, 1.45, 6.32], [x, 1.62, 6.32], [x, 1.62, 6.5], [x, 1.45, 6.5]], "#e8d9a0");
+  }
+  function leaf(c, niche) {
+    leafFrame(c, niche);
+    var x = RW - 0.01;
+    c.globalCompositeOperation = "lighter";
+    line(c, [x, 3.42, 6.1], [x, 3.42, 7.7], [255, 255, 255], 0.05, 0.9, true);
+    glow(c, [x, 2.0, 5.72], 0.32, [64, 224, 96], 0.95);
+    c.globalCompositeOperation = "source-over";
+    quad(c, [[x, 1.93, 5.66], [x, 2.07, 5.66], [x, 2.07, 5.78], [x, 1.93, 5.78]], "#8dffaa");
+  }
+  function lampBulb(c, col, halo) {
+    var x = RW - 0.01;
+    c.globalCompositeOperation = "lighter";
+    glow(c, [x, 2.0, 5.72], halo, col, 0.8);
+    c.globalCompositeOperation = "source-over";
+    quad(c, [[x, 1.93, 5.66], [x, 2.07, 5.66], [x, 2.07, 5.78], [x, 1.93, 5.78]], rgba([Math.min(255, col[0] + 110), Math.min(255, col[1] + 110), Math.min(255, col[2] + 110)], 1));
+  }
+  function glass(c, frame, tint) {
+    var x = -RW + 0.01;
+    quad(c, [[x, 1.0, 6.7], [x, 3.3, 6.7], [x, 3.3, 9.7], [x, 1.0, 9.7]], frame);
+    quad(c, [[x, 1.15, 6.8], [x, 3.15, 6.8], [x, 3.15, 9.6], [x, 1.15, 9.6]], tint);
+    quad(c, [[x, 2.5, 6.8], [x, 3.15, 6.8], [x, 3.15, 8.3], [x, 2.9, 8.3]], "rgba(255,255,255,.07)");
+  }
+  function glassLight(c, col, a) {
+    var x = -RW + 0.01;
+    quad(c, [[x, 1.15, 6.8], [x, 3.15, 6.8], [x, 3.15, 9.6], [x, 1.15, 9.6]], rgba(col, a));
+    quad(c, [[x, 2.5, 6.8], [x, 3.15, 6.8], [x, 3.15, 8.3], [x, 2.9, 8.3]], rgba([255, 255, 255], a * 0.25));
+  }
+  function slab(c, front, side) {
+    quad(c, [[-2.0, 0, 7.6], [-2.0, 2.3, 7.6], [-2.0, 2.3, 8.6], [-2.0, 0, 8.6]], side);
+    quad(c, [[-3.4, 0, 7.6], [-2.0, 0, 7.6], [-2.0, 2.3, 7.6], [-3.4, 2.3, 7.6]], front);
+  }
+  function figure(c, x, z, h, monster, fill, rim, alpha) {
+    var b = P(x, 0, z), u = h * F / z;
+    c.save(); c.translate(b[0], b[1]); c.globalAlpha = alpha;
+    c.beginPath();
+    if (monster) {
+      c.moveTo(-0.17 * u, 0); c.lineTo(-0.2 * u, -0.42 * u); c.lineTo(-0.3 * u, -0.5 * u); c.lineTo(-0.34 * u, -0.3 * u); c.lineTo(-0.42 * u, -0.32 * u);
+      c.lineTo(-0.36 * u, -0.72 * u); c.lineTo(-0.14 * u, -0.8 * u); c.lineTo(-0.16 * u, -0.98 * u); c.lineTo(-0.07 * u, -0.9 * u); c.lineTo(0.07 * u, -0.9 * u);
+      c.lineTo(0.16 * u, -0.98 * u); c.lineTo(0.14 * u, -0.8 * u); c.lineTo(0.36 * u, -0.72 * u); c.lineTo(0.42 * u, -0.32 * u); c.lineTo(0.34 * u, -0.3 * u);
+      c.lineTo(0.3 * u, -0.5 * u); c.lineTo(0.2 * u, -0.42 * u); c.lineTo(0.17 * u, 0); c.lineTo(0.04 * u, 0); c.lineTo(0, -0.3 * u); c.lineTo(-0.04 * u, 0);
+    } else {
+      c.moveTo(-0.13 * u, 0); c.lineTo(-0.14 * u, -0.46 * u); c.lineTo(-0.2 * u, -0.5 * u); c.lineTo(-0.24 * u, -0.78 * u); c.lineTo(-0.1 * u, -0.84 * u);
+      c.lineTo(-0.1 * u, -0.96 * u); c.lineTo(0, -1.0 * u); c.lineTo(0.1 * u, -0.96 * u); c.lineTo(0.1 * u, -0.84 * u); c.lineTo(0.24 * u, -0.78 * u);
+      c.lineTo(0.2 * u, -0.5 * u); c.lineTo(0.34 * u, -0.56 * u); c.lineTo(0.34 * u, -0.5 * u); c.lineTo(0.14 * u, -0.42 * u); c.lineTo(0.13 * u, 0);
+      c.lineTo(0.03 * u, 0); c.lineTo(0, -0.4 * u); c.lineTo(-0.03 * u, 0);
+    }
+    c.closePath(); c.fillStyle = fill; c.fill();
+    if (rim) { c.strokeStyle = rim; c.lineWidth = 1.6; c.stroke(); }
+    c.restore();
+  }
+
+  // ---------- fixed random things ----------
+  function rnd(seed) { var s = seed; return function () { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+  var r1 = rnd(7), STARS = [];
+  for (var i = 0; i < 150; i++) { r1(); r1(); r1(); r1(); }
+  for (i = 0; i < 230; i++) STARS.push([r1() * W, r1() * 230, 0.4 + r1() * 1.1, r1() * 6.28]);
+
+  // ---------- light as light ----------
+  // The room is drawn as it would look under full light (albedo), then multiplied by a light map
+  // worked out for each point of the walls, floor and ceiling from the scene's lights: an ambient level
+  // plus point lights and spot lights that fade with distance, as GZDoom's do (no shadows).
+  var LW = 240, LH = 135, NPIX = LW * LH;
+  var HX = new Float32Array(NPIX), HY = new Float32Array(NPIX), HZ = new Float32Array(NPIX), HK = new Uint8Array(NPIX);
+  var NX = [0, 0, 1, -1, 0], NY = [1, -1, 0, 0, 0], NZ = [0, 0, 0, 0, -1];   // floor, ceiling, left, right, back
+  (function () {
+    for (var j = 0; j < LH; j++) for (var i = 0; i < LW; i++) {
+      var dx = ((i + 0.5) * W / LW - CX) / F, dy = (CY - (j + 0.5) * H / LH) / F, z = ZD, k = 4, q;
+      if (dy < 0) { q = -EY / dy; if (q < z) { z = q; k = 0; } }
+      if (dy > 0) { q = (RH - EY) / dy; if (q < z) { z = q; k = 1; } }
+      if (dx < 0) { q = (-RW - EX) / dx; if (q < z) { z = q; k = 2; } }
+      if (dx > 0) { q = (RW - EX) / dx; if (q < z) { z = q; k = 3; } }
+      var n = j * LW + i; HX[n] = EX + dx * z; HY[n] = EY + dy * z; HZ[n] = z; HK[n] = k;
+    }
+  })();
+  // k: surface (0..4), or -1 for a thing standing in the room (no facing)
+  function shade(x, y, z, k, S, acc) {
+    acc[0] = S.amb[0]; acc[1] = S.amb[1]; acc[2] = S.amb[2];
+    for (var j = 0; j < S.lights.length; j++) {
+      var L = S.lights[j], lx = L.p[0] - x, ly = L.p[1] - y, lz = L.p[2] - z, d2 = lx * lx + ly * ly + lz * lz;
+      if (d2 >= L.r * L.r) continue;
+      var d = Math.sqrt(d2) || 1e-4, a = 1 - d / L.r;
+      if (k >= 0) { var nd = (NX[k] * lx + NY[k] * ly + NZ[k] * lz) / d; if (nd <= 0) continue; a *= 0.35 + 0.65 * nd; }
+      else a *= 0.8;
+      if (L.spot) { var cs = ly / d; if (cs <= L.co) continue; if (cs < L.ci) a *= (cs - L.co) / (L.ci - L.co); }
+      var s = a * L.k; acc[0] += L.c[0] * s; acc[1] += L.c[1] * s; acc[2] += L.c[2] * s;
+    }
+    if (S.extra) S.extra(x, y, z, k, acc);
+    return acc;
+  }
+  function lightRoom(c, S, lm) {
+    var d = lm.img.data, acc = [0, 0, 0];
+    for (var n = 0, o = 0; n < NPIX; n++, o += 4) {
+      if (HK[n] === 1 && S.sky) { acc[0] = S.amb[0]; acc[1] = S.amb[1]; acc[2] = S.amb[2]; }   // the open roof: redrawn after
+      else shade(HX[n], HY[n], HZ[n], HK[n], S, acc);
+      d[o] = Math.min(255, acc[0] * 255); d[o + 1] = Math.min(255, acc[1] * 255); d[o + 2] = Math.min(255, acc[2] * 255); d[o + 3] = 255;
+    }
+    lm.x.putImageData(lm.img, 0, 0);
+    c.globalCompositeOperation = "multiply"; c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
+    c.drawImage(lm.cv, 0, 0, W, H);
+    c.globalCompositeOperation = "source-over";
+    if (S.sky) sky(c, S.stars);
+  }
+  function lit(alb, S, p, k) {
+    var a = shade(p[0], p[1], p[2], k === undefined ? -1 : k, S, [0, 0, 0]);
+    return "rgb(" + Math.round(Math.min(255, alb[0] * a[0])) + "," + Math.round(Math.min(255, alb[1] * a[1])) + "," + Math.round(Math.min(255, alb[2] * a[2])) + ")";
+  }
+  function spot(x, y, z, r, k, col, outer, inner) { return { p: [x, y, z], r: r, k: k, c: col, spot: true, co: Math.cos(outer * Math.PI / 180), ci: Math.cos(inner * Math.PI / 180) }; }
+  function point(x, y, z, r, k, col) { return { p: [x, y, z], r: r, k: k, c: col }; }
+  function smooth(e0, e1, x) { var u = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return u * u * (3 - 2 * u); }
+
+  // the plated steel under full light
+  var STEEL_W = [168, 174, 184], STEEL_F = [140, 146, 154], STEEL_B = [160, 166, 176];
+  var OR = [255, 138, 48], ICE = [159, 216, 255];
+  var TRUSS_Z = [4.2, 5.8, 7.4, 9.0, 10.6];
+  function base(c, t, o) {
+    quad(c, FLOOR, rgba(STEEL_F, 1));
+    quad(c, LEFT, rgba(STEEL_W, 1)); quad(c, RIGHT, rgba(STEEL_W, 1)); quad(c, BACK, rgba(STEEL_B, 1));
+    quad(c, CEIL, o.roof === "panels" ? "rgb(176,182,190)" : "#03040a");
+    // plates: seams on the walls and the floor
+    var seam = [70, 76, 86], z;
+    for (z = 1.6; z < ZD; z += 1.6) { line(c, [-RW, 0, z], [-RW, RH, z], seam, 0.02, 0.8); line(c, [RW, 0, z], [RW, RH, z], seam, 0.02, 0.8); }
+    for (var h = 1.25; h < RH; h += 1.25) { line(c, [-RW, h, ZN], [-RW, h, ZD], seam, 0.02, 0.6); line(c, [RW, h, ZN], [RW, h, ZD], seam, 0.02, 0.6); line(c, [-RW, h, ZD], [RW, h, ZD], seam, 0.02, 0.6); }
+    for (var x = -3.4; x < RW; x += 1.6) line(c, [x, 0, ZD], [x, RH, ZD], seam, 0.02, 0.6);
+    for (x = -4; x < RW; x += 2) line(c, [x, 0, ZN], [x, 0, ZD], [96, 102, 110], 0.02, 0.7);
+    for (z = 2; z < ZD; z += 2) line(c, [-RW, 0, z], [RW, 0, z], [96, 102, 110], 0.02, 0.7);
+    quad(c, [[-RW, 0, ZN], [-RW, 0.3, ZN], [-RW, 0.3, ZD], [-RW, 0, ZD]], "rgb(110,116,126)");
+    quad(c, [[RW, 0, ZN], [RW, 0.3, ZN], [RW, 0.3, ZD], [RW, 0, ZD]], "rgb(110,116,126)");
+    // the bay's sign
+    var sp = P(-3.15, 3.1, ZD);
+    c.font = "600 " + Math.round(0.44 * F / ZD) + "px 'Chakra Petch', sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillStyle = rgba(OR, 1); c.fillText("TEST BAY 2", sp[0], sp[1]);
+    // the plate
+    quad(c, [[-2.7, 0.005, 5.2], [-1.5, 0.005, 5.2], [-1.5, 0.005, 6.0], [-2.7, 0.005, 6.0]], "rgb(96,100,106)");
+    quad(c, [[-2.6, 0.01, 5.28], [-1.6, 0.01, 5.28], [-1.6, 0.01, 5.92], [-2.6, 0.01, 5.92]], "rgb(196,200,204)");
+    timeDoor(c, t, "rgb(70,74,82)");
+    leafFrame(c, "rgb(204,208,212)");
+    glass(c, "rgb(70,76,88)", "rgb(40,52,70)");
+  }
+  // the open roof is not lit by the room: drawn over the lit room, black, with the stars if asked
+  function sky(c, stars) {
+    c.save(); trace(c, CEIL); c.clip();
+    c.fillStyle = "#03040a"; c.fillRect(0, 0, W, H);
+    if (stars) {
+      var g = c.createRadialGradient(620, 60, 10, 620, 60, 420); g.addColorStop(0, "rgba(60,80,150,.28)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, 320);
+      for (var i = 0; i < STARS.length; i++) {
+        var a = 0.5 + 0.4 * Math.sin(STARS[i][3]);
+        c.fillStyle = "rgba(225,235,255," + a.toFixed(2) + ")"; c.fillRect(STARS[i][0], STARS[i][1], STARS[i][2], STARS[i][2]);
+      }
+    }
+    c.restore();
+  }
+  function trusses(c, col) {
+    for (var i = 0; i < TRUSS_Z.length; i++) line(c, [-RW, RH, TRUSS_Z[i]], [RW, RH, TRUSS_Z[i]], col, 0.2, 1);
+    line(c, [-2, RH, ZN], [-2, RH, ZD], col, 0.14, 1); line(c, [2, RH, ZN], [2, RH, ZD], col, 0.14, 1);
+  }
+  // the slab and the two figures stand in the room: each takes the light where it stands
+  function things(c, S, selfAlpha) {
+    slab(c, lit([150, 156, 166], S, [-2.7, 1.15, 7.6], 4), lit([150, 156, 166], S, [-2.0, 1.15, 8.1], 2));
+    figure(c, 2.3, 9.4, 2.7, true, lit([170, 108, 88], S, [2.3, 1.4, 9.4]), null, 1);
+    figure(c, -0.6, 6.3, 1.9, false, lit([130, 150, 170], S, [-0.6, 1.0, 6.3]), null, selfAlpha || 0.85);
+  }
+  function bulb(c, p, rad, col, halo) {
+    var s = P(p[0], p[1], p[2]), R = Math.max(1.5, rad * F / p[2]);
+    if (halo) { c.globalCompositeOperation = "lighter"; glow(c, p, rad * halo, col, 0.3); c.globalCompositeOperation = "source-over"; }
+    c.fillStyle = rgba(col, 1); c.beginPath(); c.arc(s[0], s[1], R, 0, 6.2832); c.fill();
+    c.fillStyle = "rgba(255,255,255,.85)"; c.beginPath(); c.arc(s[0], s[1], R * 0.5, 0, 6.2832); c.fill();
+  }
+  function workLamp(c, x, y, z, col, on) {
+    var top = P(x, RH, z), b = P(x, y, z), R = 0.2 * F / z;
+    c.strokeStyle = "#0b0d12"; c.lineWidth = Math.max(1, 0.03 * F / z); c.beginPath(); c.moveTo(top[0], top[1]); c.lineTo(b[0], b[1] - R); c.stroke();
+    c.fillStyle = "#1a1d23"; c.beginPath(); c.ellipse(b[0], b[1] - R * 0.15, R * 1.5, R * 0.9, 0, Math.PI, 0); c.fill();
+    if (on) bulb(c, [x, y - 0.05, z], 0.13, col, 2.4);
+  }
+
+  var WARM = [1.0, 0.86, 0.66], NEUTRAL = [1, 1, 1], GREEN = [64, 224, 96], RED = [255, 60, 40];
+  var SCENES = {
+    // ---- 0. today, as built: the first page's Deep Field sketch ----
+    today: function (c, t) {
+      shell(c, { floor: ["#121821", "#0a0d12"], ceil: ["#05060d", "#05060d"], wall: ["#151b25", "#0b0e14"], back: "#131923" });
+      c.save(); trace(c, CEIL); c.clip();
+      var g = c.createRadialGradient(620, 60, 10, 620, 60, 420); g.addColorStop(0, "rgba(70,90,170,.35)"); g.addColorStop(0.5, "rgba(120,60,40,.12)"); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, 320);
+      for (var i = 0; i < STARS.length; i++) {
+        var sx = (STARS[i][0] + t * 3) % W, a = 0.55 + 0.45 * Math.sin(t * 1.3 + STARS[i][3]);
+        c.fillStyle = "rgba(225,235,255," + a.toFixed(2) + ")"; c.fillRect(sx, STARS[i][1], STARS[i][2], STARS[i][2]);
+      }
+      c.restore();
+      for (var z = 2.5; z < ZD; z += 2) line(c, [-RW, RH, z], [RW, RH, z], [28, 36, 50], 0.22, 1);
+      line(c, [-2, RH, ZN], [-2, RH, ZD], [28, 36, 50], 0.16, 1); line(c, [2, RH, ZN], [2, RH, ZD], [28, 36, 50], 0.16, 1);
+      for (z = 3; z < ZD; z += 2) { line(c, [-RW, 0, z], [-RW, RH, z], [120, 150, 190], 0.012, 0.22); line(c, [RW, 0, z], [RW, RH, z], [120, 150, 190], 0.012, 0.22); }
+      timeDoor(c, t, "#0c1017"); leaf(c, "#10151d"); glass(c, "#1c2533", "rgba(40,70,110,.35)");
+      c.globalCompositeOperation = "lighter";
+      // the high lines breathe (3.2 s); one stretch stutters
+      var br = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * 6.2832 / 3.2)), st = (Math.sin(t * 3.7) + Math.sin(t * 5.93) > 1.3) ? 0.08 : 1;
+      line(c, [-RW, 3.7, ZN], [-RW, 3.7, 3.6], ICE, 0.03, 0.6 * br, true); line(c, [-RW, 3.7, 3.6], [-RW, 3.7, 5.2], ICE, 0.03, 0.6 * br * st, true); line(c, [-RW, 3.7, 5.2], [-RW, 3.7, ZD], ICE, 0.03, 0.6 * br, true);
+      line(c, [RW, 3.7, ZN], [RW, 3.7, 5.9], ICE, 0.03, 0.6 * br, true); line(c, [RW, 3.7, 7.9], [RW, 3.7, ZD], ICE, 0.03, 0.6 * br, true);
+      var runs = [path([[-1.7, 0.01, ZN], [-1.7, 0.01, ZD - 0.03], [-1.7, 3.85, ZD - 0.03], [0, 3.85, ZD - 0.03]]),
+                  path([[1.7, 0.01, ZN], [1.7, 0.01, ZD - 0.03], [1.7, 3.85, ZD - 0.03], [0, 3.85, ZD - 0.03]])];
+      var top = 0;
+      for (var r = 0; r < 2; r++) {
+        var pa = runs[r];
+        for (i = 1; i < pa.pts.length; i++) line(c, pa.pts[i - 1], pa.pts[i], ICE, 0.035, 0.38, true);
+        for (var k = 0; k < 3; k++) {
+          var u = (t * 0.2 + k / 3 + r * 0.04) % 1, p = pulse(c, pa, u, ICE, 0.42);
+          if (p[1] < 0.1) glow(c, [p[0], 0.01, p[2]], 2.2, ICE, 0.16);
+          if (u > 0.9) top = Math.max(top, (u - 0.9) * 10);
+        }
+      }
+      glow(c, [0, 3.85, ZD - 0.03], 1.6, ICE, 0.25 + 0.6 * top);
+      quad(c, [[-1.28, 0, ZD - 0.02], [1.28, 0, ZD - 0.02], [1.28, 3.5, ZD - 0.02], [-1.28, 3.5, ZD - 0.02]], rgba(ICE, 0.05 + 0.12 * top));
+      // the sweep: every 20 s a wide pale bar crosses the room in 3 s
+      var sw = t % 20;
+      if (sw < 3) { var zs = ZN - 1.5 + sw / 3 * (ZD - ZN + 3); band(c, zs, 0.6, [255, 255, 255], 0.08, "fw"); band(c, zs + 0.6, 0.7, [255, 255, 255], 0.16, "fw"); band(c, zs + 1.3, 0.6, [255, 255, 255], 0.08, "fw"); }
+      c.globalCompositeOperation = "source-over";
+      slab(c, "#161d28", "#1e2836");
+      c.globalCompositeOperation = "lighter"; line(c, [-3.4, 2.3, 7.59], [-2.0, 2.3, 7.59], OR, 0.03, 0.8, true); line(c, [-3.4, 0.05, 7.59], [-2.0, 0.05, 7.59], OR, 0.03, 0.5, true); c.globalCompositeOperation = "source-over";
+      figure(c, 2.3, 9.4, 2.7, true, "#07090d", rgba(ICE, 0.7), 1);
+      figure(c, -0.6, 6.3, 1.9, false, "#16202c", rgba(ICE, 0.9), 0.8);
+    },
+
+    // ---- A. Lamp Row: still pools in the dark ----
+    lamp: function (c, t, lm) {
+      var S = { amb: [0.06, 0.06, 0.068], sky: true, lights: [
+        spot(0.3, 3.6, 6.0, 7, 2.6, WARM, 24, 8), spot(0.3, 3.6, 8.8, 7, 2.6, WARM, 24, 8),   // the row along the axis
+        point(0, 3.9, 10.3, 3.2, 1.3, WARM),                // the time door's lamp
+        spot(4.2, 3.9, 6.9, 6, 2.2, WARM, 30, 10),          // the frame and leaf's lamp
+        spot(-2.1, 3.6, 5.6, 7, 2.4, WARM, 20, 6),          // the plate's lamp
+        point(-4.4, 2.1, 8.2, 2.0, 0.6, [1, 0.8, 0.55])     // the box, lit from inside
+      ] };
+      base(c, t, { roof: "open" });
+      lightRoom(c, S, lm);
+      trusses(c, [20, 22, 27]);
+      glassLight(c, [255, 196, 130], 0.5);
+      things(c, S);
+      workLamp(c, 0.3, 3.6, 6.0, [255, 226, 180], true); workLamp(c, 0.3, 3.6, 8.8, [255, 226, 180], true);
+      workLamp(c, 0, 3.9, 10.3, [255, 226, 180], true); workLamp(c, -2.1, 3.6, 5.6, [255, 226, 180], true);
+      workLamp(c, 4.2, 3.9, 6.9, [255, 226, 180], true);
+      lampBulb(c, GREEN, 0.22);
+    },
+
+    // ---- B. Door Light: the doors are the lamps ----
+    door: function (c, t, lm) {
+      var red = Math.floor(t / 8) % 2 === 1, lc = red ? [1, 0.22, 0.15] : [0.25, 0.9, 0.38];
+      var fl = t % 13, flare = fl < 1.2 ? Math.pow(1 - fl / 1.2, 2) : 0;
+      var S = { amb: [0.028, 0.028, 0.036], sky: true, lights: [
+        point(0, 1.5, 10.3, 4.0 + 2.5 * flare, 1.05 + 1.6 * flare, [1, 0.93, 0.78]),   // the time door's ivory
+        point(4.5, 1.5, 6.9, 2.3, 1.0, [0.69, 0.38, 1]),                                // the VIOLET leaf
+        point(4.75, 2.05, 5.72, 1.5, 1.3, lc),                                          // the green (or red) lamp
+        point(-4.5, 2.2, 8.2, 2.0, 0.6, [0.8, 0.88, 1])                                 // the box's glass
+      ] };
+      base(c, t, { roof: "open" });
+      lightRoom(c, S, lm);
+      // the time door gives the light: its face is lit from within
+      c.globalAlpha = 0.55 + 0.45 * flare; timeDoor(c, t, "rgb(60,58,54)"); c.globalAlpha = 1;
+      if (flare > 0) { c.globalCompositeOperation = "lighter"; quad(c, [[-1.1, 0, ZD - 0.02], [1.1, 0, ZD - 0.02], [1.1, 3.3, ZD - 0.02], [-1.1, 3.3, ZD - 0.02]], rgba([255, 245, 220], 0.5 * flare)); c.globalCompositeOperation = "source-over"; }
+      glassLight(c, [190, 215, 255], 0.32);
+      things(c, S);
+      lampBulb(c, red ? RED : GREEN, 0.3);
+    },
+
+    // ---- C. Starlight: light from outside, one slow movement ----
+    star: function (c, t, lm) {
+      var PATCH = [0.6, 0.68, 0.84], v = 0.1;            // about 12 units in 120 s
+      var x0 = -9 + ((t * v) % 9);
+      var S = { amb: [0.2, 0.225, 0.29], sky: true, stars: true, lights: [
+        spot(-2.1, 3.0, 5.6, 4.0, 1.1, [1, 0.72, 0.42], 30, 12),   // the warm lamp at the plate
+        point(-4.4, 2.0, 8.2, 1.8, 0.5, [1, 0.75, 0.48])           // the warm lamp in the box
+      ], extra: function (x, y, z, k, acc) {
+        if (k !== 0 && k !== 2 && k !== 3) return;           // patches lie on the floor and climb the walls; they light no figure
+        var ex = k === 0 ? x : (k === 3 ? RW + y * 0.8 : -RW - y * 0.8);
+        var f = 0;
+        for (var n = 0; n < 3; n++) { var dx = Math.abs(ex - (x0 + n * 9)); f = Math.max(f, smooth(1.9, 0.9, dx)); }
+        if (f <= 0) return;
+        var zz = z - 0.9 - y * 0.25, bar = 1;               // the trusses' bars, cast at a slant
+        for (var b = 0; b < TRUSS_Z.length; b++) bar = Math.min(bar, smooth(0.1, 0.3, Math.abs(zz - TRUSS_Z[b])));
+        var zf = smooth(4.3, 5.4, z);                        // the open roof begins over the first truss
+        f *= bar * zf * 0.85;
+        acc[0] += PATCH[0] * f; acc[1] += PATCH[1] * f; acc[2] += PATCH[2] * f;
+      } };
+      base(c, t, { roof: "open" });
+      lightRoom(c, S, lm);
+      trusses(c, [14, 17, 24]);
+      glassLight(c, [255, 190, 120], 0.38);
+      things(c, S);
+      workLamp(c, -2.1, 3.0, 5.6, [255, 200, 140], true);
+      lampBulb(c, GREEN, 0.22);
+    },
+
+    // ---- D. Shift Clock: the light keeps time ----
+    clock: function (c, t, lm) {
+      // only the far part of the wall is in the picture, so the sketch's go is 20 s and its row 20 lamps
+      var N = 20, Z0 = 6.6, DZ = (ZD - 0.25 - Z0) / (N - 1), Y = 3.6, on = Math.floor(t) % N, zo = Z0 + on * DZ;
+      var S = { amb: [0.34, 0.34, 0.34], sky: true, lights: [
+        point(-RW + 0.15, Y, zo, 1.1, 1.6, NEUTRAL),
+        spot(-RW + 0.9, 3.0, zo, 4.5, 1.6, NEUTRAL, 26, 10)
+      ] };
+      base(c, t, { roof: "open" });
+      // the row of lamps, like a ruler
+      for (var i = 0; i < N; i++) {
+        var z = Z0 + i * DZ, x = -RW + 0.01, big = i % 5 === 0;
+        var s = P(x, Y, z), R = (big ? 0.085 : 0.065) * F / z;
+        c.fillStyle = "rgb(60,64,70)"; c.beginPath(); c.arc(s[0], s[1], R * 1.6, 0, 6.2832); c.fill();
+        c.fillStyle = "rgb(150,156,164)"; c.beginPath(); c.arc(s[0], s[1], R, 0, 6.2832); c.fill();
+        if (big) line(c, [x, Y - 0.32, z], [x, Y - 0.18, z], [60, 64, 70], 0.02, 1);
+      }
+      lightRoom(c, S, lm);
+      trusses(c, [24, 26, 30]);
+      bulb(c, [-RW + 0.02, Y, zo], (on % 5 === 0 ? 0.1 : 0.085), [255, 255, 250], 2.6);
+      things(c, S);
+      lampBulb(c, GREEN, 0.22);
+    },
+
+    // ---- E. White Room: bright and calm ----
+    white: function (c, t, lm) {
+      var S = { amb: [0.97, 0.97, 0.98], sky: false, lights: [], extra: function (x, y, z, k, acc) {
+        var m = k === 1 ? 1.05 : k === 0 ? 1.0 : k === 4 ? 0.94 : 0.9;
+        acc[0] *= m; acc[1] *= m; acc[2] *= m;
+      } };
+      base(c, t, { roof: "panels" });
+      lightRoom(c, S, lm);
+      // the lit ceiling panels
+      for (var z = 1.6; z < ZD - 0.4; z += 1.6) for (var x = -4.2; x < 4.3; x += 2.1)
+        quad(c, [[x + 0.08, RH, z + 0.08], [x + 2.02, RH, z + 0.08], [x + 2.02, RH, z + 1.52], [x + 0.08, RH, z + 1.52]], "rgb(250,251,253)");
+      things(c, S, 0.8);
+      lampBulb(c, GREEN, 0.18);
+    }
+  };
+
+  // ---------- the page ----------
+  var store = { get: function () { try { return JSON.parse(localStorage.getItem("map32-lights") || "{}") || {}; } catch (e) { return {}; } },
+                set: function (v) { try { localStorage.setItem("map32-lights", JSON.stringify(v)); } catch (e) {} } };
+  var picks = store.get();
+  if (!Array.isArray(picks.order)) picks.order = [];
+  if (!picks.x10 || typeof picks.x10 !== "object") picks.x10 = {};
+  var host = document.getElementById("concepts"), canv = [], dpr = Math.min(2, window.devicePixelRatio || 1);
+  function makeLM() { var cv = document.createElement("canvas"); cv.width = LW; cv.height = LH; var x = cv.getContext("2d"); return { cv: cv, x: x, img: x.createImageData(LW, LH) }; }
+  function addCanvas(id, cv) {
+    cv.width = W * dpr; cv.height = H * dpr;
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var k = { id: id, cv: cv, ctx: ctx, seen: true, t: 3.4, mult: 1, lm: makeLM() };
+    canv.push(k); return k;
+  }
+  addCanvas("today", document.getElementById("cv-today"));
+  CONCEPTS.forEach(function (k, n) {
+    var s = document.createElement("section");
+    s.className = "concept"; s.id = "c-" + k.id;
+    s.innerHTML =
+      '<div class="scene"><canvas role="img" aria-label="Sketch of the room lit as ' + k.name + '"></canvas>' +
+      '<div class="speed"><span>' + k.speed + '</span>' + (k.x10 ? '<button class="ghost" type="button" id="x10-' + k.id + '" aria-pressed="false">x10</button>' : '') + '</div></div>' +
+      '<div class="about"><div class="eyebrow">Concept ' + "ABCDE".charAt(n) + '</div><h2>' + k.name + '</h2><p class="pitch">' + k.pitch + '</p><dl>' +
+      '<div><dt>What lights the room</dt><dd>' + k.lights + '</dd></div>' +
+      '<div><dt>What moves</dt><dd>' + k.moves + '</dd></div>' +
+      '<div><dt>What answers the game</dt><dd>' + k.answers + '</dd></div>' +
+      '<div><dt>In the two fights</dt><dd>' + k.fights + '</dd></div>' +
+      '<div><dt>The risk</dt><dd class="risk">' + k.risk + '</dd></div></dl>' +
+      '<button class="pick" type="button" id="pick-' + k.id + '" aria-pressed="false">Pick ' + k.name + '</button></div>';
+    host.appendChild(s);
+    var cv = addCanvas(k.id, s.querySelector("canvas"));
+    s.querySelector(".pick").addEventListener("click", function () {
+      var o = picks.order, at = o.indexOf(k.id);
+      if (at >= 0) o.splice(at, 1);
+      else if (o.length < 2) o.push(k.id);
+      else o[1] = k.id;
+      sync();
+    });
+    if (k.x10) {
+      var b = s.querySelector("#x10-" + k.id);
+      var setX = function () { cv.mult = picks.x10[k.id] ? 10 : 1; b.setAttribute("aria-pressed", picks.x10[k.id] ? "true" : "false"); b.textContent = picks.x10[k.id] ? "x10 on" : "x10"; };
+      b.addEventListener("click", function () { picks.x10[k.id] = !picks.x10[k.id]; setX(); store.set(picks); if (!running) draw(true); });
+      setX();
+    }
+  });
+
+  var out = document.getElementById("out"), more = document.getElementById("more"), bother = document.getElementById("bother"), inputs = document.querySelectorAll("input[data-k]");
+  var evConcept = document.getElementById("ev-concept");
+  function nameOf(id) { var n = ""; CONCEPTS.forEach(function (k) { if (k.id === id) n = k.name; }); return n; }
+  function sync() {
+    CONCEPTS.forEach(function (k) {
+      var at = picks.order.indexOf(k.id), b = document.getElementById("pick-" + k.id), s = document.getElementById("c-" + k.id);
+      b.setAttribute("aria-pressed", at >= 0 ? "true" : "false");
+      b.textContent = at === 0 ? "First choice: " + k.name : at === 1 ? "Runner-up: " + k.name : "Pick " + k.name;
+      s.classList.toggle("is-first", at === 0); s.classList.toggle("is-second", at === 1);
+    });
+    var v = { dark: "", white: "", kept: [], events: [], fights: "", judge: "" };
+    inputs.forEach(function (i) {
+      if (!i.checked) return;
+      if (i.dataset.k === "kept" || i.dataset.k === "events") v[i.dataset.k].push(i.value); else v[i.dataset.k] = i.value;
+    });
+    picks.checked = []; inputs.forEach(function (i) { if (i.checked) picks.checked.push(i.id); });
+    picks.more = more.value; picks.bother = bother.value;
+    var lines = [], first = "MAP32 light, round two.";
+    if (picks.order[0]) first += " First choice: " + nameOf(picks.order[0]) + ".";
+    else first += " First choice: (none picked yet).";
+    if (picks.order[1]) first += " Runner-up: " + nameOf(picks.order[1]) + ".";
+    lines.push(first);
+    var dw = [];
+    if (v.dark) dw.push("Dark: " + v.dark + ".");
+    if (v.white) dw.push("White: " + v.white + ".");
+    if (dw.length) lines.push(dw.join(" "));
+    if (v.kept.length) lines.push("Kept from today: " + v.kept.join(", ") + ".");
+    if (v.events.length) lines.push("Lights answer the game: " + v.events.join(", ") + ".");
+    if (v.fights) lines.push("In the fights: " + v.fights + ".");
+    if (v.judge) lines.push("To judge: " + v.judge + ".");
+    if (bother.value.trim()) lines.push("Bothered most: " + bother.value.trim());
+    if (more.value.trim()) lines.push("Also: " + more.value.trim());
+    out.value = lines.join("\n");
+    store.set(picks);
+  }
+  if (Array.isArray(picks.checked)) inputs.forEach(function (i) { if (i.type === "checkbox") i.checked = picks.checked.indexOf(i.id) >= 0; else if (picks.checked.indexOf(i.id) >= 0) i.checked = true; });
+  if (typeof picks.more === "string") more.value = picks.more;
+  if (typeof picks.bother === "string") bother.value = picks.bother;
+  inputs.forEach(function (i) {
+    i.addEventListener("change", function () {
+      if (i.dataset.k === "events") {
+        if (i === evConcept && i.checked) inputs.forEach(function (j) { if (j.dataset.k === "events" && j !== evConcept) j.checked = false; });
+        else if (i !== evConcept && i.checked) evConcept.checked = false;
+        var any = false; inputs.forEach(function (j) { if (j.dataset.k === "events" && j.checked) any = true; });
+        if (!any) evConcept.checked = true;
+      }
+      sync();
+    });
+  });
+  more.addEventListener("input", sync); bother.addEventListener("input", sync);
+  sync();
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var note = document.getElementById("copied");
+    function fallback() { out.focus(); out.select(); note.textContent = "Selected: press Ctrl+C to copy."; }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(out.value).then(function () { note.textContent = "Copied. Paste it into the chat."; }, fallback);
+    else fallback();
+  });
+
+  // ---------- the lights ----------
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches, running = !still;
+  var pause = document.getElementById("pause");
+  function label() { pause.textContent = running ? "Stop the lights" : "Run the lights"; }
+  pause.addEventListener("click", function () { running = !running; last = 0; if (running) requestAnimationFrame(frame); label(); });
+  label();
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { canv.forEach(function (k) { if (k.cv === e.target) k.seen = e.isIntersecting; }); }); }, { rootMargin: "80px" });
+    canv.forEach(function (k) { io.observe(k.cv); });
+  }
+  function draw(all) {
+    canv.forEach(function (k) {
+      if (!all && !k.seen) return;
+      var c = k.ctx;
+      c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; c.shadowBlur = 0; c.lineCap = "butt";
+      c.fillStyle = "#05070b"; c.fillRect(0, 0, W, H);
+      try { SCENES[k.id](c, k.t, k.lm); }
+      catch (e) { c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; if (window.console) console.error("sketch " + k.id + ": " + e.message); }
+    });
+  }
+  var last = 0;
+  function frame(now) {
+    if (!running) return;
+    if (!last) last = now;
+    if (now - last > 30) {
+      var dt = Math.min(0.2, (now - last) / 1000); last = now;
+      canv.forEach(function (k) { if (k.seen) k.t += dt * k.mult; });
+      draw(false);
+    }
+    requestAnimationFrame(frame);
+  }
+  draw(true);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { draw(true); });
+  if (running) requestAnimationFrame(frame);
+})();
+</script>
