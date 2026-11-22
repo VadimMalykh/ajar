@@ -7893,3 +7893,135 @@ lying (it is put back to its place) is not seen in a test. The look of it
 coming back (it simply lies there at the start of the go, without a flash)
 and the game have not been played by hand: `MAP=MAP32 ./run.sh` in the
 worktree.
+
+## The belt lab (built 2026-11-22)
+
+`tools/map_belt.py`, `src/zscript/belt.zs`; `MAP=BELT ./run.sh`,
+`MAP=BELT MODE=1..6 tools/smoke.sh`. An engine test for MAP17's goods
+dispatch (nothing of MAP17 is built): does a thing carried by a scrolling
+floor go through a hung door? **Yes**, for a crate, a barrel, a monster and
+the player, straight and turned, through a coloured door and through a Pair.
+Run headless only: **not played by hand.**
+
+- **How it is made.** `ajarmap.belt(m, a, b, tag)`: a straight run of belt
+  64 wide (a door's width) from a to b, with a curb 16 wide and 16 high on
+  each side, and the Scroll_Floor line (223: tag, 0, 2 = the texture and what
+  stands on it, x and y as 128 + 32 a unit) for its tag. One tag a direction
+  (`ajarmap.BELT_TAG` + n); the recesses at the belt's ends get the same tag
+  (`recess(tag=)`), so the belt runs into the frame's recess up to the portal
+  line and starts at the far side's portal line. One Scroll_Floor line a tag:
+  two would carry twice as fast (`scroll=False` for further runs).
+  `AjarCrate` (20094): radius 16, height 32, solid, not shootable, not
+  pushable, Mass 1000, step height 4 (a curb holds it); Doom's box of bullets
+  (sprite `AMMO`) as a placeholder. `AjarStation` (20095, args[0] a number):
+  a crate whose middle comes into its sector is stamped with the number,
+  once each time it comes in (where it starts counts as no coming in);
+  "AJARTEST stamps=1,3 ..." on the console.
+- **The map.** Four rooms in a row along a hall, each with a doorway onto
+  it. H (start, a crate on its belt; RED, GREEN, BLUE and both TEAL leaves
+  lean here): BLUE's far side to frame 101. P: RED's far side to frame 102;
+  half-way a wall with a hatch 40 high over the belt (P's two halves are
+  joined only by the hatch and the hall). K: GREEN's far side in the north
+  wall, the belt south to a corner and east to frame 103. S: frame 104, a
+  belt 128 long, the scale (a plain floor 160 long). Stations: H 2, P 1, K 3,
+  S 8 (the colours of the far sides that lead in; TEAL for S).
+- **The speed.** Scroll_Floor 8 units a tic. What rides it moves the belt's
+  own 8 units a tic once up to speed (280 a second, Doom's walk is 8.3); its
+  `vel` reads 7.25 (the engine adds the carry for the move and takes friction
+  off after). From standing it takes about 20 tics to get to 90%. 512 units
+  of H's belt from x 96: 67 tics (the end of the start is in it; 64 at full
+  speed).
+
+**What the run showed** (MODE=1 to 6):
+
+A. **A plain door: works.** RED in 101, each put on H's belt at x 64:
+   through RED 84 tics later (`crateThroughRed`, `barrelThroughRed`,
+   `impThroughRed`, `playerThroughRed`), out of the far side at the same
+   speed and on along P's belt (`...OnPBelt`). The crate passes under the
+   hatch and waits at 102 (`crateUnderHatch`). The hatch holds the rest
+   (`barrelHeldAtHatch`, `impHeldAtHatch`, `playerHeldAtHatch`): the player
+   (56), the imp (56) and also the barrel, which is 42 high. A barrel that
+   should pass wants a hatch of 44 or more. The barrel was not set off and
+   the imp did not wake (the player was `notarget` for this).
+B. **Turned: works, with a buffer at the corner.** GREEN in 102: the crate
+   comes out of GREEN's far side in K's north wall moving south along K's
+   belt, turned 90 degrees (`outAlongKBelt`: vel (0, -7.13), x on the belt's
+   middle). At the corner it keeps going south a little and is stopped by
+   the far side of the corner, then rides east 16 off the belt's middle
+   (y 176), and waits at 103 (`roundTheCorner`, `waitsAt103`). It stays at
+   that offset from then on (it rides on through 103 and the next rooms 16
+   off the middle; no harm). **With a curb 16 high at the corner the player
+   (step 24) rode up over it and was left beside the belt**; so beyond the
+   corner there is a buffer 48 high that nothing climbs, and with it the
+   player standing still rides P, the turn, the corner, the Pair and comes to
+   rest on the scale (`playerRodeToScale`). MAP17's corners need such a
+   buffer.
+C. **A Pair: works.** A TEAL leaf in 103, its twin in 104: the crate waiting
+   at 103 goes through and comes out of frame 104's recess in S
+   (`outOfFrame104`), rides the short belt and comes to rest on the scale,
+   (2623.4, 176.2), standing still for 35 tics (`restsOnScale`). It stops
+   about 95 units after the belt ends.
+D. **The order is read: works.** RED in 101, GREEN in 102: stamps "1,3", P
+   then K (`stampsPThenK`). GREEN in 101, RED in 103 (H, K, P): "3,1"
+   (`stampsKThenP`).
+E. **An empty frame: works.** No door in 101: the crate waits at the end of
+   the belt with its box just short of the portal line (x 639.977, the line
+   at 656), not moving at all over 110 tics, no damage (`waitsAtEmptyFrame`,
+   `noJitter`, `noDamage`, `notInTheWall`). A second crate queues right
+   behind it (32.3 behind, `secondQueues`). RED hung: both go through, 7 tics
+   apart (`bothThroughInTurn`), and queue again at 102 (`queueAt102`).
+   **A door taken while a crate is in the doorway** (its box over the portal
+   line, its middle not yet across): the engine leaves the crate where it
+   is, in the line that is now a wall, and it cannot move at all, neither on
+   nor back: at 644.17 (4 over the frame's line) it stayed there for 70
+   tics, still pressing; hung again, the door let it through 2 tics later.
+   The same just out of the far side (at 788.17, its box 12 over the far
+   line): it stayed there too, although the belt carries it away from the
+   line. Refusing to take a door while something is in the doorway would not
+   do: a thief, a Stray door, a sprung frame or a Pair that parts take doors
+   away without asking, and a queue of crates keeps a doorway full. **Chosen:
+   the plate's way.** Whenever a portal line becomes solid (`Link`, which
+   every way of taking a door goes through), a crate whose box is over it is
+   put a step clear (one unit) on the side its middle is on, and a crate
+   right behind it is moved along with it (`CratesClear`, belt.zs). Only
+   crates: the player, monsters and barrels are left as the engine leaves
+   them (for the player on a sprung frame, plate.zs's `StandClear` stays).
+   **This was coded after the run above and has not been run yet**: MODE=4
+   now has the engine's own behaviour first (`rawLeftInTheLine`,
+   `rawStuckInFrameDoorway`, `rawStuckInFarDoorway`), then the same with two
+   crates and `CratesClear` (`steppedClearOfFrame`, `waitsAfterTaken`,
+   `steppedClearOfFarSide`, `goesOnAndSecondWaits`, `noneLost`).
+F. **A ring: works.** RED in 101, GREEN in 102, BLUE in 103: the crate
+   lapped H, P, K six times in 1900 tics, a lap 268 to 272 tics (counted to
+   the whole tic; about 2160 units), at the same speed at the mark every lap
+   (7.250) and the same place across the belt (y 176.14 to 176.17, the 16
+   off the middle that K's corner gives it), stamps "1,3,2" again and again
+   (`fiveLaps`). (`lapsSteady` and `noDrift` asked for too little spread in
+   that run, counting whole tics and the first lap from the belt's middle;
+   they now count to a fraction of a tic and from the first lap's end, and
+   `framesAndDoorsStayPut` asks that frames, doors and stations on the belts'
+   sectors are not carried off: **not run yet**.)
+G. **In the way: reported.** The player standing on the belt 136 before the
+   crate: both ride at the same speed and go through RED 18 tics apart; the
+   hatch holds the player and the crate stops against the player (32.4
+   behind, it does not push); the player moved away, the crate goes on
+   (`crateGoesOnWhenClear`). An awake imp put on H's belt with the player in
+   H: it steps over the curb within 10 tics and goes for the player. Put
+   back on the belt with the player in P beyond the hatch: it rides some 200
+   units, steps off, wanders in H, after about 150 tics steps back onto the
+   belt near its end and goes through RED into P, leaves the belt there and
+   paces along P's middle wall (P's halves are joined only by the hatch and
+   the hall). Nothing crashed, nothing was lost
+   outside the map.
+
+**Not tested / not played by hand.** The step clear (`CratesClear`) and the
+new lap counting above: coded, not run (the docker image `ajar-tools` was
+removed from the machine by another project's `docker image prune` during
+the work, and rebuilding it was not allowed). For the same reason the full
+`./build.sh` with the solver and `MAP=LAB MODE=1` after these changes have
+not been run. A belt the player walks against; a monster or barrel through a
+turned door or a Pair; a crate shot at (it is not shootable: a rocket's
+blast does nothing to it, untried); two belts meeting head on; a crate
+taken through by a door that a thief takes; the look of a belt (FLAT20, the
+curbs STEP1 and METAL are Doom II's, placeholders) and of the crate; the
+game by hand: `MAP=BELT ./run.sh` in the worktree.

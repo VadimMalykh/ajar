@@ -21,6 +21,8 @@ DoomEdNums
 	20091 = EngGhost
 	20092 = AjarUnseenImp
 	20093 = AjarUnseen
+	20094 = AjarCrate                 // the belt lab (belt.zs): a crate a belt carries
+	20095 = AjarStation               // ... and a room that stamps it
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -312,6 +314,16 @@ map LAB "Ajar: the lab"
 map LIFT "Ajar: the lift"
 {
 	next = "LIFT"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The belt lab (tools/map_belt.py): MAP=BELT ./run.sh
+map BELT "Ajar: the belt"
+{
+	next = "BELT"
 	nointermission
 	nojump
 	nocrouch

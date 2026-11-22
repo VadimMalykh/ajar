@@ -238,6 +238,7 @@ class AjarHandler : EventHandler
 		if (toLine) tex.SetNull();
 		else tex = TexMan.CheckForTexture(blankTex, TexMan.Type_Any);
 		l.sidedef[0].SetTexture(Side.mid, tex);
+		if (!toLine) CratesClear(l);      // a crate in the doorway is not left in the wall (belt.zs)
 	}
 
 	Line FindLine(int id)
@@ -1263,6 +1264,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MIR") GlassScript(mo, t, mode);
 		else if (level.mapname ~== "LIFT" && mode == 2) LiftCompanyScript(mo, t);
 		else if (level.mapname ~== "LIFT") LiftScript(mo, t);
+		else if (level.mapname ~== "BELT") BeltScript(mo, t, mode);
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "MAP12" && mode == 1) GoingUpScript(mo, t);
 		else if (level.mapname ~== "MAP13" && mode == 1) SightUnseenScript(mo, t);
