@@ -326,7 +326,7 @@ ajartime.shut_lamp(m, LANDING3[2] - 2, HY - 136, 180, SCREEN3)
 assert STAIRS3[1] > HY - 136 + 8
 # the cage: an alcove east of the upper room, steel inside and lit, entered only by its shutter (worked
 # from the upper room: a player inside when it shuts is put out); beside it a slit of glass; inside, in
-# view of the glass, a megasphere
+# view of the glass, a megasphere, and beside it a backpack, two boxes of rockets and two cell packs
 m.sector(rect(*CAGE3BOX), floor=WF, ceil=WC, light=230, color=HALL, wall="AJBOLT", ftex="AJTRIMF", ctex="AJTRIMF",
          id=WING3TAG)
 CAGE_SECTOR3 = len(m.polys) - 1
@@ -341,6 +341,26 @@ assert CAGE3BOX[3] - CAGEDOOR3[1] == 32 and UPPER3[1] < CAGE3BOX[1] and CAGE3BOX
 MEGA3 = (HX + 940, HY - 72)
 spots(20058, MEGA3)     # AjarSphereEachGo: a megasphere that lies there again in every new go (anew.zs, EachGoBack)
 assert CAGE3BOX[0] + 24 < MEGA3[0] < CAGE3BOX[2] - 24 and CAGEDOOR3[1] <= MEGA3[1] <= CAGE3BOX[3] - 16
+# beside it (Vadim, 2026-11-22: "backpack and more ammo (rockets and cells) in room with mega"): a backpack,
+# two boxes of rockets and two cell packs, each of them too lying there again in every new go, as the
+# megasphere does (anew.zs: AjarBackpackEachGo 20059, AjarRocketBoxEachGo 20063, AjarCellPackEachGo 20064;
+# none counts as an item). Each 16 or more from the cage's walls and from the others, and 24 from its west
+# wall: a pick-up whose box (radius 20) reaches into the shutter's sector is lost when the shutter shuts
+# (seen in a test, 2026-11-22). None hides the megasphere from the glass: a sprite that reaches as far north
+# as the glass's south end (half their widths 14, 27 and 17) stands 16 or more east of the megasphere,
+# behind it. Spread in depth and across, so that each is seen from the shutter's doorway. They are no part of
+# FIRE3 below, nor is the megasphere: the cage opens only while a self stands on its plate in the chamber,
+# so what lies in it is a prize for that, over the fight's reckoned ammunition
+SUPPLY_HALF3 = {20059: 14, 20063: 27, 20064: 17}
+SUPPLIES3 = [(20059, (HX + 944, HY - 108)), (20063, (HX + 920, HY - 136)), (20063, (HX + 960, HY - 136)),
+             (20064, (HX + 920, HY - 112)), (20064, (HX + 956, HY - 76))]
+for kind, at in SUPPLIES3:
+    spots(kind, at)
+    assert CAGE3BOX[0] + 24 <= at[0] <= CAGE3BOX[2] - 16 and CAGE3BOX[1] + 16 <= at[1] <= CAGE3BOX[3] - 16, at
+    assert at[0] >= MEGA3[0] + 16 or at[1] + SUPPLY_HALF3[kind] < CAGEDOOR3[1], ("hides the megasphere", at)
+assert CAGE3BOX[0] + 24 <= MEGA3[0] - 20
+CAGE_SPOTS3 = [MEGA3] + [at for _, at in SUPPLIES3]
+assert all(max(abs(a[0] - b[0]), abs(a[1] - b[1])) >= 16 for i, a in enumerate(CAGE_SPOTS3) for b in CAGE_SPOTS3[i + 1:])
 ajartime.shut_lamp(m, UPPER3[2] - 2, HY - 36, 180, CAGE3)
 ajartime.shutter(m, (SHUTTER3[0], HY), (SHUTTER3[1], HY), (0, -1), HY, SHUT3, under=PRESS3, nomonsters=True,
                  color=HALL)
@@ -537,6 +557,7 @@ for x, y, _ in c3.placed[1]:
     assert y < PY - 24, "wave 1 starts out of the press"
 # over half of what it would take (it was a third until Vadim asked for more): the lobby's, the landing's
 # and the boxes' ammunition against every monster's health; the BFG does more with a cell than is reckoned
+# (not the cage's, SUPPLIES3: a prize for holding it open, given again in every go)
 HARD3 = ajartime.toughness(c3.kinds)
 FIRE3 = ajartime.firepower(LOBBY3 + WING3 + BOXES3)
 assert 0.5 <= FIRE3 / HARD3 <= 0.7, (FIRE3, HARD3)
@@ -846,10 +867,12 @@ ajartime.covers(m, "room 5", FIRST, REGIONS[5], zone=(SX + 16, -240, EX + 584, N
 # a fight of goes whose boxes are spent is never a dead end: its plate that begins it anew is reached on foot
 ajartime.fight_anew_reached(m, {K3: "room 3", K4: "room 4"})
 
-# === the look: "Deep Field" (tools/works32.py; PLAN.md, "Look: MAP32") =========
-# AJAR_WORKS unset or 1: the look (Vadim chose it, 2026-11-21); 0: the plain
-# level, untouched. The look is laid on after every check above, and moves
-# nothing. SIGNS: what gfx_works.make draws for it.
+# === the look (tools/works32.py; PLAN.md, "Look: MAP32") ===========================
+# AJAR_WORKS unset or 1: the look (Vadim chose it, 2026-11-21, "Deep Field"; its
+# lights since 2026-11-22 still orange wall lamps, "on walls only, something more
+# still like orange glow, not white on black"); 0: the plain level, untouched.
+# The look is laid on after every check above, and moves nothing. SIGNS: what
+# gfx_works.make draws for it.
 WORKS = int(os.environ.get("AJAR_WORKS") or "1")
 SIGNS = []
 if WORKS:

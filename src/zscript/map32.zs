@@ -586,9 +586,8 @@ extend class AjarTimeHandler
 		}
 		if (dsStep == 4 && t == dsT + 40)
 		{
-			let wk = AjarWorks.Get();          // the look: room 3 done, plain white and steady, its light up
-			if (wk && wk.on) Console.Printf("AJARTEST info the look: time door waves so far %d", wk.waves);
-			if (wk && wk.on) Check("worksDone3", wk.StateOf(3) == AjarWorks.DONE && wk.SidesShow(3, "W") && wk.Wrong() == 0 && wk.PressLit() == 0);
+			let wk = AjarWorks.Get();          // the look: room 3 done, its light up
+			if (wk && wk.on) Check("worksDone3", wk.StateOf(3) == AjarWorks.DONE && wk.Wrong() == 0 && wk.PressLit() == 0);
 		}
 		if (dsStep == 4 && t == dsT + 40) { Check("steel3", SteelUp(3)); Go(mo, 6500, 160, 0, 0); dsOnFrom = 3; }
 		// === 4: the range: two keys under fire ===
@@ -910,30 +909,30 @@ extend class AjarTimeHandler
 			9856, 172, -192, 90, 0,         // E from PINK's far side, wide: the brass frames face each other
 			10040, 384, -192, 180, 0,       // BLUE hung: into RED's frame, the way without end
 			9672, 384, -192, 0, 0,          // and the other way, into BLUE's
-			// the look, Deep Field (works.zs; PLAN.md, "Look: MAP32"): what it puts on each room
-			180, 128, 0, 180, 0,            // room 1: its time door, the conduit round it
-			192, 330, 0, 90, 0,             // a frame with its leaf in white light
-			-300, 128, 0, 0, 0,             // from the box, through its glass
+			// the look (works.zs; PLAN.md, "Look: MAP32"): what it puts on each room, its orange wall lamps
+			180, 128, 0, 180, 0,            // room 1: its time door, the lamp over it; a wall lamp beside
+			192, 330, 0, 90, 0,             // a frame with its leaf, its pale surround
+			-300, 128, 0, 0, 0,             // from the box, through its glass: the room's time door and its lamp
 			320, 300, 0, 270, 0,            // TEST BAY 1 over the nook
-			2480, 120, 0, 90, 0,            // room 2: its time door, TEST BAY 2
+			2480, 120, 0, 90, 0,            // room 2: its time door with its lamp, TEST BAY 2
 			2200, 160, 0, 180, 0,           // frame A with its lamp
 			2480, 560, 0, 270, 0,           // from the box, through its glass
-			5200, 720, 0, 180, 0,           // room 3: time door 1
-			5768, 880, 0, 90, 15,           // the chamber's back wall: the scale, load cell A
+			5200, 720, 0, 180, 0,           // room 3: time door 1, its lamp
+			5768, 880, 0, 90, 15,           // the chamber's back wall: the scale, a wall lamp, load cell A
 			5064, 250, 0, 270, 0,           // CABIN OPENS UNDER LOAD by the wing's shutter
 			4880, 520, 0, 0, 0,             // from box 1, through its glass
-			6600, 160, 0, 0, 0,             // the corridor to room 4
-			7400, 432, -96, 180, 0,         // room 4: time door 1
+			6600, 160, 0, 0, 0,             // the corridor to room 4: a wall lamp each side
+			7400, 432, -96, 180, 0,         // room 4: time door 1, its lamp
 			7120, 120, -96, 90, 0,          // TEST BAY 4 in the lobby
 			7288, -150, -96, 90, 0,         // from box 1, through its glass
-			8160, 330, -192, 90, 0,         // room 5: TEST BAY 5
-			8232, 400, -192, 270, 0,        // its time door
-			9856, 250, -192, 90, 0,         // the way out: the hatch, lit all round
+			8160, 330, -192, 90, 0,         // room 5: TEST BAY 5, a wall lamp beside it
+			8232, 400, -192, 270, 0,        // its time door with its lamp
+			9856, 250, -192, 90, 0,         // the way out: the hatch, lit orange all round
 			8296, -150, -192, 90, 0,        // from the box, through its glass
 			8300, 400, -192, 0, 0,          // F1 with its leaf
 			5250, 1000, 0, 130, 25,         // the plate line: a self on the cage's plate
 			5768, 400, 0, 90, 0,            // the press down: the flare
-			320, -150, 0, 90, 0             // room 1 done: plain white, steady
+			320, -150, 0, 90, 0             // room 1 done: its light up
 		};
 		int WIDE = 30, OPEN3 = 12, SHUT3V = 19, LINE3 = 53, FLARE3 = 54, DONE1 = 55;
 		if (t == LINE3 * 40 - 25) dsGhost = Actor.Spawn("AjarGhost", (5096, 1184, 0));        // on the cage's plate
@@ -948,7 +947,7 @@ extend class AjarTimeHandler
 		if (t == DONE1 * 40 + 20)
 		{
 			let wk = AjarWorks.Get();
-			if (wk && wk.on) Check("worksTourDone1", wk.StateOf(1) == AjarWorks.DONE && wk.SidesShow(1, "W") && wk.Wrong() == 0);
+			if (wk && wk.on) Check("worksTourDone1", wk.StateOf(1) == AjarWorks.DONE && wk.Wrong() == 0);
 		}
 		int i = t / 40;
 		if (t == OPEN3 * 40 - 15) dsGhost = Actor.Spawn("AjarGhost", (5768, 1000, 0));
@@ -976,11 +975,13 @@ extend class AjarTimeHandler
 // the fight, and the timetable"). Room 3 is entered at its lobby by the script
 // (as MODE=5), godmode. Go 1 is the bait: the screen's plate from TT_SCR to
 // TT_SCR_OFF, the cage's from TT_CAGE to TT_CAGE_OFF, out by door 3 at TT_OUT1.
-// Go 2 goes up the wing, into the cage while the first self holds it, pulls
-// the lever at TT_PULL, out by the window and door 2. Go 3 finds the
-// megasphere in the cage again (EachGoBack), watches the press lamps from box
-// 2, and begins the fight anew. Then (after every check above) go 1 takes the
-// megasphere and goes out by door 3, and go 2 finds it again and takes it too.
+// Go 2 goes up the wing, into the cage while the first self holds it (taking
+// the megasphere, the backpack, the rockets and the cells), pulls the lever at
+// TT_PULL, out by the window and door 2. Go 3 finds all six in the cage again
+// (EachGoBack), watches the press lamps from box 2, and begins the fight anew
+// (the backpack is gone, the six lie there once each). Then (after every check
+// above) go 1 takes them and goes out by door 3, and go 2 finds them again and
+// takes them too.
 extend class AjarTimeHandler
 {
 	const TT_SCR = 160;
@@ -991,6 +992,8 @@ extend class AjarTimeHandler
 	const TT_PULL = 560;
 	int ttStep, ttT, ttOutO, ttLandO, ttUpO, ttPull;
 	int ttItems, ttFound;       // the level's item total and found count once the megasphere is taken
+	int ttRockets, ttCells;     // the player's rockets and cells before the cage's five are taken (or after)
+	bool ttSupLay;              // go 2: the five lay there as the player stepped in
 	// go 1 as it went, live: the first tic of each hold, and the tic after its last (wing shutter, screen, cage)
 	int ttFrom[3], ttTo[3];
 	bool ttAmber, ttNoneSee;
@@ -1080,6 +1083,50 @@ extend class AjarTimeHandler
 		return n, counted;
 	}
 
+	// the backpack, the two boxes of rockets and the two cell packs beside it (map_secret2.SUPPLIES3): of
+	// their five spots, how many have one of its kind lying there; how many of those three kinds lie anywhere
+	// (five and five: one each where it lay, no double, none elsewhere); and how many count as an item
+	int, int, int SuppliesThere33()
+	{
+		static const int sx[] = { 5944, 5920, 5960, 5920, 5956 };
+		static const int sy[] = { -108, -136, -136, -112, -76 };
+		int placed = 0, n = 0, counted = 0;
+		let it = ThinkerIterator.Create("Inventory");
+		Inventory a;
+		while (a = Inventory(it.Next()))
+		{
+			if (a.owner || !a.bSpecial || !(a is "AjarBackpackEachGo" || a is "AjarRocketBoxEachGo" || a is "AjarCellPackEachGo"))
+				continue;
+			n++;
+			if (a.bCountItem) counted++;
+			for (int i = 0; i < 5; i++)
+			{
+				Name cls = i == 0 ? 'AjarBackpackEachGo' : i < 3 ? 'AjarRocketBoxEachGo' : 'AjarCellPackEachGo';
+				if (a.GetClassName() == cls && abs(a.pos.x - sx[i]) < 1 && abs(a.pos.y - sy[i]) < 1) { placed++; break; }
+			}
+		}
+		return placed, n, counted;
+	}
+
+	// the five as at the first entry: one each where it lay, nothing else, none counted
+	bool SuppliesLie33()
+	{
+		int placed, n, counted;
+		[placed, n, counted] = SuppliesThere33();
+		Console.Printf("AJARTEST info cage supplies: placed=%d lying=%d counted=%d", placed, n, counted);
+		return placed == 5 && n == 5 && !counted;
+	}
+
+	// none of the five lies anywhere, and the player has one backpack and may carry 100 rockets and 600 cells
+	bool SuppliesTaken33(Actor mo)
+	{
+		int placed, n, counted;
+		[placed, n, counted] = SuppliesThere33();
+		Console.Printf("AJARTEST info cage supplies taken: lying=%d backpacks=%d rockets=%d/%d cells=%d/%d", n, Backpacks(mo),
+			mo.CountInv("RocketAmmo"), MaxOf(mo, "RocketAmmo"), mo.CountInv("Cell"), MaxOf(mo, "Cell"));
+		return !n && Backpacks(mo) == 1 && MaxOf(mo, "RocketAmmo") == 100 && MaxOf(mo, "Cell") == 600;
+	}
+
 	void TableScript(PlayerPawn mo)
 	{
 		if (level.totaltime > level.maptime + 10) return;
@@ -1136,7 +1183,12 @@ extend class AjarTimeHandler
 			if (o == TT_CAGE) Go(mo, 5096, 1184, 0, 90);
 			if (o == TT_CAGE + 90) Check("cageOpensWithItsPlate3", cage.IsOpen() && cp.pressed && LampsShow(CAGE3, AjarLamp.GREEN));
 			if (o == TT_CAGE_OFF) Go(mo, 5096, 1080, 0, 0);
-			if (o == TT_CAGE_OFF + AjarShutter.TICS + 4) Check("cageShutsAgain3", cage.IsShut() && !cp.pressed && LampsShow(CAGE3, AjarLamp.RED));
+			if (o == TT_CAGE_OFF + AjarShutter.TICS + 4)
+			{
+				Check("cageShutsAgain3", cage.IsShut() && !cp.pressed && LampsShow(CAGE3, AjarLamp.RED));
+				// what lies in the cage is clear of the shutter: none of it lost as it shut
+				Check("suppliesStayAsItShuts3", SuppliesLie33() && MegaThere33());
+			}
 			if (o == TT_OUT1) Go(mo, 6500, 1040, 0, 0);
 			if (o > TT_OUT1) Walk(mo, (8, 0));
 			// the holds as they go (the take writes this tic's place at index o)
@@ -1228,14 +1280,28 @@ extend class AjarTimeHandler
 			// the cage, held open by the earlier self: in, the megasphere, put out when it steps off
 			if (o == TT_CAGE + AjarShutter.TICS + 4)
 				Check("cageHeldByMyEarlierSelf3", cage.IsOpen() && cp.pressed && !cp.On(mo) && AllGhosts() >= 1);
-			if (o == TT_CAGE + AjarShutter.TICS + 5) Go(mo, 5860, -120, 96, 0);
+			if (o == TT_CAGE + AjarShutter.TICS + 5)
+			{
+				ttSupLay = SuppliesLie33();
+				ttRockets = mo.CountInv("RocketAmmo"); ttCells = mo.CountInv("Cell");
+				ttItems = level.total_items; ttFound = level.found_items;
+				Go(mo, 5860, -120, 96, 0);
+			}
 			if (o > TT_CAGE + AjarShutter.TICS + 5 && o <= TT_CAGE + AjarShutter.TICS + 15) Walk(mo, (8, 0));
 			if (o > TT_CAGE + AjarShutter.TICS + 15 && o <= TT_CAGE + AjarShutter.TICS + 20) Walk(mo, (0, 8));
 			if (o == TT_CAGE + AjarShutter.TICS + 26)
 			{
 				Console.Printf("AJARTEST info in the cage at (%d,%d,%d) health=%d", mo.pos.x, mo.pos.y, mo.pos.z, mo.health);
 				Check("megasphere3", mo.health == 200 && !MegaThere33() && mo.pos.x > 5896);
+				// the backpack, the rockets and the cells beside it, walked over on the way: the limits doubled,
+				// 5 + 5 rockets and 100 + 100 cells, and the backpack's 1 and 20 (none of them counted: one item
+				// found in the cage, the megasphere)
+				Console.Printf("AJARTEST info go 2 took rockets %d -> %d, cells %d -> %d, items %d/%d (before %d/%d)", ttRockets, mo.CountInv("RocketAmmo"),
+					ttCells, mo.CountInv("Cell"), level.found_items, level.total_items, ttFound, ttItems);
+				Check("suppliesTaken3", ttSupLay && SuppliesTaken33(mo) && mo.CountInv("RocketAmmo") == ttRockets + 11
+					&& mo.CountInv("Cell") == ttCells + 220 && level.found_items == ttFound + 1 && level.total_items == ttItems);
 				ttItems = level.total_items; ttFound = level.found_items;
+				ttRockets = mo.CountInv("RocketAmmo"); ttCells = mo.CountInv("Cell");
 			}
 			if (o == TT_CAGE_OFF + AjarShutter.TICS + 4)
 			{
@@ -1275,6 +1341,10 @@ extend class AjarTimeHandler
 					level.found_items, level.total_items, ttFound, ttItems);
 				Check("megasphereBackNextGo3", MegaThere33() && megas == 1 && !counted && level.total_items == ttItems
 					&& level.found_items == ttFound && level.found_items <= level.total_items);
+				// and the five beside it, one each, not counted; the player keeps what go 2 took of them (one
+				// backpack, the limits doubled, the rockets and cells)
+				Check("suppliesBackNextGo3", SuppliesLie33() && Backpacks(mo) == 1 && MaxOf(mo, "RocketAmmo") == 100 && MaxOf(mo, "Cell") == 600
+					&& mo.CountInv("RocketAmmo") == ttRockets && mo.CountInv("Cell") == ttCells);
 			}
 			if (o == 3) Go(mo, 6600, 560, 64, 180);         // in box 2, looking into the hall
 			// the guards alive now are on the demo, though the second self is in the wing
@@ -1313,6 +1383,13 @@ extend class AjarTimeHandler
 			Console.Printf("AJARTEST info anew: megaspheres=%d counted=%d items=%d/%d, at the first entry %d/%d", megas, counted,
 				level.found_items, level.total_items, first.levelFound, first.levelItems);
 			Check("megasphereCountedAnew3", megas == 1 && counted == 1 && level.total_items == first.levelItems && level.found_items == first.levelFound);
+			// the five beside it, one each where it lay; the player's backpack gone (none at the first entry), the
+			// limits, rockets and cells as then
+			Console.Printf("AJARTEST info anew: backpacks=%d/%d rockets=%d/%d of %d/%d cells=%d/%d of %d/%d", Backpacks(mo), BackpacksFirst(),
+				mo.CountInv("RocketAmmo"), MaxOf(mo, "RocketAmmo"), CountFirst("RocketAmmo"), MaxFirst("RocketAmmo"),
+				mo.CountInv("Cell"), MaxOf(mo, "Cell"), CountFirst("Cell"), MaxFirst("Cell"));
+			Check("suppliesAnew3", SuppliesLie33() && Backpacks(mo) == BackpacksFirst() && MaxOf(mo, "RocketAmmo") == MaxFirst("RocketAmmo")
+				&& MaxOf(mo, "Cell") == MaxFirst("Cell") && mo.CountInv("RocketAmmo") == CountFirst("RocketAmmo") && mo.CountInv("Cell") == CountFirst("Cell"));
 		}
 		// each plate's message is said once a level: on both again
 		if (ttStep == 3 && t == ttT + 3) Go(mo, 5768, 1216, 0, 90);
@@ -1337,6 +1414,7 @@ extend class AjarTimeHandler
 			if (o == 20)
 			{
 				ttItems = level.total_items; ttFound = level.found_items;
+				ttRockets = mo.CountInv("RocketAmmo"); ttCells = mo.CountInv("Cell");
 				mo.health = mo.player.health = 100;
 				Go(mo, 5940, -120, 96, 90);
 			}
@@ -1345,6 +1423,9 @@ extend class AjarTimeHandler
 			{
 				Console.Printf("AJARTEST info anew, go 1: health=%d items=%d/%d (before %d/%d)", mo.health, level.found_items, level.total_items, ttFound, ttItems);
 				Check("megasphereAfterAnew3", mo.health == 200 && !MegaThere33() && level.found_items == ttFound + 1 && level.total_items == ttItems);
+				// the five beside it too: the backpack taken again doubles the limits again
+				Console.Printf("AJARTEST info anew, go 1 took rockets %d -> %d, cells %d -> %d", ttRockets, mo.CountInv("RocketAmmo"), ttCells, mo.CountInv("Cell"));
+				Check("suppliesAfterAnew3", SuppliesTaken33(mo) && mo.CountInv("RocketAmmo") == ttRockets + 11 && mo.CountInv("Cell") == ttCells + 220);
 			}
 			if (o == 32) Go(mo, 6500, 1040, 0, 0);
 			if (o > 32) Walk(mo, (8, 0));
@@ -1358,10 +1439,13 @@ extend class AjarTimeHandler
 				[megas, counted] = MegasThere33();
 				Console.Printf("AJARTEST info anew, go 2: megaspheres=%d counted=%d items=%d/%d at=%d", megas, counted, level.found_items, level.total_items, at);
 				Check("megasphereEveryGo3", MegaThere33() && megas == 1 && !counted && level.total_items == ttItems && level.found_items == ttFound + 1);
+				// the five too, one each, not counted; the backpack go 1 took is still the player's
+				Check("suppliesEveryGo3", SuppliesLie33() && Backpacks(mo) == 1 && MaxOf(mo, "RocketAmmo") == 100 && MaxOf(mo, "Cell") == 600);
 			}
 			if (o == 3) Go(mo, 5100, 200, 0, 90);
 			if (o == 60)
 			{
+				ttRockets = mo.CountInv("RocketAmmo"); ttCells = mo.CountInv("Cell");
 				mo.health = mo.player.health = 100;
 				Go(mo, 5940, -120, 96, 90);
 			}
@@ -1371,6 +1455,10 @@ extend class AjarTimeHandler
 				Console.Printf("AJARTEST info anew, go 2: health=%d items=%d/%d", mo.health, level.found_items, level.total_items);
 				Check("megasphereTakenAgain3", mo.health == 200 && !MegaThere33() && level.found_items == ttFound + 1
 					&& level.total_items == ttItems && level.found_items <= level.total_items);
+				// the five again (go 1's self, which walked over them first, picked nothing up): a second backpack
+				// gives its ammunition only, the limits stay doubled, one backpack
+				Console.Printf("AJARTEST info anew, go 2 took rockets %d -> %d, cells %d -> %d", ttRockets, mo.CountInv("RocketAmmo"), ttCells, mo.CountInv("Cell"));
+				Check("suppliesTakenAgain3", SuppliesTaken33(mo) && mo.CountInv("RocketAmmo") == ttRockets + 11 && mo.CountInv("Cell") == ttCells + 220);
 				Check("noParadoxEachGo3", !paradoxes && !paradox);
 				ttStep = 6;
 			}

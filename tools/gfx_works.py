@@ -1,38 +1,41 @@
-"""MAP32's look, "Deep Field" (Vadim, 2026-11-21; AJAR_WORKS in map_secret2.py,
-the dressing in works32.py, the lights in src/zscript/works.zs).
+"""MAP32's look: the pictures (Vadim, 2026-11-21, "Deep Field"; its lights
+redone 2026-11-22, Vadim: "on walls only, something more still like orange
+glow, not white on black"; AJAR_WORKS in map_secret2.py, the dressing in
+works32.py, what answers the game in src/zscript/works.zs).
 
-A plant hung in space where time doors are tested: dark plated steel, thin
-lines of ice-white light (ICE), a little orange for hazard and marking.
+A plant hung in space where time doors are tested: dark plated steel, orange
+for hazard and marking, and one kind of light: a still orange wall lamp, a
+short bar in a dark housing with a soft glow painted round it on the plate.
+Nothing here moves (no ANIMDEFS); the stars drift (MAPINFO).
 
-Every name is AJZ... Most textures are composites (the TEXTURES lump written
-here): a plate drawn once per wall height and thin strips of light laid over
-it, so that the moving variants cost no pictures. A FAMILY is five letters,
-AJZ<part><height>, and its variants are the last three:
-  M00..M15  the lights move: the high line breathes, the dashes of the
-            conduit at the foot run to the right (as the wall is seen)
-  L00..L15  the same, the dashes running to the left
-  S00       steady (a fight that is on, a box)
-  W00       plain white and steady (a room that is done)
-  D00       the high line failed (a stutter: works.zs swaps it in)
-works.zs picks the variant by the room's state; a name of any other shape is
-never touched by it.
-Parts: W a wall; U the wall over a time door (a lit line across its top);
-V, Y a strip beside a time door, the door on its left (V) or right (Y), the
-conduit climbing it; P the press's chamber (a load scale on every plate);
-T the steel lintel over the chamber's mouth (TEST BAY 3, LOAD 4000 t); X
-the wall over a time door in the chamber (96 high, hung from the door);
-1..9 a wall with a sign on it (SIGNS, from works32.py); CF the floor with a
-conduit every 256 (dashes run east); KC a ceiling with a light line.
-Heights (the fifth letter): A 96, B 128, C 160, D 192, E 224, F 256, G 288,
-H 320. A wall is hung from the ceiling, so its high line is a quarter of the
-height down and its conduit 24 over the floor.
-Pictures, not composites: AJZN<h> a frame's surround (pale neutral steel, a
-white line), AJZO<h> the wall over a frame (a white lit strip), AJZQ a slab's
-or pillar's side (an orange line along its top), AJZSTP a step, AJZFT the
-tread plate floor, AJZPLT the press's face (ribbed), AJZBED the bed under it
-(a composite: hazard border, the load cells), AJZHA/AJZHB/AJZHC/AJZHD the
-hatch round the way out, AJZSKY the stars, AJZN0..AJZN9 signs over openings.
-Sprite AJZT: a dash of white light, laid flat (the plate line, works.zs).
+Every name is AJZ... Heights of wall (the last letter of a wall's name):
+A 96, B 128, C 160, D 192, E 224, F 256, G 288, H 320. A wall is hung from
+the ceiling (the chamber's from its floor: the press's ceiling moves).
+  AJZB<h>   patch: the plate, 128 wide, rows of 64 from the top, rivets, the
+            skirting
+  AJZW<h>   a wall (TEXTURES: AJZB<h>); also the pens' and the cage's
+  AJZWL<h>  a wall with a lamp (a picture, B..H): the lamp centred 128 wide,
+            its middle LAMP_Y(h) over the floor; a brightmap: the bar
+            white, the glow grey in proportion
+  AJZU<h>   the wall over a time door and the 32 beside it each side (a
+            picture, B..H): the same lamp, its middle DOOR_Y(h) over the
+            floor, centred on the door's mouth (64 wide; works32.py sets the
+            offsets)
+  AJZXD     the wall over a time door in the chamber (96 high, hung from the
+            door): rows 0..95 of AJZUD
+  AJZPD     the chamber's wall (TEXTURES: AJZBD and a load scale, AJZSC);
+            AJZPDL the same with a lamp (a picture)
+  AJZ1..9   a wall with a sign on it (SIGNS, from works32.py; TEXTURES)
+  AJZTH     the steel lintel over the chamber's mouth, 1280 wide (TEST BAY 3,
+            LOAD 4000 t between hazard stripes; TEXTURES)
+Pictures: AJZN<h> a frame's surround (pale neutral steel, 64 each side and
+over the frame), AJZQ a slab's or pillar's side (an orange line along its
+top), AJZSTP a step, AJZHAZ hazard stripes, AJZSKY the stars,
+AJZHA/AJZHB/AJZHC/AJZHD the hatch round the way out (an orange lit border),
+AJZI1 a sign over an opening. Flats: AJZFT tread plate, AJZKP the ceiling's
+steel plate, AJZPLT the press's face (ribbed), AJZBED the bed under it (a
+composite: hazard border, the load cells). Sprite AJZT: a dash of white
+light, laid flat (the plate line, works.zs).
 """
 import math
 import random
@@ -46,26 +49,31 @@ DIGITS.update({"t": ("00000", "01000", "11100", "01000", "00110"),
                "W": ("10001", "10001", "10101", "11011", "10001"),
                "X": ("10001", "01010", "00100", "01010", "10001")})
 
-ICE = (159, 216, 255)
 ORANGE = (255, 138, 48)
-WHITE = (236, 240, 244)
+CORE = (255, 214, 150)          # the middle of a lamp's bar: pale warm
 HEIGHTS = {"A": 96, "B": 128, "C": 160, "D": 192, "E": 224, "F": 256, "G": 288, "H": 320}
 CODE = {h: c for c, h in HEIGHTS.items()}
-FRAMES = 16             # a breath: FRAMES x TICS tics (3.2 seconds)
-TICS = 7
-PERIOD, STEP = 48, 12   # the dashes: one every PERIOD, STEP further each frame (60 a second)
-DOOR_TOP = 102          # the lit line over a time door, over the floor (the door is 96 high)
-STRIP = 32              # a strip beside a time door
+LAMPED = [c for c, h in HEIGHTS.items() if h > 96]     # the heights a lamp is drawn for
+STRIP = 32              # a strip beside the hatch; and beside a time door, the door lamp's glow
+LAMP_W, LAMP_H = 44, 7  # the lamp's bar
+GLOW_SX = 30.0          # the glow: a gaussian, its sigma across,
+GLOW_UP, GLOW_DOWN = 26.0, 32.0     # above the lamp and below it
+GLOW_WHOLE, GLOW_GONE = 34, 62      # across: whole within GLOW_WHOLE of the middle, nothing from GLOW_GONE
+GLOW_LIFT = 1.1         # the steel under the glow brightened by this share (warm) at its heart
+GLOW_ADD = 0.7          # and ORANGE added by this share
+WARM = (1.0, 0.55, 0.1)
 
 
-def high_row(h):
-    """The high line's top row: a quarter of the wall down from the ceiling."""
-    return round(h / 4) - 1
+def LAMP_Y(h):
+    """A wall lamp's middle over the floor: 128 on walls 192 and higher, lower
+    on shorter ones so that the lamp and most of its glow fit."""
+    return min(128, h - 60)
 
 
-def foot_row(h):
-    """The conduit's top row: its middle 24 over the floor."""
-    return h - 26
+def DOOR_Y(h):
+    """A door lamp's middle over the floor (the door is 96 high): 128 where the
+    wall allows, else half way between the door's top and the ceiling."""
+    return min(128, (96 + h) // 2)
 
 
 class Canvas:
@@ -100,13 +108,6 @@ class Canvas:
         self.rect(x1, y1, x1 + t, y2, c)
         self.rect(x2 - t, y1, x2, y2, c)
 
-    def shade(self, x1, y1, x2, y2, f):
-        for y in range(max(0, y1), min(self.h, y2)):
-            for x in range(max(0, x1), min(self.w, x2)):
-                i = (y * self.w + x) * 4
-                for k in range(3):
-                    self.b[i + k] = max(0, min(255, int(self.b[i + k] * f)))
-
     def noise(self, amount, seed):
         rnd = random.Random(seed)
         b = self.b
@@ -122,6 +123,11 @@ class Canvas:
                 c = src.get(x, y)
                 if c[3]:
                     self.set(x0 + x, y0 + y, c)
+
+    def crop(self, y0, y1):
+        im = Canvas(self.w, y1 - y0)
+        im.b[:] = self.b[y0 * self.w * 4:y1 * self.w * 4]
+        return im
 
     def png(self, grab=None):
         raw = b"".join(b"\0" + bytes(self.b[y * self.w * 4:(y + 1) * self.w * 4]) for y in range(self.h))
@@ -145,13 +151,11 @@ def mix(a, b, t):
 # --- the plates ---------------------------------------------------------------
 TOP, BOT = (31, 41, 56), (18, 24, 33)
 SEAM, SEAM_HI, RIVET = (9, 12, 17), (46, 58, 76), (74, 88, 108)
-GROOVE = (5, 7, 10)
 
 
-def plate(h, *, top=TOP, bot=BOT, seam=SEAM, hi=SEAM_HI, rivet=RIVET, seed=1, w=128, grooves=True):
+def plate(h, *, top=TOP, bot=BOT, seam=SEAM, hi=SEAM_HI, rivet=RIVET, seed=1, w=128, skirting=True):
     """A wall of plates 128 wide, h high, hung from the ceiling: rows of 64
-    from the top, rivets at the corners, a groove for the high line and one
-    for the conduit at the foot."""
+    from the top, rivets at the corners, the skirting at the foot."""
     im = Canvas(w, h)
     for y in range(h):
         im.rect(0, y, w, y + 1, mix(top, bot, y / max(1, h - 1)))
@@ -169,134 +173,90 @@ def plate(h, *, top=TOP, bot=BOT, seam=SEAM, hi=SEAM_HI, rivet=RIVET, seed=1, w=
                         im.rect(rx, ry, rx + 2, ry + 2, rivet)
                         im.set(rx + 1, ry + 2, seam)
                         im.set(rx + 2, ry + 1, seam)
-    if grooves:
-        r = high_row(h)
-        im.rect(0, r - 2, w, r + 5, GROOVE)
-        im.rect(0, r - 3, w, r - 2, hi)
-        im.rect(0, r + 5, w, r + 6, seam)
-        f = foot_row(h)
-        im.rect(0, f - 3, w, f + 7, GROOVE)
-        im.rect(0, f - 4, w, f - 3, hi)
-        im.rect(0, f + 7, w, f + 8, (40, 48, 60))
-        im.rect(0, h - 4, w, h, (12, 15, 20))                # the skirting
+    if skirting:
+        im.rect(0, h - 4, w, h, (12, 15, 20))
     return im
 
 
-def hiline(c, w=128):
-    im = Canvas(w, 3)
-    im.rect(0, 0, w, 1, scale(c, 0.55))
-    im.rect(0, 1, w, 2, c)
-    im.rect(0, 2, w, 3, scale(c, 0.55))
-    return im
+# --- the lamp -------------------------------------------------------------------
+def glow_at(dx, dy):
+    """The glow's strength (0..1) at (dx, dy) from the lamp's middle (dy down)."""
+    ax = abs(dx)
+    if ax >= GLOW_GONE:
+        return 0.0
+    sy = GLOW_DOWN if dy > 0 else GLOW_UP
+    g = math.exp(-0.5 * ((dx / GLOW_SX) ** 2 + (dy / sy) ** 2))
+    if ax > GLOW_WHOLE:
+        t = (ax - GLOW_WHOLE) / (GLOW_GONE - GLOW_WHOLE)
+        g *= 1 - t * t * (3 - 2 * t)
+    return g
 
 
-def conduit(c, w=128 + PERIOD, moving=True):
-    """The conduit at the foot: a dim line with bright dashes."""
-    im = Canvas(w, 4)
-    dim = scale(c, 0.30)
-    im.rect(0, 0, w, 4, (16, 24, 34))
-    im.rect(0, 1, w, 3, dim)
-    if moving:
-        for x in range(0, w, PERIOD):
-            im.rect(x, 0, x + 14, 4, c)
-            im.rect(x + 2, 1, x + 12, 3, mix(c, (255, 255, 255), 0.6))
-    return im
+def lamp(im, cy, seed, cx=64):
+    """Paints a lamp, its bar's middle at (cx, cy), and its glow onto im;
+    returns the brightmap (the bar white, the glow grey in proportion)."""
+    rnd = random.Random(seed)
+    bm = Canvas(im.w, im.h, (0, 0, 0, 255))
+    b, m = im.b, bm.b
+    for y in range(im.h):
+        for x in range(im.w):
+            g = glow_at(x + 0.5 - cx, y + 0.5 - cy)
+            if g <= 0.0:
+                continue
+            i = (y * im.w + x) * 4
+            for k in range(3):
+                v = b[i + k] * (1 + GLOW_LIFT * g * WARM[k]) + ORANGE[k] * GLOW_ADD * g
+                b[i + k] = min(255, int(v + rnd.random()))         # dithered: no steps
+            v = min(255, int(255 * g + rnd.random()))
+            m[i:i + 3] = bytes((v, v, v))
+    hw = LAMP_W // 2
+    x0, y0 = cx - hw, cy - LAMP_H // 2
+    im.rect(x0 - 2, y0 - 2, x0 + LAMP_W + 2, y0 + LAMP_H + 2, (10, 10, 12))      # the housing
+    im.rect(x0 - 2, y0 - 2, x0 + LAMP_W + 2, y0 - 1, (70, 60, 52))
+    bm.rect(x0 - 2, y0 - 2, x0 + LAMP_W + 2, y0 + LAMP_H + 2, (0, 0, 0))
+    for y in range(y0, y0 + LAMP_H):
+        for x in range(x0, x0 + LAMP_W):
+            ex = abs(x + 0.5 - cx) / hw
+            ey = abs(y + 0.5 - (y0 + LAMP_H / 2)) / (LAMP_H / 2)
+            im.set(x, y, mix(CORE, ORANGE, min(1.0, max(ex ** 3, ey ** 2))))
+            bm.set(x, y, (255, 255, 255))
+    return bm
 
 
-def vconduit(c, length, phase):
-    """The conduit climbing beside a time door, its dashes `phase` up."""
-    im = Canvas(4, length)
-    im.rect(0, 0, 4, length, (16, 24, 34))
-    im.rect(1, 0, 3, length, scale(c, 0.30))
-    for y in range(-PERIOD, length + PERIOD, PERIOD):
-        y0 = y - phase
-        im.rect(0, y0, 4, y0 + 14, c)
-        im.rect(1, y0 + 2, 3, y0 + 12, mix(c, (255, 255, 255), 0.6))
-    return im
-
-
-def breath(f):
-    """The high line's strength at frame f: it swells and sinks once a cycle."""
-    return 0.42 + 0.58 * (0.5 - 0.5 * math.cos(2 * math.pi * f / FRAMES))
+def lamp_wall(h, y_over_floor, seed, base=None):
+    """A plate h high with a lamp, its middle y_over_floor over the floor: (picture, brightmap)."""
+    im = base or plate(h, seed=40 + h)
+    return im, lamp(im, h - y_over_floor, seed)
 
 
 # --- composites ---------------------------------------------------------------
 class Comp:
-    """The TEXTURES lump, the ANIMDEFS lines and the GLDEFS brightmaps."""
+    """The TEXTURES lump and the GLDEFS brightmaps."""
 
     def __init__(self):
-        self.tex, self.anim, self.glow = [], [], []
+        self.tex, self.glow = [], []
 
     def define(self, kind, name, w, h, patches):
         lines = [f'{kind} "{name}", {w}, {h}', "{"]
-        for p in patches:
-            nm, x, y = p[:3]
-            extra = p[3] if len(p) > 3 else None
-            if extra:
-                lines.append(f'\tPatch "{nm}", {x}, {y} {{ Alpha {extra:.3f} Style Translucent }}')
-            else:
-                lines.append(f'\tPatch "{nm}", {x}, {y}')
+        for nm, x, y in patches:
+            lines.append(f'\tPatch "{nm}", {x}, {y}')
         lines.append("}")
         self.tex.append("\n".join(lines))
 
     def brightmap(self, kind, name, path):
         self.glow.append(f'brightmap {kind} "{name}"\n{{\n\tmap "{path}"\n}}')
 
-    def animate(self, kind, names):
-        self.anim.append(f"{kind} {names[0]}\n" + "".join(f"\tpic {n} tics {TICS}\n" for n in names))
 
-
-def family(out, comp, fam, w, h, base, lit, *, conduit_at=None, flat=False, brightmap=None, extra=()):
-    """Every variant of the family `fam` (5 letters): `base` the patches
-    under the lights, `lit` a list of (x, y, width) where the high line (and
-    lines like it) lie, `conduit_at` (x0, y, width) of the conduit (or None),
-    `extra` patches over all. Brightmap: the picture at `brightmap`."""
-    kind = "Flat" if flat else "WallTexture"
-    akind = "flat" if flat else "texture"
-
-    def lines(strip, alpha):
-        return [(strip, x, y, alpha) if alpha < 0.999 else (strip, x, y) for x, y, _ in lit for _ in [0]]
-
-    def cond(strip, off):
-        if not conduit_at:
-            return []
-        x0, y, width = conduit_at
-        return [(strip, x0 + xx + off, y) for xx in range(0, width, 128)]
-
-    names = {}
-    for v in ("M", "L"):
-        names[v] = []
-        for f in range(FRAMES):
-            a = breath(f)
-            off = -PERIOD + (f * STEP) % PERIOD if v == "M" else -((f * STEP) % PERIOD)
-            nm = f"{fam}{v}{f:02d}"
-            comp.define(kind, nm, w, h, base + lines("AJZHL", a) + cond("AJZCD", off) + list(extra))
-            names[v].append(nm)
-        comp.animate(akind, names[v])
-    comp.define(kind, f"{fam}S00", w, h, base + lines("AJZHL", 0.8) + cond("AJZCD", 0) + list(extra))
-    comp.define(kind, f"{fam}W00", w, h, base + lines("AJZHW", 0.9) + cond("AJZCW", 0) + list(extra))
-    comp.define(kind, f"{fam}D00", w, h, base + cond("AJZCD", 0) + list(extra))
-    if brightmap:
-        for v in ("M", "L"):
-            for nm in names[v]:
-                comp.brightmap(akind, nm, brightmap)
-        for v in "SWD":
-            comp.brightmap(akind, f"{fam}{v}00", brightmap)
-
-
-def bright(w, h, rows=(), rects=(), mask=None):
+def bright(w, h, mask=(), rows=()):
     """A brightmap: white where it is lit whatever the room's light."""
     im = Canvas(w, h, (0, 0, 0, 255))
     for y0, n in rows:
         im.rect(0, y0, w, y0 + n, (255, 255, 255))
-    for r in rects:
-        im.rect(*r, (255, 255, 255))
-    if mask:
-        for (x0, y0), src in mask:
-            for y in range(src.h):
-                for x in range(src.w):
-                    if src.get(x, y)[3] and sum(src.get(x, y)[:3]) > 200:
-                        im.set(x0 + x, y0 + y, (255, 255, 255))
+    for (x0, y0), src in mask:
+        for y in range(src.h):
+            for x in range(src.w):
+                if src.get(x, y)[3] and sum(src.get(x, y)[:3]) > 200:
+                    im.set(x0 + x, y0 + y, (255, 255, 255))
     return im
 
 
@@ -339,24 +299,17 @@ def tread(seed=5):
 
 
 def ceiling_plate():
-    im = plate(128, top=(26, 33, 44), bot=(22, 28, 38), grooves=False, seed=9)
-    im.rect(0, 56, 128, 72, (36, 44, 56))
-    im.rect(0, 58, 128, 70, GROOVE)
-    return im
+    return plate(128, top=(26, 33, 44), bot=(22, 28, 38), skirting=False, seed=9)
 
 
 def neutral(h, seed=4):
-    """A frame's surround: pale neutral steel, a white line (a picture)."""
-    im = plate(h, top=(150, 154, 158), bot=(128, 132, 136), seam=(92, 96, 100), hi=(176, 180, 184),
-               rivet=(196, 198, 202), seed=seed, grooves=False)
-    r = high_row(h)
-    im.rect(0, r - 2, 128, r + 5, (60, 62, 66))
-    im.rect(0, r, 128, r + 3, WHITE)
-    return im
+    """A frame's surround: pale neutral steel (a picture)."""
+    return plate(h, top=(150, 154, 158), bot=(128, 132, 136), seam=(92, 96, 100), hi=(176, 180, 184),
+                 rivet=(196, 198, 202), seed=seed, skirting=False)
 
 
 def slab_side():
-    im = plate(320, top=(30, 38, 50), bot=(20, 26, 35), grooves=False, seed=13)
+    im = plate(320, top=(30, 38, 50), bot=(20, 26, 35), skirting=False, seed=13)
     im.rect(0, 0, 128, 2, (60, 40, 24))
     im.rect(0, 2, 128, 6, ORANGE)
     im.rect(0, 6, 128, 7, (60, 40, 24))
@@ -453,86 +406,47 @@ def scale_strip(h):
     return im
 
 
-# --- the families ----------------------------------------------------------------
-def wall_base(h, part, comp, out):
-    """The patches of a plain wall of height h, 128 wide."""
-    return [(f"AJZB{CODE[h]}", 0, 0)]
+def lit_border(im, x1, y1, x2, y2):
+    """The hatch's border: ORANGE with a pale warm core."""
+    im.rect(x1, y1, x2, y2, ORANGE)
+    if x2 - x1 > y2 - y1:
+        im.rect(x1, y1 + 2, x2, y2 - 2, CORE)
+    else:
+        im.rect(x1 + 2, y1, x2 - 2, y2, CORE)
 
 
+# --- all of it ----------------------------------------------------------------
 def make(out, signs=()):
-    """Writes the pictures and returns the text of TEXTURES, ANIMDEFS lines
-    and GLDEFS, as a dict."""
+    """Writes the pictures and returns the text of TEXTURES and GLDEFS, as a dict."""
     comp = Comp()
-    out["patches/AJZHL.png"] = hiline(ICE).png()
-    out["patches/AJZHW.png"] = hiline(WHITE).png()
-    out["patches/AJZCD.png"] = conduit(ICE).png()
-    out["patches/AJZCW.png"] = conduit(WHITE, moving=False).png()
     for c, h in HEIGHTS.items():
         out[f"patches/AJZB{c}.png"] = plate(h, seed=40 + h).png()
-    # walls: W, and the chamber's P (a scale on every plate)
-    for c, h in HEIGHTS.items():
-        hr, fr = high_row(h), foot_row(h)
-        bm = f"brightmaps/ajzw{c.lower()}.png"
-        out[bm] = bright(128, h, rows=((hr, 3), (fr, 4))).png()
-        family(out, comp, f"AJZW{c}", 128, h, [(f"AJZB{c}", 0, 0)], [(0, hr, 128)], conduit_at=(0, fr, 128),
-               brightmap=bm)
-    out["patches/AJZSC.png"] = scale_strip(192).png()
-    h, c = 192, "D"
-    family(out, comp, "AJZPD", 128, h, [(f"AJZB{c}", 0, 0), ("AJZSC", 6, 0)], [(0, high_row(h), 128)],
-           conduit_at=(0, foot_row(h), 128), brightmap="brightmaps/ajzwd.png")
-    # the wall over a time door (the line over the door: DOOR_TOP over the floor),
-    # and the strips beside it
-    for c, h in HEIGHTS.items():
-        if h < 128:
-            continue
-        hr, fr, dr = high_row(h), foot_row(h), h - DOOR_TOP - 1
-        bm = f"brightmaps/ajzu{c.lower()}.png"
-        out[bm] = bright(128, h, rows=((hr, 3), (dr, 3))).png()
-        family(out, comp, f"AJZU{c}", 128, h, [(f"AJZB{c}", 0, 0)], [(0, hr, 128), (0, dr, 128)],
-               brightmap=bm)
-        # the strips: the vertical conduit from the foot's conduit to the door's line
-        length = fr + 4 - dr
-        for ph in range(PERIOD // STEP):
-            out[f"patches/AJZV{c}{ph}.png"] = vconduit(ICE, length, ph * STEP).png()
-        out[f"patches/AJZV{c}S.png"] = vconduit(ICE, length, 0).png()
-        out[f"patches/AJZV{c}W.png"] = vconduit(WHITE, length, 0).png()
-        for part, lx in (("V", 4), ("Y", STRIP - 8)):
-            fam = f"AJZ{part}{c}"
-            bm = f"brightmaps/ajz{part.lower()}{c.lower()}.png"
-            hx = (lx - 128 + 4, lx + 4) if part == "V" else (lx, lx + 128)     # the door's line, to the door side
-            dl = (0, dr, lx + 4, dr + 3) if part == "V" else (lx, dr, STRIP, dr + 3)
-            out[bm] = bright(STRIP, h, rows=((hr, 3), (fr, 4)), rects=((lx, dr, lx + 4, fr + 4), dl)).png()
-            under = [(f"AJZB{c}", 0, 0)]
-            door_line = (hx[0], dr, 128)
-            names = {}
-            for v in ("M", "L"):
-                names[v] = []
-                for f in range(FRAMES):
-                    a = breath(f)
-                    off = -PERIOD + (f * STEP) % PERIOD
-                    nm = f"{fam}{v}{f:02d}"
-                    comp.define("WallTexture", nm, STRIP, h, under + [
-                        ("AJZHL", 0, hr, a), ("AJZCD", off, fr), ("AJZHL", door_line[0], dr, a),
-                        (f"AJZV{c}{f % (PERIOD // STEP)}", lx, dr)])
-                    names[v].append(nm)
-                comp.animate("texture", names[v])
-            comp.define("WallTexture", f"{fam}S00", STRIP, h, under + [
-                ("AJZHL", 0, hr, 0.8), ("AJZCD", 0, fr), ("AJZHL", door_line[0], dr, 0.8), (f"AJZV{c}S", lx, dr)])
-            comp.define("WallTexture", f"{fam}W00", STRIP, h, under + [
-                ("AJZHW", 0, hr, 0.9), ("AJZCW", 0, fr), ("AJZHW", door_line[0], dr, 0.9), (f"AJZV{c}W", lx, dr)])
-            comp.define("WallTexture", f"{fam}D00", STRIP, h, under + [
-                ("AJZCD", 0, fr), ("AJZHL", door_line[0], dr, 0.8), (f"AJZV{c}S", lx, dr)])
-            for v in ("M", "L"):
-                for nm in names[v]:
-                    comp.brightmap("texture", nm, bm)
-            for v in "SWD":
-                comp.brightmap("texture", f"{fam}{v}00", bm)
-    # the chamber's door: the wall over it, 96 high, hung from the door (rows 0..95 of a wall of 192)
-    out["brightmaps/ajzxd.png"] = bright(128, 96, rows=((high_row(192), 3), (192 - DOOR_TOP - 1, 3))).png()
-    family(out, comp, "AJZXD", 128, 96, [("AJZBD", 0, 0)], [(0, high_row(192), 128), (0, 192 - DOOR_TOP - 1, 128)],
-           brightmap="brightmaps/ajzxd.png")
-    # the lintel over the chamber's mouth: 1280 wide, 320 high, the hall's wall over it; under the hall's
-    # high line TEST BAY 3 and LOAD 4000 t between hazard stripes; below the lintel's 128, the press's face
+        comp.define("WallTexture", f"AJZW{c}", 128, h, [(f"AJZB{c}", 0, 0)])
+    # the lamps: on a wall (AJZWL), over a time door (AJZU)
+    for c in LAMPED:
+        h = HEIGHTS[c]
+        for nm, y in ((f"AJZWL{c}", LAMP_Y(h)), (f"AJZU{c}", DOOR_Y(h))):
+            im, bm = lamp_wall(h, y, seed=70 + h)
+            out[f"textures/{nm}.png"] = im.png()
+            out[f"brightmaps/{nm.lower()}.png"] = bm.png()
+            comp.brightmap("texture", nm, f"brightmaps/{nm.lower()}.png")
+            if nm == "AJZUD":
+                # the chamber's door: the wall over it, 96 high, hung from the door (rows 0..95 of the 192)
+                out["textures/AJZXD.png"] = im.crop(0, 96).png()
+                out["brightmaps/ajzxd.png"] = bm.crop(0, 96).png()
+                comp.brightmap("texture", "AJZXD", "brightmaps/ajzxd.png")
+    # the chamber: a load scale on every plate; with a lamp
+    sc = scale_strip(192)
+    out["patches/AJZSC.png"] = sc.png()
+    comp.define("WallTexture", "AJZPD", 128, 192, [("AJZBD", 0, 0), ("AJZSC", 6, 0)])
+    pd = plate(192, seed=40 + 192)
+    pd.paste(sc, 6, 0)
+    im, bm = lamp_wall(192, LAMP_Y(192), seed=80, base=pd)
+    out["textures/AJZPDL.png"] = im.png()
+    out["brightmaps/ajzpdl.png"] = bm.png()
+    comp.brightmap("texture", "AJZPDL", "brightmaps/ajzpdl.png")
+    # the lintel over the chamber's mouth: 1280 wide, 320 high, the hall's wall over it: TEST BAY 3 and
+    # LOAD 4000 t between hazard stripes; below the lintel's 128, the press's face
     hz = hazard(64, 24)
     out["patches/AJZHZ.png"] = hz.png()
     s1 = sign_plate(["TEST BAY 3"], 220, 3)
@@ -545,63 +459,22 @@ def make(out, signs=()):
         face.rect(0, y, 128, y + 4, (66, 74, 84))
         face.rect(0, y + 18, 128, y + 24, (20, 24, 30))
     out["patches/AJZPF.png"] = face.png()
-    hr = high_row(320)
     base = [("AJZBH", x, 0) for x in range(0, 1280, 128)]
     base += [("AJZPF", x, 128) for x in range(0, 1280, 128)]
     base += [("AJZHZ", x, 96) for x in range(0, 1280, 64)]
     s1x, s2x = 640 - 40 - s1.w, 640 + 40
     base += [("AJZG3", s1x, 94), ("AJZG4", s2x, 94)]
-    out["brightmaps/ajzth.png"] = bright(1280, 320, rows=((hr, 3),), mask=[((s1x, 94), s1), ((s2x, 94), s2)]).png()
-    family(out, comp, "AJZTH", 1280, 320, base, [(x, hr, 128) for x in range(0, 1280, 128)],
-           brightmap="brightmaps/ajzth.png")
-    # the floor: tread plate; with a conduit every 256 (in the middle of the flat), its dashes running east
+    comp.define("WallTexture", "AJZTH", 1280, 320, base)
+    out["brightmaps/ajzth.png"] = bright(1280, 320, mask=[((s1x, 94), s1), ((s2x, 94), s2)]).png()
+    comp.brightmap("texture", "AJZTH", "brightmaps/ajzth.png")
+    # the floor: tread plate; the ceiling: steel plate
     tr = tread()
     out["flats/AJZFT.png"] = tr.png()
     out["patches/AJZFT.png"] = tr.png()
-    gr = Canvas(256, 12, (6, 8, 11, 255))
-    gr.rect(0, 0, 256, 1, (52, 60, 72))
-    gr.rect(0, 11, 256, 12, (52, 60, 72))
-    out["patches/AJZFG.png"] = gr.png()
-    out["brightmaps/ajzcf.png"] = bright(256, 256, rows=((126, 4),)).png()
-    fbase = [("AJZFT", x, y) for x in (0, 128) for y in (0, 128)] + [("AJZFG", 0, 122)]
-    names = []
-    for f in range(PERIOD // STEP):
-        nm = f"AJZCFM{f:02d}"
-        comp.define("Flat", nm, 256, 256, fbase + [("AJZCD", -PERIOD + f * STEP + xx, 126) for xx in (0, 128, 256)])
-        names.append(nm)
-        comp.brightmap("flat", nm, "brightmaps/ajzcf.png")
-    comp.animate("flat", names)
-    for v, strip in (("S", "AJZCD"), ("W", "AJZCW"), ("D", "AJZCD")):
-        comp.define("Flat", f"AJZCF{v}00", 256, 256, fbase + [(strip, xx, 126) for xx in (0, 128)])
-        comp.brightmap("flat", f"AJZCF{v}00", "brightmaps/ajzcf.png")
-    # the ceiling: steel with a line of light across every 128
-    out["patches/AJZKP.png"] = ceiling_plate().png()
-    out["patches/AJZKL.png"] = hiline(ICE, 128).png()
-    out["brightmaps/ajzkc.png"] = bright(128, 128, rows=((59, 10),)).png()
-    for v, c in (("S", ICE), ("W", WHITE)):
-        lamp = Canvas(128, 10)
-        lamp.rect(0, 0, 128, 10, scale(c, 0.55))
-        lamp.rect(0, 2, 128, 8, c)
-        for x in range(0, 128, 32):
-            lamp.rect(x, 0, x + 2, 10, (30, 36, 46))
-        out[f"patches/AJZK{v}.png"] = lamp.png()
-        comp.define("Flat", f"AJZKC{v}00", 128, 128, [("AJZKP", 0, 0), (f"AJZK{v}", 0, 59)])
-        comp.brightmap("flat", f"AJZKC{v}00", "brightmaps/ajzkc.png")
+    out["flats/AJZKP.png"] = ceiling_plate().png()
     # pictures
     for c, h in HEIGHTS.items():
         out[f"textures/AJZN{c}.png"] = neutral(h).png()
-        out[f"brightmaps/ajzn{c.lower()}.png"] = bright(128, h, rows=((high_row(h), 3),)).png()
-        comp.brightmap("texture", f"AJZN{c}", f"brightmaps/ajzn{c.lower()}.png")
-        if h >= 128:
-            o = neutral(h, seed=6)
-            dr = h - DOOR_TOP - 1
-            o.rect(0, dr - 2, 128, dr + 5, (60, 62, 66))
-            o.rect(0, dr, 128, dr + 3, WHITE)
-            out[f"textures/AJZO{c}.png"] = o.png()
-            out[f"brightmaps/ajzo{c.lower()}.png"] = bright(128, h, rows=((high_row(h), 3), (dr, 3))).png()
-            comp.brightmap("texture", f"AJZO{c}", f"brightmaps/ajzo{c.lower()}.png")
-    for c, h in HEIGHTS.items():                                 # plain plate: the pens, the cage
-        comp.define("WallTexture", f"AJZR{c}", 128, h, [(f"AJZB{c}", 0, 0)])
     out["textures/AJZHAZ.png"] = hazard(64, 64).png()
     out["textures/AJZQ.png"] = slab_side().png()
     out["brightmaps/ajzq.png"] = bright(128, 320, rows=((2, 4),)).png()
@@ -629,26 +502,24 @@ def make(out, signs=()):
         out[f"patches/AJZL{letter}.png"] = lab.png()
         bed += [("AJZLQ", px - 50, py - 50), (f"AJZL{letter}", px - lab.w // 2, py + 56)]
     comp.define("Flat", "AJZBED", 2048, 512, bed)
-    # the hatch round the way out: a full ICE border (lower 96, upper 32, sides of 224)
+    # the hatch round the way out: an orange border lit all round (lower 96, upper 32, sides of 224)
     for nm, h, rows in (("AJZHA", 96, ((0, 6),)), ("AJZHB", 32, ((26, 6),))):
-        im = plate(h, seed=50 + h, grooves=False)
+        im = plate(h, seed=50 + h, skirting=False)
         for y0, n in rows:
-            im.rect(0, y0, 128, y0 + n, ICE)
-            im.rect(0, y0 + 2, 128, y0 + n - 2, mix(ICE, (255, 255, 255), 0.7))
+            lit_border(im, 0, y0, 128, y0 + n)
         out[f"textures/{nm}.png"] = im.png()
         out[f"brightmaps/{nm.lower()}.png"] = bright(128, h, rows=rows).png()
         comp.brightmap("texture", nm, f"brightmaps/{nm.lower()}.png")
     for nm, x0 in (("AJZHC", STRIP - 6), ("AJZHD", 0)):          # C: the hatch on its right; D: on its left
         h = 224
         im = plate(h, seed=55, w=STRIP)
-        im.rect(x0, 32 - 6, x0 + 6, 128 + 6, ICE)
-        im.rect(x0 + 2, 32 - 4, x0 + 4, 128 + 4, mix(ICE, (255, 255, 255), 0.7))
-        hr, fr = high_row(h), foot_row(h)
-        im.rect(0, hr, STRIP, hr + 3, ICE)
+        lit_border(im, x0, 32 - 6, x0 + 6, 128 + 6)
         out[f"textures/{nm}.png"] = im.png()
-        out[f"brightmaps/{nm.lower()}.png"] = bright(STRIP, h, rows=((hr, 3),), rects=((x0, 26, x0 + 6, 134),)).png()
+        bm = bright(STRIP, h)
+        bm.rect(x0, 26, x0 + 6, 134, (255, 255, 255))
+        out[f"brightmaps/{nm.lower()}.png"] = bm.png()
         comp.brightmap("texture", nm, f"brightmaps/{nm.lower()}.png")
-    # signs: on an opening's upper (a picture) or on a wall piece (a family)
+    # signs: on an opening's upper (a picture) or on a wall piece (a composite)
     for sg in signs:
         if sg["kind"] == "upper":
             w, h = sg["w"], sg["h"]
@@ -665,11 +536,9 @@ def make(out, signs=()):
             pn = f"AJZS{sg['name'][3]}"
             out[f"patches/{pn}.png"] = p.png()
             y = sg["y"]
-            hr, fr = high_row(h), foot_row(h)
+            comp.define("WallTexture", sg["name"], 128, h, [(f"AJZB{c}", 0, 0), (pn, 8, y)])
             bm = f"brightmaps/{sg['name'].lower()}.png"
-            out[bm] = bright(128, h, rows=((hr, 3), (fr, 4)), mask=[((8, y), p)]).png()
-            family(out, comp, sg["name"], 128, h, [(f"AJZB{c}", 0, 0)], [(0, hr, 128)], conduit_at=(0, fr, 128),
-                   extra=[(pn, 8, y)], brightmap=bm)
+            out[bm] = bright(128, h, mask=[((8, y), p)]).png()
+            comp.brightmap("texture", sg["name"], bm)
     return {"textures": "\n\n".join(comp.tex) + "\n",
-            "animdefs": "\n".join(comp.anim) + "\n",
             "gldefs": "\n\n".join(comp.glow) + "\n"}
