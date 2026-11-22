@@ -14,6 +14,10 @@
 //      laps counted, the lamps, how long the shutter is up
 //   5  the paradoxes walked
 //   6  views (tools/smoke_MAP18_6.cfg takes a screenshot of each)
+//   7  the one-sided doorways: each face walked, where it lands; the longer
+//      way east against the way west; the way back from the cloakroom to
+//      the start; a monster woken beside each face kept off it by its fence
+//   8  views of the one-sided doorways (tools/smoke_MAP18_8.cfg)
 // The player is god-moded and unseen, and every monster is gone.
 
 extend class AjarHandler
@@ -207,6 +211,8 @@ extend class AjarHandler
 		else if (mode == 4) TamLaps(mo, t);
 		else if (mode == 5) TamParadoxes(mo, t);
 		else if (mode == 6) TamViews(mo, t);
+		else if (mode == 7) TamOneSided(mo, t);
+		else if (mode == 8) TamOneSidedViews(mo, t);
 	}
 
 	// MODE=1: TEAL in the long lane, the rest as the generator's best track.
@@ -602,6 +608,217 @@ extend class AjarHandler
 			BeltHang(mo, DoorOf(3), 112);
 			BeltHang(mo, DoorOf(1), 128);
 		}
+		int i = t / 40;
+		if (i >= views.Size() / 4) return;
+		TamPose(mo, views[i * 4], views[i * 4 + 1], views[i * 4 + 2]);
+		mo.pitch = views[i * 4 + 3];
+		if (t % 40 == 0) Console.Printf("AJARTEST view=%d at (%.0f,%.0f)", i, views[i * 4], views[i * 4 + 1]);
+	}
+
+	// --- the one-sided doorways (map_clockdept.py: ONESIDE sites 1 to 3) -----------------------------
+	const ODD1 = 1871; const MOUTH1 = 1872; const X_IN = 1873; const X_OUT = 1874;
+	const ODD2 = 1875; const ARCH_GATE = 1876; const MOUTH2 = 1877;
+	const ODD3 = 1878; const OFFICE_GATE = 1879; const MOUTH3 = 1880;
+	const FENCE = 48;
+	Vector2 tamFrom, tamSet, tamPreFrom, tamPreSet, tamLand;
+	double tamPrevAng, tamPreAng, tamLandAng, tamLandZ, tamMinDist;
+	int tamJumps, tamEast, tamWest;
+	Actor tamImp;
+
+	// A walk at 10 a tic, as TamWalk, that keeps the first crossing: where
+	// the player was and how he was moving the tic before, where he landed.
+	bool TamGo(Actor mo, int t, double x, double y, double ang, int tics)
+	{
+		int k = TamIn(t);
+		if (k == 1)
+		{
+			TamPose(mo, x, y, ang);
+			tamFrom = mo.pos.xy;
+			tamPrevAng = ang;
+			tamSet = (0, 0);
+			tamJumps = 0;
+			return false;
+		}
+		if ((mo.pos.xy - tamFrom).Length() > 64)
+		{
+			if (!tamJumps)
+			{
+				tamPreFrom = tamFrom; tamPreSet = tamSet; tamPreAng = tamPrevAng;
+				tamLand = mo.pos.xy; tamLandAng = mo.angle; tamLandZ = mo.pos.z;
+			}
+			tamJumps++;
+		}
+		tamFrom = mo.pos.xy;
+		tamPrevAng = mo.angle;
+		tamSet = (0, 0);
+		if (k <= tics + 1) { tamSet = (cos(mo.angle), sin(mo.angle)) * 10; mo.vel.xy = tamSet; }
+		else mo.vel.xy = (0, 0);
+		return k == tics + 4;
+	}
+
+	// The first crossing went from the portal `src` to `dst` as the engine
+	// carries a thing (oneside.zs, OneSideTest.Through): the place where the
+	// tic's move would have ended, carried through, and the facing turned.
+	bool TamLanded(int src, int dst, string what)
+	{
+		Line s = FindLine(src), d = FindLine(dst);
+		if (!tamJumps || !s || !d) { Console.Printf("AJARTEST info %s: no crossing", what); return false; }
+		double rot = OneSideTest.Turn(s, d);
+		Vector2 want = OneSideTest.Through(s, d, tamPreFrom + tamPreSet);
+		double off = (tamLand - want).Length(), angOff = Actor.DeltaAngle(tamLandAng, tamPreAng + rot);
+		Console.Printf("AJARTEST info %s: from (%.1f,%.1f) facing %.0f to (%.1f,%.1f,%.1f) facing %.0f; turn %.0f; place off by %.3f, facing by %.3f; %d jumps",
+			what, tamPreFrom.x, tamPreFrom.y, Actor.Normalize180(tamPreAng), tamLand.x, tamLand.y, tamLandZ, Actor.Normalize180(tamLandAng),
+			Actor.Normalize180(rot), off, angOff, tamJumps);
+		return tamJumps == 1 && off < 1 && abs(angOff) < 0.5;
+	}
+
+	double TamToLine(Vector2 p, int id)
+	{
+		Line l = FindLine(id);
+		Vector2 a = l.v1.p, d = l.delta;
+		double u = clamp(((p - a) dot d) / (d dot d), 0, 1);
+		return (p - (a + d * u)).Length();
+	}
+
+	// A monster woken beside a face with the player beyond it: in `tics` it
+	// comes no nearer to the face than its fence lets it, and crosses nothing.
+	bool TamFenceCase(Actor mo, int t, double ix, double iy, double px, double py, double pz, int face, double keep, string what)
+	{
+		int k = TamIn(t);
+		if (k == 1)
+		{
+			mo.player.cheats &= ~CF_NOTARGET;
+			Pose(mo, px, py, pz, 0);
+			tamImp = Actor.Spawn("DoomImp", (ix, iy, level.PointInSector((ix, iy)).floorplane.ZatPoint((ix, iy))));
+			tamImp.angle = tamImp.AngleTo(mo);
+			tamImp.target = mo;
+			tamImp.movedir = 8;     // no way it was going: Doom's chase would not turn it round towards the player at first
+			tamImp.SetState(tamImp.SeeState);
+			tamFrom = tamImp.pos.xy;
+			tamJumps = 0;
+			tamMinDist = TamToLine(tamImp.pos.xy, face);
+			return false;
+		}
+		if (!tamImp) { Check(what, false); return true; }
+		if ((tamImp.pos.xy - tamFrom).Length() > 64) tamJumps++;
+		tamFrom = tamImp.pos.xy;
+		tamMinDist = min(tamMinDist, TamToLine(tamImp.pos.xy, face));
+		if (k < 160) return false;
+		Console.Printf("AJARTEST info %s: the imp from (%.0f,%.0f) is at (%.0f,%.0f), came %.1f near the face (kept off %.0f), %d jumps, its target %s",
+			what, ix, iy, tamImp.pos.x, tamImp.pos.y, tamMinDist, keep, tamJumps, tamImp.target == mo ? "the player" : "other");
+		Check(what, tamJumps == 0 && tamMinDist >= keep - 0.5 && tamImp.target == mo);
+		tamImp.Destroy();
+		mo.player.cheats |= CF_NOTARGET;
+		return true;
+	}
+
+	void TamOneSided(Actor mo, int t)
+	{
+		switch (tamStep)
+		{
+		// site 1, the longer way east
+		case 0:
+			if (TamGo(mo, t, 5120, 2208, 0, 20)) { Check("eastIntoTheStretch", TamLanded(ODD1, X_IN, "eastIntoTheStretch") && InBox(mo, 5008, 2384, 5104, 2672)); TamNext(t); }
+			break;
+		case 1:
+			if (TamGo(mo, t, 5056, 2440, 270, 15)) { Check("stretchBackOutWest", TamLanded(X_IN, ODD1, "stretchBackOutWest") && InBox(mo, 4992, 2112, 5200, 2304)); TamNext(t); }
+			break;
+		case 2:
+			if (TamGo(mo, t, 5376, 2660, 90, 15)) { Check("stretchOutOfTheMouthEast", TamLanded(X_OUT, MOUTH1, "stretchOutOfTheMouthEast") && InBox(mo, 5216, 2112, 5440, 2304)); TamNext(t); }
+			break;
+		case 3:
+			if (TamGo(mo, t, 5300, 2208, 180, 20)) { Check("westPlain", tamJumps == 0 && InBox(mo, 4992, 2112, 5200, 2304)); TamNext(t); }
+			break;
+		case 4:     // the longer way east, at 10 a tic by the generator's way (MapSpots 2001 on), then back west (2041 on)
+			if (TamIn(t) == 1) { TamPose(mo, 5080, 2208, 0); TamStartRun(t); }
+			else if (TamRun(mo, t, 2000, 10) || TamIn(t) > 400) { tamEast = t - tamT0; Check("theLongWayEastIsWalked", InBox(mo, 5300, 2112, 5440, 2304)); TamNext(t); }
+			break;
+		case 5:
+			if (TamIn(t) == 1) { TamPose(mo, 5340, 2208, 180); TamStartRun(t); }
+			else if (TamRun(mo, t, 2040, 10) || TamIn(t) > 400)
+			{
+				tamWest = t - tamT0;
+				Console.Printf("AJARTEST info the longer way east: %d tics at 10 a tic, back west %d (x 5080 to 5340)", tamEast, tamWest);
+				Check("theWayEastIsLonger", InBox(mo, 4992, 2112, 5120, 2304) && tamEast < 400 && tamEast * 10 > 1000 && tamWest * 10 < 320);
+				TamNext(t);
+			}
+			break;
+		// site 2, the hut bigger inside
+		case 6:
+			if (TamGo(mo, t, 1472, 800, 270, 15)) { Check("hutDoorIntoTheArchive", TamLanded(ODD2, ARCH_GATE, "hutDoorIntoTheArchive") && InBox(mo, 256, -1088, 1280, -320)); TamNext(t); }
+			break;
+		case 7:
+			if (TamGo(mo, t, 768, -420, 90, 15)) { Check("archiveDoorOutOfTheHut", TamLanded(ARCH_GATE, ODD2, "archiveDoorOutOfTheHut") && InBox(mo, 1392, 704, 1552, 1000)); TamNext(t); }
+			break;
+		case 8:
+			if (TamGo(mo, t, 1472, 600, 90, 15)) { Check("hutFrontPlainFromInside", tamJumps == 0 && InBox(mo, 1392, 704, 1552, 900)); TamNext(t); }
+			break;
+		case 9:
+			if (TamGo(mo, t, 1472, 380, 90, 12)) { Check("intoTheHutFromBehind", tamJumps == 0 && InBox(mo, 1360, 464, 1584, 688)); TamNext(t); }
+			break;
+		case 10:    // round the hut: up its west side, then along its front past the door
+			if (TamGo(mo, t, 1310, 420, 90, 36)) { Check("roundTheHut_west", tamJumps == 0 && mo.pos.y > 760); TamNext(t); }
+			break;
+		case 11:
+			if (TamGo(mo, t, 1310, 770, 0, 34)) { Check("roundTheHut_front", tamJumps == 0 && mo.pos.x > 1620 && mo.pos.y > 760); TamNext(t); }
+			break;
+		// site 3, the turn-round
+		case 12:
+			if (TamGo(mo, t, 3560, 736, 180, 20)) { Check("hallIntoTheCloakroomPlain", tamJumps == 0 && InBox(mo, 3008, 512, 3392, 1024)); TamNext(t); }
+			break;
+		case 13:
+			if (TamGo(mo, t, 3300, 736, 0, 15)) { Check("cloakroomDoorIntoTheOffice", TamLanded(ODD3, OFFICE_GATE, "cloakroomDoorIntoTheOffice") && InBox(mo, 2432, 3264, 2880, 3968) && abs(mo.pos.z - 256) < 1); TamNext(t); }
+			break;
+		case 14:
+			if (TamGo(mo, t, 2780, 3552, 0, 15)) { Check("officeGateIntoTheCloakroom", TamLanded(OFFICE_GATE, ODD3, "officeGateIntoTheCloakroom") && InBox(mo, 3008, 512, 3392, 1024) && abs(mo.pos.z) < 1); TamNext(t); }
+			break;
+		case 15:    // the way back from the cloakroom to the start on foot, at 16.7 (MapSpots 2061 on)
+			if (TamIn(t) == 1) { TamPose(mo, 3384, 736, 180); TamStartRun(t); }
+			else if (TamRun(mo, t, 2060, TAM_RUN) || TamIn(t) > 600)
+			{
+				Console.Printf("AJARTEST info the cloakroom back to the start on foot: %d tics, at (%.0f,%.0f,%.0f)", t - tamT0, mo.pos.x, mo.pos.y, mo.pos.z);
+				Check("cloakroomBackToTheHallOnFoot", InBox(mo, 3456, 256, 4544, 1280) && abs(mo.pos.z) < 1 && TamIn(t) <= 600);
+				TamNext(t);
+			}
+			break;
+		// the fences: an imp woken beside each face, the player beyond it
+		case 16: if (TamFenceCase(mo, t, 5060, 2208, 5340, 2208, 0, ODD1, FENCE + 20, "fence1_oddSide")) TamNext(t); break;
+		case 17: if (TamFenceCase(mo, t, 5360, 2208, 5060, 2208, 0, ODD1, FENCE + 20, "fence1_plainSide")) TamNext(t); break;
+		case 18: if (TamFenceCase(mo, t, 1472, 900, 1472, 600, 0, ODD2, FENCE + 20, "fence2_yard")) TamNext(t); break;
+		case 19: if (TamFenceCase(mo, t, 1472, 560, 1472, 900, 0, ODD2, FENCE + 20, "fence2_insideTheHut")) TamNext(t); break;
+		case 20: if (TamFenceCase(mo, t, 768, -520, 1472, 900, 0, ARCH_GATE, FENCE + 20, "fence2_archiveDoor")) TamNext(t); break;
+		case 21: if (TamFenceCase(mo, t, 3250, 736, 3600, 736, 0, ODD3, FENCE + 20, "fence3_cloakroom")) TamNext(t); break;
+		case 22: if (TamFenceCase(mo, t, 3560, 736, 3200, 736, 0, ODD3, 64 + 20, "fence3_hall")) TamNext(t); break;
+		case 23: if (TamFenceCase(mo, t, 2700, 3552, 3100, 3600, 256, OFFICE_GATE, FENCE + 20, "fence3_officeGate")) TamNext(t); break;
+		case 24:
+			Console.Printf("AJARTEST oneSidedDone=1");
+			TamNext(t);
+			break;
+		}
+	}
+
+	// MODE=8: the one-sided doorways seen (tools/smoke_MAP18_8.cfg)
+	void TamOneSidedViews(Actor mo, int t)
+	{
+		static const double views[] = {
+			5040, 2208, 0, 0,       // 0 the longer way: from the court's side, the odd face (the stretch in it) and its signs
+			5130, 2140, 15, 0,      // 1 ... close, at a slant
+			5420, 2208, 180, 0,     // 2 ... from the rotunda's side: a plain doorway, no sign
+			5056, 2420, 90, 0,      // 3 in the stretch, from its way in
+			5376, 2560, 90, 0,      // 4 the stretch's way out (the rotunda's side of the corridor in it)
+			1472, 920, 270, 0,      // 5 the porter's hut from the yard: its door (the archive in it) and the signs
+			1260, 960, 300, 0,      // 6 ... at a slant
+			1472, 250, 90, 0,       // 7 the hut from behind: in by the back, its door plain from inside
+			1472, 600, 90, 0,       // 8 inside the hut: the yard through its door
+			768, -420, 270, 0,      // 9 the archive, from inside its door
+			300, -1040, 40, 0,      // 10 the archive from its far corner
+			768, -720, 90, 0,       // 11 the archive's door: the yard in it
+			3720, 736, 180, 0,      // 12 the cloakroom's doorway from the entrance hall: plain, no sign
+			3150, 736, 0, 0,        // 13 the doorway from inside the cloakroom: the office in it, and the signs
+			3120, 920, 340, 0,      // 14 ... at a slant
+			2560, 3552, 0, 0,       // 15 the office's gate: the cloakroom in it
+			2500, 3830, 330, 0      // 16 the office and its gate at a slant
+		};
 		int i = t / 40;
 		if (i >= views.Size() / 4) return;
 		TamPose(mo, views[i * 4], views[i * 4 + 1], views[i * 4 + 2]);
