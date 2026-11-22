@@ -5809,6 +5809,9 @@ Not decided: how the halves are told apart and which is played first, what
 the crossing fights are, what the thing done together is, what happens when
 the second go spoils what the first one did. No checks asked for yet.
 
+Taken further on 2026-11-22: see "Idea for a map of 21 to 30: the whole map in
+three goes, two switches and a door", near the end of this file.
+
 ## Idea: one-sided portals (Vadim, 2026-11-20; a note, nothing built or checked)
 
 Not for any particular map. Vadim: a portal that is one-sided. From one side
@@ -8883,6 +8886,261 @@ monsters in the loop (an imp shooting, a demon walking into the pulse's
 line); a thief taking a leaf of the beat; the ripper against barrels and
 crates; the gate coming down on a monster or the player; speeds under 10 or
 over 200; save and load.
+## MAP17: the way out round the line, and three secrets (built 2026-11-22)
+
+Vadim played the first version and liked it, with two complaints: once order
+3 raised the shutter the way out was simply there (walk into the night room
+and out), and he found no secret (the hidden order's note in the press's cell
+was tied to nothing). Built from a brief settled on Fable (branch
+`map17-exit`); the making on Opus. Not played by hand.
+
+**What is where.**
+- *The night room* stays at (2368, 128), the corridor from the shutter
+  joining its south wall, but is now the unjoined kind:
+  `ajarmap.way_home(m, 2368, 128, VIOLET, barred=True)`. VIOLET's far side
+  in its west end, an empty brass frame (190, plain brass) in its east end.
+  `barred` (new, MAP17 only) makes the frame `only=4` with `home` = VIOLET's
+  colour: any door but VIOLET hangs there, and `Hang` never calls
+  `ComeHome` for it (its args[1] is a colour, never a far side's line id).
+  VIOLET leans against the north wall facing the corridor's mouth (2528,
+  360). Two medikits, a box of shells and a box of rockets in the room.
+  An `AjarRing` thing (20099, map17.zs) stands in its middle.
+- *Two panels in the wing's east wall*, either side of the shutter: the old
+  one (tag 4, y -128..-64) and its mirror (tag 5, y 192..256), each with a
+  closet behind it (secret sectors). The second closet is (2192, 128, 2288,
+  320): 32 short of the mirror's 2320, since VIOLET's far side's stub reaches
+  west to 2304. In it a soul sphere, a box of rockets, a cell pack.
+- *The store behind the hopper*: the hall's west wall under the chute opens
+  over the belt's width (y 224..288), 64 high, a 16-deep mouth (dark: the
+  hopper's texture's dark foot shows over it), into a room (-208, 160, -16,
+  352; a secret sector, light 104) with crates stacked against its north,
+  west and south walls (sectors 32, 64 and 96 high, `AJDSTOR`/`AJDSTOF`:
+  four of the crate sprite's plain boxes to a 64). A backpack, a box of
+  shells, four armour bonuses. Not on the line (no belt tag).
+- *The notes, torn.* The hidden order's note in the press's cell (`AJDN00`,
+  same place, west wall y 288..352) is now the lower part of a sheet torn
+  across, no pin; its stub (the top strip, the pin, the matching torn edge)
+  is pinned to the south panel (`AJDNS1`), where the whole sheet would hang.
+  The blank crate's note (`AJDNH0`: a bare crate, torn top) hangs on the
+  hall's west wall at y 128..192, south of the chute, in sight from the
+  start; its stub is on the north panel (`AJDNS2`). Seen in the views: the
+  cell's note is made out from the press hall's floor north of the cell
+  (880, 440) through the north glass, and, smaller, from (1110, 330) through
+  the east glass; not moved.
+- *The dispatcher's boards* have a sixth panel, "WAY OUT" with a brass bar
+  for a number (`AJRX0`..`AJRX9`), for frame 190: the hall's board now runs
+  160..544, the press hall's 1088..1472, the wing's 896 down to 512. Nothing
+  else moved. VIOLET in an outlet already showed (the panels have every
+  colour); checked.
+
+**The rules as built.**
+- VIOLET tried in the brass frame: refused, `The way out will not open onto
+  itself here.\nIt has to come round the line.` (ajar.zs `UseFrame`, the
+  `only=4` branch for frame 190; MAP11's archive keeps its text).
+- *The ring* (`AjarRing.Closes`): a station for the player is the kiln
+  (GREEN, outlet 103) and labelling (BLUE, outlet 104). Closed when the
+  brass frame holds GREEN or BLUE and that station's outlet holds VIOLET, or
+  holds the other of the two whose outlet holds VIOLET: the four
+  arrangements. RED, a TEAL leaf, or nothing closes nothing. Read every tic.
+- Each time it becomes closed: `The line runs round through the way
+  out.\nGo round.` (said after whatever the hanging said).
+- While closed, the player coming into the night room by a step through a
+  portal (a jump of more than 64 in a tic into the room's box, recesses
+  included), i.e. out of the brass frame or out of VIOLET's far side, ends
+  the level (Exit_Normal). By the corridor, or leaving, nothing. Nothing is
+  nailed; a door of the ring taken down opens it.
+- AJARTEST lines: `ringClosed n= t=`, `ringOpened n= t=`, `ringOut
+  by=brass|violet at (x,y) t=`.
+- *Crates off the line*: a crate that comes out of a door into the night room
+  (VIOLET in an outlet, or a leaf whose twin hangs in the brass frame) is
+  taken back the tic it gets there: the crate tells the hopper when it
+  changes sector (`AjarHopper.Arrived`, called from `AjarCrate.Tick`), and
+  the hopper's "off" rule takes it then rather than on its own next tick.
+- *The bay's checker* has a third order: a crate with no stamps (args[4] is
+  now 3 + 10 x the tag it opens: 53). Filled: `The bay's scale passes the
+  crate: unstamped.\nNobody ordered a blank one, but a panel north of the
+  shutter slides open.` The hidden order now says "a panel south of the
+  shutter". Refusals: while the main order is open, `The bay's scale wants
+  GREEN, BLUE, RED. This one came ...` as before; once only hidden orders
+  are left, `has no order for a crate stamped ...` (or `for an unstamped
+  crate.`); silent when all three are filled.
+- *The hopper's guard*: no crate is issued while the player or a living
+  monster overlaps the box from 64 behind the hopper to 64 before it, 48
+  either side of the belt's middle (under the chute and in the store's
+  mouth); each tic someone is there the two-second wait starts again.
+- Ambushes: VIOLET's first take (cause 15): a hell knight and two imps in
+  the wing by the shutter. The ring's first closing (cause 49, 40 +
+  `AjarRing.CAUSE` 9, read by `CheckerOpened`): a revenant and two imps in
+  the kiln, a hell knight and two imps in labelling, none on a belt.
+- MAP17's tests now switch `ajar_autotest` off when the level ends (its way
+  out leads into MAP17 again).
+
+**Budget** (`budget.py`, skill 3, secrets counted): 82 monsters, hp 10270,
+ammunition x2.29 (was 73, 8610, x1.93); without the secrets' ammunition
+about x1.75 (was about x1.87). Health 290 (was 140; 100 of it the soul
+sphere).
+
+**Checks** (2026-11-22, on the full `./build.sh` with the solver):
+- Solver: MAP17 solvable in 16 door actions, 134055 states, 0 stuck,
+  nothing that can be lost (was 12, 7521). The PUZZLE: VIOLET home and
+  leaning in "night", frame 190 in "night" with `only` every door but
+  VIOLET, the shutter "wing" to "night" both ways (key x), "exit" from
+  "night" by sight "y" (at "night", the four arrangements), sight "t" (at
+  "wing", a leaf in 101 and the other in 105) opening "blank", and "store"
+  joined to "hall" both ways. The solution after order 3: VIOLET from the
+  night room, through GREEN (101) into the kiln, swap BLUE for VIOLET in
+  103, out through GREEN, swap GREEN for BLUE in 101, to the night room,
+  GREEN into the brass frame, round. Every other map as before.
+- thingcheck, itemcheck, mapcheck on `map_dispatch`: 0 problems each (138
+  sectors, 155 things, 3 secret sectors).
+- `MAP=MAP17 MODE=1`: 61 checks, all passed, and `levelExited`. Orders at t=270,
+  542, 2436 as before; then VIOLET taken, refused in the brass frame; RED in
+  the brass frame and VIOLET in 102 (script hands): the boards show `AJRP5`
+  and `AJRX1`, no ring; walked through RED into the cell and back out
+  against its belt into the night room: nothing ends. Then the solver's
+  route walked: ring closed at t=2918 with the text; out to the corridor and
+  in by it: nothing; GREEN taken down (ringOpened), through VIOLET's far side
+  into the kiln and back through 103 into the night room: nothing; closed
+  again at 3011; VIOLET's 3 and the ring's 6 ambushers came; into the brass
+  frame, GREEN's far side, the kiln, out through VIOLET in 103: `ringOut
+  by=violet` at t=3115, `levelExited`.
+- `MODE=2`: 31 checks, all passed. First the store, by the player's own
+  walking (`+forward` from the cfg, `cl_run 0`) up the hall's belt from x
+  300: under the chute 58 tics after the key went down (3.52 a tic against
+  the belt), in the store at t=144, secret 1. The guard: with the player held
+  under the chute 140 tics no crate, the next 70 tics after they went; the
+  same with a zombie. Then the hidden order as before (panel, closet, secret
+  2 of 3), then a leaf from 103 into 101 (its twin in 105): the blank order
+  filled, the north panel open, the closet entered: secrets 3 of 3; the bay
+  then refuses an unstamped crate with "wants GREEN, BLUE, RED"; no crate
+  ever behind the hopper (watched every tic).
+- `MODE=3`: 39 checks, all passed (the first version's 31, the store watch,
+  and): VIOLET in 101: a crate taken back "off" at (2353.3, 256) the tic it
+  came there; a leaf in 101, its twin in the brass frame: taken back "off"
+  at (2702.7, 256) the tic it came there; no ring from either; one crate in
+  the level at the end.
+- `MODE=4`: 8 lines `name=1` (the first version's 7 and `theFirstCrateIsIssued`), as from the base: walking
+  7.98 a tic, out of the cell, the kiln and labelling at 3.15, 3.29 and 3.96 a tic against the belts.
+- `MODE=5`: 29 views (the old 16 and: the night room from the way in, the
+  brass frame down the room, VIOLET's far side, both panels with their
+  stubs, the cell's note through the glass from east and north, the blank
+  note in the hall, the store's mouth from the hall, inside the store, the
+  three boards with VIOLET in 102 and GREEN in the brass frame), looked at.
+- `MAP=BELT MODE=1..6`: 13, 7, 3, 17, 5 and 4 checks, all passed, as before. MAP16's walk-through:
+  49 checks and `levelExited`, the same lines as the base's pk3 run the same day (only the order in which
+  ambushers came differs).
+- Every other map's wad and every graphic `gfx.make_all` made before built
+  byte for byte as from the branch's base `a594308` (2774 entries compared,
+  the base built with `AJAR_QUICK=1` from `git archive`). Changed: MAP17's
+  wad, `AJDN00` (the torn note), `mapinfo.txt`, `ajar.zs`, `belt.zs`,
+  `map17.zs`. New (15): `AJDNH0`, `AJDNS1`, `AJDNS2`, `AJDSTOR`, flat
+  `AJDSTOF`, `AJRX0`..`AJRX9`.
+
+**Choices and departures.**
+- The brass frame's refusal is `only=4`'s branch keyed on frame 190, not a
+  new `only` value. The ring is a thing with its own `Tick`, not a handler
+  hook. The stations of the ring (GREEN 103, BLUE 104) are constants in
+  `AjarRing`, not map data.
+- "Coming in by a door" is told by a jump of more than 64 in one tic into
+  the room: a script's `Pose` into the room from outside would count too
+  (the tests never do it while the ring is closed).
+- The blank order is coded into the checker's args[4] (3 + 10 x tag): the
+  thing had no free argument.
+- The guard's box includes the store's mouth; a player deep in the store
+  does not hold the hopper.
+- The crate taken back the same tic needed `AjarCrate.Tick` to call the
+  hopper; on the belt lab's map there is no hopper and nothing changes.
+- The views of the panels and the hall's note are taken from 200 off: the
+  notes hang at 70..120 up, as the first version put them, above the
+  middle of a view from close by.
+
+**Not tested / not played by hand.** The fights (the scripts remove
+monsters, the ambushers only say they came); whether the stubs and torn
+edges are read as one sheet by someone who has not been told (they are
+small: 36 by 10; since the review at 70..80 up, their pins level with the
+pin of the bay's note on the shutter between them, so that the three read
+as a row of sheets, two torn off: `gfx_dispatch.stub`, seen in MODE=5 on
+a quick build); the ring closed with BLUE (labelling) or
+through both stations (only the GREEN, 103 arrangement was walked; the
+others are the same code); a crate coming round the ring into the night
+room while the player walks it; the level as a whole by hand.
+
+## Idea for a map of 21 to 30: the whole map in three goes, two switches and a door (Vadim, 2026-11-22; a note, nothing built or checked)
+
+Vadim, while MAP17's way out was being built: "just for memory", to come back
+to when work on MAP21 starts. It takes up "Idea for maps 20 to 30: one map,
+two halves, two of you" (2026-11-20, above) and gives it an end. What is under
+"As Vadim put it" is his; "Open" is his too, as questions he asked himself;
+"Claude's notes" are Claude's, not agreed and not checked against the engine.
+
+**As Vadim put it.**
+- The map has two parts. The player goes through the first one in the normal
+  way. At its end he sees a switch, another switch, and a clear sign that the
+  two have to be pressed at the same moment.
+- In the same place he sees a time room, which he knows from the secret
+  levels (MAP31, MAP32). He goes in and starts the map again, in parallel
+  with his first go, but through the other part.
+- On the way he sees his earlier battles from time to time. Perhaps he even
+  takes part in them; but then something has to send him the right way, so
+  that he ends at the second switch. Or, if the second switch is in the same
+  room as the first, perhaps the two of him simply fight together. Not sure.
+- When the second copy has come to the end too and presses its switch at the
+  same moment as the first, both see a door open. It shuts again as soon as
+  they step away from the switches (or by a timer).
+- So now the player understands that a third copy is needed, the one that
+  walks through that door. He does it all once more: into the time room, the
+  map again as the third copy, and through the door.
+
+**Open (Vadim: "there are some things to think about").**
+- **The timing.** The first copy does not know about timing when it gets to
+  the switch. It has to press it and then wait there for some time, long
+  enough for the second copy to press too and for the third to go through. It
+  is the same thing as MAP32's room 2, but to get there the player has had to
+  play the whole map. How is he made aware of it, or helped to do the right
+  thing?
+- **One room or several.** Are the two switches and the door in one room, or
+  in different rooms with something transparent between them? If in different
+  rooms, the player has to be led so that all three copies end in the right
+  places.
+- **Taking part in the earlier fights**: yes or no, and if yes, how the
+  second copy is still brought to its own switch.
+
+**Claude's notes (not agreed, nothing checked).**
+- The costly mistake is the first copy leaving the switch too soon: it is
+  found out a whole map later. So the first go should not be able to end
+  wrongly. Ways to that, any of which may do:
+  - Not a switch that is pressed but a plate that is stood on (MAP16 taught
+    that a weight has to stay), and the time room's way in opens only while
+    the plate is held or is reached from the plate itself. Then every go ends
+    with its copy standing where it must stand, and "a go that ended there
+    stays there" does the waiting for the player. To check against the goes
+    labs: what an earlier self does after its go's last tic.
+  - The sign at the switches shows three figures: one on each switch and one
+    walking through the door. Then the need for a third go is read at the
+    first visit and not found out by a door that shuts in the face; Vadim's
+    version, where the shutting door teaches it, is the stronger moment but
+    costs one go more if the second copy also leaves too soon.
+  - A clock that is seen from everywhere in the map (MAP18 is the clock
+    department, so by 21 clocks are known), and at the switches a dial that
+    marks when each was pressed in the earlier goes. A later copy then knows
+    how long it has, and the parts can be made so that the second and third
+    are shorter than the first.
+- One room or several: glass between three small rooms answers "who goes
+  where" by the building itself (part one ends at switch one and nowhere
+  else, part two at switch two, the third way at the door), and all three
+  see each other at the end, which is the picture the level is for. One
+  shared room is better only if the copies are to fight together there.
+- Taking part in the earlier fights changes them, and MAP32 has rules for
+  that already (the paradox; an earlier self's shots; a fight as fought). A
+  safe first version: the parts cross only at windows, so the earlier fights
+  are seen and not touched, and one shared fight at most, at the end.
+- The length: three goes of a whole map is long. The second and third ways
+  could be short cuts through what the first go opened.
+- Before it is built: a lab, as for the belt and the clock, with a go that
+  lasts minutes and not seconds (how long a go the recording holds, what an
+  earlier self does when its go is over, two selves holding two plates while
+  a third walks through).
+
 ## The one-sided doorway lab (built 2026-11-22)
 
 `tools/map_oneside.py`, `src/zscript/oneside.zs`; `MAP=ONESIDE ./run.sh`,

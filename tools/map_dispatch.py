@@ -26,7 +26,13 @@ Rooms, all on floor 0:
   labelling, north, sealed: BLUE's far side, the belt under the gantry, 104.
   the dispatch wing, east: BLUE and both TEAL leaves lean here. The bay: 105,
     a short belt out of it, the scale, and beyond it the shutter to the night
-    room, the way out. A panel in the wall south of it: the secret.
+    room. Panels in the wall south and north of it: two secrets.
+  the night room: VIOLET leans here; its far side in the west end, a brass
+    frame that takes any door but VIOLET in the east end. The way out is a
+    ring round the line (AjarRing, map17.zs; PLAN.md, "MAP17: the way out
+    round the line, and three secrets").
+  the store behind the hopper, west of the hall: a secret, reached up the
+    belt against it, under the chute.
 Glass (shots stop, sight does not): the hall sees the press's checker, the
 press hall sees the kiln's scale, the wing sees into the kiln and labelling.
 Steel doors with no handle: A, the hall to the press hall; B, the press hall
@@ -36,8 +42,14 @@ The orders (a note at each checker is a picture of the crate as wanted):
   1. the press's checker wants RED: steel door A opens.
   2. the kiln's scale wants RED, GREEN: steel door B opens.
   3. the bay's scale wants GREEN, BLUE, RED: the shutter goes up.
-  The secret: the bay's scale also takes BLUE, RED, GREEN (its note is in
-  the press's cell, beside RED's far side): the panel in the bay opens.
+  The secrets: the bay's scale also takes BLUE, RED, GREEN (its note is in
+  the press's cell, beside RED's far side, its stub on the panel): the panel
+  south of the shutter opens; and a crate with no stamps (a leaf in 101, its
+  twin in 105; the note by the hopper, its stub on the panel): the panel
+  north of it opens.
+  The way out: the brass frame holds GREEN or BLUE, and that station's
+  outlet VIOLET (or the other station's door, and its outlet VIOLET); then
+  coming into the night room by either of its doors ends the level.
 A crate that has not moved on along the line for ten seconds is taken back,
 as is one with more than six stamps or one off the belts (AjarHopper,
 map17.zs); the next comes two seconds after.
@@ -47,7 +59,7 @@ doors that fills it, as the beams of MAP13 and MAP15 are.
 """
 import ajarmap
 import map_institute1 as I1
-from ajarmap import RED, GREEN, BLUE, TEAL, far_id, LEAVES
+from ajarmap import RED, GREEN, BLUE, VIOLET, TEAL, far_id, LEAVES
 from map_institute1 import T, dress, tint, named, things, LOOK, FACES
 from map_institute1 import ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, CHAINGUNNER, KNIGHT, REVENANT, CACO
 from udmf import Map, rect
@@ -60,10 +72,11 @@ if LOOK:
     import gfx_institute
     m.align |= gfx_institute.ALIGNED
 
-CRATE_T, STATION_T, HOPPER_T, CHECKER_T, LAMP_T = 20094, 20095, 20096, 20097, 20098
+CRATE_T, STATION_T, HOPPER_T, CHECKER_T, LAMP_T, RING_T = 20094, 20095, 20096, 20097, 20098, 20099
 LINE, SCALE = 901, 902                      # sector tags: every belt (all run east, at SPEED), the bay's scale
 SPEED = 4                                   # units a tic: the player walks at 8.3 and gets out against it
-DOOR_A, DOOR_B, SHUTTER, PANEL = 1, 2, 3, 4  # sector tags of what the checkers open
+DOOR_A, DOOR_B, SHUTTER, PANEL, PANEL2 = 1, 2, 3, 4, 5  # sector tags of what the checkers open
+RING = 9                                    # ambush cause 40 + RING: the way out's ring first closed (map17.zs)
 HALL_F, PRESS_F, KILN_F, LABEL_F, BAY_F = 101, 102, 103, 104, 105
 CELL_N = 171                                # thing ids of the checkers (their lamps name them)
 H = 256                                     # the rooms' height, but the kiln's
@@ -193,10 +206,10 @@ def board(box, face, note, look, top=112):
 
 def route_board(x, y, step, look, depth=8):
     """The dispatcher's board: a niche 128 high in the wall at x, y, and in its
-    back wall a panel for each outlet, the colour that hangs there now lit
+    back wall a panel for each outlet and the night room's brass frame, the colour that hangs there now lit
     (ajarmap.route_board; AjarHandler.BoardTick). `step` is (64, 0) along a
     north wall, (0, -64) along an east one."""
-    n = 5
+    n = 6
     if step[0]:
         box = (x, y, x + 64 * n, y + depth)
         a = (x, y + depth)
@@ -206,12 +219,13 @@ def route_board(x, y, step, look, depth=8):
     m.sector(rect(*box), floor=64, ceil=192, light=230, **{k: v for k, v in look.items() if k not in ("ceil", "light")})
     mouth = ((x, y), (x + 64 * n, y)) if step[0] else ((x, y), (x, y - 64 * n))
     I1.over(*mouth, WALL[id(look)])
-    ajarmap.route_board(m, a, [("H", HALL_F), ("P", PRESS_F), ("K", KILN_F), ("L", LABEL_F), ("D", BAY_F)], step=step)
+    ajarmap.route_board(m, a, [("H", HALL_F), ("P", PRESS_F), ("K", KILN_F), ("L", LABEL_F), ("D", BAY_F),
+                               ("X", ajarmap.HOME)], step=step)
 
 
-def note_on_wall(a, b, out, part, what):
+def note_on_wall(a, b, out, part, what, name=None):
     """A note pinned to the room's wall piece a-b (64 long), seen looking `out`."""
-    name = f"AJDN{len(NOTES):02d}"
+    name = name or f"AJDN{len(NOTES):02d}"
     NOTES[name] = (part, I1._shift(a, b, out), what)
     m.cut(a, b)
     m.line(a, b, mid=name, exact=True)
@@ -228,6 +242,19 @@ run(96, 640, HY, HALL)
 scroll(160, HY)
 for p, q in (((96, HY - 48), (96, HY + 48)), ((0, HY - 48), (96, HY - 48)), ((0, HY + 48), (96, HY + 48))):
     m.line(p, q, upper="AJDHOPR", dontpegtop=True)
+# the store behind the hopper, where the crates come from (a secret): its mouth is the west wall under the
+# chute, the belt's width and 64 high, reached by walking up the belt against it. Crates stacked against
+# its walls. Not on the line: a crate is never issued into it, and one that got there would be taken back.
+STORE = (-208, HY - 96, -16, HY + 96)
+STORE_LOOK = dict(light=104, color=tint(DIM), **dress(wall="CK", ftex="FC", ctex="KC"))
+m.sector(rect(-16, HY - BW, 0, HY + BW), floor=0, ceil=64, **STORE_LOOK)
+m.line((0, HY - BW), (0, HY + BW), upper="AJDHOPR")                         # (its dark foot over the mouth)
+m.sector(rect(*STORE), floor=0, ceil=128, special=1024, **STORE_LOOK)
+for box, top in (((-208, HY + 96, -144, HY + 128), 96), ((-144, HY + 96, -80, HY + 128), 64),
+                 ((-80, HY + 96, -16, HY + 128), 32), ((-240, HY - 96, -208, HY + 96), 96),
+                 ((-208, HY - 128, -144, HY - 96), 64), ((-144, HY - 128, -80, HY - 96), 96),
+                 ((-80, HY - 128, -16, HY - 96), 64)):
+    m.sector(rect(*box), floor=top, ceil=128, **dict(STORE_LOOK, ftex="AJDSTOF", side="AJDSTOR"))
 frame((640, HY - BW), (640, HY + BW), (1, 0), HALL_F, color=tint(PALE))
 m.thing(48, HY, HOPPER_T, args=(LINE, SCALE))
 # the window onto the press hall: the press's checker is seen from here
@@ -239,6 +266,8 @@ steel_door((640, 400), (640, 464), (1, 0), DOOR_A, "EX", "EX", "PRESS")
 passage((656, 400), (656, 464), (1, 0), 112, "LA", "HOPPER")
 route_board(160, 512, (64, 0), HALL)
 I1.hang((0, 384), (0, 512), "WS")                                           # a warning by the hopper
+# the blank crate's note, torn from its top, by the hopper in plain sight (its stub: the second panel)
+note_on_wall((0, 128), (0, 192), (-1, 0), "EX", "blank", name="AJDNH0")
 
 # === the press hall, the cell and the press ===========================================
 CELL = (768, 160, 992, 352)
@@ -254,8 +283,9 @@ far((768, HY + BW), (768, HY - BW), (-1, 0), RED, color=tint(RUST))
 for p, q in (((768, CELL[1]), (992, CELL[1])), ((768, CELL[3]), (992, CELL[3])),
              ((992, CELL[1]), (992, HY - 48)), ((992, HY + 48), (992, CELL[3]))):
     m.line(p, q, **TALL_GLASS)
-# the secret's note, on the cell's west wall beside RED's far side: behind whoever comes in
-note_on_wall((768, HY + BW), (768, HY + BW + 64), (-1, 0), "LA", "secret")
+# the secret's note, on the cell's west wall beside RED's far side: behind whoever comes in. Torn from
+# its top: the stub is on the panel in the bay
+note_on_wall((768, HY + BW), (768, HY + BW + 64), (-1, 0), "LA", "secret", name="AJDN00")
 # the press: a hatch 40 high through it over the belt; it stamps RED
 m.sector(rect(992, HY - BW, 1056, HY + BW), floor=0, ceil=40, light=150, wall="AJDPRSS", ftex=BELT_F,
          ctex="AJTRIMF", id=LINE)
@@ -345,7 +375,7 @@ run(1728, SCALE_X[0], BY, WING)
 run(SCALE_X[0], SCALE_X[1], BY, WING, ftex=SCALE_F, tag=SCALE)
 frame((1728, BY + BW), (1728, BY - BW), (-1, 0), BAY_F, home=TEAL, only=3, color=tint(STEEL))
 m.sector(rect(*STAND), floor=80, **dict(WING, ftex="AJTRIMF", side="AJDBRDS"))
-m.thing(1936, BY, CHECKER_T, id=CELL_N + 2, args=(321, SHUTTER, 213, PANEL, 3))
+m.thing(1936, BY, CHECKER_T, id=CELL_N + 2, args=(321, SHUTTER, 213, PANEL, 3 + 10 * PANEL2))     # (+ the blank one)
 m.thing(1936, BY - 56, LAMP_T, args=(CELL_N + 2,))
 # the shutter to the night room, the bay's note on it
 m.sector(rect(2176, BY - BW, 2192, BY + BW), floor=0, ceil=0, light=160, wall="AJSHUT", ftex="AJTRIMF",
@@ -359,12 +389,25 @@ m.sector(rect(2192, BY - BW, 2560, BY + BW), floor=0, ceil=160, light=150, color
          **dress(wall="EV", ftex="FE", ctex="KE"))
 m.sector(rect(2496, BY + BW, 2560, 128), floor=0, ceil=160, light=150, color=tint(STEEL),
          **dress(wall="EV", ftex="FE", ctex="KE"))
-ajarmap.way_out(m, 2368, 128, None)
-# the panel in the wall south of the shutter, and the closet behind it: the secret
-m.sector(rect(2176, -128, 2192, -64), floor=0, ceil=0, light=160, wall=T("CO") if LOOK else "AJWALL",
-         ftex="AJTRIMF", ctex="AJTRIMF", id=PANEL)
-m.line((2176, -128), (2176, -64), upper=T("CO") if LOOK else "AJWALL", dontpegtop=True)
+# The night room: VIOLET's far side in its west end, an empty brass frame in its east end, facing each other,
+# but the frame takes any door but VIOLET, and nothing hung in it is the way out by itself. The way out is a
+# ring round the line (AjarRing, map17.zs): the brass frame holds GREEN or BLUE, that station's outlet
+# VIOLET, or the other station's door and its outlet VIOLET; then coming into the night room by either of
+# its doors ends the level.
+NIGHT = (2368, 128)
+ajarmap.way_home(m, *NIGHT, VIOLET, barred=True)
+m.thing(NIGHT[0] + 160, NIGHT[1] + 128, RING_T, args=(192, 128, ajarmap.HOME, VIOLET))
+# the panels in the wall south and north of the shutter, and the closets behind them: secrets. Each has the
+# stub of a note pinned to it, the top of the sheet whose rest is elsewhere
+for (y1, y2), tag, stub in (((-128, -64), PANEL, "AJDNS1"), ((192, 256), PANEL2, "AJDNS2")):
+    m.sector(rect(2176, y1, 2192, y2), floor=0, ceil=0, light=160, wall=T("CO") if LOOK else "AJWALL",
+             ftex="AJTRIMF", ctex="AJTRIMF", id=tag)
+    NOTES[stub] = ("CO", I1._shift((2176, y1), (2176, y2), (1, 0)), "stub:" + ("secret" if tag == PANEL else "blank"))
+    m.line((2176, y1), (2176, y2), upper=stub, dontpegtop=True)
 m.sector(rect(2192, -192, 2320, 0), floor=0, ceil=128, light=120, color=tint(DIM), special=1024,
+         **dress(wall="CK", ftex="FC", ctex="KC"))
+# (the second closet stops short of VIOLET's far side, whose stub reaches west to 2304)
+m.sector(rect(2192, 128, 2288, 320), floor=0, ceil=128, light=120, color=tint(DIM), special=1024,
          **dress(wall="CK", ftex="FC", ctex="KC"))
 # the windows into the kiln and labelling
 window((1600, -416, 1728, -320), [((1600, -416), (1600, -320)), ((1728, -416), (1728, -320))])
@@ -382,6 +425,7 @@ ajarmap.door(m, RED, 560, 120, angle=90)
 ajarmap.door(m, GREEN, 1450, 450, angle=270)
 ajarmap.door(m, BLUE, 1800, 650, angle=0)
 ajarmap.pair(m, TEAL, (1800, 760, 0), (1800, 870, 0))
+ajarmap.door(m, VIOLET, NIGHT[0] + 160, NIGHT[1] + 232, angle=270)           # against the north wall, seen from the way in
 
 # === the hall: the start ===========================================================================
 m.thing(320, 80, 1, angle=90)
@@ -440,6 +484,19 @@ things(DEMON, (2000, 200), (1850, 150), angle=180)
 # the secret: the closet behind the panel
 m.thing(2256, -96, 83)                                                      # a megasphere
 things(2046, (2256, -160))
+# the second: the closet behind the panel north of the shutter
+m.thing(2240, 224, 2013)                                                    # a soul sphere
+things(2046, (2240, 160))
+things(17, (2240, 288))
+# the third: the store behind the hopper
+m.thing(-112, HY, 8)                                                        # a backpack
+things(2049, (-176, HY - 40))
+things(2015, (-176, HY + 40), (-144, HY + 64), (-80, HY - 64), (-48, HY + 64))
+
+# === the night room ==========================================================================================
+things(2012, (NIGHT[0] + 80, NIGHT[1] + 40), (NIGHT[0] + 240, NIGHT[1] + 40))
+things(2049, (NIGHT[0] + 80, NIGHT[1] + 216))
+things(2046, (NIGHT[0] + 240, NIGHT[1] + 216))
 
 # === ambushes =============================================================================================
 # RED, taken: the hall
@@ -460,6 +517,14 @@ ajarmap.ambush(m, 10 + BLUE, CACO, (1900, -350), angle=90, after=3)
 # a TEAL leaf, taken: the wing again, and labelling
 ajarmap.ambush(m, 10 + TEAL, KNIGHT, (2100, -50), angle=180)
 ajarmap.ambush(m, 10 + TEAL, IMP, (900, 620), (1000, 900), angle=0, after=2)
+# VIOLET, taken: the wing, by the shutter
+ajarmap.ambush(m, 10 + VIOLET, KNIGHT, (2090, 210), angle=180)
+ajarmap.ambush(m, 10 + VIOLET, IMP, (2130, -120), (2050, 260), angle=180)
+# the ring first closed: the kiln and labelling, off the belts
+ajarmap.ambush(m, 40 + RING, REVENANT, (1150, -130), angle=0)
+ajarmap.ambush(m, 40 + RING, IMP, (850, -380), (1450, -380), angle=90)
+ajarmap.ambush(m, 40 + RING, KNIGHT, (1350, 640), angle=90)
+ajarmap.ambush(m, 40 + RING, IMP, (850, 860), (1450, 860), angle=270)
 
 LA, LB = LEAVES[TEAL]
 
@@ -472,15 +537,18 @@ def _both(d):
 
 PUZZLE = dict(
     start="hall", goal="exit", complete=True,
-    names={RED: "RED", BLUE: "BLUE", GREEN: "GREEN", LA: "a TEAL leaf", LB: "the other TEAL leaf"},
+    names={RED: "RED", BLUE: "BLUE", GREEN: "GREEN", VIOLET: "VIOLET", LA: "a TEAL leaf", LB: "the other TEAL leaf"},
     walk=[("hall", "floor", "a"), ("floor", "hall", "a"),                    # steel door A: order 1
           ("floor", "wing", "b"), ("wing", "floor", "b"),                    # steel door B: order 2
-          ("wing", "exit", "x"),                                             # the shutter: order 3
-          ("wing", "secret", "s"), ("secret", "wing", "s")],                 # the panel: the hidden order
-    frames={HALL_F: "hall", PRESS_F: "floor", KILN_F: "kiln", LABEL_F: "label", BAY_F: "wing"},
-    only={BAY_F: (LA, LB)},
+          ("wing", "night", "x"), ("night", "wing", "x"),                    # the shutter: order 3
+          ("night", "exit", "y"),                                            # the ring walked round
+          ("wing", "secret", "s"), ("secret", "wing", "s"),                  # the panel: the hidden order
+          ("wing", "blank", "t"), ("blank", "wing", "t"),                    # the second panel: the blank crate
+          ("hall", "store"), ("store", "hall")],                             # the store behind the hopper
+    frames={HALL_F: "hall", PRESS_F: "floor", KILN_F: "kiln", LABEL_F: "label", BAY_F: "wing", ajarmap.HOME: "night"},
+    only={BAY_F: (LA, LB), ajarmap.HOME: (RED, GREEN, BLUE, LA, LB)},
     doors={RED: dict(home="pressIn", lean="hall"), GREEN: dict(home="kiln", lean="floor"),
-           BLUE: dict(home="label", lean="wing"),
+           BLUE: dict(home="label", lean="wing"), VIOLET: dict(home="night", lean="night"),
            LA: dict(pair=LB, lean="wing"), LB: dict(pair=LA, lean="wing")},
     sights={
         "a": dict(at="hall", say="a crate comes to the press stamped RED", lines=[{RED: (HALL_F,)}]),
@@ -488,8 +556,13 @@ PUZZLE = dict(
                   lines=[{RED: (HALL_F,), GREEN: (PRESS_F,)}]),
         "x": dict(at="wing", say="the bay's order is filled",
                   lines=_both(({GREEN: (HALL_F,), BLUE: (KILN_F,), RED: (LABEL_F,)}, PRESS_F, BAY_F))),
+        "y": dict(at="night", say="the line runs round through the way out",
+                  lines=[{GREEN: (ajarmap.HOME,), VIOLET: (KILN_F,)}, {BLUE: (ajarmap.HOME,), VIOLET: (LABEL_F,)},
+                         {GREEN: (ajarmap.HOME,), BLUE: (KILN_F,), VIOLET: (LABEL_F,)},
+                         {BLUE: (ajarmap.HOME,), GREEN: (LABEL_F,), VIOLET: (KILN_F,)}]),
         "s": dict(at="wing", say="the hidden order is filled",
                   lines=_both(({BLUE: (HALL_F,), RED: (LABEL_F,), GREEN: (PRESS_F,)}, KILN_F, BAY_F))),
+        "t": dict(at="wing", say="a blank crate comes onto the bay's scale", lines=_both(({}, HALL_F, BAY_F))),
     })
 I1.m = _theirs
 

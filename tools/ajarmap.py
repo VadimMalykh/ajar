@@ -234,7 +234,8 @@ SECRET_HOME, SECRET_MOUTH = 193, 591    # a secret way out the player builds (wa
 SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze): see squeeze()
 
 
-def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, mouth=HOME_MOUTH, rose=False):
+def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, mouth=HOME_MOUTH, rose=False,
+              barred=False):
     """A way out the player has to build (MAP05 on). The same night room as
     way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
     its two ends are not joined yet: the far side of the door `colour` is in
@@ -268,7 +269,13 @@ def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, 
     `mouth` are SECRET_HOME and SECRET_MOUTH instead, and `rose` gives it the
     look of PINK's places (ROSE, as way_longer()) and makes the carpet strip
     one secret sector. Hung there, the door turns its mouths into
-    Exit_Secret, and the plain way out is not touched (ComeHome)."""
+    Exit_Secret, and the plain way out is not touched (ComeHome).
+
+    With `barred` (MAP17) it is the other way round: the brass frame (plain
+    brass) takes any door but `colour` (recess only=4), and hanging a door
+    there never makes the way out by itself. What does is the caller's
+    (MAP17's ring round the line, map17.zs). In a PUZZLE graph `only={frame:
+    every other door}`, and the goal is the caller's."""
     tinted = dict(color=ROSE) if rose else {}
     room(m, [x, x + 160, x + 320] if grille else [x, x + 320], [y, y + 96, y + 160, y + 256],
          lambda i, j: j == 1, ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
@@ -285,7 +292,8 @@ def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, 
     # ... and a frame that takes that door only says so: its brass is inlaid
     # with the door's colour
     recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, frame, far_id(colour),
-           trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=far_id(colour), only=only, **tinted)
+           trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=colour if barred else far_id(colour),
+           only=4 if barred else only, **tinted)
     for xx in (x, x + 320):
         m.line((xx, y + 96), (xx, y + 160), id=mouth)
     for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
@@ -334,7 +342,8 @@ def ambush(m, cause, kind, *spots, angle=0, after=0, near=0):
     when the player takes something: `cause` is a room key's number (1..4),
     or 10 plus the colour of a door, taken for the first time; or 20 plus the
     tag of a target() or sensor, once that is set off (MAP15, 2026-11-20); or
-    40 plus the tag a checker opens, once its order is filled (MAP17, map17.zs).
+    40 plus the tag a checker opens, once its order is filled (MAP17, map17.zs;
+    49 there: its way out's ring first closed, AjarRing).
     `near`: they hold back further until the player is within that distance
     of the spot and in sight of it: an ambush in a room the player comes back
     to, not one that walks out to meet him. Doom's oldest
