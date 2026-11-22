@@ -8617,3 +8617,87 @@ hardware renderer at other light levels; the refusal lamp seen from the
 windows in play; a crate held by a door taken while it is in the doorway
 (`CratesClear`, from the lab, not run here); the level from MAP16's way out
 by a real exit. Not played by hand.
+
+## MAP18: the clock department, a big building to make geometries in (2026-11-22, outline; nothing built)
+
+Vadim and Claude. **Nothing here is built. Of the engine, only what "The
+first tests, run" says is known**; two labs were started the same day (map
+CLOCK, task `clock-lab`; map ONESIDE, task `oneside-lab`) and their results
+go in sections of their own at the end of this file.
+
+**Vadim** (2026-11-22):
+- MAP18 should be bigger: "previous several maps are not quite big (and
+  frankly there's no really big maps yet in the whole game)". Measured that
+  day: MAP11 to 16 have 186 to 308 sectors, 1760 to 3264 units on the long
+  side, 86 to 176 monsters with ambushes; MAP17 133 sectors and 73; MAP06 to
+  09 have 690 to 1219 sectors and 148 to 175 monsters; MAP10 956 sectors
+  over 13772 x 8304 (districts far apart).
+- The clock idea, yes, and "metronome could be interesting".
+- "Maybe we could make it consist of a lot of areas, connected naturally
+  (normal doors, stairs, lift) as well as having frames, so you can build
+  your own geometry from it. Here also one-sided portals could exist to make
+  it more confusing."
+- "Not so much puzzle-heavy (only that timer/metronome related for the
+  exit), but mostly to enjoy different spatial paradoxes."
+
+**Claude's reading of it, to argue over** (none of it agreed yet):
+
+- **It is the "kit of rooms" of the second round with one measure: the
+  stopwatch.** That note's difficulty was that a geometry the player builds
+  has to be read by something, or building it is routing again. Here time
+  reads it, twice: the metronome reads the length of a loop, the run reads
+  the length of a way. Everything else is free.
+- **Everything is reached on foot.** No keys, no thief, no nailer, no room
+  whose only way in is a door (a room may have a door as its only way *in*
+  if it has a way out on foot). So a door is never needed, only wanted, and
+  nothing can be lost by construction: any door can always be fetched. The
+  solver does not search arrangements for stuck states; it checks that the
+  building is one piece on foot and that the run can be made.
+- **Why anyone hangs a door, with no lock asking for it**: the building is
+  big and the doors are the shortcuts (the size is the reason); each area's
+  frames are placed so that the obvious hanging makes that area's paradox;
+  and each paradox pays in the fight or with a cache that is otherwise the
+  long way round. No paradox is a lock.
+- **The doors**: mostly Pairs, since a Pair joins any two frames: TEAL and
+  ORANGE, perhaps a third. Two or three coloured doors with far sides in
+  places worth coming back to (the court, the lift's car, the head of the
+  stair).
+- **The areas** (ten or so, each an ordinary part of the building with one
+  paradox ready in its frames): the long gallery (frames at its ends and
+  along it: the endless corridor, the corridor of chosen length); the
+  stairwell (foot and head: the endless stair, free this time); the lift
+  with a frame in its car (the moving room); the rotunda (frames all round,
+  a pillar: round the pillar; the arena); the six-sided hall (the
+  honeycomb); the square room with frames on three walls and a far side on
+  the fourth (the room that is its own neighbour); the court with the
+  inside-out booth, fixed (the hall with no size); and plain ones between
+  (canteen, cloakroom, offices, a yard).
+- **One-sided doorways** (Vadim's idea of 2026-11-20): fixed parts of the
+  building, two or three, each marked on its face (the plan's rule: know
+  where a door leads before stepping through), each one paradox: the way
+  back that is longer than the way there, the room bigger inside than its
+  walls, the turn-round. In a timed run a doorway with a direction matters
+  by itself. Always a way round on foot. Not "more confusing" without a
+  sign: confusion with no rule to find is only noise.
+- **The way out, two steps, both the same lesson (distance is time):**
+  1. *The metronome.* A pulse fired down the long gallery. With a Pair hung
+     in two of the gallery's frames it laps for ever through the endless
+     corridor, and strikes a contact every lap; the nearer the two frames,
+     the faster the beat. A gate stays up while the beat is fast enough.
+     The Pair that keeps the beat is then not free for the run.
+  2. *The relay run.* Behind the gate, the lever; at the other end of the
+     building, the night room's shutter, up for some seconds after the
+     pull, far too few on foot. Lay the track of doors, pull, run. Several
+     tracks work; a run that fails is pulled again.
+- **Left out**: the timetable (shutters that open by the clock, the booth's
+  faces turning). It is the puzzle-heavy one and the only one that puts time
+  into the solver's state. The run is a shortest way through an arrangement,
+  which the solver can measure without a clock.
+- **Size**: 600 to 800 sectors, about 8000 units on the long side, 200 to
+  250 monsters, one building.
+- **Name**: "Time and Motion" (Claude's candidate, not agreed).
+- **Before it can be built** (the two labs): a pulse lapping through hung
+  doors and a Pair, what its beat is at each distance, a gate held by the
+  beat, what happens when a leaf is taken or something stands in the way;
+  a doorway that leads one way from one face and another from the other,
+  for walking, sight, shots, monsters and sound.
