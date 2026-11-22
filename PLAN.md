@@ -3885,10 +3885,87 @@ and the engine has not been asked** (see "Before it can be built").
   fallback is that the player walks the ring and the lock reads the order of
   rooms they came through (`LoopLen` already counts a closed loop through
   the way out's room; reading the order would be new).
-- **Not decided**: the building's plan; which stations are reached only by
-  the line; what order 1's place is; how the note and the stamps are drawn;
-  the solver's crate (a token with a place, moved by the arrangement); the
-  size of the fights.
+- **Not decided** (then; settled below): the building's plan; which stations
+  are reached only by the line; what order 1's place is; how the note and
+  the stamps are drawn; the solver's crate (a token with a place, moved by
+  the arrangement); the size of the fights.
+
+#### The first version, as decided (2026-11-22)
+
+Vadim, after starting `MAP=MAP17` and finding Doom II's: "build it now", the
+open points left to Claude. All of what follows is Claude's; none of it has
+been played. The belt lab answered the engine ("The belt lab", at the end).
+
+- **Three stations and their colours**: the press RED, the kiln GREEN,
+  labelling BLUE. A TEAL Pair for the bay. No keys, no thief, no nailer, no
+  Stray door: nobody but the player moves a door.
+- **Frames**: 101 the hopper's outlet, 102 the press's, 103 the kiln's, 104
+  labelling's, 105 the bay's (a TEAL leaf only).
+- **The building**, on one floor, three rooms in a row from west to east,
+  and two sealed ones:
+  - *The hall* (the start): the hopper and its belt to 101. RED leans here.
+  - *The press hall*: RED's far side opens into a cell around the head of
+    the press's belt; the press is a hatch 40 high in the cell's far wall
+    (a crate passes, the player and monsters do not). Beyond it, in the open
+    hall, the belt runs on over order 1's checker to 102. GREEN leans here.
+  - *The dispatch wing*: BLUE and both TEAL leaves lean here. In it the bay:
+    105, a short belt out of it, the scale, and the shutter to the night
+    room (the way out).
+  - *The kiln*, sealed: GREEN's far side, a belt through the kiln (a low
+    tunnel the player walks round), order 2's scale, 103. No way in or out
+    but GREEN's far side and whatever hangs in 103.
+  - *Labelling*, sealed the same way: BLUE's far side, a belt, 104.
+  - Glass lets the hall see the press's checker, the press hall see the
+    kiln's scale, and the wing see into the kiln and into labelling, so each
+    sealed frame is seen before it is reached.
+- **So the stations reached only by the line are the kiln and labelling.**
+  To hang anything in 103 or 104 the player comes in as the crate does, by
+  that station's own door, hung in a frame they can walk to, or two doors
+  deep. The press's cell is a dead end for the player.
+- **The orders.** A checker reads a crate that comes onto it, for good:
+  1. *See it*: the press's checker wants RED. RED in 101, and the crate
+     goes through the wall into the press. It opens the steel door from the
+     hall to the press hall.
+  2. *Use it*: the kiln's scale wants RED, GREEN. RED in 101, GREEN in 102.
+     GREEN in 101 sends a crate there stamped GREEN only: refused, and the
+     player has seen what an order is. It opens the steel door to the wing.
+  3. *The way out*: the bay's scale wants GREEN, BLUE, RED. GREEN in 101,
+     BLUE in 103, RED in 104, a leaf in 102 and its twin in 105. Order 2
+     left RED in 101 and GREEN in 102, so nothing stays where it was. BLUE
+     goes into the kiln through GREEN, RED into labelling through GREEN and
+     then BLUE: the line is walked as it is built, deeper each time.
+  - *The secret*: a second note, BLUE, RED, GREEN, on the wall of the
+    press's cell beside RED's far side, behind whoever comes in. BLUE in
+    101, RED in 104, GREEN in 102, a leaf in 103 and its twin in 105; the
+    bay's scale then opens a panel in the bay.
+- **The solver** needs no crate: an order is a `sights` key (as the beams of
+  13 and 15 are), set off by the arrangement that fills it. As prototyped:
+  12 door actions to the way out, 7521 states, none stuck, nothing that can
+  be lost; the secret room 11 from the start.
+- **The crates.** One on the line at a time. The hopper issues the next two
+  seconds after the last is gone. A crate that has stood still for ten
+  seconds is taken back (so is one with more than six stamps, or off the
+  belts), and that is all "rejected" means. A crate waiting at an empty
+  frame goes on when a door is hung there, with the stamps it has: an order
+  can be filled a door at a time by someone quick, which is more than the
+  solver knows and harms nothing.
+- **The belts run at 4**, not the lab's 8: the player walks at 8.3 and has to
+  get back out of a sealed room against the belt, by its far side. To be
+  checked: walking (not running) out of each far side.
+- **How it is drawn.** A crate carries its stamps as coloured bands, the
+  first lowest. A note is a picture of the crate as it is wanted, so there
+  is no order of reading to learn. Each checker has a lamp, and says what it
+  wanted and what came when it refuses. The dispatcher's board hangs in the
+  hall, the press hall and the wing: for each outlet, the colour that hangs
+  there now.
+- **The fights**: the usual kind, about half of MAP16's count; company
+  comes when each door is first taken and when orders 1 and 2 are filled.
+  **Nothing but crates rides the line in the first version.** "The line
+  delivers" is left out: a sleeping monster carried to the press is held at
+  the hatch and jams the line, so it wants a press that crushes (a ceiling
+  that comes down to 40 over the belt), which the engine has not been
+  asked.
+- **Name**: "Made to Order", still Claude's candidate.
 
 ## Look: MAP11 (started 2026-11-19)
 
@@ -8436,3 +8513,107 @@ room, and death and rescue or begin anew in a wound go, are not run (the
 plates and the paths are the same). The look of the plates in MAP32 (the
 same AJWD wall sprites as MAP31's, no light of their own) and the game have
 not been played by hand: `MAP=MAP32 ./run.sh` in the worktree.
+
+## MAP17 "Made to Order": the first playable version (built 2026-11-22)
+
+Built as decided in "MAP17: the goods dispatch" above (its subsection "The
+first version, as decided"), on branch `map17`. `MAP=MAP17 ./run.sh` in the
+worktree plays it; MAP16's way out now leads to it.
+
+**What is where.**
+- `tools/map_dispatch.py`: the level. Hall (the hopper's chute and belt,
+  101, the window and steel door A to the press hall); press hall (the glass
+  cell with RED's far side and the secret's note beside it, the press with
+  its 40-high hatch, the checker stretch with its board, note and lamp, 102,
+  steel door B); the wing (the bay with 105, the scale, the stand with the
+  lamp, the shutter with order 3's note on it, the corridor to the night
+  room, the panel and the closet behind it); the sealed kiln (GREEN's far
+  side, the tunnel 40 high, the scale with its board, 103) and the sealed
+  labelling room (BLUE's far side, the gantry 72 high, 104). Windows: hall to
+  press hall, press hall to kiln, wing to kiln and to labelling. Dispatcher's
+  boards in the hall, the press hall and the wing (`route_board`). The
+  PUZZLE is the one in `build/proto17.py`. 133 sectors, 132 things.
+- `tools/gfx_dispatch.py`: the belt (slats), the scale, curbs, the hopper,
+  press, kiln and gantry, the notes (a picture of the crate as wanted, no
+  words), the board's panels `AJR<s><c>`, the crate's sprites `AJB*` (bands,
+  first lowest, grey for a stamp other than RED, GREEN, BLUE, a hatched lid
+  over three) and the checker's lamp `AJQL`.
+- `src/zscript/map17.zs`: `AjarHopper` (20096), `AjarChecker` (20097),
+  `AjarCheckLamp` (20098) and the smoke tests. The crate and the stations
+  stay the belt lab's (`belt.zs`): the crate now shows its bands and is read
+  by a checker when it comes into its sector.
+- `ajar.zs`: ambush cause 40 + a tag, once the order that opens that tag is
+  filled (orders 1 and 2: 41, 42); MAP17's scripts. `ajarmap.way_out` takes
+  `colour=None` (no far side: MAP17's way in is a corridor from the shutter).
+
+**The rules as built.** One crate on the line: the first at once, the next
+70 tics after the last is gone. Taken back (a puff and a sound) when it has
+not moved on east by 8 in 350 tics (it stood still 10 seconds: at an empty
+frame, behind the player or a monster), when it has not moved on by 64 in
+385 tics (rocking in a doorway that sends it back against a belt: each pass
+gains or loses a little, so the first rule never comes), with more than 6
+stamps, or off the line's sectors. A checker reads a crate once, coming
+onto it; a match fills the order for good (Door_Open, a message, the lamp
+green); otherwise, while it has an order open, a refusal: the lamp flashes
+red four seconds, a clunk, and "The kiln's scale wants RED, GREEN. This one
+came GREEN." ("came unstamped" with none; the bay, once only the hidden
+order is left, "has no order for a crate stamped ..."). A filled checker is
+silent. The bay's hidden order (BLUE, RED, GREEN) opens the panel; the
+closet is the secret. Belts at speed 4.
+
+**Fights.** 52 placed and 21 ambush spots (73), against MAP16's 129 and
+17 (146). Ambushes on the first take of RED, GREEN, BLUE and a TEAL leaf
+and on orders 1 (the press hall, `near=640`) and 2 (the wing, `near=700`).
+Weapons as MAP15 and MAP16: shotgun and chaingun in the hall, the super
+shotgun in the press hall, rockets in the kiln, plasma in labelling, the
+megasphere in the closet.
+
+**Checks** (2026-11-22, on the full `./build.sh` with the solver):
+- Solver: MAP17 solvable in 12 door actions, 7521 states, 0 stuck, nothing
+  lost (the secret: 11 actions, `build/proto17.py`). The other maps as before.
+- thingcheck, itemcheck, mapcheck on `map_dispatch`: 0 problems each.
+- `MAP=MAP17 MODE=1`: the solver's solution with real crates, 36 checks and
+  `levelExited`. Orders filled at t=270, 542 and 2436: the first crate goes
+  round and comes to the bay stamped RED, GREEN, BLUE, RED (refused, taken
+  back after 10 s on the scale), the next GREEN, BLUE, RED; out at t=2485.
+- `MODE=2`: the hidden order from a fresh start (orders 1 and 2 first),
+  15 checks: filled at t=2256, the panel open, the shutter shut, the secret
+  counted; after it the bay still asks for GREEN, BLUE, RED.
+- `MODE=3`: the rules, 31 checks. GREEN in 101: refused with the text above;
+  at empty 103 taken back exactly 350 tics after it came to rest, the next
+  70 tics later; the next waiting there goes on when BLUE is hung, its
+  stamps kept; the player held at the hatch, a crate stops 0.2 behind them
+  and is taken back 350 tics later, and goes through once they step off; the
+  same with a zombie; a leaf in 101 and its twin in 102: the crate rocks
+  through the two doorways (62 passes) and is taken back 394 tics after it
+  first came to 101; a ring (RED 101, GREEN 102, BLUE 103, RED 104) taken back
+  at its seventh stamp; a crate put on the hall's floor taken back the same
+  tic; no crate outside the map, one crate in the level at the end.
+- `MODE=4`: the player's own walking, `+forward` held down from
+  `tools/smoke_MAP17_4.cfg` with `cl_run 0` (7.98 a tic on the floor); the
+  script only puts the player on the hall's belt with RED, GREEN or BLUE in
+  101 and turns them round once held (at the press's hatch, the kiln's
+  tunnel, or the empty 104). Out into the hall each time: 3.15, 3.29 and
+  3.96 a tic against the belts, from a standstill. 7 checks.
+- `MODE=5`: 16 views (the boards, the notes, the press, the kiln's tunnel,
+  the gantry, the bay, crates with 0 to 5 stamps), looked at.
+- `MAP=BELT MODE=1..6`: 13, 7, 3, 17, 5 and 4 checks (lines `name=1`), all
+  passed; the branch's base gives the same 13 and 17 for MODE=1 and 4 (the
+  16 and 20 in "The belt lab" were counted another way). The lab's crates
+  now look like MAP17's; MAP16's walk-through: 50 checks and
+  `levelExited`.
+- Every other map's wad and every graphic `gfx.make_all` made before (2516
+  entries) built byte for byte as from the branch's base `5364d9a`; 227 new.
+
+**Departures.** The bay's shutter is a 16-thick door sector (tag 3) with
+the note on its face, the panel the same (tag 4); MAP17's way out has no far
+side of its own (`way_out(colour=None)`). The "rocking" rule is a second
+timer (64 in 385 tics), as the 10-second rule alone never took a rocking
+crate back. MODE=5 (views) is added to the four asked for.
+
+**Not tested / not played by hand.** The fights (the scripts remove
+monsters); a monster riding the belt into a sealed room; the look in the
+hardware renderer at other light levels; the refusal lamp seen from the
+windows in play; a crate held by a door taken while it is in the doorway
+(`CratesClear`, from the lab, not run here); the level from MAP16's way out
+by a real exit. Not played by hand.

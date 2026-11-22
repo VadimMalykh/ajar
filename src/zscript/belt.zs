@@ -4,9 +4,12 @@
 // (ajarmap.belt: Scroll_Floor, the texture and things). Where a belt ends
 // at a frame, what it carries goes through whatever door hangs there and
 // comes out of that door's far side; the belt there carries it on.
-//  * AjarCrate thing (20094): what MAP17 will send. Solid, not shootable,
+//  * AjarCrate thing (20094): what MAP17 sends. Solid, not shootable,
 //    not pushed by walking into it, heavy; carried like anything on the
-//    floor. It keeps the stamps of the rooms it came into, in order.
+//    floor. It keeps the stamps of the rooms it came into, in order, and
+//    shows them as coloured bands, the first lowest (gfx_dispatch.py; since
+//    MAP17, here too). Coming into the sector of a checker (map17.zs) it is
+//    read, once by each.
 //  * AjarStation thing (20095): args[0] a colour number. A crate whose
 //    middle comes into the station's sector is stamped with that number
 //    (once each time it comes in; where it starts is no coming in).
@@ -15,6 +18,7 @@
 class AjarCrate : Actor
 {
 	Array<int> stamps;
+	Array<AjarChecker> readBy;
 	Sector was;
 
 	Default
@@ -28,8 +32,42 @@ class AjarCrate : Actor
 	States
 	{
 	Spawn:
-		AMMO A -1;              // Doom's box of bullets, for now
+		AJB0 A -1;              // no stamps: a plain crate (its bands: Bands())
 		Stop;
+	Bands:                      // only so that these are loaded
+		AJB1 ABCD -1;
+		AJB2 ABCDEFGHIJKLMNOP -1;
+		AJBA ABCDEFGHIJKLMNOP -1;
+		AJBB ABCDEFGHIJKLMNOP -1;
+		AJBC ABCDEFGHIJKLMNOP -1;
+		AJBD ABCDEFGHIJKLMNOP -1;
+		AJBE ABCDEFGHIJKLMNOP -1;
+		AJBF ABCDEFGHIJKLMNOP -1;
+		AJBG ABCDEFGHIJKLMNOP -1;
+		AJBH ABCDEFGHIJKLMNOP -1;
+		Stop;
+	}
+
+	// A stamp's band: RED, GREEN, BLUE, or grey for any other.
+	static int Band(int c) { return c == 1 ? 0 : c == 3 ? 1 : c == 2 ? 2 : 3; }
+
+	// The sprite for the stamps: AJB0 none, AJB1 one, AJB2 two, AJBA..AJBD
+	// three, AJBE..AJBH more (the first three drawn, the lid hatched).
+	void Bands()
+	{
+		static const name three[] = { 'AJBA', 'AJBB', 'AJBC', 'AJBD', 'AJBE', 'AJBF', 'AJBG', 'AJBH' };
+		int n = stamps.Size();
+		int a = n > 0 ? Band(stamps[0]) : 0, b = n > 1 ? Band(stamps[1]) : 0, c = n > 2 ? Band(stamps[2]) : 0;
+		if (n == 0) { sprite = GetSpriteIndex('AJB0'); frame = 0; }
+		else if (n == 1) { sprite = GetSpriteIndex('AJB1'); frame = a; }
+		else if (n == 2) { sprite = GetSpriteIndex('AJB2'); frame = 4 * a + b; }
+		else { sprite = GetSpriteIndex(three[a + (n > 3 ? 4 : 0)]); frame = 4 * b + c; }
+	}
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		Bands();
 	}
 
 	string StampList()
@@ -52,7 +90,16 @@ class AjarCrate : Actor
 		{
 			if (s.home != CurSector) continue;
 			stamps.Push(s.args[0]);
+			Bands();
 			Console.Printf("AJARTEST stamps=%s t=%d crate at (%.0f,%.0f)", StampList(), level.maptime, pos.x, pos.y);
+		}
+		let ci = ThinkerIterator.Create("AjarChecker");
+		AjarChecker k;
+		while (k = AjarChecker(ci.Next()))
+		{
+			if (k.home != CurSector || readBy.Find(k) < readBy.Size()) continue;
+			readBy.Push(k);
+			k.Read(self);
 		}
 	}
 }

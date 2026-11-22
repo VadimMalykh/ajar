@@ -210,11 +210,16 @@ def way_out(m, x, y, colour):
     Candelabra stand at both ends and repeat in the doorway. Put company
     in it with things; in a PUZZLE graph it is the goal.
 
+    `colour` None (MAP17): no far side; the middle of the south wall is
+    plain wall, and the caller makes the way in (a room touching it there
+    opens onto it).
+
     It uses doorway number WAY_OUT (line ids 159 and 259)."""
     room(m, [x, x + 128, x + 192, x + 320], [y, y + 96, y + 160, y + 256],
          lambda i, j: j == 1 or (i == 1 and j == 0),
          ceil=160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2")
-    recess(m, (x + 128, y), (x + 192, y), (0, -1), 0, far_id(colour), 150 + WAY_OUT, far_colour=colour)
+    if colour:
+        recess(m, (x + 128, y), (x + 192, y), (0, -1), 0, far_id(colour), 150 + WAY_OUT, far_colour=colour)
     doorway(m, WAY_OUT, (x + 320, y + 96), (x + 320, y + 160), (1, 0), 0,
             (x, y + 96), (x, y + 160), (-1, 0), 0, trim=("AJXA", "AJXAF"))
     for xx in (x, x + 320):
@@ -328,7 +333,8 @@ def ambush(m, cause, kind, *spots, angle=0, after=0, near=0):
     """Monsters of Doom editor number `kind` that come in a flash at `spots`
     when the player takes something: `cause` is a room key's number (1..4),
     or 10 plus the colour of a door, taken for the first time; or 20 plus the
-    tag of a target() or sensor, once that is set off (MAP15, 2026-11-20).
+    tag of a target() or sensor, once that is set off (MAP15, 2026-11-20); or
+    40 plus the tag a checker opens, once its order is filled (MAP17, map17.zs).
     `near`: they hold back further until the player is within that distance
     of the spot and in sight of it: an ambush in a room the player comes back
     to, not one that walks out to meet him. Doom's oldest
@@ -921,6 +927,7 @@ def _on(key, a, b):
 
 BOARDED = {}        # a door's face -> the same nailed up (gfx.boarded), wherever an excerpt() ends at a door
 SCENERY_T = {34, 35, 2028, 85, 86, 44, 45, 46, 55, 56, 57, 48, 70} | set(range(20021, 20030))   # what only stands there
+SCENERY_T |= {20098}  # MAP17's checker lamps (map17.zs)
 
 
 def boarded(face):

@@ -1324,10 +1324,13 @@ def make_all():
     import map_institute4                                        # ... and MAP14's
     import map_institute5                                        # ... and MAP15's
     import map_institute6                                        # ... and MAP16's
+    import map_dispatch                                          # ... and MAP17's
     gfx_institute.make(out, map_institute1.SIGNS, map_institute1.FACES)
     for n in gfx_institute.LOOKS:                                # MAP16's lever, on the canteen gallery's wall
         levers(out, f"AJICL{n}", unpng(out[f"textures/AJICA{n}.png"]), 128)
     gfx_institute.weigh_dial(out, map_institute1.LOOK)           # MAP16's weighbridge dial, in the build's look
+    import gfx_dispatch                                          # MAP17's line, crates, notes and board
+    gfx_dispatch.make(out, map_dispatch.NOTES)
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
                            + "cameratexture AJREEL 512 224\n").encode()
     import gfx_works                                             # MAP32's look (works32.py)
