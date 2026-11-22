@@ -1,28 +1,45 @@
-"""MAP32's look, "Deep Field" (Vadim, 2026-11-21; PLAN.md, "Look: MAP32"):
+"""MAP32's look (Vadim, 2026-11-21, "Deep Field"; PLAN.md, "Look: MAP32"):
 the level of map_secret2.py dressed after it is built, with AJAR_WORKS unset
 or 1. AJAR_WORKS=0 is the plain level, which this never touches.
+
+Its lights, since 2026-11-22 (Vadim: "on walls only, something more still
+like orange glow, not white on black"): one still orange wall lamp, the only
+house light of the level, painted with its glow onto a wall plate
+(gfx_works.py). Over every time door (centred on its mouth, with 32 of glow
+cut beside it each side), and along the walls of each room's main spaces
+(RECTS and the two corridors): on each straight run of plain wall
+max(1, round(length / LAMP_EVERY)) lamps, spread evenly about the run's
+middle on the walls' 128 grid, LAMP_APART apart at least; none on a run
+shorter than LAMP_RUN, none whose middle is nearer than LAMP_NEAR to one of
+the puzzle's lamps (2026-11-22, round two: more of them, the rooms of goes
+lit 176 instead of 152). No light is
+attached to a lamp: they are pictures only. The pens and the way out have a
+dull orange light each (things that works.zs lights).
 
 Nothing here moves a wall, a floor or a ceiling, or adds a sector: it gives
 sectors and lines textures, flats, light and (in UDMF) a second tag, cuts a
 few walls into pieces so that a piece can wear its own picture, and puts
-things that are nothing but carriers of light (src/zscript/works.zs). The
-pictures are drawn by gfx_works.py; the lights and the textures that change
-with the game are worked by works.zs.
+things that are carriers of light or mark the rooms (src/zscript/works.zs,
+which also answers the game: the press, a room done, the plate line).
 
   dress(g)  dresses the module g (map_secret2) and returns its SIGNS, the
-            signs gfx_works.make draws.
+            signs gfx_works.make draws. Prints how many lamps each room got.
 """
 import math
+import sys
 
-from gfx_works import CODE, STRIP, high_row
+from gfx_works import CODE, HEIGHTS, STRIP
 
-ROOM_T = 20081          # AjarWorksRoom: a rectangle of a room (args: room, half width, half height, axis, sweep)
-SPOT_T = 20080          # AjarWorksSpot: a light (args: kind, room, radius, dx or line id, dy)
-STEADY, ORANGE_LAMP, TRAVEL, STUTTER = 1, 2, 3, 4
+ROOM_T = 20081          # AjarWorksRoom: a rectangle of a room (args: room, half width, half height); marks the look
+SPOT_T = 20080          # AjarWorksSpot: a light (args: kind, room, radius, strength in hundredths)
+ORANGE_LAMP = 2
 TAG = 4100              # sectors of room k: moreids 4100 + 10k; those the press's light follows: + 1
-STUTTER_ID = 4300       # the line of room k's stutter: 4300 + k
-QUIET = 192             # no coloured or moving light nearer than this to a frame, leaf, plate, lamp or lever
-LAMP_QUIET = 256        # nothing that stutters nearer than this to a lamp
+QUIET = 192             # the pens' lights reach no frame, leaf, plate, lamp or lever
+LAMP_EVERY = 384        # a wall lamp to so much of a straight run of wall
+LAMP_RUN = 192          # a run shorter than this has none
+LAMP_NEAR = 160         # no wall lamp's middle nearer than this to one of the puzzle's lamps
+LAMP_APART = 256        # lamps on one run at least this far apart
+WHY = []                # (a check's notes) the plates a wall lamp was not put on, and why
 PUZZLE_T = {20001, 20002, 20044, 20047, 20048, 20053, 20054, 20056, 20057}
 LAMP_T = {20048, 20053, 20054, 20057}
 
@@ -103,37 +120,30 @@ def dress(g):
         if h not in CODE:
             assert role == "slab", (si, h, role)
         c = CODE.get(h, "D")
-        steady = role in ("box", "case")
-        if role in ("pen", "cage"):
-            s["wall"] = f"AJZR{c}"
-        elif role == "chamber":
-            s["wall"] = "AJZPDM00"
+        if role == "chamber":
+            s["wall"] = "AJZPD"
         elif role != "slab":
-            s["wall"] = f"AJZW{c}{'S' if steady else 'M'}00"
+            s["wall"] = f"AJZW{c}"
         s["side"] = "AJZQ" if role == "slab" else "AJZSTP"
         x, y = centre(si)
         if role == "chamber":
             s["ftex"], s["ctex"] = "AJZBED", "AJZPLT"
             # the bed is one picture over the chamber and the mouth: its north-west corner at (HX, WY)
             s["raw"] = dict(s["raw"], xpanningfloor=float((-g.HX) % 2048), ypanningfloor=float(g.WY % 512))
-        elif role in ("room",) and k in (1, 2, 5, 0):
-            s["ftex"] = "AJZCFM00"
         else:
             s["ftex"] = "AJZFT"
-        if k == 0 and 388 <= y <= 516:
-            s["raw"] = dict(s["raw"], ypanningfloor=float((128 + 452) % 256))     # a conduit down its middle
         sky = ((k == 2 and s["floor"] == g.PITF and role == "room")
                or (k == 3 and role in ("room", "slab") and s["ceil"] == g.HY + 320 and y < g.PY)
                or (k == 4 and role in ("room", "slab") and g.RX <= x <= g.RX + g.RW and 0 <= y <= g.RY + g.RL))
         if role != "chamber":
-            s["ctex"] = "F_SKY1" if sky else "AJZKCS00"
+            s["ctex"] = "F_SKY1" if sky else "AJZKP"
         s["color"] = None
         if role == "box":
-            s["light"] = 170
+            s["light"] = 176
         elif role == "case":
             pass
         elif k in (1, 2, 5, 0) or si in lobby3 + lobby4:
-            s["light"] = 152
+            s["light"] = 176
         else:
             s["light"] = 184
         if role not in ("box", "case") and k:
@@ -205,7 +215,7 @@ def dress(g):
         CLAIMED.append((start, end))
         return start, end, n
 
-    # --- time doors: the conduit climbs round them --------------------------------------
+    # --- time doors: a lamp over each; frames: a pale surround -------------------------------
     def mouth_of(rs):
         """The mouth of the recess sector rs: (the room's sector, its edge a, b, the mouth's ends in the
         edge's direction)."""
@@ -224,23 +234,33 @@ def dress(g):
             return a if a != p else (2 * p[0] - b[0], 2 * p[1] - b[1])
         return b if b != p else (2 * p[0] - a[0], 2 * p[1] - a[1])
 
-    TARGET = {1: (192, 512), 2: (2632, 0), 3: (6536, 160), 4: (7456, 1400), 5: (9856, 608), 0: (1e6, 0)}
+    def cut_along(si, start, d, want, tex):
+        """Pieces of `tex` on the one-sided wall from `start` in the direction d
+        (a unit), `want` long in all, on across sectors as high as si; returns
+        how much was cut (less where the wall turns or opens)."""
+        done, pt = 0, start
+        while done < want:
+            w = wall_of(pt, (pt[0] + d[0], pt[1] + d[1]))
+            if not w or S[w[0]]["floor"] != S[si]["floor"] or S[w[0]]["ceil"] != S[si]["ceil"] \
+                    or INFO[w[0]]["role"] not in ("room", "chamber", "box"):
+                break
+            s_i, a, b = w
+            far = (pt[0] + d[0] * (want - done), pt[1] + d[1] * (want - done))
+            got = piece(s_i, a, b, pt, far, want - done, tex,
+                        **({"dontpegbottom": True} if INFO[s_i]["pegfloor"] else {}))
+            if not got:
+                break
+            pt, done = got[1], done + got[2]
+        return done
 
-    def var(name, k, a, b):
-        """A moving family's name with its dashes running toward room k's way on."""
-        if len(name) != 8 or name[5] != "M":
-            return name
-        t = TARGET[k]
-        mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-        if (t[0] - mid[0]) * (b[0] - a[0]) + (t[1] - mid[1]) * (b[1] - a[1]) < 0:
-            return name[:5] + "L" + name[6:]
-        return name
-
+    COUNT = {k: [0, 0] for k in range(6)}       # by room (0: the corridors): wall lamps, door lamps
+    DOOR_AT = []                # the door lamps' middles (on the mouth's line): the hook centres them
+    CUT_SHORT = []              # doors where the glow beside the mouth could not be cut whole
     steel = [set(m.polys[i]) for i in range(n_sec) if S[i]["id"] in (3390, 3490)]
     doors = frames = 0
     for rs in range(n_sec):
         s = S[rs]
-        if s["ceil"] - s["floor"] != 96 or s["light"] != 176 or rs in caseglass:
+        if rs in INFO or s["ceil"] - s["floor"] != 96 or s["light"] != 176 or rs in caseglass:
             continue
         if any(len(set(m.polys[rs]) & st) >= 2 for st in steel):
             continue                                    # the mouth of a steel door: no frame, no time door
@@ -253,35 +273,36 @@ def dress(g):
         if not mo:
             continue
         si, a, b, (p, q) = mo
-        info, room = INFO[si], S[si]
+        info = INFO[si]
         k = info["room"]
         h = height(si)
         c = CODE[h]
         if time:
             doors += 1
-            steady = info["role"] == "box"
-            v = "S" if steady else "M"
             if info["role"] == "chamber":
-                m.line(p, q, upper=f"AJZXD{v}00")       # hung from the door: the press's ceiling moves
+                assert h == 192, h
+                m.line(p, q, upper="AJZXD")             # hung from the door: the press's ceiling moves
             else:
-                m.line(p, q, upper=f"AJZU{c}{v}00", dontpegtop=True)
-            for start, back, part in ((p, True, "Y"), (q, False, "V")):
-                got = piece(si, a, b, start, towards(a, b, start, back), STRIP, None,
-                            **({"dontpegbottom": True} if info["pegfloor"] else {}))
-                if got:
-                    st, en, n = got
-                    m.line(st, en, mid=f"AJZ{part}{c}{v}00")
-                    if part == "Y" and n < STRIP:
-                        OFFS[frozenset((st, en))] = {"offsetx_mid": float(STRIP - n)}
+                m.line(p, q, upper=f"AJZU{c}", dontpegtop=True)
+            DOOR_AT.append(((p[0] + q[0]) / 2, (p[1] + q[1]) / 2))
+            COUNT[k][1] += 1
+            ln = math.hypot(q[0] - p[0], q[1] - p[1])
+            u = ((q[0] - p[0]) / ln, (q[1] - p[1]) / ln)
+            for start, d in ((p, (-u[0], -u[1])), (q, u)):     # the glow beside the mouth
+                n = cut_along(si, start, d, STRIP, f"AJZU{c}")
+                if n < STRIP:
+                    CUT_SHORT.append((k, start, n))
         else:
             frames += 1
-            m.line(p, q, upper=f"AJZO{c}", lower=f"AJZN{c}", dontpegtop=True, dontpegbottom=True)
+            m.line(p, q, upper=f"AJZN{c}", lower=f"AJZN{c}", dontpegtop=True, dontpegbottom=True)
             for start, back in ((p, True), (q, False)):
                 piece(si, a, b, start, towards(a, b, start, back), 64, f"AJZN{c}")
     assert doors >= 20 and frames >= 12, (doors, frames)
+    for k, st, n in CUT_SHORT:
+        print(f"works32: room {k}: the door lamp's glow by {st} only {n} wide (the wall turns or opens)", file=sys.stderr)
 
     # --- room 3: the test bay -------------------------------------------------------------
-    m.line((g.MOUTH3[0], g.PY), (g.MOUTH3[1], g.PY), upper="AJZTHM00", exact=True, dontpegtop=True)
+    m.line((g.MOUTH3[0], g.PY), (g.MOUTH3[1], g.PY), upper="AJZTH", exact=True, dontpegtop=True)
     for x in g.MOUTH3:                                  # the stubs' ends: hazard stripes
         m.line((x, g.PY), (x, g.PY + 32), mid="AJZHAZ", dontpegbottom=True)
 
@@ -300,7 +321,7 @@ def dress(g):
         st = p if on(p, a, b) < on(q, a, b) else q
         got = piece(si, a, b, st, q if st == p else p, 128, None)
         assert got and got[2] == 128, ("no room for the sign", name, got)
-        m.line(p, q, mid=var(f"{name}M00", k, a, b))
+        m.line(p, q, mid=name)
         SIGNS.append(dict(kind="wall", name=name, h=height(si), lines=lines, y=y))
 
     # --- the way out: a hatch round the night room's mouth, lit all round ------------------
@@ -314,113 +335,167 @@ def dress(g):
         if got and tex == "AJZHC" and got[2] < STRIP:
             OFFS[frozenset(got[:2])] = {"offsetx_mid": float(STRIP - got[2])}
 
-    # --- the puzzle's things: no coloured or moving light near them ---------------------------
+    # --- the rooms: their rectangles (things that mark the look, for works.zs) -----------------
+    NAMED = {1: [("room", (0, -192, 640, 512)), ("box", (-400, 32, -208, 224)), ("nook", (384, 528, 576, 624))],
+             2: [("gallery", (2000, 0, 3280, 320)), ("pit", g.PIT2), ("box", (2384, 480, 2576, 672)),
+                 ("case", (2048, 336, 2304, 432))],
+             3: [("hall", (g.HX, g.HY, g.HX + g.HW, g.PY)), ("chamber", (g.HX, g.PY, g.HX + g.HW, g.WY)),
+                 ("lobby", (4744, 64, 5000, 320)), ("wing", (g.LANDING3[0], g.PEN3[1], g.CAGE3BOX[2], g.HY)),
+                 ("box 1", (4776, 464, 4984, 656)), ("box 2", (6552, 464, 6760, 656)),
+                 ("box 3", (6100, -216, 6356, -16)), ("case", (4776, 336, 4968, 432))],
+             4: [("range", (g.RX, g.RY, g.RX + g.RW, g.RY + g.RL)), ("lobby", (6872, 32, 7200, 320)),
+                 ("west wing", g.WINGS4[0]), ("east wing", g.WINGS4[1]), ("pen", g.PEN4),
+                 ("box 1", (7200, -208, 7376, -16)), ("box 2", (7536, -208, 7712, -16)),
+                 ("box 3", (6992, 500, 7184, 680)), ("case", (7728, 96, 7824, 288))],
+             5: [("S", (8048, 160, 8560, 672)), ("L", (8800, 160, 9248, 672)), ("E", (9600, 160, 10112, 608)),
+                 ("box", (8200, -240, 8392, -48)), ("case", (8576, 512, 8672, 640))],
+             0: [("corridor 3-4", (6552, 96, 6872, 224)), ("corridor 4-5", (7728, 388, 8048, 516))]}
+    RECTS = {k: [r for _, r in v] for k, v in NAMED.items() if k}
+    CORRIDORS = [r for _, r in NAMED[0]]
+    for k, rects in RECTS.items():
+        for x1, y1, x2, y2 in rects:
+            m.thing((x1 + x2) / 2, (y1 + y2) / 2, ROOM_T, args=(k, (x2 - x1) // 2, (y2 - y1) // 2))
+    PER_RECT = {}               # wall lamps by (room, its rectangle's name)
+
+    def rect_of(k, pt):
+        for name, (x1, y1, x2, y2) in NAMED[k]:
+            if x1 <= pt[0] <= x2 and y1 <= pt[1] <= y2:
+                return name
+        return "elsewhere"
+
+    # --- the wall lamps ---------------------------------------------------------------------
+    PUZZLE_LAMPS = [(t["x"], t["y"]) for t in m.things if t["type"] in LAMP_T]
+    MAIN = [r for rects in RECTS.values() for r in rects] + CORRIDORS
+
+    def in_main(pt):
+        return any(x1 <= pt[0] <= x2 and y1 <= pt[1] <= y2 for x1, y1, x2, y2 in MAIN)
+
+    def subtract(lo, hi, cover):
+        parts = [(lo, hi)]
+        for c0, c1 in cover:
+            nxt = []
+            for p0, p1 in parts:
+                if c1 <= p0 or c0 >= p1:
+                    nxt.append((p0, p1))
+                    continue
+                if c0 > p0:
+                    nxt.append((p0, c0))
+                if c1 < p1:
+                    nxt.append((c1, p1))
+            parts = nxt
+        return parts
+
+    # the plain one-sided wall of the rooms' main spaces, by line: {(axis, where, direction): [(w0, w1, si, a, b)]}
+    LINES = {}
+    for si, info in INFO.items():
+        if info["role"] not in ("room", "chamber"):
+            continue
+        s = S[si]
+        h = height(si)
+        if h != s["ceil"] - s["floor"] or h <= 96:
+            continue
+        p = m.polys[si]
+        for a, b in zip(p, p[1:] + p[:1]):
+            if a[0] != b[0] and a[1] != b[1]:
+                continue
+            ax = 0 if a[1] == b[1] else 1              # the axis the wall runs along
+            cover = [sorted((c[ax], e[ax])) for s_j, c, e in EDGES
+                     if s_j != si and on(c, a, b) is not None and on(e, a, b) is not None]
+            cover += [sorted((c[ax], e[ax])) for c, e in CLAIMED if on(c, a, b) is not None and on(e, a, b) is not None]
+            lo, hi = sorted((a[ax], b[ax]))
+            for w0, w1 in subtract(lo, hi, cover):
+                mid = ((w0 + w1) / 2, a[1]) if ax == 0 else (a[0], (w0 + w1) / 2)
+                if in_main(mid):
+                    LINES.setdefault((ax, a[1 - ax], 1 if b[ax] > a[ax] else -1), []).append((w0, w1, si, a, b))
+
+    def at(ax, where, w):
+        return (w, where) if ax == 0 else (where, w)
+
+    for (ax, where, d), parts in sorted(LINES.items()):
+        parts.sort()
+        runs = [[parts[0]]]
+        for pt in parts[1:]:
+            if pt[0] == runs[-1][-1][1]:
+                runs[-1].append(pt)
+            else:
+                runs.append([pt])
+        for run in runs:
+            w0, w1 = run[0][0], run[-1][1]
+            ln = w1 - w0
+            if ln < LAMP_RUN:
+                WHY.append((run[0][2], at(ax, where, w0), at(ax, where, w1), None, f"run {ln} long"))
+                continue
+            n = max(1, int(ln / LAMP_EVERY + 0.5))
+            mid = (w0 + w1) / 2
+            chosen = []
+            for i in range(n):
+                want = mid + (i - (n - 1) / 2) * ln / n          # the lamp's middle, as the rule spreads them
+                g0 = round((want - 64) / 128) * 128
+                tries = sorted((g0 + o for o in (0, 128, -128, 256, -256)),
+                               key=lambda x: (abs(x + 64 - want), abs(x + 64 - mid)))
+                for x in tries:
+                    centre_pt = at(ax, where, x + 64)
+                    # the parts the plate lies on: one after another, sectors as high (a seam between them is unseen)
+                    on_it = [pt for pt in run if pt[1] > x and pt[0] < x + 128]
+                    whole = (on_it and on_it[0][0] <= x and on_it[-1][1] >= x + 128
+                             and all(p1[1] == p2[0] for p1, p2 in zip(on_it, on_it[1:]))
+                             and len({(S[pt[2]]["floor"], S[pt[2]]["ceil"], INFO[pt[2]]["role"]) for pt in on_it}) == 1)
+                    if not whole:
+                        WHY.append((run[0][2], at(ax, where, x), at(ax, where, x + 128), centre_pt,
+                                    f"not whole on the run {at(ax, where, w0)}..{at(ax, where, w1)}"))
+                        continue
+                    if any(abs(x - o) < LAMP_APART for o in chosen):
+                        WHY.append((run[0][2], at(ax, where, x), at(ax, where, x + 128), centre_pt, "by another lamp"))
+                        continue
+                    near = [(round(math.hypot(centre_pt[0] - lx, centre_pt[1] - ly)), (lx, ly)) for lx, ly in PUZZLE_LAMPS]
+                    near = [nl for nl in near if nl[0] < LAMP_NEAR]
+                    if near:
+                        WHY.append((run[0][2], at(ax, where, x), at(ax, where, x + 128), centre_pt,
+                                    f"puzzle lamp {min(near)[1]} {min(near)[0]} away"))
+                        continue
+                    si = on_it[0][2]
+                    tex = "AJZPDL" if INFO[si]["role"] == "chamber" else f"AJZWL{CODE[height(si)]}"
+                    for p0, p1, s_i, a, b in on_it:
+                        lo, hi = max(p0, x), min(p1, x + 128)
+                        start, end = at(ax, where, lo), at(ax, where, hi)
+                        got = piece(s_i, a, b, start, end, hi - lo, tex)
+                        assert got and got[2] == hi - lo, ("a wall lamp's plate not whole", start, end, got)
+                    chosen.append(x)
+                    k = INFO[si]["room"]
+                    COUNT[k][0] += 1
+                    PER_RECT[(k, rect_of(k, centre_pt))] = PER_RECT.get((k, rect_of(k, centre_pt)), 0) + 1
+                    break
+    for k in (1, 2, 3, 4, 5, 0):
+        where = ", ".join(f"{name} {PER_RECT[(k, name)]}" for name, _ in NAMED[k] + [("elsewhere", None)]
+                          if (k, name) in PER_RECT)
+        print(f"works32: {f'room {k}' if k else 'the corridors'}: {COUNT[k][0]} wall lamps, {COUNT[k][1]} door lamps"
+              f"{' (' + where + ')' if where else ''}", file=sys.stderr)
+
+    # --- the puzzle's things: the pens' lights keep off them -------------------------------------
     PUZZLE = [(t["x"], t["y"]) for t in m.things if t["type"] in PUZZLE_T]
-    LAMPS = [(t["x"], t["y"]) for t in m.things if t["type"] in LAMP_T]
     for rs in range(n_sec):
         s = S[rs]
-        if s["light"] == 176 and s["ceil"] - s["floor"] == 96 and s["wall"].startswith("AJTR") and s["wall"] != "AJTR10":
+        if rs not in INFO and s["light"] == 176 and s["ceil"] - s["floor"] == 96 and s["wall"].startswith("AJTR") \
+                and s["wall"] != "AJTR10":
             PUZZLE.append(centre(rs))                   # a far side: a leaf comes out there
 
     def quiet(p):
         return min(math.hypot(p[0] - x, p[1] - y) for x, y in PUZZLE)
 
-    # --- stutters: one stretch of the high line in each room -----------------------------------
-    STUTTERS = {1: ((640, 64), (640, 192)), 2: ((2880, 0), (3008, 0)), 3: ((6400, 0), (6528, 0)),
-                4: ((7200, 1000), (7200, 1128)), 5: ((9120, 672), (9248, 672))}
-    for k, (p, q) in STUTTERS.items():
-        w = wall_of(p, q)
-        assert w, ("no wall for the stutter", k)
-        si, a, b = w
-        st = p if on(p, a, b) < on(q, a, b) else q
-        got = piece(si, a, b, st, q if st == p else p, 128, None, id=STUTTER_ID + k)
-        assert got and got[2] == 128, ("no room for the stutter", k)
-        mid = ((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)
-        nrm = (b[1] - a[1], -(b[0] - a[0]))          # into the sector (it is on the right of a-b)
-        ln = math.hypot(*nrm)
-        at = (mid[0] + nrm[0] / ln * 24, mid[1] + nrm[1] / ln * 24)
-        assert quiet(at) >= 160 + 16 and quiet(at) >= QUIET and min(math.hypot(at[0] - x, at[1] - y) for x, y in LAMPS) >= LAMP_QUIET, (k, at)
-        h = height(si)
-        m.thing(at[0], at[1], SPOT_T, args=(STUTTER, k, 160, STUTTER_ID + k, 0), height=float(h - high_row(h) - 4))
-
-    # --- the rooms, for works.zs: their rectangles; sweeps along the big ones --------------------
-    RECTS = {1: [((0, -192, 640, 512), 0, 1), ((-400, 32, -208, 224), 0, 0), ((384, 528, 576, 624), 0, 0)],
-             2: [((2000, 0, 3280, 320), 0, 1), (g.PIT2, 1, 1), ((2384, 480, 2576, 672), 0, 0),
-                 ((2048, 336, 2304, 432), 0, 0)],
-             3: [((g.HX, g.HY, g.HX + g.HW, g.PY), 0, 1), ((g.HX, g.PY, g.HX + g.HW, g.WY), 0, 1),
-                 ((4744, 64, 5000, 320), 0, 0), ((g.LANDING3[0], g.PEN3[1], g.CAGE3BOX[2], g.HY), 0, 0),
-                 ((4776, 464, 4984, 656), 0, 0), ((6552, 464, 6760, 656), 0, 0), ((6100, -216, 6356, -16), 0, 0),
-                 ((4776, 336, 4968, 432), 0, 0)],
-             4: [((g.RX, g.RY, g.RX + g.RW, g.RY + g.RL), 1, 1), ((6872, 32, 7200, 320), 0, 0),
-                 (g.WINGS4[0], 1, 0), (g.WINGS4[1], 1, 0), (g.PEN4, 0, 0), ((7200, -208, 7376, -16), 0, 0),
-                 ((7536, -208, 7712, -16), 0, 0), ((6992, 500, 7184, 680), 0, 0), ((7728, 96, 7824, 288), 0, 0)],
-             5: [((8048, 160, 8560, 672), 1, 1), ((8800, 160, 9248, 672), 1, 1), ((9600, 160, 10112, 608), 1, 1),
-                 ((8200, -240, 8392, -48), 0, 0), ((8576, 512, 8672, 640), 0, 0)]}
-    for k, rects in RECTS.items():
-        for (x1, y1, x2, y2), axis, sweep in rects:
-            m.thing((x1 + x2) / 2, (y1 + y2) / 2, ROOM_T, args=(k, (x2 - x1) // 2, (y2 - y1) // 2, axis, sweep))
-
-    # --- steady lights: high on the walls, ICE, away from the puzzle -----------------------------
-    def floor_at(p):
-        for si in INFO:
-            x1, y1, x2, y2 = box(si)
-            if x1 < p[0] < x2 and y1 < p[1] < y2 and INFO[si]["role"] not in ("slab",):
-                return si
-        return None
-
-    def steady(k, rect, n, radius, inset=40):
-        x1, y1, x2, y2 = rect
-        cands = []
-        for x in range(x1 + inset, x2 - inset + 1, 32):
-            cands += [(x, y1 + inset), (x, y2 - inset)]
-        for y in range(y1 + inset, y2 - inset + 1, 32):
-            cands += [(x1 + inset, y), (x2 - inset, y)]
-        cands = [c for c in cands if quiet(c) >= max(QUIET, radius) + 16 and floor_at(c) is not None]
-        chosen = []
-        while len(chosen) < n and cands:
-            best = max(cands, key=lambda c: (min([math.hypot(c[0] - o[0], c[1] - o[1]) for o in chosen] or [1e9]),
-                                             quiet(c)))
-            if chosen and min(math.hypot(best[0] - o[0], best[1] - o[1]) for o in chosen) < 300:
-                break
-            chosen.append(best)
-        for c in chosen:
-            si = floor_at(c)
-            h = height(si)
-            m.thing(c[0], c[1], SPOT_T, args=(STEADY, k, radius, 0, 0), height=float(h - high_row(h) - 12))
-        return len(chosen)
-
-    LIGHTS = {}
-    LIGHTS[1] = steady(1, (0, 0, 640, 512), 3, 224)
-    LIGHTS[2] = steady(2, (2000, 0, 3280, 320), 3, 224) + steady(2, g.PIT2, 2, 256)
-    LIGHTS[3] = steady(3, (g.HX, g.HY, g.HX + g.HW, g.PY), 4, 288) + steady(3, (4744, 64, 5000, 320), 1, 224)
-    LIGHTS[4] = steady(4, (g.RX, g.RY, g.RX + g.RW, g.RY + g.RL), 4, 256) + steady(4, g.WINGS4[0], 1, 200) \
-        + steady(4, g.WINGS4[1], 1, 200)
-    LIGHTS[5] = steady(5, (8048, 160, 8560, 672), 1, 224) + steady(5, (8800, 160, 9248, 672), 1, 224) \
-        + steady(5, (9600, 160, 10112, 608), 1, 224)
-    steady(0, (6552, 96, 6872, 224), 1, 200, inset=64)
-    steady(0, (7728, 388, 8048, 516), 1, 200, inset=64)
     # the pens: a dull orange, steady (they are fight: rule 5 counts them)
     for k, pen in ((3, g.PEN3), (4, g.PEN4)):
         c = ((pen[0] + pen[2]) / 2, (pen[1] + pen[3]) / 2)
         r = min(300, int(quiet(c)) - 16)
         assert r >= QUIET, ("the pen's light by the puzzle", k, quiet(c))
-        m.thing(c[0], c[1], SPOT_T, args=(ORANGE_LAMP, k, r, 0, 0), height=96.0)
-        LIGHTS[k] += 1
-    # the hatch: the brightest light of the level, before the way out
-    m.thing(g.NX + 160, g.NY - 48, SPOT_T, args=(STEADY, 5, 200, 0, 0), height=150.0)
+        m.thing(c[0], c[1], SPOT_T, args=(ORANGE_LAMP, k, r, 45, 0), height=96.0)
+    # the hatch: a light before the way out, orange as the pens'
+    m.thing(g.NX + 160, g.NY - 48, SPOT_T, args=(ORANGE_LAMP, 5, 200, 60, 0), height=150.0)
     assert quiet((g.NX + 160, g.NY - 48)) >= 200 + 16
-    LIGHTS[5] += 1
-    # steady lights a room has (with its stutter's): 12 at most with what moves; in rooms 3 and 4 at most 8
-    assert LIGHTS[3] <= 7 and LIGHTS[4] <= 7 and all(n <= 7 for n in LIGHTS.values()), LIGHTS
 
-    # --- lights that travel along a floor conduit toward the room's time door --------------------
-    for k, a, b in ((1, (600, 128), (40, 128)), (2, (3240, 128), (2520, 128)), (2, (3310, -128), (3760, -128)),
-                    (0, (6560, 128), (6864, 128)), (0, (7736, 452), (8040, 452))):
-        clear = sum(quiet((a[0] + (b[0] - a[0]) * i / 20, a[1] + (b[1] - a[1]) * i / 20)) >= QUIET for i in range(21))
-        assert clear >= 7, ("a travelling light mostly by the puzzle", a, b, clear)
-        m.thing(a[0], a[1], SPOT_T, args=(TRAVEL, k, 160, b[0] - a[0], b[1] - a[1]), height=20.0)
+    # --- each side's last touches: world alignment, pegging, the door lamps centred ----------------
+    ALIGNED = {f"AJZW{c}" for c in HEIGHTS} | {f"AJZWL{c}" for c in HEIGHTS} | {"AJZPD", "AJZPDL"}
+    DOOR_TEX = {f"AJZU{c}" for c in HEIGHTS} | {"AJZXD"}
 
-    # --- each side's last touches: direction, world alignment, pegging --------------------------------
     def replace_upper(o_i):
         o = S[o_i]
         return o_i in INFO or o["wall"] == "AJTRIM" or o_i in caseglass
@@ -439,20 +514,34 @@ def dress(g):
         if u % 128:
             sd["offsetx_" + part] = float(u % 128)
 
+    def door_off(sd, part, p, q):
+        """A door lamp's picture on the side p-q: its column 64 at the door's middle."""
+        ln = math.hypot(q[0] - p[0], q[1] - p[1])
+        u = ((q[0] - p[0]) / ln, (q[1] - p[1]) / ln)
+        best = None
+        for c in DOOR_AT:
+            if abs(u[0] * (c[1] - p[1]) - u[1] * (c[0] - p[0])) > 1e-6:
+                continue
+            s = (p[0] - c[0]) * u[0] + (p[1] - c[1]) * u[1]     # p from the door's middle, along the side
+            if -64 - 1e-6 <= s and s + ln <= 64 + 1e-6 and (best is None or abs(s) < abs(best)):
+                best = s
+        assert best is not None, ("a door lamp's piece by no door", p, q)
+        if (64 + best) % 128:
+            sd["offsetx_" + part] = float((64 + best) % 128)
+
     def hook(ld, sides, a, b, si, other, given):
         front = sides[ld["sidefront"]]
         if other is None:
             if si not in INFO:
                 return
-            k = INFO[si]["room"]
-            key = frozenset((a, b))
             tex = front.get("texturemiddle", "")
-            if tex.startswith("AJZ") and len(tex) == 8 and tex[5] in "MLS":
-                front["texturemiddle"] = var(tex, k, a, b)
-                if key not in OFFS and tex[3] not in "VY" and not tex[3].isdigit():      # (a sign is its own piece)
-                    align(front, "mid", a, b)
+            if tex in ALIGNED:
+                align(front, "mid", a, b)
+            elif tex in DOOR_TEX:
+                door_off(front, "mid", a, b)
             if INFO[si]["pegfloor"]:
                 ld["dontpegbottom"] = True
+            key = frozenset((a, b))
             if key in OFFS:
                 front.update(OFFS[key])
             return
@@ -460,20 +549,17 @@ def dress(g):
         for sd, s_i, o_i, p, q in ((front, si, other, a, b), (back, other, si, b, a)):
             if s_i not in INFO or INFO[s_i]["role"] == "slab":
                 continue
-            s, o, k = S[s_i], S[o_i], INFO[s_i]["room"]
+            s, o = S[s_i], S[o_i]
             if given["upper"] is None and s["ceil"] > o["ceil"] and replace_upper(o_i):
-                sd["texturetop"] = var(s["wall"], k, p, q)
+                sd["texturetop"] = s["wall"]
                 align(sd, "top", p, q)
                 ld["dontpegtop"] = True
             if given["lower"] is None and s["floor"] < o["floor"] and replace_lower(o_i):
-                sd["texturebottom"] = var(s["wall"], k, p, q)
+                sd["texturebottom"] = s["wall"]
                 align(sd, "bottom", p, q)
                 ld["dontpegbottom"] = True
-            for part, key in (("top", "texturetop"), ("bottom", "texturebottom")):
-                if given["upper" if part == "top" else "lower"] is not None:
-                    tex = sd.get(key, "")
-                    if tex.startswith("AJZ") and len(tex) == 8 and tex[5] == "M" and tex[3] in "UX5678":
-                        sd[key] = var(tex, k, p, q)
+            if sd.get("texturetop") in DOOR_TEX and s["ceil"] > o["ceil"]:
+                door_off(sd, "top", p, q)
 
     m.line_hook = hook
     return SIGNS

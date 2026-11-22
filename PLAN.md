@@ -7564,7 +7564,83 @@ and no pulse runs. When the mix is picked, the choice text carries a line
 Source `design/map32-lights.html`.
 **The page**: https://claude.ai/artifact/1MGMoqEhfqKASpvs5zqfei
 
-Nothing chosen yet, nothing built.
+Nothing of this page was chosen or built: round three below came instead.
+
+### Light, round three: a still orange glow on the walls (built 2026-11-22; not played by hand)
+
+Vadim, after the page, 2026-11-22: "Still don't like lights in rooms 1 and 2
+of map32. Somehow it's too much. Can we do on walls only, maybe something
+more still like orange glow, not white on black? room 3 looks better (or
+maybe I have less chance to pay attention on that). But let's do all in the
+same style." Built at once in the game, no page (round one's sketch was
+kinder than the game). `AJAR_WORKS` unset or 1 builds it; `AJAR_WORKS=0` is
+the plain level as before (its TEXTMAP is byte for byte main's). Deep Field's
+moving lights are gone from the code; the section "Deep Field as built" above
+says what was there until this.
+
+**Gone.** Every ice-white line: the high line and the foot conduit with its
+dashes on every wall (and the grooves they lay in), the conduit climbing round
+the time doors, the white line on the frames' surrounds and the white strip
+over the frames, the floor conduits, the ceilings' light lines. Everything
+that moved or flickered: breathing, running dashes, travelling floor lights,
+sweeps, the stutter, and the wave from a time door. Every dim ice dynamic
+light. The texture variants (M, L, S, W, D), their ANIMDEFS, and the swapping
+of textures by a room's state: a fight that is on looks as any room, and a
+room done no longer turns white.
+
+**The one house light: a wall lamp.** A short bar (about 44 by 7, pale warm
+core (255, 214, 150) to orange (255, 138, 48)) in a dark housing, with a soft
+orange glow painted on the plate round it (about 100 across, a little longer
+below than above, dithered, gone before the plate's edges) and a brightmap in
+proportion, so it glows whatever the room's light. A picture and nothing
+else: it is still, no dynamic light hangs on it, so it tints no leaf, frame
+or lamp of the puzzle. Its middle is 128 over the floor on walls 192 and
+higher (100 on 160, 68 on 128), which is on a seam of the plates.
+- *Over every time door* (the doors' mouths are 64 wide, so a 32 piece of the
+  same picture is cut each side for the glow to be whole; by room 3's two hall
+  doors the wall turns 16 on and the glow ends at the corner).
+- *Along the walls*, cut as 128 pieces on the world's 128 grid: per straight
+  run of plain wall in a room's main spaces and the two corridors, one lamp
+  for every 384 (`LAMP_EVERY`), a run of 192 or more gets one (`LAMP_RUN`),
+  lamps on a run at least 256 apart, none whose middle is within 160 of a
+  red, amber or green lamp of the puzzle (`LAMP_NEAR`), none in boxes, cases,
+  pens, the cage, on slabs or on the lintel of room 3. A run ends at anything
+  that is not plain wall (a frame's surround, a sign, a door's glow, the
+  hatch). A lamp's plate may span the fitted sectors a hall is cut into.
+- Lamps as built: room 1 seven on walls (three of them in the entrance
+  passage, two on the south wall, one each west and east, none on the north
+  wall, whose runs are 96, 96 and 64) and two over doors; room 2 thirteen
+  (gallery 4, pit 9) and three; room 3 nine (hall 4: three south, one east;
+  chamber 4; lobby 1) and seven; room 4 twelve (range 3, lobby 1, wings 4
+  and 4) and five; room 5 six and four; the corridors two each. The build
+  prints them (`works32: room 1: 7 wall lamps, 2 door lamps ...`) and keeps
+  why each place passed over was (`works32.WHY`).
+- The hatch round the way out has its border in the same orange, and the
+  light before it is orange (0.6). The pens keep their dull orange light.
+
+**Stays.** The plated steel, tread floor, stars, signs, hazard stripes, the
+slabs' orange edge, the chamber's scale and bed, the pale surrounds of the
+frames (without lines). Of the lights that answer the game: the press (the
+hall and chamber dip by 48, a white flash, back in 20 tics), a room done has
+its light up by 24, and the plate line (white dashes on the floor from a
+pressed plate to what it works: the one thing still on a floor, kept because
+it says which door the plate works; Vadim has not been asked about it apart
+from "on walls only").
+
+**Light levels.** Rooms 1, 2, 5, the corridors, lobbies and boxes 176 (they
+were 152, boxes 170); rooms 3 and 4 184 as before. With the lines gone the
+rooms of goes at 152 were black boxes in the shots, and room 3, which Vadim
+liked better, was the brighter one.
+
+**Tests** (2026-11-22; no `=0`, no script error or warning): `MAP=MAP32
+MODE=3 TIMEOUT=1500` 78 on the quick and on the full build (`worksDone3` and
+`worksTourDone1` no longer ask for the white variants; the info line of time
+door waves is gone), `MODE=7` 27, the tour `MODE=2` with `worksTourDone1`.
+`killedOnTheDemo4` failed once on a quick build of this and of the look
+before it alike (how room 4's demo happens to go), and passed in every later
+run. The session looked at the tour's shots of all five rooms before
+merging. The board of the look as built (`design/map32-board.html`) still
+shows Deep Field.
 
 ## The paradox in fights (built 2026-11-21)
 
