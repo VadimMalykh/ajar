@@ -144,8 +144,9 @@ extend class AjarHandler
 	Array<AjarBeltWatch> belts;
 	AjarCrate beltCrate, beltCrate2;
 	Actor beltSubject;
-	int beltT1, beltT2, beltLaps;
+	int beltT1, beltT2, beltT3, beltLaps;
 	double beltLapAt, beltLapMin, beltLapMax;
+	Array<double> beltLapTook;
 	double beltLo, beltHi, beltYLo, beltYHi, beltVLo, beltVHi;
 	bool beltFlag;
 
@@ -417,10 +418,22 @@ extend class AjarHandler
 		if (beltT1 && t == beltT1 + 35)
 		{
 			if (beltRaw) Check("rawStuckInFrameDoorway", a.pos.x == beltLo && a.pos.x + a.radius > 656);
-			else Check("waitsAfterTaken", abs(a.pos.x - 640) < 0.1 && abs(b.pos.x - 608) < 0.1 && a.vel.Length() < 0.01);
+			else Check("waitsAfterTaken", abs(a.pos.x - 640) < 0.1 && abs(b.pos.x - (a.pos.x - 32)) < 1 && a.vel.Length() < 0.01 && b.vel.Length() < 0.01);
 			BeltHang(mo, DoorOf(1), 101);
 		}
-		if (beltT1 && t > beltT1 + 35 && !beltT2 && InP(a) && a.pos.x - a.radius < 784)
+		// (with the step clear: the two now queue touching; RED hung, both set
+		// off together, and RED taken again as the first is in the doorway
+		// with the second right behind it)
+		if (!beltRaw && beltT1 && t > beltT1 + 35 && !beltT3 && a.pos.x + a.radius > 656 && a.pos.x < 656)
+		{
+			beltT3 = t;
+			Console.Printf("AJARTEST info clear: the queue in the frame's doorway at t=%d, crateC at %.2f, crateD at %.2f: RED is taken", t, a.pos.x, b.pos.x);
+			BeltTake(mo, 101);
+			Console.Printf("AJARTEST info clear: right after, crateC at %.2f, crateD at %.2f", a.pos.x, b.pos.x);
+			Check("queueSteppedClear", a.pos.x + a.radius < 656 && b.pos.x <= a.pos.x - 32 + 0.01 && OnBelt(a) && OnBelt(b));
+		}
+		if (beltT3 && t == beltT3 + 10) BeltHang(mo, DoorOf(1), 101);
+		if (beltT1 && t > beltT1 + 35 && (beltRaw || (beltT3 && t > beltT3 + 10)) && !beltT2 && InP(a) && a.pos.x - a.radius < 784)
 		{
 			beltT2 = t;
 			beltLo = a.pos.x;
@@ -437,7 +450,7 @@ extend class AjarHandler
 			else Check("goesOnAndSecondWaits", a.pos.x > 1000 && abs(b.pos.x - 640) < 0.1);
 			Check("noneLost", level.IsPointInLevel(a.pos) && (!b || level.IsPointInLevel(b.pos)));
 			BeltDrop(a); BeltDrop(b);
-			beltT1 = beltT2 = 0;
+			beltT1 = beltT2 = beltT3 = 0;
 			if (beltRaw)
 			{
 				beltRaw = false;
@@ -458,6 +471,7 @@ extend class AjarHandler
 			Pose(mo, 560, 72, 0, 90);
 		}
 		if (t == 10) { beltCrate = AjarCrate(BeltSpawn("AjarCrate", 64, 192, t, "crate")); beltLo = 64; }
+		if (t == 6) BeltKeep();
 		AjarCrate c = beltCrate;
 		if (!c) return;
 		// a lap: past x 320 on H's belt (the tic it got there, to a fraction)
@@ -468,6 +482,7 @@ extend class AjarHandler
 			{
 				double took = at - beltLapAt;
 				beltLaps++;
+				beltLapTook.Push(took);
 				beltLapMin = beltLaps == 1 ? took : min(beltLapMin, took);
 				beltLapMax = beltLaps == 1 ? took : max(beltLapMax, took);
 				if (beltLaps == 1) { beltYLo = beltYHi = c.pos.y; beltVLo = beltVHi = c.vel.x; }
@@ -478,12 +493,18 @@ extend class AjarHandler
 			beltLapAt = at;
 		}
 		beltLo = c.pos.x;
-		if (t == 6) BeltKeep();
 		if (t == 1900)
 		{
 			Console.Printf("AJARTEST info %d laps, %.2f to %.2f tics, y %.3f..%.3f, speed %.3f..%.3f (from the first lap's end on)", beltLaps, beltLapMin, beltLapMax, beltYLo, beltYHi, beltVLo, beltVHi);
 			Check("fiveLaps", beltLaps >= 5);
-			Check("lapsSteady", beltLapMax - beltLapMin < 1);
+			// a lap is not to the tic the same (the corner in K: below), but
+			// within 2% of each other, and the later ones no slower
+			double early = 0, late = 0;
+			int half = beltLapTook.Size() / 2;
+			for (int i = 0; i < half * 2; i++) { if (i < half) early += beltLapTook[i]; else late += beltLapTook[i]; }
+			if (half) Console.Printf("AJARTEST info laps %d to %d took %.2f on average, laps %d to %d %.2f", 1, half, early / half, half + 1, half * 2, late / half);
+			Check("lapsSteady", beltLapMax - beltLapMin < 5.4);
+			Check("notSlowing", half > 0 && late / half - early / half < 1);
 			Check("noDrift", beltYHi - beltYLo < 0.1 && beltVHi - beltVLo < 0.01);
 			Check("framesAndDoorsStayPut", BeltKept());
 		}

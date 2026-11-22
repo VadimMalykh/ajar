@@ -8066,21 +8066,28 @@ E. **An empty frame: works.** No door in 101: the crate waits at the end of
    right behind it is moved along with it (`CratesClear`, belt.zs). Only
    crates: the player, monsters and barrels are left as the engine leaves
    them (for the player on a sprung frame, plate.zs's `StandClear` stays).
-   **This was coded after the run above and has not been run yet**: MODE=4
-   now has the engine's own behaviour first (`rawLeftInTheLine`,
-   `rawStuckInFrameDoorway`, `rawStuckInFarDoorway`), then the same with two
-   crates and `CratesClear` (`steppedClearOfFrame`, `waitsAfterTaken`,
-   `steppedClearOfFarSide`, `goesOnAndSecondWaits`, `noneLost`).
+   MODE=4 runs both. The engine alone (`beltRaw`): `rawLeftInTheLine`,
+   `rawStuckInFrameDoorway` (644.17 for 35 tics), `rawStuckInFarDoorway`
+   (788.17). With `CratesClear`: the crate in the frame's doorway is put at
+   639.00 the moment RED is taken and then waits at the empty frame like any
+   other (639.98; `steppedClearOfFrame`, `waitsAfterTaken`, the second crate
+   queued 32.4 behind it); RED hung and taken again as the first of the two
+   touching crates is in the doorway (640.73 and 608.33): they are put at
+   639.00 and 607.00, the one behind moved along (`queueSteppedClear`); just
+   out of the far side (785.47) the crate is put at 801.00 and rides on in P,
+   while the second waits in H at the now empty frame
+   (`steppedClearOfFarSide`, `goesOnAndSecondWaits`, `noneLost`).
 F. **A ring: works.** RED in 101, GREEN in 102, BLUE in 103: the crate
-   lapped H, P, K six times in 1900 tics, a lap 268 to 272 tics (counted to
-   the whole tic; about 2160 units), at the same speed at the mark every lap
-   (7.250) and the same place across the belt (y 176.14 to 176.17, the 16
-   off the middle that K's corner gives it), stamps "1,3,2" again and again
-   (`fiveLaps`). (`lapsSteady` and `noDrift` asked for too little spread in
-   that run, counting whole tics and the first lap from the belt's middle;
-   they now count to a fraction of a tic and from the first lap's end, and
-   `framesAndDoorsStayPut` asks that frames, doors and stations on the belts'
-   sectors are not carried off: **not run yet**.)
+   lapped H, P, K six times in 1900 tics (`fiveLaps`), stamps "1,3,2" again
+   and again. A lap (about 2160 units) took 267.65 to 271.79 tics (counted to
+   a fraction of a tic; `lapsSteady` asks for less than 2%), laps 1 to 3
+   270.14 on average and laps 4 to 6 269.74 (`notSlowing`). The spread is all
+   in K: H to P and P to K take 84 tics every lap, K to H 98 to 104, as the
+   crate hits the corner's buffer a little differently each time. At the
+   mark the speed was 7.250 and the place across the belt y 176.14 to 176.17
+   every lap (the 16 off the middle that K's corner gives it; `noDrift`).
+   Frames, doors and stations, which stand on the belts' sectors without
+   gravity, were not carried off (`framesAndDoorsStayPut`).
 G. **In the way: reported.** The player standing on the belt 136 before the
    crate: both ride at the same speed and go through RED 18 tics apart; the
    hatch holds the player and the crate stops against the player (32.4
@@ -8094,12 +8101,30 @@ G. **In the way: reported.** The player standing on the belt 136 before the
    the hall). Nothing crashed, nothing was lost
    outside the map.
 
-**Not tested / not played by hand.** The step clear (`CratesClear`) and the
-new lap counting above: coded, not run (the docker image `ajar-tools` was
-removed from the machine by another project's `docker image prune` during
-the work, and rebuilding it was not allowed). For the same reason the full
-`./build.sh` with the solver and `MAP=LAB MODE=1` after these changes have
-not been run. A belt the player walks against; a monster or barrel through a
+**For MAP17**, from the above:
+- The hatch 40 high holds a barrel too (42 high): a barrel meant to pass
+  wants 44 or more; the player (56) and an imp (56) are held either way.
+- An awake monster steps off a belt over a 16 curb at once and goes its own
+  way; only a sleeping one, a barrel or the crate stays on. A belt that is
+  to keep monsters on needs side walls over 24.
+- The player standing still rides the whole line wherever no hatch stops
+  them: through the doors, turned, round a corner, through a Pair, to the
+  scale. A belt is a way to travel, and a hatch is what keeps the player
+  off a stretch of it.
+- A corner needs a buffer higher than 24 on its far side, or the player and
+  monsters ride over the curb there; the crate comes out of a corner 16 off
+  the belt's middle and stays so (no harm with 64-wide belts and doors).
+- A door taken while a crate is in its doorway would leave the crate stuck
+  in the wall: `CratesClear` (belt.zs, from `Link`) now puts it a step clear.
+
+**Runs** (2026-11-22, on the full `./build.sh` with the solver, which
+succeeded): `MAP=BELT MODE=1` 16 checks, `MODE=2` 9, `MODE=3` 3, `MODE=4` 20,
+`MODE=5` 5, `MODE=6` 4, all passed; `MAP=LAB MODE=1` 13 of 13; MAP16's
+walk-through (`MAP=MAP16 tools/smoke.sh`) all 47 checks and `levelExited`,
+out by the way out it builds (`wayOutBuilt`), as a check that `Link` calling
+`CratesClear` changes nothing where there are no crates.
+
+**Not tested / not played by hand.** A belt the player walks against; a monster or barrel through a
 turned door or a Pair; a crate shot at (it is not shootable: a rocket's
 blast does nothing to it, untried); two belts meeting head on; a crate
 taken through by a door that a thief takes; the look of a belt (FLAT20, the
