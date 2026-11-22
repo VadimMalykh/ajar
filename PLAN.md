@@ -8702,6 +8702,103 @@ go in sections of their own at the end of this file.
   a doorway that leads one way from one face and another from the other,
   for walking, sight, shots, monsters and sound.
 
+### The first version, as decided (2026-11-22, after the clock lab)
+
+Vadim, the same evening, to the outline above: yes; "some sign maybe would
+be useful" on the one-sided doorways; the name "Time and Motion" "is ok".
+What follows is Claude's, settled so that a first version can be built;
+none of it has been played. The clock lab's results are in "The clock lab";
+the one-sided doorway lab was still running, so the three doorways below are
+sites kept free, built in a task after it.
+
+**One change from the outline: the pulse is the run's clock.** The outline
+had two steps (a gate held by the beat, then a lever with seconds). The lab
+showed that frames on one line along a corridor are walls to each other, so
+"the nearer the frames, the faster the beat" needs a lane for each length;
+and a gate that only asks for a fast beat is one hanging. So instead:
+
+- **The delay hall** has three delay lines, lanes 2048, 1024 and 512 long,
+  each with a frame in its west end and one in its east end facing it, an
+  emitter and a lever. A pulled lever fires that lane's pulse and **raises
+  the night room's shutter at the other end of the building. The shutter
+  stays up while the pulse lives.** A pulse lives for LAPS passes of its own
+  lane's contact (4 to begin with) and then burns out; with no loop it
+  bursts on the lane's end and the shutter is hardly up at all.
+- So the time for the run is the length of the loop: a Pair in the long
+  lane gives about 11 seconds (4 laps of 98 tics at speed 20), in the short
+  one 3. **Two lanes joined by both Pairs** (the east end of one to the west
+  end of the other, and back) make one loop of both lengths: about 17
+  seconds.
+- **The doors are one budget for two uses**: a door in the delay hall makes
+  the clock longer, a door on the track makes the way shorter. Both Pairs in
+  the lines and the whole way run on foot; one Pair in the long lane and the
+  other on the track; the short lane and a very good track: each is an
+  answer, and the stopwatch is the only judge. Pulling again calls the
+  pulse back and starts again; nothing is used up.
+- What is shown: the beats left, counted down with a tick at every lap
+  wherever the player is, and as lamps at the levers and at the shutter.
+- No frame nearer than about 1000 units on foot to the levers or to the
+  shutter, and no far side either, so no single door is the whole track.
+- Tuning (numbers from the generator's own measure of the ways, on foot at
+  16.7 units a tic, a plain run): with nothing hung on the track the long
+  lane alone must not be enough (the way takes about a third longer than
+  its time); both Pairs in two lanes must be enough for a clean run on
+  foot; the long lane with one good link must leave a few seconds spare.
+
+**The doors**: both TEAL leaves (in the entrance hall, at the start), both
+ORANGE leaves (the far east, upper floor), RED (far side in the lift's car:
+the moving room), GREEN (far side in the basement stores, the best end for
+a track, the door itself the furthest find), BLUE (far side on the court's
+north wall, the middle of everything).
+
+**The building**, about 8000 x 4000, the court in the middle; floors are
+areas at their own heights (basement -256, ground 0, upper 256), joined by
+the stair, the lift and the canteen's steps:
+- *Entrance hall and cloakroom* (start, south of the court). Frame.
+- *The court*: open sky, the clock tower in its middle is the inside-out
+  booth: four fixed faces, onto the four walls of the hall with no size.
+- *The yard* (south-west, open): the long way round to the delay hall.
+- *The delay hall* (west, ground): the three lanes, the levers at its west
+  end.
+- *The stairwell* (north-west): one straight flight up to the upper west
+  floor, a frame at its foot facing up the flight and one at its head
+  facing down: the endless stair.
+- *Upper west*: the clockmakers' offices and the hall with no size (its
+  four openings show the court north, east, south and west from the tower).
+- *The rotunda* (east of the court): eight-sided, frames in its north, east
+  and west walls, a pillar with a stub of wall to the south wall and a
+  frame in each face of the stub (round the pillar). The arena.
+- *The lift* (further east): basement, ground, upper east; RED's far side in
+  the car.
+- *Upper east*: the six-sided hall (two slanted walls joined to each other
+  for good, so it is already an endless row; frames in the two straight
+  walls, and a Pair there makes it a honeycomb; the last two walls are its
+  doorways) and the square room that is its own neighbour (north joined to
+  south for good, frames east and west).
+- *The canteen and kitchen* (south-east), steps down to the basement.
+- *The basement*: stores (GREEN's far side), the boiler room, and at its
+  east end the night room behind the shutter.
+- **Three sites for one-sided doorways**, built later: between the court and
+  the rotunda (the way east is longer than the way back west: it is the
+  run's direction); a porter's hut in the yard (bigger inside: the archive);
+  the cloakroom's doorway (the turn-round: looking back from the cloakroom
+  it shows the upper west offices). Each with a sign on the odd face.
+
+**No solver PUZZLE**: five doors and some twenty-five frames with nothing
+locked are too many arrangements to search and none can be stuck. The
+generator checks instead, in the build: every area and every frame reached
+on foot from every other with no door hung; the ways and times above.
+
+**Fights**: 200 to 250 with ambushes, the usual kind, thickest in the
+rotunda, the court and the basement; company when each door is first taken
+and the first time a pulse makes a full lap. Each paradox has something in
+it worth the hanging (a fight that goes better, a cache seen from there).
+
+**Left for later tasks**: the one-sided doorways; the look (the first
+version wears MAP11's); the secret (candidates: all three lanes in one loop,
+which needs a coloured door's far side in the hall; a second shutter that
+wants the short lane's time).
+
 ## The clock lab (built 2026-11-22)
 
 `tools/map_clock.py`, `src/zscript/clock.zs`; `MAP=CLOCK ./run.sh`,
