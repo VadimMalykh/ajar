@@ -9794,7 +9794,7 @@ and 8), and a game-code fix for missiles at an odd face,
   armour stays in the hut.
 - **Site 3, the turn-round.** The cloakroom's doorway off the entrance hall
   (x 3392..3456, 64 deep) is plain from the hall. From the cloakroom its odd
-  face (x 3456, facing west) shows and leads to the last upper office
+  face (x 3392, facing west) shows and leads to the last upper office
   (office 3): out of a gate in that office's north wall (2720..2784, 3968),
   facing south, a desk ahead. That gate, seen from the office, shows the
   cloakroom and leads back into it, out of the doorway's odd face, facing
