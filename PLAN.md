@@ -5809,6 +5809,9 @@ Not decided: how the halves are told apart and which is played first, what
 the crossing fights are, what the thing done together is, what happens when
 the second go spoils what the first one did. No checks asked for yet.
 
+Taken further on 2026-11-22: see "Idea for a map of 21 to 30: the whole map in
+three goes, two switches and a door", near the end of this file.
+
 ## Idea: one-sided portals (Vadim, 2026-11-20; a note, nothing built or checked)
 
 Not for any particular map. Vadim: a portal that is one-sided. From one side
@@ -9062,3 +9065,79 @@ a quick build); the ring closed with BLUE (labelling) or
 through both stations (only the GREEN, 103 arrangement was walked; the
 others are the same code); a crate coming round the ring into the night
 room while the player walks it; the level as a whole by hand.
+
+## Idea for a map of 21 to 30: the whole map in three goes, two switches and a door (Vadim, 2026-11-22; a note, nothing built or checked)
+
+Vadim, while MAP17's way out was being built: "just for memory", to come back
+to when work on MAP21 starts. It takes up "Idea for maps 20 to 30: one map,
+two halves, two of you" (2026-11-20, above) and gives it an end. What is under
+"As Vadim put it" is his; "Open" is his too, as questions he asked himself;
+"Claude's notes" are Claude's, not agreed and not checked against the engine.
+
+**As Vadim put it.**
+- The map has two parts. The player goes through the first one in the normal
+  way. At its end he sees a switch, another switch, and a clear sign that the
+  two have to be pressed at the same moment.
+- In the same place he sees a time room, which he knows from the secret
+  levels (MAP31, MAP32). He goes in and starts the map again, in parallel
+  with his first go, but through the other part.
+- On the way he sees his earlier battles from time to time. Perhaps he even
+  takes part in them; but then something has to send him the right way, so
+  that he ends at the second switch. Or, if the second switch is in the same
+  room as the first, perhaps the two of him simply fight together. Not sure.
+- When the second copy has come to the end too and presses its switch at the
+  same moment as the first, both see a door open. It shuts again as soon as
+  they step away from the switches (or by a timer).
+- So now the player understands that a third copy is needed, the one that
+  walks through that door. He does it all once more: into the time room, the
+  map again as the third copy, and through the door.
+
+**Open (Vadim: "there are some things to think about").**
+- **The timing.** The first copy does not know about timing when it gets to
+  the switch. It has to press it and then wait there for some time, long
+  enough for the second copy to press too and for the third to go through. It
+  is the same thing as MAP32's room 2, but to get there the player has had to
+  play the whole map. How is he made aware of it, or helped to do the right
+  thing?
+- **One room or several.** Are the two switches and the door in one room, or
+  in different rooms with something transparent between them? If in different
+  rooms, the player has to be led so that all three copies end in the right
+  places.
+- **Taking part in the earlier fights**: yes or no, and if yes, how the
+  second copy is still brought to its own switch.
+
+**Claude's notes (not agreed, nothing checked).**
+- The costly mistake is the first copy leaving the switch too soon: it is
+  found out a whole map later. So the first go should not be able to end
+  wrongly. Ways to that, any of which may do:
+  - Not a switch that is pressed but a plate that is stood on (MAP16 taught
+    that a weight has to stay), and the time room's way in opens only while
+    the plate is held or is reached from the plate itself. Then every go ends
+    with its copy standing where it must stand, and "a go that ended there
+    stays there" does the waiting for the player. To check against the goes
+    labs: what an earlier self does after its go's last tic.
+  - The sign at the switches shows three figures: one on each switch and one
+    walking through the door. Then the need for a third go is read at the
+    first visit and not found out by a door that shuts in the face; Vadim's
+    version, where the shutting door teaches it, is the stronger moment but
+    costs one go more if the second copy also leaves too soon.
+  - A clock that is seen from everywhere in the map (MAP18 is the clock
+    department, so by 21 clocks are known), and at the switches a dial that
+    marks when each was pressed in the earlier goes. A later copy then knows
+    how long it has, and the parts can be made so that the second and third
+    are shorter than the first.
+- One room or several: glass between three small rooms answers "who goes
+  where" by the building itself (part one ends at switch one and nowhere
+  else, part two at switch two, the third way at the door), and all three
+  see each other at the end, which is the picture the level is for. One
+  shared room is better only if the copies are to fight together there.
+- Taking part in the earlier fights changes them, and MAP32 has rules for
+  that already (the paradox; an earlier self's shots; a fight as fought). A
+  safe first version: the parts cross only at windows, so the earlier fights
+  are seen and not touched, and one shared fight at most, at the end.
+- The length: three goes of a whole map is long. The second and third ways
+  could be short cuts through what the first go opened.
+- Before it is built: a lab, as for the belt and the clock, with a go that
+  lasts minutes and not seconds (how long a go the recording holds, what an
+  earlier self does when its go is over, two selves holding two plates while
+  a third walks through).
