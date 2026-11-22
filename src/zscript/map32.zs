@@ -976,8 +976,10 @@ extend class AjarTimeHandler
 // (as MODE=5), godmode. Go 1 is the bait: the screen's plate from TT_SCR to
 // TT_SCR_OFF, the cage's from TT_CAGE to TT_CAGE_OFF, out by door 3 at TT_OUT1.
 // Go 2 goes up the wing, into the cage while the first self holds it, pulls
-// the lever at TT_PULL, out by the window and door 2. Go 3 watches the press
-// lamps from box 2, and begins the fight anew.
+// the lever at TT_PULL, out by the window and door 2. Go 3 finds the
+// megasphere in the cage again (EachGoBack), watches the press lamps from box
+// 2, and begins the fight anew. Then (after every check above) go 1 takes the
+// megasphere and goes out by door 3, and go 2 finds it again and takes it too.
 extend class AjarTimeHandler
 {
 	const TT_SCR = 160;
