@@ -336,20 +336,23 @@ def note_board(seq, seed):
     return im
 
 
-def note_on_wall(n, part, shift, seq, seed, torn=0, piece=None):
+def note_on_wall(n, part, shift, seq, seed, torn=0, piece=None, top=120):
+    """`top`: how high over the floor the sheet's top edge is."""
     im = GI.on_wall(n, part, 64, shift)
     p = paper(seq, 36, 50, seed, tilt=1, torn=torn, part=piece)
-    paste(im, p, 12, im.h - 120)
+    paste(im, p, 12, im.h - top)
     return im
 
 
 def stub(n, part, shift, what):
     """A panel in the wall (laid from the ceiling, as the wall is) with the
-    stub of the sheet `what` pinned to it, where the whole sheet would be."""
+    stub of the sheet `what` pinned to it, where the whole sheet would be:
+    its top at 80, level with the bay's note on the shutter between them, so
+    that the three read as a row of sheets, two of them torn off."""
     if n:
-        return note_on_wall(n, part, shift, ORDERS[what], 4, TORN[what], "stub")
+        return note_on_wall(n, part, shift, ORDERS[what], 4, TORN[what], "stub", top=80)
     im = Img(64, 256, (188, 184, 176))                              # (the plain level: as its notes are drawn)
-    paste(im, paper(ORDERS[what], torn=TORN[what], part="stub"), 12, im.h - 120)
+    paste(im, paper(ORDERS[what], torn=TORN[what], part="stub"), 12, im.h - 80)
     return im
 
 

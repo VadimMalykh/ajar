@@ -8789,7 +8789,10 @@ sphere).
 **Not tested / not played by hand.** The fights (the scripts remove
 monsters, the ambushers only say they came); whether the stubs and torn
 edges are read as one sheet by someone who has not been told (they are
-small: 36 by 10 at 110..120 up); the ring closed with BLUE (labelling) or
+small: 36 by 10; since the review at 70..80 up, their pins level with the
+pin of the bay's note on the shutter between them, so that the three read
+as a row of sheets, two torn off: `gfx_dispatch.stub`, seen in MODE=5 on
+a quick build); the ring closed with BLUE (labelling) or
 through both stations (only the GREEN, 103 arrangement was walked; the
 others are the same code); a crate coming round the ring into the night
 room while the player walks it; the level as a whole by hand.
