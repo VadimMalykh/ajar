@@ -1,7 +1,7 @@
 gameinfo
 {
 	StatusBarClass = "AjarStatusBar"
-	AddEventHandlers = "AjarHandler", "AjarTimeHandler", "AjarWorks"
+	AddEventHandlers = "AjarHandler", "AjarTimeHandler", "AjarWorks", "AjarOddFaces"
 }
 
 DoomEdNums

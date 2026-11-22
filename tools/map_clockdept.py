@@ -75,7 +75,7 @@ from ajarmap import RED, GREEN, BLUE, TEAL, ORANGE, far_id, LIFT
 from map_institute1 import T, dress, tint, over, hang, LOOK
 from map_institute1 import ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, CHAINGUNNER, KNIGHT, REVENANT, CACO
 from map_institute1 import BARON, SOUL, MANCUBUS
-from udmf import Map, rect
+from udmf import MONSTERS, Map, rect
 
 # --- the run's clock: the two named constants ---------------------------------------------------
 LAPS = 4            # passes of its own lane's contact that a pulse lives for
@@ -123,13 +123,17 @@ class Walk:
     corners, which are nodes too. Stairs are areas like any other (measured
     flat); the lift's ride is a link that costs its time (4 units a tic),
     the car assumed to be waiting. A hung door is a link of 32 (through two
-    recesses 16 deep)."""
+    recesses 16 deep). A one-sided doorway is a link one way only for each
+    of its faces (arc): where each face leads; `portal` is the angle to walk
+    it in when it is a crossing of a portal (the smoke tests' MapSpots)."""
     R = 16
 
     def __init__(self):
         self.areas = {}
         self.nodes = []
         self.links = []
+        self.arcs = []
+        self.portals = {}           # (node, node): the angle that walks through a portal from the first to the second
 
     def area(self, name, shape, z, obst=()):
         poly = rect(*shape) if not isinstance(shape[0], (tuple, list)) else list(shape)
@@ -144,6 +148,12 @@ class Walk:
 
     def link(self, i, j, cost):
         self.links.append((i, j, cost))
+
+    def arc(self, i, j, cost, portal=None):
+        """One way only: from node i to node j."""
+        self.arcs.append((i, j, cost))
+        if portal is not None:
+            self.portals[i, j] = portal
 
     @staticmethod
     def crosses(p, q, r):
@@ -192,11 +202,21 @@ class Walk:
         for i, j, c in self.links:
             adj[i].append((j, c))
             adj[j].append((i, c))
-        self._adj = adj
+        for i, j, c in self.arcs:
+            adj[i].append((j, c))
+        radj = {i: [] for i in adj}
+        for i, out in adj.items():
+            for j, c in out:
+                radj[j].append((i, c))
+        self._adj, self._radj = adj, radj
         return adj
 
-    def dijkstra(self, src, extra=()):
+    def dijkstra(self, src, extra=(), reverse=False):
+        """Shortest ways from src; `reverse`: to src (each one way link the
+        way it goes)."""
         adj = self.graph()
+        if reverse:
+            adj = self._radj
         more = {}
         for i, j, c in extra:
             more.setdefault(i, []).append((j, c))
@@ -358,6 +378,7 @@ def fixed(n, a1, a2, a_out, a_z, A, b1, b2, b_out, b_z, B_, trim=None):
     fa, fb = front(a1, a2, a_out), front(b1, b2, b_out)
     i, j = W.node(fa[0], fa[1], f"doorway {n}a", A), W.node(fb[0], fb[1], f"doorway {n}b", B_)
     W.link(i, j, 32)
+    W.portals[i, j], W.portals[j, i] = angle_of(a_out), angle_of(b_out)    # a way through it is walked so (tests)
     return i, j
 
 
@@ -375,22 +396,111 @@ def things(kind, *spots, angle=0):
         m.thing(x, y, kind, angle=angle)
 
 
+# --- the one-sided doorways (PLAN.md, "The one-sided doorway lab"; ajarmap.oneside) ------------------
+# Line ids: each doorway's odd face, its plain mouth, and the gates at the far end of its odd face.
+ODD1, MOUTH1, X_IN, X_OUT = 1871, 1872, 1873, 1874       # 1: the longer way east (the court to the rotunda)
+ODD2, ARCH_GATE, MOUTH2 = 1875, 1876, 1877                # 2: the porter's hut, bigger inside (its archive)
+ODD3, OFFICE_GATE, MOUTH3 = 1878, 1879, 1880              # 3: the turn-round (the cloakroom to the offices)
+FENCE = 48          # no monster stands or fires nearer than this to an odd face or a gate: a blockmonsters line
+ODD_LINES = []      # (a, b): every odd face and gate, for the check that no monster is placed near one
+SIGNPLATES = {}     # (look, wall, shift, top row, times the wall's height): name; gfx_clockdept.make draws them
+SIGN_TOP = 68       # the plate's top is this high over the floor (32 high: eye height in the middle)
+
+
+def fence(*points):
+    """A blockmonsters line along `points` (a polyline on sector edges)."""
+    for p, q in zip(points, points[1:]):
+        m.line(p, q, blockmonsters=True)
+
+
+def gate(m1, m2, out, z, line_id, target, part):
+    """The far end of an odd face: an opening in a room's wall with a portal
+    at its back, fixed from the start (as map ONESIDE's and map ENG's): a
+    DEPTH-deep recess and a STUB behind its line; `target` is the odd face,
+    so what walks in here comes out of it. The wall `part` goes on over it."""
+    D, S = ajarmap.DEPTH, ajarmap.STUB
+    b1, b2 = (m1[0] + out[0] * D, m1[1] + out[1] * D), (m2[0] + out[0] * D, m2[1] + out[1] * D)
+    c1, c2 = (b1[0] + out[0] * S, b1[1] + out[1] * S), (b2[0] + out[0] * S, b2[1] + out[1] * S)
+    trim = dict(wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+    m.sector([m1, m2, b2, b1], floor=z, ceil=z + ajarmap.DOOR_H, light=176, **trim)
+    m.sector([b1, b2, c2, c1], floor=z, ceil=z + ajarmap.DOOR_H, light=96, **trim)
+    m.line(b1, b2, id=line_id, special=156, args=(target, 0, 1, 1))
+    over(m1, m2, part)
+    ODD_LINES.append((b1, b2))
+
+
+def oneway(a, b, out, z, line_id, target, near, far_part, *, thick=16, mouth_id=0):
+    """A one-sided doorway (ajarmap.oneside, blind): a-b its plain mouth, in
+    the wall `near`; its odd face `thick` further `out`, in the wall
+    `far_part` of the room it faces."""
+    ajarmap.oneside(m, a, b, out, z, line_id, target, thick=thick, mouth_id=mouth_id, blind=True)
+    c, d = I1._far(a, b, out, thick)
+    over(a, b, near)
+    over(c, d, far_part)
+    ODD_LINES.append((c, d))
+
+
+def sign(a, b, look_out, part, ceil):
+    """The sign of an odd face, on the wall piece a-b (64 long) beside it:
+    a plate with the pictogram of a way that does not lead back, on the
+    room's wall `part` (whose ceiling is `ceil` over its floor, the wall
+    pegged to it), seen looking `look_out`."""
+    if not LOOK:
+        return
+    h = gfx_institute.HEIGHT.get(part, 256)
+    reps = -(-ceil // h)                    # the wall's texture over and over to the ceiling: the plate on the lowest only
+    key = (LOOK, part, I1._shift(a, b, look_out), ceil - SIGN_TOP, reps)
+    m.cut(a, b)
+    m.line(a, b, mid=SIGNPLATES.setdefault(key, f"AJIY{LOOK}{len(SIGNPLATES):02d}"), exact=True)
+
+
 # =================================================================================================
 # THE GROUND FLOOR, WEST
 # =================================================================================================
 # --- the yard: open, south-west; the porter's hut ---------------------------------------------------
 YARD = sky("PU", "FP", 224, 384)
-HUT = (1344, 448, 1600, 704)                 # ONESIDE site 2: the porter's hut, 256 square (plain for now)
-# ONESIDE site 2: the hut's "inside", a room about 1024 x 768, is to go in the free ground
-# at x 256..1280, y -1088..-320 (south of the yard, nothing built there).
+# ONESIDE site 2, bigger inside: the porter's hut, 256 square. Its door, seen
+# from the yard, shows and leads into its archive (1024 x 768, south of the
+# yard), whose door leads back out of the hut's door into the yard. From
+# inside the hut (in by the plain opening at its back) the door is a plain
+# way out, as the lab's booth (PLAN.md, "The one-sided doorway lab", C).
+HUT = (1344, 448, 1600, 704)
+HUT_FENCE = (1392, 704, 1552, 752)          # the yard's side of its door: no monster nearer than 48
 fit((0, 0, 2880, 1216), [((640, 832, 896, 896), dict(floor=32, **dress(side="PS"), ftex=T("PT") if LOOK else "AJBOARD")),
-                         ((2304, 128, 2496, 192), dict(floor=32, **dress(side="PS"), ftex=T("PT") if LOOK else "AJBOARD"))],
+                         ((2304, 128, 2496, 192), dict(floor=32, **dress(side="PS"), ftex=T("PT") if LOOK else "AJBOARD")),
+                         (HUT_FENCE, dict(id=0))],
     holes=[HUT], **YARD)
 W.area("yard", (0, 0, 2880, 1216), G, obst=[HUT, (640, 832, 896, 896), (2304, 128, 2496, 192)])
-fit((1360, 464, 1584, 688), **look("CK", "FC", "KC", 150, 128))         # the hut
+fit((1360, 464, 1584, 688), [((1360, 656, 1584, 688), dict(id=0))], **look("CK", "FC", "KC", 150, 128))     # the hut
 W.area("hut", (1360, 464, 1584, 688), G)
-ajarmap.roomdoor(m, (1440, 688), (1504, 688), (0, 1), 0)                # its door, from the yard
-W.link(W.node(1472, 660, "hut door", "hut"), W.node(1472, 732, "hut door", "yard"), 72)
+oneway((1440, 688), (1504, 688), (0, 1), G, ODD2, ARCH_GATE, "CK", "PU", mouth_id=MOUTH2)     # its door
+fence((1392, 704), (1392, 752), (1552, 752), (1552, 704))
+fence((1360, 656), (1584, 656))                                             # inside, 48 from the odd face
+for a, b in (((1376, 704), (1440, 704)), ((1504, 704), (1568, 704))):     # the sign, both sides of the door
+    sign(a, b, (0, -1), "PU", 384)
+ajarmap.opening(m, (1440, 464), (1504, 464), (0, -1), G)                    # the hut's back: a plain way in
+over((1440, 464), (1504, 464), "CK")
+over((1440, 448), (1504, 448), "PU")
+W.link(W.node(1472, 492, "hut back", "hut"), W.node(1472, 420, "hut back", "yard"), 72)
+HUT_IN = W.node(1472, 680, "hut door, inside", "hut")
+HUT_OUT = W.node(1472, 732, "hut door, the yard", "yard")
+W.arc(HUT_IN, HUT_OUT, 52)                                                  # out of the hut: plain
+
+# --- the hut's archive: the inside of the porter's hut ------------------------------------------------
+ARCH = (256, -1088, 1280, -320)
+ARCH_FENCE = (688, -368, 848, -320)
+arch_stacks = [((x, -960, x + 64, -512), solid("SK", 256)) for x in (320, 480, 992, 1152)]
+arch_table = (704, -800, 832, -736)
+fit(ARCH, grid(ARCH, 4, 2, 196, 96) + arch_stacks + [(arch_table, block(40, "DT", "DS")), (ARCH_FENCE, dict(id=0))],
+    **look("AR", "FR", "KA", 156, 256, DIM))
+W.area("hutarchive", ARCH, G, obst=[r for r, _ in arch_stacks] + [arch_table])
+gate((736, -320), (800, -320), (0, 1), G, ARCH_GATE, ODD2, "AR")              # its door: out of the hut's door
+fence((688, -320), (688, -368), (848, -368), (848, -320))
+for a, b in (((576, -1088), (704, -1088)), ((832, -1088), (960, -1088)), ((256, -768), (256, -896)), ((1280, -896), (1280, -768))):
+    hang(a, b, "CI")                                                        # card indexes
+ARCH_DOOR = W.node(768, -328, "the archive's door", "hutarchive")
+W.arc(HUT_OUT, ARCH_DOOR, 52, portal=270)                                  # the hut's door from the yard: into the archive
+W.arc(ARCH_DOOR, HUT_OUT, 52, portal=90)                                   # the archive's door: out of the hut's door
 frame((0, 320), (0, 384), (-1, 0), 119, G, "yard")                     # Y1: the start of a track
 frame((2048, 0), (2112, 0), (0, -1), 120, G, "yard")
 
@@ -496,13 +606,20 @@ gap((2400, 3008), (2464, 3008), (0, 1), U, "EX", "CO", "workshop", "spine")
 
 # --- four offices north of the spine -----------------------------------------------------------------
 OFFICES = [(704, 1216), (1280, 1792), (1856, 2368), (2432, 2880)]
+OFFICE_FENCE = (2672, 3920, 2832, 3968)     # before the gate in the last office's north wall (ONESIDE site 3)
 for k, (x1, x2) in enumerate(OFFICES):
     desks = [((x1 + 64, 3392, x1 + 192, 3456), block(40, "DT", "DS")), ((x2 - 192, 3648, x2 - 64, 3712), block(40, "DT", "DS"))]
-    fit((x1, 3264, x2, 3968), grid((x1, 3264, x2, 3968), 1, 2, 200, 96) + desks, floor=U, **look("AR", "FR", "KA", 150 + 12 * k, U + 192, DIM))
+    fit((x1, 3264, x2, 3968), grid((x1, 3264, x2, 3968), 1, 2, 200, 96) + desks + ([(OFFICE_FENCE, dict(id=0))] if k == 3 else []),
+        floor=U, **look("AR", "FR", "KA", 150 + 12 * k, U + 192, DIM))
     W.area(f"office{k}", (x1, 3264, x2, 3968), U, obst=[r for r, _ in desks])
     cx = (x1 + x2) // 2 // 64 * 64
     gap((cx, 3200), (cx + 64, 3200), (0, 1), U, "CO", "AR", "spine", f"office{k}")
 frame((1504, 3968), (1568, 3968), (0, 1), 124, U, "office1")
+# ONESIDE site 3's far end: a gate in the last office's north wall, out of the cloakroom's doorway;
+# from the cloakroom it shows the office looking south, a desk ahead
+gate((2784, 3968), (2720, 3968), (0, 1), U, OFFICE_GATE, ODD3, "AR")
+fence((2672, 3968), (2672, 3920), (2832, 3920), (2832, 3968))
+OFFICE_DOOR = W.node(2752, 3960, "the offices' gate", "office3")
 
 # --- the north wing: the archive of clocks and the timekeepers' office ------------------------------
 stacks = [((x, 3392, x + 64, 3840), solid("SK", U + 192)) for x in (3200, 3456, 3712)]
@@ -534,12 +651,28 @@ joint((3456, 320), (3456, 448), "porch", "entrance")
 hang((3904, 256), (4096, 256), "ST")                                        # the street doors, behind the start
 hang((3456, 1088), (3456, 1216), "NB")                                      # the clock
 frame((4544, 896), (4544, 960), (1, 0), 118, G, "entrance")
-fit((3008, 512, 3392, 1024), [((3008, 512, 3040, 1024), block(48, "UT", "US"))], **look("CK", "FC", "KC", 160, 160, PAPER))
+CLOAK_FENCE = (3344, 640, 3392, 832)
+fit((3008, 512, 3392, 1024), [((3008, 512, 3040, 1024), block(48, "UT", "US")), (CLOAK_FENCE, dict(id=0))],
+    **look("CK", "FC", "KC", 160, 160, PAPER))
 W.area("cloak", (3008, 512, 3392, 1024), G, obst=[(3008, 512, 3040, 1024)])
 for y in (576, 704, 832):
     hang((3008, y), (3008, y + 64), "CT")
-# ONESIDE site 3: the cloakroom's doorway off the entrance hall (plain for now)
-gap((3456, 704), (3456, 768), (-1, 0), G, "LB", "CK", "entrance", "cloak")
+# ONESIDE site 3, the turn-round: the cloakroom's doorway off the entrance hall
+# is a plain way in from the hall; from the cloakroom it shows and leads into
+# the last office upstairs (its gate, above), whose gate leads back out of it
+# into the cloakroom. So the cloakroom is come into from the hall and left
+# into the offices; the way back to the hall on foot is upstairs and round.
+oneway((3456, 704), (3456, 768), (-1, 0), G, ODD3, OFFICE_GATE, "LB", "CK", thick=64, mouth_id=MOUTH3)
+fence((3456, 704), (3456, 768))                                             # the plain mouth: 64 from the odd face
+fence((3392, 640), (3344, 640), (3344, 832), (3392, 832))
+for a, b in (((3392, 640), (3392, 704)), ((3392, 768), (3392, 832))):
+    sign(a, b, (1, 0), "CK", 160)
+CLOAK_HALL = W.node(3464, 736, "the cloakroom's door, the hall", "entrance")
+CLOAK_IN = W.node(3384, 736, "the cloakroom's door, inside", "cloak")
+W.arc(CLOAK_HALL, CLOAK_IN, 80)                                             # into the cloakroom: plain
+W.arc(CLOAK_IN, OFFICE_DOOR, 32, portal=0)                                  # its doorway from inside: into the office
+W.arc(OFFICE_DOOR, CLOAK_IN, 32, portal=90)                                 # the office's gate: out into the cloakroom
+START = W.node(4000, 480, "the start", "entrance")
 fit((4544, 512, 5056, 640), **look("CO", "FC", "KC", 176, 160, MINT))     # the way east to the canteen
 W.area("eastway", (4544, 512, 5056, 640), G)
 joint((4544, 512), (4544, 640), "entrance", "eastway")
@@ -569,13 +702,48 @@ for n, (dx, dy) in zip((1, 2, 3, 4), ((0, 1), (1, 0), (0, -1), (-1, 0))):
     b1, b2 = (P(tx - dy * 32, ty - dx * 32), P(tx + dy * 32, ty + dx * 32))
     fixed(n, a1, a2, (dx, dy), U, "nosize", b1, b2, (-dx, -dy), G, "court")
 
-# ONESIDE site 1: the corridor between the court and the rotunda (plain for
-# now). The way east is to be longer than the way back west: free ground
-# for an extra stretch of about 1024 is kept north of it, x 4992..5440,
-# y 2368..2944 (nothing built there).
-fit((4992, 2176, 5440, 2304), **look("CO", "FC", "KC", 170, 192, MINT))
-W.area("oneside", (4992, 2176, 5440, 2304), G)
-joint((4992, 2176), (4992, 2304), "court", "oneside")
+# ONESIDE site 1, the longer way east: the corridor between the court and the
+# rotunda (192 wide) has a wall across it with a doorway, plain walking west.
+# Walking east its odd face leads into an extra stretch of corridor (three
+# legs, north of it), whose far end puts you out of the doorway's plain mouth
+# into the rotunda's side, heading east: the lab's bay 3 the other way round.
+OS_X1, OS_X2 = 5200, 5216                    # the wall across: the odd face (facing west) and the mouth
+CORR1 = look("CO", "FC", "KC", 170, 192, MINT)
+for box in ((4992, 2112, 5152, 2304), (5152, 2112, OS_X1, 2304), (OS_X2, 2112, 5248, 2304), (5248, 2112, 5440, 2304)):
+    m.sector(rect(*box), **CORR1)
+fence((5152, 2112), (5152, 2304))            # 48 from the odd face
+fence((5248, 2112), (5248, 2304))            # 48 from it on the mouth's side
+oneway((OS_X2, 2176), (OS_X2, 2240), (-1, 0), G, ODD1, X_IN, "CO", "CO", mouth_id=MOUTH1)
+for a, b in (((OS_X1, 2112), (OS_X1, 2176)), ((OS_X1, 2240), (OS_X1, 2304))):
+    sign(a, b, (1, 0), "CO", 192)
+W.area("courtway", (4992, 2112, OS_X1, 2304), G)
+W.area("rotside", (OS_X2, 2112, 5440, 2304), G)
+joint((4992, 2112), (4992, 2304), "court", "courtway")
+STRETCH_TOP = 2704                           # the stretch: legs 96 wide, walls 64 between them
+XL = look("CO", "FC", "KC", 150, 192, MINT)
+STRETCH = [(5008, 2400, 5104, STRETCH_TOP - 96), (5008, STRETCH_TOP - 96, 5264, STRETCH_TOP),
+           (5168, 2496, 5264, STRETCH_TOP - 96), (5168, 2400, 5424, 2496), (5328, 2496, 5424, STRETCH_TOP)]
+for i, box in enumerate(STRETCH):
+    fit(box, [((box[0], (box[1] + box[3]) // 2 // 16 * 16 - 32, box[2], (box[1] + box[3]) // 2 // 16 * 16 + 32), dict(light=196))]
+        if i in (0, 2, 4) else [], **XL)
+# for the walk the legs overlap the corners they turn in, and each turn is a node in the middle of its corner
+for i, box in enumerate([(5008, 2400, 5104, STRETCH_TOP), STRETCH[1], (5168, 2400, 5264, STRETCH_TOP), STRETCH[3],
+                         (5328, 2400, 5424, STRETCH_TOP)]):
+    W.area(f"stretch{i}", box, G)
+for i, (x, y) in enumerate(((5056, STRETCH_TOP - 48), (5216, STRETCH_TOP - 48), (5216, 2448), (5376, 2448))):
+    W.node(x, y, "a turn of the stretch", f"stretch{i}", f"stretch{i + 1}")
+gate((5088, 2400), (5024, 2400), (0, -1), G, X_IN, ODD1, "CO")             # its way in: the first leg's south end
+gate((5344, STRETCH_TOP), (5408, STRETCH_TOP), (0, 1), G, X_OUT, MOUTH1, "CO")     # its way out: the last's north end
+OS_FACE = W.node(OS_X1 - 8, 2208, "the long way's odd face", "courtway")
+OS_MOUTH = W.node(OS_X2 + 8, 2208, "the long way's mouth", "rotside")
+STRETCH_IN = W.node(5056, 2408, "the stretch's way in", "stretch0")
+STRETCH_OUT = W.node(5376, STRETCH_TOP - 8, "the stretch's way out", "stretch4")
+W.arc(OS_MOUTH, OS_FACE, 32)                 # west: plain
+W.arc(OS_FACE, STRETCH_IN, 32, portal=0)     # east: into the stretch
+W.arc(STRETCH_IN, OS_FACE, 32, portal=270)   # back out of its way in: out of the odd face, west
+W.arc(STRETCH_OUT, OS_MOUTH, 32, portal=90)  # out of its way out: out of the mouth, east
+S1_WEST = W.node(5080, 2208, "west of the long way (tests)", "courtway")
+S1_EAST = W.node(5340, 2208, "east of the long way (tests)", "rotside")
 
 # --- the rotunda: eight-sided, a pillar, a stub from it to the south wall: the arena --------------
 ROT = (5440, 1600, 6592, 2752)
@@ -629,7 +797,7 @@ for xa, xb in zip(xs, xs[1:]):
                 props.update(change)
         m.sector(piece, **props)
 W.area("rotunda", OCT, G, obst=[PILLAR, STUB])
-joint((5440, 2176), (5440, 2304), "oneside", "rotunda")
+joint((5440, 2112), (5440, 2304), "rotside", "rotunda")
 frame((5984, 2752), (6048, 2752), (0, 1), 109, G, "rotunda")             # north
 frame((6592, 2240), (6592, 2304), (1, 0), 110, G, "rotunda")             # east
 frame((5440, 1984), (5440, 2048), (-1, 0), 111, G, "rotunda")            # west
@@ -838,6 +1006,11 @@ things(2047, (7616, 3400))
 # the yard and the regulator room
 things(2049, (2700, 1100), (300, 900))
 things(2018, (1472, 560))                                                   # green armour, in the porter's hut
+# the hut's archive (bigger inside): an early detour off the yard, worth it before the court
+m.thing(768, -880, 2023)                                                    # a berserk pack, behind the reading table
+things(2049, (600, -660), (936, -660))
+things(2012, (432, -1020), (1104, -1020))
+things(2015, (680, -720), (856, -720), (680, -816), (856, -816))
 things(2012, (300, 1990))
 things(2007, (2600, 150), (1100, 150))
 things(2011, (2780, 600), (100, 100))
@@ -886,7 +1059,10 @@ things(ZOMBIE, (400, 800), (1000, 300), (1800, 900), (2200, 600), (2600, 300), (
 things(SERGEANT, (1200, 1000), (2000, 300), (2500, 900), (700, 500), angle=90)
 things(IMP, (1700, 200), (2100, 1100), (1100, 600), (2700, 1000), (500, 200), (1500, 1050), angle=90)
 things(DEMON, (1900, 600), (2400, 400), angle=90)
-m.thing(1472, 600, ZOMBIE, angle=270)                                       # the porter
+m.thing(1520, 560, ZOMBIE, angle=270)                                       # the porter (kept 144 off the odd face)
+things(IMP, (432, -640), (1104, -640), angle=90)                            # the hut's archive, among the stacks
+things(SERGEANT, (640, -1000), (896, -1000), angle=90)
+m.thing(768, -560, SPECTRE, angle=90)
 things(IMP, (250, 1700), (250, 1950), angle=180)                            # the regulator room
 things(IMP, (1000, 1350), (1600, 1350), (2200, 1550), (1200, 1980), (2000, 2000), angle=180)  # the delay hall
 things(SERGEANT, (800, 1550), (1700, 1800), (2300, 1750), angle=180)
@@ -927,7 +1103,7 @@ things(CACO, (3500, 2200), (4500, 2200), (4000, 1720), angle=270)
 things(KNIGHT, (3700, 1500), (4300, 1500), angle=90)
 things(REVENANT, (3100, 2400), (4900, 2400), angle=270)
 things(DEMON, (3800, 2350), (4200, 1950), angle=270)
-m.thing(5200, 2240, IMP, angle=180)                                         # the corridor to the rotunda
+m.thing(5080, 2208, IMP, angle=180)                                         # the corridor to the rotunda, its court side
 things(IMP, (5600, 2400), (6400, 2400), (5800, 2650), (6250, 2650), (5650, 1750), (6350, 1800), angle=180)   # the rotunda
 things(DEMON, (5700, 2150), (6300, 2150), (6016, 2450), angle=180)
 things(SPECTRE, (5800, 1700), (6250, 1950), angle=90)
@@ -1017,28 +1193,32 @@ def life(*lanes):
 def measure():
     adj = W.graph()
     lines, bad = [], []
-    # one piece on foot, with no door hung
-    seen, todo = {0}, [0]
-    while todo:
-        for j, _ in adj[todo.pop()]:
-            if j not in seen:
-                seen.add(j)
-                todo.append(j)
-    if len(seen) != len(W.nodes):
-        lost = sorted({W.nodes[i]["label"] for i in range(len(W.nodes)) if i not in seen})
-        bad.append(f"not one piece on foot: {', '.join(lost[:8])}")
+    # one piece on foot, with no door hung: every node reached from every
+    # other, each one-sided doorway's face going only where it leads (the
+    # node 0 reaches every node, and every node reaches it)
+    for way, name in ((adj, "reached from"), (W._radj, "able to reach")):
+        seen, todo = {0}, [0]
+        while todo:
+            for j, _ in way[todo.pop()]:
+                if j not in seen:
+                    seen.add(j)
+                    todo.append(j)
+        if len(seen) != len(W.nodes):
+            lost = sorted({W.nodes[i]["label"] for i in range(len(W.nodes)) if i not in seen})
+            bad.append(f"not one piece on foot: not {name} the rest: {', '.join(lost[:8])}")
     areas = {a for n in W.nodes for a in n["areas"]}
     if areas != set(W.areas):
         bad.append(f"areas with no way in: {sorted(set(W.areas) - areas)}")
     lever = LEVERS[1]
     dL, pL = W.dijkstra(lever)
-    dS, pS = W.dijkstra(SHUTTER_NODE)
-    dlev = [W.dijkstra(LEVERS[k])[0] for k in LEVERS]
+    dS, pS = W.dijkstra(SHUTTER_NODE, reverse=True)                        # to the shutter
+    dS_from = W.dijkstra(SHUTTER_NODE)[0]
+    dlev = [W.dijkstra(LEVERS[k], reverse=r)[0] for k in LEVERS for r in (False, True)]
     near_l = min(min(d[n] for d in dlev) for n, _ in list(FRAMES.values()) + list(FARS.values()))
-    near_s = min(dS[n] for n, _ in list(FRAMES.values()) + list(FARS.values()))
+    near_s = min(min(dS[n], dS_from[n]) for n, _ in list(FRAMES.values()) + list(FARS.values()))
     lines.append(f"MAP18: one piece on foot: {len(W.areas)} areas, {len(W.nodes)} nodes, {len(FRAMES)} frames, "
-                 f"{len(FARS)} far sides (RED's at three floors); the nearest frame or far side "
-                 f"{near_l:.0f} on foot from a lever, {near_s:.0f} from the shutter")
+                 f"{len(FARS)} far sides (RED's at three floors), {len(W.arcs)} one way links; the nearest frame or far side "
+                 f"{near_l:.0f} on foot from a lever, {near_s:.0f} from the shutter (either way)")
     if near_l < NEAR or near_s < NEAR:
         bad.append(f"a frame or far side nearer than {NEAR} to a lever ({near_l:.0f}) or the shutter ({near_s:.0f})")
     w0 = dL[SHUTTER_NODE]
@@ -1146,6 +1326,23 @@ def measure():
         bad.append(f"both Pairs in lanes 1 and 2 are not enough on foot ({spare_lm:.0f} tics)")
     if spare_1 < 105:
         bad.append(f"the long lane and the best single link leave {spare_1:.0f} tics, under 3 seconds")
+    # the one-sided doorways: each face's way, and no monster placed near an odd face or a gate
+    d_e, d_w = W.dijkstra(S1_WEST)[0][S1_EAST], W.dijkstra(S1_EAST)[0][S1_WEST]
+    lines.append(f"    the one-sided doorways: the longer way east {d_e:.0f} ({tics(d_e):.0f} tics), back west {d_w:.0f} "
+                 f"({tics(d_w):.0f}); the stretch alone {W.dijkstra(STRETCH_IN)[0][STRETCH_OUT]:.0f}; "
+                 f"the cloakroom back to the start on foot {W.dijkstra(CLOAK_IN)[0][START]:.0f}")
+
+    def seg(p, a, b):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        t = max(0, min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy)))
+        return math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy)
+    near_odd = [(t["type"], t["x"], t["y"]) for t in m.things
+                if (t["type"] in MONSTERS or t["type"] == ajarmap.AMBUSH_T)
+                and min(seg((t["x"], t["y"]), a, b) for a, b in ODD_LINES) < FENCE + 64]
+    lines.append(f"    {len(ODD_LINES)} odd faces and gates, each behind a fence {FENCE} off; monsters placed nearer "
+                 f"than {FENCE + 64} to one: {len(near_odd)}")
+    if near_odd:
+        bad.append(f"monsters placed by an odd face or a gate: {near_odd}")
     return lines, bad, dict(dL=dL, pL=pL, w0=w0, steps=steps, hung=hung, D=D, goal=goal)
 
 
@@ -1175,24 +1372,34 @@ for idx, ((k, used, came), how) in enumerate(steps):
 CARZ = {n: z for z, n in CARN.items()}
 
 
-def as_spots(legs):
-    """(x, y, what, angle): what 1 through a door at `angle`, 2 a ride in
-    the car to the floor `angle` - 512 (the car's buttons), 0 a plain walk."""
+def as_spots(legs, after=None):
+    """(x, y, what, angle): what 1 through a door or a one-sided doorway's
+    portal at `angle`, 2 a ride in the car to the floor `angle` - 512 (the
+    car's buttons), 0 a plain walk. `after`: the node the way goes on to."""
     out, prev = [], None
-    for n, through in legs:
+    nexts = [n for n, _ in legs[1:]] + [after]
+    for (n, through), nxt in zip(legs, nexts):
         x, y = W.nodes[n]["x"], W.nodes[n]["y"]
         if prev in CARZ and n in CARZ and CARZ[prev] != CARZ[n]:
             out.append((x, y, 2, CARZ[n] + 512))
         elif through:
             out.append((x, y, 1, angle_at[n]))
+        elif (n, nxt) in W.portals:
+            out.append((x, y, 1, W.portals[n, nxt]))
         else:
             out.append((x, y, 0, 0))
         prev = n
     return out
 
 
-route_a = as_spots(legs)
-route_b = as_spots([(i, False) for i in Walk.path(_R["pL"], SHUTTER_NODE)[:-1]])
+def walk_spots(a, b):
+    """The shortest way on foot from node a to node b, as spots (b the last)."""
+    p = Walk.path(W.dijkstra(a)[1], b)
+    return as_spots([(i, False) for i in p[:-1]], b) + [(W.nodes[b]["x"], W.nodes[b]["y"], 0, 0)]
+
+
+route_a = as_spots(legs, SHUTTER_NODE)
+route_b = as_spots([(i, False) for i in Walk.path(_R["pL"], SHUTTER_NODE)[:-1]], SHUTTER_NODE)
 for r in (route_a, route_b):                 # the shutter, and beyond it into the night room and out by its east end
     r += [(7776, 2568, 0, 0), (7776, 2648, 0, 0), (7776, 2736, 0, 0), (7904, 2736, 0, 0)]
 hung = _R["hung"]
@@ -1204,8 +1411,14 @@ m.thing(200, 200, MAPSPOT, id=ROUTE_A, args=(*(hung[ORANGE] if ORANGE in hung el
 m.thing(264, 200, MAPSPOT, id=ROUTE_A - 1, args=(red_floor + 512,))
 spots(ROUTE_A, route_a)
 spots(ROUTE_B, route_b, dy=1)
+# the one-sided doorways' ways for MODE=7: east and west along the court to rotunda corridor, the
+# cloakroom back to the start on foot
+TEST_WAYS = {2000: walk_spots(S1_WEST, S1_EAST), 2040: walk_spots(S1_EAST, S1_WEST), 2060: walk_spots(CLOAK_IN, START)}
+for first, way in TEST_WAYS.items():
+    assert len(way) < 40 if first == 2060 else len(way) < 20, (first, len(way))
+    spots(first, way, dy=2 + (first - 2000) // 20)       # each way its own spots: none on another's
 MEASURE.append(f"    the ways as MapSpots: A {len(route_a)} spots (tid {ROUTE_A + 1} on), B {len(route_b)} ({ROUTE_B + 1} on); "
-               f"RED's car at {red_floor}")
+               f"RED's car at {red_floor}; the doorways' tests: " + ", ".join(f"{len(w)} ({k + 1} on)" for k, w in TEST_WAYS.items()))
 I1.m = _theirs
 
 if __name__ == "__main__":

@@ -501,9 +501,15 @@ class OneSideTest : EventHandler
 	}
 
 	Actor thrower;
+	int oddBefore;
 
 	void ShotCase(Actor mo, int t, int at, double x, double y, double ang, int kind, string what, int want)
 	{
+		// AjarOddFaces (oddfaces.zs) carries a missile put beyond an odd face through it; the two cases that
+		// show the engine's own way (the missile put beyond without crossing) are run without it
+		let odd = AjarOddFaces(EventHandler.Find("AjarOddFaces"));
+		if (t == at && odd) { odd.off = what.IndexOf("_intoA") >= 0; oddBefore = odd.carried; }
+		if (kind == 5) kind = 3;
 		if (t == at) Pose(mo, kind == 3 ? 330 : x, kind == 3 ? 650 : y, ang);
 		if (t == at + 2)
 		{
@@ -513,7 +519,7 @@ class OneSideTest : EventHandler
 				// an imp's own throw (P_SpawnMissile), at the dummy in A, straight south
 				thrower = Make("DoomImp", x, y, ang);
 				Zero();
-				missile = thrower.SpawnMissile(dummies[0], "DoomImpBall");
+				missile = thrower.SpawnMissile(dummies[want == 1 ? 1 : 0], "DoomImpBall");
 				Console.Printf("AJARTEST info %s: the imp at (%.1f,%.1f), its fireball put at (%.1f,%.1f)", what, x, y, missile.pos.x, missile.pos.y);
 			}
 			else if (kind == 4)
@@ -526,6 +532,7 @@ class OneSideTest : EventHandler
 		}
 		if (t == at + 85)
 		{
+			if (odd && odd.carried != oddBefore) Console.Printf("AJARTEST info %s: carried through an odd face", what);
 			if (kind) Console.Printf("AJARTEST info %s: %s fired from (%.1f,%.1f) facing %.1f, hit %s, burst at (%.1f,%.1f,%.1f)", what,
 				kind == 1 || kind == 4 ? "a rocket" : "an imp's fireball", x, y, ang, Hit(), missileLast.x, missileLast.y, missileLast.z);
 			int others = 0;
@@ -570,15 +577,20 @@ class OneSideTest : EventHandler
 			192, 372, 270, 3, 0,       // an imp 4 from it: the ball is put beyond the line without crossing it
 			192, 400, 270, 4, 2,       // the player 32 from it, a rocket
 			192, 372, 270, 4, 0,       // the player 4 from it: the same
-			192, 372, 270, 0, 2        // a hitscan from 4: a trace, not put ahead
+			192, 372, 270, 0, 2,       // a hitscan from 4: a trace, not put ahead
+			// the same with AjarOddFaces: the missile put beyond the odd face is carried through it
+			192, 372, 270, 3, 2,
+			192, 372, 270, 4, 2,
+			192, 360, 90, 5, 1         // an imp in the opening, behind the odd face, throws out through it: plain, into B
 		};
 		static const string names[] = {
 			"hitscanBToC", "hitscanAToB", "hitscanCToB", "hitscanSlantBToC", "rocketBToC", "impBallBToC", "rocketAToB", "impBallAToB",
 			"rocketCToB", "impBallCToB", "rocketSlantBToC", "hitscanPLToMR", "hitscanMRToE", "impBallMRToE", "hitscanHallToR", "rocketHallToR",
-			"impThrowsFrom32", "impThrowsFrom4_intoA", "playerRocketFrom32", "playerRocketFrom4_intoA", "hitscanFrom4" };
-		for (int i = 0; i < 21; i++)
+			"impThrowsFrom32", "impThrowsFrom4_intoA", "playerRocketFrom32", "playerRocketFrom4_intoA", "hitscanFrom4",
+			"impThrowsFrom4_carried", "playerRocketFrom4_carried", "impThrowsFromBehindTheFace" };
+		for (int i = 0; i < 24; i++)
 			ShotCase(mo, t, 10 + 90 * i, cases[i * 5], cases[i * 5 + 1], cases[i * 5 + 2], int(cases[i * 5 + 3]), names[i], int(cases[i * 5 + 4]));
-		if (t == 10 + 90 * 21) Console.Printf("AJARTEST shotsDone=1");
+		if (t == 10 + 90 * 24) Console.Printf("AJARTEST shotsDone=1");
 	}
 
 	// --- MODE=4: monsters -----------------------------------------------------
