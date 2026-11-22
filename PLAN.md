@@ -3885,10 +3885,87 @@ and the engine has not been asked** (see "Before it can be built").
   fallback is that the player walks the ring and the lock reads the order of
   rooms they came through (`LoopLen` already counts a closed loop through
   the way out's room; reading the order would be new).
-- **Not decided**: the building's plan; which stations are reached only by
-  the line; what order 1's place is; how the note and the stamps are drawn;
-  the solver's crate (a token with a place, moved by the arrangement); the
-  size of the fights.
+- **Not decided** (then; settled below): the building's plan; which stations
+  are reached only by the line; what order 1's place is; how the note and
+  the stamps are drawn; the solver's crate (a token with a place, moved by
+  the arrangement); the size of the fights.
+
+#### The first version, as decided (2026-11-22)
+
+Vadim, after starting `MAP=MAP17` and finding Doom II's: "build it now", the
+open points left to Claude. All of what follows is Claude's; none of it has
+been played. The belt lab answered the engine ("The belt lab", at the end).
+
+- **Three stations and their colours**: the press RED, the kiln GREEN,
+  labelling BLUE. A TEAL Pair for the bay. No keys, no thief, no nailer, no
+  Stray door: nobody but the player moves a door.
+- **Frames**: 101 the hopper's outlet, 102 the press's, 103 the kiln's, 104
+  labelling's, 105 the bay's (a TEAL leaf only).
+- **The building**, on one floor, three rooms in a row from west to east,
+  and two sealed ones:
+  - *The hall* (the start): the hopper and its belt to 101. RED leans here.
+  - *The press hall*: RED's far side opens into a cell around the head of
+    the press's belt; the press is a hatch 40 high in the cell's far wall
+    (a crate passes, the player and monsters do not). Beyond it, in the open
+    hall, the belt runs on over order 1's checker to 102. GREEN leans here.
+  - *The dispatch wing*: BLUE and both TEAL leaves lean here. In it the bay:
+    105, a short belt out of it, the scale, and the shutter to the night
+    room (the way out).
+  - *The kiln*, sealed: GREEN's far side, a belt through the kiln (a low
+    tunnel the player walks round), order 2's scale, 103. No way in or out
+    but GREEN's far side and whatever hangs in 103.
+  - *Labelling*, sealed the same way: BLUE's far side, a belt, 104.
+  - Glass lets the hall see the press's checker, the press hall see the
+    kiln's scale, and the wing see into the kiln and into labelling, so each
+    sealed frame is seen before it is reached.
+- **So the stations reached only by the line are the kiln and labelling.**
+  To hang anything in 103 or 104 the player comes in as the crate does, by
+  that station's own door, hung in a frame they can walk to, or two doors
+  deep. The press's cell is a dead end for the player.
+- **The orders.** A checker reads a crate that comes onto it, for good:
+  1. *See it*: the press's checker wants RED. RED in 101, and the crate
+     goes through the wall into the press. It opens the steel door from the
+     hall to the press hall.
+  2. *Use it*: the kiln's scale wants RED, GREEN. RED in 101, GREEN in 102.
+     GREEN in 101 sends a crate there stamped GREEN only: refused, and the
+     player has seen what an order is. It opens the steel door to the wing.
+  3. *The way out*: the bay's scale wants GREEN, BLUE, RED. GREEN in 101,
+     BLUE in 103, RED in 104, a leaf in 102 and its twin in 105. Order 2
+     left RED in 101 and GREEN in 102, so nothing stays where it was. BLUE
+     goes into the kiln through GREEN, RED into labelling through GREEN and
+     then BLUE: the line is walked as it is built, deeper each time.
+  - *The secret*: a second note, BLUE, RED, GREEN, on the wall of the
+    press's cell beside RED's far side, behind whoever comes in. BLUE in
+    101, RED in 104, GREEN in 102, a leaf in 103 and its twin in 105; the
+    bay's scale then opens a panel in the bay.
+- **The solver** needs no crate: an order is a `sights` key (as the beams of
+  13 and 15 are), set off by the arrangement that fills it. As prototyped:
+  12 door actions to the way out, 7521 states, none stuck, nothing that can
+  be lost; the secret room 11 from the start.
+- **The crates.** One on the line at a time. The hopper issues the next two
+  seconds after the last is gone. A crate that has stood still for ten
+  seconds is taken back (so is one with more than six stamps, or off the
+  belts), and that is all "rejected" means. A crate waiting at an empty
+  frame goes on when a door is hung there, with the stamps it has: an order
+  can be filled a door at a time by someone quick, which is more than the
+  solver knows and harms nothing.
+- **The belts run at 4**, not the lab's 8: the player walks at 8.3 and has to
+  get back out of a sealed room against the belt, by its far side. To be
+  checked: walking (not running) out of each far side.
+- **How it is drawn.** A crate carries its stamps as coloured bands, the
+  first lowest. A note is a picture of the crate as it is wanted, so there
+  is no order of reading to learn. Each checker has a lamp, and says what it
+  wanted and what came when it refuses. The dispatcher's board hangs in the
+  hall, the press hall and the wing: for each outlet, the colour that hangs
+  there now.
+- **The fights**: the usual kind, about half of MAP16's count; company
+  comes when each door is first taken and when orders 1 and 2 are filled.
+  **Nothing but crates rides the line in the first version.** "The line
+  delivers" is left out: a sleeping monster carried to the press is held at
+  the hatch and jams the line, so it wants a press that crushes (a ceiling
+  that comes down to 40 over the belt), which the engine has not been
+  asked.
+- **Name**: "Made to Order", still Claude's candidate.
 
 ## Look: MAP11 (started 2026-11-19)
 
