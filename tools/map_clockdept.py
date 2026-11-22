@@ -301,6 +301,20 @@ def fit(box, features=(), holes=(), floor=0, **base):
 RUNNER = dict(runner=True)
 
 
+def grid(box, nx, ny, light, size=64):
+    """Pools of light under the ceiling's lamps: nx by ny squares, evenly
+    spread over the room `box` (put first among a room's features, so that
+    furniture wins where they meet)."""
+    x1, y1, x2, y2 = box
+    out = []
+    for i in range(nx):
+        for j in range(ny):
+            cx = x1 + (x2 - x1) * (2 * i + 1) // (2 * nx) // 16 * 16
+            cy = y1 + (y2 - y1) * (2 * j + 1) // (2 * ny) // 16 * 16
+            out.append(((cx - size // 2, cy - size // 2, cx + size // 2, cy + size // 2), dict(light=light)))
+    return out
+
+
 def block(height, top="BT", side=None):      # a bench, a desk, a table: MAP11's (box())
     return I1.box(height, top, side)
 
@@ -412,7 +426,7 @@ for lane, y in LANE_Y.items():
     strips += [((west, y - 32, XE, y + 32), RUNNER)]
 for lane, y in LANE_Y.items():               # the contact: a bright band across the lane, its west edge the line
     strips += [((CONTACT_X, y - 32, CONTACT_X + 16, y + 32), dict(light=255))]
-fit((XW, 1280, XE, 2048), strips + [((832, 1920, 960, 2048), block(64)), ((640, 1856, 768, 1984), block(48)),
+fit((XW, 1280, XE, 2048), grid((XW, 1280, XE, 1408), 6, 1, 236) + grid((XW, 1984, XE, 2048), 6, 1, 236) + strips + [((832, 1920, 960, 2048), block(64)), ((640, 1856, 768, 1984), block(48)),
                                     ((640, 1600, 704, 1728), block(96))],
     holes=list(PIER.values()), **HALL)
 W.area("hall", (XW, 1280, XE, 2048), G, obst=list(PIER.values()) + [(832, 1920, 960, 2048), (640, 1856, 768, 1984),
@@ -470,12 +484,12 @@ W.area("nosize", NOSIZE, U)
 gap((1568, 2992), (1632, 2992), (0, 1), U, "EX", "CO", "nosize", "spine", thick=80)
 
 # --- the drawing office and the workshop, south of the spine --------------------------------------
-fit((768, 2688, 1408, 3008), [((832, 2752, 960, 2880), block(48)), ((1088, 2752, 1216, 2880), block(48)),
+fit((768, 2688, 1408, 3008), grid((768, 2688, 1408, 3008), 2, 1, 224, 96) + [((832, 2752, 960, 2880), block(48)), ((1088, 2752, 1216, 2880), block(48)),
                               ((832, 2944, 1216, 3008), block(48, "UT", "US"))],
     floor=U, **look("LA", "FA", "KA", 188, U + 192, RUST))
 W.area("drawing", (768, 2688, 1408, 3008), U, obst=[(832, 2752, 960, 2880), (1088, 2752, 1216, 2880), (832, 2944, 1216, 3008)])
 gap((1280, 3008), (1344, 3008), (0, 1), U, "LA", "CO", "drawing", "spine")
-fit((2048, 2688, 2880, 3008), [((2176, 2752, 2304, 2880), solid("TK", U + 64)), ((2560, 2752, 2688, 2880), solid("TK", U + 64))],
+fit((2048, 2688, 2880, 3008), grid((2048, 2688, 2880, 3008), 3, 1, 216) + [((2176, 2752, 2304, 2880), solid("TK", U + 64)), ((2560, 2752, 2688, 2880), solid("TK", U + 64))],
     floor=U, **look("EX", "FE", "KE", 180, U + 192, STEEL))
 W.area("workshop", (2048, 2688, 2880, 3008), U, obst=[(2176, 2752, 2304, 2880), (2560, 2752, 2688, 2880)])
 gap((2400, 3008), (2464, 3008), (0, 1), U, "EX", "CO", "workshop", "spine")
@@ -484,7 +498,7 @@ gap((2400, 3008), (2464, 3008), (0, 1), U, "EX", "CO", "workshop", "spine")
 OFFICES = [(704, 1216), (1280, 1792), (1856, 2368), (2432, 2880)]
 for k, (x1, x2) in enumerate(OFFICES):
     desks = [((x1 + 64, 3392, x1 + 192, 3456), block(40, "DT", "DS")), ((x2 - 192, 3648, x2 - 64, 3712), block(40, "DT", "DS"))]
-    fit((x1, 3264, x2, 3968), desks, floor=U, **look("AR", "FR", "KA", 150 + 12 * k, U + 192, DIM))
+    fit((x1, 3264, x2, 3968), grid((x1, 3264, x2, 3968), 1, 2, 200, 96) + desks, floor=U, **look("AR", "FR", "KA", 150 + 12 * k, U + 192, DIM))
     W.area(f"office{k}", (x1, 3264, x2, 3968), U, obst=[r for r, _ in desks])
     cx = (x1 + x2) // 2 // 64 * 64
     gap((cx, 3200), (cx + 64, 3200), (0, 1), U, "CO", "AR", "spine", f"office{k}")
@@ -492,10 +506,10 @@ frame((1504, 3968), (1568, 3968), (0, 1), 124, U, "office1")
 
 # --- the north wing: the archive of clocks and the timekeepers' office ------------------------------
 stacks = [((x, 3392, x + 64, 3840), solid("SK", U + 192)) for x in (3200, 3456, 3712)]
-fit((3008, 3264, 3968, 3968), stacks, floor=U, **look("AR", "FR", "KA", 140, U + 192, DIM))
+fit((3008, 3264, 3968, 3968), grid((3008, 3264, 3968, 3968), 4, 1, 184) + stacks, floor=U, **look("AR", "FR", "KA", 140, U + 192, DIM))
 W.area("archive", (3008, 3264, 3968, 3968), U, obst=[r for r, _ in stacks])
 gap((3072, 3200), (3200, 3200), (0, 1), U, "CO", "AR", "spine", "archive")
-fit((4096, 3264, 5120, 3968), [((4352, 3520, 4864, 3584), block(40, "DT", "DS"))], floor=U,
+fit((4096, 3264, 5120, 3968), grid((4096, 3264, 5120, 3968), 3, 2, 230, 96) + [((4352, 3520, 4864, 3584), block(40, "DT", "DS"))], floor=U,
     **look("LB", "FL", "KL", 190, U + 192, PALE))
 W.area("timekeepers", (4096, 3264, 5120, 3968), U, obst=[(4352, 3520, 4864, 3584)])
 gap((4544, 3200), (4672, 3200), (0, 1), U, "CO", "LB", "spine", "timekeepers")
@@ -510,7 +524,7 @@ W.area("porch", (2880, 320, 3456, 448), G)
 joint((2880, 320), (2880, 448), "yard", "porch")
 ENTR = look("LB", "FL", "KL", 210, 256, PALE)
 desk = (3776, 832, 4224, 896)
-fit((3456, 256, 4544, 1280), [(desk, block(40, "DT", "DS")),
+fit((3456, 256, 4544, 1280), grid((3456, 256, 4544, 1280), 2, 2, 240, 96) + [(desk, block(40, "DT", "DS")),
                               ((3648, 448, 3712, 512), solid("PI", 256)), ((4288, 448, 4352, 512), solid("PI", 256)),
                               ((3648, 1024, 3712, 1088), solid("PI", 256)), ((4288, 1024, 4352, 1088), solid("PI", 256))],
     **ENTR)
@@ -537,7 +551,7 @@ beds = [((3264, 1600, 3520, 1664), dict(floor=32, **dress(side="TS"), ftex=T("TT
         ((4480, 1600, 4736, 1664), dict(floor=32, **dress(side="TS"), ftex=T("TT") if LOOK else "AJBOARD")),
         ((3264, 2624, 3520, 2688), dict(floor=32, **dress(side="TS"), ftex=T("TT") if LOOK else "AJBOARD")),
         ((4480, 2624, 4736, 2688), dict(floor=32, **dress(side="TS"), ftex=T("TT") if LOOK else "AJBOARD"))]
-fit((3008, 1344, 4992, 2944), beds, holes=[BOOTH], **COURT)
+fit((3008, 1344, 4992, 2944), [((x, y, x + 256, y + 256), dict(ftex=T("FL") if LOOK else "AJFLOOR")) for x in (3584, 4160) for y in (1792, 2304)] + beds, holes=[BOOTH], **COURT)
 W.area("court", (3008, 1344, 4992, 2944), G, obst=[BOOTH] + [r for r, _ in beds])
 gap((3936, 1280), (4064, 1280), (0, 1), G, "LB", "LB", "entrance", "court")
 gap((2944, 2176), (2944, 2240), (1, 0), G, "CO", "LB", "ncorr", "court")
@@ -658,13 +672,13 @@ W.link(CARN[G], LAND[G], 0)
 # --- the canteen and the kitchen (south-east); the kitchen's steps down to the basement -------------
 tables = [((x, y, x + 128, y + 64), block(32, "TT", "TS")) for x in (5248, 5504, 5760, 6016) for y in (576, 832, 1088)]
 counter = (6336, 576, 6400, 1216)
-fit((5056, 320, 6400, 1472), tables + [(counter, block(40, "DT", "DS"))], **look("CA", "FN", "KC", 200, 256, PAPER))
+fit((5056, 320, 6400, 1472), grid((5056, 320, 6400, 1472), 3, 2, 236, 96) + tables + [(counter, block(40, "DT", "DS"))], **look("CA", "FN", "KC", 200, 256, PAPER))
 W.area("canteen", (5056, 320, 6400, 1472), G, obst=[r for r, _ in tables] + [counter])
 joint((5056, 512), (5056, 640), "eastway", "canteen")
 hang((5568, 1472), (5696, 1472), "MN")
 frame((5600, 320), (5664, 320), (0, -1), 121, G, "canteen")
 ovens = [((6528, 896, 6784, 1024), solid("TK", 64)), ((6528, 384, 6784, 512), solid("TK", 64))]
-fit((6400, 320, 6912, 1472), ovens, **look("LA", "FA", "KA", 190, 256, RUST))
+fit((6400, 320, 6912, 1472), grid((6400, 320, 6912, 1472), 2, 3, 224) + ovens, **look("LA", "FA", "KA", 190, 256, RUST))
 W.area("kitchen", (6400, 320, 6912, 1472), G, obst=[r for r, _ in ovens])
 joint((6400, 320), (6400, 576), "canteen", "kitchen")
 joint((6400, 1216), (6400, 1472), "canteen", "kitchen")
@@ -684,24 +698,24 @@ joint((6912, 1344), (6912, 1472), "kitchen", "steps")
 # =================================================================================================
 BASE = dict(floor=B)
 # the cellar, at the foot of the kitchen's steps; the stores south of it
-fit((7424, 1152, 7936, 1872), [((7616, 1344, 7744, 1472), solid("TK", B + 192)), ((7808, 1600, 7936, 1728), solid("TK", B + 192))],
+fit((7424, 1152, 7936, 1872), grid((7424, 1152, 7936, 1872), 2, 2, 184) + [((7616, 1344, 7744, 1472), solid("TK", B + 192)), ((7808, 1600, 7936, 1728), solid("TK", B + 192))],
     **BASE, **look("PU", "FP", "KP", 152, B + 192, COLD))
 W.area("cellar", (7424, 1152, 7936, 1872), B, obst=[(7616, 1344, 7744, 1472), (7808, 1600, 7936, 1728)])
 joint((7424, 1344), (7424, 1472), "steps", "cellar")
 shelves = [((7232, y, 7744, y + 48), solid("SK", B + 192)) for y in (448, 704)]
-fit((7040, 256, 7936, 1088), shelves, **BASE, **look("AR", "FR", "KA", 144, B + 192, DIM))
+fit((7040, 256, 7936, 1088), grid((7040, 256, 7936, 1088), 3, 2, 180) + shelves, **BASE, **look("AR", "FR", "KA", 144, B + 192, DIM))
 W.area("stores", (7040, 256, 7936, 1088), B, obst=[r for r, _ in shelves])
 gap((7616, 1088), (7744, 1088), (0, 1), B, "AR", "PU", "stores", "cellar")
 far((7040, 512), (7040, 576), (-1, 0), GREEN, B, "stores")
 frame((7040, 896), (7040, 960), (-1, 0), 122, B, "stores")
 frame((7936, 576), (7936, 640), (1, 0), 123, B, "stores")
-fit((6944, 1936, 7936, 2096), **BASE, **look("PU", "FP", "KP", 140, B + 160, COLD))
+fit((6944, 1936, 7936, 2096), grid((6944, 1936, 7936, 2096), 4, 1, 176), **BASE, **look("PU", "FP", "KP", 140, B + 160, COLD))
 W.area("mid", (6944, 1936, 7936, 2096), B)
 gap((7616, 1872), (7744, 1872), (0, 1), B, "PU", "PU", "cellar", "mid")
 LAND[B] = W.node(6928, 2016, "landing B", "mid", f"car{B}")
 ajarmap.lift_button(m, (6944, 2064), (6944, 2096), B, CAR_TIDS + 4, (6976, 2064), tex="AJLB0", foot=True)
 boilers = [((7168, 2304, 7296, 2432), solid("TK", B + 224)), ((7424, 2304, 7552, 2432), solid("TK", B + 224))]
-fit((7040, 2160, 7936, 2592), boilers + [((7680, 2432, 7872, 2592), dict(light=200))],
+fit((7040, 2160, 7936, 2592), grid((7040, 2160, 7680, 2592), 3, 2, 176) + boilers + [((7680, 2432, 7872, 2592), dict(light=200))],
     **BASE, **look("PU", "FP", "KQ", 144, B + 224, COLD))
 W.area("boiler", (7040, 2160, 7936, 2592), B, obst=[r for r, _ in boilers])
 gap((7616, 2096), (7744, 2096), (0, 1), B, "PU", "PU", "mid", "boiler")
@@ -789,7 +803,7 @@ gap((6688, 3200), (6752, 3200), (0, 1), U, "CO", "CK", "spine", "square", thick=
 
 # --- the regulator store, far east: both ORANGE leaves ---------------------------------------------
 store_benches = [((7424, 3456, 7552, 3520), block(48)), ((7680, 3456, 7808, 3520), block(48))]
-fit((7296, 3328, 7936, 3968), store_benches, floor=U, **look("LA", "FA", "KA", 192, U + 192, RUST))
+fit((7296, 3328, 7936, 3968), grid((7296, 3328, 7936, 3968), 2, 2, 228, 96) + store_benches, floor=U, **look("LA", "FA", "KA", 192, U + 192, RUST))
 W.area("orange", (7296, 3328, 7936, 3968), U, obst=[r for r, _ in store_benches])
 gap((7552, 3200), (7680, 3200), (0, 1), U, "CO", "LA", "spine", "orange", thick=128)
 frame((7936, 3584), (7936, 3648), (1, 0), 126, U, "orange")

@@ -61,13 +61,14 @@ extend class AjarHandler
 		if (l) l.Activate(mo, 0, SPAC_Use);
 	}
 
-	void TamClearOut()
+	// Every monster gone, and every ambush but those of the first lap (cause 50) when `keepLap`.
+	void TamClearOut(bool keepLap = false)
 	{
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
 		while (a = Actor(it.Next())) if (a.bIsMonster) { a.ClearCounters(); a.Destroy(); }
 		it = ThinkerIterator.Create("AjarAmbush");
-		while (a = Actor(it.Next())) a.Destroy();
+		while (a = Actor(it.Next())) if (!keepLap || a.args[0] != 50) a.Destroy();
 	}
 
 	// Every door down and back where it leant.
@@ -194,7 +195,7 @@ extend class AjarHandler
 		{
 			mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 			tamAt = 1;
-			TamClearOut();
+			TamClearOut(mode == 4);         // MODE=4: the first lap's ambushes come (and go at once: the autotest's rule)
 			let d = Delay();
 			Check("theShutterIsThere", d && d.shutter && d.lamps.Size() == 2 * d.args[2]);
 			Check("theShutterIsDown", d && d.Down() && !d.Live());
@@ -435,6 +436,14 @@ extend class AjarHandler
 			Check(names[c] .. "LapsEven", even && d.lapAt.Size() > 1);
 			Check(names[c] .. "LapsCounted", d.lapAt.Size() == d.args[2] && d.gone == 1);
 			Check(names[c] .. "LampsCountDown", tamFlag && TamLampsLit() == 0);
+			if (c == 0)
+			{
+				int n50 = 0;
+				let it = ThinkerIterator.Create("AjarAmbush");
+				Actor a;
+				while (a = Actor(it.Next())) if (a.args[0] == 50) n50++;
+				Check("theFirstLapsAmbushesCame", delayFirstLap && n50 == 0);
+			}
 			TamNext(t);
 		}
 		else if (TamIn(t) > 1200) { Check(names[c] .. "Ends", false); TamNext(t); }
