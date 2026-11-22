@@ -466,7 +466,7 @@ class AjarHandler : EventHandler
 		return null;
 	}
 
-	int ambushHid[30], ambushShown[30];      // by cause: ambushers that came unseen (UnseenJoin), and seen
+	int ambushHid[50], ambushShown[50];      // by cause: ambushers that came unseen (UnseenJoin), and seen
 
 	void AmbushTick(PlayerPawn mo)
 	{
@@ -478,7 +478,11 @@ class AjarHandler : EventHandler
 			int g = a.args[0];
 			if (!a.armed)
 			{
-				if (g > 20)
+				if (g > 40)                                     // MAP17: the order that opens tag g - 40 is filled
+				{
+					if (!CheckerOpened(g - 40)) continue;
+				}
+				else if (g > 20)
 				{
 					let tg = TargetTagged(g - 20);
 					if (!tg || !tg.done) continue;
@@ -498,7 +502,7 @@ class AjarHandler : EventHandler
 			m.angle = a.angle;
 			Actor.Spawn("TeleportFog", a.pos, ALLOW_REPLACE);
 			bool hid = UnseenJoin(m);                           // come into a room only the glass shows
-			if (g >= 0 && g < 30) { if (hid) ambushHid[g]++; else ambushShown[g]++; }
+			if (g >= 0 && g < 50) { if (hid) ambushHid[g]++; else ambushShown[g]++; }
 			if (CVar.GetCVar("ajar_autotest").GetInt())
 			{
 				// a scripted walkthrough: it came, which is all the test wants
@@ -1278,6 +1282,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP04" && mode != 2) PartyWallScript(mo, t);
 		else if (level.mapname ~== "MAP09" && mode == 3) ChainScript(mo, t);
 		else if (level.mapname ~== "MAP10" && mode == 3) LongWayScript(mo, t);
+		else if (level.mapname ~== "MAP17") MadeToOrderScript(mo, t, mode);
 		else if (level.mapname ~== "MAP32") return;        // its views are map32.zs's (Views32)
 		else if (!(level.mapname ~== "MAP01") && mode == 2) Tour(mo, t);
 		else if (level.mapname ~== "MAP02" && mode == 3) LodgerPortrait(mo, t);

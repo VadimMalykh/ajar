@@ -23,6 +23,9 @@ DoomEdNums
 	20093 = AjarUnseen
 	20094 = AjarCrate                 // the belt lab (belt.zs): a crate a belt carries
 	20095 = AjarStation               // ... and a room that stamps it
+	20096 = AjarHopper                // MAP17 (map17.zs): the hopper that issues crates
+	20097 = AjarChecker               // ... a checker that reads a crate's stamps against an order
+	20098 = AjarCheckLamp             // ... and its lamp
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -278,11 +281,22 @@ map MAP31 "This Is Where We Came In"
 	music = ""
 }
 
-// Act 2, level 6 (tools/map_institute6.py). Its way out starts it again
-// until there is a MAP17.
+// Act 2, level 6 (tools/map_institute6.py). Its way out leads on to MAP17.
 map MAP16 "Watch Your Step"
 {
-	next = "MAP16"
+	next = "MAP17"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 2, level 7 (tools/map_dispatch.py, src/zscript/map17.zs): the goods
+// dispatch, where a crate takes the doors' way. Its way out starts it again
+// until there is a MAP18.
+map MAP17 "Made to Order"
+{
+	next = "MAP17"
 	nointermission
 	nojump
 	nocrouch
