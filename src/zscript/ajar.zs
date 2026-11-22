@@ -1267,6 +1267,7 @@ class AjarHandler : EventHandler
 		if (t % 35 == 0)       // (MAP32's played demonstration, mode 20, is watched: not on the screen)
 			Console.PrintfEx(mode == 20 ? PRINT_HIGH | PRINT_NONOTIFY : PRINT_HIGH, "AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
+		if (level.mapname ~== "ONESIDE") return;   // so has the one-sided doorway lab (oneside.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);

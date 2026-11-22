@@ -663,6 +663,37 @@ def opening(m, a, b, out, floor, *, thick=16, color=None):
              ftex="AJTRIMF", ctex="AJTRIMF", color=color)
 
 
+def oneside(m, a, b, out, floor, line_id, target, *, thick=16, mouth_id=0, blind=False, color=None,
+            wall="AJTRIM", flat="AJTRIMF", height=DOOR_H):
+    """A one-sided doorway (PLAN.md, "The one-sided doorway lab"): an opening
+    through a wall `thick` deep that is ordinary from one side and leads
+    elsewhere from the other. a-b is its mouth on the plain side, `out` the
+    way from there through the wall. Walking `out` through it is a plain
+    walk into the room beyond; from that room the doorway shows, and leads
+    to, the portal line `target` (a gate elsewhere, whose own portal names
+    line_id back: what comes out of it comes out of this doorway into the
+    room beyond, as if it had come through from the plain side).
+
+    Underneath: the far edge of the opening (the odd face) is a two-sided
+    line with Line_SetPortal (type 1, aligned to the floor), its front side
+    to the room beyond and the opening's sector behind it, and a line portal
+    acts for its front side only. Things cross from the back without it.
+    `mouth_id`: an id for the plain mouth a-b (front side to the plain room),
+    so that a portal elsewhere can name it and put what comes through into
+    the plain room as if it had walked out through the doorway backwards
+    (the longer way back). `blind`: the odd face blocks monsters' sight
+    (blocksight), both ways; the player still sees through the plain face.
+    Returns the opening's sector."""
+    c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
+    d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
+    s = m.sector([a, b, d, c], floor=floor, ceil=floor + height, light=170, wall=wall,
+                 ftex=flat, ctex=flat, color=color)
+    m.line(c, d, id=line_id, special=156, args=(target, 0, 1, 1), back=s, **({"blocksight": True} if blind else {}))
+    if mouth_id:
+        m.line(a, b, id=mouth_id, back=s)
+    return s
+
+
 BELT_W, CURB_W, CURB_H = 64, 16, 16     # a belt is a door wide; its curbs
 BELT_SPEED = 8      # Scroll_Floor's speed in units a tic (what rides it goes a little slower: PLAN.md, "The belt lab")
 BELT_TAG = 900      # 900 + n: the sectors of one belt (one direction), see belt()

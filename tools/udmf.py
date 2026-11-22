@@ -199,6 +199,14 @@ class Map:
             if (a, b) in done:
                 continue
             p = dict(props_for(a, b))
+            # back=si: the line's back side is to face sector si (its front the
+            # other one). Otherwise the front faces whichever of the two sectors
+            # was declared first. A line portal acts for its front side only
+            # (ajarmap.oneside).
+            want = p.pop("back", None)
+            if want is not None and si == want and edges.get((b, a)) is not None:
+                a, b, si = b, a, edges[(b, a)]
+                done.add((a, b))
             p.pop("exact", None)
             fit = p.pop("fit", None)               # see side()
             whole = p.pop("whole", None)
