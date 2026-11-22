@@ -29,6 +29,8 @@ DoomEdNums
 	20099 = AjarRing                  // ... and the way out that comes round the line
 	20110 = AjarPulseEmitter          // the clock lab (clock.zs): fires a pulse along a gallery
 	20111 = AjarContact               // ... the contact a pulse sets off, and its metronome
+	20130 = AjarLaneContact           // MAP18 (clock.zs): a delay lane's contact, counting its own pulse's laps
+	20131 = AjarDelayShutter          // ... the night room's shutter, up while a pulse lives, and its lamps
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -295,11 +297,23 @@ map MAP16 "Watch Your Step"
 }
 
 // Act 2, level 7 (tools/map_dispatch.py, src/zscript/map17.zs): the goods
-// dispatch, where a crate takes the doors' way. Its way out starts it again
-// until there is a MAP18.
+// dispatch, where a crate takes the doors' way. Its way out leads on to MAP18.
 map MAP17 "Made to Order"
 {
-	next = "MAP17"
+	next = "MAP18"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// Act 2, level 8 (tools/map_clockdept.py, src/zscript/map18.zs): the clock
+// department, where a pulse in a delay lane is the stopwatch for the run.
+// Its way out starts it again until there is a MAP19.
+map MAP18 "Time and Motion"
+{
+	next = "MAP18"
+	sky1 = "SKY2", 0               // the yard and the court are open: the city
 	nointermission
 	nojump
 	nocrouch
