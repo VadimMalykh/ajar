@@ -934,9 +934,11 @@ def face(n, part, shift, keys, s=""):
     return im
 
 
-def street_doors(n):
-    """128 wide: the doors you came in by, shut."""
-    im = on_wall(n, "LB", 128)
+def street_doors(n, shift=0):
+    """128 wide: the doors you came in by, shut. `shift`: where in its 64 the
+    wall stands at the picture's left edge (SD: half a tile on, for a hall
+    whose middle is not on the 64s)."""
+    im = on_wall(n, "LB", 128, shift)
     c = {1: OAK, 2: AL, 3: (86, 92, 88)}[n]
     glass = (150, 176, 190) if n != 3 else (96, 104, 104)
     top = 256 - 140
@@ -1344,6 +1346,7 @@ def make(out, signs={}, faces={}, looks=LOOKS):
         for tag, fn in (("ST", street_doors), ("MO", long_wall), ("NB", notices), ("CT", coats), ("BB", blackboard),
                         ("CB", cabinets), ("MN", menu), ("CI", card_index), ("GA", gauges), ("CP", control), ("WS", warning)):
             put("textures", name(tag, n), fn(n))
+        put("textures", name("SD", n), street_doors(n, 32))
         for tag, im in list(floors(n).items()) + list(tops(n).items()):
             put("flats", name(tag, n), im)
         for part in "LCAPE":
