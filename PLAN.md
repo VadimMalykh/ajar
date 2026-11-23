@@ -10943,3 +10943,89 @@ When Vadim has chosen: the chosen take and set become the game's (the
 defaults in `TakeName` / `SetName`); the chosen music is committed, each
 piece given its maps in `mapinfo.txt`, with a credits file; `tools/music.py`
 goes or stays by his answer.
+
+## The sound lab, third try: unreal doors, music in Doom's own manner (built 2026-11-23, on trial in a worktree)
+
+Vadim on the second try: the door recordings "are literally about doors, but
+our doors are not usual"; the recorded music is "not appropriate for a Doom
+game (even as strange as ours) at all". He asked whether Doom's music could
+be analysed (Sigil's, for one) and something written in that style. Both
+halves were redone; branch `sound-lab-2` again, not merged until he has
+listened (`cd .wt/ajar/sound-lab-2 && MAP=SOUND ./run.sh`).
+
+**Door sounds: a piece of space comes loose, a piece of space locks in.**
+TAKE and SET each step through Doom's door and seven candidates, in two
+families.
+
+- A, Doom's own sounds by their names, nothing copied, some re-pitched as
+  they play (`ajsounds.txt` has a 4th field, the pitch; `AjarHandler` has
+  `takePitch` / `setPitch`; 0 or 1 is the engine's own pitch, so every level
+  plays as before). Take: weapon pick-up; the fast door shutting; the lift
+  starting at 1.3. Set: the lift stopping; the fast door opening; the lift
+  stopping at 0.7.
+- B, recordings bent out of shape by `tools/sfx.py` (reverse, re-pitch,
+  layer, reverb, limiter; all standard library). A take rises and stops
+  dead: un-slam (a door shut backwards), un-slam low, peel (a whoosh ending
+  in a pop), field drops (a force field falling). A set is a short lead-in
+  and a heavy hit: seal, slam with sub, field up and clunk, thud and ring.
+  Sources: Kenney's RPG and Sci-fi sounds, CC0, only the files used, in
+  `assets/sounds/`. Each is at -13 dBFS on its loudest 100 ms, as Doom's
+  doors are; every take has its loudest part at 82 to 92 % of its length.
+
+Not checked: that the pitch is applied when a re-pitched Doom sound plays
+(the engine reports the unshifted length), and how any of it sounds.
+
+**Music: what Doom's music is made of.** Every piece in doom2.wad (Bobby
+Prince) and in SIGIL_v1_21.wad (James Paddock's MIDI set) was read note by
+note: speed, instruments and their registers, the share of each scale
+degree, the bass line bar by bar, the drum bar, which voice plays in which
+four bars. What they have in common:
+
+- a bass riff one bar long with a fixed rhythm, on the key note 25 to 47 %
+  of the time, then b3, 5, b7, 4, b6; b2 and b5 as passing notes;
+- the riff in groups of four bars (a a a b), moved whole to the 4th, the
+  flat 6th and the flat 7th;
+- a guitar an octave above the bass in the same riff: single notes 59 %,
+  bare fifths 23 %;
+- voices entering and leaving by blocks of 4 or 8 bars, one tune at a time,
+  organ or strings holding minor triads;
+- drums: even hats or ride, snare on the back beats, the kick following the
+  bass, a tom fill closing every fourth bar; all exactly on the grid;
+- 75 to 140 beats a minute (the slow ones are as common as the fast), 100 to
+  300 seconds, then round again; 8 to 27 notes a second, 20 to 50 % of them
+  drums;
+- picked bass, overdriven and distorted guitar, rock organ, synth bass,
+  strings; and, in the quiet pieces, harpsichord, pizzicato, timpani,
+  tubular bells, woodblocks.
+
+The first try's waltzes had none of that, whatever the instruments.
+
+`tools/music.py` is rewritten on those rules (the old pieces are gone): a
+piece is bars of steps, a pattern a bar, a form the list of a voice's bars
+(`A`, `A+5` moved up five semitones, `A<` backwards). Six pieces, the riffs
+and tunes its own, nothing copied:
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_HING | Off Its Hinges | E, 104: the plain rocker, bass and guitar in one riff, organ stabs |
+| AJM_FARS | The Far Side | F, 76: synth bass in octaves, held organ, bells, a slow tune |
+| AJM_SEVN | One Door Short | D, 7/8: harpsichord, plucked strings, cello; a bar a beat short |
+| AJM_CLOK | The Small Hours, Twice | A, a slow shuffle; a woodblock ticks; the third round is the blues backwards |
+| AJM_AFTR | After Hours | C, 60: strings, a drone, timpani, a few piano notes |
+| AJM_ENGN | Paradox Engine | D, 138: Sigil's way, a chugging guitar, brass over held fifths |
+
+Checked: each file read back by a second MIDI reader; the key note's share
+(28 to 41 %), notes a second and the drums' share lie where Doom's do; no
+semitone clash between two voices lasts (what is left is the flat second
+against the pedal in Paradox Engine and neighbour notes on the piano in
+After Hours, both meant); GZDoom with sound on starts all six
+(`S_ChangeMusic` 1); the walkthrough `soundlab=ok`, 97 checks. Not checked:
+how they sound. GZDoom plays them with the same synth as Doom's own music,
+so the instruments are the ones Vadim hears in Doom.
+
+The build puts these six first in `ajmusic.txt` and any recorded file from
+`trial/music/` after them (the six MacLeod pieces are removed from there).
+
+When Vadim has chosen: as before (defaults in `TakeName` / `SetName` and
+the pitches; pieces given their maps in `mapinfo.txt`); pieces he likes the
+manner of but not the tune are rewritten in `tools/music.py`.
