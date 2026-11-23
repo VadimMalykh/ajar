@@ -1328,6 +1328,7 @@ def make_all():
     import map_institute5                                        # ... and MAP15's
     import map_institute6                                        # ... and MAP16's
     import map_dispatch                                          # ... and MAP17's
+    import map_paper                                             # ... and MAP19's (its plates; it also hangs MAP18's sign below)
     gfx_institute.make(out, map_institute1.SIGNS, map_institute1.FACES)
     for n in gfx_institute.LOOKS:                                # MAP16's lever, on the canteen gallery's wall
         levers(out, f"AJICL{n}", unpng(out[f"textures/AJICA{n}.png"]), 128)

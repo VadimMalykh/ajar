@@ -436,7 +436,9 @@ class AjarHandler : EventHandler
 	// An AjarAmbush thing is a monster that is not there yet. args[0] is what
 	// brings it: 1..4, taking that room key; 11..16, taking the door of that
 	// colour (less 10) for the first time; 21.., the target or sensor with that
-	// tag (less 20) set off. args[3], if set: it holds back until the player is
+	// tag (less 20) set off; 41.., MAP17's checkers; 50, MAP18's first lap;
+	// 51..59, MAP19's register with that number (less 50) signed (pass.zs).
+	// args[3], if set: it holds back until the player is
 	// within that distance of it and in sight of it. args[1]
 	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
 	// after, facing the way the thing faces, and knows where the player is.
@@ -481,6 +483,10 @@ class AjarHandler : EventHandler
 				if (g == 50)                                    // MAP18: the first lap a pulse has made (clock.zs)
 				{
 					if (!delayFirstLap) continue;
+				}
+				else if (g > 50 && g < 60)                      // MAP19: register g - 50 is signed (pass.zs)
+				{
+					if (!AjarPassRegister.IsSigned(g - 50)) continue;
 				}
 				else if (g > 40)                                // MAP17: the order that opens tag g - 40 is filled
 				{
@@ -1163,9 +1169,8 @@ class AjarHandler : EventHandler
 		if (mode == 3 && level.mapname ~== "MAP15") Check("outBySecretWayOut", e.NextMap ~== "MAP32");
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
-		// MAP17's and MAP18's tests end with the level: the next map must not take the test up
-		if (level.mapname ~== "MAP17") CVar.FindCVar("ajar_autotest").SetInt(0);
-		if (level.mapname ~== "MAP18" && e.NextMap ~== "MAP18") CVar.FindCVar("ajar_autotest").SetInt(0);
+		// MAP17's, MAP18's and MAP19's tests end with the level: the next map must not take the test up
+		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1309,6 +1314,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
 		if (level.mapname ~== "ONESIDE") return;   // so has the one-sided doorway lab (oneside.zs)
 		if (level.mapname ~== "PASS") return;      // and the pass lab (passtest.zs)
+		if (level.mapname ~== "MAP19") return;     // and MAP19 (map19.zs, PaperTest)
 		if (level.mapname ~== "SOUND") return;     // and the sound lab (soundlab.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
