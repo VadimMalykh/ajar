@@ -580,7 +580,7 @@ def plaque(a, b, look_out, part, words, z=0, niche=8, high=128, top=84):
 
 def register(n, name, box, z, opens, bridge=0):
     """A register (AjarPassRegister): its plate `box` at height z (the room
-    draws it: plate_box() and PLATE_F among its features); signed, it opens
+    draws it: plate() among its features); signed, it opens
     the steel doors tagged `opens`, and with `bridge` raises the footbridge
     of that tag (pass.zs)."""
     c = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
@@ -591,6 +591,15 @@ def register(n, name, box, z, opens, bridge=0):
 
 def plate_box(c):
     return (c[0] - PLATE // 2, c[1] - PLATE // 2, c[0] + PLATE // 2, c[1] + PLATE // 2)
+
+
+def plate(c, **more):
+    """A register's plate as a room's feature: plate_box(c) and PLATE_F, the
+    flat's tiles laid from the plate's own corner (a flat is laid from the
+    map's origin, and a plate stands where its frame's axis puts it, on no
+    grid: uncorrected, the pattern is cut off at the plate's edges)."""
+    box = plate_box(c)
+    return (box, dict(PLATE_F, raw=dict(xpanningfloor=float(-box[0] % 64), ypanningfloor=float(box[3] % 64)), **more))
 
 
 def pass_desk(box):
@@ -659,7 +668,7 @@ far((1280, 1376), (1280, 1440), (1, 0), RED, G, "forecourt")
 # the duty room, sealed: glass either side of 101, its own steel door (register 1's), the chaingun
 DR = (256, 1152, 624, 1664)
 REG1_C = (DR[2] - 128, 1408)                                                # 128 in from the duty room's glass wall, on 101's axis
-room(DR, DUTY_Z, look("CK", "FC", "KC", 176, DUTY_Z + 160, PAPER), [((256, 1152, 320, 1664), block(48, "UT", "US")), (plate_box(REG1_C), PLATE_F)], name="dutyroom",
+room(DR, DUTY_Z, look("CK", "FC", "KC", 176, DUTY_Z + 160, PAPER), [((256, 1152, 320, 1664), block(48, "UT", "US")), plate(REG1_C)], name="dutyroom",
      sealed=True)
 pane_y(1216, 1344, 624, 704, sill=48, top=208)
 pane_y(1472, 1568, 624, 704, sill=48, top=208)
@@ -726,7 +735,7 @@ LODGE_IN = (912, 2992, 1072, 3152)
 # (48 north of its mouth): the odd face and the stretch's way out shift it north by the stretch's length
 CW_OUT_AT = (992, CW_MOUTH_Y + 48)
 REG8_C = crossing(CW_FACE, X_IN_P).inv()(crossing(X_OUT_P, CW_MOUTH).inv()(CW_OUT_AT))
-room(LODGE_IN, G, look("CK", "FC", "KC", 190, 128, PAPER), [(plate_box(REG8_C), dict(PLATE_F, special=1024))], name="lodge",
+room(LODGE_IN, G, look("CK", "FC", "KC", 190, 128, PAPER), [plate(REG8_C, special=1024)], name="lodge",
      sealed=True)
 register(8, "the porter's lodge", plate_box(REG8_C), G, LODGE_TAG)
 for box in ((896, 2976, 1088, 2992), (896, 2992, 912, 3152), (1072, 2992, 1088, 3152), (896, 3152, 960, 3168), (1024, 3152, 1088, 3168)):
@@ -756,7 +765,7 @@ for a, b in (((1536, 2560), (1664, 2560)),):
 ST = (1808, 2560, 2816, 2816)
 st_shelves = [((x, 2560, x + 192, 2608), solid("SK", 192)) for x in range(1856, 2752, 256)]
 REG2_C = (1728 + 864, 2688)                                                 # 864 in from the stack's west wall, on 102's axis
-room(ST, G, look("AR", "FR", "KA", 200, 192, DIM), grid(ST, 4, 1, 224, 96) + st_shelves + [(plate_box(REG2_C), PLATE_F)], name="stack", sealed=True)
+room(ST, G, look("AR", "FR", "KA", 200, 192, DIM), grid(ST, 4, 1, 224, 96) + st_shelves + [plate(REG2_C)], name="stack", sealed=True)
 pane_x(1808, 2816, 2816, 2832)
 RC = (1760, 2832, 3008, 2992)
 # a reading desk against the north wall at the east end (where a Pair in 106 and 109 would put the
@@ -814,7 +823,7 @@ pass_desk(DESK3)
 plaque((3392, 3392), (3520, 3392), (0, 1), "LB", "REGISTER 5 GALLERY", z=LINK_Z)
 SG = (3712, 3200, 6400, 3392)
 REG5_C = (LINK_MID[0] + LINK_LAPS * LINK_LAP, LINK_MID[1])
-room(SG, LINK_Z, look("CO", "FC", "KC", 220, LINK_Z + 192, MINT), [((x, 3200, x + 64, 3392), dict(light=250)) for x in range(3840, 6400, 320)] + [(plate_box(REG5_C), PLATE_F)],
+room(SG, LINK_Z, look("CO", "FC", "KC", 220, LINK_Z + 192, MINT), [((x, 3200, x + 64, 3392), dict(light=250)) for x in range(3840, 6400, 320)] + [plate(REG5_C)],
      name="sealedgallery", sealed=True)
 register(5, "down the bricked-up gallery", plate_box(REG5_C), LINK_Z, REG_TAG[5])
 SR5 = (6464, 3136, 6848, 3392)
@@ -870,7 +879,7 @@ joint((1792, 4448), (1984, 4448), "flight", "toplanding")
 # its far end, where the stair's head would be
 NSH = (2048, 3984, 2240, 4576)
 REG4_C = ((TL[0] + TL[2]) / 2 + 256, (4448 + 4576) / 2)                    # on the gallery: the top landing, as the double sees it
-room(NSH, G, STAIRS, [((2048, 4448, 2240, 4576), dict(floor=U, **dress(side="GF", ftex="GT"))), (plate_box(REG4_C), dict(PLATE_F, floor=U))],
+room(NSH, G, STAIRS, [((2048, 4448, 2240, 4576), dict(floor=U, **dress(side="GF", ftex="GT"))), plate(REG4_C, floor=U)],
      name="nostair", sealed=True)
 glass((1984, 3968, 2048, 4576), [((1984, 3968), (1984, 4576)), ((2048, 3984), (2048, 4576))], sill=0, top=448)
 for p, q in (((1984, 3968), (1984, 4576)), ((2048, 3984), (2048, 4576))):
@@ -889,7 +898,7 @@ joint((1792, 4640), (1984, 4640), "toplanding", "upper")
 frame((3968, 4832), (4032, 4832), (0, 1), 103, U, "upper")
 SR3 = (4064, 4848, 4736, 5120)
 REG3_C = (FRAMES[103]["mouth"][0] + 560, FRAMES[103]["mouth"][1] + 96)      # 96 ahead and 560 to the right of the frame
-room(SR3, U, look("CK", "FC", "KC", 184, U + 160, PAPER), [((4096, 5056, 4672, 5120), block(48, "UT", "US")), (plate_box(REG3_C), PLATE_F)], name="sideroom",
+room(SR3, U, look("CK", "FC", "KC", 184, U + 160, PAPER), [((4096, 5056, 4672, 5120), block(48, "UT", "US")), plate(REG3_C)], name="sideroom",
      sealed=True)
 pane_x(4352, 4480, 4832, 4848, z=U)
 register(3, "the side room", plate_box(REG3_C), U, REG_TAG[3])
@@ -980,7 +989,7 @@ BIG_END = (BIG[2] - 48, (BIG[1] + BIG[3]) / 2)
 # back wall and over the water with the player at the big store's far end
 REG9_C = crossing(BOAT_FACE, BIG_P).inv()(BIG_END)
 posts = [(ISLAND[0] + 32, ISLAND[1] + 32), (ISLAND[2] - 48, ISLAND[1] + 32), (ISLAND[0] + 32, ISLAND[3] - 48), (ISLAND[2] - 48, ISLAND[3] - 48)]
-fit(ISLAND, [((x, y, x + 16, y + 16), solid("PI", 160)) for x, y in posts] + [(plate_box(REG9_C), dict(PLATE_F, special=1024))],
+fit(ISLAND, [((x, y, x + 16, y + 16), solid("PI", 160)) for x, y in posts] + [plate(REG9_C, special=1024)],
     floor=G, **PCL)
 W.area("island", ISLAND, G)
 W.link(W.node(5984, POND[1] - 24, "the footbridge, the bank", "pond"), W.node(5984, ISLAND[1] + 24, "the footbridge, the island", "island"),
@@ -1001,7 +1010,7 @@ steel_door((5216, 5120), (5280, 5120), (0, 1), G, REG_TAG[7], "pond", "kiosk", t
 frame((6848, 4512), (6848, 4576), (1, 0), 113, G, "pond")
 BH = (6928, 4416, 7952, 4672)
 REG7_C = (6848 + 864, 4544)                                                 # 864 in from the court's wall, on 113's axis
-room(BH, G, look("PU", "FP", "KP", 170, 192, COLD), [((x, 4416, x + 64, 4672), dict(light=220)) for x in range(7040, 7952, 256)] + [(plate_box(REG7_C), PLATE_F)],
+room(BH, G, look("PU", "FP", "KP", 170, 192, COLD), [((x, 4416, x + 64, 4672), dict(light=220)) for x in range(7040, 7952, 256)] + [plate(REG7_C)],
      name="boathouse", sealed=True)
 pane_y(4432, 4496, 6848, 6928)
 pane_y(4592, 4656, 6848, 6928)
@@ -1125,7 +1134,7 @@ for k in (1, 2, 3):
                    ceil=top + 192, light=200, color=tint(COLD), **dress(wall="PU", ftex="FP", ctex="KP"))
     y1 = FLIGHT[1] + ALONG * k
     y2 = y1 + SEAL_LANDING                                                  # (the last one: as long, the plate on it)
-    fit((6272, y1, 6464, y2), [(plate_box((FOOT_MID[0], FOOT_MID[1] + STAIR_LAPS * ALONG)), PLATE_F)] if k == STAIR_LAPS else [],
+    fit((6272, y1, 6464, y2), [plate((FOOT_MID[0], FOOT_MID[1] + STAIR_LAPS * ALONG))] if k == STAIR_LAPS else [],
         floor=top + TOWER_FOOT, **dict(SEAL, ceil=top + TOWER_FOOT + 192))
     W.area(f"sealedflight{k}", (6272, FLIGHT[0] + ALONG * k, 6464, FLIGHT[1] + ALONG * k), top,
            ramp=("y", FLIGHT[0] + ALONG * k, top, FLIGHT[1] + ALONG * k, top + TOWER_FOOT))
