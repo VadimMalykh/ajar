@@ -10891,6 +10891,62 @@ to come); desks 1 to 3 in MODE 3 with T set by the script; the timings
 with real input; the look in the hardware renderer; the level from MAP18's
 way out by a real exit (MAP18's run stops at its exit). Not played by hand.
 
+### MAP19: the link hall's side door let the player in and never out (fixed 2026-11-23)
+
+**Vadim** (2026-11-23, playing, in the link hall): "I still cannot get out of
+here. Exit is too small."
+
+- **Why.** The side door was two steps of 32 down from the hall (floor 64) to
+  the vestibule (0), each under its own lintel 96 over the step: 136, then
+  112. The engine lets a body down from a floor only when the whole of its
+  box (the player's is 32 by 32) is off that floor, and until then it has
+  to fit, at the upper floor's height, under every ceiling the box is under.
+  Off the hall the box is already under the second lintel, 48 over the
+  hall's floor, and the player is 56. Coming up he fits, so the door was a
+  trap: with both TEAL leaves hung in 105 and 106 there was no other way
+  out of the hall. The runs never walked it (they put the player in the
+  hall).
+- **Fixed** in `tools/map_paper.py`: both steps under one lintel, a door's
+  height (96) over the hall's floor.
+- **So that it is found next time**: `tools/mapcheck.py` reports `LINTEL`,
+  a step down that is shut this way (the player's box put just beyond every
+  straight piece of edge between a floor he gets to and a lower one; shut
+  when nowhere along it is free and a ceiling within 40 beyond is less than
+  56 over the upper floor; doors and sectors with an id left out). It
+  reports the old door and not the new one. `MAP=MAP19 MODE=1` now walks out
+  of the hall by the side door at a run, back in, and out at a walk (6
+  checks): on a package with the old door the player stops at y 3407.7,
+  still at 64, both times (4 of the 6 fail), with the fix all pass.
+- **Checks**: the full build; mapcheck on `map_paper` 0 problems;
+  `MAP=MAP19 MODE=1` 79 checks, `MODE=2` 34, `MODE=3` 51, none failed,
+  `levelExited`.
+- **The same check on every other map** (38 generators): one more place,
+  MAP12's store, "a hole and steps out": the hole (ceiling 64 over the
+  store's floor) opened straight onto steps 16 deep, so by the same rule
+  the player on the first step was still under the hole, in both
+  directions. (MAP09's one report was a shut door at the foot of a step,
+  which opens: sectors of no height are now left out.) The other problems
+  mapcheck prints on old maps (41 `WALL`, 1 `VOID`) are not of this kind
+  and were there before.
+- **MAP12's store, asked of the engine and fixed** (task
+  `map12-store-hole`, the same day; Claude's, unasked: Vadim had not met
+  it). `MAP=MAP12 MODE=2` (new, `StoreHoleScript` in `map12.zs`) walks out
+  of the store by the hole with empty hands and back in from the top. On
+  the map as it was both fail: going out the player stops in the hole at
+  the first step (584, -272, -64), going in on the second step (584, -240,
+  -22). So whoever dropped into the store with empty hands and no door
+  hung down there had no way out, though the puzzle graph has the hole as
+  a walk both ways (the solver's "0 stuck" took it on trust; the
+  walkthrough leaves by RED). Now the steps are in the store, three of 16
+  against its north wall under its own ceiling, and the hole is at the
+  upper floor's height (floor 0, 64 high, 48 wide as before), with flat
+  floor beyond where the steps were: no low ceiling is over a step. Both
+  checks pass; `MODE=1` as before (30 checks, `levelExited`); the full
+  build "MAP12: solvable in 9 door actions, 12423 states, 0 stuck" (the
+  graph is unchanged); mapcheck 0 problems (2 before), itemcheck and
+  thingcheck 0. Looked at once from inside the store (three pale steps up
+  to the hole in the blue wall); not played by hand.
+
 ## The sound lab, second try: recordings (built 2026-11-23, on trial in a worktree)
 
 Vadim, after playing the first lab: "both sounds and music are pretty bad,
@@ -11383,6 +11439,451 @@ seen from outside); the other is "In Phase".
   railings cannot keep the parts apart.
 - Whether the three parts have to be played in a fixed order (proposed:
   yes; the future seen needs it).
+
+## The water lab (built 2026-11-23)
+
+`tools/map_water.py` (the map), `tools/ajarwater.py` (the pieces a map puts
+down: basin, weir, raft, gauge, bulkhead), `tools/gfx_water.py` (the gauge
+texture AJGAUGE, the wheel sprite AJWH), `src/zscript/water.zs` (the
+mechanic), `src/zscript/watertest.zs` (the tests); `MAP=WATER ./run.sh`,
+`MAP=WATER MODE=1..8 tools/smoke.sh`. An engine lab for MAP20 "High Water":
+can water go through doors? **Yes. Water stands level on both sides of a
+hung door, measured from the door's sill, and it is drawn rightly through
+the door, from above it and from under it; the player wades, swims (under
+`nojump`, with the jump key), goes through a hung door under water both
+ways and uses doors under water; shots and monsters behave; a Pair lifts
+water 192 up; a circle with a spillway turns a wheel that lights a lamp and
+holds a shutter open.** Run headless only (docker, software GL): **not
+played by hand**, and the look on the real machine (the GLES backend) is not
+checked.
+
+- **How the water is drawn.** Each basin (a room that can hold water: all its
+  sectors carry one tag, its frames' and far sides' recesses too) has a
+  hidden control sector far off the map (at -6000, -6000 on); its ceiling is
+  the water's surface. A line of it carries `Sector_Set3DFloor(tag, 2, 0,
+  144)`: type 2 is a swimmable 3D floor (drawn from above and below, its
+  sides where it meets a sector without it, shoot-through, see-through),
+  alpha 144 of 255. Its top and bottom are FWATER1 (Doom II's own, animated),
+  its sides FWATER1 too; the control sector's light (150) and colour
+  (#70B8D8) tint everything under the surface. The script moves the surface
+  every tic with `Sector.MoveCeiling` (smooth, nothing jumps). A dry basin's
+  surface is put 32 under its floor (out of sight). One catch, from the
+  engine's source (`maploader/specials.cpp`): a 3D floor whose control line
+  has no upper texture is given alpha 0, so the control line is made
+  two-sided (a second dummy sector beside it). The surface goes through line
+  portals like any floor: through a hung door one sees the far basin's own
+  water at its own height, with no work of ours. **Transfer_Heights was not
+  tried**: the 3D floor did everything asked at once, and Transfer_Heights
+  draws its fake water by where the viewer stands (one sector's heights
+  decide what the whole view shows), which is the wrong thing through a
+  portal into another basin; it also cannot show two water heights side by
+  side in one view. It stays the fallback only if the 3D floor ever proves
+  too slow on the real machine (not measured).
+- **The rule** (`AjarWaterHandler`, named in WATER's MAPINFO only; does
+  nothing on other maps). A basin (`AjarBasin`, thing 20140, args tag, plan
+  area, brim, kind, depth) has a water height w, a floor (its lowest), a plan
+  area (the generator's number, taken as the same at every height) and a
+  brim (the highest the water goes). Kinds: NORMAL; RESERVOIR (fixed, its
+  water `depth` over its floor, which is the sill of the far side in it);
+  OUTFALL (fixed, always empty). Each hung plain door links its frame's
+  basin and its far side's basin; a hung Pair (both leaves hung) links the
+  basins of its two frames; nothing is linked while a door is down. Per link
+  and tic, with sA, sB the two sills (the floor at the portal line) and
+  h = max(w - s, 0): q = K (hA - hB) from the higher head to the lower,
+  K = 2048 volume a tic per unit of head; 8 K (free fall) while the lower
+  side is dry at its sill. q never takes the heads past level, the giver
+  under its sill or the taker over its brim. All of a tic's flows are
+  reckoned from the same levels and then made together, so the order of the
+  doors does not matter (an earlier version moved water door by door; a
+  basin fed by one door and drained by another then settled 6 units off).
+  The time constant of a 512 x 512 room on a fixed source is area / K = 128
+  tics (3.7 s).
+- **Weirs** (`AjarWeir`, thing 20141, args upper, lower, crest, chute tag,
+  lamp tag x 65536 + shutter tag): one way only, q = K_WEIR max(wU - crest,
+  0), K_WEIR = 2048. Its paddle wheel is a wall sprite at the spillway, turned
+  (roll) at flow / 1024 degrees a tic, at most 12. Over 4096 a tic (2 units
+  over the crest) for 3 s running the wheel counts as turning: the lamp
+  sector goes from light 96 to 255 (and a dynamic light comes on), and the
+  shutter (a door sector) goes up 96 and is held there; once the flow has
+  been under 4096 for a moment the wheel stops, the lamp goes out, and 3 s
+  after that the shutter comes down (speed 4). While water goes down the
+  chute its floors turn FWATER1 and scroll.
+- **Bulkheads.** The ordinary doors (Door_Raise) into each bay refuse to
+  open from the dry side while the basin behind holds water ("Water stands
+  behind this bulkhead.\nIt will not open from the dry side."); from the wet
+  side they open, and nothing is done about the water then (the lab never
+  opens one wet).
+- **The drowning rule** (`bDrown` on the handler, default on): a walking
+  monster whose head has been under water (its waterlevel 3) for 3 s takes 20
+  each second after until dead; flying and floating ones never. The player's
+  air is the engine's own, not changed.
+- **Rafts** (`AjarRaft`, thing 20142, F: the lowest priority, done because it
+  was quick): a solid, bridge-like flat sprite (the crate's), radius 24,
+  height 8. While the water under it is 4 or more deep its middle stays at
+  the surface; it drifts towards the door the most water leaves its basin
+  by, at min(2, outflow / (64 x depth) / 4) units a tic, and goes through the
+  door when it gets there; the player standing on it goes with it.
+- **The map.** One dry corridor, bays to the north, each behind a bulkhead,
+  each with a staff gauge (marks every 32 from the floor). R (the
+  RESERVOIR, BLUE's far side, 96 deep) and O (the OUTFALL, GREEN's far side)
+  are seen through glass in the corridor's wall. 1 *see it*: hall A (512 x
+  512, ceiling 288), frame 101 at the floor (west), 102 on a gallery 128 up
+  (north, a stair to it), 103 at the floor (east), a ledge at 208 with no
+  stair (a medikit on it); BLUE, GREEN and the raft are here. 2 *the pipe*:
+  room B (floor 0, frames 104 and 105) and room C (floor 192, frame 106),
+  the TEAL pair. 3 *the circle*: the lower pool L (floor 0) and the upper
+  pool U (floor 192) north of it; U spills over a crest at 224 down a chute
+  into L, the wheel in the chute; frame 107 at L's foot, 108 at U's head,
+  109 for BLUE in L; the ORANGE pair; a passage with a stair to U. The lamp
+  is in the corridor's ceiling by the machine room, whose shutter the wheel
+  holds open (a soulsphere inside). 4 *company*: the cell K (frame 110),
+  two imps, a pinky and a cacodemon, armoured glass from an alcove.
+  `tools/mapcheck.py map_water`: 105 sectors, 0 problems.
+
+**What the runs showed:**
+
+1. **The rule (MODE=1, 10 checks; MODE=2, 8; MODE=3, 9; all pass).** BLUE
+   in 101 (A's floor) on R (96 over its sill): A fills to 96 (95.6 after 16
+   s; 44 after 2 s, 66 after 4, 86 after 8). BLUE in 102 (the gallery, 128
+   up): A fills to 128 + 96 = 224 (224.0 after 17 s; free fall to the
+   gallery's sill, then the head). BLUE in 102 and GREEN in 103 (A's floor,
+   to O): A settles at 96 within 2 s (what comes in over the gallery equals
+   what goes out at the floor: exactly 96.000, since the gallery door then
+   feeds freely). BLUE in 101 and GREEN in 103: the drain holds A near its
+   sill, at 10.667 (= 96 / 9: K in, 8 K out). GREEN alone in 103: A drains
+   to 0 in 1 s; in 102: to the gallery's 128 (2 s); in 101: to 0 (2 s).
+   The pipe: BLUE in 105 fills B to 96 (95.9) and through the TEAL pair (104
+   in B at 0, 106 in C at 192) C to 288, 192 higher (191.9 over B). BLUE
+   taken down, the pair alone keeps both where they are (no change over 5
+   s, within 0.05). GREEN drains B to 0 and C to its sill, 192, and no
+   lower. B 96 and C 0 over their sills sharing by the pair: 48 and 240
+   each (47.8, 239.8), the volume the same to the last digit; the flow is
+   signed (from 104's side when B is higher). The circle: L filled to 96 by
+   BLUE, then the ORANGE pair hung (107 at L's foot, 108 at U's head): U
+   rises, spills over the crest, and in about 10 s it goes round steadily:
+   U 234.54 (10.54 over the crest), L 53.09, 21592 a tic up the pair and
+   over the weir, both as reckoned by hand from K and K_WEIR, no water
+   lost. The wheel turned from 5.0 s after the pair was hung (lamp 255,
+   shutter open 96). Leaf 108 taken down: the wheel stopped 6.1 s after
+   (6.1 reckoned), the lamp went out, the shutter shut 3.7 s after the
+   wheel stopped (9.7 s after the leaf); U settles at the crest (224.003)
+   and L at what is left (63.63).
+2. **A: the moving surface.** The swimmable 3D floor, moved by
+   MoveCeiling every tic: works (above). Transfer_Heights: not tried (why:
+   above).
+3. **B: seen through a hung door** (MODE=7, 14 views from fixed places, the
+   water held still for each; `build/smokeW7/` in the worktree, made again
+   by the run). Dry A looking into R through BLUE: R's water stands in the
+   doorway like the side of a tank, 96 high, its top and its side (FWATER1)
+   drawn. Both sides 48 over their sills (B and C by the pair, 192 apart):
+   one continuous surface through the doorway, from both sides. Depths that
+   differ (B 71, C 25 over the sills, held mid-flow): a step at the portal
+   line, the far water lower in the doorway. From under water (A 96, the eye
+   at 51): the near water's tint and the far water through 101 alike; under
+   the surface looking up: the surface from below. The gallery door with A
+   52 over the gallery and R 96 over its own sill: the two levels each right.
+   R through the corridor's glass: the water and the gauge (96 at the mark).
+   The circle running, from L: the surface, the chute and the wheel. The
+   cell through the armoured glass with the monsters under water. A dry
+   room's frame onto the outfall: dry both sides. Nothing looked wrong in
+   any view; the look is the software GL's in docker.
+4. **C: the player (MODE=4, 18 checks, all pass).** Waterlevel by depth:
+   1 at 8 and 24, 2 at 30 and 40, 3 at 44 and 60 (player height 56, eyes
+   at 41). The walk key for 1 s: dry 210 along; wading (24) 210; swimming
+   103 along and 20 down (level look). With no key the player sinks (100
+   to 68 in 2 s). **Up: the jump key swims up under `nojump`** (z 140 in 1
+   s from the floor), by the script and by a real key press (`+jump` from
+   the console script); the engine checks `nojump` only for a jump from the
+   ground, so no change was needed. Looking 45 up and walking: up 75 in 1 s.
+   The fly-up key (`+moveup`) also works (70 in 1 s; not bound by default).
+   **Rising water does not lift a player standing on the floor**: A filled
+   to 224 round him and he stayed on the floor (the engine's water does not
+   buoy; he must swim). Climbing out onto the ledge (208) from the surface,
+   the walk and jump keys: out with the water 8 or 24 under the ledge, not
+   with 40 or 56 (he swims at the wall); looking up and walking also gets
+   out from 8 under. Through BLUE under water, both ways: from A into R and
+   back, landing in the recess on the other side under water (waterlevel 3)
+   facing on. USE under water takes BLUE out of 101 and hangs it again, by
+   the script and by a real `+use`. Air (the engine's own): 20 s (700
+   tics), then hurts of 2, 3, 4, 5, 6, 7, 8, 8, 9 about every 0.9 s (9 hurts and 52 lost
+   in 28.6 s under). The script's keys are put into the player's command and
+   the engine's own movement (`HandleMovement`, `CheckUse`) is run with
+   them; the real presses agree with it.
+5. **D: shots and monsters (MODE=5, 6 checks; MODE=6, 6; all pass).** A
+   bullet, an imp's fireball and a rocket each hit a dummy across the
+   surface, from above into the water, from under it out of it, under
+   water, through BLUE under water, and from dry A through BLUE into R's
+   water. The cell flooded by BLUE in 110 with the monsters woken and after
+   the player (who is outside): imps and pinky walk the floor, waterlevel 2
+   at 54 deep and 3 at about 76; they do not swim up. The cacodemon floats
+   on in the water unharmed. An imp pushed through BLUE in 110 under water
+   comes out in R, still under water.
+6. **E: drowning (MODE=6).** On (the default): both imps dead 7.2 s after
+   the cell began to fill, the pinky 12.2 s; the cacodemon alive. Off: an
+   imp lives 8 s with its head under; turned on again it drowns in 9 s.
+   GREEN in 110 then drains the cell to 0 in 1.5 s.
+7. **F: a raft (MODE=8, 4 checks, all pass).** On A at 10.67 (BLUE in 101,
+   GREEN in 103) it floats with its middle at the surface, is carried to
+   103 and through it into O (where it grounds), with the player standing
+   on it the whole way. At 96 (the lintel of 103 is 96), it is carried
+   to the wall over the door and held there, still afloat. The raft is
+   solid: a fireball and a rocket shot into A's water stopped on it (seen
+   by chance in MODE=5, which now takes the raft away first).
+
+**For MAP20:**
+- Count on: depth by the frame's height (the head over the far side's sill,
+  plus the frame's own height); a drain holding a room near its sill; a
+  Pair lifting water to the higher frame's sill plus the head; a spillway
+  wheel driving a lamp and a shutter; the water drawn right through any
+  hung door; swimming with the jump key in a `nojump` map; doors used and
+  carried under water; walking monsters drowning, flyers not.
+- Times: a 512 x 512 room on a reservoir comes within 1 of its level in
+  about 16 s (half way in 3 s). Time grows with the area (at the same K):
+  plan big rooms with that, or give MAP20 its own K.
+- Avoid: a ledge more than 24 over the water the player is to climb out at;
+  counting on rising water to lift the player (he must swim); a frame or far
+  side whose recess is not tagged with its basin (the water would stop at
+  its mouth); opening a bulkhead from its wet side (not modelled).
+- The plan area is the generator's number and the same at every height: a
+  room with a gallery or a ledge fills at the wrong speed above them (the
+  levels where it settles are right; only the times are off).
+
+Runs: MODE=1..8 above, all pass (MODE=1, 2, 3, 6, 7, 8 on the full build;
+MODE=4 and 5 again after two last test-only changes, on a quick build);
+`MAP=LAB MODE=1`, `MAP=PASS MODE=1` (50) and `MAP=MAP19 MODE=1` (73) pass on
+the full build. Shared code touched: `tools/build.py` (the map),
+`tools/gfx.py` (two lines: gfx_water), `src/zscript.zs` (two includes),
+`src/mapinfo.txt` (things 20140..20142, the map entry), `src/zscript/ajar.zs`
+(one line: AjarHandler's WorldTick leaves WATER to its own test, as for
+the other labs).
+
+**Not played by hand.** Unchecked: the look on the real machine (GLES); how
+fast many 3D floors and portals draw there; sounds (there are none: no
+splash, no rushing water); a saved game with water moving; what a monster
+does in water beyond walking the floor; the wheel's turning seen moving
+(only one still view); a bulkhead opened from the wet side. The headless
+screenshots fall at slightly different tics than the script's, so each view
+holds the water still for its 70 tics.
+
+## The left-handed room lab (built 2026-11-23)
+
+`tools/map_lefthand.py` (the map), `tools/lefthand.py` (the reflection, for
+MAP20 to call), `tools/gfx_lefthand.py` (the lab's textures),
+`src/zscript/lefthand.zs` (the run-time part and the tests),
+`tools/lefthand_compare.py` (question 1's pixel comparison); `MAP=LEFT
+./run.sh`, `MAP=LEFT MODE=1..5 tools/smoke.sh`. An engine test for "MAP20's
+secret way out: the left-handed copy": a pane among real mirrors that is an
+opening onto a room built as the mirror image of this one. **It works: from
+every place tried the opening is the mirror pixel for pixel (bar a line one
+pixel high along its top edge) until something is in the room that is not
+in the copy: the player, his shots, a monster. Walking in, walking back,
+shots and the way out behind the copy's door work exactly. What gives it
+away is a second mirror: a mirror seen through the opening is drawn black.**
+Run headless only (docker, software GL, the OpenGL backend): **not played by
+hand**, and the look on the real machine (the GLES backend) is not checked.
+The ZDoom wiki could not be reached (zdoom.org dropped the connection again):
+the engine facts below are measured on GZDoom 4.12.2, except what a web
+search said of SPRITEFLIP, which the runs then confirmed.
+
+- **The map.** Bays off one corridor, each room 512 x 384 with five panes in
+  its north wall, every pane in the same surround (a niche 64 wide, 8 deep,
+  sill 24, head 160, the glass at its back, y 392). The fourth pane (x
+  320..384, not the middle one) is the one that may be an opening. Each room
+  holds things with a clear left and right: a brass plaque "ROOM 20" with an
+  arrow pointing right on the south wall, a lamp and a brighter patch of
+  floor in the north-east corner only, a step (16 high, green, a slanting
+  stripe) along the west half of the south wall, a sham door frame in the
+  west wall, a marine's statue turned 30 degrees (8 rotations: the gun in
+  his right hand), a dead marine (one picture), floor tiles with an F in a
+  corner, walls with a stripe near the left of each panel and a red triangle
+  pointing right; the way in is a door in the east wall's south end.
+  A: the fourth pane is a line portal (501) onto the matching pane (502) of
+  A', A built again reflected in the glass's plane, 2096 north. A' has one
+  thing more: a door in its west wall near the panes and behind it a room
+  with an `Exit_Secret` line (`secretnext` of the lab is MIR). B: A with the
+  fourth pane a real mirror (question 1's control), 1024 east so that every
+  flat lies the same. C: A with a mirror pane on the south wall too (128
+  wide, the same surround), its copy C' (511, 512) kept off the automap
+  until entered. D: B with that south mirror. V: the carried door (below).
+- **How the reflection is made** (`lefthand.left_handed(m, src, axis, at,
+  shift, hide=False)`). The room is built a second time into a Map of its
+  own (`src`; in the lab by the same function as the room, with the copy's
+  one difference), and that whole map is reflected in the line y = at (or x
+  = at) and moved by `shift`, at the level of the finished UDMF records
+  (`Map.parts()`): every vertex mirrored; every line runs the other way (v1
+  and v2 swapped), so each side stays on its own sector's side and every
+  wall keeps its face to its room; every wall texture is replaced by a copy
+  flipped left to right (`AJLHnnn`, made in the build by
+  `lefthand.flip_all` from the generated PNG: no engine trick), with its x
+  offset set to -(o + L k) (o the old offset, L the line's length, k the
+  scale), so that each column of the copy's wall is the column the mirror
+  shows there; every flat is replaced by a copy flipped across the plane
+  (rows for a plane along x). Flats lie by world position, so the copy must
+  stand where the 64 grid comes out right: for a plane along x the shift's
+  x a multiple of 64 and 2 at + its y a multiple of 64 (the helper asserts
+  it). Things stand at the mirrored place with the angle mirrored (360 - a
+  for a plane along x). Light, heights, specials, line ids, tags and flags
+  are kept. The copy goes into the level whole (`Map.chunks`): it shares no
+  vertex with the rest, an island joined only by portals. A marker thing,
+  `AjarLeftHanded` (20150, in `lefthand.zs`, the copy's box in its args),
+  turns on SPRITEFLIP for every actor standing in the copy at the start:
+  the picture drawn mirrored **and the rotation shown mirrored too** (a
+  thing turned 30 seen from the left in the mirror is the thing turned 330
+  seen from the right in the copy), which is what a mirror does; negative
+  x scale or XFLIP would flip the picture only and show the wrong rotation
+  of an 8-rotation sprite. Measured: the statue (8 rotations) and the dead
+  marine (one picture) in the copy are pixel for pixel their images in the
+  mirror (question 1). An actor that comes into the copy later is not
+  flipped (not needed in the lab: nothing does). The portal: the two pane
+  lines are one line reflected, so the engine's rule dst.v2 + R(p -
+  src.v1) is a pure shift (turn 360, `openingIsAShift`).
+- **Question 1: the opening looks like its neighbours (MODE=2, 22 views;
+  `tools/lefthand_compare.py`).** Five cameras in A and the same five in B:
+  straight on from the south wall (256, 48), from the west at a slant (96,
+  64, facing 50), from the east at a slant (464, 160, facing 135), from the
+  far corner on the step (32, 32, facing 55), and before the fourth pane
+  (352, 140, facing 95), each with the player drawn and hidden (not drawn,
+  in the mirrors either); and A and B turned away from the glass, the
+  control. A pixel differs when a channel differs by more than 24 of 255.
+  **With the player hidden, A and B differ in 60, 3, 4, 1 and 8 pixels of
+  419328 (at most 0.014%)**; the control differs in 2. With the player
+  drawn, outside his reflection (found as where B differs from B without
+  him): the same counts; inside it, from the camera before the fourth pane,
+  289 to 413 pixels (him, missing from the opening: the tell). From the
+  other four cameras his reflection is in another pane (one's reflection is
+  always straight ahead of one), and the opening cannot be told. Causes,
+  each looked at: **texture alignment, flats, light, the statue's and the
+  dead marine's sprites: no difference at all.** The 60 pixels are a line
+  one pixel high along the top edge of the opening (the portal and the
+  mirror are cut off a pixel apart there: not fixable from the map, and
+  not seen at play size); the rest are single pixels on edges. **The
+  mirror's sheen** (`gl_mirror_envmap`, on in Vadim's config and by
+  default): it is drawn over the opening as over the mirrors, so it is no
+  tell (with it on and off A and B differ the same; on against off changes
+  24000 to 44000 pixels of the pane wall). The lamp had to be one that does
+  not flicker (the tech lamp's animation made A and B differ by its phase:
+  any animated thing in the room, a flickering light or a scrolling wall, is
+  in step in the copy only if it started in step: not tried). Sky: not
+  tried (the room has a ceiling); dynamic lights (lights.pk3 is not loaded
+  headless): not tried.
+- **Question 2: a second mirror gives the opening away (MODE=3 views 8 to
+  15).** With a mirror on the south wall of C, **a mirror seen through the
+  opening is drawn black**: looking into the fourth pane, where D (all
+  mirrors) shows the south mirror with the room again in it, C shows a
+  black rectangle (2288 pixels differ straight on, 5914 close and turned).
+  The same with `r_mirror_recursions` and `r_portal_recursions` 16: it is
+  not the depth limit, the engine does not draw a mirror beyond a line
+  portal here. The other way round works: from C, in the south mirror, the
+  pane wall with the opening looks as D's (366 pixels differ, a thin strip
+  where D shows the player's reflection twice over). So MAP20's room may
+  have mirrors only where they cannot be seen through the opening: on the
+  pane wall itself (coplanar, never seen through it), or on the opening's
+  own side wall out of its line of sight; no mirror opposite or across.
+- **Question 3: the tells (MODE=3 views 0 to 3 and 7; MODE=2 camera 4).**
+  The camera stands before the fourth pane, and what is to be told stands
+  behind it, where only the glass can show it. Two frozen imps: in A the
+  one at (180, 40) is in the third pane, the one at (400, 40) is in no pane;
+  in B both are in the glass (390 pixels differ, all in the fourth pane:
+  the imp and the player). A rocket and a plasma ball held in the air: the
+  plasma ball in the third pane in both, the rocket only in B's fourth (187
+  pixels, with the player). The player:
+  only in B's fourth (above). Props, made twice (the statue, the dead
+  marine, the lamp): in both, pixel for pixel. A monster in the copy (view
+  7): an imp standing in A' where A's (352, 200) would be is a figure in
+  the opening with nobody in the room. The script cannot know what is drawn;
+  these are screenshots and pixel counts only.
+- **Question 4: walking in and back, shots, the way out (MODE=1, 20
+  checks, all pass).** Walking, running, at 15 degrees and backing into the
+  opening: each lands where the engine's rule says, off by 0.000000, facing
+  as before (into the copy: away from its glass), at the place of the copy
+  that is the mirror image of the room's place just before the glass;
+  walking and running back out of the copy's fourth pane: the same, into A.
+  A mirror pane is a wall (walking at the third stops at y 376). A rocket
+  and a plasma ball fired through the opening fly on into A' and burst on a
+  dummy there (rocket at y 2716 of the copy, plasma 2708); a hitscan the
+  same (puff at 2744). A rocket and a hitscan at a mirror pane stop at the
+  glass (y 380 and 388), nothing behind it hit. In by the opening, the
+  copy's door opens (its line used), walking west crosses the
+  `Exit_Secret` line: the level ends to its `secretnext`
+  (`exitBySecretWayOut`). The copy's marker flipped its 3 things; the
+  statue in A' stands at (128, 2680) facing 330, flipped.
+- **Question 5: the automap (MODE=3 views 16 to 18).** The copy is another
+  place on the map and is drawn as one: after looking through the opening,
+  A' appears far north of A, its walls mapped as far as they were seen
+  through the glass (the engine marks what it draws through a portal), a
+  room with no way to it. With `hide=True` (C') every line in the copy's box
+  is `ML_DONTDRAW` until the player has stood in it: not drawn after being
+  seen through the glass, nor with the computer map (which draws the unseen
+  V' in grey); after the player has stood in C', drawn. So the copy can be
+  kept off the map until entered; once entered it is a second room far
+  away, and anyone who reads the map then sees it. Not tried: drawing it
+  over the room it mirrors (the map has no such thing for a type-1 portal).
+- **Question 6: sound and sight (MODE=4).** An imp in A' facing the
+  opening does not see the player in A in plain view through it (woke 0,
+  `CheckSight` 0); an imp in A facing the opening does not see the player
+  in A' (0, 0): the engine's sight goes through the portal line as through a
+  hole, into the stub behind it (as in the one-sided doorway lab). A shot's
+  alarm in A wakes an imp in A' facing away (1 of 1): sound goes through
+  this kind of portal, and the copy is an island, so it came no other way.
+  Nothing was built for either.
+- **The carried door (MODE=4 3 checks, MODE=5 6 views).** Bay V: the panes
+  are niches the size of a frame's recess (64 wide, 16 deep, 96 high, no
+  sill, the frame's trim and light 176), the fourth is frame 101, GREEN
+  leans in the room and its far side is the matching niche of V' (built with
+  the frame's trim, not GREEN's coloured one). GREEN in 101: walking in and
+  back land exactly (a pure shift, 2080); GREEN in 102 (the east wall): into
+  V' turned (turn 450), landing exactly. **The surround can be made the
+  same** (a mirror in a recess the size of a frame), but the frame does not
+  read as a pane: empty, it shows the blank frame texture among the glass (a
+  dark recess among mirrors); hung, the leaf stands open in the room before
+  it, a green door with its glow, and is in every mirror and not in the
+  opening. A hung door reads as a door. As a secret, a carried door
+  among mirrors gives itself away at once; a fixed opening does not.
+- **What MAP20 can count on.** A room built with `left_handed` from its own
+  Map, one pane among mirrors a fixed portal (`Line_SetPortal` type 1,
+  floors aligned) onto its image: from anywhere in the room, with the player
+  out of line with the opening, it is the mirror, texture, light and sprite
+  for sprite. Walking, running, backing, at a slant, both ways; shots and
+  hitscans go on into the copy; mirrors stop shots; the copy's door and
+  exit work; the copy can be kept off the automap until entered.
+- **What it must avoid.** Anything in the room that is not in the copy and
+  can be in line with the opening: the player himself (he shows by his
+  absence when he stands before it: put the opening where one does not
+  stand square to it, or accept the tell, which is the design's own),
+  monsters, shots, a carried door, anything spawned or moved (things are
+  made twice and must stand still; an animated thing must start in step); a
+  mirror the opening can see (drawn black); a Doom (IWAD) texture in the
+  room (only generated textures can be flipped; the build stops); a copy
+  placed off the 64 grid; panning or rotated flats (handled, not tested);
+  scaled wall textures (handled by the formula, not tested); switches (a
+  flipped switch texture is another texture, its ANIMDEFS pair not made);
+  the copy joined to the rest of the level other than by portals.
+- **Shared code changed.** `tools/udmf.py`: `textmap()` split into
+  `parts()` (the UDMF records) and the writing, which also writes
+  `Map.chunks` (records put in whole); every other map's wad is byte for
+  byte as before (sha1 of all 39). `tools/gfx.py`: four lines at the end of
+  `make_all` (the lab's textures and the flipped copies). `tools/build.py`,
+  `src/mapinfo.txt` (the map, and a `DoomEdNums` block of its own: 20150
+  AjarLeftHanded, 20151 AjarLeftHandStatue), `src/zscript.zs`: the
+  registration. `src/zscript/ajar.zs`: one line (the generic test script
+  leaves map LEFT alone).
+- **The runs**, on the full build (`./build.sh` with the solver, 9 min):
+  `MAP=LEFT MODE=1` 20 checks and `MODE=4` 7, none failed; `MODE=2` 22
+  views, `MODE=3` 19, `MODE=5` 6. `tools/mapcheck.py map_lefthand`: 0
+  problems (83 sectors; it does not see the copies, which are records put
+  in whole); the sources of A', C' and V' and bay V built at the origin
+  (mapcheck draws x < 3000 only): 0 problems each. `MAP=MIR MODE=1` as
+  before (its two "comes back off a mirror" checks are 0, as "Nothing comes
+  back off a mirror by itself" says), `MAP=MAP15 MODE=1` out by the way out,
+  `MAP=PASS MODE=1` 50 checks, none failed.
+- **Not played by hand.** Not played at all; the look on GLES not checked
+  (in particular the sheen on the opening, measured here on OpenGL); the
+  black mirror beyond the portal seen on the software GL only; not tried:
+  a sky, dynamic lights, an animated thing, a sloped floor, a copy reflected
+  in a plane along y (the code is there, untested), monsters walking
+  between the room and the copy (walking through works for the player; the
+  copy's things are flipped only if they stood there at the start), a
+  savegame (the marker's state is in its fields).
 
 ## The three goes lab (built 2026-11-23)
 

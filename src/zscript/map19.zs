@@ -439,6 +439,16 @@ class PaperTest : EventHandler
 		if (Op() && Laps(mo, "reg5_fiveLapsEast", 5, 3328, 3296, 0, 2720, 0, 0)) Next();
 		if (Op() && WaitSigned("reg5_signedByFiveLaps", 5)) Next();
 		if (Op() && DoorUp("reg5_eastStrongroomOpen", 1905, 1)) Next();
+		// out of the link hall on foot by its side door, back in, and out again at a walk (2026-11-23: its
+		// lintel came down with its two steps, and Vadim, in the hall with both leaves hung, could not get out)
+		if (Op() && WalkTo(mo, "linkHall_outByTheSideDoor", 3328, 3488, 100)) Next();
+		if (Op() && Stand(mo, 8)) Next();
+		if (Op()) { Check("linkHall_downInTheVestibule", mo.pos.z == 0, PStr(mo.pos)); Next(); }
+		if (Op() && WalkTo(mo, "linkHall_backInByTheSideDoor", 3328, 3296, 100)) Next();
+		if (Op()) { Check("linkHall_upInTheHall", mo.pos.z == 64, PStr(mo.pos)); Next(); }
+		if (Op() && WalkTo(mo, "linkHall_outAtAWalk", 3312.5, 3488, 200, 3)) Next();
+		if (Op() && Stand(mo, 8)) Next();
+		if (Op()) { Check("linkHall_downAgain", mo.pos.z == 0, PStr(mo.pos)); Next(); }
 		// register 7: GREEN taken down from 102, over the balcony into the pond court, hung in 113
 		if (Op() && DeskAt(mo, "desk3_resetsThirdTime", 3)) Next();
 		if (Op() && TakeDoor(mo, green)) Next();

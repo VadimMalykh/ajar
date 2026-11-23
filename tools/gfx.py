@@ -1350,7 +1350,13 @@ def make_all():
     gfx_clockdept.make(out, map_clockdept.SIGNPLATES)
     import gfx_lift                                              # the lift's buttons (MAP12)
     gfx_lift.make(out)
+    import gfx_water                                             # the water lab's gauge and wheel
+    gfx_water.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)
+    import gfx_lefthand                                          # the left-handed room lab (map LEFT); then the flipped
+    import map_lefthand                                          # copies its reflected rooms ask for (tools/lefthand.py)
+    gfx_lefthand.make(out)
+    gfx_lefthand.flip(out)
     return out
