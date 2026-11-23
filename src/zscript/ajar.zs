@@ -819,7 +819,9 @@ class AjarHandler : EventHandler
 	{
 		AjarDoor old = f.door ? Unhang(f) : null;
 		if (carrying) Hang(carrying, f);
-		thief.A_StartSound(carrying ? "doors/dr1_open" : "doors/dr1_clos", CHAN_AUTO);
+		if (carrying && old) PlaySwap(thief);
+		else if (carrying) PlaySet(thief);
+		else PlayTake(thief);
 		if (carrying && old) Say("A thief swaps the " .. old.Label() .. " door for the " .. carrying.Label() .. " one!");
 		else if (carrying) Say("A thief hangs the " .. carrying.Label() .. " door!");
 		else if (old) Say("A thief has taken the " .. old.Label() .. " door!");
@@ -830,8 +832,40 @@ class AjarHandler : EventHandler
 	{
 		d.carried = true;
 		d.Hide();
-		thief.A_StartSound("doors/dr1_clos", CHAN_AUTO);
+		PlayTake(thief);
 		Say("A thief picks up the " .. d.Label() .. " door!");
+	}
+
+	// --- the sounds of taking and hanging a door ---------------------------
+	// Every door action of the player's and the thief's plays through these.
+	// An empty name is Doom's sound (doors/dr1_clos to take, doors/dr1_open to
+	// hang), and so is every level's: only the sound lab (soundlab.zs, map
+	// SOUND) chooses others, the game's own (src/sndinfo.txt, tools/sfx.py).
+	string takeSound, setSound;
+	int swapSetTics;            // a swap's set sound is still to come in this many tics
+	Actor swapBy;
+
+	string TakeName() { return takeSound != "" ? takeSound : "doors/dr1_clos"; }
+	string SetName() { return setSound != "" ? setSound : "doors/dr1_open"; }
+
+	void PlayTake(Actor who) { if (who) who.A_StartSound(TakeName(), CHAN_AUTO); }
+	void PlaySet(Actor who) { if (who) who.A_StartSound(SetName(), CHAN_AUTO); }
+
+	// Doom's sounds: one dr1_open, as it always was. The game's own: the
+	// door comes off (take), and a moment later the other goes on (set).
+	void PlaySwap(Actor who)
+	{
+		if (takeSound == "" && setSound == "") { PlaySet(who); return; }
+		PlayTake(who);
+		swapBy = who;
+		swapSetTics = 7;
+	}
+
+	void SwapTick()
+	{
+		if (swapSetTics <= 0 || --swapSetTics > 0) return;
+		PlaySet(swapBy);
+		swapBy = null;
 	}
 
 	// A carried door is put down where `at` stands, to be picked up again.
@@ -972,14 +1006,14 @@ class AjarHandler : EventHandler
 		if (f.door && !carried)
 		{
 			carried = Unhang(f);
-			user.A_StartSound("doors/dr1_clos", CHAN_AUTO);
+			PlayTake(user);
 			if (carried.IsPair()) Say("You unhinge a leaf of the " .. carried.Label() .. " pair.");
 			else Say("You unhinge the " .. carried.Label() .. " door.");
 		}
 		else if (!f.door && carried)
 		{
 			Hang(carried, f);
-			user.A_StartSound("doors/dr1_open", CHAN_AUTO);
+			PlaySet(user);
 			SayHung(carried, null);
 			carried = null;
 		}
@@ -987,7 +1021,7 @@ class AjarHandler : EventHandler
 		{
 			AjarDoor old = Unhang(f);
 			Hang(carried, f);
-			user.A_StartSound("doors/dr1_open", CHAN_AUTO);
+			PlaySwap(user);
 			SayHung(carried, old);
 			carried = old;
 		}
@@ -1007,7 +1041,7 @@ class AjarHandler : EventHandler
 		d.carried = true;
 		d.Hide();
 		carried = d;
-		user.A_StartSound("doors/dr1_clos", CHAN_AUTO);
+		PlayTake(user);
 		if (d.args[3] == 2) { d.args[3] = 0; Say("Your hands find the " .. d.Label() .. " door\nthat only the glass showed."); }
 		else if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for a few seconds.");
 		else if (d.IsPair()) Say("A leaf of the " .. d.Label() .. " pair: it opens onto its twin,\nwherever that hangs.");
@@ -1254,6 +1288,7 @@ class AjarHandler : EventHandler
 
 	override void WorldTick()
 	{
+		SwapTick();
 		SelfShots();
 		StrayTick();
 		ShutterTick();
@@ -1274,6 +1309,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
 		if (level.mapname ~== "ONESIDE") return;   // so has the one-sided doorway lab (oneside.zs)
 		if (level.mapname ~== "PASS") return;      // and the pass lab (passtest.zs)
+		if (level.mapname ~== "SOUND") return;     // and the sound lab (soundlab.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);

@@ -1,0 +1,13 @@
+// Ajar's own door sounds, synthesised by tools/sfx.py (sounds/ajtake1.wav ...).
+// Every level still plays Doom's (doors/dr1_clos, doors/dr1_open); the sound
+// lab (map SOUND, src/zscript/soundlab.zs) lets them be heard in their place.
+
+// taking a door off its hinges
+ajar/take1	ajtake1		// A: squeak and knock
+ajar/take2	ajtake2		// B: creak and pins
+ajar/take3	ajtake3		// C: pins only
+
+// hanging a door
+ajar/set1	ajset1		// A: thud and clack
+ajar/set2	ajset2		// B: slide and thud
+ajar/set3	ajset3		// C: two pins
