@@ -10077,3 +10077,136 @@ figures as before; mapcheck, thingcheck, itemcheck on `map_clockdept`: 0
 problems each; `MAP=MAP18 MODE=1` 8 checks with levelExited; two headless
 views of the wall (from the hall's middle and from the west): one pair, one
 plate, no seam in the wall. Not played by hand.
+
+## MAP19 "On Paper": the first version, as decided (2026-11-23)
+
+Vadim (2026-11-23) chose "the pass and its double" from three proposals (the
+outline is in "MAP19 'On Paper': the pass and its double", written the same
+day on branch `pass-lab` with the lab, map PASS; water through doors he
+"likes actually", and it goes to MAP20 with a lab of its own). Of the list
+of ideas still unused he said: "The arrangement is the map: I like this,
+let's use", and that he likes the rest. What follows is Claude's, settled on
+Fable so that a first version can be built; none of it is played.
+
+**The rule** (the lab builds and tests it): the pass counts everything the
+body does and takes every door for a hole in the wall. Through any portal
+of the game's the player lands at the far side and a white double walks on
+through the wall behind the frame; from then on it is at T(player), a turn,
+a shift and a change of height that change only at a crossing. It is paper:
+nothing stops, sees or hurts it. A register is signed when the double has
+stood on its plate, at its height, for a second; signed is for good. A pass
+desk puts the double back on the player.
+
+**Two things added to the outline.**
+- *The arrangement is the map.* The grounds are walled courts with no
+  gates. The tower yard is entered with a door in hand only through
+  YELLOW, whose far side is in it; the pond court only by the drop from the
+  upper floor's balcony; the east yard only through whatever hangs in its
+  one frame, and GREEN hangs there when the level begins, so that GREEN's
+  far side in the archive is an open way to a yard far off and the first
+  thing done with GREEN is to take it down from the inside (or to swap RED
+  in first: set-up-and-swap, and then the east yard opens off the forecourt
+  for the rest of the level). A register's answer is a certain kind of door
+  in a certain frame, and some of those frames are in the courts.
+- *Nothing can be lost, by construction*, and so no solver PUZZLE for the
+  whole level (ten doors and twenty frames are too many states: tried).
+  Every court can be entered with empty hands (a gap in its railings: a
+  squeeze) and left with a door in hand (a turnstile, one way). Everything
+  else is one piece on foot inside its stage. The generator checks exactly
+  these facts in the build. The grounds alone, with RED, BLUE and ORANGE
+  left out and the pump frames taking leaves only, were put to
+  `tools/solve.py` as a prototype: 16 door actions, 35590 states, none
+  stuck.
+
+**The doors** (ten leaves; MAP18 has seven) and where they are met:
+RED leans in the pass hall; its far side in the forecourt's east wall, facing
+west, straight across from the duty room's frame. GREEN hangs in the east
+yard's frame 112; its far side at the west end of the archive's reading
+corridor, facing east down it. BLUE leans in the basement; its far side at
+the foot of the grand stair, facing up it. YELLOW stands in the pond
+court's kiosk behind steel (register 7); its far side in the tower yard.
+Both TEAL leaves lean on the upper floor. Both ORANGE leaves lean in the
+pond court. VIOLET and PINK stand in the two strongrooms (registers 5 and
+6); their far sides are the two ends of the night room (`way_through`).
+
+**The registers** (frame, what is behind its wall, the answer meant, what
+it opens; "ahead/right/up" are the player's own, from the frame's line):
+1. *The duty room* (forecourt): frame 101 in its glass wall, the plate 128
+   in. RED in 101 (the only door): the player steps out across the
+   forecourt looking at the glass and sees the double walk in. Opens the
+   barrier to the covered way, and the duty room's own door (the chaingun).
+2. *The stack* (archive): frame 102, the plate 864 in. GREEN in 102: the
+   player walks the reading corridor, the double the stack beside them
+   behind glass. RED cannot: the forecourt gives 608. Opens the steel door
+   to the stair hall.
+3. *The side room* (upper floor): frame 103, the plate 96 ahead and 560 to
+   the right. RED in 103: the forecourt has that room north of RED's far
+   side. GREEN cannot (the corridor has no room to the right). Opens the
+   basement's door.
+4. *The hall with no stair* (beside the grand stair, behind glass): frame
+   104, the plate on a gallery 256 up where the stair's head would be. BLUE
+   in 104: the player climbs the grand stair, the double climbs the air.
+   Opens the garden door (the grounds).
+5. *Down the bricked-up gallery*: the link hall, 512 long, frames 105 and
+   106 in its ends; behind 106's wall the gallery really goes on, sealed,
+   some 2700, seen through glass beside the frame; the plate where the
+   fifth lap puts the double with the player in the middle of the hall. A
+   Pair in 105 and 106, five laps east. Draws the bolt of the east
+   strongroom (VIOLET), which stands at the sealed gallery's far end and
+   opens on the east yard.
+6. *Down the bricked-up stair* (the water tower): one flight with frames
+   107 at its foot and 108 at its head; behind the foot's wall the stair
+   really goes on down, sealed, seen through glass; the plate on the third
+   landing down. A Pair in 107 and 108, laps down. Both leaves have to be
+   brought into the tower yard through YELLOW. Draws the bolt of the
+   tower's strongroom (PINK).
+7. *The boathouse* (pond court): frame 113, the plate 864 in. GREEN in 113
+   (carried over the balcony), walked in the reading corridor. Opens the
+   kiosk: YELLOW.
+- Secrets: *the porter's lodge*, a glass lodge in the lobby with its plate
+  where the double stands when the player has just come out of the covered
+  way (the first sight of the double, for whoever stops to look); *the
+  island pavilion* in the pond, its plate reached through the boat store
+  that is bigger inside (walk to the end of the big store: the double walks
+  out of the little one's back wall and over the water) or any other way the
+  player finds; it raises a footbridge to the island.
+- Left for a later task: "round the corner" (a pump, a quarter turn, the
+  pump again) and Room 13.
+
+**The stages.** Gatehouse (pass hall, forecourt) → register 1 → the covered
+way and the block's ground floor (lobby, gallery, archive, link hall,
+offices, canteen, the east lane; the east yard by GREEN's far side) →
+register 2 → the stair hall and the upper floor → register 3 → the
+basement (BLUE) → register 4 → the garden (the avenue, the gazebo, the
+gaps into the courts). Registers 5, 6 and 7 are free of the stages.
+
+**The way out**: two brass frames face each other across the pass hall, at
+the start, with the street doors between them (`brass_pair`); VIOLET and
+PINK hung in them close the loop into the night room (MAP09's chain).
+
+**The building's own paradoxes**: the covered way from the forecourt to the
+lobby, longer going than coming (a one-sided doorway: going north the
+player walks a corridor 768 long that is elsewhere, the double goes
+straight up the real one and is seen ahead in the lobby); the boat store
+bigger inside; the gazebo in the garden, whose four faces are the four
+walls of the hall with no size on the upper floor (MAP18's clock tower).
+Sites for what the player builds beside the two pumps: the avenue in the
+garden between two arches (frames 109 and 110 facing each other 1280
+apart: the endless corridor out of doors), the gallery's west end (121:
+3200 of floor ahead), spare frames in every part.
+
+**The measure** (in the generator, run in every build; the build fails if
+a rule is broken): for every register, which crossings put the double on
+its plate from floor the player can stand on without another crossing, at
+the right height: every door in every frame, both ways; every pair of
+frames for a Pair; the building's own portals; then two crossings in a
+row; and for 5 and 6 the laps. Rules: each answer meant above is found;
+registers 5 and 6 have no answer of one crossing; register 2 is not
+answered by RED nor 3 by GREEN; every court has its squeeze in and its
+turnstile out; inside a stage everything is one piece on foot.
+
+**Size and fights**: over MAP18's (874 sectors, 8000 x 4000, 229 monsters
+on "Resident"): about 9000 x 5500, 900 sectors or more, about 250
+monsters, MAP18's mix and weapons in the same order. Company on the first
+take of each door and when a register is signed. No keys, no thief, no
+nailer, no Stray door, no lift.
