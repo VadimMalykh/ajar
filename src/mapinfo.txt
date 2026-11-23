@@ -34,6 +34,12 @@ DoomEdNums
 	20132 = AjarPassDesk              // the pass lab (pass.zs): a pass desk, that puts the double back on the player
 	20133 = AjarPassRegister          // ... and a register, signed by the double
 	20134 = AjarSoundButton           // the sound lab (soundlab.zs): a switch that picks a door sound or a track
+	20160 = AjarThird                 // a map played whole in goes (third.zs; MAP33, the lab THIRD)
+	20161 = AjarThirdHall             // ... a window hall
+	20162 = AjarThirdPost             // ... a monster of the future seen
+	20163 = AjarThirdWatch            // ... where an earlier self must not come before a hall is won
+	20164 = AjarThirdWin              // ... a shutter a hall's win opens
+	20165 = AjarThirdWind             // ... a plate on a wall that winds the clock on
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -515,6 +521,17 @@ map TWOKEY "Ajar: two keys at once"
 map SHUT "Ajar: the shutter"
 {
 	next = "SHUT"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The three goes lab (tools/map_third.py): the whole map in three goes, MAP33's
+// engine. MAP=THIRD ./run.sh
+map THIRD "Ajar: three goes"
+{
+	next = "THIRD"
 	nointermission
 	nojump
 	nocrouch
