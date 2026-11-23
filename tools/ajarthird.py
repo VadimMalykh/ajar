@@ -1,0 +1,129 @@
+"""Map helpers for a map played whole in three goes (MAP33; the lab is map
+THIRD, tools/map_third.py). src/zscript/third.zs has the contract; PLAN.md,
+"The three goes lab"."""
+import re
+
+import ajarmap
+import ajartime
+
+THIRD_T = 20160     # AjarThird: the map is played in goes (one to a map)
+HALL_T = 20161      # AjarThirdHall: a window hall
+POST_T = 20162      # AjarThirdPost: a monster of the future seen
+WATCH_T = 20163     # AjarThirdWatch: where an earlier self must not come before a hall is won
+WIN_T = 20164       # AjarThirdWin: a shutter a hall's win opens
+WIND_T = 20165      # AjarThirdWind: a plate on a wall that winds the clock on
+FIGHT = 9           # the fight number of the AjarZone over the whole map (the paradox's room)
+
+
+def time_door(k):
+    """The line id of time door k (at the end of part k)."""
+    return 3310 + k
+
+
+def box_door(k):
+    """The line id of box k's door (where time door k - 1 comes out)."""
+    return 3320 + k
+
+
+def box_tag(k):
+    """The sector tag of box k: its room and its door's recess."""
+    return 3330 + k
+
+
+def third(m, x, y, exit_tag, out_tag, zone, *, seconds=10):
+    """The map is played in goes (third.zs). `exit_tag`: the AjarShutter
+    that is the exit door, open while every plate is stood on and `seconds`
+    more; `out_tag`: the sector tag of the room behind it (through the door).
+    `zone` (x1, y1, x2, y2): the whole map, for the paradox (an AjarZone of
+    fight FIGHT)."""
+    m.thing(x, y, THIRD_T, args=(exit_tag, out_tag, seconds))
+    ajartime.zone(m, FIGHT, 0, *zone)
+
+
+def time_door_at(m, k, a, b, out, floor, **look):
+    """Time door k, in the end room of part k: a-b its 64-wide mouth, `out`
+    pointing out of the room. Through it, the player is in box k + 1."""
+    ajarmap.recess(m, a, b, out, floor, time_door(k), box_door(k + 1), far_colour=ajartime.TIME, **look)
+
+
+def box_door_at(m, k, a, b, out, floor, **look):
+    """Box k's door (in its wall, `out` pointing out of the box): where the
+    player comes out of time door k - 1. Shut for good."""
+    ajarmap.recess(m, a, b, out, floor, box_door(k), time_door(k - 1), far_colour=ajartime.TIME, tag=box_tag(k), **look)
+
+
+def box(m, k, poly, **look):
+    """Box k's room (its sectors carry box_tag(k))."""
+    return m.sector(poly, id=box_tag(k), **look)
+
+
+def hall(m, x, y, h, part, tag, tag2=0):
+    """Window hall h: every sector with `tag` (and `tag2`). The go of `part`
+    fights there and is recorded; every later go sees it played back."""
+    m.thing(x, y, HALL_T, args=(h, part, tag, tag2))
+
+
+def post(m, x, y, h, kind, angle=0):
+    """A monster of Doom editor number `kind` that hall h's fight has at x, y:
+    before that fight's go a body lies there (if it leaves one), in it the
+    monster stands there idle. Put it where it cannot leave (a pedestal 64
+    high, a pit) or give it a monster that leaves no body."""
+    m.thing(x, y, POST_T, angle=angle, args=(h, kind))
+
+
+def watch(m, x, y, tag, h, go=1):
+    """The earlier self of `go` must not come into a sector with `tag` while
+    hall h's fight is not won (the paradox)."""
+    m.thing(x, y, WATCH_T, args=(tag, h, go))
+
+
+def win(m, x, y, h, shutter_tag):
+    """The AjarShutter of `shutter_tag` is opened by hall h's win: open in
+    the goes before its fight's, shut in that go until the win, and in later
+    goes as it was then."""
+    m.thing(x, y, WIN_T, args=(h, shutter_tag))
+
+
+def plate(m, x, y, n):
+    """Plate n (the end of part n), on the floor."""
+    m.thing(x, y, ajartime.PLATE_T, args=(0, 0, 0, n))
+
+
+def wind(m, x, y, angle, z=30):
+    """A plate on a wall, facing `angle`, `z` over the floor: USE winds the
+    clock on to two seconds before an earlier self next steps on its plate.
+    Stand it 2 off the wall."""
+    m.thing(x, y, WIND_T, angle=angle, height=float(z))
+
+
+def reach(m, start):
+    """The sectors reached on foot from sector `start`, both ways over every
+    two-sided line that does not block (heights are not looked at: a drop
+    counts as a way back up, which only makes the check stricter)."""
+    text = m.textmap()
+    sides = [int(s) for s in re.findall(r"sidedef\{[^}]*?sector=(\d+);", text)]
+    nxt = {}
+    for ld in re.findall(r"linedef\{([^}]*)\}", text):
+        if "sideback" not in ld or "blocking=true" in ld:
+            continue
+        f = sides[int(re.search(r"sidefront=(\d+);", ld).group(1))]
+        k = sides[int(re.search(r"sideback=(\d+);", ld).group(1))]
+        nxt.setdefault(f, set()).add(k)
+        nxt.setdefault(k, set()).add(f)
+    seen, todo = {start}, [start]
+    while todo:
+        for q in nxt.get(todo.pop(), ()):
+            if q not in seen:
+                seen.add(q)
+                todo.append(q)
+    return seen
+
+
+def apart(m, starts):
+    """No part is joined to another on foot: `starts` {part: a sector of it};
+    what is reached from each is reached from no other."""
+    got = {p: reach(m, s) for p, s in starts.items()}
+    for p in got:
+        for q in got:
+            assert p == q or not got[p] & got[q], f"part {p} and part {q} are joined on foot"
+    return got

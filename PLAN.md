@@ -11917,3 +11917,281 @@ with 18 tracks (123 checks); GZDoom with sound on and a null device starts
 all 18 (`S_ChangeMusic` 1). **Not checked: how they sound**, least of all the
 instruments new to the game's music: music box, marimba, church organ,
 tremolo strings, horn, flute, clarinet, the warm pad, the glockenspiel.
+
+## The three goes lab (built 2026-11-23)
+
+Map THIRD (`MAP=THIRD ./run.sh`): MAP33's whole structure, small, in plain
+textures. The engine is `src/zscript/third.zs`, written against a map
+contract, so that MAP33 can use it unchanged; the map helpers are
+`tools/ajarthird.py`, the map `tools/map_third.py`, the tests
+`src/zscript/thirdtest.zs` (`MAP=THIRD MODE=3..9 tools/smoke.sh`).
+
+**The map.** Part 1 (yellow): the start hall S; the window hall W1 east of
+it, a fight of eight (three imps, three zombiemen, two sergeants); the
+gantry along the turbine hall R's north wall, its floor 96 over R's,
+behind a railing; the gantry's shutter; the end room E1 with plate 1 and
+time door 1. RED leans in S, and W1's north wall has a frame whose RED far
+side is in S's north wall. Part 2 (green): box 2 south of S (glass onto
+S); a corridor C2 with glass onto W1; its east end open onto R, 96 up (a
+drop); R: two mancubi on pedestals, an arachnotron in a pit, a pain
+elemental; the steel door; stairs up; E2 with plate 2, time door 2 and a
+wind plate. Part 3 (red): box 3 (glass onto S); a corridor; the duct
+along R's south wall (glass onto R); E3 with the exit door, the room
+behind it with the exit, and a wind plate. E1, E2 and E3 are a row with
+glass between, so each sees the other two. The generator asserts that
+no part is joined to another on foot (`ajarthird.apart`: a flood over
+every two-sided line that does not block, heights ignored).
+
+**The contract** (third.zs's head says it in full):
+- AjarThird (20160), one: args the exit door's sector tag (an AjarShutter),
+  the tag of the room behind it (the player there is through), its seconds
+  (0: 10). With it an AjarZone of fight 9 over the whole map (the paradox
+  works by zones).
+- Line id 3310+k: time door k. Line id 3320+k: box k's door, where time
+  door k-1 comes out. Sector tag 3330+k: box k (its room and its door's
+  recess). The number of parts is the last box's number.
+- AjarPlate with args[3] = n: plate n, at the end of part n.
+- AjarThirdHall (20161): window hall h, args (h, the part whose go fights
+  there, its sector tag, a second tag).
+- AjarThirdPost (20162): a monster of hall h's fight, args (h, Doom editor
+  number), at the thing's place and angle.
+- AjarThirdWatch (20163): args (sector tag, h, go): the earlier self of
+  that go must not come into those sectors while hall h is not won.
+- AjarThirdWin (20164): args (h, shutter tag): a shutter hall h's win opens.
+- AjarThirdWind (20165): a plate on a wall; USE winds on.
+- Monsters of a window hall are ordinary things in its sectors. Posts are
+  not monsters until their go.
+
+**The rules as built** (each with the mode that checks it):
+1. One clock (`ot`, the goes' clock of time.zs), 0 at the start of each go.
+   The HUD, top middle: "m:ss / m:ss" (this go, the longest earlier go) while
+   an earlier go is still playing, then this go's time alone, then "go k of
+   n". All modes.
+2. Go k plays part k. Time door k leads into box k+1 and the clock starts at
+   0 again. Health, armour, weapons and ammunition simply stay with the
+   player (it is the same actor). A carried door is put back by
+   `FirstDoors` and the player is told, as in plate.zs's `NextGo`.
+   Checked: `boxTwo` (box 2, health and bullets as at the door),
+   `boxThree`, `doorsAsAtTheStart`.
+3. Earlier selves are AjarGhosts set each tic to the record of their go (its
+   place, angle, pitch and picture), in their part's colour (TRNSLATE:
+   AjarSelf1 yellow, AjarSelf2 green, AjarSelf3 red, the player's green
+   ramp turned). Each is gone at its go's end. One on an AjarPlate presses
+   it (plate.zs as it was). Checked: `firstSelf`, `twoSelves`, self against
+   record after winding and loading; plates pressed by selves in every end
+   check.
+4. Doors: goes.zs's `GoWatch` writes down what the player did and
+   `GhostDoors` has every earlier self do it again at its tic. Go 1 hangs
+   RED in W1's frame (`redHung`). From part 2 it is seen done again at its
+   tic: box 2 looks onto S, where RED leans, and its far side shows in S's
+   north wall once hung. Checked: `doorsAsAtTheStart` at go 2's start, and
+   `redHungAgain`: in go 2, at the tic go 1 hung it (570 in the last run),
+   RED is in W1's frame again and the first self is where it was. No
+   screenshot shows its far side through the glass at that tic.
+5. Window halls: in the go of the hall's part, the hall is recorded tic by
+   tic into an AjarTrack (time.zs's record and puppets). That covers monsters
+   alive and dead, missiles, puffs and blood, and what lies about; not
+   players, earlier selves, puppets, or the level's own Ajar things. In
+   every later go it is played back from its start by puppets, in step
+   with the clock. Meanwhile the hall's real things are held: tics -1,
+   unseen, not solid, not shootable, kept in place. When the record ends,
+   the puppets go and the hall is as it was left. Checked: W1 against what
+   go 1 noted at five tics of its fight, in go 2 and again in go 3 (`w1AsItWas`
+   10 of 10, puppets where the monsters were, as they looked, no more and no
+   fewer); the real ones unseen meanwhile (`w1RealUnseen`), and seen after
+   (`w1AsLeft`).
+6. R. Go 1: an AjarFigure of the last death picture at each post (not
+   solid), and the shutters its win opens are open (`bodiesInR`,
+   `gantryOverBodies`, screenshot 1). Go 2: the figures go; the monsters
+   stand at their posts alive with AMBUSH, so they are idle until they see
+   the player; the shutters are shut (`rAlive`, `rIdle`). The win is every
+   post's monster dead and no monster alive in R's sectors (the pain
+   elemental's lost souls count). It opens the gantry's shutter and the
+   steel door at once (`rWon`). The paradox: the go-1 self comes onto the
+   gantry while R is not won. The universe ends, centred on that self, and
+   the player dies where they are, with "Your earlier self came onto the
+   gantry at 0:17, and then everything in the hall below was dead. Here it
+   is not." (`gantryParadox`, mode 4). Go 2's fight in R is a window hall
+   for go 3: before it the monsters stand there as puppets (`rBefore`),
+   during it they are as go 2 noted (`rAsItWas`), after it the real bodies
+   show (`rAfter`). In go 3 the shutters stay shut until go 2's win tic
+   (`shuttersShutBeforeWin`, `shuttersAsGoTwoWon`). Screenshot 5.
+7. The end. The exit door (an AjarShutter) is held open while plates 1 and 2
+   are both pressed, and 350 tics more. It is keyed with the tics left, so
+   it beeps its last three seconds as the press does. Time door 1 opens
+   once the player stands on plate 1 in go 1
+   (`plateOneOpensTimeDoorOne`). Time door 2 opens once the player stands
+   on plate 2 while plate 1 is pressed, which is the moment the exit door
+   opens (`doorOpensWithBoth`, `exitOpenInGoTwo`). Once open, a time door
+   stays open for the rest of its go. Too late, go 2: two tics after the
+   last tic at which the earlier selves hold plate 1 (from the records, the
+   pale stretches left out), with time door 2 not opened. It ends with "Your
+   earlier self left its plate for the last time at m:ss, and the door
+   never opened in this go." (`lateInGoTwo`, mode 5). Too late, go 3: the
+   earlier selves will not hold both plates again, the door's time is out,
+   it has shut, and the player is not behind it. It ends with "The exit door
+   has shut for the last time, and you are not through it." (`lateInGoThree`,
+   mode 6). Both end the universe where the player stands; no copy is
+   involved.
+8. An autosave (`LevelLocals.MakeAutoSave`) on the first tic and at each
+   time door. What the engine loads after death and USE: in single play
+   `G_DoReborn` loads the newest save of any kind (the engine's
+   BackupSaveName), so normally the autosave of the go's start. Tested both
+   ways, with real USE presses from the cfg. After the gantry paradox (mode
+   4: `loadedGoTwoStart`, `loadedPlays`) and after an ordinary death in go 2
+   (mode 9: `loadedTheGoTwoSave`, `loadedSelfPlays`, `loadedHallPlays`, and
+   W1 against go 1's notes after the load, 4 of 4), the loaded game is go 2
+   at tic 1. Go 1's record is whole (1319 tics before and after), as are W1's
+   track (1252 records, 56 slots) and the door logs, and the first self and
+   W1 play on as before. A save the player makes by hand becomes what is
+   loaded instead (not tested).
+9. Winding on, from the plates in E2 and E3 (AjarThirdWind, USE). The
+   clock goes to 70 tics before the next moment an earlier self steps onto
+   its own plate (the start of a span on it, after now plus 70). If there is
+   none: "No earlier self steps onto its plate after this", and the clock
+   stays (`windNoneLeft`). Done at once: the player's record over the stretch
+   is them standing there, marked pale; what the earlier selves did to doors
+   in the stretch is done in its order; a hall being played is put as its
+   record has it then (or ended); a hall being recorded gets empty tics; the
+   shutters, and in the last go the exit door, are set as the records have
+   them; the plates follow from the selves. The self that wound is pale over
+   its stretch (alpha 0.35, translucent, health 0 so it presses nothing, no
+   touch). No price. Mode 7: E2 in go 2 (`windToBeforePlateOne`, `windSelf`,
+   `windHall`, `windPale`); E3 in go 3 (`windInE3To`, `windInE3Selves`,
+   `windHallR`); go 2's self pale in go 3 over its stretch, off plate 2 then,
+   and solid after (`paleSelf`, `notPaleAfter`).
+10. The HUD's timetable under the clock, in the selves' colours: "1 comes
+    onto the gantry 0:17 (the hall below must be won)" in the watched hall's
+    go; "n on plate n a - b" for every span; in the last go "the exit door
+    open a - b". Seen in screenshots 2 to 5.
+11. The long go (mode 8): go 1 lasts 21034 tics (10 minutes), walking round
+    W1 from the end of its fight to tic 20720, then the gantry and plate 1.
+    In go 2, R is killed at once, then the clock is wound to 3000, 6000,
+    ..., 20000, 20500. At each, the first self is at its recorded place and
+    W1's puppets are as recorded (8 of 8). Then go 2 is too late, and the
+    paradox works over the whole record (250 echoes, `longLateParadox`).
+    Numbers:
+    - The self's record is 21034 tics × 5 doubles + 1 int, 0.93 MB in memory.
+    - W1's track over 21034 tics is 1144 records in 50 slots (it only
+      records changes), 130 KB.
+    - The door log has 2 entries. Working out the timetable over it takes
+      5.3 ms, once a go. A wind takes 0.1 to 1.1 ms.
+    - The go-2 autosave after it is 96 KB on disk, against 92 KB after a
+      1319-tic go 1. Inside, the level's JSON is 932 KB against 231 KB
+      (35.6 bytes a tic), deflated to 43 KB against 39 KB. That ratio flatters:
+      this go loops round the same walk. Varied play deflates worse; from the
+      short goes, roughly 20 to 25 bytes a tic deflated. So a save with two
+      earlier ten-minute goes would be about 1 MB, a guess, not measured.
+    - GZDoom 4.12 cannot run a level faster than real time (no singletics;
+      -timedemo is for demos), so mode 8 is one run of about 11 minutes.
+
+**Choices of mine** (Claude's; none asked for, each easy to change):
+- Earlier selves do not shoot and cannot be shot. Their shots are seen
+  only where a window hall recorded them (the player's rockets in R are in
+  go 3's view of it).
+- The arrival: the player comes out of the box's door a few units past its
+  line, which leads nowhere and is solid, so they would be stuck in it. They
+  are set a step clear (`ThirdClearDoor`). Found in testing: without it the
+  player could not move in box 3.
+- The pain elemental leaves no body (Doom's: it bursts), so in go 1 its
+  post shows nothing. Bodies are shown only for monsters whose death ends
+  in a lasting picture.
+- The win counts every live monster in the hall's sectors, not only the
+  posts', so the lost souls must die too.
+- A hall's real things are held by setting tics to -1, unseen, not solid,
+  not shootable and without a target, kept in place each tic, and given
+  back as they were when its record ends.
+- Winding puts only the records' things as they would be: real monsters
+  elsewhere do not move on. A go's own hall gets empty tics over a wind. In
+  THIRD that is harmless (E2 is reached only after R is won), but on a map
+  where one could wind with one's own hall still fighting, its record would
+  stand still there.
+- The late paradox in go 2 comes two tics after the last tic plate 1 is
+  held; in the last go it comes once the door has fully shut (12 tics
+  after its time is out).
+- The wind plate is AjarWind's picture, which says "30". That is wrong for
+  this plate, so MAP33 needs its own picture.
+- The engine's hooks: time.zs calls `ThirdLoaded` at the end of
+  WorldLoaded, `ThirdTick` in WorldTick (all of it, when the map is played
+  in goes) and `ThirdOverlay` in RenderOverlay. paradox.zs's `EndUniverse`
+  takes an optional reason (`why`, said in place of "You touched your earlier
+  self.") and `apart` (the end centred on the copy, no white shape of the
+  player); with no copy (i < 0) it is centred on the player. Existing
+  callers are unchanged. A load is seen by a transient field
+  (`thirdSeen`), for the tests.
+
+**The tests** (each `MAP=THIRD MODE=n tools/smoke.sh`, quick build; results
+on 2026-11-23):
+- `MODE=3`, the whole solution, three goes and out by the exit door: 51 of
+  51, including W1 against go 1 at five tics in each later go. It also
+  holds five views for `smoke_THIRD_3.cfg`'s screenshots. Go 1 leaves plate
+  1 at tic 1300 in this mode, so that the shots find the views.
+- `MODE=4`, go 2 stays in box 2: the gantry paradox at go 2's tic 608
+  (`gantryParadox`, `theDarkAfter`). Then USE (the cfg, `+use` at 2500)
+  loads go 2's save (`loadedGoTwoStart`, `loadedPlays`). All pass.
+- `MODE=5`, go 2 keeps off plate 2: `lateInGoTwo` (24 of 24).
+- `MODE=6`, go 3 waits in box 3: `lateInGoThree` (49 of 49).
+- `MODE=7`, winding in E2 and in E3, the pale self, none left: 58 of 58.
+- `MODE=8 TIMEOUT=760 EXTRA="+set save_dir /out/saves"`, the long go: all
+  pass (`longGoRecorded`, `longRWon`, eight samples, `longLateParadox`).
+- `MODE=9 EXTRA="+set save_dir /out/saves"`, the save: killed in go 2,
+  USE, loaded: all pass.
+- Not broken, on the same build: `MAP=PLATE MODE=3` and `MODE=4`,
+  `MAP=TWOKEY MODE=3`, `MAP=MAP32 MODE=10` (34 of 34), `MAP=MAP31 MODE=8`
+  (8 of 8, the paradox logged once).
+- The scripted player cannot press buttons from WorldTick: they are written
+  over before the player's think. So its shots are the script's
+  (`LineAttack`, `SpawnPlayerMissile`) and USE comes from the cfg.
+  `LevelLocals.MakeScreenShot()` wrote nothing headless, so the cfg takes
+  the screenshots.
+
+**Not tested / not played by hand**:
+- Nobody has played THIRD by hand. Not checked: the drop into R feels
+  fair, R's fight is winnable without god mode, and the timetable is
+  readable at speed.
+- RED's far side seen through box 2's glass at the tic go 1 hangs it (the
+  hang is checked, the sight is not).
+- A manual or quick save in a go: the engine would load that instead of
+  the go's start after a death.
+- A death in go 1 or go 3, and the paradox of touching an earlier self
+  (the parts cannot meet here).
+- What the selves' colours look like after a load (the translation is by
+  name, so it should hold).
+- The cost per tic of recording halls on a big map (every actor is looked
+  at once a tic), and a 21000-tic go of varied play (this one loops).
+- Music, sounds of the selves' door work at a distance, the HUD at other
+  resolutions.
+
+**The outline's "Waits for the lab", answered:**
+- A ten-minute go over a whole map: it works. Its record is about 44 bytes
+  a tic in memory (0.9 MB for ten minutes). A window hall records only
+  changes (W1: 1144 records in ten minutes, nearly all in its fight). The
+  go-2 save was 96 KB here; with varied play, guess about 0.5 MB a
+  ten-minute go in a save. Sampling it by winding takes about a millisecond.
+- A time door whose box is elsewhere, and one clock: yes. Line ids 3310+k
+  and 3320+k, box tag 3330+k; the player is set clear of the box door. The
+  clock is 0 at each go's start.
+- A window hall played to later goes in step: yes, checked against notes
+  of go 1 at five tics, in go 2, in go 3, and after a load.
+- The turbine hall: bodies for go 1 (but none for the pain elemental), the
+  monsters idle for go 2, the gantry paradox, go 3's view before, during and
+  after: all built and checked.
+- The end: plates held by earlier selves, the door and its ten seconds,
+  the time doors on success, the two late paradoxes: built and checked.
+- The save at each go's start, and the load after a death: the engine
+  loads the newest save, which is the go's start unless the player saved
+  since. The loaded game has every earlier go whole.
+- Winding on in an end room: built and checked in E2 and E3.
+
+**What a big map can count on:** the contract above, unchanged. The
+engine expects:
+- parts that do not meet on foot (`ajarthird.apart` checks it);
+- one zone of fight 9 over everything;
+- each window hall's sectors tagged, and nothing of another part in them;
+- monsters at posts that cannot leave them (pedestals, a pit) or that
+  leave no body;
+- a watched place that is the hall's own second tag.
+
+The engine sets aside the room-of-goes machinery of time.zs and plate.zs
+(halls, boxes and the touch rule are not used beyond what is listed). It
+needs nothing of MAP33's coordinates.

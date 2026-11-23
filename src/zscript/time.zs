@@ -499,6 +499,7 @@ class AjarTimeHandler : EventHandler
 			for (int n = 1; h.FindLine(BoxLine(k, n)); n++) h.Link(BoxLine(k, n), 0, TIME_TEX);
 		}
 		FindShows();
+		ThirdLoaded();              // third.zs: a map played whole in goes (MAP33)
 	}
 
 	// --- the show ---------------------------------------------------------------
@@ -2520,6 +2521,7 @@ class AjarTimeHandler : EventHandler
 		if (!zf.Size()) return;
 		let mo = players[consoleplayer].mo;
 		if (!mo) return;
+		if (third) { ThirdTick(PlayerPawn(mo)); return; }       // third.zs: the whole map in goes
 		if (paradox) { ParadoxTick(PlayerPawn(mo)); Tests(mo); return; }      // paradox.zs: this universe is over
 		if (reel && reel < 4) { ReelTick(PlayerPawn(mo)); Tests(mo); return; }
 		if (goes) { GoesTick(PlayerPawn(mo)); playerWas = mo.pos; Table(); Tests(mo); return; }      // a room of goes (plate.zs); the timetable (table.zs)
@@ -2653,6 +2655,7 @@ class AjarTimeHandler : EventHandler
 			return;
 		}
 		if (paradox) return;                // paradox.zs: no clock in a universe that is over
+		if (third) { ThirdOverlay(e); return; }     // third.zs
 		if (goes && GoesClock()) return;      // plate.zs
 		if (open && phase == LIVE && takes.Size() > 1)
 		{

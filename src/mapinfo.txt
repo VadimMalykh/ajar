@@ -37,6 +37,12 @@ DoomEdNums
 	20140 = AjarBasin                 // the water lab (water.zs): a basin, a room that holds water
 	20141 = AjarWeir                  // ... and a fixed overflow from one basin into another, with its wheel
 	20142 = AjarRaft                  // ... and a raft, afloat on a basin's surface
+	20160 = AjarThird                 // a map played whole in goes (third.zs; MAP33, the lab THIRD)
+	20161 = AjarThirdHall             // ... a window hall
+	20162 = AjarThirdPost             // ... a monster of the future seen
+	20163 = AjarThirdWatch            // ... where an earlier self must not come before a hall is won
+	20164 = AjarThirdWin              // ... a shutter a hall's win opens
+	20165 = AjarThirdWind             // ... a plate on a wall that winds the clock on
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -548,6 +554,17 @@ map TWOKEY "Ajar: two keys at once"
 map SHUT "Ajar: the shutter"
 {
 	next = "SHUT"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The three goes lab (tools/map_third.py): the whole map in three goes, MAP33's
+// engine. MAP=THIRD ./run.sh
+map THIRD "Ajar: three goes"
+{
+	next = "THIRD"
 	nointermission
 	nojump
 	nocrouch
