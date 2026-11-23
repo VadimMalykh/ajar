@@ -11089,3 +11089,155 @@ piece. (Asking a headless run what plays at a level's start answers "no
 music", for stock Doom II too, so that is not a check.)
 
 Still open: the title screen and the text screens have Doom's music.
+
+## MAP20 "High Water": water through doors (2026-11-23, outline; nothing built)
+
+**Vadim** (2026-11-23): "Let's start working on map20. Should be something
+special like map10 was. Also this should have another secret exit (secret
+map will be later)." Of three proposals he took the first: "Yes 1 is good."
+And on "special": it does not have to be a bus or a thing of that kind;
+that was what was special for MAP10, "for map 20 it can be anything else".
+Everything below is Claude's, to argue over. **Nothing is built and the
+engine has not been asked**: two labs were started the same day (map WATER,
+task `water-lab`; map LEFT, task `lefthand-lab`); their results go in "The
+water lab" and "The left-handed room lab", after this section.
+
+**One idea: water uses doors too.** No new rule. Core rule 4 says everything
+uses doors, and the campaign table of the first day had "water and light
+through doors". Light has had 13 and 15. What makes it the act's last
+level: in 11 to 19 a hanging joined two places and was undone by taking
+the door down. Water stays where a door put it. The building is changed,
+slowly and in sight, and the door is free again.
+
+**The rule as the player meets it**: water stands level on both sides of a
+hung door, measured from the door's sill (a door joins floor to floor).
+- *The reservoir* never runs dry and *the outfall* never fills. BLUE's far
+  side is in the reservoir, 96 or so of water over its sill; GREEN's is in
+  the outfall.
+- **The height of the frame sets the depth.** BLUE in a frame at the floor
+  makes a pool. BLUE in a frame on a gallery fills the hall to the gallery
+  and 96 over it.
+- **GREEN is a drain down to its own sill**: in a floor frame it empties the
+  room, in a frame half-way up it leaves the room half full. BLUE and GREEN
+  in one room: a level held near GREEN's sill, and a current from the one
+  to the other.
+- **A Pair is a pipe, and it lifts.** It joins sill to sill: a leaf low in
+  a full room, its twin in a frame 192 higher in another, and the second
+  room's water stands 192 over the first's.
+- **Water stays.** Take BLUE down and the pool is still there. To get it out
+  again takes GREEN, or a pipe to somewhere lower.
+- How it is reckoned (the lab builds it): every room that holds water is a
+  basin with a surface, a floor, a brim and an area; each hung door between
+  two basins passes, every tic, a volume in proportion to the difference of
+  the two depths over the sills, more freely where it falls out onto a dry
+  side. So water rises and falls over seconds, and what settles is what the
+  sentences above say.
+
+**What water does for the player.** It floats them up to ledges and frames
+no stair reaches, with a door in hand. Drained, it uncovers frames,
+hatches and what lay on the bottom. It shuts ways (a passage under water is
+a dive, a drained moat is a walk) and so the arrangement is the map once
+more ("the arrangement is the map", used by 19 for doors: here a court is
+entered when its water stands right). It carries what floats, if the lab
+finds a floating thing worth having. It drowns what walks, if that rule is
+kept (below).
+
+**The place**: the waterworks behind and under the institute, indoors and
+out, at MAP19's size or a little over (about 9000 x 5500, 900 sectors, 250
+monsters). The water tower (MAP19's grounds show it from the other side),
+the pump house, the staff baths and the swimming bath, the boiler house
+with its tall feed tank, the cooling hall of the big machine (flooded since
+the day it was left: the first room the player has to drain), the lock
+between the upper and the lower yard, the wheel house, the outfall on the
+river.
+
+**Steps**, each a thing to do, as in 11 to 13:
+1. *See it*: the baths, at the start. BLUE in the floor frame: a plunge
+   pool. BLUE in the gallery's frame: the hall fills and the player floats
+   up to the ledge with the way on.
+2. *Drain it*: the cooling hall, found full. What is needed is on its
+   floor; GREEN's frames are at three heights, and which is used decides
+   what is left standing.
+3. *The pipe*: the boiler house. The feed tank is filled from the bath
+   below it by a Pair, low leaf and high leaf, and climbed by floating.
+4. *The lock*: a chamber between two yards with a frame at each height.
+   The player rides the water up with a door in hand: the way a door is
+   carried to where no stair goes.
+5. *The circle*: the wheel house (the way out, below).
+
+**The way out: the wheel.** A spillway from an upper pool down to a lower,
+a wheel in it. A leaf at the foot and its twin at the head: the water
+falls into its own source and goes round for as long as both hang, if
+there is water enough below, and the wheel turns. The institute's
+perpetual motion machine, which the patent office never passed. While it
+turns it holds the sluice to the machine hall open: the way to 21 to 30.
+It wants three hangings at once (the Pair in the spillway, BLUE feeding
+the lower pool from a frame high enough) and the water standing right in
+two rooms, with the leaves and BLUE still needed elsewhere until then.
+Whether the last link is a brass frame and a door as well (Vadim asked of
+19 that the way out be made with doors) is open.
+
+**The secret way out: the left-handed copy** (Vadim, 2026-11-19: "for
+MAP20's secret exit"; see "MAP20's secret way out"). The swimming bath has
+a wall of mirrors, and one pane is an opening onto the bath built
+reflected. The tells: the player is not in it, nor the wave they make.
+Claude's addition, to argue over: the pane is above the tiles, out of
+reach from the floor, and is come to by flooding the bath and swimming up
+to it. Water goes through the opening as through any door, so the
+"reflection" fills as the bath does and stays true. In the left-handed
+bath one thing is not as it was: a door in the side wall, and the secret
+way out behind it. Until the secret level is made it leads on as the plain
+one does.
+
+**Fights only this level can have**: a hall that fills while it is fought
+in, the dry ground growing smaller; a cell flooded before it is entered,
+or drained to let out what was kept in the tank; a sluice opened on the
+player by an ambush, to be answered with GREEN; cacodemons and lost souls
+over water where nothing else can follow.
+
+**Nothing can be lost**: to be made true by construction, as in 19, and
+checked in the build. Every basin has a brim under its ceiling with an
+overflow to the outfall, so no room fills to the top and there is air at
+every surface. BLUE and GREEN can always be fetched by swimming, which
+needs no door. Whether the solver can carry water in its state (levels are
+numbers, not places) is not known; the generator's own measure, as 19's,
+is the likelier proof.
+
+**Waits for the labs**:
+- *Water*: a surface a script moves, in which the player swims (the levels
+  have `nojump`: how they rise is the first question); how it is drawn
+  through a hung door, level and while the two sides differ; taking and
+  hanging a door under water; shots and monsters in it; the rule of flow
+  settling at the levels written above; the wheel.
+- *The left-handed room*: a room built a second time reflected, with its
+  walls' writing and its props turned; whether the opening passes for a
+  mirror among mirrors.
+
+**Open, for Vadim**:
+- Whether what walks drowns (a monster whose head is under for three
+  seconds takes harm; the lab has it behind a switch). It makes flooding a
+  weapon, which the pitch's "disposal" promised and the institute has not
+  used; it also lets a patient player empty rooms without a fight.
+- Whether the player can drown (Doom's air supply), or dives are free.
+- The name ("High Water" is Claude's candidate; "Finding Its Level" the
+  other).
+- Company: none of Ajar's own (thief, nailer, lodger, repainter) is
+  proposed. A thief that takes BLUE while a hall is filling would be the
+  one to add.
+
+**The other two proposals, not taken** (Claude's, kept as notes):
+- *The vivarium*, "Feeding Time": the puzzle is the company. The institute
+  kept what came through the doors: cells, runs, observation rooms. The
+  bottle, the feeding hatch (the Small door), glass that shows one way (the
+  one-sided doorway in a fight), two cells set on each other; the first
+  monster too wide for a door, and the jigsaw wall as its gate (three doors
+  side by side in order are one wide opening; out of order the beast is
+  seen in shuffled strips). Wants the one test never run: something wider
+  than a door through neighbouring openings. Claude: a candidate for a
+  level of 21 to 30.
+- *The exam*, "Full Circle": one dead machine in the central hall, the
+  wings lifted from 11 to 19 as MAP10 lifted the town; it starts when the
+  beam, the crate, the pulse, the lift, the weight and the paper double all
+  arrive at once, and there are too few doors, so one hanging has to serve
+  two readers. Everything it needs is built; no new sight, and a heap of
+  ideas.
