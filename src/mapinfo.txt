@@ -33,6 +33,7 @@ DoomEdNums
 	20131 = AjarDelayShutter          // ... the night room's shutter, up while a pulse lives, and its lamps
 	20132 = AjarPassDesk              // the pass lab (pass.zs): a pass desk, that puts the double back on the player
 	20133 = AjarPassRegister          // ... and a register, signed by the double
+	20134 = AjarSoundButton           // the sound lab (soundlab.zs): a switch that picks a door sound or a track
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -410,6 +411,17 @@ map PASS "Ajar: the pass"
 	nocrouch
 	music = ""
 	EventHandlers = "AjarPassHandler", "PassTest"
+}
+
+// The sound lab (tools/map_soundlab.py, src/zscript/soundlab.zs): MAP=SOUND ./run.sh
+map SOUND "Ajar: the sound lab"
+{
+	next = "SOUND"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "AjarSoundLab"
 }
 
 // Sight lines (tools/map_optics.py): MAP=OPT ./run.sh
