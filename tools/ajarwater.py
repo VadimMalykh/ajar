@@ -15,8 +15,10 @@ tic by the script.
                 same at every height)
         brim    the highest its water stands (absolute)
         kind    NORMAL, RESERVOIR (always full: its surface `depth` over its
-                floor, which is the sill of the far side in it) or OUTFALL
-                (always empty)
+                floor, which is the sill of the far side in it), OUTFALL
+                (always empty) or FOLLOW (its surface is kept at that of the
+                basin tagged `depth`, every tic: MAP20's left-handed bath; it
+                has no links of its own and its area and brim are not used)
         depth   NORMAL: the water it starts with, over its floor
     weir(m, x, y, upper, lower, crest, chute, lamp, shutter)
         a fixed overflow from basin `upper` into basin `lower` over a crest
@@ -56,7 +58,7 @@ For a level (MAP20, tools/map_highwater.py):
         `tag` first stands at or over (`over`) or at or under `height`
 """
 BASIN_T, WEIR_T, RAFT_T = 20140, 20141, 20142      # AjarBasin, AjarWeir, AjarRaft (src/zscript/water.zs)
-NORMAL, RESERVOIR, OUTFALL = 0, 1, 2
+NORMAL, RESERVOIR, OUTFALL, FOLLOW = 0, 1, 2, 3
 CTL = 6000                              # the control sector of basin tag t has the tag CTL + t
 BULKHEAD = 9000                         # the dry side of a bulkhead into basin tag t: line id BULKHEAD + t
 SURFACE, SIDE = "FWATER1", "FWATER1"     # the water's top (Doom II's own, animated) and its sides (a flat, on a wall)
@@ -72,7 +74,8 @@ def basin(m, tag, area, brim, *, floor, kind=NORMAL, depth=0, at=None):
     n = getattr(m, "_basins", 0)
     m._basins = n + 1
     x, y = VOID[0] + 128 * n, VOID[1]
-    level = {NORMAL: floor + depth if depth else floor - DRY, RESERVOIR: floor + depth, OUTFALL: floor - DRY}[kind]
+    level = {NORMAL: floor + depth if depth else floor - DRY, RESERVOIR: floor + depth, OUTFALL: floor - DRY,
+             FOLLOW: floor - DRY}[kind]
     # The control sector, and beside it a second one, so that the line with
     # the special is two-sided: its front side then has an upper texture
     # (a 3D floor whose line has none is drawn with alpha 0).
@@ -121,9 +124,11 @@ def pressure_door(m, a, b, out, sill, tag, sides, lamp, *, thick=32, auto=False,
     lt = (thick - 16) // 2
     p = lambda q, d: (q[0] + out[0] * d, q[1] + out[1] * d)
     a1, b1, a2, b2, a3, b3 = p(a, lt), p(b, lt), p(a, lt + 16), p(b, lt + 16), p(a, thick), p(b, thick)
-    for s0, s1, t0, t1 in ((a, b, a1, b1), (a2, b2, a3, b3)):
+    # Each lamp strip on a basin's side carries that basin's tag too (moreids), so that the water's 3D floor
+    # is in it as in the rest of the basin: without it the surface stopped short of the door (a notch).
+    for side, (s0, s1, t0, t1) in zip(sides, ((a, b, a1, b1), (a2, b2, a3, b3))):
         m.sector([s0, s1, t1, t0], floor=sill, ceil=sill + 96, light=160, wall="AJTRIM", ftex="AJTRIMF", ctex=LAMP_TEX,
-                 id=lamp)
+                 id=lamp, raw=dict(moreids=str(side)) if side else None)
     m.sector([a1, b1, b2, a2], floor=sill, ceil=sill, light=160, id=tag, **look)
     for s, t in ((a1, b1), (a2, b2)):
         m.line(s, t, special=11, args=(0, 16), playeruse=True, repeatspecial=True)
