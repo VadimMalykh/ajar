@@ -10477,3 +10477,47 @@ carried by a scroller or a pusher across a portal; monsters taking the
 double for the player (the outline's open question: it is `NEVERTARGET`
 and nothing sees it); the cost of the picture on the real machine; more
 than one player.
+
+## A late act in Doom II's own maps (Vadim's idea, 2026-11-23; not designed)
+
+Vadim: "reuse some classic doom maps, but with our mechanics added (spacial +
+time paradoxes)", near the end, "after map 25 maybe". Claude's view the same
+day; nothing is built and nothing is decided beyond "it goes into the plan".
+
+**As a short act of two to four maps, late, with the classic maps patched as
+they load.** Not the maps copied into the package: "Doom II mod" already says
+that nothing from `doom2.wad` is copied into the pk3, and a changed copy of
+one of id's maps in the package or on GitHub would be exactly that. The act
+needs Doom II, as the whole game does.
+
+Why it should work:
+
+- A paradox is felt most in a place the player knows by heart. After 25 maps
+  of Ajar's own places, walking into Entryway with a door under the arm is a
+  turn of its own; everybody knows where the exit is, so hanging a door and
+  stepping straight to it is funny before it is a puzzle.
+- Doom's own doors could be the frames: the classic maps are full of doors,
+  and to unhinge one of those and hang it elsewhere is the mechanic meeting
+  its ancestor.
+- The arena maps suit time. Dead Simple fought beside one's earlier selves is
+  the plain candidate, in the manner of MAP32's room 3.
+
+What is hard:
+
+- **No proof by default.** Ajar's maps come out of a generator with a solver
+  behind it: nothing can be lost, nobody is stuck. A classic map has drops,
+  lifts and one-way routes the solver knows nothing of. Each map taken needs
+  its room graph written by hand for the solver, or the rule relaxed there
+  (a door that is lost comes back, say).
+- **They are maps for fighting.** The puzzle is laid over them by where the
+  few doors and frames are; most of the map stays scenery and combat.
+- **Whether a Doom door line can be a frame is an engine question**, not
+  looked at yet: Ajar's frames are lines of its own making, 64 wide, in a
+  recess; Doom's doors come in other widths and heights, and a map loaded
+  from the IWAD has no spare lines. A lab comes first, as for the one-sided
+  doorway and the pass: load a Doom II map, make one of its doors a frame
+  from ZScript, hang a door in it, walk through both ways.
+
+A first cut, to be argued over when the act comes up: three maps, Entryway
+(MAP01) for space, Dead Simple (MAP07) for time, and one more for both. Map
+numbers and names for them, and how the act is reached, are open.
