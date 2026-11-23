@@ -10891,6 +10891,44 @@ to come); desks 1 to 3 in MODE 3 with T set by the script; the timings
 with real input; the look in the hardware renderer; the level from MAP18's
 way out by a real exit (MAP18's run stops at its exit). Not played by hand.
 
+### MAP19: the link hall's side door let the player in and never out (fixed 2026-11-23)
+
+**Vadim** (2026-11-23, playing, in the link hall): "I still cannot get out of
+here. Exit is too small."
+
+- **Why.** The side door was two steps of 32 down from the hall (floor 64) to
+  the vestibule (0), each under its own lintel 96 over the step: 136, then
+  112. The engine lets a body down from a floor only when the whole of its
+  box (the player's is 32 by 32) is off that floor, and until then it has
+  to fit, at the upper floor's height, under every ceiling the box is under.
+  Off the hall the box is already under the second lintel, 48 over the
+  hall's floor, and the player is 56. Coming up he fits, so the door was a
+  trap: with both TEAL leaves hung in 105 and 106 there was no other way
+  out of the hall. The runs never walked it (they put the player in the
+  hall).
+- **Fixed** in `tools/map_paper.py`: both steps under one lintel, a door's
+  height (96) over the hall's floor.
+- **So that it is found next time**: `tools/mapcheck.py` reports `LINTEL`,
+  a step down that is shut this way (the player's box put just beyond every
+  straight piece of edge between a floor he gets to and a lower one; shut
+  when nowhere along it is free and a ceiling within 40 beyond is less than
+  56 over the upper floor; doors and sectors with an id left out). It
+  reports the old door and not the new one. `MAP=MAP19 MODE=1` now walks out
+  of the hall by the side door at a run, back in, and out at a walk (6
+  checks): on a package with the old door the player stops at y 3407.7,
+  still at 64, both times (4 of the 6 fail), with the fix all pass.
+- **Checks**: the full build; mapcheck on `map_paper` 0 problems;
+  `MAP=MAP19 MODE=1` 79 checks, `MODE=2` 34, `MODE=3` 51, none failed,
+  `levelExited`.
+- **The same check on every other map** (38 generators): one more place,
+  MAP12's store, "a hole and steps out": the hole (ceiling 64 over the
+  store's floor) opens straight onto steps 16 deep, so by the same rule the
+  player on the first step is still under the hole, in both directions. Not
+  yet asked of the engine; the next task. (MAP09's one report was a shut
+  door at the foot of a step, which opens: sectors of no height are now
+  left out.) The other problems mapcheck prints on old maps (41 `WALL`, 1
+  `VOID`) are not of this kind and were there before.
+
 ## The sound lab, second try: recordings (built 2026-11-23, on trial in a worktree)
 
 Vadim, after playing the first lab: "both sounds and music are pretty bad,
