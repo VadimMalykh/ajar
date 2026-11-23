@@ -51,6 +51,7 @@ import ctypes.util
 import io
 import math
 import os
+import random
 import struct
 import sys
 import wave
@@ -504,6 +505,90 @@ OWN = [
 ]
 
 
+
+# --- MAP20's water (water.zs): made here, from noise and the recordings above -------------------
+def _noise(t, seed):
+    r = random.Random(seed)
+    return [r.uniform(-1, 1) for _ in range(S(t))]
+
+
+def _loud(x):
+    """finish() without its fades: the gain to LOUD through the limiter (a loop's ends must meet)."""
+    m = sum(x) / len(x)
+    x = lowpass(highpass([v - m for v in x], 30), 6000)
+    target = 10 ** (LOUD / 20)
+    g = target / (loudest(x)[0] or 1e-9)
+    for _ in range(40):
+        y = limit([v * g for v in x])
+        e = LOUD - db(loudest(y)[0])
+        if abs(e) < 0.05:
+            break
+        g *= 10 ** (e / 20)
+    return y
+
+
+def _loop(x, t=0.25):
+    """The last `t` s laid over the first, fading across, so that the sound loops without a seam."""
+    n = S(t)
+    body, tail = x[:-n], x[-n:]
+    for i in range(n):
+        f = i / n
+        body[i] = body[i] * f + tail[i] * (1 - f)
+    return body
+
+
+def _bubbles(t, seed, rate=9.0, lo=500, hi=1400):
+    """Little rising sine chirps at random, as air comes up through water."""
+    r = random.Random(seed)
+    out = [0.0] * S(t)
+    k = 0.0
+    while True:
+        k += r.expovariate(rate)
+        if k > t - 0.08:
+            break
+        f0, d = r.uniform(lo, hi), r.uniform(0.02, 0.06)
+        a, ph = r.uniform(0.2, 0.6), 0.0
+        for i in range(S(d)):
+            f = f0 * (1 + 0.8 * i / S(d))
+            ph += 2 * math.pi * f / OUT
+            j = S(k) + i
+            if j < len(out):
+                out[j] += a * math.sin(ph) * math.sin(math.pi * i / S(d))
+    return out
+
+
+def water_running():
+    """Water through a door: a rushing noise, low-passed, over a few bubbles; a 2 s loop."""
+    rush = lowpass(lowpass(highpass(_noise(2.25, 20), 120), 1400), 2200)
+    return mix((norm(rush), 0), (norm(_bubbles(2.25, 21)), 0, -10))
+
+
+def water_splash():
+    """Going in or out: a burst of noise falling away, a cloth whoosh under it, bubbles after."""
+    burst = decay(lowpass(highpass(_noise(0.7, 22), 300), 3000), 0.35, 0.02)
+    whoosh = cut(speed(rpg("cloth1"), semis(-3)), 0, 0.4)
+    return mix((norm(fade_in(burst, 0.01)), 0), (norm(whoosh), 0, -6), (norm(_bubbles(0.5, 23, 20)), 0.15, -12))
+
+
+def wheel_turning():
+    """A paddle wheel: a slow knock (a book set down, an octave down) twice a turn, a pot's ring a
+    long way down after each, water noise under it; a 1.6 s loop."""
+    t = 1.85
+    knock = cut(speed(hit(rpg("bookPlace2")), 0.5), 0, 0.3)
+    ring = decay(cut(speed(cut(hit(rpg("metalPot1")), 0, 0.3), semis(-24)), 0, 0.5), 0.5, 0.02)
+    water = lowpass(highpass(_noise(t, 24), 100), 900)
+    return mix((norm(water), 0, -8), (norm(knock), 0.05), (norm(ring), 0.08, -9),
+               (norm(knock), 0.85, -2), (norm(ring), 0.88, -10))
+
+
+WATER = [
+    # logical name   lump       the recipe          a loop?
+    ("ajar/water",   "ajwater",  water_running,      True),
+    ("ajar/splash",  "ajsplash", water_splash,       False),
+    ("ajar/wheel",   "ajwheel",  wheel_turning,      True),
+]
+
+
 def wav(x):
     samples = [max(-32768, min(32767, int(round(v * 32767)))) for v in x]
     b = io.BytesIO()
@@ -541,6 +626,9 @@ def make_all():
             out[f"sounds/{lump}.wav"] = wav(finish(recipe()))
             snd.append(f"ajar/{kind}{count[kind]}\t{lump}\t\t// {name}: {first_line(recipe)}")
             own[kind].append(f"{kind}|ajar/{kind}{count[kind]}|{name}|1")
+        for logical, lump, recipe, loop in WATER:
+            out[f"sounds/{lump}.wav"] = wav(_loop(_loud(recipe())) if loop else finish(recipe()))
+            snd.append(f"{logical}\t{lump}\t\t// MAP20: {first_line(recipe)}")
         listing = game + [l for l in listing if l.startswith("take")] + own["take"] + [l for l in listing if l.startswith("set")] + own["set"]
         out["sndinfo.txt"] = "\n".join(snd) + "\n"
         out["ajsounds.txt"] = "\n".join(listing) + "\n"

@@ -437,7 +437,8 @@ class AjarHandler : EventHandler
 	// brings it: 1..4, taking that room key; 11..16, taking the door of that
 	// colour (less 10) for the first time; 21.., the target or sensor with that
 	// tag (less 20) set off; 41.., MAP17's checkers; 50, MAP18's first lap;
-	// 51..59, MAP19's register with that number (less 50) signed (pass.zs).
+	// 51..59, MAP19's register with that number (less 50) signed (pass.zs);
+	// 60 and 61, MAP20's basin first at or over, at or under a height (args[4]: water.zs).
 	// args[3], if set: it holds back until the player is
 	// within that distance of it and in sight of it. args[1]
 	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
@@ -480,7 +481,11 @@ class AjarHandler : EventHandler
 			int g = a.args[0];
 			if (!a.armed)
 			{
-				if (g == 50)                                    // MAP18: the first lap a pulse has made (clock.zs)
+				if (g == 60 || g == 61)                         // MAP20: a basin first at or over / under a height (water.zs)
+				{
+					if (!AjarWaterHandler.WaterDue(g, a.args[4])) continue;
+				}
+				else if (g == 50)                               // MAP18: the first lap a pulse has made (clock.zs)
 				{
 					if (!delayFirstLap) continue;
 				}
@@ -1184,7 +1189,7 @@ class AjarHandler : EventHandler
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
 		// MAP17's, MAP18's and MAP19's tests end with the level: the next map must not take the test up
-		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19") CVar.FindCVar("ajar_autotest").SetInt(0);
+		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1329,6 +1334,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "ONESIDE") return;   // so has the one-sided doorway lab (oneside.zs)
 		if (level.mapname ~== "PASS") return;      // and the pass lab (passtest.zs)
 		if (level.mapname ~== "MAP19") return;     // and MAP19 (map19.zs, PaperTest)
+		if (level.mapname ~== "MAP20") return;     // and MAP20 (map20.zs, HighWaterTest)
 		if (level.mapname ~== "SOUND") return;     // and the sound lab (soundlab.zs)
 		if (level.mapname ~== "WATER") return;     // and the water lab (watertest.zs)
 		if (level.mapname ~== "LEFT") return;      // and the left-handed room lab (lefthand.zs)

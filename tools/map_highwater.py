@@ -1,0 +1,979 @@
+"""Act 2, level 10: "High Water" (MAP20), the waterworks behind and under the
+institute. PLAN.md, "MAP20 'High Water': the first version, as decided"; the
+water is the water lab's (map WATER, tools/map_water.py, tools/ajarwater.py,
+src/zscript/water.zs). It wears MAP19's look (AJAR_INSTITUTE) for now.
+
+The rule (the lab's): water stands level on both sides of a hung door,
+measured from the door's sill. BLUE's far side is in the reservoir (96 over
+its sill), GREEN's in the outfall (always dry). Four doors only: BLUE, GREEN
+and the two TEAL leaves.
+
+Places (x east, y north; floor 0 is the baths' floor):
+  the baths (stage 1, "see it"): the changing room (the start), the swimming
+    bath off it (a room only in this version), the plunge hall P (101 at the
+    floor, 102 on the gallery at 128, the ledge at 216 behind its coaming),
+    the changing room's upper floor at 240 (from the ledge; the gallery's
+    own door, bolted on its side, comes out in it)
+  the pump corridor and the pump house (GREEN), the cooling hall C (stage 2,
+    "drain it"; 111 on the walkway at 104, 112 on the landing at 0, 113 at
+    the floor at -128; E2 and two cells in its floor, pressure doors)
+  the passage from E2 and the boiler house with the feed tank T (stage 3,
+    "the pipe"; 121 in T, the float that raises the yard gate)
+  the lower yard (0) and the upper yard (192), the lock K between them
+    (stage 4; 131, 135 at its floor, 133 on a shelf at 88), the wheel house
+    (stage 5; L at -96 with 107 and 109, U at 128 with 108, the spillway and
+    the wheel), the sluice, the tunnel and the machine hall (the way out)
+  the reservoir (behind glass from the upper yard) and the outfall (from the
+    lower yard): BLUE's and GREEN's far sides, not walked but through a door
+
+No solver PUZZLE: water levels are numbers, not places. Instead the measure
+(MEASURE, every build) runs the lab's rule of flow, written again here, to
+rest for every hanging the plan names, and checks the four facts of "nothing
+can be lost" on a graph of the places; the build fails on a broken rule.
+"""
+import math
+import os as _os
+
+import ajarmap
+import ajarwater as W
+import map_institute1 as I1
+import map_clockdept as CD
+from ajarmap import GREEN, BLUE, TEAL, far_id
+from map_institute1 import dress, tint, over, LOOK
+from map_institute1 import ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, CHAINGUNNER, KNIGHT, REVENANT, CACO
+from map_institute1 import BARON, SOUL, MANCUBUS
+from udmf import MONSTERS, Map, rect
+
+ARACH, PAIN, VILE = 68, 71, 64
+
+m = Map()
+_theirs, I1.m = I1.m, m                     # MAP11's helpers draw on their module's map: this one while this file runs
+_cd, CD.m = CD.m, m
+if LOOK:
+    import gfx_institute
+    m.align |= gfx_institute.ALIGNED
+
+# === the rate and the rules (water.zs reads them from the rate thing) =================================
+K_FLOW = 1000           # volume a tic per unit of head difference through a hung door (the lab's is 2048)
+FREE = 6                # ... this many times that onto a dry sill (the lab's)
+K_WEIR = K_FLOW         # over the spillway's crest, per unit over it (as in the lab: the same as K)
+WHEEL_FLOW = 2 * K_WEIR  # the wheel counts as turning over this (2 over the crest) ...
+WHEEL_TICS = 192        # ... for this long (the lab's is 105: 3 s; here 5.5 s, so that the wait is not under 5 s)
+HOLD = W.HOLD
+REACH = 24              # the player climbs out from water no more than this under a ledge (the lab)
+DIVE = 260              # the deepest dive "nothing can be lost" allows
+WAIT = (5, 25)          # no wait the level asks for is shorter or longer (s)
+FLOAT_MARK, FLOAT_SECONDS = 216, 2
+
+# === tags ========================================================================================
+TP, TC, TT, TK, TL, TU, TSB, TR, TO = 21, 22, 23, 24, 25, 26, 27, 28, 29     # basins
+PD_P, PD_E2, PD_CA, PD_CB, PD_T, PD_K = 41, 42, 43, 44, 45, 46                # pressure doors (sector tags)
+LAMP0 = 50              # + (pressure door tag - 40): its two lamps
+GD_TAG, GW_TAG, LEDGE_TAG, YARD_TAG, SLUICE, WLAMP, CHUTE = 61, 62, 63, 64, 65, 66, 67
+MAPSPOT = 9001
+NAMES = {TP: "P (the plunge hall)", TC: "C (the cooling hall)", TT: "T (the feed tank)", TK: "K (the lock)",
+         TL: "L (the lower pool)", TU: "U (the upper pool)", TSB: "the swimming bath", TR: "the reservoir",
+         TO: "the outfall"}
+SHORT = {TP: "P", TC: "C", TT: "T", TK: "K", TL: "L", TU: "U", TSB: "SB", TR: "R", TO: "O"}
+
+# === the look ======================================================================================
+SKY = "F_SKY1"
+
+
+def look(wall, ftex, ctex, light, ceil, color=None):
+    return dict(ceil=ceil, light=light, color=tint(color), **dress(wall=wall, ftex=ftex, ctex=ctex))
+
+
+def sky(wall, ftex, light, ceil):
+    d = look(wall, ftex, "KC", light, ceil)
+    d["ctex"] = SKY
+    return d
+
+
+PALE, MINT, PAPER, DIM, RUST, COLD, STEEL = 0xDCE8DC, 0xC8E0C8, 0xF0E4C8, 0xB0B8C8, 0xE8C8B0, 0xA8C0D8, 0xC8D0E0
+CHANGE = look("CK", "FC", "KC", 200, 192, PAPER)
+BATH = look("LA", "FA", "KA", 210, 320, PALE)
+PUMP = look("PU", "FP", "KP", 180, 352, COLD)
+CORR = look("CO", "FC", "KC", 180, 344, MINT)
+HALL = look("PU", "FP", "KP", 170, 400, COLD)
+BOIL = look("EX", "FE", "KE", 176, 448, RUST)
+YARD = sky("PU", "FP", 220, 512)
+UPYARD = dict(sky("LB", "FL", 230, 640), ftex="GRASS1")
+WORKS = look("EX", "FE", "KE", 190, 256, STEEL)
+GLASS = dict(mid="AJGLAS", midboth=True, blocking=True, blockhitscan=True, blockprojectiles=True)
+
+BASINS = {}             # tag -> dict(name, floor, area, brim, kind, depth, at)
+AREAS = {}              # name -> (box, floor): where monsters and things may stand
+TAKEN = []              # (x, y, r): what stands where
+AVOID = []              # (x, y): fronts of frames and doors: nothing placed near
+
+
+def basin(tag, brim, kind=W.NORMAL, depth=0, at=None):
+    BASINS[tag] = dict(name=NAMES[tag], floor=None, area=0, brim=brim, kind=kind, depth=depth, at=at)
+
+
+def S(box, floor, lk, *, ceil=None, tag=0, area=None, **k):
+    """A rectangular sector `box` at `floor` in the look `lk`; `tag` a basin's
+    (its plan area counts, unless `area` False) or any other sector tag."""
+    d = dict(lk)
+    c = d.pop("ceil")
+    d.update(k)
+    i = m.sector(rect(*box), floor=floor, ceil=c if ceil is None else ceil, id=tag, **d)
+    if tag in BASINS:
+        b = BASINS[tag]
+        b["floor"] = floor if b["floor"] is None else min(b["floor"], floor)
+        if area is not False:
+            b["area"] += (box[2] - box[0]) * (box[3] - box[1])
+    return i
+
+
+def stairs(a, b, out, floor, rise, steps, depth, lk, *, ceil=None, tag=0):
+    d = dict(lk)
+    c = d.pop("ceil")
+    ajarmap.stairs(m, a, b, out, floor, rise, steps=steps, depth=depth, ceil=c if ceil is None else ceil, id=tag, **d)
+    if tag in BASINS:
+        bb = BASINS[tag]
+        w = abs(a[0] - b[0]) + abs(a[1] - b[1])
+        bb["area"] += w * depth * steps
+        lowest = min(floor + rise * (i + 1) // steps for i in range(steps))
+        bb["floor"] = lowest if bb["floor"] is None else min(bb["floor"], lowest)
+
+
+def area(name, box, floor):
+    AREAS[name] = (box, floor)
+
+
+FRAMES = {}             # n -> dict(basin, sill, place, mouth, out)
+FARS = {}               # colour -> dict(basin, sill)
+
+
+def front(a, b, out, d=32):
+    return ((a[0] + b[0]) / 2 - out[0] * d, (a[1] + b[1]) / 2 - out[1] * d)
+
+
+def frame(a, b, out, n, sill, tag, place):
+    ajarmap.recess(m, a, b, out, sill, n, far_id(BLUE), tag=tag)
+    FRAMES[n] = dict(basin=tag, sill=sill, place=place, mouth=((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), out=out)
+    AVOID.append(front(a, b, out))
+
+
+def far(a, b, out, colour, sill, tag):
+    ajarmap.recess(m, a, b, out, sill, far_id(colour), 101, far_colour=colour, tag=tag)
+    FARS[colour] = dict(basin=tag, sill=sill, mouth=((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), out=out)
+
+
+def gauge(a, b):
+    W.gauge(m, a, b)
+
+
+def opening(box, floor, lk=None, height=96):
+    lk = lk or dict(light=170, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF", ceil=0)
+    d = dict(lk)
+    d.pop("ceil")
+    m.sector(rect(*box), floor=floor, ceil=floor + height, **d)
+    AVOID.append(((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
+
+
+def pressure(a, b, out, sill, tag, sides, *, thick=32, auto=False):
+    W.pressure_door(m, a, b, out, sill, tag, sides, LAMP0 + tag - 40, thick=thick, auto=auto)
+    PDOORS[tag] = dict(sill=sill, sides=sides, auto=auto)
+    AVOID.append(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2))
+
+
+PDOORS = {}
+
+# =================================================================================================
+# THE BATHS (stage 1, "see it")
+# =================================================================================================
+basin(TP, 232, at=(800, 256))
+basin(TSB, 0, at=(-704, 256))
+# --- the changing room: the start ----------------------------------------------------------------
+CR0 = (0, 0, 448, 384)
+S(CR0, 0, CHANGE)
+area("cr0", CR0, 0)
+m.thing(224, 64, 1, angle=90)
+TAKEN.append((224, 64, 64))
+# --- the swimming bath, off it: the pool (the pit at -160, the shallow end at -96, steps up to the poolside)
+SBL = look("LA", "FA", "KA", 215, 320, PALE)
+S((-832, 0, -576, 512), -160, SBL, tag=TSB)                                    # the pit
+S((-576, 0, -416, 512), -96, SBL, tag=TSB)                                     # the shallow end
+stairs((-416, 0), (-416, 512), (1, 0), -96, 96, 4, 24, SBL, tag=TSB)          # up to the poolside (the last step is 0)
+S((-320, 0, -32, 640), 0, SBL)                                                 # the poolside
+S((-832, 512, -320, 640), 0, SBL)
+area("sb", (-320, 0, -32, 640), 0)
+opening((-32, 128, 0, 192), 0)
+for y in (32, 128, 224, 320, 416):                                             # five tall panes, all mirrors for now
+    m.sector(rect(-848, y, -832, y + 64), floor=0, ceil=288, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+    m.line((-848, y), (-848, y + 64), special=182)                             # Line_Mirror
+    m.line((-832, y), (-832, y + 64), blocking=True, blockeverything=True)
+frame((-768, 0), (-704, 0), (0, -1), 141, -160, TSB, "sb")
+frame((-528, 0), (-464, 0), (0, -1), 142, -96, TSB, "sb")
+gauge((-640, 0), (-576, 0))
+PANE_SILL = 0
+
+# --- the plunge hall P ---------------------------------------------------------------------------------
+P_BOX = (480, 0, 1120, 512)
+GALLERY, LANDING, LEDGE, COAMING = 128, 240, 216, 232
+S((480, 0, 544, 128), 0, BATH, tag=TP)
+stairs((480, 128), (544, 128), (0, 1), 0, GALLERY, 8, 32, BATH, tag=TP)       # up to the gallery, under water
+S((544, 0, 1040, 384), 0, BATH, tag=TP)
+S((1040, 0, 1120, 128), 0, BATH, tag=TP)
+S((1040, 320, 1120, 384), 0, BATH, tag=TP)
+S((480, 384, 1120, 448), GALLERY, BATH, tag=TP)                                # the gallery
+S((480, 448, 576, 512), GALLERY, BATH, tag=TP)
+stairs((576, 448), (576, 512), (1, 0), GALLERY, LANDING - GALLERY, 7, 32, BATH, tag=TP)   # on up, to the gallery door
+S((800, 448, 864, 512), LANDING, BATH)                                         # the landing, over the brim
+S((864, 448, 1120, 512), GALLERY, BATH, tag=TP)
+S((1040, 128, 1056, 320), COAMING, BATH)                                       # the ledge's coaming, round three sides ...
+S((1056, 128, 1120, 144), COAMING, BATH)
+S((1056, 304, 1120, 320), COAMING, BATH)
+S((1056, 144, 1120, 304), LEDGE, BATH)                                         # ... and the ledge: no stair
+area("p", (544, 0, 1040, 384), 0)
+area("ledge", (1056, 144, 1120, 304), LEDGE)
+pressure((448, 32), (448, 96), (1, 0), 0, PD_P, (0, TP))                       # P's own door from the changing room
+ajarmap.bolted(m, (800, 512), (864, 512), (0, 1), LANDING, GD_TAG, thick=96)   # the gallery's door, bolted on its far side
+frame((736, 0), (800, 0), (0, -1), 101, 0, TP, "p")
+frame((960, 512), (1024, 512), (0, 1), 102, GALLERY, TP, "p_gal")
+gauge((544, 0), (608, 0))
+# the ledge door: opens by USE and stays open (a stage gate)
+m.sector(rect(1120, 192, 1152, 256), floor=LEDGE, ceil=LEDGE, light=160, wall="BIGDOOR2", ftex="FLAT20", ctex="FLAT20",
+         id=LEDGE_TAG)
+for x in (1120, 1152):
+    m.line((x, 192), (x, 256), special=11, args=(LEDGE_TAG, 32), playeruse=True, repeatspecial=True)
+for y in (192, 256):
+    m.line((1120, y), (1152, y), mid="DOORTRAK", dontpegbottom=True)
+AVOID.append((1136, 224))
+
+# --- the changing room's upper floor (240): from the ledge by the pump corridor ---------------------------------
+UPPER = look("CK", "FC", "KC", 196, 400, PAPER)
+S((0, 608, 1056, 864), LANDING, UPPER)
+S((1056, 608, 1120, 864), LANDING, UPPER)
+area("cr1", (0, 608, 1056, 864), LANDING)
+
+# =================================================================================================
+# THE PUMP CORRIDOR, THE PUMP HOUSE, THE COOLING HALL (stage 2, "drain it")
+# =================================================================================================
+S((1152, 160, 1184, 288), LEDGE, CORR)
+S((1184, 160, 1472, 288), LEDGE, CORR)
+ajarmap.unbolt(m, (1184, 160), (1184, 288), GD_TAG)                            # the first steps from the ledge draw the gallery's bolt
+S((1152, 288, 1216, 672), LEDGE, CORR)
+opening((1120, 608, 1152, 672), LANDING)
+area("pc", (1184, 160, 1472, 288), LEDGE)
+area("pcn", (1152, 288, 1216, 672), LEDGE)
+PH_Z = 104
+stairs((1472, 160), (1472, 288), (1, 0), LEDGE, PH_Z - LEDGE, 8, 32, CORR)
+opening((1728, 160, 1760, 288), PH_Z)
+PH = (1760, 0, 2272, 768)
+S(PH, PH_Z, PUMP, ceil=PH_Z + 288)
+area("ph", PH, PH_Z)
+opening((2272, 672, 2304, 736), PH_Z)
+
+C_FLOOR, C_LAND, WALK, C_BRIM, C_FOUND = -128, 0, 104, 100, 96
+basin(TC, C_BRIM, depth=C_FOUND - C_FLOOR, at=(2816, 384))
+CH = dict(HALL)
+S((2304, 640, 3328, 768), WALK, CH)                                            # the walkway: north ...
+S((2304, 256, 2368, 640), WALK, CH)                                            # ... west ...
+S((3264, 256, 3328, 640), WALK, CH)                                            # ... and east
+stairs((2304, 256), (2368, 256), (0, -1), WALK, C_LAND - WALK, 5, 32, CH, tag=TC)     # down to the landing
+S((2304, 0, 2496, 96), C_LAND, CH, tag=TC)                                     # the landing
+stairs((2496, 0), (2496, 96), (1, 0), C_LAND, C_FLOOR - C_LAND, 6, 32, CH, tag=TC)    # on down to the floor
+S((2368, 96, 3264, 640), C_FLOOR, CH, tag=TC)
+S((2688, 0, 3264, 96), C_FLOOR, CH, tag=TC)
+S((3264, 0, 3328, 256), C_FLOOR, CH, tag=TC)
+area("cwalk", (2304, 640, 3328, 768), WALK)
+area("cwalkw", (2304, 256, 2368, 640), WALK)
+area("cwalke", (3264, 256, 3328, 640), WALK)
+area("cfloor", (2368, 96, 3264, 640), C_FLOOR)
+frame((2944, 768), (3008, 768), (0, 1), 111, WALK, TC, "cwalk")
+frame((2368, 0), (2432, 0), (0, -1), 112, C_LAND, TC, "c")
+frame((2752, 0), (2816, 0), (0, -1), 113, C_FLOOR, TC, "c")
+gauge((2880, 0), (2944, 0))
+pressure((2944, 0), (3008, 0), (0, -1), C_FLOOR, PD_E2, (TC, 0))               # E2: to the passage and the boiler house
+CELL_A, CELL_B = (3024, -400, 3200, -32), (3216, -400, 3424, -32)
+CELL = look("PU", "FP", "KP", 120, C_FLOOR + 128, RUST)
+S(CELL_A, C_FLOOR, CELL)
+S(CELL_B, C_FLOOR, CELL)
+pressure((3104, 0), (3168, 0), (0, -1), C_FLOOR, PD_CA, (TC, 0), auto=True)    # the cells: open when C is first dry
+pressure((3232, 0), (3296, 0), (0, -1), C_FLOOR, PD_CB, (TC, 0), auto=True)
+# the passage from E2, and its stair up to the boiler house
+PASS = look("PU", "FP", "KP", 150, C_FLOOR + 128, COLD)
+S((2944, -480, 3008, -32), C_FLOOR, PASS)
+S((3008, -480, 3712, -416), C_FLOOR, PASS)
+stairs((3648, -416), (3712, -416), (0, 1), C_FLOOR, 0 - C_FLOOR, 8, 48, PASS, ceil=160)
+opening((3648, -32, 3712, 0), 0)
+area("pass", (3008, -480, 3712, -416), C_FLOOR)
+# the gangway: from the east walkway down to the boiler house, bolted on its side
+ajarmap.bolted(m, (3328, 384), (3328, 448), (1, 0), WALK, GW_TAG, thick=32)
+stairs((3360, 384), (3360, 448), (1, 0), WALK, -WALK, 8, 28, CORR, ceil=WALK + 160)
+
+# =================================================================================================
+# THE BOILER HOUSE AND THE FEED TANK (stage 3, "the pipe")
+# =================================================================================================
+T_BRIM = 272
+basin(TT, T_BRIM, at=(4200, 640))
+BH = (3584, 0, 4352, 768)
+S((3584, 0, 4352, 416), 0, BOIL)
+S((3584, 416, 4064, 704), 0, BOIL)
+S((3584, 704, 3712, 768), 0, BOIL)
+stairs((3712, 704), (3712, 768), (1, 0), 0, T_BRIM, 16, 22, BOIL)              # the dry stair up to the rim
+S((4064, 416, 4352, 480), T_BRIM, BOIL)                                        # the catwalk
+S((4064, 480, 4096, 528), T_BRIM, BOIL)                                        # the tank's west wall, its rim at 272 ...
+pressure((4064, 528), (4064, 592), (1, 0), 0, PD_T, (0, TT))                    # ... the manhole ...
+S((4064, 592, 4096, 608), T_BRIM, BOIL)
+m.sector(rect(4064, 608, 4096, 624), floor=8, ceil=T_BRIM - 8, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF",
+         id=TT)                                                                # ... the gauge glass (the water stands in it) ...
+for x in (4064, 4096):
+    m.line((x, 608), (x, 624), **GLASS)
+S((4064, 624, 4096, 768), T_BRIM, BOIL)
+m.cut((4064, 624), (4064, 688))
+m.line((4064, 624), (4064, 688), lower="AJFLOATM", dontpegbottom=False)       # ... and the float mark beside it
+S((4096, 480, 4352, 512), T_BRIM, BOIL)                                        # the south wall's rim
+S((4096, 512, 4288, 768), 0, BOIL, tag=TT)                                     # in the tank
+stairs((4288, 768), (4352, 768), (0, -1), 0, T_BRIM, 16, 16, BOIL, tag=TT)     # its stair up to the rim, under water
+area("bh", (3584, 0, 4352, 416), 0)
+area("bhw", (3584, 416, 4064, 704), 0)
+area("catwalk", (4064, 416, 4352, 480), T_BRIM)
+frame((4160, 768), (4224, 768), (0, 1), 121, 0, TT, "t")
+gauge((4224, 768), (4288, 768))
+W.float_gate(m, 4200, 704, TT, FLOAT_MARK, YARD_TAG, FLOAT_SECONDS)
+# the yard gate, which the float raises
+m.sector(rect(3616, 768, 3680, 864), floor=0, ceil=0, light=160, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF", id=YARD_TAG)
+for x in (3616, 3680):
+    m.line((x, 768), (x, 864), mid="AJTRIM", dontpegbottom=True)
+AVOID.append((3648, 816))
+
+# =================================================================================================
+# THE YARDS, THE LOCK, THE WHEEL HOUSE (stages 4 and 5)
+# =================================================================================================
+LY = (3584, 864, 5184, 1856)
+UY_Z, K_SILL, K_SHELF, K_BRIM = 192, 192, 88, 200
+L_FLOOR, L_BRIM, U_FLOOR, CREST, U_BRIM = -96, -4, 128, 160, 184
+FOUNTAIN = (4352, 1216, 4864, 1536)
+CD.fit(LY, [(FOUNTAIN, dict(floor=40, **dress(side="TK"))),                    # a fountain's basin: its curb is 40 high
+            ((4384, 1248, 4832, 1504), dict(floor=16, ftex="FWATER1")),
+            ((5168, 1280, 5184, 1344), dict(ceil=112, ctex="TLITE6_5", light=96, id=WLAMP))],   # the wheel's lamp
+       floor=0, **YARD)
+area("ly", LY, 0)
+AREAS["ly"] = (LY, 0)
+LY_OBST = [FOUNTAIN]
+# the sluice, the tunnel, the machine hall (the way out)
+m.sector(rect(5184, 1280, 5216, 1344), floor=0, ceil=0, light=160, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF", id=SLUICE)
+for y in (1280, 1344):
+    m.line((5184, y), (5216, y), mid="AJTRIM", dontpegbottom=True)
+AVOID.append((5160, 1312))
+S((5216, 1248, 5600, 1376), 0, look("PU", "FP", "KP", 140, 128, COLD))
+area("tunnel", (5216, 1248, 5600, 1376), 0)
+S((5600, 1056, 6048, 1568), 0, WORKS)
+S((6048, 1056, 6112, 1568), 0, WORKS, light=250)
+m.line((6048, 1056), (6048, 1568), special=243, playercross=True)              # Exit_Normal
+area("mh", (5600, 1056, 6048, 1568), 0)
+# the outfall (GREEN's far side), seen from the lower yard through glass
+basin(TO, 256, kind=W.OUTFALL, at=(5408, 1664))
+S((5248, 1504, 5568, 1824), 0, look("PU", "FP", "KP", 140, 256, COLD), tag=TO)
+far((5568, 1632), (5568, 1696), (1, 0), GREEN, 0, TO)
+m.sector(rect(5184, 1600, 5248, 1728), floor=24, ceil=168, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+for x in (5184, 5248):
+    m.line((x, 1600), (x, 1728), **GLASS)
+
+# --- the lock K ------------------------------------------------------------------------------------------
+basin(TK, K_BRIM, at=(4032, 2080))
+KL = sky("PU", "FP", 210, 512)
+S((3904, 1920, 4160, 2240), 0, KL, tag=TK)
+S((4160, 1920, 4224, 2112), 0, KL, tag=TK)
+S((4160, 2112, 4224, 2240), K_SHELF, KL, tag=TK)                               # the shelf: only a swimmer reaches it
+S((3968, 2240, 4096, 2304), K_SILL, KL)                                        # the open sill onto the upper yard
+pressure((3968, 1856), (4032, 1856), (0, 1), 0, PD_K, (0, TK), thick=64)        # from the lower yard
+frame((3904, 1984), (3904, 2048), (-1, 0), 131, 0, TK, "k")
+frame((4224, 1984), (4224, 2048), (1, 0), 135, 0, TK, "k")
+frame((4224, 2144), (4224, 2208), (1, 0), 133, K_SHELF, TK, "shelf")
+gauge((3904, 2176), (3904, 2240))
+# the lock's own way out at any level, empty handed: through a squeeze at its floor and up a stair behind
+# its west wall to the upper yard (a door cannot go through the squeeze, so it is not a way up for one)
+S((3840, 2080, 3888, 2144), 0, KL, tag=TK)
+stairs((3840, 2144), (3888, 2144), (0, 1), 0, K_SILL, 8, 12, KL, tag=TK)
+S((3840, 2240, 3888, 2304), K_SILL, KL, tag=TK)
+ajarmap.squeeze(m, (3904, 2096), (3904, 2144), (-1, 0), 0, thick=16)
+area("k", (3904, 1920, 4160, 2240), 0)
+
+# --- the squeeze stair (empty hands, both ways) and the terrace (a drop, any hands) between the yards ------
+ajarmap.squeeze(m, (3648, 1856), (3696, 1856), (0, 1), 0, thick=32)
+S((3632, 1888, 3712, 1936), 0, KL)
+stairs((3632, 1936), (3712, 1936), (0, 1), 0, UY_Z, 10, 32, KL)
+S((3632, 2256, 3712, 2272), UY_Z, KL)
+opening((3632, 2272, 3712, 2304), UY_Z, sky("PU", "FP", 200, UY_Z + 128))
+S((3744, 1856, 3808, 2304), UY_Z, KL)                                          # the terrace: a drop into the lower yard
+
+# --- the upper yard --------------------------------------------------------------------------------------
+UY = (3584, 2304, 5184, 3264)
+S(UY, UY_Z, UPYARD)
+area("uy", UY, UY_Z)
+# the reservoir (BLUE's far side) in the water tower, behind glass
+basin(TR, 448, kind=W.RESERVOIR, depth=96, at=(5408, 2784))
+S((5248, 2624, 5568, 2944), UY_Z, look("LB", "FL", "KL", 200, 448, STEEL), tag=TR)
+far((5568, 2752), (5568, 2816), (1, 0), BLUE, UY_Z, TR)
+m.sector(rect(5184, 2720, 5248, 2848), floor=UY_Z + 24, ceil=UY_Z + 168, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+for x in (5184, 5248):
+    m.line((x, 2720), (x, 2848), **GLASS)
+
+# --- the wheel house: L (the lower pool), U (the upper pool), the spillway and its wheel ------------------
+basin(TL, L_BRIM, at=(4700, 2000))
+basin(TU, U_BRIM, at=(4600, 2192))
+WH = sky("PU", "FP", 200, 448)
+stairs((4480, 1856), (4608, 1856), (0, 1), 0, L_FLOOR, 4, 16, WH, tag=TL)      # down into L from the lower yard
+S((4416, 1920, 5120, 2080), L_FLOOR, WH, tag=TL)
+stairs((4480, 2304), (4608, 2304), (0, -1), UY_Z, U_FLOOR - UY_Z, 4, 16, WH, tag=TU)   # down into U from the upper yard
+S((4416, 2144, 4800, 2240), U_FLOOR, WH, tag=TU)
+S((4800, 2144, 4832, 2240), CREST, WH, tag=TU)                                 # the crest
+stairs((4832, 2240), (4960, 2240), (0, -1), CREST, L_FLOOR - CREST, 8, 20, WH, tag=CHUTE)   # the spillway, down into L
+frame((5120, 1984), (5120, 2048), (1, 0), 107, L_FLOOR, TL, "l")
+frame((4416, 1952), (4416, 2016), (-1, 0), 109, L_FLOOR, TL, "l")
+frame((4416, 2160), (4416, 2224), (-1, 0), 108, U_FLOOR, TU, "u")
+gauge((4672, 1920), (4736, 1920))
+gauge((4672, 2240), (4736, 2240))
+W.weir(m, 4896, 2176, TU, TL, CREST, CHUTE, WLAMP, SLUICE)
+
+# --- the basins' things, the rate -------------------------------------------------------------------------
+for tag, b in BASINS.items():
+    W.basin(m, tag, b["area"], b["brim"], floor=b["floor"], kind=b["kind"], depth=b["depth"], at=b["at"])
+W.rate(m, 224, 192, K_FLOW, FREE, W.FLOAT | W.OVERFLOW, WHEEL_TICS)
+
+# =================================================================================================
+# THE DOORS
+# =================================================================================================
+ajarmap.door(m, BLUE, 672, 160, angle=0)                                       # BLUE leans by the plunge
+ajarmap.door(m, GREEN, 2208, 384, angle=180)                                   # GREEN in the pump house
+ajarmap.pair(m, TEAL, (2624, 352, 90), (2944, 288, 90))                        # both TEAL leaves on C's floor
+for x, y in ((672, 160), (2208, 384), (2624, 352), (2944, 288)):
+    TAKEN.append((x, y, 40))
+
+
+# =================================================================================================
+# THE FIGHTS AND WHAT IS PICKED UP (MAP19's weapons in MAP19's order; what walks drowns)
+# =================================================================================================
+area("l", (4416, 1920, 5120, 2080), L_FLOOR)
+area("u", (4416, 2144, 4800, 2240), U_FLOOR)
+area("cella", CELL_A, C_FLOOR)
+area("cellb", CELL_B, C_FLOOR)
+OBST = {"ly": LY_OBST}
+NOROOM = []
+
+
+def halton(i, b):
+    f, r = 1, 0
+    while i:
+        f /= b
+        r += f * (i % b)
+        i //= b
+    return r
+
+
+def spot(name, r=20):
+    """A free place for a thing of radius r in area `name`: off its walls, clear of every other
+    thing and of the fronts of frames and doors (a Halton sequence: the same every build)."""
+    (x1, y1, x2, y2), _ = AREAS[name]
+    obs = OBST.get(name, [])
+    mx = min(16, (x2 - x1) / 2 - r - 1)
+    my = min(16, (y2 - y1) / 2 - r - 1)
+    for k in range(1, 4000):
+        x = round((x1 + mx + r + halton(k, 2) * (x2 - x1 - 2 * mx - 2 * r)) / 8) * 8
+        y = round((y1 + my + r + halton(k, 3) * (y2 - y1 - 2 * my - 2 * r)) / 8) * 8
+        if not (x1 + r < x < x2 - r and y1 + r < y < y2 - r):
+            continue
+        if any(o[0] - r - 24 < x < o[2] + r + 24 and o[1] - r - 24 < y < o[3] + r + 24 for o in obs):
+            continue
+        if any(max(abs(x - tx), abs(y - ty)) < r + tr + 8 for tx, ty, tr in TAKEN):
+            continue
+        if any(math.hypot(x - ax, y - ay) < 80 for ax, ay in AVOID):
+            continue
+        TAKEN.append((x, y, r))
+        return x, y
+    NOROOM.append(name)
+    return x1 + 64, y1 + 64
+
+
+R = {CACO: 31, PAIN: 31, MANCUBUS: 48, ARACH: 64, BARON: 24, KNIGHT: 24, DEMON: 30, SPECTRE: 30}
+COMPANY = {}            # place -> {kind: count} (the write-up)
+
+
+def put(name, kind, n, angle=0, skill=None):
+    for _ in range(n):
+        x, y = spot(name, R.get(kind, 20))
+        if skill:
+            m.thing(x, y, kind, angle=angle, skill=skill)
+        else:
+            m.thing(x, y, kind, angle=angle)
+    COMPANY.setdefault(name, {})
+    COMPANY[name][kind] = COMPANY[name].get(kind, 0) + n
+
+
+def wambush(name, over, tag, height, kind, n, angle=0, after=0, near=0):
+    spots = [spot(name, R.get(kind, 20)) for _ in range(n)]
+    W.water_ambush(m, over, tag, height, kind, *spots, angle=angle, after=after, near=near)
+    key = f"{name} (water)"
+    COMPANY.setdefault(key, {})
+    COMPANY[key][kind] = COMPANY[key].get(kind, 0) + n
+
+
+def ambush(name, cause, kind, n, angle=0, after=0, near=0):
+    spots = [spot(name, R.get(kind, 20)) for _ in range(n)]
+    ajarmap.ambush(m, cause, kind, *spots, angle=angle, after=after, near=near)
+    key = f"{name} (ambush)"
+    COMPANY.setdefault(key, {})
+    COMPANY[key][kind] = COMPANY[key].get(kind, 0) + n
+
+
+def item(kind, x, y):
+    m.thing(x, y, kind)
+    TAKEN.append((x, y, 16))
+
+
+def items(name, kind, n):
+    for _ in range(n):
+        m.thing(*spot(name, 16), kind)
+
+
+# what is picked up: the weapons where MAP19 has them in the order of the way (shotgun, chaingun,
+# super shotgun, rocket launcher, plasma rifle)
+item(2001, 320, 288)                                    # the shotgun: the changing room
+item(2002, 1088, 224)                                   # the chaingun: on the ledge, the stage's prize
+item(82, 1968, 160)                                     # the super shotgun: the pump house
+item(2003, 4160, 448)                                   # the rocket launcher: the boiler house's catwalk
+item(2004, 4960, 3008)                                  # the plasma rifle: the upper yard, by the reservoir's glass
+item(2018, 640, 736)                                    # green armour: the changing room's upper floor
+AMMO = [("cr0", 2008, 3), ("cr0", 2011, 2), ("sb", 2008, 2), ("sb", 2012, 1), ("p", 2008, 2), ("cr1", 2007, 3),
+        ("cr1", 2049, 1), ("cr1", 2012, 1), ("pc", 2007, 1), ("pcn", 2011, 1), ("cr1", 2011, 1), ("ph", 2049, 2), ("ph", 2048, 1),
+        ("ph", 2012, 2), ("cwalk", 2049, 2), ("cwalk", 2048, 1), ("cwalkw", 2011, 1), ("ph", 2011, 2), ("bh", 2049, 1),
+        ("bh", 2046, 1), ("pass", 2012, 1), ("bh", 2046, 2), ("bh", 2049, 2), ("bh", 2048, 1), ("bh", 2012, 2),
+        ("bhw", 2010, 4), ("bhw", 2011, 3), ("ly", 2046, 3), ("ly", 2049, 2), ("ly", 2048, 2), ("ly", 17, 1),
+        ("ly", 2012, 3), ("ly", 2047, 3), ("uy", 17, 2), ("uy", 2046, 2), ("uy", 2049, 2), ("uy", 2012, 3),
+        ("uy", 2047, 2), ("l", 2049, 1), ("l", 2012, 1), ("tunnel", 2046, 1), ("tunnel", 2012, 1),
+        ("mh", 17, 1), ("mh", 2012, 2), ("mh", 2046, 1),
+        ("cr1", 2049, 1), ("ph", 2049, 1), ("bh", 2049, 1), ("bhw", 2046, 1), ("ly", 2046, 1), ("ly", 17, 1),
+        ("ly", 2048, 1), ("uy", 2048, 1), ("p", 2012, 1), ("pc", 2012, 1), ("bhw", 2012, 1), ("ly", 2012, 1),
+        ("uy", 2012, 1), ("bhw", 2019, 1)]
+AMMO.append(("ph", 8, 1))                              # a backpack: the pump house
+for name, kind, n in AMMO:
+    items(name, kind, n)
+
+# the baths: a few to learn on; cacodemons over the water when P first stands over 200
+put("cr0", ZOMBIE, 2, angle=270)
+put("sb", ZOMBIE, 3, angle=0)
+put("sb", SERGEANT, 1, angle=0)
+put("p", IMP, 3, angle=180)
+put("p", SERGEANT, 2, angle=180)
+put("cr1", IMP, 4, angle=0)
+put("cr1", CHAINGUNNER, 2, angle=0)
+put("cr1", SERGEANT, 2, angle=0)
+wambush("p", True, TP, 200, CACO, 3, angle=180)
+# the pump corridor and the pump house: the fight for GREEN
+put("pc", SERGEANT, 2, angle=180)
+put("pcn", SERGEANT, 1, angle=270)
+put("pcn", IMP, 2, angle=270)
+put("ph", IMP, 6, angle=180)
+put("ph", DEMON, 3, angle=180)
+put("ph", SPECTRE, 2, angle=180)
+put("ph", CHAINGUNNER, 2, angle=180)
+put("ph", REVENANT, 1, angle=180)
+ambush("ph", 10 + GREEN, IMP, 4, angle=180, after=2)
+ambush("ph", 10 + GREEN, KNIGHT, 2, angle=180, after=4)
+# the cooling hall: revenants and imps on the walkway while it is full; the cells
+put("cwalk", REVENANT, 2, angle=270)
+put("cwalke", REVENANT, 1, angle=180)
+put("cwalk", IMP, 4, angle=270)
+put("cwalkw", IMP, 3, angle=0)
+put("cella", DEMON, 3, angle=90)
+put("cella", KNIGHT, 2, angle=90)
+put("cellb", DEMON, 3, angle=90)
+put("cellb", KNIGHT, 2, angle=90)
+put("cellb", BARON, 1, angle=90)
+wambush("cwalke", False, TC, C_FLOOR + 8, IMP, 2, angle=180, after=3)
+wambush("cwalk", False, TC, C_FLOOR + 8, IMP, 2, angle=270, after=3)          # when C is first dry: the walkway's second lot
+# the passage and the boiler house: chaingunners on the catwalk, company when the float trips
+put("pass", ZOMBIE, 4, angle=0)
+put("pass", SPECTRE, 2, angle=180)
+put("catwalk", CHAINGUNNER, 2, angle=180)
+put("bhw", CHAINGUNNER, 2, angle=0)
+put("bh", IMP, 4, angle=90)
+put("bh", KNIGHT, 2, angle=90)
+put("bhw", REVENANT, 2, angle=0)
+wambush("bh", True, TT, FLOAT_MARK, CACO, 3, angle=90, after=1)
+wambush("bhw", True, TT, FLOAT_MARK, IMP, 4, angle=0, after=2)
+# the lower yard: the big open fight
+put("ly", MANCUBUS, 2, angle=270)
+put("ly", ARACH, 2, angle=270)
+put("ly", CACO, 3, angle=270)
+put("ly", PAIN, 1, angle=270)
+put("ly", IMP, 6, angle=270)
+put("ly", SERGEANT, 4, angle=270)
+put("ly", CHAINGUNNER, 2, angle=270)
+put("ly", REVENANT, 2, angle=270)
+# the lock: lost souls and cacodemons at the sill when K first stands over 150
+wambush("uy", True, TK, 150, SOUL, 6, angle=270)
+wambush("uy", True, TK, 150, CACO, 2, angle=270, after=2)
+# the upper yard: an arch-vile and its court
+put("uy", VILE, 1, angle=270)
+put("uy", KNIGHT, 3, angle=270)
+put("uy", REVENANT, 2, angle=270)
+put("uy", IMP, 4, angle=270)
+put("uy", CHAINGUNNER, 2, angle=270)
+put("uy", MANCUBUS, 1, angle=270)
+# the wheel house
+put("l", IMP, 3, angle=90)
+put("u", SERGEANT, 2, angle=270)
+# behind the sluice: what it lets out when the wheel first turns
+put("tunnel", DEMON, 2, angle=180)
+put("mh", DEMON, 1, angle=180)
+put("tunnel", IMP, 1, angle=180)
+put("mh", IMP, 2, angle=180)
+put("mh", KNIGHT, 2, angle=180)
+put("mh", BARON, 1, angle=180)
+put("mh", REVENANT, 2, angle=180)
+put("mh", CHAINGUNNER, 2, angle=180)
+
+# where the tests stand the player (map20.zs: MapSpot tids)
+TEST_SPOTS = {}
+
+
+def test_spot(tid, x, y, angle):
+    TEST_SPOTS[tid] = (x, y, angle)
+    m.thing(x, y, MAPSPOT, id=tid, angle=angle)
+
+
+for n, fr in FRAMES.items():                            # 1000 + n: before frame n, facing it
+    (x, y), o = fr["mouth"], fr["out"]
+    test_spot(1000 + n, x - o[0] * 40, y - o[1] * 40, round(math.degrees(math.atan2(o[1], o[0]))) % 360)
+VIEWS = {2001: (520, 480, 315), 2002: (2336, 736, 315), 2003: (2976, 200, 270), 2004: (3900, 640, 0),
+         2005: (4200, 448, 90), 2006: (3648, 900, 0), 2007: (4032, 2280, 270), 2008: (4544, 2288, 270),
+         2009: (4900, 1312, 0), 2010: (-200, 300, 180), 2011: (1088, 224, 0), 2012: (832, 640, 270),
+         2013: (5300, 1312, 0), 2014: (4032, 2340, 270), 2015: (4000, 1820, 90), 2016: (2000, 400, 0),
+         2017: (3300, -448, 0), 2018: (3296, 416, 0), 2019: (3560, 416, 180), 2020: (416, 64, 0),
+         2021: (2944, 64, 270), 2022: (4064, 704, 0)}
+for tid, (x, y, a) in VIEWS.items():
+    test_spot(tid, x, y, a)
+
+
+# =================================================================================================
+# THE MEASURE: the lab's rule of flow written again (water.zs, AjarWaterHandler: Links, Spills,
+# Apply), run to rest for every hanging the plan names; the four facts of "nothing can be lost"
+# =================================================================================================
+TIC = 35
+
+
+class Flow:
+    """The water of the level, as water.zs keeps it, one tic at a time."""
+
+    def __init__(self, levels=None, k=K_FLOW, overflow=True):
+        self.k, self.overflow = k, overflow
+        self.w = {}
+        for tag, b in BASINS.items():
+            if b["kind"] == W.OUTFALL:
+                self.w[tag] = b["floor"] - 32
+            else:
+                self.w[tag] = min(max(b["floor"] + b["depth"], b["floor"]), b["brim"])
+        self.w.update(levels or {})
+        self.links = []             # (basin a, sill a, basin b, sill b)
+        self.turning = 0            # tics the spill has stayed over WHEEL_FLOW
+        self.spill = 0
+
+    def fixed(self, t):
+        return BASINS[t]["kind"] != W.NORMAL
+
+    def hang(self, door, n, twin=None):
+        f = FRAMES[n]
+        if door == TEAL:
+            g = FRAMES[twin]
+            self.links.append((f["basin"], f["sill"], g["basin"], g["sill"]))
+        else:
+            g = FARS[door]
+            self.links.append((f["basin"], f["sill"], g["basin"], g["sill"]))
+        return self
+
+    def take(self, n):
+        s = FRAMES[n]["sill"], FRAMES[n]["basin"]
+        self.links = [l for l in self.links if (l[1], l[0]) != s and (l[3], l[2]) != s]
+        return self
+
+    def q(self, a, sa, b, sb):
+        w = self.w
+        sign = 1
+        ha, hb = w[a] - sa, w[b] - sb
+        if ha < hb:
+            a, b, sa, sb, ha, hb, sign = b, a, sb, sa, hb, ha, -1
+        if ha <= 0:
+            return 0
+        q = (self.k * FREE if hb <= 0 else self.k) * (ha - max(hb, 0))
+        ia = 0 if self.fixed(a) else 1 / BASINS[a]["area"]
+        ib = 0 if self.fixed(b) else 1 / BASINS[b]["area"]
+        if ia + ib > 0:
+            q = min(q, (ha - hb) / (ia + ib))
+        if not self.fixed(a):
+            q = min(q, ha * BASINS[a]["area"])
+        if not self.fixed(b) and not self.overflow:
+            q = min(q, (BASINS[b]["brim"] - w[b]) * BASINS[b]["area"])
+        return max(q, 0) * sign
+
+    def move(self, a, b, q):
+        for t, d in ((a, -q), (b, q)):
+            if not self.fixed(t):
+                bb = BASINS[t]
+                self.w[t] = min(max(self.w[t] + d / bb["area"], bb["floor"]), bb["brim"])
+
+    def tic(self):
+        qs = [(a, b, self.q(a, sa, b, sb)) for a, sa, b, sb in self.links]
+        over = self.w[TU] - CREST
+        s = self.k * over if over > 0 else 0          # K_WEIR is the level's K
+        s = min(s, max(over, 0) * BASINS[TU]["area"])
+        if not self.overflow:
+            s = min(s, (BASINS[TL]["brim"] - self.w[TL]) * BASINS[TL]["area"])
+        self.spill = max(s, 0)
+        for a, b, q in qs:
+            self.move(a, b, q)
+        self.move(TU, TL, self.spill)
+        self.turning = self.turning + 1 if self.spill > 2 * self.k else 0
+
+    def run(self, watch, ok, seconds=120, hold=0):
+        """Runs `seconds`; returns (where `watch` rests, seconds until within 1 of it, seconds until
+        ok(level) first held `hold` seconds on end and for good (None: never), seconds the wheel
+        first counted as turning (None: never))."""
+        trace, wheel = [], None
+        for t in range(seconds * TIC):
+            self.tic()
+            trace.append(self.w[watch])
+            if wheel is None and self.turning >= WHEEL_TICS:
+                wheel = (t + 1) / TIC
+        rest = trace[-1]
+        settle = 0
+        for i in range(len(trace) - 1, -1, -1):
+            if abs(trace[i] - rest) > 1:
+                settle = (i + 1) / TIC
+                break
+        at = None
+        if ok(rest):
+            i = len(trace)
+            while i > 0 and ok(trace[i - 1]):
+                i -= 1
+            at = i / TIC + hold
+        return rest, settle, at, wheel
+
+
+def _found():
+    return Flow()
+
+
+# Each named hanging: (what it is, what is hung, the basin to read, what it is for and the height
+# that must be reached for it (the water no more than REACH under it), meant: True an answer meant
+# (must reach), False a wrong one named (must not), None a step (reported only), a wait the level asks for?)
+def _runs():
+    runs = []
+    def add(name, flow, watch, what, need, meant, wait, mark=None, hold=0):
+        runs.append(dict(name=name, flow=flow, watch=watch, what=what, need=need, meant=meant, wait=wait, mark=mark,
+                         hold=hold))
+    add("BLUE in 101", Flow().hang(BLUE, 101), TP, "the ledge (its coaming 232)", COAMING, False, False)
+    add("BLUE in 102", Flow().hang(BLUE, 102), TP, "the ledge (its coaming 232)", COAMING, True, True)
+    add("GREEN in 111", Flow().hang(GREEN, 111), TC, "E2 opens (under 16 at its sill)", None, None, False)
+    add("GREEN in 112", Flow().hang(GREEN, 112), TC, "E2 opens (under 16 at its sill)", None, False, True)
+    add("GREEN in 113", Flow().hang(GREEN, 113), TC, "E2 opens (under 16 at its sill)", None, True, True)
+    add("BLUE in 121", Flow({TC: C_FLOOR}).hang(BLUE, 121), TT, "the float mark 216, 2 s", None, False, False,
+        FLOAT_MARK, FLOAT_SECONDS)
+    add("TEAL 113-121, BLUE in 111", Flow().hang(TEAL, 113, 121).hang(TEAL, 121, 113).hang(BLUE, 111), TT,
+        "the float mark 216, 2 s", None, True, True, FLOAT_MARK, FLOAT_SECONDS)
+    add("TEAL 101-121 from P 224, BLUE in 102", Flow({TP: 224}).hang(TEAL, 101, 121).hang(TEAL, 121, 101).hang(BLUE, 102), TT,
+        "the float mark 216, 2 s", None, True, True, FLOAT_MARK, FLOAT_SECONDS)
+    add("TEAL 101-121 from P 224, no BLUE", Flow({TP: 224}).hang(TEAL, 101, 121).hang(TEAL, 121, 101), TT,
+        "the float mark 216, 2 s", None, False, False, FLOAT_MARK, FLOAT_SECONDS)
+    add("BLUE in 131 (alone)", Flow().hang(BLUE, 131), TK, "the sill 192", K_SILL, False, False)
+    add("  ... the shelf", Flow().hang(BLUE, 131), TK, "frame 133 on the shelf 88", K_SHELF, True, False)
+    add("then BLUE in 133", Flow({TK: 96}).hang(BLUE, 133), TK, "the sill 192", K_SILL, True, True)
+    add("BLUE in 141", Flow().hang(BLUE, 141), TSB, "the panes (sills 0)", PANE_SILL, False, False)
+    add("BLUE in 142", Flow().hang(BLUE, 142), TSB, "the panes (sills 0)", PANE_SILL, True, True)
+    add("BLUE in 109", Flow().hang(BLUE, 109), TL, "L at its brim -4", L_BRIM, True, True)
+    add("circle, L full: TEAL 107-108", Flow({TL: L_BRIM}).hang(TEAL, 107, 108).hang(TEAL, 108, 107), TU,
+        "the wheel turning", None, True, True)
+    add("circle, L dry: TEAL 107-108", Flow().hang(TEAL, 107, 108).hang(TEAL, 108, 107), TU,
+        "the wheel turning", None, False, False)
+    return runs
+
+
+def _pair_once(flow):
+    """A Pair links once (water.zs: from the leaf in the lower-numbered frame): the runs above
+    hang both leaves, so keep one of the two links."""
+    seen, keep = set(), []
+    for l in flow.links:
+        key = frozenset(((l[0], l[1]), (l[2], l[3])))
+        if key not in seen:
+            seen.add(key)
+            keep.append(l)
+    flow.links = keep
+    return flow
+
+
+def _maxlevels():
+    """The highest each basin can ever stand: through any door, from the reservoir down."""
+    top = {t: (b["floor"] + b["depth"] if b["kind"] != W.OUTFALL else b["floor"]) for t, b in BASINS.items()}
+    sills = [(f["basin"], f["sill"]) for f in FRAMES.values()] + [(f["basin"], f["sill"]) for f in FARS.values()]
+    for _ in range(50):
+        for t, b in BASINS.items():
+            if b["kind"] != W.NORMAL:
+                continue
+            best = top[t]
+            for a, sa in sills:
+                if a != t:
+                    continue
+                for c, sc in sills:
+                    if c != t and top[c] > sc:
+                        best = max(best, top[c] - sc + sa)
+            if t == TL:
+                best = max(best, L_FLOOR)
+            top[t] = min(best, b["brim"])
+    top[TL] = L_BRIM
+    return top
+
+
+# the ways out of each basin with empty hands, and the levels they are good for (lo, hi): the
+# pressure door while it is under HOLD at its sill; a stair that goes on under water out over the
+# brim (any level); a ledge or sill while the water is no more than REACH under it
+EXITS = {
+    TP: [("its pressure door", 0, HOLD), ("the stair to the landing and the gallery's door", 0, 999),
+         ("over the coaming to the ledge", COAMING - REACH, 999)],
+    TC: [("the stair up to the walkway", C_FLOOR, 999), ("E2", C_FLOOR, C_FLOOR + HOLD)],
+    TT: [("the manhole", 0, HOLD), ("its stair up to the rim", 0, 999)],
+    TK: [("its pressure door", 0, HOLD), ("the squeeze and the stair behind it", 0, 999),
+         ("over the sill", K_SILL - REACH, 999)],
+    TL: [("the stair up to the lower yard", L_FLOOR, 999)],
+    TU: [("the stair up to the upper yard", U_FLOOR, 999)],
+    TSB: [("the steps up to the poolside", -160, 999)],
+}
+
+# Where a door can be carried (places, by name; FRAMES[n]["place"]); squeezes are not ways for it.
+# A pressure door is: the basin behind it can always be emptied through a frame at its floor (GREEN).
+# ("water", basin, level): only while the basin stands at least so high (a swim with the door).
+CARRY = [
+    ("cr0", "p", None), ("p", "cr0", None), ("p", "p_gal", None), ("p_gal", "p", None),
+    ("p_gal", "cr1", None), ("cr1", "p_gal", None),                     # the gallery's door: bolt drawn from the ledge on
+    ("p", "ledge", (TP, COAMING - REACH)), ("ledge", "p", None),
+    ("ledge", "pc", None), ("pc", "ledge", None), ("cr1", "pc", None), ("pc", "cr1", None),
+    ("pc", "ph", None), ("ph", "pc", None), ("ph", "cwalk", None), ("cwalk", "ph", None),
+    ("cwalk", "c", None), ("c", "cwalk", None),
+    ("c", "pass", None), ("pass", "c", None), ("pass", "bh", None), ("bh", "pass", None),
+    ("cwalk", "bh", None), ("bh", "cwalk", None),                       # the gangway, once its bolt is drawn
+    ("bh", "t", None), ("t", "bh", None), ("cr0", "sb", None), ("sb", "cr0", None),
+    ("bh", "ly", None), ("ly", "bh", None),                             # the yard gate, once raised
+    ("ly", "k", None), ("k", "ly", None), ("k", "uy", (TK, K_SILL - REACH)), ("uy", "k", None),
+    ("k", "shelf", (TK, K_SHELF - REACH)), ("shelf", "k", None),
+    ("uy", "ly", None),                                                 # the terrace: a drop
+    ("ly", "l", None), ("l", "ly", None), ("uy", "u", None), ("u", "uy", None),
+]
+LOWER = {"cr0", "p", "p_gal", "ledge", "cr1", "pc", "ph", "cwalk", "c", "pass", "bh", "t", "sb", "ly", "k", "l"}
+UPPER = {"uy", "u", "shelf"}
+
+
+def _reach(start, levels):
+    seen, todo = {start}, [start]
+    while todo:
+        a = todo.pop()
+        for x, y, need in CARRY:
+            if x == a and y not in seen and (need is None or levels[need[0]] >= need[1]):
+                seen.add(y)
+                todo.append(y)
+    return seen
+
+
+REST = {}               # each named hanging's level at rest (the measure)
+# the ones map20.zs compares its own with: MapSpot 3100 + n, args[0] the level at rest x 100
+EXPECT = ["BLUE in 102", "GREEN in 112", "GREEN in 113", "TEAL 113-121, BLUE in 111", "BLUE in 131 (alone)",
+          "then BLUE in 133", "BLUE in 109", "circle, L full: TEAL 107-108", "BLUE in 101", "BLUE in 121",
+          "TEAL 101-121 from P 224, no BLUE", "BLUE in 142", "BLUE in 141"]
+
+
+def measure():
+    lines, problems = [], []
+    lines.append(f"MAP20 measure: K {K_FLOW} (the lab's 2048), FREE {FREE}, overflow to the outfall; "
+                 f"waits the level asks for {WAIT[0]}..{WAIT[1]} s")
+    lines.append(f"  {'hanging':36} {'basin':5} {'rests at':>9} {'after':>8} {'reached':>7}  for (the time it is reached)")
+    for r in _runs():
+        f = _pair_once(r["flow"])
+        what, need = r["what"], r["need"]
+        if r["mark"] is not None:
+            ok = lambda v: v >= r["mark"]
+        elif what.startswith("E2"):
+            ok = lambda v: v < C_FLOOR + HOLD
+        elif need == L_BRIM:
+            ok = lambda v: v >= L_BRIM - 0.5
+        elif need is None:
+            ok = lambda v: True
+        else:
+            ok = lambda v: v >= need - REACH
+        rest, settle, at, wheel = f.run(r["watch"], ok, hold=r["hold"])
+        REST[r["name"]] = rest
+        if what.startswith("the wheel"):
+            at = wheel
+        ok, t = at is not None, at
+        tt = f"{t:.1f} s" if t is not None else "-"
+        lines.append(f"  {r['name']:36} {SHORT[r['watch']]:5} {rest:9.1f} {settle:6.1f} s {tt:>7}  {what}: "
+                     f"{'yes' if ok else 'no'}{'' if r['meant'] is None else ' (meant)' if r['meant'] else ' (not meant)'}")
+        if r["meant"] is True and not ok:
+            problems.append(f"{r['name']}: {what} not reached")
+        if r["meant"] is False and ok:
+            problems.append(f"{r['name']}: {what} reached, which it must not be")
+        if r["wait"] and ok and not (WAIT[0] <= t <= WAIT[1]):
+            problems.append(f"{r['name']}: the wait is {t:.1f} s")
+    # the four facts
+    top = _maxlevels()
+    lines.append("  the highest each basin can stand: " + ", ".join(f"{SHORT[t]} {top[t]:.0f}" for t in top
+                                                                   if BASINS[t]["kind"] == W.NORMAL))
+    deep = []
+    for n, f in sorted(FRAMES.items()):
+        d = top[f["basin"]] - f["sill"]
+        deep.append(f"{n} {max(d, 0):.0f}")
+        if d > DIVE:
+            problems.append(f"frame {n}: a dive of {d:.0f} at its deepest")
+    lines.append(f"  1. every frame by a dive of at most {DIVE} (the deepest, by frame): " + ", ".join(deep)
+                 + f"; frame 133 on the shelf ({K_SHELF}) needs K at {K_SHELF - REACH} or over, which BLUE in 131"
+                 " or 135 gives (the one frame that is not come to on foot when its basin is dry)")
+    for t, ways in EXITS.items():
+        lo, hi = BASINS[t]["floor"], top[t]
+        cover = sorted((max(a, lo), b) for _, a, b in ways)
+        x = lo
+        for a, b in cover:
+            if a > x + 1e-6:
+                break
+            x = max(x, b)
+        if x < hi:
+            problems.append(f"{NAMES[t]}: no way out with empty hands from {x} up to {hi}")
+    lines.append("  2. every basin can be left with empty hands at any level it can have: "
+                 + "; ".join(f"{SHORT[t]} {', '.join(n for n, _, _ in w)}" for t, w in EXITS.items()))
+    places = sorted({f["place"] for f in FRAMES.values()})
+    worst = {t: (top[t] if BASINS[t]["kind"] == W.NORMAL else 0) for t in BASINS}
+    bad = []
+    for a in places:
+        got = _reach(a, worst)
+        for b in places:
+            if b in got:
+                continue
+            if a in LOWER and b in UPPER:
+                continue                                    # up from the lower yard: the lock's
+            bad.append(f"{a}->{b}")
+    if bad:
+        problems.append("a door cannot be carried " + ", ".join(bad))
+    lines.append(f"  3. every door can be carried from any frame to any other ({len(places)} places), up from the "
+                 "lower side to the upper only by the lock: " + ("yes" if not bad else "no"))
+    lines.append("  4. the stage gates stay open once opened (the ledge door and the gallery's and gangway's bolts:"
+                 " Door_Open; the yard gate: the float raises it for good): by construction; MODE=3 tries them")
+    return lines, problems
+
+
+I1.m, CD.m = _theirs, _cd                    # MAP11's and MAP18's helpers draw on their own maps again
+MEASURE, PROBLEMS = measure()
+for _n, _name in enumerate(EXPECT):
+    m.thing(32 + 32 * _n, 352, MAPSPOT, id=3101 + _n, args=(round(REST[_name] * 100),))
+if NOROOM:
+    PROBLEMS.append("no room for things in " + ", ".join(sorted(set(NOROOM))))
+if PROBLEMS:
+    raise SystemExit("MAP20: " + "; ".join(PROBLEMS) + "\n" + "\n".join(MEASURE))
+
+if __name__ == "__main__":
+    import sys
+    if "-m" in sys.argv:
+        print("\n".join(MEASURE))
+    else:
+        sys.stdout.write(m.textmap())

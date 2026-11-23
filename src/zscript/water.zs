@@ -27,8 +27,17 @@
 // has been under water (the engine's waterlevel 3) for 3 seconds takes
 // DROWN_DAMAGE each second until it is dead. Flying monsters are not hurt.
 //
-// The handler is named in map WATER's MAPINFO only; on a map with no basin
-// it does nothing.
+// The handler is named in the MAPINFO of map WATER and of MAP20 ("High
+// Water", tools/map_highwater.py); on a map with no basin it does nothing.
+//
+// A level may set its own rate and rules (AjarWaterRate, thing 20143; the
+// lab has none and keeps the constants below): K and FREE, the weir's K (the
+// level's K) and the wheel's time; FLOAT, the player floats up when idle
+// under water; OVERFLOW, a basin at its brim spills what more comes in (to
+// the outfall: it is gone), so that no door's or weir's flow is held back by
+// a full basin. MAP20 also has pressure doors (AjarPressureDoor), a float
+// that raises a gate (AjarFloatGate), ambushes brought by water (AjarAmbush
+// causes 60 and 61, WaterDue) and the water's sounds (tools/sfx.py).
 
 class AjarBasin : Actor
 {
@@ -136,6 +145,80 @@ class AjarRaft : Actor
 	}
 }
 
+// A level's own rate of flow and rules (args: K, FREE, flags 1 FLOAT 2 OVERFLOW, wheel tics; 0: the lab's).
+class AjarWaterRate : Actor
+{
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE +NOINTERACTION
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+}
+
+// A door that water holds (ajarwater.pressure_door; args: the door's sector tag, the basin tags on its
+// two sides (0: dry ground), its lamps' sector tag, flags: 1 it opens by itself when the basin args[1]
+// is first dry). It opens by USE only while the water at its sill is under HOLD on both sides, and
+// shuts itself (never on anyone) when the water comes to HOLD. Its lamps are red while water holds it.
+class AjarPressureDoor : Actor
+{
+	const HOLD = 16;
+	const SPEED = 4;
+	const UP = 88;             // how far it opens
+	Sector door;
+	Array<int> lamps;
+	Array<int> uses;           // its two door lines, by index
+	AjarBasin side[2];
+	double sill;
+	bool open;                 // wanted open
+	bool autoDone;
+	bool held;
+	int shutWaits;             // tics it has waited to shut on someone (the tests)
+	int refused;               // USEs refused (the tests)
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE +NOINTERACTION
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+
+	double Top() { return door.ceilingplane.ZatPoint(door.centerspot); }
+	bool IsOpen() { return Top() > sill + 56; }
+	bool IsShut() { return Top() <= sill + 0.01; }
+	double WaterAt(int i) { return side[i] ? max(side[i].w - sill, 0) : 0; }
+}
+
+// A float in a basin (args: the basin's tag, the mark, the gate's sector tag, seconds): once the water
+// has stood at the mark or over for that long, it raises the gate for good.
+class AjarFloatGate : Actor
+{
+	AjarBasin b;
+	int over;
+	bool tripped;
+	int trippedAt;
+	Array<int> gate;
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +INVISIBLE +NOINTERACTION
+	}
+	States
+	{
+	Spawn:
+		TNT1 A -1;
+		Stop;
+	}
+}
+
 class AjarWaterHandler : EventHandler
 {
 	const K = 2048.;           // volume a tic, per unit of head difference, through a hung door
@@ -149,6 +232,21 @@ class AjarWaterHandler : EventHandler
 	const DROWN_DAMAGE = 20;
 	const BULKHEAD = 9000;     // the dry side of a bulkhead into basin tag t: line id BULKHEAD + t (ajarwater.bulkhead)
 	const CTL = 6000;          // basin tag t's control sector: tag CTL + t
+	const FLOAT_UP = 64. / 35; // the player rises this much a tic when he floats (FLOAT)
+	const SOUND_SLOT = 7;      // the channel a frame's running water and a wheel's turning play on
+
+	// the level's rate and rules: the constants above, unless an AjarWaterRate says otherwise
+	double kFlow, freeFall, kWeir, wheelFlow;
+	int wheelTics;
+	bool bFloat, bOverflow;
+	Array<AjarPressureDoor> pdoors;
+	Array<AjarFloatGate> floats;
+	Array<int> lastWater;      // by player: his waterlevel last tic (the splash)
+	bool saidSwim;
+	int floatTics;             // tics the player has been floated up (the tests)
+	int keysUntil;             // a test's script holds keys down until this tic: he is not idle (map20.zs)
+	Array<int> dueKeys;        // WaterDue's causes once met: cause * 65536 + args[4]
+	Array<AjarFrame> linkF;    // this tic's links: the frame whose door made it (its sound)
 
 	bool ready, any;
 	bool bDrown;               // the drowning rule (PLAN.md, "The water lab", E)
@@ -202,6 +300,17 @@ class AjarWaterHandler : EventHandler
 	{
 		ready = true;
 		bDrown = true;
+		kFlow = K; freeFall = FREE; kWeir = K_WEIR; wheelFlow = WHEEL_FLOW; wheelTics = WHEEL_TICS;
+		let ri = ThinkerIterator.Create("AjarWaterRate");
+		let rate = AjarWaterRate(ri.Next());
+		if (rate)
+		{
+			if (rate.args[0]) { kFlow = rate.args[0]; kWeir = kFlow; wheelFlow = 2 * kWeir; }
+			if (rate.args[1]) freeFall = rate.args[1];
+			bFloat = rate.args[2] & 1;
+			bOverflow = rate.args[2] & 2;
+			if (rate.args[3]) wheelTics = rate.args[3];
+		}
 		h = AjarHandler(EventHandler.Find("AjarHandler"));
 		basinOf.Resize(level.sectors.Size());
 		for (int i = 0; i < basinOf.Size(); i++) basinOf[i] = 0;
@@ -247,6 +356,35 @@ class AjarWaterHandler : EventHandler
 			while ((s = ci.Next()) >= 0) { wr.chute.Push(s); wr.chuteDry.Push(TexMan.GetName(level.sectors[s].GetTexture(Sector.floor))); }
 			weirs.Push(wr);
 		}
+		let pi = ThinkerIterator.Create("AjarPressureDoor");
+		AjarPressureDoor pd;
+		while (pd = AjarPressureDoor(pi.Next())) SetupPressureDoor(pd);
+		let gi = ThinkerIterator.Create("AjarFloatGate");
+		AjarFloatGate fg;
+		while (fg = AjarFloatGate(gi.Next()))
+		{
+			fg.b = BasinOfTag(fg.args[0]);
+			let si = level.CreateSectorTagIterator(fg.args[2]);
+			int s;
+			while ((s = si.Next()) >= 0) fg.gate.Push(s);
+			floats.Push(fg);
+		}
+	}
+
+	void SetupPressureDoor(AjarPressureDoor pd)
+	{
+		let si = level.CreateSectorTagIterator(pd.args[0]);
+		int s = si.Next();
+		if (s < 0) { Console.Printf("AjarPressureDoor: no sector %d", pd.args[0]); return; }
+		pd.door = level.sectors[s];
+		pd.sill = pd.door.floorplane.ZatPoint(pd.door.centerspot);
+		for (int i = 0; i < pd.door.lines.Size(); i++)
+			if (pd.door.lines[i].special == 11) pd.uses.Push(pd.door.lines[i].Index());
+		let li = level.CreateSectorTagIterator(pd.args[3]);
+		while ((s = li.Next()) >= 0) pd.lamps.Push(s);
+		pd.side[0] = BasinOfTag(pd.args[1]);
+		pd.side[1] = BasinOfTag(pd.args[2]);
+		pdoors.Push(pd);
 	}
 
 	// --- the water -------------------------------------------------------------------------
@@ -265,11 +403,11 @@ class AjarWaterHandler : EventHandler
 			sign = -1;
 		}
 		if (ha <= 0) return 0;                          // nothing over the higher sill
-		double q = (hb <= 0 ? K * FREE : K) * (ha - max(hb, 0));
+		double q = (hb <= 0 ? kFlow * freeFall : kFlow) * (ha - max(hb, 0));
 		double ia = a.Fixed() ? 0 : 1 / a.area, ib = b.Fixed() ? 0 : 1 / b.area;
 		if (ia + ib > 0) q = min(q, (ha - hb) / (ia + ib));     // never past level
 		if (!a.Fixed()) q = min(q, ha * a.area);                // a never under its sill by this door
-		if (!b.Fixed()) q = min(q, (b.brim - b.w) * b.area);    // b never over its brim
+		if (!b.Fixed() && !bOverflow) q = min(q, (b.brim - b.w) * b.area);    // b never over its brim (OVERFLOW: it spills)
 		q = max(q, 0);
 		return q * sign;
 	}
@@ -292,6 +430,7 @@ class AjarWaterHandler : EventHandler
 	void Links()
 	{
 		linkA.Clear(); linkB.Clear(); linkSA.Clear(); linkSB.Clear(); linkQ.Clear(); linkFrame.Clear(); linkLA.Clear(); linkLB.Clear();
+		linkF.Clear();
 		for (int i = 0; i < frames.Size(); i++)
 		{
 			let f = frames[i];
@@ -307,6 +446,7 @@ class AjarWaterHandler : EventHandler
 			double q = Flow(a, sa, b, sb);
 			linkA.Push(a); linkB.Push(b); linkSA.Push(sa); linkSB.Push(sb); linkQ.Push(q); linkFrame.Push(f.args[0]);
 			linkLA.Push(la.Index()); linkLB.Push(lb.Index());
+			linkF.Push(f);
 		}
 	}
 
@@ -317,9 +457,9 @@ class AjarWaterHandler : EventHandler
 			let wr = weirs[i];
 			if (!wr.up || !wr.low) continue;
 			wr.over = wr.up.w - wr.Crest();
-			double q = wr.over > 0 ? K_WEIR * wr.over : 0;
+			double q = wr.over > 0 ? kWeir * wr.over : 0;
 			if (!wr.up.Fixed()) q = min(q, max(wr.over, 0) * wr.up.area);
-			if (!wr.low.Fixed()) q = min(q, (wr.low.brim - wr.low.w) * wr.low.area);
+			if (!wr.low.Fixed() && !bOverflow) q = min(q, (wr.low.brim - wr.low.w) * wr.low.area);
 			wr.flow = max(q, 0);
 		}
 	}
@@ -327,10 +467,14 @@ class AjarWaterHandler : EventHandler
 	void Wheel(AjarWeir wr)
 	{
 		wr.spin = min(wr.flow / 1024., 12);                     // degrees a tic: a quarter of a unit over the crest is 0.5
-		if (wr.flow > WHEEL_FLOW) wr.overTics++;
+		if (wr.flow > wheelFlow) wr.overTics++;
 		else wr.overTics = 0;
 		bool was = wr.turning;
-		wr.turning = wr.overTics >= WHEEL_TICS;
+		wr.turning = wr.overTics >= wheelTics;
+		if (wr.spin > 0.05 && !wr.IsActorPlayingSound(SOUND_SLOT))
+			wr.A_StartSound("ajar/wheel", SOUND_SLOT, CHANF_LOOPING, 0.2, ATTN_NORM);
+		if (wr.spin > 0.05) wr.A_SoundVolume(SOUND_SLOT, clamp(wr.spin / 6, 0.2, 1));
+		else if (wr.IsActorPlayingSound(SOUND_SLOT)) wr.A_StopSound(SOUND_SLOT);
 		if (was && !wr.turning) wr.stoppedAt = level.maptime;
 		// the lamp
 		let li = level.CreateSectorTagIterator(wr.LampTag());
@@ -454,12 +598,184 @@ class AjarWaterHandler : EventHandler
 		for (int i = 0; i < basins.Size(); i++) Show(basins[i]);
 		Drowning();
 		Rafts();
+		Running();
+		for (int i = 0; i < pdoors.Size(); i++) PressureDoor(pdoors[i]);
+		for (int i = 0; i < floats.Size(); i++) FloatGate(floats[i]);
+		Players();
+	}
+
+	// --- MAP20: the sounds of water ----------------------------------------------------------
+	// Water running at a door that passes any, louder the more goes; quiet at the others.
+	void Running()
+	{
+		for (int i = 0; i < frames.Size(); i++)
+		{
+			let f = frames[i];
+			if (!f) continue;
+			int j = linkF.Find(f);
+			double q = j < linkF.Size() ? abs(linkQ[j]) : 0;
+			if (q > 32)
+			{
+				double v = clamp(sqrt(q / (kFlow * 64)), 0.15, 1);
+				if (!f.IsActorPlayingSound(SOUND_SLOT)) f.A_StartSound("ajar/water", SOUND_SLOT, CHANF_LOOPING, v, ATTN_NORM);
+				else f.A_SoundVolume(SOUND_SLOT, v);
+			}
+			else if (f.IsActorPlayingSound(SOUND_SLOT)) f.A_StopSound(SOUND_SLOT);
+		}
+	}
+
+	// --- MAP20: the player in the water: a splash going in and out; FLOAT -------------------------
+	static bool Idle(PlayerInfo p)
+	{
+		let c = p.cmd;
+		return !c.forwardmove && !c.sidemove && !c.upmove && !(c.buttons & (BT_JUMP | BT_CROUCH));
+	}
+
+	void Players()
+	{
+		lastWater.Resize(MAXPLAYERS);
+		for (int i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || !players[i].mo) continue;
+			let mo = players[i].mo;
+			int wl = mo.waterlevel;
+			if ((wl > 0) != (lastWater[i] > 0) && level.maptime > 2)
+				mo.A_StartSound("ajar/splash", CHAN_BODY, CHANF_OVERLAP, wl > 0 ? 1 : 0.6);
+			lastWater[i] = wl;
+			if (!bFloat || wl < 3 || mo.health <= 0) continue;
+			if (!saidSwim && h) { h.Say("Swim up: look up and walk, or the jump key."); saidSwim = true; }
+			if (!Idle(players[i]) || level.maptime <= keysUntil) continue;
+			mo.vel.z = max(mo.vel.z, FLOAT_UP);
+			floatTics++;
+		}
+	}
+
+	// --- MAP20: pressure doors ------------------------------------------------------------------
+	bool Held(AjarPressureDoor pd) { return pd.WaterAt(0) >= AjarPressureDoor.HOLD || pd.WaterAt(1) >= AjarPressureDoor.HOLD; }
+
+	void PressureDoor(AjarPressureDoor pd)
+	{
+		if (!pd.door) return;
+		bool was = pd.held;
+		pd.held = Held(pd);
+		for (int i = 0; i < pd.lamps.Size(); i++)
+		{
+			Sector l = level.sectors[pd.lamps[i]];
+			l.SetColor(pd.held ? Color(255, 255, 64, 48) : Color(255, 200, 255, 200), 0);
+			l.SetLightLevel(pd.held ? 176 : 224);
+		}
+		// a cell in a tank's floor opens by itself the first time the tank is dry
+		if (pd.args[4] & 1 && !pd.autoDone && pd.side[0] && !pd.side[0].Wet() && !pd.held)
+		{
+			pd.autoDone = true;
+			if (!pd.open) { pd.open = true; pd.A_StartSound("doors/dr2_open", CHAN_BODY); }
+		}
+		// the water comes: it shuts itself
+		if (pd.held && !was && pd.open) { pd.open = false; pd.A_StartSound("doors/dr2_clos", CHAN_BODY); }
+		double top = pd.Top();
+		double want = pd.open ? pd.sill + AjarPressureDoor.UP : pd.sill;
+		if (abs(top - want) < 0.01) return;
+		if (want < top && Someone(pd)) { pd.shutWaits++; return; }       // never on anyone: it waits
+		int r = pd.door.MoveCeiling(AjarPressureDoor.SPEED, want, -1, want > top ? 1 : -1, false);
+		if (r == Sector.MOVE_CRUSHED) pd.shutWaits++;
+	}
+
+	// anyone (solid) standing in the door's way
+	bool Someone(AjarPressureDoor pd)
+	{
+		let it = BlockThingsIterator.Create(pd, 96);
+		while (it.Next())
+		{
+			let a = it.thing;
+			if (!a || !a.bSolid || a.health <= 0 && !a.player) continue;
+			if (a.pos.z >= pd.Top() || a.pos.z + a.height <= pd.sill) continue;
+			if (level.PointInSector(a.pos.xy) == pd.door) return true;
+			// the door's own box: its four corners
+			Vector2 lo = (1e9, 1e9), hi = (-1e9, -1e9);
+			for (int i = 0; i < pd.door.lines.Size(); i++)
+			{
+				Line l = pd.door.lines[i];
+				lo = (min(lo.x, l.v1.p.x, l.v2.p.x), min(lo.y, l.v1.p.y, l.v2.p.y));
+				hi = (max(hi.x, l.v1.p.x, l.v2.p.x), max(hi.y, l.v1.p.y, l.v2.p.y));
+			}
+			if (a.pos.x + a.radius > lo.x && a.pos.x - a.radius < hi.x && a.pos.y + a.radius > lo.y && a.pos.y - a.radius < hi.y)
+				return true;
+		}
+		return false;
+	}
+
+	AjarPressureDoor PressureDoorOfLine(Line l)
+	{
+		if (!l) return null;
+		for (int i = 0; i < pdoors.Size(); i++) if (pdoors[i].uses.Find(l.Index()) < pdoors[i].uses.Size()) return pdoors[i];
+		return null;
+	}
+
+	// the player's USE (or a test's): true if it opens
+	bool UsePressureDoor(AjarPressureDoor pd)
+	{
+		if (Held(pd))
+		{
+			pd.refused++;
+			if (h) h.Say("The water holds this door shut.\nIt opens when the water at its sill is gone.");
+			pd.A_StartSound("plats/pt1_stop", CHAN_BODY);
+			return false;
+		}
+		if (!pd.open) { pd.open = true; pd.A_StartSound("doors/dr1_open", CHAN_BODY); }
+		return true;
+	}
+
+	// --- MAP20: the float that raises the yard gate -------------------------------------------------
+	void FloatGate(AjarFloatGate fg)
+	{
+		if (!fg.b) return;
+		if (!fg.tripped)
+		{
+			fg.over = fg.b.w >= fg.args[1] ? fg.over + 1 : 0;
+			if (fg.over >= fg.args[3] * TICRATE)
+			{
+				fg.tripped = true;
+				fg.trippedAt = level.maptime;
+				if (h) h.Say("The float in the feed tank has risen:\nthe yard gate goes up.");
+				fg.A_StartSound("doors/dr2_open", CHAN_BODY, 0, 1, ATTN_NONE);
+			}
+			return;
+		}
+		for (int i = 0; i < fg.gate.Size(); i++)
+		{
+			Sector g = level.sectors[fg.gate[i]];
+			double fz = g.floorplane.ZatPoint(g.centerspot), cz = g.ceilingplane.ZatPoint(g.centerspot);
+			if (cz < fz + 112 - 0.01) g.MoveCeiling(2, fz + 112, -1, 1, false);
+		}
+	}
+
+	// --- MAP20: ambushes brought by water (AjarAmbush causes 60 and 61; ajarwater.water_ambush) ------
+	// arg: the basin's tag * 1024 + the height + 512. Once met, met for good (a basin *first* at it).
+	static bool WaterDue(int cause, int arg)
+	{
+		let wh = Get();
+		if (!wh || !wh.ready) return false;
+		int key = cause * 65536 + arg;
+		if (wh.dueKeys.Find(key) < wh.dueKeys.Size()) return true;
+		let b = wh.BasinOfTag(arg / 1024);
+		if (!b) return false;
+		double z = arg % 1024 - 512;
+		bool met = cause == 60 ? b.w >= z : b.w <= z;
+		if (met) wh.dueKeys.Push(key);
+		return met;
 	}
 
 	// A bulkhead will not open from the dry side while water stands behind it.
 	override void WorldLinePreActivated(WorldEvent e)
 	{
 		if (!any || !e.ActivatedLine) return;
+		let pd = PressureDoorOfLine(e.ActivatedLine);
+		if (pd)
+		{
+			e.ShouldActivate = false;                        // the handler moves it (PressureDoor)
+			if (e.Thing && e.Thing.player) UsePressureDoor(pd);
+			return;
+		}
 		int i = bulkheads.Find(e.ActivatedLine.Index());
 		if (i == bulkheads.Size()) return;
 		let b = BasinOfTag(bulkheadTag[i]);

@@ -34,6 +34,26 @@ tic by the script.
     bulkhead(m, a, b, out, floor, tag)
         an ordinary door (Door_Raise) a-b, `out` into the basin with `tag`:
         from the dry side it will not open while the basin holds water
+
+For a level (MAP20, tools/map_highwater.py):
+    rate(m, x, y, k, free, flags, wheel)
+        the level's own rate of flow (K, and how many times that water falls
+        out onto a dry sill) and its rules: FLOAT (the player floats up when
+        idle under water), OVERFLOW (a basin at its brim spills what comes
+        in to the outfall, so no flow is held back by a full basin). A map
+        without it keeps the lab's (K 2048, 8, no flags).
+    pressure_door(m, a, b, out, sill, tag, sides, lamp)
+        a door that water holds: it opens by USE only while the water at its
+        sill is under HOLD on both sides, says so when it refuses, and shuts
+        itself (never on anyone) when the water comes to HOLD. A lamp over
+        it on each side, red while water holds it. `auto`: it opens by itself
+        the first time the basin sides[0] is dry (a cell in a tank's floor).
+    float_gate(m, x, y, basin, mark, gate)
+        a float in `basin`: once the water has stood at `mark` or over for
+        2 s it raises the gate (sector tag `gate`) for good
+    water_ambush(m, over, tag, height, kind, *spots, ...)
+        ajarmap.ambush's monsters, brought by water: they come when basin
+        `tag` first stands at or over (`over`) or at or under `height`
 """
 BASIN_T, WEIR_T, RAFT_T = 20140, 20141, 20142      # AjarBasin, AjarWeir, AjarRaft (src/zscript/water.zs)
 NORMAL, RESERVOIR, OUTFALL = 0, 1, 2
@@ -78,6 +98,54 @@ def raft(m, x, y):
 def gauge(m, a, b):
     m.cut(a, b)
     m.line(a, b, mid="AJGAUGE", dontpegbottom=True, exact=True)
+
+
+RATE_T, PDOOR_T, FLOAT_T = 20143, 20144, 20145      # AjarWaterRate, AjarPressureDoor, AjarFloatGate (water.zs)
+FLOAT, OVERFLOW = 1, 2                  # rate() flags
+HOLD = 16                               # a pressure door is held by this much water at its sill, on either side
+LAMP_TEX = "TLITE6_6"                   # a pressure door's lamp (Doom II's own flat)
+AMBUSH_OVER, AMBUSH_UNDER = 60, 61      # AjarAmbush causes (ajar.zs): a basin first at or over / at or under a height
+
+
+def rate(m, x, y, k, free, flags, wheel=0):
+    """`wheel`: tics the spill must stay over 2 units' flow for a wheel to count as turning (0: the lab's)."""
+    m.thing(x, y, RATE_T, args=(k, free, flags, wheel))
+
+
+def pressure_door(m, a, b, out, sill, tag, sides, lamp, *, thick=32, auto=False, look=None):
+    """a-b is its 64-wide mouth on one side, `out` the way through; `tag` the
+    door's sector tag, `sides` the basin tags on the two sides (0: dry
+    ground), `lamp` the tag of its two lamp strips. Declare the rooms on
+    both sides first."""
+    look = look or dict(wall="BIGDOOR2", ftex="FLAT20", ctex="FLAT20")
+    lt = (thick - 16) // 2
+    p = lambda q, d: (q[0] + out[0] * d, q[1] + out[1] * d)
+    a1, b1, a2, b2, a3, b3 = p(a, lt), p(b, lt), p(a, lt + 16), p(b, lt + 16), p(a, thick), p(b, thick)
+    for s0, s1, t0, t1 in ((a, b, a1, b1), (a2, b2, a3, b3)):
+        m.sector([s0, s1, t1, t0], floor=sill, ceil=sill + 96, light=160, wall="AJTRIM", ftex="AJTRIMF", ctex=LAMP_TEX,
+                 id=lamp)
+    m.sector([a1, b1, b2, a2], floor=sill, ceil=sill, light=160, id=tag, **look)
+    for s, t in ((a1, b1), (a2, b2)):
+        m.line(s, t, special=11, args=(0, 16), playeruse=True, repeatspecial=True)
+    for s, t in ((a, a3), (b, b3)):
+        m.line(s, t, mid="DOORTRAK", dontpegbottom=True)
+    c = ((a1[0] + b2[0]) / 2, (a1[1] + b2[1]) / 2)
+    m.thing(c[0], c[1], PDOOR_T, args=(tag, sides[0], sides[1], lamp, 1 if auto else 0))
+
+
+def float_gate(m, x, y, basin_tag, mark, gate, seconds=2):
+    m.thing(x, y, FLOAT_T, args=(basin_tag, mark, gate, seconds))
+
+
+def water_ambush(m, over, tag, height, kind, *spots, angle=0, after=0, near=0):
+    """As ajarmap.ambush (thinned the same way, counted with it), but brought
+    by water: basin `tag` first at or over (`over`) or at or under `height`."""
+    import ajarmap
+    for x, y in spots:
+        i = m.ambushers = getattr(m, "ambushers", -1) + 1
+        m.thing(x, y, ajarmap.AMBUSH_T, angle=angle,
+                args=(AMBUSH_OVER if over else AMBUSH_UNDER, kind, after, near, tag * 1024 + height + 512),
+                skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
 
 
 def bulkhead(m, a, b, out, floor, tag, *, thick=16):
