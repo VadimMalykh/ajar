@@ -1,4 +1,6 @@
-"""Ajar's music, written as notes and turned into MIDI files by this script.
+"""Not called by the build since 2026-11-23 (the lab tries recorded music, tools/music_trial.py); kept until Vadim decides.
+
+Ajar's music, written as notes and turned into MIDI files by this script.
 
 Nothing is recorded: a piece is a tune written out bar by bar, a line of
 chords and an accompaniment pattern, the way the maps are rooms written out

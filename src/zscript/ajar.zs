@@ -846,7 +846,7 @@ class AjarHandler : EventHandler
 	// Every door action of the player's and the thief's plays through these.
 	// An empty name is Doom's sound (doors/dr1_clos to take, doors/dr1_open to
 	// hang), and so is every level's: only the sound lab (soundlab.zs, map
-	// SOUND) chooses others, the game's own (src/sndinfo.txt, tools/sfx.py).
+	// SOUND) chooses others, the game's own (tools/sfx.py and its sndinfo.txt).
 	string takeSound, setSound;
 	int swapSetTics;            // a swap's set sound is still to come in this many tics
 	Actor swapBy;
@@ -864,7 +864,7 @@ class AjarHandler : EventHandler
 		if (takeSound == "" && setSound == "") { PlaySet(who); return; }
 		PlayTake(who);
 		swapBy = who;
-		swapSetTics = 7;
+		swapSetTics = 9;
 	}
 
 	void SwapTick()

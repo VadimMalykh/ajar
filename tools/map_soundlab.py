@@ -8,9 +8,10 @@ The three far sides are on the south wall, in the same room: whatever hangs
 where, walking through comes back into this room, and no door can be lost.
 
 On the east wall, well away from the frames, four switches (soundlab.zs):
-TAKE and SET step their sound on (Doom's, A, B, C, Doom's ...) and play it;
-MUSIC - and MUSIC + step through silence and the tracks of ajmusic.txt
-(tools/music.py). A shotgun and shells by the start, to hear a door beside
+TAKE and SET step their sound on (Doom's, 1, 2 ... the candidates of
+ajsounds.txt, tools/sfx.py, Doom's ...) and play it; MUSIC - and MUSIC + step
+through silence and the tracks of ajmusic.txt (tools/music_trial.py, from
+trial/music/). A shotgun and shells by the start, to hear a door beside
 a shot. The level begins with Doom's sounds and silence.
 """
 import ajarmap
