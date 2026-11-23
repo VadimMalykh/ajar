@@ -1330,6 +1330,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "PASS") return;      // and the pass lab (passtest.zs)
 		if (level.mapname ~== "MAP19") return;     // and MAP19 (map19.zs, PaperTest)
 		if (level.mapname ~== "SOUND") return;     // and the sound lab (soundlab.zs)
+		if (level.mapname ~== "WATER") return;     // and the water lab (watertest.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);
