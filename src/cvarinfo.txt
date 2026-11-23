@@ -1,3 +1,4 @@
 server noarchive int ajar_autotest = 0;
 server noarchive int ajar_only = 0;
 server noarchive int ajar_lodger_look = 0;
+user noarchive bool ajar_pass_inset = true;
