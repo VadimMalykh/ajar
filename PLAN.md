@@ -10418,6 +10418,15 @@ E. **The views (MODE=5, 15 views).** 0-2: out of RED's far side, the duty
    double in A: the picture shows A. 14: `ajar_pass_inset 0`: no picture,
    the line stays.
 
+F. **Nothing else changed.** Every other map's wad is byte for byte as at
+   the base commit (sha1 of all 36, from the old and new generators); the
+   pass code is not on any other map (its handler is named in map PASS's
+   MAPINFO only). The ANIMDEFS has one new line (the camera texture) for
+   every map. On the full build (`./build.sh`, with the solver, 5 min 15):
+   `MAP=ONESIDE MODE=1` 32 checks, `MAP=LAB MODE=1` 13, `MAP=MAP18 MODE=1`
+   8 with levelExited, none failed; PASS MODE=1 to 4 as above (50, 21, 8,
+   26, none failed) and MODE=5's 15 views.
+
 **The picture works headless** at once (no more than the hour asked). It
 costs a second drawing of the scene each frame while it is shown (at 256 x
 160); not measured, as the headless renderer says nothing of the real
