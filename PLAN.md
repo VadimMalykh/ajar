@@ -10117,7 +10117,7 @@ chain for the way out. Claude's candidates for MAP20 or after: water (the
 canal lock; it wants a lab of its own: a water level that moves, swum in,
 seen through a hung door), the Flip door.
 
-## MAP19 "On Paper": the pass and its double (2026-11-23, Claude's outline; not agreed; nothing built)
+## MAP19 "On Paper": the pass and its double (2026-11-23, Claude's outline; Vadim chose it the same day from three proposals: see "the first version, as decided"; the lab is "The pass lab")
 
 **Vadim** (2026-11-23, MAP18 played): MAP19 "comparable size or even bigger,
 with more doors and spatial paradoxes. MAP18 has a lot of frames, but almost
