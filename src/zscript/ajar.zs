@@ -846,16 +846,21 @@ class AjarHandler : EventHandler
 	// Every door action of the player's and the thief's plays through these.
 	// An empty name is Doom's sound (doors/dr1_clos to take, doors/dr1_open to
 	// hang), and so is every level's: only the sound lab (soundlab.zs, map
-	// SOUND) chooses others, the game's own (tools/sfx.py and its sndinfo.txt).
+	// SOUND) chooses others, the game's own (tools/sfx.py and its sndinfo.txt)
+	// or another of Doom's played at another pitch (takePitch / setPitch: 2 an
+	// octave up, 0.5 an octave down; 0, as every level has it, or 1 is the
+	// engine's own pitch, A_StartSound's 0, so nothing changes for them).
 	string takeSound, setSound;
+	double takePitch, setPitch;
 	int swapSetTics;            // a swap's set sound is still to come in this many tics
 	Actor swapBy;
 
 	string TakeName() { return takeSound != "" ? takeSound : "doors/dr1_clos"; }
 	string SetName() { return setSound != "" ? setSound : "doors/dr1_open"; }
+	static double PitchArg(double p) { return p > 0 && p != 1 ? p : 0; }
 
-	void PlayTake(Actor who) { if (who) who.A_StartSound(TakeName(), CHAN_AUTO); }
-	void PlaySet(Actor who) { if (who) who.A_StartSound(SetName(), CHAN_AUTO); }
+	void PlayTake(Actor who) { if (who) who.A_StartSound(TakeName(), CHAN_AUTO, 0, 1.0, ATTN_NORM, PitchArg(takePitch)); }
+	void PlaySet(Actor who) { if (who) who.A_StartSound(SetName(), CHAN_AUTO, 0, 1.0, ATTN_NORM, PitchArg(setPitch)); }
 
 	// Doom's sounds: one dr1_open, as it always was. The game's own: the
 	// door comes off (take), and a moment later the other goes on (set).

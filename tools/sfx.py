@@ -1,32 +1,42 @@
-"""Ajar's own door sounds, cut from recordings (the sound lab, map SOUND: MAP=SOUND ./run.sh).
+"""Door sounds on trial in the sound lab (map SOUND: MAP=SOUND ./run.sh), third round.
 
-The sources are Kenney Vleugels' "RPG sounds" (CC0, assets/sounds/kenney-rpg/,
-license.txt there): OGG files, decoded with the system's libsndfile through
-ctypes (standard library only; the ajar-tools image has libsndfile1).
+A door taken is a piece of space coming loose; a door set, a piece of space
+locking in. Two families, side by side in the lab:
 
-SOUNDS below is the list of candidates, one line each: whether it is a take
-(a door coming off its hinges) or a set (a door hung), its name, and its
-layers. The first layer is a source as it is; each further layer is placed
-by a rule and set some dB under the first, both measured by loudness (the
-RMS of the loudest 100 ms). A candidate is then cut: leading silence (below
--40 dB of its peak) off, trailing silence (below -60 dB) off, at most
-TAKE_MAX / SET_MAX seconds with a 60 ms fade-out when that cuts it, and its
-peak brought to -3 dBFS. Nothing is saturated or compressed: a recording
-whose loudness stays under Doom's door sounds at that peak stays quieter.
+A. Doom's own sounds, played by their logical names (the game always runs
+   on the player's doom2.wad, so nothing is copied into the package), each
+   at a pitch of its own (A_StartSound's pitch: 2 an octave up, 0.5 an
+   octave down). DOOM below.
+
+B. Recordings turned into shapes no door makes: reversed, re-pitched,
+   layered, reverberated. The sources are Kenney Vleugels' "RPG sounds" and
+   "Sci-fi sounds" (both CC0: assets/sounds/kenney-rpg/, kenney-scifi/, each
+   with its license.txt), OGG files decoded with the system's libsndfile
+   through ctypes (standard library only; the ajar-tools image has
+   libsndfile1). OWN below: one line each, its recipe a small function of
+   the helpers further down. A take's energy rises and stops dead; a set has
+   a short lead-in, then a heavy hit with a short tail.
+   Every B sound is then finished the same way: DC and rumble under 30 Hz
+   off, a gentle low-pass at 6 kHz (Doom's own are 11025 Hz, nothing above
+   5.5 kHz), its loudest 100 ms brought to LOUD (Doom's door sounds measure
+   -12.5 dBFS so) with a soft limiter holding the peak under CEIL, 3 ms
+   fades at both ends.
 
 Written mono, 22050 Hz, 16-bit (44100 Hz sources are low-passed and halved).
 
 make_all() gives build.py:
-    sounds/ajtake1.wav ... sounds/ajsetN.wav   the candidates, in table order
+    sounds/ajtake1.wav ... sounds/ajsetN.wav   family B, in table order
     sndinfo.txt     ajar/take1..n -> ajtake1..n, ajar/set1..n -> ajset1..n
-    ajsounds.txt    one line a candidate, kind|logical name|its name, read by
-                    the lab (src/zscript/soundlab.zs)
+    ajsounds.txt    one line a candidate, kind|logical name|its name|pitch,
+                    family A then B, read by the lab (src/zscript/soundlab.zs)
 Every level still plays Doom's door sounds; only the lab chooses these.
 
     python3 tools/sfx.py DIR [IWAD]     writes the WAVs, sndinfo.txt and
                                         ajsounds.txt to DIR and prints each
-                                        one's length, peak and loudness, and
-                                        with IWAD the same for Doom's two.
+                                        one's length, peak, loudness, where
+                                        its loudest 100 ms lies and its
+                                        envelope; with IWAD the same for
+                                        Doom's two door sounds.
 """
 import ctypes
 import ctypes.util
@@ -38,33 +48,23 @@ import sys
 import wave
 from fractions import Fraction
 
-SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "sounds", "kenney-rpg")
+SOUNDS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "sounds")
+PACKS = {"rpg": "kenney-rpg", "scifi": "kenney-scifi"}
 OUT = 22050                     # the rate written
-PEAK = 10 ** (-3 / 20)          # -3 dBFS
-TAKE_MAX, SET_MAX = 0.8, 0.9    # seconds
-FADE = 0.06                     # the fade-out when a sound is cut short
-CREAKS = ("creak1", "creak2", "creak3")     # a layer naming several sources takes the shortest
+LOUD = -13.0                    # dBFS, RMS of the loudest 100 ms
+CEIL = -1.2                     # dBFS, the limiter's ceiling (the peak stays under it)
+EDGE = 0.003                    # s, the fades at both ends
 
-# A layer: (source, when, dB[, "peak"]). `when`: 0 (with the first layer);
-# "dies" (as the layer before it dies away, its 10 ms envelope 24 dB under its
-# peak for good); "peak+S" (S seconds after the first layer's loudest point).
-# dB: against the first layer's loudness, or with "peak" its peak (for a click
-# laid on a door: by loudness a 20 ms click 3 dB under would peak 5 dB over the
-# door, and the whole would come out 5 dB quieter).
-SOUNDS = [
-    # kind    its name               layers
-    ("take", "door opens 1",       [("doorOpen_1",)]),
-    ("take", "door opens 2",       [("doorOpen_2",)]),
-    ("take", "latch",              [("metalLatch",)]),
-    ("take", "latch, then creak",  [("metalLatch",), (CREAKS, "dies", -4)]),
-    ("take", "click",              [("metalClick",)]),
-    ("set",  "door shuts 1",       [("doorClose_1",)]),
-    ("set",  "door shuts 2",       [("doorClose_2",)]),
-    ("set",  "door shuts 3",       [("doorClose_3",)]),
-    ("set",  "door shuts 4",       [("doorClose_4",)]),
-    ("set",  "shut and latch",     [("doorClose_1",), ("metalLatch", "peak+0.08", -3, "peak")]),
+# --- family A: Doom's own, by name and pitch ----------------------------------------
+DOOM = [
+    # kind    its name in the lab             logical name (GZDoom's Doom sndinfo)  pitch
+    ("take", "Doom: weapon pick-up",          "misc/w_pkup",                         1.0),
+    ("take", "Doom: fast door shuts",         "doors/dr2_clos",                      1.0),
+    ("take", "Doom: lift starts, pitch 1.3",  "plats/pt1_strt",                      1.3),
+    ("set",  "Doom: lift stops",              "plats/pt1_stop",                      1.0),
+    ("set",  "Doom: fast door opens",         "doors/dr2_open",                      1.0),
+    ("set",  "Doom: lift stops, pitch 0.7",   "plats/pt1_stop",                      0.7),
 ]
-LIMIT = {"take": TAKE_MAX, "set": SET_MAX}
 
 
 # --- decoding: libsndfile through ctypes -------------------------------------------
@@ -152,7 +152,7 @@ def resample(x, src, dst, half=64):
     return out
 
 
-# --- measures and cuts --------------------------------------------------------------
+# --- measures -----------------------------------------------------------------------
 def db(v):
     return 20 * math.log10(v) if v > 0 else -999.0
 
@@ -170,83 +170,324 @@ def loudest(x, rate=OUT, window=0.1):
     return math.sqrt(max(best, 0) / w), at
 
 
-def peak_at(x):
-    return max(range(len(x)), key=lambda i: abs(x[i]))
+def peak(x):
+    return max(abs(v) for v in x) or 1e-9
 
 
 def trim(x, lead_db=-40, tail_db=-60):
     """Without the leading silence (below lead_db of the peak) and the trailing
     one (below tail_db)."""
-    p = max(abs(v) for v in x) or 1.0
+    p = peak(x)
     a = next(i for i, v in enumerate(x) if abs(v) >= p * 10 ** (lead_db / 20))
     b = max(i for i, v in enumerate(x) if abs(v) >= p * 10 ** (tail_db / 20))
     return x[a:b + 1]
 
 
-def dies(x, rate=OUT, under=24):
-    """Where x dies away: from here on its 10 ms envelope stays `under` dB
-    under its peak."""
-    w = int(rate * 0.01)
-    env = [max(abs(v) for v in x[i:i + w]) for i in range(0, len(x), w)]
-    top = max(env)
-    last = max(i for i, e in enumerate(env) if e >= top * 10 ** (-under / 20))
-    return min(len(x), (last + 1) * w)
-
-
+# --- the sources --------------------------------------------------------------------
 _sources = {}
 
 
-def source(name):
-    """A source at OUT Hz, trimmed of its silences."""
-    if name not in _sources:
-        rate, x = decode(os.path.join(SRC, name + ".ogg"))
-        _sources[name] = trim(resample(x, rate, OUT))
-    return _sources[name]
+def src(pack, name):
+    """A source at OUT Hz, trimmed of its silences, at its own level."""
+    key = (pack, name)
+    if key not in _sources:
+        rate, x = decode(os.path.join(SOUNDS_DIR, PACKS[pack], name + ".ogg"))
+        _sources[key] = trim(resample(x, rate, OUT))
+    return list(_sources[key])
 
 
-def build(layers):
-    """The candidate's layers mixed, before the final cut."""
-    first = source(layers[0][0])
-    loud0, _ = loudest(first)
-    peak0 = max(abs(v) for v in first)
-    parts = [(first, 0)]
-    for name, when, gain, *by in layers[1:]:
-        names = name if isinstance(name, tuple) else (name,)
-        x = min((source(n) for n in names), key=len)
-        if when == "dies":
-            prev, at = parts[-1]
-            at += dies(prev)
-        elif isinstance(when, str) and when.startswith("peak+"):
-            at = peak_at(first) + int(round(float(when[5:]) * OUT))
-        else:
-            at = int(round(when * OUT))
-        if by == ["peak"]:
-            g = peak0 / max(abs(v) for v in x) * 10 ** (gain / 20)
-        else:
-            g = loud0 / (loudest(x)[0] or 1) * 10 ** (gain / 20)
-        parts.append(([v * g for v in x], at))
-    out = [0.0] * max(at + len(x) for x, at in parts)
-    for x, at in parts:
-        for i, v in enumerate(x):
-            out[at + i] += v
+def rpg(name):
+    return src("rpg", name)
+
+
+def scifi(name):
+    return src("scifi", name)
+
+
+# --- the helpers: each takes a list of samples at OUT Hz and gives a new one ---------
+def S(t):
+    """Seconds to samples."""
+    return int(round(t * OUT))
+
+
+def semis(n):
+    """The speed factor of n semitones (-12: half speed, an octave down)."""
+    return 2 ** (n / 12)
+
+
+def rev(x):
+    return x[::-1]
+
+
+def cut(x, a=0.0, b=None):
+    """From a to b seconds (b None: to the end; negative: from the end)."""
+    return x[S(a):None if b is None else S(b)]
+
+
+def hit(x, pre=0.002, under=6.0):
+    """From its first hit on: from `pre` seconds before the first sample within
+    `under` dB of its peak (what comes before, the hand on the door, goes)."""
+    p = peak(x) * 10 ** (-under / 20)
+    i = next(i for i, v in enumerate(x) if abs(v) >= p)
+    return x[max(0, i - S(pre)):]
+
+
+def last(x, t):
+    """The last t seconds."""
+    return x[-S(t):]
+
+
+def pad(x, before=0.0, after=0.0):
+    return [0.0] * S(before) + x + [0.0] * S(after)
+
+
+def gain(x, dbs):
+    g = 10 ** (dbs / 20)
+    return [v * g for v in x]
+
+
+def norm(x, to=0.0):
+    """Peak at `to` dBFS (layers are balanced by peak, then by gain)."""
+    g = 10 ** (to / 20) / peak(x)
+    return [v * g for v in x]
+
+
+def speed(x, f):
+    """Played f times as fast: pitch up and shorter for f > 1 (linear interpolation)."""
+    n = int((len(x) - 1) / f)
+    out = []
+    for i in range(n):
+        p = i * f
+        k = int(p)
+        t = p - k
+        out.append(x[k] * (1 - t) + x[k + 1] * t)
     return out
 
 
-def finish(x, limit):
-    """Trimmed, cut to `limit` seconds with a fade-out if longer, peak at -3 dBFS:
-    16-bit integers."""
-    x = trim(x)
-    n = int(limit * OUT)
-    if len(x) > n:
-        x = x[:n]
-        f = int(FADE * OUT)
-        for i in range(f):
-            x[n - f + i] *= 0.5 + 0.5 * math.cos(math.pi * (i + 1) / f)
-    p = max(abs(v) for v in x)
-    return [int(round(v * PEAK * 32767 / p)) for v in x]
+def glide(x, f0, f1):
+    """Played at a speed going from f0 to f1 across the source (a pitch that
+    falls or rises), linear interpolation."""
+    out, p, n = [], 0.0, len(x) - 1
+    while p < n:
+        k = int(p)
+        t = p - k
+        out.append(x[k] * (1 - t) + x[k + 1] * t)
+        p += f0 + (f1 - f0) * p / n
+    return out
 
 
-def wav(samples):
+def mix(*layers):
+    """Layers (samples, at seconds[, dB]) summed into one."""
+    parts = [(x, S(at), 10 ** ((rest[0] if rest else 0) / 20)) for x, at, *rest in layers]
+    out = [0.0] * max(a + len(x) for x, a, _ in parts)
+    for x, a, g in parts:
+        for i, v in enumerate(x):
+            out[a + i] += v * g
+    return out
+
+
+def then(a, b, overlap=0.0):
+    """b starting `overlap` seconds before a ends."""
+    return mix((a, 0), (b, max(0.0, len(a) / OUT - overlap)))
+
+
+def fade_in(x, t, curve=1.0):
+    """A fade from silence over t seconds (curve > 1: slower at first)."""
+    n = min(len(x), max(1, S(t)))
+    return [v * ((i / n) ** curve if i < n else 1.0) for i, v in enumerate(x)]
+
+
+def fade_out(x, t, curve=1.0):
+    return rev(fade_in(rev(x), t, curve))
+
+
+def decay(x, t60, after=0.0):
+    """An exponential fade from `after` seconds on, 60 dB down in t60 seconds."""
+    a = S(after)
+    k = math.log(1000) / (t60 * OUT)
+    return [v if i < a else v * math.exp(-k * (i - a)) for i, v in enumerate(x)]
+
+
+def steady(x, t=0.02):
+    """Its own rise and fall taken out: divided by its RMS envelope (blocks of t
+    seconds, joined linearly), so that a shape put on after is the only one."""
+    b = max(1, S(t))
+    env = []
+    for i in range(0, len(x), b):
+        part = x[i:i + b]
+        env.append(math.sqrt(sum(v * v for v in part) / len(part)))
+    floor = max(env) * 0.01
+    out = []
+    for i, v in enumerate(x):
+        p = i / b - 0.5
+        k = min(max(int(p), 0), len(env) - 1)
+        k1 = min(k + 1, len(env) - 1)
+        t = min(max(p - k, 0.0), 1.0)
+        out.append(v / max(env[k] * (1 - t) + env[k1] * t, floor))
+    return out
+
+
+def swell(x, curve=2.0):
+    """Shaped to rise across its whole length: from silence to full at its end."""
+    return fade_in(x, len(x) / OUT, curve)
+
+
+def lowpass(x, hz):
+    """One pole, 6 dB an octave."""
+    a = 1 - math.exp(-2 * math.pi * hz / OUT)
+    y, out = 0.0, []
+    for v in x:
+        y += a * (v - y)
+        out.append(y)
+    return out
+
+
+def highpass(x, hz):
+    return [v - l for v, l in zip(x, lowpass(x, hz))]
+
+
+def reverb(x, t60=0.4, wet=0.3, size=1.0):
+    """A short Schroeder reverb: four combs in parallel, two all-passes in
+    series; the tail (t60 seconds) is added to the length. `size` scales the
+    delays (a smaller room for < 1)."""
+    n = len(x) + S(t60)
+    dry = x + [0.0] * (n - len(x))
+    acc = [0.0] * n
+    for ms in (29.7, 37.1, 41.1, 43.7):
+        d = max(1, int(ms * size * OUT / 1000))
+        g = 10 ** (-3 * d / OUT / t60)
+        y = [0.0] * n
+        for i in range(n):
+            y[i] = dry[i] + (g * y[i - d] if i >= d else 0.0)
+            acc[i] += y[i] / 4
+    for ms, g in ((5.0, 0.7), (1.7, 0.7)):
+        d = max(1, int(ms * size * OUT / 1000))
+        y = [0.0] * n
+        for i in range(n):
+            y[i] = -g * acc[i] + (acc[i - d] + g * y[i - d] if i >= d else 0.0)
+        acc = y
+    return [a + wet * b for a, b in zip(dry, acc)]
+
+
+def click(ms=3.0, at_db=0.0):
+    """A tiny click: one cycle of a 1.5 kHz sine under a short decay."""
+    n = max(2, S(ms / 1000))
+    return [10 ** (at_db / 20) * math.sin(2 * math.pi * 1500 * i / OUT) * math.exp(-4 * i / n) for i in range(n)]
+
+
+def limit(x, ceil_db=CEIL, knee_db=6.0):
+    """A soft limiter: linear up to knee_db under the ceiling, a tanh curve
+    above it that never reaches the ceiling."""
+    c = 10 ** (ceil_db / 20)
+    k = c * 10 ** (-knee_db / 20)
+    r = c - k
+
+    def one(v):
+        a = abs(v)
+        if a <= k:
+            return v
+        return math.copysign(k + r * math.tanh((a - k) / r), v)
+    return [one(v) for v in x]
+
+
+def finish(x):
+    """The same for every B sound: DC and rumble under 30 Hz off, a gentle
+    low-pass at 6 kHz, the loudest 100 ms at LOUD dBFS through the limiter
+    (the gain before it found by a few steps), 3 ms fades at both ends."""
+    m = sum(x) / len(x)
+    x = lowpass(highpass([v - m for v in x], 30), 6000)
+    target = 10 ** (LOUD / 20)
+    g = target / (loudest(x)[0] or 1e-9)
+    for _ in range(40):
+        y = limit([v * g for v in x])
+        e = LOUD - db(loudest(y)[0])
+        if abs(e) < 0.05:
+            break
+        g *= 10 ** (e / 20)
+    m = sum(y) / len(y)
+    y = [v - m for v in y]
+    return fade_out(fade_in(y, EDGE), EDGE)
+
+
+# --- family B: the recipes ------------------------------------------------------------
+# Takes: a piece of space comes loose; the energy rises and then stops dead, 0.35-0.7 s.
+def take_unslam():
+    """A door shut played backwards: its ring swells into the slam, and stops on it."""
+    return rev(cut(hit(rpg("doorClose_4")), 0, 0.5))
+
+
+def take_unslam_low():
+    """The same an octave lower, the reverb put on before reversing, so that its
+    tail comes first as a rising pre-swell; a tiny click at the very end."""
+    x = rev(reverb(cut(speed(hit(rpg("doorClose_4")), 0.5), 0, 0.4), t60=0.5, wet=0.5))
+    x = fade_in(last(x, 0.62), 0.05)
+    return mix((x, 0), (click(3, -6), len(x) / OUT - 0.004))
+
+
+def take_peel():
+    """A knife drawn, five semitones down, swelling, ending in a short pop (a thud
+    pitched up) that stops it."""
+    w = swell(cut(speed(rpg("drawKnife2"), semis(-5)), 0, 0.42), 1.5)
+    pop = fade_out(cut(speed(hit(rpg("bookPlace1")), semis(9)), 0, 0.05), 0.015)
+    return then(norm(w, -6), norm(pop), 0.02)
+
+
+def take_field_drops():
+    """A force field falling in pitch while it grows, cut short."""
+    x = glide(scifi("forceField_000"), 1.5, 0.55)
+    return swell(steady(cut(x, 0, 0.5)), 1.6)
+
+
+# Sets: a piece of space locks in; a short lead-in, then a heavy hit with a short tail, 0.4-0.9 s.
+def set_seal():
+    """A whoosh backwards (0.2 s) straight into a door shut a fifth down, with a
+    copy an octave under that, in a short reverb."""
+    lead = swell(last(rev(rpg("cloth1")), 0.2), 1.2)
+    shut = hit(rpg("doorClose_4"))
+    slam = mix((cut(speed(shut, 2 / 3), 0, 0.42), 0), (cut(speed(shut, 1 / 3), 0, 0.42), 0, -3))
+    return reverb(then(norm(lead, -4), norm(decay(slam, 0.45, 0.05))), t60=0.2, wet=0.25, size=0.6)
+
+
+def set_slam_sub():
+    """A slam with an octave-down copy and a low-passed sub under it; no lead-in,
+    the shortest reverb."""
+    x = cut(hit(rpg("doorClose_2")), 0, 0.45)
+    low = speed(x, 0.5)
+    sub = lowpass(lowpass(low, 120), 120)
+    y = mix((norm(x), 0), (norm(low), 0, -4), (norm(sub), 0, -2))
+    return reverb(decay(cut(y, 0, 0.6), 0.6, 0.08), t60=0.15, wet=0.2, size=0.5)
+
+
+def set_field_clunk():
+    """A force field rising in pitch (0.2 s) into a metal impact."""
+    lead = swell(steady(cut(glide(scifi("forceField_000"), 0.6, 1.8), 0, 0.2)), 1.5)
+    clunk = decay(cut(hit(scifi("impactMetal_003")), 0, 0.55), 0.5, 0.03)
+    return then(norm(lead, -14), norm(clunk))
+
+
+def set_thud_ring():
+    """A low thud with a short metallic ring after it, the ring a metal pot an
+    octave and a fifth down, fading over 0.5 s."""
+    thud = norm(cut(speed(hit(rpg("bookPlace2")), semis(-7)), 0, 0.3))
+    ring = decay(norm(cut(speed(cut(hit(rpg("metalPot1")), 0, 0.3), semis(-19)), 0, 0.65)), 0.7, 0.02)
+    return mix((thud, 0), (ring, 0.01, -3))
+
+
+OWN = [
+    # kind    its name in the lab   the recipe
+    ("take", "un-slam",           take_unslam),
+    ("take", "un-slam, low",      take_unslam_low),
+    ("take", "peel",              take_peel),
+    ("take", "field drops",       take_field_drops),
+    ("set",  "seal",              set_seal),
+    ("set",  "slam with sub",     set_slam_sub),
+    ("set",  "field up, clunk",   set_field_clunk),
+    ("set",  "thud and ring",     set_thud_ring),
+]
+
+
+def wav(x):
+    samples = [max(-32768, min(32767, int(round(v * 32767)))) for v in x]
     b = io.BytesIO()
     with wave.open(b, "wb") as w:
         w.setnchannels(1)
@@ -256,17 +497,8 @@ def wav(samples):
     return b.getvalue()
 
 
-def recipe(layers):
-    """A layer list in words, for the table and the sndinfo comments."""
-    out = []
-    for i, (name, *rest) in enumerate(layers):
-        name = "shortest of " + "/".join(name) if isinstance(name, tuple) else name
-        if rest:
-            when, gain, *by = rest
-            w = "as it dies away" if when == "dies" else (f"{when[5:]} s after the peak" if isinstance(when, str) else f"at {when} s")
-            name += f" {w}, {gain:+g} dB" + (" by peak" if by else " by loudness")
-        out.append(name)
-    return " + ".join(out)
+def first_line(f):
+    return " ".join(f.__doc__.split())
 
 
 _made = None
@@ -277,14 +509,18 @@ def make_all():
     global _made
     if _made is None:
         out, snd, listing, count = {}, [], [], {"take": 0, "set": 0}
-        snd.append("// Made by tools/sfx.py from recordings (assets/sounds/kenney-rpg, CC0): the sound lab's\n"
-                   "// door sounds. Every level still plays Doom's; the lab (soundlab.zs) chooses these.\n")
-        for kind, name, layers in SOUNDS:
+        snd.append("// Made by tools/sfx.py from recordings (assets/sounds/kenney-rpg, kenney-scifi; CC0): the sound\n"
+                   "// lab's door sounds. Every level still plays Doom's; the lab (soundlab.zs) chooses these.\n")
+        for kind, name, logical, pitch in DOOM:
+            listing.append(f"{kind}|{logical}|{name}|{pitch:g}")
+        own = {"take": [], "set": []}
+        for kind, name, recipe in OWN:
             count[kind] += 1
             lump = f"aj{kind}{count[kind]}"
-            out[f"sounds/{lump}.wav"] = wav(finish(build(layers), LIMIT[kind]))
-            snd.append(f"ajar/{kind}{count[kind]}\t{lump}\t\t// {name}: {recipe(layers)}")
-            listing.append(f"{kind}|ajar/{kind}{count[kind]}|{name}")
+            out[f"sounds/{lump}.wav"] = wav(finish(recipe()))
+            snd.append(f"ajar/{kind}{count[kind]}\t{lump}\t\t// {name}: {first_line(recipe)}")
+            own[kind].append(f"{kind}|ajar/{kind}{count[kind]}|{name}|1")
+        listing = [l for l in listing if l.startswith("take")] + own["take"] + [l for l in listing if l.startswith("set")] + own["set"]
         out["sndinfo.txt"] = "\n".join(snd) + "\n"
         out["ajsounds.txt"] = "\n".join(listing) + "\n"
         _made = out
@@ -293,10 +529,19 @@ def make_all():
 
 # --- figures --------------------------------------------------------------------
 def figures(samples, rate):
-    """Length (s), peak (dBFS), RMS over the loudest 100 ms (dBFS); samples as
-    fractions of full scale."""
-    rms, _ = loudest(samples, rate)
-    return len(samples) / rate, db(max(abs(v) for v in samples)), db(rms)
+    """Length (s), peak (dBFS), RMS over the loudest 100 ms (dBFS), where the
+    middle of that 100 ms lies (% of the length), and the envelope: the RMS of
+    each tenth of the sound, dB under the loudest tenth."""
+    rms, at = loudest(samples, rate)
+    n = len(samples)
+    w = int(rate * 0.1)
+    tenths = []
+    for k in range(10):
+        part = samples[k * n // 10:(k + 1) * n // 10] or [0.0]
+        tenths.append(math.sqrt(sum(v * v for v in part) / len(part)))
+    top = max(tenths) or 1e-9
+    env = " ".join(f"{max(-99, round(db(t / top))):3d}" for t in tenths)
+    return n / rate, db(peak(samples)), db(rms), 100 * (at + min(w, n) / 2) / n, env
 
 
 def wav_figures(data):
@@ -325,18 +570,18 @@ def doom_sound(wad, name):
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    print(f"{'sound':10} {'length s':>9} {'peak dBFS':>10} {'RMS 100ms dBFS':>15}  recipe")
+    print(f"{'sound':10} {'length s':>9} {'peak dBFS':>10} {'RMS 100ms':>10} {'at %':>5}  envelope by tenths (dB)          name")
     made = make_all()
-    names = iter(SOUNDS)
+    names = iter(OWN)
     for path, data in made.items():
         with open(os.path.join(out, os.path.basename(path)), "wb" if isinstance(data, bytes) else "w") as f:
             f.write(data)
         if path.endswith(".wav"):
-            kind, name, layers = next(names)
-            ln, pk, rms = wav_figures(data)
-            print(f"{os.path.basename(path)[:-4]:10} {ln:9.3f} {pk:10.2f} {rms:15.2f}  {name}: {recipe(layers)}")
+            kind, name, recipe = next(names)
+            ln, pk, rms, at, env = wav_figures(data)
+            print(f"{os.path.basename(path)[:-4]:10} {ln:9.3f} {pk:10.2f} {rms:10.2f} {at:5.0f}  {env}  {name}")
     if len(sys.argv) > 2:
-        for name in ("DSDORCLS", "DSDOROPN"):
+        for name in ("DSDORCLS", "DSDOROPN", "DSWPNUP", "DSBDCLS", "DSBDOPN", "DSPSTART", "DSPSTOP"):
             rate, s = doom_sound(sys.argv[2], name)
-            ln, pk, rms = figures(s, rate)
-            print(f"{name:10} {ln:9.3f} {pk:10.2f} {rms:15.2f}   ({rate} Hz, 8-bit)")
+            ln, pk, rms, at, env = figures(s, rate)
+            print(f"{name:10} {ln:9.3f} {pk:10.2f} {rms:10.2f} {at:5.0f}  {env}  ({rate} Hz, 8-bit)")
