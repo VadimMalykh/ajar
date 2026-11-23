@@ -11279,3 +11279,145 @@ is the likelier proof.
   arrive at once, and there are too few doors, so one hanging has to serve
   two readers. Everything it needs is built; no new sight, and a heap of
   ideas.
+
+## MAP33, the third secret level: the whole map in three goes (2026-11-23, outline; nothing built)
+
+From MAP20's secret way out (the left-handed bath). It takes Vadim's "Idea
+for a map of 21 to 30: the whole map in three goes, two switches and a
+door" (2026-11-22) and makes it the third secret level. **Nothing is built
+and the engine has not been asked**: a lab was started the same day (map
+THIRD, task `third-lab`); its results go in "The three goes lab", after
+this section.
+
+**Vadim** (2026-11-23):
+- The three goes map is the next secret map. And the rule for the rest of
+  the game, to Claude's question whether copies of the player stay in the
+  secret maps while 21 to 30 get time as "the door to before" (a room built
+  twice, then and now: no recording, no copy, no paradox death): "Yes,
+  let's build map33 suggested way." Claude reads the yes as both.
+- No learning room at the start: "most of the players, who found secret
+  level 3 will also find previous 2".
+- "Quite a big map, which can be went through 3 times by different paths
+  (maybe sometimes crossed, but mostly separate). And the question how do
+  we direct player to proper way?"
+- **The future seen**: "what if the very first copy at some moment will
+  cross some room, that will show corpses and other evidences of the battle
+  happened there. And only on the second go he will fight there, so in
+  first go he kind of saw future. I understand that we cannot place corpses
+  how they will be placed after real battle, but still wouldn't it be a
+  great idea".
+
+Everything below is Claude's, to argue over.
+
+**What the player is told, in one sentence**: three parts, three goes; the
+time door at the end of a part leads to before, into the start of the next
+part.
+
+**How the player is sent the right way** (Vadim's question): they cannot
+take a wrong one.
+- *The box is the start of the next part.* A time door has always led into
+  a box that looks on the hall through glass. Here box 2 and box 3 look on
+  the start hall: the player sees their earlier self set off, and the only
+  way out of the box is into its own part.
+- *No part is joined to another on foot.* Where they cross it is glass, a
+  height or a railing. So the building answers "who goes where", and inside
+  a part the player is as free as in any level: loops, side rooms, secrets.
+- *A colour for each part*: the lamps over its doors, a line on its floor,
+  and the earlier self of that go wears it. The sign at the end shows three
+  figures in the three colours: one on each plate, one walking through the
+  door.
+- *Clocks.* The go's clock is on the HUD as in MAP32, and the timetable
+  (table.zs) says when an earlier self crosses the turbine hall and when it
+  steps on its plate.
+
+**The crossing room: the future seen** (Vadim's idea, the heart of the
+level). The turbine hall, on three heights.
+- Go 1 crosses it on the crane gantry and sees the floor below after a
+  battle: bodies, wrecks, scorched walls. Go 2 comes in at the floor and
+  fights that battle. Go 3 passes under the floor in a glass duct and sees
+  whatever is true at that moment: the hall waiting, the fight (the earlier
+  self in it, as fought), or the bodies.
+- **It can be made honest.** What leaves a body stands where it cannot
+  leave: mancubi and arachnotrons on the turbine casings, a spider
+  mastermind in the pit, revenants and chaingunners in the bays of the
+  wall. What moves leaves no body: lost souls and pain elementals. So go 1
+  is shown bodies in exactly those places, and go 2 leaves bodies in
+  exactly those places. Nothing has to be remembered and compared.
+- **The knot.** The shutter at the far end of the gantry is opened by the
+  win. Go 1 finds it open and walks through: it could go on only because
+  the fight had been won. So go 2 must win before its earlier self comes
+  onto the gantry. If anything in the hall still lives at that moment, it
+  is a paradox. The hall's clock has a mark at that moment.
+- The gantry has a railing and the floor no stair to it: go 1 cannot come
+  down, go 2 cannot come up.
+
+**The end**: three small rooms with glass between them. Plate 1, plate 2,
+and the way out behind a door.
+- The rule on the sign: the door is open while both plates are stood on,
+  and ten seconds more.
+- Go 1 steps on plate 1. Nothing opens but its own time door (so a first go
+  cannot end without having stood there). Nobody has to wait: the ten
+  seconds belong to the door.
+- Go 2 has to be on plate 2 when its earlier self steps on plate 1. It sees
+  the door open in the third room, behind glass, out of reach. Its time
+  door opens.
+- Go 3 waits at the door and walks through.
+- **The parts get shorter**: about 9, 6 and 3 minutes of play (the lab and
+  the first build say what is right), so that a later self is early. A self
+  that is early winds time on, in the end rooms only (MAP31's plates).
+- A go that comes too late (the earlier self has left its plate, the door
+  has shut) is a paradox as well.
+
+**A mistake costs a part, not the map.** Every failure is the one the
+player knows, the paradox, and death is death; but the game is saved at
+the start of each go, so what is lost is that go. This hangs on the lab:
+whether a script can make the engine's autosave, and whether a loaded game
+has the earlier goes whole. If not, a part has to be put back by script, as
+"Begin anew in a fight" does for a hall.
+
+**Fights.** Each part is fought once, by the go whose part it is, and the
+player takes health, weapons and ammunition through a time door as in
+MAP31. An earlier part's fights are seen again only through glass: two or
+three window halls where the earlier go is played, monsters and all, in
+step with the clock.
+
+**Doors.** Each part has its own doors and frames and is an Ajar level in
+itself. **No door joins two parts in the first version**: a hung door
+between parts would be a way on foot. Later, perhaps, a Pair behind bars
+(sight and shots between two selves, no walking).
+
+**The place** (Claude's candidate): a power station, since three goes at
+one moment are three phases. The boiler house, the turbine hall, the
+switchyard out of doors, the cable ducts, the control room with three
+switchgear cells (the end). The colours are the three phases': yellow,
+green, red.
+
+**Size**: MAP19's or over (about 9000 x 5500, 900 sectors, 250 to 300
+monsters); part 1 about 45 per cent of it, part 2 35, part 3 20.
+
+**Name**: "Third Person" (Claude's candidate: the third self, and oneself
+seen from outside); the other is "In Phase".
+
+**Waits for the lab** (map THIRD):
+- a go that lasts ten minutes over a whole map: the record, its cost, a
+  saved game with it;
+- a time door whose box is somewhere else, at the start of the next part,
+  and one clock for the whole map;
+- a window hall: a fight of go 1 played to go 2 and go 3 in step with the
+  clock;
+- the turbine hall: bodies shown to go 1, the same monsters alive for go 2,
+  the paradox when the earlier self comes before the win, go 3's view;
+- the end: plates held by earlier selves, the door and its ten seconds, the
+  time doors that open on success, the paradox of coming too late;
+- the save at the start of a go, and what the engine loads after a death;
+- winding on in an end room.
+
+**Open, for Vadim**:
+- The place and the name.
+- Whether a paradox (and a death) costs the go, as proposed, or the level,
+  as in MAP32.
+- Whether go 1 crosses over the battlefield (the gantry, as proposed) or
+  walks among the bodies. Among them is the stronger picture, but then
+  railings cannot keep the parts apart.
+- Whether the three parts have to be played in a fixed order (proposed:
+  yes; the future seen needs it).
