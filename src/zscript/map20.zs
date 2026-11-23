@@ -468,7 +468,7 @@ class HighWaterTest : EventHandler
 		if (Op())
 		{
 			Keys(WALKKEY, BT_JUMP);
-			if (!(mo.pos.x > 1080 && mo.pos.z >= 215) && opT < 140) return;
+			if (!(mo.pos.x > 1080 && abs(mo.pos.z - 216) < 1) && opT < 140) return;
 			Keys();
 			Check("outOnTheLedge", mo.pos.x > 1056 && abs(mo.pos.z - 216) < 1, String.Format("player %s after %d tics", PStr(mo.pos), opT));
 			Next();
