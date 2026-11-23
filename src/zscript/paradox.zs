@@ -268,17 +268,25 @@ extend class AjarTimeHandler
 		}
 	}
 
-	void EndUniverse(PlayerPawn mo, int i)
+	// `why` (third.zs): what is said instead of "You touched your earlier
+	// self." (a line break in it makes two lines). `apart`: the copy is not
+	// touched but far off (a self that came where it could not have); the
+	// end is where it is, and the player only dies. i < 0: no copy at all
+	// (coming too late): the end is where the player is.
+	string paradoxWhy;
+	void EndUniverse(PlayerPawn mo, int i, string why = "", bool apart = false)
 	{
-		AjarGhost g = ghosts[i];
+		AjarGhost g = i >= 0 && i < ghosts.Size() ? ghosts[i] : null;
 		paradox = true;
 		paradoxes++;
 		paradoxTic = level.maptime;
 		paradoxCopy = i + 1;
-		paradoxAt = ((mo.pos.xy + g.pos.xy) / 2, max(mo.pos.z, g.pos.z));
+		paradoxWhy = why;
+		paradoxAt = !g ? mo.pos : apart ? g.pos : ((mo.pos.xy + g.pos.xy) / 2, max(mo.pos.z, g.pos.z));
+		Vector3 gp = g ? g.pos : mo.pos;
 		if (CVar.GetCVar("ajar_autotest").GetInt())
 			Console.Printf("AJARTEST info paradox t=%d go=%d ot=%d copy=%d at=(%d,%d,%d) me=(%d,%d,%d)", level.maptime, takes.Size(), ot, i + 1,
-				g.pos.x, g.pos.y, g.pos.z, mo.pos.x, mo.pos.y, mo.pos.z);
+				gp.x, gp.y, gp.z, mo.pos.x, mo.pos.y, mo.pos.z);
 		paradoxReach = 0;
 		for (int z = 0; z < zf.Size(); z++)
 		{
@@ -291,8 +299,8 @@ extend class AjarTimeHandler
 		}
 		pdxFloor = level.PointInSector(paradoxAt.xy).floorplane.ZAtPoint(paradoxAt.xy);
 		// the two that met: white shapes of them where they stood (before the body falls)
-		pdxMe = ParadoxShape(mo, mo.pos, mo.angle);
-		pdxIt = ParadoxShape(g, g.pos, g.angle);
+		pdxMe = g && apart ? null : ParadoxShape(mo, mo.pos, mo.angle);
+		pdxIt = g ? ParadoxShape(g, g.pos, g.angle) : null;
 		// the view: a camera at the player's eye, which holds still until the blast
 		pdxEye = (mo.pos.xy, mo.player.viewz);
 		pdxEyeAng = mo.angle;
@@ -306,8 +314,7 @@ extend class AjarTimeHandler
 			mo.player.camera = pdxCam;
 		}
 		// the copy is gone in it
-		g.Destroy();
-		ghosts[i] = null;
+		if (g) { g.Destroy(); ghosts[i] = null; }
 		// the player is dead: nothing spares them
 		mo.player.cheats &= ~(CF_GODMODE | CF_GODMODE2 | CF_BUDDHA | CF_BUDDHA2 | CF_FROZEN | CF_TOTALLYFROZEN);
 		mo.bBuddha = false;
@@ -318,7 +325,7 @@ extend class AjarTimeHandler
 		mo.player.damagecount = 0;          // (no red of a hit: the white is drawn, RenderOverlay)
 		mo.player.bonuscount = 0;
 		mo.vel = (0, 0, 0);
-		mo.bInvisible = true;               // (its white shape stands there)
+		mo.bInvisible = pdxMe != null;      // (its white shape stands there)
 		mo.A_StartSound("weapons/bfgf", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE, 0.8);
 		Say("");                            // (a hint on the screen goes)
 		// the room stands still; every moment of the player's in it, at once
@@ -719,8 +726,19 @@ extend class AjarTimeHandler
 		double s = level.maptime - 1 - pdxSaidTic + e.FracTic;
 		double a = pdxSaidLast ? min(1., s / 8) : clamp(1 - (s - PDX_SAY_TICS) / PDX_SAY_FADE, 0., 1.);
 		if (a <= 0) return;
-		static const string lines[] = { "PARADOX", "", "You touched your earlier self.", "This universe is over.", "", "Press USE to begin again." };
-		int n = pdxSaidLast ? 6 : 4;
+		Array<string> lines;
+		lines.Push("PARADOX");
+		lines.Push("");
+		if (paradoxWhy == "") lines.Push("You touched your earlier self.");
+		else
+		{
+			Array<string> why;
+			paradoxWhy.Split(why, "\n");
+			for (int i = 0; i < why.Size(); i++) lines.Push(why[i]);
+		}
+		lines.Push("This universe is over.");
+		if (pdxSaidLast) { lines.Push(""); lines.Push("Press USE to begin again."); }
+		int n = lines.Size();
 		double y = 150;
 		for (int i = 0; i < n; i++)
 		{

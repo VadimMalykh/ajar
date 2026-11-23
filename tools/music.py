@@ -44,6 +44,12 @@ the other six are written the same way. Which map plays which piece is in
 src/mapinfo.txt (the quiet one on MAP01 and MAP10 by his word, the rest by
 how much fighting a map has). All twelve can be heard in the sound lab
 (MAP=SOUND ./run.sh).
+
+Six more quiet ones, 2026-11-23: Vadim asked for more like After Hours (the
+piece of MAP01 and MAP10). They are the last six of TRACKS, written the way
+that one is: held chords two bars long over a low note, a tune of a few long
+notes coming in after eight bars, one more voice every eight bars, hardly any
+drums, then round again from the bare beginning. No map plays them yet.
 """
 import random
 import re
@@ -60,9 +66,10 @@ DRUMS = 9
 PIANO, EPIANO, HARPSI, VIBES, BELLS, ORGAN, MUTED, OVERDRIVE, DISTORTION = 0, 4, 6, 11, 14, 18, 28, 29, 30
 ACBASS, FINGER, PICKBASS, FRETLESS, SYNBASS1, SYNBASS, CELLO, CONTRABASS, PIZZ, HARP, TIMPANI = 32, 33, 34, 35, 38, 39, 42, 43, 45, 46, 47
 STRINGS, SLOWSTR, CHOIR, SYNBRASS, SQUARE, SAW, POLYSYNTH = 48, 49, 52, 62, 80, 81, 90
+GLOCK, MUSICBOX, MARIMBA, CHURCH, TREMOLO, VOICE, HORN, CLARINET, FLUTE, WARMPAD = 9, 10, 12, 19, 44, 53, 60, 71, 73, 89
 # percussion keys
 KICK, KICK2, SNARE, ESNARE, HAT, OHAT, CRASH, RIDE, RBELL = 36, 35, 38, 40, 42, 46, 49, 51, 53
-TOM1, TOM2, TOM3, TOM4, WOOD_HI, WOOD_LO = 48, 47, 45, 41, 76, 77
+TOM1, TOM2, TOM3, TOM4, WOOD_HI, WOOD_LO, STICK = 48, 47, 45, 41, 76, 77, 37
 
 
 def parse(pattern, steps):
@@ -709,6 +716,245 @@ def dead_letter():
     return p
 
 
+# The quiet ones after After Hours (see the top). In each the chords are named in its first comment; a tune's bar
+# is written against the chord of that bar, so a tune is not moved with the chords unless its form says so.
+
+def do_not_disturb():
+    """A, 56 a minute. The lullaby: a music box over strings that sink a third and come back, a voice a semitone apart."""
+    p = Piece("Do Not Disturb", 56)
+    hold = " ".join("-" * 16)
+    # two bars each: A minor, F minor, A minor, E major
+    p.voice("strings", SLOWSTR, 57, {
+        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("m T m-4 T m T M-5 T", 4), vel=68, gate=1.0, volume=90, pan=54, reverb=80)
+    p.voice("drone", CONTRABASS, 33, {
+        "D": "1 - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("D T D-4 T D T D-5 T", 4), vel=82, gate=1.0, volume=102)
+    p.voice("music box", MUSICBOX, 69, {
+        "Ba": ". . . . 5 - b3' - 2' - 1' - - - - -",
+        "Bb": ". . . . b3' - 7 - b6 - - - - - - -",
+        "Bc": ". . . . 5 - 1' - b3' - 5' - - - - -",
+        "Bd": ". . . . 5' - 4' - 2' - 7 - - - - -",
+        "Be": ". . . . 1' - 2' - b3' - - - 5 - - -",
+        "Bf": ". . . . b3' - b6 - 7 - - - - - - -",
+        "Bg": ". . . . b3' - 1' - 5 - - - - - - -",
+        "Bh": ". . . . 2' - 7 - 5 - - - - - - -",
+    }, rep("_", 8, "Ba _ Bb _ Bc _ Bd _", 1, "Be _ Bf _ Bg _ Bh _", 1, "Ba _ Bb _ Bc _ Bd _", 1), vel=80, gate=1.0,
+            volume=96, pan=44, reverb=80)
+    p.voice("voice", VOICE, 69, {                       # A, A flat, A, G sharp: the one note the chords do not share
+        "a": "1 - - - - - - - - - - - - - - -", "b": "7, - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 16, "a T b T a T b T", 2), vel=60, gate=1.0, volume=80, pan=74, reverb=90)
+    p.voice("harp", HARP, 57, {
+        "H": "1 . . . 5 . . . b3' . . . 5 . . .",
+        "HM": "1 . . . 5 . . . 3' . . . 5 . . .",
+    }, rep("_", 24, "H H H-4 H-4 H H HM-5 HM-5", 1), vel=64, gate=1.0, volume=84, pan=36, reverb=80)
+    p.drums({
+        "a": {KICK2: "x..o............"},                 # a heart, slow
+    }, rep("_", 8, "a", 24), vel=78, volume=86)
+    return p
+
+
+def left_luggage():
+    """D, 66 a minute. The empty hall: a fretless bass riff with room in it, electric piano, a tune on the vibraphone."""
+    p = Piece("Left Luggage", 66)
+    # eight bars: D minor x4, G major x2, D minor x2; the middle: B flat, C, D minor x2, twice
+    intro = rep("L1 L1 L1 L2", 1)
+    unit = "L1 L1 L1 L2 L1+5 L1+5 L1 L2".split()
+    middle = "L1-4 L1-2 L1 L2".split() * 2
+    p.voice("bass", FRETLESS, 38, {
+        "L1": "1 - - . . . 1 . 5, - - . . . b7, .",
+        "L2": "1 - - . . . 1 . 4 - - . b3 . 2 .",
+    }, intro + unit * 2 + middle + unit + intro, vel=98, gate=0.9, volume=112)
+    chords, mid = "c c c c C-7 C-7 c c".split(), "C-4 C-2 c c".split() * 2
+    p.voice("piano", EPIANO, 62, {
+        "c": "1m - - - - - - - - - - - . . . .",
+        "C": "1M - - - - - - - - - - - . . . .",
+    }, rep("_", 4) + chords * 2 + mid + chords + rep("_", 4), vel=62, gate=1.0, volume=82, pan=44, reverb=60)
+    p.voice("strings", SLOWSTR, 50, {
+        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -",
+    }, rep("_", 20, "M-4 M-2 m m", 2, "_", 12), vel=60, gate=1.0, volume=76, pan=78, reverb=80)
+    tune = "A1 A2 A3 A4 A5 A6 A7 A8".split()
+    p.voice("vibes", VIBES, 74, {
+        "A1": "5 - - - - - - - 4 - - - b3 - - -",
+        "A2": "1 - - - - - - - - - - - . . . .",
+        "A3": "5 - - - - - - - b7 - - - 5 - - -",
+        "A4": "4 - - - - - - - - - - - . . . .",
+        "A5": "6 - - - - - - - 5 - - - 4 - - -",
+        "A6": "2 - - - - - - - - - - - . . . .",
+        "A7": "b3 - - - - - - - 1 - - - b7, - - -",
+        "A8": "1 - - - - - - - - - - - . . . .",
+        "B1": "b3 - - - - - - - 1 - - - b3 - - -",
+        "B2": "4 - - - - - - - 2 - - - 4 - - -",
+        "B3": "5 - - - - - - - - - - - 4 - b3 -",
+        "B4": "1 - - - - - - - - - - - . . . .",
+        "B5": "1' - - - - - - - b6 - - - 4 - - -",
+        "B6": "b7 - - - - - - - 4 - - - 2 - - -",
+        "B7": "b3 - - - - - - - 4 - - - 5 - - -",
+        "B8": "1' - - - - - - - - - - - - - - -",
+    }, rep("_", 12) + tune + "B1 B2 B3 B4 B5 B6 B7 B8".split() + tune + rep("_", 4), vel=82, gate=1.0, volume=94,
+            reverb=70)
+    p.drums({
+        "t": {RIDE: "o...o...o...o..."},
+        "a": {RIDE: "o...o...o...o...", KICK2: "x.......o.......", STICK: "....o.......o..."},
+        "f": {RIDE: "o...o...o...o...", KICK2: "x.......o.......", STICK: "....o.......o.o."},
+    }, rep("t", 4, "a a a f", 8, "t", 4), vel=84, volume=90)
+    return p
+
+
+def light_under_the_door():
+    """E, 58 a minute. The watch kept: a harp going round, strings trembling on one note, a horn far off, then a flute."""
+    p = Piece("Light Under the Door", 58)
+    hold = " ".join("-" * 16)
+    # two bars each: E minor, F major, E minor, D minor (the white keys from E)
+    p.voice("harp", HARP, 52, {
+        "m": "1 . 5 . 1' . b3' . 5' . b3' . 1' . 5 .",
+        "M": "1 . 5 . 1' . 3' . 5' . 3' . 1' . 5 .",
+    }, rep("m m M+1 M+1 m m m-2 m-2", 4), vel=70, gate=1.0, volume=92, pan=44, reverb=70)
+    p.voice("drone", CONTRABASS, 40, {
+        "D": "1 - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("D T D+1 T D T D-2 T", 4), vel=82, gate=1.0, volume=100)
+    p.voice("tremolo", TREMOLO, 64, {                   # B, C, B, A
+        "a": "5 - - - - - - - - - - - - - - -", "b": "b6 - - - - - - - - - - - - - - -",
+        "c": "4 - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 8, "a T b T a T c T", 3), vel=58, gate=1.0, volume=76, pan=76, reverb=80)
+    tune = {
+        "H1": "5 - - - - - - - - - - - 1' - - -",
+        "H2": "b3' - - - - - - - 1' - - - 5 - - -",
+        "H3": "4 - - - - - - - - - - - b6 - - -",
+        "H4": "b2' - - - - - - - b6 - - - 4 - - -",
+        "H5": "5 - - - - - - - 1' - - - b3' - - -",
+        "H6": "5' - - - - - - - - - - - . . . .",
+        "H7": "4' - - - - - - - b2' - - - b7 - - -",
+        "H8": "4 - - - - - - - - - - - . . . .",
+    }
+    whole = "H1 H2 H3 H4 H5 H6 H7 H8"
+    p.voice("horn", HORN, 52, tune, rep("_", 8, whole, 1, "_", 8, whole, 1), vel=80, gate=0.97, volume=92, pan=58,
+            reverb=90)
+    p.voice("flute", FLUTE, 64, tune, rep("_", 16, whole, 2), vel=70, gate=0.97, volume=82, pan=40, reverb=80)
+    p.voice("timpani", TIMPANI, 40, {
+        "a": "1 . . . . . . . . . . . . . 1 1",
+    }, rep("_", 16, "a _ _ _ a _ _ _", 2), vel=78, gate=0.9, volume=92, pan=72, reverb=70)
+    return p
+
+
+def between_floors():
+    """F sharp, in five, 72 a minute. The lift that stopped: five piano notes round and round, a cello, a held chord."""
+    p = Piece("Between Floors", 72, steps=20, sig=(5, 4))
+    hold = " ".join("-" * 20)
+    # two bars each: F sharp minor, B minor, D major, G major; the piano's lowest note stays until the last
+    round_ = "Oi Oi Oiv Oiv OVI OVI OII OII"
+    p.voice("piano", PIANO, 66, {
+        "Oi": "1 - - . 5 - - . b3 - - . 5 - - . b3 - - .",
+        "Oiv": "1 - - . b6 - - . 4 - - . b6 - - . 4 - - .",
+        "OVI": "1 - - . b6 - - . b3 - - . b6 - - . b3 - - .",
+        "OII": "b2 - - . b6 - - . 4 - - . b6 - - . 4 - - .",
+    }, rep(round_, 4), vel=72, gate=1.0, volume=94, pan=46, reverb=80)
+    p.voice("bass", ACBASS, 42, {
+        "B": "1 - - - - - - - - - - . 5, - - - - - - .",
+    }, rep("_", 4, "B-4 B-4 B+1 B+1", 1, "B B B+5 B+5 B-4 B-4 B+1 B+1", 3), vel=92, gate=0.9, volume=108)
+    p.voice("pad", WARMPAD, 54, {
+        "m": "1m - - - - - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 8, "m T m+5 T M-4 T M+1 T", 3), vel=58, gate=1.0, volume=74, pan=76, reverb=80)
+    p.voice("cello", CELLO, 54, {
+        "T1": "5 - - - - - - - - - - - b3 - - - 1 - - -",
+        "T2": "b3 - - - - - - - - - - - - - - - . . . .",
+        "T3": "b6 - - - - - - - - - - - 4 - - - 1 - - -",
+        "T4": "4 - - - - - - - - - - - - - - - . . . .",
+        "T5": "1' - - - - - - - - - - - b6 - - - b3 - - -",
+        "T6": "b6 - - - - - - - - - - - - - - - . . . .",
+        "T7": "b2' - - - - - - - - - - - b6 - - - 4 - - -",
+        "T8": "b2 - - - - - - - - - - - - - - - . . . .",
+    }, rep("_", 8, "T1 T2 T3 T4 T5 T6 T7 T8", 2, "_", 8), vel=86, gate=1.0, volume=98, reverb=70)
+    p.voice("choir", CHOIR, 66, {                       # C sharp, then D for the three chords that have it
+        "a": "5 - - - - - - - - - - - - - - - - - - -", "b": "b6 - - - - - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 16, "a T b T T T T T", 2), vel=58, gate=1.0, volume=76, pan=30, reverb=90)
+    p.drums({
+        "a": {KICK2: "x...................", RBELL: "............o......."},     # three and two
+    }, rep("_", 4, "a", 28), vel=80, volume=88)
+    return p
+
+
+def night_bell():
+    """C sharp, 60 a minute. The desk at night: a slow minor blues on an organ, a bell tolling, a small bell nobody
+    answers, a cello."""
+    p = Piece("Night Bell", 60)
+    hold = " ".join("-" * 16)
+    # twelve bars: C sharp minor x4, F sharp minor x2, C sharp minor x2, A major, G sharp major, C sharp minor x2
+    p.voice("organ", CHURCH, 49, {
+        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("m T T T m+5 T m T M-4 M-5 m T", 3), vel=56, gate=1.0, volume=72, pan=58, reverb=80)
+    p.voice("bass", ACBASS, 37, {
+        "P": "1 - - - - - - . 5, - - - - - - .",
+        "Q": "1 - - - - - - . 5 - - - - - - .",
+    }, rep("P P P P P+5 P+5 P P Q-4 Q-5 P P", 3), vel=92, gate=0.9, volume=108)
+    p.voice("bell", BELLS, 61, {
+        "B": "1 - - - - - - - - - - - - - - -",
+    }, rep("B _ _ _", 9), vel=78, gate=1.0, volume=88, pan=36, reverb=90)
+    p.voice("desk bell", GLOCK, 85, {
+        "d": ". . . . . . . . . . . . 5 - - -",
+    }, rep("_ _ _ d", 9), vel=70, gate=1.0, volume=80, pan=84, reverb=70)
+    tune = {
+        "N1": "5 - - - - - - - b7 - - - 5 - - -",
+        "N2": "4 - - - b3 - - - 1 - - - - - - -",
+        "N3": "5 - - - - - - - b7 - - - 1' - - -",
+        "N4": "b7 - - - 5 - - - - - - - . . . .",
+        "N5": "b6 - - - - - - - 1' - - - b6 - - -",
+        "N6": "4 - - - b6 - - - 4 - - - - - - -",
+        "N7": "5 - - - - - - - 4 - - - b3 - - -",
+        "N8": "1 - - - - - - - - - - - . . . .",
+        "N9": "b3' - - - - - - - 1' - - - b6 - - -",
+        "N10": "2' - - - - - - - 7 - - - 5 - - -",
+        "N11": "b3 - - - 4 - - - 5 - - - - - - -",
+        "N12": "1 - - - - - - - - - - - . . . .",
+    }
+    whole = "N1 N2 N3 N4 N5 N6 N7 N8 N9 N10 N11 N12"
+    p.voice("cello", CELLO, 49, tune, rep("_", 12, whole, 2), vel=86, gate=1.0, volume=98, pan=50, reverb=70)
+    p.voice("strings", STRINGS, 61, tune, rep("_", 24, whole, 1), vel=62, gate=1.0, volume=76, pan=74, reverb=80)
+    p.voice("timpani", TIMPANI, 37, {
+        "a": "1 . . . . . . . . . . . . . 1 1",
+    }, rep("_", 24, "a _ _ _ a+5 _ a _ _ _ a _", 1), vel=76, gate=0.9, volume=90, pan=72, reverb=70)
+    p.drums({
+        "a": {KICK2: "x...............", RIDE: "....o.......o..."},
+    }, rep("_", 12, "a", 24), vel=82, volume=88)
+    return p
+
+
+def standing_water():
+    """B flat, 52 a minute. The flooded floor: every chord a step lower than the last, drips on a marimba, a clarinet."""
+    p = Piece("Standing Water", 52)
+    hold = " ".join("-" * 16)
+    # two bars each: B flat minor, A flat minor, G flat minor, F major; all the voices sink with the chords
+    p.voice("strings", SLOWSTR, 58, {
+        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("m T m-2 T m-4 T M-5 T", 4), vel=66, gate=1.0, volume=88, pan=56, reverb=80)
+    p.voice("drone", CONTRABASS, 34, {
+        "D": "1 - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("D T D-2 T D-4 T D-5 T", 4), vel=82, gate=1.0, volume=102)
+    p.voice("drips", MARIMBA, 70, {
+        "da": ". . . 1' . . . . . . 5 . . . . .",
+        "db": ". . . . . . b3' . . . . . . 1' . 5",
+        "dB": ". . . . . . 3' . . . . . . 1' . 5",
+    }, rep("da db da-2 db-2 da-4 db-4 da-5 dB-5", 4), vel=70, gate=1.0, volume=88, pan=34, reverb=90)
+    p.voice("clarinet", CLARINET, 58, {
+        "S1": "5 - - - - - - - - - - - b3 - - -",
+        "S2": "1 - - - - - - - - - - - . . . .",
+        "S7": "2 - - - - - - - - - - - 7, - - -",
+        "S8": "5, - - - - - - - - - - - . . . .",
+        "T1": "1 - - - b3 - - - 5 - - - - - - -",
+        "T2": "b7 - - - - - - - 5 - - - . . . .",
+        "T7": "5, - - - 7, - - - 2 - - - - - - -",
+        "T8": "4 - - - - - - - 2 - - - . . . .",
+    }, rep("_", 8, "S1 S2 S1-2 S2-2 S1-4 S2-4 S7 S8", 1, "T1 T2 T1-2 T2-2 T1-4 T2-4 T7 T8", 1,
+           "S1 S2 S1-2 S2-2 S1-4 S2-4 S7 S8", 1), vel=80, gate=0.97, volume=94, pan=60, reverb=80)
+    p.voice("voice", VOICE, 70, {                       # the fifth of each chord
+        "a": "5 - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 16, "a T a-2 T a-4 T a-5 T", 2), vel=56, gate=1.0, volume=74, pan=78, reverb=90)
+    p.voice("harp", HARP, 46, {
+        "H": "1 . . . 5 . . . 1' . . . 5 . . .",
+    }, rep("_", 24, "H H H-2 H-2 H-4 H-4 H-5 H-5", 1), vel=62, gate=1.0, volume=82, pan=44, reverb=80)
+    return p
+
+
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_FARS", "the creeping one: synth bass in octaves, held organ, bells, a slow tune", far_side),
@@ -722,6 +968,12 @@ TRACKS = [
     ("AJM_FILE", "the machine: synth bass in sixteenths, a saw riff, a square-wave tune", filing),
     ("AJM_COPY", "the canon: plucked strings, a woodblock; the tune's copy four bars behind", carbon_copy),
     ("AJM_DEAD", "the slow heavy one: a riff on the tritone, timpani, a choir, a bell", dead_letter),
+    ("AJM_DSTB", "quiet, the lullaby: a music box over strings that sink a third, a voice a semitone apart", do_not_disturb),
+    ("AJM_LUGG", "quiet, the empty hall: a fretless bass riff, electric piano, a vibraphone tune", left_luggage),
+    ("AJM_LGHT", "quiet, the watch kept: a harp going round, trembling strings, a horn, then a flute", light_under_the_door),
+    ("AJM_FLRS", "quiet, in five: five piano notes round and round, a cello, a held chord", between_floors),
+    ("AJM_BELL", "quiet, a slow minor blues: an organ, a bell tolling, a desk bell nobody answers, a cello", night_bell),
+    ("AJM_WATR", "quiet, the flooded floor: every chord a step lower, drips on a marimba, a clarinet", standing_water),
 ]
 
 

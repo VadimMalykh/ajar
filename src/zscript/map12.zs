@@ -15,6 +15,20 @@ extend class AjarHandler
 	bool InLift(Actor mo) { return InBox(mo, -96, -96, 96, 96); }
 	bool InBooth(Actor mo) { return mo.pos.z == 192 && InBox(mo, -1216, 160, -1040, 352); }
 
+	// MODE 2: the store's hole and steps, on foot with empty hands: out of the
+	// store and up, and from the top down and in (2026-11-23: mapcheck's LINTEL
+	// said the hole's ceiling shut both; the walkthrough never walked them).
+	void StoreHoleScript(Actor mo, int t)
+	{
+		mo.player.cheats |= CF_GODMODE;
+		if (t == 10) Pose(mo, 584, -400, -64, 90);
+		Forward(mo, t, 10, 40);
+		if (t == 60) { Console.Printf("AJARTEST info out: player (%.1f, %.1f, %.1f)", mo.pos.x, mo.pos.y, mo.pos.z); Check("outOfTheStoreByTheHole", mo.pos.z == 0 && mo.pos.y > -208); }
+		if (t == 62) Pose(mo, 584, -176, 0, 270);
+		Forward(mo, t, 62, 40);
+		if (t == 112) { Console.Printf("AJARTEST info in: player (%.1f, %.1f, %.1f)", mo.pos.x, mo.pos.y, mo.pos.z); Check("intoTheStoreByTheHole", mo.pos.z == -64 && mo.pos.y < -288); }
+	}
+
 	void GoingUpScript(Actor mo, int t)
 	{
 		mo.player.cheats |= CF_GODMODE;

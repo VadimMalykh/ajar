@@ -99,19 +99,24 @@ hang((-448, -768), (-448, -704), "WS")
 hang((448, -768), (448, -704), "WS")
 hang((-64, -832), (64, -832), "CP")
 
-# --- the store, sunk off the hall behind lock 1: a drop in, a hole and steps out ----
+# --- the store, sunk off the hall behind lock 1: a drop in, steps and a hole out ----
+# The steps are in the store, under its own ceiling, and the hole is at the upper floor's height. (Until 2026-11-23
+# the hole was at the store's floor with the steps beyond it: the hole's ceiling, 64 over the store's floor, was
+# then over whoever stood on the first step, 21 up, and the way was shut in both directions. mapcheck's LINTEL.)
 SUNK = -64
 ajarmap.fitted(m, (464, -704, 896, -272), [
     ((464, -544, 528, -416), dict(floor=0)),                                 # the ledge inside the door
     ((656, -560, 720, -400), solid(SUNK, "SK")),                             # a stack
+    ((560, -320, 608, -304), dict(floor=SUNK + 21)),                         # three steps up to the hole
+    ((560, -304, 608, -288), dict(floor=SUNK + 42)),
+    ((560, -288, 608, -272), dict(floor=0)),
 ], floor=SUNK, ceil=SUNK + H, light=150, color=tint(DIM), **dress(wall="AR", ftex="FR", ctex="KA"))
 locked((448, -512), (448, -448), (1, 0), 0, "1", 302, "EX", "AR", "STORE")
 frame((896, -640), (896, -576), (1, 0), 107, DIM, SUNK)
 frame((896, -432), (896, -368), (1, 0), 109, DIM, SUNK)                      # two: hands can be emptied down here
 hang((704, -704), (832, -704), "CI")
-I1.squeeze((560, -272), (608, -272), (0, 1), SUNK, "AR", "AR")
-ajarmap.stairs(m, (560, -256), (608, -256), (0, 1), SUNK, -SUNK, steps=3, depth=16, ceil=128, light=140,
-               **dress(wall="AR", ftex="FR", ctex="KA"))
+I1.squeeze((560, -272), (608, -272), (0, 1), 0, "AR", "AR")
+m.sector(rect(560, -256, 608, -208), ceil=128, light=140, **dress(wall="AR", ftex="FR", ctex="KA"))
 m.sector(rect(464, -208, 608, -144), ceil=128, light=150, color=tint(DIM), **dress(wall="AR", ftex="FR", ctex="KA"))
 ajarmap.opening(m, (448, -208), (448, -144), (1, 0), 0, color=tint(STEEL))
 over((448, -208), (448, -144), "EX")

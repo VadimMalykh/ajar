@@ -1337,6 +1337,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "MAP20") return;     // and MAP20 (map20.zs, HighWaterTest)
 		if (level.mapname ~== "SOUND") return;     // and the sound lab (soundlab.zs)
 		if (level.mapname ~== "WATER") return;     // and the water lab (watertest.zs)
+		if (level.mapname ~== "LEFT") return;      // and the left-handed room lab (lefthand.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);
@@ -1348,6 +1349,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "CLOCK") ClockScript(mo, t, mode);       // the clock lab (clock.zs)
 		else if (level.mapname ~== "MAP11" && mode == 1) ByAppointmentScript(mo, t);
 		else if (level.mapname ~== "MAP12" && mode == 1) GoingUpScript(mo, t);
+		else if (level.mapname ~== "MAP12" && mode == 2) StoreHoleScript(mo, t);
 		else if (level.mapname ~== "MAP13" && mode == 1) SightUnseenScript(mo, t);
 		else if (level.mapname ~== "MAP14" && mode == 1) OnTheLevelScript(mo, t);
 		else if (level.mapname ~== "MAP15" && mode == 1) OnReflectionScript(mo, t);

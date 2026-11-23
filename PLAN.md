@@ -10922,12 +10922,30 @@ here. Exit is too small."
   `levelExited`.
 - **The same check on every other map** (38 generators): one more place,
   MAP12's store, "a hole and steps out": the hole (ceiling 64 over the
-  store's floor) opens straight onto steps 16 deep, so by the same rule the
-  player on the first step is still under the hole, in both directions. Not
-  yet asked of the engine; the next task. (MAP09's one report was a shut
-  door at the foot of a step, which opens: sectors of no height are now
-  left out.) The other problems mapcheck prints on old maps (41 `WALL`, 1
-  `VOID`) are not of this kind and were there before.
+  store's floor) opened straight onto steps 16 deep, so by the same rule
+  the player on the first step was still under the hole, in both
+  directions. (MAP09's one report was a shut door at the foot of a step,
+  which opens: sectors of no height are now left out.) The other problems
+  mapcheck prints on old maps (41 `WALL`, 1 `VOID`) are not of this kind
+  and were there before.
+- **MAP12's store, asked of the engine and fixed** (task
+  `map12-store-hole`, the same day; Claude's, unasked: Vadim had not met
+  it). `MAP=MAP12 MODE=2` (new, `StoreHoleScript` in `map12.zs`) walks out
+  of the store by the hole with empty hands and back in from the top. On
+  the map as it was both fail: going out the player stops in the hole at
+  the first step (584, -272, -64), going in on the second step (584, -240,
+  -22). So whoever dropped into the store with empty hands and no door
+  hung down there had no way out, though the puzzle graph has the hole as
+  a walk both ways (the solver's "0 stuck" took it on trust; the
+  walkthrough leaves by RED). Now the steps are in the store, three of 16
+  against its north wall under its own ceiling, and the hole is at the
+  upper floor's height (floor 0, 64 high, 48 wide as before), with flat
+  floor beyond where the steps were: no low ceiling is over a step. Both
+  checks pass; `MODE=1` as before (30 checks, `levelExited`); the full
+  build "MAP12: solvable in 9 door actions, 12423 states, 0 stuck" (the
+  graph is unchanged); mapcheck 0 problems (2 before), itemcheck and
+  thingcheck 0. Looked at once from inside the store (three pale steps up
+  to the hole in the blue wall); not played by hand.
 
 ## The sound lab, second try: recordings (built 2026-11-23, on trial in a worktree)
 
@@ -11647,6 +11665,537 @@ does in water beyond walking the floor; the wheel's turning seen moving
 (only one still view); a bulkhead opened from the wet side. The headless
 screenshots fall at slightly different tics than the script's, so each view
 holds the water still for its 70 tics.
+
+## The left-handed room lab (built 2026-11-23)
+
+`tools/map_lefthand.py` (the map), `tools/lefthand.py` (the reflection, for
+MAP20 to call), `tools/gfx_lefthand.py` (the lab's textures),
+`src/zscript/lefthand.zs` (the run-time part and the tests),
+`tools/lefthand_compare.py` (question 1's pixel comparison); `MAP=LEFT
+./run.sh`, `MAP=LEFT MODE=1..5 tools/smoke.sh`. An engine test for "MAP20's
+secret way out: the left-handed copy": a pane among real mirrors that is an
+opening onto a room built as the mirror image of this one. **It works: from
+every place tried the opening is the mirror pixel for pixel (bar a line one
+pixel high along its top edge) until something is in the room that is not
+in the copy: the player, his shots, a monster. Walking in, walking back,
+shots and the way out behind the copy's door work exactly. What gives it
+away is a second mirror: a mirror seen through the opening is drawn black.**
+Run headless only (docker, software GL, the OpenGL backend): **not played by
+hand**, and the look on the real machine (the GLES backend) is not checked.
+The ZDoom wiki could not be reached (zdoom.org dropped the connection again):
+the engine facts below are measured on GZDoom 4.12.2, except what a web
+search said of SPRITEFLIP, which the runs then confirmed.
+
+- **The map.** Bays off one corridor, each room 512 x 384 with five panes in
+  its north wall, every pane in the same surround (a niche 64 wide, 8 deep,
+  sill 24, head 160, the glass at its back, y 392). The fourth pane (x
+  320..384, not the middle one) is the one that may be an opening. Each room
+  holds things with a clear left and right: a brass plaque "ROOM 20" with an
+  arrow pointing right on the south wall, a lamp and a brighter patch of
+  floor in the north-east corner only, a step (16 high, green, a slanting
+  stripe) along the west half of the south wall, a sham door frame in the
+  west wall, a marine's statue turned 30 degrees (8 rotations: the gun in
+  his right hand), a dead marine (one picture), floor tiles with an F in a
+  corner, walls with a stripe near the left of each panel and a red triangle
+  pointing right; the way in is a door in the east wall's south end.
+  A: the fourth pane is a line portal (501) onto the matching pane (502) of
+  A', A built again reflected in the glass's plane, 2096 north. A' has one
+  thing more: a door in its west wall near the panes and behind it a room
+  with an `Exit_Secret` line (`secretnext` of the lab is MIR). B: A with the
+  fourth pane a real mirror (question 1's control), 1024 east so that every
+  flat lies the same. C: A with a mirror pane on the south wall too (128
+  wide, the same surround), its copy C' (511, 512) kept off the automap
+  until entered. D: B with that south mirror. V: the carried door (below).
+- **How the reflection is made** (`lefthand.left_handed(m, src, axis, at,
+  shift, hide=False)`). The room is built a second time into a Map of its
+  own (`src`; in the lab by the same function as the room, with the copy's
+  one difference), and that whole map is reflected in the line y = at (or x
+  = at) and moved by `shift`, at the level of the finished UDMF records
+  (`Map.parts()`): every vertex mirrored; every line runs the other way (v1
+  and v2 swapped), so each side stays on its own sector's side and every
+  wall keeps its face to its room; every wall texture is replaced by a copy
+  flipped left to right (`AJLHnnn`, made in the build by
+  `lefthand.flip_all` from the generated PNG: no engine trick), with its x
+  offset set to -(o + L k) (o the old offset, L the line's length, k the
+  scale), so that each column of the copy's wall is the column the mirror
+  shows there; every flat is replaced by a copy flipped across the plane
+  (rows for a plane along x). Flats lie by world position, so the copy must
+  stand where the 64 grid comes out right: for a plane along x the shift's
+  x a multiple of 64 and 2 at + its y a multiple of 64 (the helper asserts
+  it). Things stand at the mirrored place with the angle mirrored (360 - a
+  for a plane along x). Light, heights, specials, line ids, tags and flags
+  are kept. The copy goes into the level whole (`Map.chunks`): it shares no
+  vertex with the rest, an island joined only by portals. A marker thing,
+  `AjarLeftHanded` (20150, in `lefthand.zs`, the copy's box in its args),
+  turns on SPRITEFLIP for every actor standing in the copy at the start:
+  the picture drawn mirrored **and the rotation shown mirrored too** (a
+  thing turned 30 seen from the left in the mirror is the thing turned 330
+  seen from the right in the copy), which is what a mirror does; negative
+  x scale or XFLIP would flip the picture only and show the wrong rotation
+  of an 8-rotation sprite. Measured: the statue (8 rotations) and the dead
+  marine (one picture) in the copy are pixel for pixel their images in the
+  mirror (question 1). An actor that comes into the copy later is not
+  flipped (not needed in the lab: nothing does). The portal: the two pane
+  lines are one line reflected, so the engine's rule dst.v2 + R(p -
+  src.v1) is a pure shift (turn 360, `openingIsAShift`).
+- **Question 1: the opening looks like its neighbours (MODE=2, 22 views;
+  `tools/lefthand_compare.py`).** Five cameras in A and the same five in B:
+  straight on from the south wall (256, 48), from the west at a slant (96,
+  64, facing 50), from the east at a slant (464, 160, facing 135), from the
+  far corner on the step (32, 32, facing 55), and before the fourth pane
+  (352, 140, facing 95), each with the player drawn and hidden (not drawn,
+  in the mirrors either); and A and B turned away from the glass, the
+  control. A pixel differs when a channel differs by more than 24 of 255.
+  **With the player hidden, A and B differ in 60, 3, 4, 1 and 8 pixels of
+  419328 (at most 0.014%)**; the control differs in 2. With the player
+  drawn, outside his reflection (found as where B differs from B without
+  him): the same counts; inside it, from the camera before the fourth pane,
+  289 to 413 pixels (him, missing from the opening: the tell). From the
+  other four cameras his reflection is in another pane (one's reflection is
+  always straight ahead of one), and the opening cannot be told. Causes,
+  each looked at: **texture alignment, flats, light, the statue's and the
+  dead marine's sprites: no difference at all.** The 60 pixels are a line
+  one pixel high along the top edge of the opening (the portal and the
+  mirror are cut off a pixel apart there: not fixable from the map, and
+  not seen at play size); the rest are single pixels on edges. **The
+  mirror's sheen** (`gl_mirror_envmap`, on in Vadim's config and by
+  default): it is drawn over the opening as over the mirrors, so it is no
+  tell (with it on and off A and B differ the same; on against off changes
+  24000 to 44000 pixels of the pane wall). The lamp had to be one that does
+  not flicker (the tech lamp's animation made A and B differ by its phase:
+  any animated thing in the room, a flickering light or a scrolling wall, is
+  in step in the copy only if it started in step: not tried). Sky: not
+  tried (the room has a ceiling); dynamic lights (lights.pk3 is not loaded
+  headless): not tried.
+- **Question 2: a second mirror gives the opening away (MODE=3 views 8 to
+  15).** With a mirror on the south wall of C, **a mirror seen through the
+  opening is drawn black**: looking into the fourth pane, where D (all
+  mirrors) shows the south mirror with the room again in it, C shows a
+  black rectangle (2288 pixels differ straight on, 5914 close and turned).
+  The same with `r_mirror_recursions` and `r_portal_recursions` 16: it is
+  not the depth limit, the engine does not draw a mirror beyond a line
+  portal here. The other way round works: from C, in the south mirror, the
+  pane wall with the opening looks as D's (366 pixels differ, a thin strip
+  where D shows the player's reflection twice over). So MAP20's room may
+  have mirrors only where they cannot be seen through the opening: on the
+  pane wall itself (coplanar, never seen through it), or on the opening's
+  own side wall out of its line of sight; no mirror opposite or across.
+- **Question 3: the tells (MODE=3 views 0 to 3 and 7; MODE=2 camera 4).**
+  The camera stands before the fourth pane, and what is to be told stands
+  behind it, where only the glass can show it. Two frozen imps: in A the
+  one at (180, 40) is in the third pane, the one at (400, 40) is in no pane;
+  in B both are in the glass (390 pixels differ, all in the fourth pane:
+  the imp and the player). A rocket and a plasma ball held in the air: the
+  plasma ball in the third pane in both, the rocket only in B's fourth (187
+  pixels, with the player). The player:
+  only in B's fourth (above). Props, made twice (the statue, the dead
+  marine, the lamp): in both, pixel for pixel. A monster in the copy (view
+  7): an imp standing in A' where A's (352, 200) would be is a figure in
+  the opening with nobody in the room. The script cannot know what is drawn;
+  these are screenshots and pixel counts only.
+- **Question 4: walking in and back, shots, the way out (MODE=1, 20
+  checks, all pass).** Walking, running, at 15 degrees and backing into the
+  opening: each lands where the engine's rule says, off by 0.000000, facing
+  as before (into the copy: away from its glass), at the place of the copy
+  that is the mirror image of the room's place just before the glass;
+  walking and running back out of the copy's fourth pane: the same, into A.
+  A mirror pane is a wall (walking at the third stops at y 376). A rocket
+  and a plasma ball fired through the opening fly on into A' and burst on a
+  dummy there (rocket at y 2716 of the copy, plasma 2708); a hitscan the
+  same (puff at 2744). A rocket and a hitscan at a mirror pane stop at the
+  glass (y 380 and 388), nothing behind it hit. In by the opening, the
+  copy's door opens (its line used), walking west crosses the
+  `Exit_Secret` line: the level ends to its `secretnext`
+  (`exitBySecretWayOut`). The copy's marker flipped its 3 things; the
+  statue in A' stands at (128, 2680) facing 330, flipped.
+- **Question 5: the automap (MODE=3 views 16 to 18).** The copy is another
+  place on the map and is drawn as one: after looking through the opening,
+  A' appears far north of A, its walls mapped as far as they were seen
+  through the glass (the engine marks what it draws through a portal), a
+  room with no way to it. With `hide=True` (C') every line in the copy's box
+  is `ML_DONTDRAW` until the player has stood in it: not drawn after being
+  seen through the glass, nor with the computer map (which draws the unseen
+  V' in grey); after the player has stood in C', drawn. So the copy can be
+  kept off the map until entered; once entered it is a second room far
+  away, and anyone who reads the map then sees it. Not tried: drawing it
+  over the room it mirrors (the map has no such thing for a type-1 portal).
+- **Question 6: sound and sight (MODE=4).** An imp in A' facing the
+  opening does not see the player in A in plain view through it (woke 0,
+  `CheckSight` 0); an imp in A facing the opening does not see the player
+  in A' (0, 0): the engine's sight goes through the portal line as through a
+  hole, into the stub behind it (as in the one-sided doorway lab). A shot's
+  alarm in A wakes an imp in A' facing away (1 of 1): sound goes through
+  this kind of portal, and the copy is an island, so it came no other way.
+  Nothing was built for either.
+- **The carried door (MODE=4 3 checks, MODE=5 6 views).** Bay V: the panes
+  are niches the size of a frame's recess (64 wide, 16 deep, 96 high, no
+  sill, the frame's trim and light 176), the fourth is frame 101, GREEN
+  leans in the room and its far side is the matching niche of V' (built with
+  the frame's trim, not GREEN's coloured one). GREEN in 101: walking in and
+  back land exactly (a pure shift, 2080); GREEN in 102 (the east wall): into
+  V' turned (turn 450), landing exactly. **The surround can be made the
+  same** (a mirror in a recess the size of a frame), but the frame does not
+  read as a pane: empty, it shows the blank frame texture among the glass (a
+  dark recess among mirrors); hung, the leaf stands open in the room before
+  it, a green door with its glow, and is in every mirror and not in the
+  opening. A hung door reads as a door. As a secret, a carried door
+  among mirrors gives itself away at once; a fixed opening does not.
+- **What MAP20 can count on.** A room built with `left_handed` from its own
+  Map, one pane among mirrors a fixed portal (`Line_SetPortal` type 1,
+  floors aligned) onto its image: from anywhere in the room, with the player
+  out of line with the opening, it is the mirror, texture, light and sprite
+  for sprite. Walking, running, backing, at a slant, both ways; shots and
+  hitscans go on into the copy; mirrors stop shots; the copy's door and
+  exit work; the copy can be kept off the automap until entered.
+- **What it must avoid.** Anything in the room that is not in the copy and
+  can be in line with the opening: the player himself (he shows by his
+  absence when he stands before it: put the opening where one does not
+  stand square to it, or accept the tell, which is the design's own),
+  monsters, shots, a carried door, anything spawned or moved (things are
+  made twice and must stand still; an animated thing must start in step); a
+  mirror the opening can see (drawn black); a Doom (IWAD) texture in the
+  room (only generated textures can be flipped; the build stops); a copy
+  placed off the 64 grid; panning or rotated flats (handled, not tested);
+  scaled wall textures (handled by the formula, not tested); switches (a
+  flipped switch texture is another texture, its ANIMDEFS pair not made);
+  the copy joined to the rest of the level other than by portals.
+- **Shared code changed.** `tools/udmf.py`: `textmap()` split into
+  `parts()` (the UDMF records) and the writing, which also writes
+  `Map.chunks` (records put in whole); every other map's wad is byte for
+  byte as before (sha1 of all 39). `tools/gfx.py`: four lines at the end of
+  `make_all` (the lab's textures and the flipped copies). `tools/build.py`,
+  `src/mapinfo.txt` (the map, and a `DoomEdNums` block of its own: 20150
+  AjarLeftHanded, 20151 AjarLeftHandStatue), `src/zscript.zs`: the
+  registration. `src/zscript/ajar.zs`: one line (the generic test script
+  leaves map LEFT alone).
+- **The runs**, on the full build (`./build.sh` with the solver, 9 min):
+  `MAP=LEFT MODE=1` 20 checks and `MODE=4` 7, none failed; `MODE=2` 22
+  views, `MODE=3` 19, `MODE=5` 6. `tools/mapcheck.py map_lefthand`: 0
+  problems (83 sectors; it does not see the copies, which are records put
+  in whole); the sources of A', C' and V' and bay V built at the origin
+  (mapcheck draws x < 3000 only): 0 problems each. `MAP=MIR MODE=1` as
+  before (its two "comes back off a mirror" checks are 0, as "Nothing comes
+  back off a mirror by itself" says), `MAP=MAP15 MODE=1` out by the way out,
+  `MAP=PASS MODE=1` 50 checks, none failed.
+- **Not played by hand.** Not played at all; the look on GLES not checked
+  (in particular the sheen on the opening, measured here on OpenGL); the
+  black mirror beyond the portal seen on the software GL only; not tried:
+  a sky, dynamic lights, an animated thing, a sloped floor, a copy reflected
+  in a plane along y (the code is there, untested), monsters walking
+  between the room and the copy (walking through works for the player; the
+  copy's things are flipped only if they stood there at the start), a
+  savegame (the marker's state is in its fields).
+
+## Six more quiet pieces, after After Hours (2026-11-23; nobody has heard them)
+
+**Vadim** (2026-11-23): "Could you generate more melodies like the one used
+in map01, map10?" That one is After Hours (`AJM_AFTR`). Six more are in
+`tools/music.py`, the last six of `TRACKS`, written the way that one is: held
+chords two bars long over a low note, a tune of a few long notes coming in
+after eight bars, one more voice every eight bars, hardly any drums, then
+round again from the bare beginning. Each has its own key, chords,
+instruments and tune:
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_DSTB | Do Not Disturb | A, 56: a music box over strings going A minor, F minor, A minor, E; a voice moving a semitone; a slow heart on the drum. The nearest to After Hours |
+| AJM_LUGG | Left Luggage | D, 66: the one with a pulse. A fretless bass riff with room in it, electric piano, a vibraphone tune, a ride and a rim click |
+| AJM_LGHT | Light Under the Door | E, 58: a harp going round on E minor, F, E minor, D minor; strings trembling on one note; the tune on a horn, then a flute, then both. No drums |
+| AJM_FLRS | Between Floors | F sharp, 5/4, 72: five piano notes round and round whose lowest stays while the chords change; a cello tune; a held chord |
+| AJM_BELL | Night Bell | C sharp, 60: a slow twelve-bar minor blues on a church organ, a bell tolling every four bars, a desk bell at the end of each line, a cello tune |
+| AJM_WATR | Standing Water | B flat, 52: every chord a step lower than the last (B flat, A flat, G flat minor, then F), all voices sinking with them; drips on a marimba; a clarinet. Written with MAP20 in mind |
+
+**No map plays them**: `src/mapinfo.txt` is as it was. They are pieces 13 to
+18 in the sound lab (`MAP=SOUND ./run.sh`, MUSIC + and MUSIC -). Which map
+takes which is Vadim's to say once heard; pieces he likes the manner of but
+not the tune are rewritten.
+
+Checked: each is 132 to 148 s (After Hours is 128), 1.4 to 4.4 notes a second
+(After Hours 1.7); no semitone between two sounding notes lasts three steps
+in any of the six; the files read back by a second MIDI reader (every track
+ends together, no note left sounding); the lab's walkthrough `soundlab=ok`
+with 18 tracks (123 checks); GZDoom with sound on and a null device starts
+all 18 (`S_ChangeMusic` 1). **Not checked: how they sound**, least of all the
+instruments new to the game's music: music box, marimba, church organ,
+tremolo strings, horn, flute, clarinet, the warm pad, the glockenspiel.
+
+## The three goes lab (built 2026-11-23)
+
+Map THIRD (`MAP=THIRD ./run.sh`): MAP33's whole structure, small, in plain
+textures. The engine is `src/zscript/third.zs`, written against a map
+contract, so that MAP33 can use it unchanged; the map helpers are
+`tools/ajarthird.py`, the map `tools/map_third.py`, the tests
+`src/zscript/thirdtest.zs` (`MAP=THIRD MODE=3..9 tools/smoke.sh`).
+
+**The map.** Part 1 (yellow): the start hall S; the window hall W1 east of
+it, a fight of eight (three imps, three zombiemen, two sergeants); the
+gantry along the turbine hall R's north wall, its floor 96 over R's,
+behind a railing; the gantry's shutter; the end room E1 with plate 1 and
+time door 1. RED leans in S, and W1's north wall has a frame whose RED far
+side is in S's north wall. Part 2 (green): box 2 south of S (glass onto
+S); a corridor C2 with glass onto W1; its east end open onto R, 96 up (a
+drop); R: two mancubi on pedestals, an arachnotron in a pit, a pain
+elemental; the steel door; stairs up; E2 with plate 2, time door 2 and a
+wind plate. Part 3 (red): box 3 (glass onto S); a corridor; the duct
+along R's south wall (glass onto R); E3 with the exit door, the room
+behind it with the exit, and a wind plate. E1, E2 and E3 are a row with
+glass between, so each sees the other two. The generator asserts that
+no part is joined to another on foot (`ajarthird.apart`: a flood over
+every two-sided line that does not block, heights ignored).
+
+**The contract** (third.zs's head says it in full):
+- AjarThird (20160), one: args the exit door's sector tag (an AjarShutter),
+  the tag of the room behind it (the player there is through), its seconds
+  (0: 10). With it an AjarZone of fight 9 over the whole map (the paradox
+  works by zones).
+- Line id 3310+k: time door k. Line id 3320+k: box k's door, where time
+  door k-1 comes out. Sector tag 3330+k: box k (its room and its door's
+  recess). The number of parts is the last box's number.
+- AjarPlate with args[3] = n: plate n, at the end of part n.
+- AjarThirdHall (20161): window hall h, args (h, the part whose go fights
+  there, its sector tag, a second tag).
+- AjarThirdPost (20162): a monster of hall h's fight, args (h, Doom editor
+  number), at the thing's place and angle.
+- AjarThirdWatch (20163): args (sector tag, h, go): the earlier self of
+  that go must not come into those sectors while hall h is not won.
+- AjarThirdWin (20164): args (h, shutter tag): a shutter hall h's win opens.
+- AjarThirdWind (20165): a plate on a wall; USE winds on.
+- Monsters of a window hall are ordinary things in its sectors. Posts are
+  not monsters until their go.
+
+**The rules as built** (each with the mode that checks it):
+1. One clock (`ot`, the goes' clock of time.zs), 0 at the start of each go.
+   The HUD, top middle: "m:ss / m:ss" (this go, the longest earlier go) while
+   an earlier go is still playing, then this go's time alone, then "go k of
+   n". All modes.
+2. Go k plays part k. Time door k leads into box k+1 and the clock starts at
+   0 again. Health, armour, weapons and ammunition simply stay with the
+   player (it is the same actor). A carried door is put back by
+   `FirstDoors` and the player is told, as in plate.zs's `NextGo`.
+   Checked: `boxTwo` (box 2, health and bullets as at the door),
+   `boxThree`, `doorsAsAtTheStart`.
+3. Earlier selves are AjarGhosts set each tic to the record of their go (its
+   place, angle, pitch and picture), in their part's colour (TRNSLATE:
+   AjarSelf1 yellow, AjarSelf2 green, AjarSelf3 red, the player's green
+   ramp turned). Each is gone at its go's end. One on an AjarPlate presses
+   it (plate.zs as it was). Checked: `firstSelf`, `twoSelves`, self against
+   record after winding and loading; plates pressed by selves in every end
+   check.
+4. Doors: goes.zs's `GoWatch` writes down what the player did and
+   `GhostDoors` has every earlier self do it again at its tic. Go 1 hangs
+   RED in W1's frame (`redHung`). From part 2 it is seen done again at its
+   tic: box 2 looks onto S, where RED leans, and its far side shows in S's
+   north wall once hung. Checked: `doorsAsAtTheStart` at go 2's start, and
+   `redHungAgain`: in go 2, at the tic go 1 hung it (570 in the last run),
+   RED is in W1's frame again and the first self is where it was. No
+   screenshot shows its far side through the glass at that tic.
+5. Window halls: in the go of the hall's part, the hall is recorded tic by
+   tic into an AjarTrack (time.zs's record and puppets). That covers monsters
+   alive and dead, missiles, puffs and blood, and what lies about; not
+   players, earlier selves, puppets, or the level's own Ajar things. In
+   every later go it is played back from its start by puppets, in step
+   with the clock. Meanwhile the hall's real things are held: tics -1,
+   unseen, not solid, not shootable, kept in place. When the record ends,
+   the puppets go and the hall is as it was left. Checked: W1 against what
+   go 1 noted at five tics of its fight, in go 2 and again in go 3 (`w1AsItWas`
+   10 of 10, puppets where the monsters were, as they looked, no more and no
+   fewer); the real ones unseen meanwhile (`w1RealUnseen`), and seen after
+   (`w1AsLeft`).
+6. R. Go 1: an AjarFigure of the last death picture at each post (not
+   solid), and the shutters its win opens are open (`bodiesInR`,
+   `gantryOverBodies`, screenshot 1). Go 2: the figures go; the monsters
+   stand at their posts alive with AMBUSH, so they are idle until they see
+   the player; the shutters are shut (`rAlive`, `rIdle`). The win is every
+   post's monster dead and no monster alive in R's sectors (the pain
+   elemental's lost souls count). It opens the gantry's shutter and the
+   steel door at once (`rWon`). The paradox: the go-1 self comes onto the
+   gantry while R is not won. The universe ends, centred on that self, and
+   the player dies where they are, with "Your earlier self came onto the
+   gantry at 0:17, and then everything in the hall below was dead. Here it
+   is not." (`gantryParadox`, mode 4). Go 2's fight in R is a window hall
+   for go 3: before it the monsters stand there as puppets (`rBefore`),
+   during it they are as go 2 noted (`rAsItWas`), after it the real bodies
+   show (`rAfter`). In go 3 the shutters stay shut until go 2's win tic
+   (`shuttersShutBeforeWin`, `shuttersAsGoTwoWon`). Screenshot 5.
+7. The end. The exit door (an AjarShutter) is held open while plates 1 and 2
+   are both pressed, and 350 tics more. It is keyed with the tics left, so
+   it beeps its last three seconds as the press does. Time door 1 opens
+   once the player stands on plate 1 in go 1
+   (`plateOneOpensTimeDoorOne`). Time door 2 opens once the player stands
+   on plate 2 while plate 1 is pressed, which is the moment the exit door
+   opens (`doorOpensWithBoth`, `exitOpenInGoTwo`). Once open, a time door
+   stays open for the rest of its go. Too late, go 2: two tics after the
+   last tic at which the earlier selves hold plate 1 (from the records, the
+   pale stretches left out), with time door 2 not opened. It ends with "Your
+   earlier self left its plate for the last time at m:ss, and the door
+   never opened in this go." (`lateInGoTwo`, mode 5). Too late, go 3: the
+   earlier selves will not hold both plates again, the door's time is out,
+   it has shut, and the player is not behind it. It ends with "The exit door
+   has shut for the last time, and you are not through it." (`lateInGoThree`,
+   mode 6). Both end the universe where the player stands; no copy is
+   involved.
+8. An autosave (`LevelLocals.MakeAutoSave`) on the first tic and at each
+   time door. What the engine loads after death and USE: in single play
+   `G_DoReborn` loads the newest save of any kind (the engine's
+   BackupSaveName), so normally the autosave of the go's start. Tested both
+   ways, with real USE presses from the cfg. After the gantry paradox (mode
+   4: `loadedGoTwoStart`, `loadedPlays`) and after an ordinary death in go 2
+   (mode 9: `loadedTheGoTwoSave`, `loadedSelfPlays`, `loadedHallPlays`, and
+   W1 against go 1's notes after the load, 4 of 4), the loaded game is go 2
+   at tic 1. Go 1's record is whole (1319 tics before and after), as are W1's
+   track (1252 records, 56 slots) and the door logs, and the first self and
+   W1 play on as before. A save the player makes by hand becomes what is
+   loaded instead (not tested).
+9. Winding on, from the plates in E2 and E3 (AjarThirdWind, USE). The
+   clock goes to 70 tics before the next moment an earlier self steps onto
+   its own plate (the start of a span on it, after now plus 70). If there is
+   none: "No earlier self steps onto its plate after this", and the clock
+   stays (`windNoneLeft`). Done at once: the player's record over the stretch
+   is them standing there, marked pale; what the earlier selves did to doors
+   in the stretch is done in its order; a hall being played is put as its
+   record has it then (or ended); a hall being recorded gets empty tics; the
+   shutters, and in the last go the exit door, are set as the records have
+   them; the plates follow from the selves. The self that wound is pale over
+   its stretch (alpha 0.35, translucent, health 0 so it presses nothing, no
+   touch). No price. Mode 7: E2 in go 2 (`windToBeforePlateOne`, `windSelf`,
+   `windHall`, `windPale`); E3 in go 3 (`windInE3To`, `windInE3Selves`,
+   `windHallR`); go 2's self pale in go 3 over its stretch, off plate 2 then,
+   and solid after (`paleSelf`, `notPaleAfter`).
+10. The HUD's timetable under the clock, in the selves' colours: "1 comes
+    onto the gantry 0:17 (the hall below must be won)" in the watched hall's
+    go; "n on plate n a - b" for every span; in the last go "the exit door
+    open a - b". Seen in screenshots 2 to 5.
+11. The long go (mode 8): go 1 lasts 21034 tics (10 minutes), walking round
+    W1 from the end of its fight to tic 20720, then the gantry and plate 1.
+    In go 2, R is killed at once, then the clock is wound to 3000, 6000,
+    ..., 20000, 20500. At each, the first self is at its recorded place and
+    W1's puppets are as recorded (8 of 8). Then go 2 is too late, and the
+    paradox works over the whole record (250 echoes, `longLateParadox`).
+    Numbers:
+    - The self's record is 21034 tics × 5 doubles + 1 int, 0.93 MB in memory.
+    - W1's track over 21034 tics is 1144 records in 50 slots (it only
+      records changes), 130 KB.
+    - The door log has 2 entries. Working out the timetable over it takes
+      5.3 ms, once a go. A wind takes 0.1 to 1.1 ms.
+    - The go-2 autosave after it is 96 KB on disk, against 92 KB after a
+      1319-tic go 1. Inside, the level's JSON is 932 KB against 231 KB
+      (35.6 bytes a tic), deflated to 43 KB against 39 KB. That ratio flatters:
+      this go loops round the same walk. Varied play deflates worse; from the
+      short goes, roughly 20 to 25 bytes a tic deflated. So a save with two
+      earlier ten-minute goes would be about 1 MB, a guess, not measured.
+    - GZDoom 4.12 cannot run a level faster than real time (no singletics;
+      -timedemo is for demos), so mode 8 is one run of about 11 minutes.
+
+**Choices of mine** (Claude's; none asked for, each easy to change):
+- Earlier selves do not shoot and cannot be shot. Their shots are seen
+  only where a window hall recorded them (the player's rockets in R are in
+  go 3's view of it).
+- The arrival: the player comes out of the box's door a few units past its
+  line, which leads nowhere and is solid, so they would be stuck in it. They
+  are set a step clear (`ThirdClearDoor`). Found in testing: without it the
+  player could not move in box 3.
+- The pain elemental leaves no body (Doom's: it bursts), so in go 1 its
+  post shows nothing. Bodies are shown only for monsters whose death ends
+  in a lasting picture.
+- The win counts every live monster in the hall's sectors, not only the
+  posts', so the lost souls must die too.
+- A hall's real things are held by setting tics to -1, unseen, not solid,
+  not shootable and without a target, kept in place each tic, and given
+  back as they were when its record ends.
+- Winding puts only the records' things as they would be: real monsters
+  elsewhere do not move on. A go's own hall gets empty tics over a wind. In
+  THIRD that is harmless (E2 is reached only after R is won), but on a map
+  where one could wind with one's own hall still fighting, its record would
+  stand still there.
+- The late paradox in go 2 comes two tics after the last tic plate 1 is
+  held; in the last go it comes once the door has fully shut (12 tics
+  after its time is out).
+- The wind plate is AjarWind's picture, which says "30". That is wrong for
+  this plate, so MAP33 needs its own picture.
+- The engine's hooks: time.zs calls `ThirdLoaded` at the end of
+  WorldLoaded, `ThirdTick` in WorldTick (all of it, when the map is played
+  in goes) and `ThirdOverlay` in RenderOverlay. paradox.zs's `EndUniverse`
+  takes an optional reason (`why`, said in place of "You touched your earlier
+  self.") and `apart` (the end centred on the copy, no white shape of the
+  player); with no copy (i < 0) it is centred on the player. Existing
+  callers are unchanged. A load is seen by a transient field
+  (`thirdSeen`), for the tests.
+
+**The tests** (each `MAP=THIRD MODE=n tools/smoke.sh`, quick build; results
+on 2026-11-23):
+- `MODE=3`, the whole solution, three goes and out by the exit door: 51 of
+  51, including W1 against go 1 at five tics in each later go. It also
+  holds five views for `smoke_THIRD_3.cfg`'s screenshots. Go 1 leaves plate
+  1 at tic 1300 in this mode, so that the shots find the views.
+- `MODE=4`, go 2 stays in box 2: the gantry paradox at go 2's tic 608
+  (`gantryParadox`, `theDarkAfter`). Then USE (the cfg, `+use` at 2500)
+  loads go 2's save (`loadedGoTwoStart`, `loadedPlays`). All pass.
+- `MODE=5`, go 2 keeps off plate 2: `lateInGoTwo` (24 of 24).
+- `MODE=6`, go 3 waits in box 3: `lateInGoThree` (49 of 49).
+- `MODE=7`, winding in E2 and in E3, the pale self, none left: 58 of 58.
+- `MODE=8 TIMEOUT=760 EXTRA="+set save_dir /out/saves"`, the long go: all
+  pass (`longGoRecorded`, `longRWon`, eight samples, `longLateParadox`).
+- `MODE=9 EXTRA="+set save_dir /out/saves"`, the save: killed in go 2,
+  USE, loaded: all pass.
+- Not broken, on the same build: `MAP=PLATE MODE=3` and `MODE=4`,
+  `MAP=TWOKEY MODE=3`, `MAP=MAP32 MODE=10` (34 of 34), `MAP=MAP31 MODE=8`
+  (8 of 8, the paradox logged once).
+- The scripted player cannot press buttons from WorldTick: they are written
+  over before the player's think. So its shots are the script's
+  (`LineAttack`, `SpawnPlayerMissile`) and USE comes from the cfg.
+  `LevelLocals.MakeScreenShot()` wrote nothing headless, so the cfg takes
+  the screenshots.
+
+**Not tested / not played by hand**:
+- Nobody has played THIRD by hand. Not checked: the drop into R feels
+  fair, R's fight is winnable without god mode, and the timetable is
+  readable at speed.
+- RED's far side seen through box 2's glass at the tic go 1 hangs it (the
+  hang is checked, the sight is not).
+- A manual or quick save in a go: the engine would load that instead of
+  the go's start after a death.
+- A death in go 1 or go 3, and the paradox of touching an earlier self
+  (the parts cannot meet here).
+- What the selves' colours look like after a load (the translation is by
+  name, so it should hold).
+- The cost per tic of recording halls on a big map (every actor is looked
+  at once a tic), and a 21000-tic go of varied play (this one loops).
+- Music, sounds of the selves' door work at a distance, the HUD at other
+  resolutions.
+
+**The outline's "Waits for the lab", answered:**
+- A ten-minute go over a whole map: it works. Its record is about 44 bytes
+  a tic in memory (0.9 MB for ten minutes). A window hall records only
+  changes (W1: 1144 records in ten minutes, nearly all in its fight). The
+  go-2 save was 96 KB here; with varied play, guess about 0.5 MB a
+  ten-minute go in a save. Sampling it by winding takes about a millisecond.
+- A time door whose box is elsewhere, and one clock: yes. Line ids 3310+k
+  and 3320+k, box tag 3330+k; the player is set clear of the box door. The
+  clock is 0 at each go's start.
+- A window hall played to later goes in step: yes, checked against notes
+  of go 1 at five tics, in go 2, in go 3, and after a load.
+- The turbine hall: bodies for go 1 (but none for the pain elemental), the
+  monsters idle for go 2, the gantry paradox, go 3's view before, during and
+  after: all built and checked.
+- The end: plates held by earlier selves, the door and its ten seconds,
+  the time doors on success, the two late paradoxes: built and checked.
+- The save at each go's start, and the load after a death: the engine
+  loads the newest save, which is the go's start unless the player saved
+  since. The loaded game has every earlier go whole.
+- Winding on in an end room: built and checked in E2 and E3.
+
+**What a big map can count on:** the contract above, unchanged. The
+engine expects:
+- parts that do not meet on foot (`ajarthird.apart` checks it);
+- one zone of fight 9 over everything;
+- each window hall's sectors tagged, and nothing of another part in them;
+- monsters at posts that cannot leave them (pedestals, a pit) or that
+  leave no body;
+- a watched place that is the hall's own second tag.
+
+The engine sets aside the room-of-goes machinery of time.zs and plate.zs
+(halls, boxes and the touch rule are not used beyond what is listed). It
+needs nothing of MAP33's coordinates.
 
 ## MAP20 "High Water": the first version, as decided (2026-11-23)
 

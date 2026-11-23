@@ -40,6 +40,12 @@ DoomEdNums
 	20143 = AjarWaterRate             // MAP20 (water.zs): the level's own rate of flow and rules
 	20144 = AjarPressureDoor          // ... a door that water holds shut
 	20145 = AjarFloatGate             // ... a float that raises a gate for good
+	20160 = AjarThird                 // a map played whole in goes (third.zs; MAP33, the lab THIRD)
+	20161 = AjarThirdHall             // ... a window hall
+	20162 = AjarThirdPost             // ... a monster of the future seen
+	20163 = AjarThirdWatch            // ... where an earlier self must not come before a hall is won
+	20164 = AjarThirdWin              // ... a shutter a hall's win opens
+	20165 = AjarThirdWind             // ... a plate on a wall that winds the clock on
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -447,6 +453,25 @@ map WATER "Ajar: the water lab"
 	EventHandlers = "AjarWaterHandler", "WaterTest"
 }
 
+// The left-handed room lab (tools/map_lefthand.py, src/zscript/lefthand.zs): MAP=LEFT ./run.sh
+// Its exit (behind the door in the reflected room) is the secret one.
+map LEFT "Ajar: the left-handed room"
+{
+	next = "LEFT"
+	secretnext = "MIR"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "LeftHandTest"
+}
+
+DoomEdNums
+{
+	20150 = AjarLeftHanded
+	20151 = AjarLeftHandStatue
+}
+
 // The sound lab (tools/map_soundlab.py, src/zscript/soundlab.zs): MAP=SOUND ./run.sh
 map SOUND "Ajar: the sound lab"
 {
@@ -546,6 +571,17 @@ map TWOKEY "Ajar: two keys at once"
 map SHUT "Ajar: the shutter"
 {
 	next = "SHUT"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The three goes lab (tools/map_third.py): the whole map in three goes, MAP33's
+// engine. MAP=THIRD ./run.sh
+map THIRD "Ajar: three goes"
+{
+	next = "THIRD"
 	nointermission
 	nojump
 	nocrouch
