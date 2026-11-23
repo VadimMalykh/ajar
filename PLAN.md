@@ -10922,12 +10922,30 @@ here. Exit is too small."
   `levelExited`.
 - **The same check on every other map** (38 generators): one more place,
   MAP12's store, "a hole and steps out": the hole (ceiling 64 over the
-  store's floor) opens straight onto steps 16 deep, so by the same rule the
-  player on the first step is still under the hole, in both directions. Not
-  yet asked of the engine; the next task. (MAP09's one report was a shut
-  door at the foot of a step, which opens: sectors of no height are now
-  left out.) The other problems mapcheck prints on old maps (41 `WALL`, 1
-  `VOID`) are not of this kind and were there before.
+  store's floor) opened straight onto steps 16 deep, so by the same rule
+  the player on the first step was still under the hole, in both
+  directions. (MAP09's one report was a shut door at the foot of a step,
+  which opens: sectors of no height are now left out.) The other problems
+  mapcheck prints on old maps (41 `WALL`, 1 `VOID`) are not of this kind
+  and were there before.
+- **MAP12's store, asked of the engine and fixed** (task
+  `map12-store-hole`, the same day; Claude's, unasked: Vadim had not met
+  it). `MAP=MAP12 MODE=2` (new, `StoreHoleScript` in `map12.zs`) walks out
+  of the store by the hole with empty hands and back in from the top. On
+  the map as it was both fail: going out the player stops in the hole at
+  the first step (584, -272, -64), going in on the second step (584, -240,
+  -22). So whoever dropped into the store with empty hands and no door
+  hung down there had no way out, though the puzzle graph has the hole as
+  a walk both ways (the solver's "0 stuck" took it on trust; the
+  walkthrough leaves by RED). Now the steps are in the store, three of 16
+  against its north wall under its own ceiling, and the hole is at the
+  upper floor's height (floor 0, 64 high, 48 wide as before), with flat
+  floor beyond where the steps were: no low ceiling is over a step. Both
+  checks pass; `MODE=1` as before (30 checks, `levelExited`); the full
+  build "MAP12: solvable in 9 door actions, 12423 states, 0 stuck" (the
+  graph is unchanged); mapcheck 0 problems (2 before), itemcheck and
+  thingcheck 0. Looked at once from inside the store (three pale steps up
+  to the hole in the blue wall); not played by hand.
 
 ## The sound lab, second try: recordings (built 2026-11-23, on trial in a worktree)
 
