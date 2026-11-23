@@ -11029,3 +11029,63 @@ The build puts these six first in `ajmusic.txt` and any recorded file from
 When Vadim has chosen: as before (defaults in `TakeName` / `SetName` and
 the pitches; pieces given their maps in `mapinfo.txt`); pieces he likes the
 manner of but not the tune are rewritten in `tools/music.py`.
+
+## Door sounds and music: chosen (2026-11-23)
+
+Vadim heard the third lab: "music is much much better now"; take 8, set 4;
+piece 5 for MAP01 and MAP10, the others by how active a map is; more
+pieces in the same manner welcome ("they all good actually").
+
+**Door sounds, the game's own now** (`AjarHandler`, constants `TAKE_SOUND`
+... `SET_PITCH`):
+
+- a take is "field drops" (`ajar/take`, `sounds/ajtake.wav`, made by
+  `tools/sfx.py` from Kenney's force field, CC0);
+- a set is Doom's lift stopping, `plats/pt1_stop`, at pitch 0.7 (played from
+  the player's doom2.wad, nothing copied);
+- a swap is always the take and, 9 tics later, the set.
+
+An earlier self in a room of goes (`plate.zs`, `GhostDoors`) plays the same
+two. Left on Doom's sounds, as other events: a STRAY door shutting by itself
+(`StrayShut`), a locker opened with a key, the time box's way back opening,
+the plate working a hung door (the fast door's sounds). Not confirmed by a
+check: that the 0.7 is applied (Vadim chose it by ear in the lab, so it
+was).
+
+The lab stays (MAP=SOUND): choice 1 of each switch is the game's, Doom's old
+door is choice 2, the other candidates after it.
+
+**Music: twelve pieces, a piece to every level.** Six more written by
+`tools/music.py` on the same rules: Night Porter (G, 96: fingered bass,
+muted guitar, electric piano, vibes), Fire Door (A, 126: a galloping riff,
+a tune over held fifths), Service Lift (E, a heavy 12/8 shuffle), Filing
+Under Fire (C, 132: synth bass in sixteenths, a saw riff), Carbon Copy (B,
+100: plucked strings, the tune's copy four bars behind), Dead Letter Office
+(E, 66: a riff on the tritone, timpani, choir, bell). Same checks as the
+first six; nobody has heard these six.
+
+By the count of Doom's monsters on "Resident" (in brackets):
+
+| Piece | Maps |
+|---|---|
+| After Hours | MAP01 (8), MAP10 (140): Vadim's word |
+| The Far Side | MAP02 (34), MAP13 (79) |
+| One Door Short | MAP03 (57), MAP31 (0) |
+| Night Porter | MAP04 (85), MAP17 (52) |
+| Off Its Hinges | MAP05 (131), MAP15 (122) |
+| Fire Door | MAP06 (155), MAP16 (128) |
+| Service Lift | MAP07 (154), MAP12 (79, "Going Up") |
+| Paradox Engine | MAP08 (163), MAP18 (203) |
+| Filing Under Fire | MAP09 (130), MAP19 (207) |
+| Carbon Copy | MAP11 (68) |
+| Dead Letter Office | MAP14 (82) |
+| The Small Hours, Twice | MAP32 (the goes; the piece that plays itself backwards) |
+
+The labs have no music. A new level takes a piece in `src/mapinfo.txt`
+(`music = "AJM_..."`); a new piece is a function in `tools/music.py` and a
+line in its `TRACKS`. Checked: every level's lump is in the package; GZDoom
+with sound on starts all twelve in the lab and `idmus` starts a level's
+piece. (Asking a headless run what plays at a level's start answers "no
+music", for stock Doom II too, so that is not a check.)
+
+Still open: the title screen and the text screens have Doom's music.

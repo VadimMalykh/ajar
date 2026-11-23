@@ -114,6 +114,9 @@ skill nightshift
 	Aggressiveness = 0.5
 }
 
+// Music: the pieces are written by tools/music.py (music/AJM_*.mid). MAP01 and MAP10 have the quiet one by
+// Vadim's word (2026-11-23); the others are given by how much fighting a map has, the heavy ones where it is
+// thickest. The labs have none (the sound lab plays any of them from its switches).
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -121,7 +124,7 @@ map MAP01 "Borrowed Rooms"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_AFTR"
 }
 
 // Act 1, level 2 (tools/map_hinges2.py)
@@ -132,7 +135,7 @@ map MAP02 "No Vacancy"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_FARS"
 }
 
 // Act 1, level 3 (tools/map_hinges3.py)
@@ -143,7 +146,7 @@ map MAP03 "Stage Door"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_SEVN"
 }
 
 // Act 1, level 4 (tools/map_hinges4.py)
@@ -154,7 +157,7 @@ map MAP04 "Party Wall"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_PORT"
 }
 
 // Act 1, level 5 (tools/map_hinges5.py)
@@ -165,7 +168,7 @@ map MAP05 "Lost Property"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_HING"
 }
 
 // Act 1, level 6 (tools/map_hinges6.py)
@@ -176,7 +179,7 @@ map MAP06 "After Hours"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_FIRE"
 }
 
 // Act 1, level 7 (tools/map_hinges7.py)
@@ -187,7 +190,7 @@ map MAP07 "Small Hours"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_LIFT"
 }
 
 // Act 1, level 8 (tools/map_hinges8.py)
@@ -198,7 +201,7 @@ map MAP08 "Closing Time"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_ENGN"
 }
 
 // Act 1, level 9 (tools/map_hinges9.py)
@@ -209,7 +212,7 @@ map MAP09 "Putting You Through"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_FILE"
 }
 
 // Act 1, level 10 (tools/map_hinges10.py). Its secret way out (the loop of
@@ -223,7 +226,7 @@ map MAP10 "All Change"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_AFTR"
 }
 
 // Act 2, level 1 (tools/map_institute1.py).
@@ -233,7 +236,7 @@ map MAP11 "By Appointment"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_COPY"
 }
 
 // Act 2, level 2 (tools/map_institute2.py).
@@ -243,7 +246,7 @@ map MAP12 "Going Up"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_LIFT"
 }
 
 // Act 2, level 3 (tools/map_institute3.py).
@@ -253,7 +256,7 @@ map MAP13 "Sight Unseen"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_FARS"
 }
 
 // Act 2, level 4 (tools/map_institute4.py).
@@ -263,7 +266,7 @@ map MAP14 "On the Level"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_DEAD"
 }
 
 // Act 2, level 5 (tools/map_institute5.py). Its secret way out (built with
@@ -275,7 +278,7 @@ map MAP15 "On Reflection"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_HING"
 }
 
 // The first secret level (tools/map_secret1.py), from MAP10's secret way out.
@@ -286,7 +289,7 @@ map MAP31 "This Is Where We Came In"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_SEVN"
 }
 
 // Act 2, level 6 (tools/map_institute6.py). Its way out leads on to MAP17.
@@ -296,7 +299,7 @@ map MAP16 "Watch Your Step"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_FIRE"
 }
 
 // Act 2, level 7 (tools/map_dispatch.py, src/zscript/map17.zs): the goods
@@ -307,7 +310,7 @@ map MAP17 "Made to Order"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_PORT"
 }
 
 // Act 2, level 8 (tools/map_clockdept.py, src/zscript/map18.zs): the clock
@@ -320,7 +323,7 @@ map MAP18 "Time and Motion"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_ENGN"
 }
 
 // Act 2, level 9 (tools/map_paper.py, src/zscript/map19.zs): the pass office,
@@ -333,7 +336,7 @@ map MAP19 "On Paper"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_FILE"
 	EventHandlers = "AjarPassHandler", "AjarPaper", "PaperTest"
 }
 
@@ -347,7 +350,7 @@ map MAP32 "Double Shift"
 	nointermission
 	nojump
 	nocrouch
-	music = ""
+	music = "AJM_CLOK"
 	sky1 = "AJZSKY", 1             // the look's stars (gfx_works.py), drifting; the plain level has no sky
 }
 
