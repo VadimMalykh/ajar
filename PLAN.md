@@ -12617,3 +12617,62 @@ doors' lamps' colours on the real renderer; a saved game with water
 moving; the water's surface is not drawn over the lamp strips of the
 pressure doors inside basins (strips 8 to 24 wide, not part of the basin):
 a visible notch at the K, E2 and cell doors when they stand in water.
+
+## MAP20: the secret way out, as decided (2026-11-24)
+
+Settled by Claude on Fable after "The left-handed room lab", for the task
+`map20-secret`. Vadim's part is the idea (2026-11-19: the left-handed copy
+"for MAP20's secret exit") and that MAP20 has a secret way out; the rest
+is Claude's and none of it is played.
+
+**The room** is the swimming bath as the first version built it: the pit
+(floor -160), the shallow end (-96) with its steps to the poolside (0),
+frames 141 and 142, and across the pit the wall of five panes with their
+sills at 0. BLUE in 142 brings the water to 0 and the panes are swum to.
+
+**The fourth pane is the opening** (never the middle one): a fixed line
+portal, made at load, onto the left-handed bath: the swimming bath built a
+second time reflected in the plane of the pane wall
+(`lefthand.left_handed`, kept off the automap until it is entered). Fixed
+and not a carried door: the lab showed that a frame among the mirrors
+reads as a dark recess and a hung leaf as a leaf.
+
+**What the lab asks of the room**, kept by the generator and checked in the
+build:
+- no mirror that the opening can see: the five panes' wall is the only
+  glass in the bath (a mirror seen through the opening is drawn black);
+- nothing in the bath moves by itself: no monsters, no ambushers, nothing
+  animated that could be out of step with its copy;
+- every wall and flat of the bath can be flipped (the game's own generated
+  textures). The water is the exception: its surface is Doom's own animated
+  flat, which cannot be flipped and is left as it is in the copy (it has
+  no reading direction). How close the two then are with water standing is
+  measured, not assumed.
+
+**The water.** The left-handed bath is not a basin of its own: its surface
+is kept at the swimming bath's, every tic, so the "reflection" fills and
+empties as the room does. The opening joins nothing (it is not a hung
+door). The frames 141 and 142 are in the copy as empty recesses only: a
+door hung in the room is not in the fourth pane, which is one more tell.
+
+**The tells**: the player is in four panes and not in the fourth; the same
+for his shots and for a door he has hung; and in the fourth pane, for
+whoever looks along the wall, there is a door in the side wall by the
+shallow end where the room has blank wall.
+
+**What is not as it was**: that door. In the left-handed bath it opens (an
+ordinary door) onto a short passage, a secret sector, and the line with
+`Exit_Secret`. Nothing is said on the screen when the player comes through
+the glass.
+
+**Where it leads**: MAP33 "Third Person", when that map is in main (session
+ajar-ec is building it); until then `secretnext` is what `next` is.
+
+**Nothing can be lost.** The way back is the opening, when the water
+stands within 24 of the panes' sills. If the bath has been drained behind
+the player he cannot come back, and does not need to: the secret way out
+is on the left-handed bath's poolside, which its steps reach at any level.
+
+**Also in this task**: the water's surface is not drawn at the lamp strips
+of pressure doors that stand in a basin (a notch at the lock's door, E2
+and the cells when they are under water): to be mended.
