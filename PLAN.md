@@ -10016,3 +10016,41 @@ MAP18 itself (tested in ONESIDE only); the fix with a missile that hits
 something in its first step; monsters through the portals of their own
 will (blocked by the fences); the signs in the hardware renderer; the
 automap gives the trick away (left so, as decided). Not played by hand.
+
+## MAP18: the furniture upstairs was pits (fixed 2026-11-23)
+
+Vadim, playing: a screenshot looking up out of a narrow hole with the
+offices' walls all round. It was an office desk. `block()` in
+`tools/map_clockdept.py` gave furniture its height from 0, not from the
+floor of the room it stands in, so on the upper floor (256) every desk,
+bench and table was a hole with its bottom at 40 or 48: 208 to 216 deep,
+open from above, no way out. 14 of them (21 sectors): the eight office
+desks, the drawing office's two benches and counter, the timekeepers' long
+desk, the regulator store's two benches. Whoever walked onto one fell in and
+stayed. The ground floor and the basement had none (the basement has no
+`block()`).
+
+- **The fix.** `block()` now gives `up`, its height over the room, and
+  `fit()` adds the room's floor. In the built level only those 21 sectors'
+  floors changed (to 296 and 304); no line, side or thing did.
+- **Why no check saw it.** The walk graph takes furniture as obstacles, so
+  no measured way crossed one; the scripted runs follow those ways; mapcheck
+  looked at overlaps and things only. The views of MODE=6 showed the rooms
+  with holes where the desks were, and that was not noticed at the look.
+- **The new check**, in `tools/mapcheck.py`: PIT. A floor, or several joined
+  by steps of 24 at most, with everything around more than 24 higher, that
+  the player can get to on foot (from a start, a line with an id or a
+  special, a sector with an id; not through blocking lines or lines with a
+  middle texture) and that has nothing to take them out (no id, no line
+  with a special or an id, no thing with a special). The old MAP18: 14
+  pits. The fixed one and every other map module (36 in all): none. Scenery
+  nobody gets to (MAP10's stage of the theatre with the room under it,
+  MAP07's and MAP08's horizons, MAP16's channel under its grilles) is not
+  counted, by the "can get to" rule.
+
+**Checks** (2026-11-23): the full `./build.sh` with the solver, MAP18's
+figures as before (9078, 3202, 2367, 3496, 7540); thingcheck, itemcheck,
+mapcheck on `map_clockdept`: 0 problems each; `MAP=MAP18 MODE=1` 8 checks
+with levelExited, `MODE=7` 27, none failed; `MODE=6` views 30 (an office)
+and 33 (the drawing office) looked at: the desks and benches stand on the
+floor. Not played by hand.

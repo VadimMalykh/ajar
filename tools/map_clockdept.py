@@ -277,7 +277,8 @@ def fit(box, features=(), holes=(), floor=0, **base):
     is cut along every feature's and hole's edges; cells in a hole are left
     out (void: a pillar, a pier, a wall), each other cell gets the room's
     properties changed by every feature it is in (later ones win; RUNNER is
-    MAP11's strip of carpet under lights). Cells alike are joined."""
+    MAP11's strip of carpet under lights; a feature's `up` is its floor over
+    the room's). Cells alike are joined."""
     x1, y1, x2, y2 = box
     xs = sorted({x1, x2} | {v for r, _ in features for v in (r[0], r[2]) if x1 < v < x2}
                 | {v for h in holes for v in (h[0], h[2]) if x1 < v < x2})
@@ -295,7 +296,9 @@ def fit(box, features=(), holes=(), floor=0, **base):
                         props.update(ceil=base["ceil"] + 16, light=min(255, base["light"] + 30),
                                      ftex="AJRUG", ctex="AJLITE", lift=16)
                     else:
-                        props.update(change)
+                        props.update({k: v for k, v in change.items() if k != "up"})
+                        if "up" in change:                      # furniture stands on this room's floor (block())
+                            props["floor"] = floor + change["up"]
             cells[i, j] = props
     runs = {}
     for j in range(len(ys) - 1):
@@ -335,8 +338,14 @@ def grid(box, nx, ny, light, size=64):
     return out
 
 
-def block(height, top="BT", side=None):      # a bench, a desk, a table: MAP11's (box())
-    return I1.box(height, top, side)
+def block(height, top="BT", side=None):
+    """A bench, a desk, a table (MAP11's box()), `height` over the floor of
+    the room it is put in: fit() adds the room's floor. (2026-11-23: the
+    height was taken from 0, so on the upper floor every desk was a pit
+    216 deep that the player fell into and could not leave.)"""
+    d = I1.box(height, top, side)
+    d["up"] = d.pop("floor")
+    return d
 
 
 def solid(part, top):                        # to the ceiling: a pillar, a stack, a tank (MAP11's pillar())
