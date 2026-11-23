@@ -93,7 +93,8 @@ def plated(name, box, plate, floor=0, ceil=None):
         if b[0] < b[2] and b[1] < b[3]:
             room(name, b, floor, ceil)
     m.sector(rect(*plate), floor=floor, ceil=floor + 192 if ceil is None else ceil, light=min(255, light + 30),
-             wall=wall, ftex=PLATE, ctex="CEIL5_1", color=tint)
+             wall=wall, ftex=PLATE, ctex="CEIL5_1", color=tint,
+             raw=dict(xpanningfloor=float(-px1 % 64), ypanningfloor=float(py2 % 64)))   # the tile laid from the plate's corner
 
 
 def register(n, x, y, tag, half=32):
