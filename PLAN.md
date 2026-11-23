@@ -11428,7 +11428,8 @@ seen from outside); the other is "In Phase".
 down: basin, weir, raft, gauge, bulkhead), `tools/gfx_water.py` (the gauge
 texture AJGAUGE, the wheel sprite AJWH), `src/zscript/water.zs` (the
 mechanic), `src/zscript/watertest.zs` (the tests); `MAP=WATER ./run.sh`,
-`MAP=WATER MODE=1..8 tools/smoke.sh`. An engine lab for MAP20 "High Water":
+`MAP=WATER MODE=1..8 tools/smoke.sh` (MODE=1 runs 177 s of game time and
+needs `TIMEOUT=240`; found 2026-11-23, 185 s on the wall). An engine lab for MAP20 "High Water":
 can water go through doors? **Yes. Water stands level on both sides of a
 hung door, measured from the door's sill, and it is drawn rightly through
 the door, from above it and from under it; the player wades, swims (under
