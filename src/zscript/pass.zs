@@ -16,9 +16,13 @@
 //    player standing on it (in the box, feet within 32 of its floor) has T
 //    set back to the identity.
 //  * AjarPassRegister (20133): args[0], args[1] half its plate's box,
-//    args[2] the sector tag of the door it opens, args[3] its number (its
-//    name: AjarPassRegister.Name). Signed for good once the double has stood
-//    in the box, feet within 32 of the plate's floor, for 35 tics running.
+//    args[2] the sector tag of the doors it opens, args[3] its number (its
+//    name: AjarPassRegister.Name), args[4] (if set) the tag of a floor it
+//    raises to its highest neighbour (a footbridge) and the id of the lines
+//    that stop being railings then. Signed for good once the double has
+//    stood in the box, feet within 32 of the plate's floor, for 35 tics
+//    running. A level names its registers and says what each opens
+//    (Name, Opened: MAP19's are AjarPaper's, map19.zs).
 //
 // Scripted moves of the player that are not portals (SetOrigin, Teleport)
 // are not crossings: T is kept and the double moves with the player. A
@@ -370,7 +374,24 @@ class AjarPassRegister : Actor
 				"the far end of the corridor", "the foot of the stair" };
 			return names[clamp(n, 0, 6)];
 		}
+		if (level.mapname ~== "MAP19") return AjarPaper.RegisterName(n);
 		return String.Format("register %d", n);
+	}
+
+	// the message's second line: what signing it opened
+	static string Opened(int n)
+	{
+		if (level.mapname ~== "MAP19") return AjarPaper.Opened(n);
+		return "Its door is unbolted.";
+	}
+
+	// whether register n of this level is signed (the ambushes of cause 50 + n, ajar.zs)
+	static bool IsSigned(int n)
+	{
+		let it = ThinkerIterator.Create("AjarPassRegister");
+		AjarPassRegister r;
+		while (r = AjarPassRegister(it.Next())) if (r.args[3] == n) return r.signed;
+		return false;
 	}
 
 	override void PostBeginPlay()
@@ -403,8 +424,22 @@ class AjarPassRegister : Actor
 		A_RemoveLight('lamp');
 		A_AttachLight('lamp', DynamicLight.PointLight, 0x40FF60, 48, 48, 0, (0, 0, 8));
 		if (args[2]) level.ExecuteSpecial(11 /* Door_Open */, null, null, false, args[2], 16);
+		if (args[4])
+		{
+			level.ExecuteSpecial(24 /* Floor_RaiseToHighest */, null, null, false, args[4], 8);
+			let li = level.CreateLineIdIterator(args[4]);
+			TextureID none;
+			none.SetNull();
+			int i;
+			while ((i = li.Next()) >= 0)
+			{
+				Line l = level.lines[i];
+				l.flags &= ~(Line.ML_BLOCKING | Line.ML_BLOCKEVERYTHING);
+				for (int k = 0; k < 2; k++) if (l.sidedef[k]) l.sidedef[k].SetTexture(Side.mid, none);
+			}
+		}
 		A_StartSound("switches/exitbutn", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
-		string msg = String.Format("Signed in: %s.\nIts door is unbolted.", Name(args[3]));
+		string msg = String.Format("Signed in: %s.\n%s", Name(args[3]), Opened(args[3]));
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (h) h.Say(msg);
 		else Console.MidPrint(smallfont, msg);

@@ -9,12 +9,17 @@ then on it is at T(player), a turn, a shift and a change of height that change
 only at a crossing. A register is signed when the double has stood on its
 plate, at its height, for a second. Each register opens a steel door.
 
-Phase 1 of the build (this file as it stands): the building, its doors, frames,
-sealed rooms and glass, the fixed paradoxes, the way out, the fights, the
-measure and the checks. Every register and every pass desk goes through
-register() and pass_desk() below, which for now only record them (the measure
-uses them) and put a MapSpot; each register's steel door is a plain tagged
-door the test script opens. The lap constants are named at the top.
+The building, its doors, frames, sealed rooms and glass, the fixed paradoxes,
+the way out, the fights, the measure and the checks. Every register and every
+pass desk goes through register() and pass_desk() below, which record them
+(the measure uses them) and put the AjarPassRegister or AjarPassDesk thing
+(pass.zs); a register opens its steel doors by their sector tag, register 9
+raises the island's footbridge instead. The two laps (the link hall's and the
+water tower's flight) are read off the frames' portal lines where those are
+made, and the sealed gallery and the sealed stair are built to them. What a
+register is called and what it says it opened: AjarPaper in map19.zs. The
+smoke runs (PaperTest, map19.zs) find their places by the MapSpots put at the
+end of this file (TEST_SPOTS).
 
 Floors (each area at its own height, side by side in plan: no room over room):
 the basement -256, the ground 0, the upper floor 256; the water tower's stair
@@ -48,6 +53,7 @@ geometry (rectangle arithmetic under quarter turns); the build fails if not.
 """
 import heapq
 import math
+import os as _os
 
 import ajarmap
 import map_institute1 as I1
@@ -58,13 +64,11 @@ from map_institute1 import ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, CHAINGUNNER, K
 from map_institute1 import BARON, SOUL, MANCUBUS
 from udmf import MONSTERS, Map, rect
 
-# --- the laps: set from the pass lab's measured figures in phase 2 ---------------------------------
-# LINK_LAP: how far one lap of the link hall (a Pair in 105 and 106, walked east into 106 and out of
-# 105) moves the double, east; for now the distance between the two frames' portal lines.
-# STAIR_LAP: the same for the water tower's flight (a Pair in 107 and 108, walked down into 107 and
-# out of 108): (along, down).
-LINK_LAP = 544
-STAIR_LAP = (544, 128)
+# --- the laps (the pass lab: a lap is the distance between the two portal lines, the room and both
+# recesses). LINK_LAP: how far one lap of the link hall (a Pair in 105 and 106, walked east into 106
+# and out of 105) moves the double, east. STAIR_LAP: the same for the water tower's flight (a Pair in
+# 107 and 108, walked down into 107 and out of 108): (along, down). Both are read off the frames'
+# portal lines below, where those are made.
 LINK_LAPS, STAIR_LAPS = 5, 3                 # the laps that sign registers 5 and 6
 PLATE = 128                                  # a register's plate: a square this wide (the lab's)
 TOL_Z = 32                                   # the double is on the plate if its feet are this near it (pass.zs)
@@ -84,8 +88,9 @@ G, U, B = 0, 256, -256                       # the ground, the upper floor, the 
 TOWER_FOOT = -128                            # the water tower's stair: its head is on the ground
 MAPSPOT = 9001
 REG_TAG = {n: 1900 + n for n in range(1, 8)}  # each register's steel door (sector tag)
-LODGE_TAG, BRIDGE_TAG = 1908, 1909           # the porter's lodge's door; the island's footbridge (phase 2)
-BRIDGE_RAIL = 1910                           # line id: the pond's railing where the footbridge lands
+LODGE_TAG, BRIDGE_TAG = 1908, 1909           # the porter's lodge's door; the island's footbridge (register 9)
+BRIDGE_RAIL = BRIDGE_TAG                     # line id: the pond's railing where the footbridge lands (pass.zs
+                                             # takes it away when it raises the footbridge)
 DESK_T, REGISTER_T = 20132, 20133           # AjarPassDesk, AjarPassRegister (src/zscript/pass.zs)
 PLATE_F = dict(ftex="GATE3", light=232)      # a register's plate in the floor (the lab's)
 DESK_F = dict(ftex="FLAT23", light=232)      # a pass desk (the lab's)
@@ -580,7 +585,7 @@ def register(n, name, box, z, opens, bridge=0):
     of that tag (pass.zs)."""
     c = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
     assert box[2] - box[0] == PLATE and box[3] - box[1] == PLATE, (n, box)
-    REGISTERS[n] = dict(name=name, box=box, z=z, opens=opens, centre=c)
+    REGISTERS[n] = dict(name=name, box=box, z=z, opens=opens, centre=c, bridge=bridge)
     m.thing(c[0], c[1], REGISTER_T, id=REG_SPOT + n, args=(PLATE // 2, PLATE // 2, opens, n, bridge))
 
 
@@ -794,7 +799,8 @@ pane_y(3208, 3256, 3584, 3712, z=LINK_Z)
 pane_y(3336, 3384, 3584, 3712, z=LINK_Z)
 LINK_MID = ((LH[0] + LH[2]) / 2, (LH[1] + LH[3]) / 2)
 # a lap is the distance between the two portal lines (the pass lab): the hall and both recesses
-assert LINK_LAP == FRAMES[106]["c"][0] - FRAMES[105]["c"][0] == LH[2] - LH[0] + 2 * ajarmap.DEPTH, LINK_LAP
+LINK_LAP = FRAMES[106]["c"][0] - FRAMES[105]["c"][0]
+assert LINK_LAP == LH[2] - LH[0] + 2 * ajarmap.DEPTH and FRAMES[106]["z"] == FRAMES[105]["z"], LINK_LAP
 LV = (2880, 3456, 3712, 3712)
 DESK3 = (3392, 3504, 3520, 3568)
 room(LV, G, look("LB", "FL", "KL", 190, 256, PALE), [(DESK3, DESK_F)], name="linkvest")
@@ -825,8 +831,8 @@ room(EY, G, sky("LB", "FC", 224, 320), [((7104, 2944, 7680, 3520), dict(ftex=T("
 steel_door((6912, 3200), (6912, 3264), (-1, 0), G, REG_TAG[5], "eastyard", "strongroom5", thick=64)
 pane_y(3296, 3360, 6848, 6912, sill=32, top=128)
 frame((7872, 3200), (7872, 3264), (1, 0), 112, G, "eastyard")
-squeeze((6848, 3472), (6848, 3520), (1, 0), G, "lane", "eastyard")
-turnstile((6912, 3632), (6912, 3568), (-1, 0), G, "eastyard", "lane")
+EY_IN = squeeze((6848, 3472), (6848, 3520), (1, 0), G, "lane", "eastyard")
+EY_OUT = turnstile((6912, 3632), (6912, 3568), (-1, 0), G, "eastyard", "lane")
 
 # --- offices off the gallery; the basement's stair room (register 3's door); the stair hall ----------
 W1 = (1216, 3456, 1664, 4032)
@@ -913,7 +919,7 @@ us_shelves = [((x, 5248, x + 64, 5504), solid("SK", U + 192)) for x in (4160, 44
 room(USTORE, U, look("AR", "FR", "KA", 156, U + 192, DIM), us_shelves, name="upperstore")
 gap((3904, 5312), (3904, 5376), (1, 0), U, "AR", "AR", "office2", "upperstore")
 # the balcony at the corridor's east end, over the pond court: a drop of 256, one way
-gap((4864, 4672), (4864, 4800), (1, 0), U, "CO", "LB", "upper", "balcony")
+BAL_GAP = gap((4864, 4672), (4864, 4800), (1, 0), U, "CO", "LB", "upper", "balcony")
 
 # =================================================================================================
 # THE POND COURT (open; in by the balcony only, out by a turnstile into the east lane)
@@ -942,7 +948,7 @@ for p, q in (((POND[0], POND[1]), (POND[0], POND[3])), ((POND[0], POND[3]), (PON
              ((ISLAND[2], ISLAND[3]), (ISLAND[2], ISLAND[1])), ((ISLAND[2], ISLAND[1]), (6016, ISLAND[1])),
              ((5952, ISLAND[1]), (ISLAND[0], ISLAND[1]))):
     m.line(p, q, **RAIL)
-m.line((5952, POND[1]), (6016, POND[1]), id=BRIDGE_RAIL, **RAIL)            # where the footbridge will land: unrailed in phase 2
+m.line((5952, POND[1]), (6016, POND[1]), id=BRIDGE_RAIL, **RAIL)            # where the footbridge lands: unrailed when it is up
 # the boat store, bigger inside (MAP18's hut): its door from the court shows and leads into the big
 # store in free ground (between the garden and the block), heading east; the big store's door leads
 # back out of the little one's. The inside of the little store is reached by a plain door in its side.
@@ -977,6 +983,8 @@ posts = [(ISLAND[0] + 32, ISLAND[1] + 32), (ISLAND[2] - 48, ISLAND[1] + 32), (IS
 fit(ISLAND, [((x, y, x + 16, y + 16), solid("PI", 160)) for x, y in posts] + [(plate_box(REG9_C), dict(PLATE_F, special=1024))],
     floor=G, **PCL)
 W.area("island", ISLAND, G)
+W.link(W.node(5984, POND[1] - 24, "the footbridge, the bank", "pond"), W.node(5984, ISLAND[1] + 24, "the footbridge, the island", "island"),
+       ISLAND[1] - POND[1] + 48, tag=BRIDGE_TAG)                            # up once register 9 is signed
 register(9, "the island", plate_box(REG9_C), G, 0, bridge=BRIDGE_TAG)
 # the kiosk, sealed behind steel (register 7's), YELLOW in it, glass to see it
 fit((5136, 5136, 5360, 5360), floor=G, **look("CK", "FC", "KC", 190, 128, PAPER))
@@ -1062,7 +1070,7 @@ for n, (dx, dy) in zip((1, 2, 3, 4), ((0, 1), (1, 0), (0, -1), (-1, 0))):
     b1, b2 = (P(tx - dy * 32, ty - dx * 32), P(tx + dy * 32, ty + dx * 32))
     fixed(n, a1, a2, (dx, dy), U, "nosize", b1, b2, (-dx, -dy), G, "garden")
 # the tower yard's two ways from the garden: a squeeze in, a turnstile out
-squeeze((5696, 1408), (5696, 1456), (1, 0), G, "garden", "toweryard")
+TY_IN = squeeze((5696, 1408), (5696, 1456), (1, 0), G, "garden", "toweryard")
 
 # =================================================================================================
 # THE TOWER YARD (open; in with a door by YELLOW only, with empty hands by the squeeze)
@@ -1096,24 +1104,31 @@ frame((6336, 960), (6400, 960), (0, 1), 107, TOWER_FOOT, "towerfoot")
 FOOT_MID = ((FOOT[0] + FOOT[2]) / 2, (FOOT[1] + FOOT[3]) / 2)
 # a lap of the flight: from 108's line to 107's (the head's landing, the flight, the foot's landing, two
 # recesses) and the flight's fall (the pass lab: 544 along, 128 down)
-assert STAIR_LAP == (FRAMES[107]["c"][1] - FRAMES[108]["c"][1], FRAMES[108]["z"] - FRAMES[107]["z"]), STAIR_LAP
-# behind the foot's wall the stair goes on down, sealed: three more flights of the same pitch, lit;
-# glass beside 107 to see down it
+FLIGHT = 576, 832                                                           # the real flight: y from, to
+STAIR_LAP = (FRAMES[107]["c"][1] - FRAMES[108]["c"][1], FRAMES[108]["z"] - FRAMES[107]["z"])
+assert STAIR_LAP == ((HL[3] - HL[1]) + (FLIGHT[1] - FLIGHT[0]) + (FOOT[3] - FOOT[1]) + 2 * ajarmap.DEPTH, G - TOWER_FOOT), STAIR_LAP
+# behind the foot's wall the stair goes on down, sealed, built to the lap (the pass lab): its flight k
+# is the real one moved k laps along and down, and each landing between two flights is the head's
+# landing, the foot's and the two recesses (288), so that the double walks on its steps. Three more
+# flights, lit; glass beside 107 to see down it.
 for x1, x2 in ((6272, 6320), (6416, 6464)):
     glass((x1, 960, x2, 1040), [((x1, 960), (x2, 960)), ((x1, 1040), (x2, 1040))], sill=16, top=144, z=TOWER_FOOT)
 SEAL = look("PU", "FP", "KP", 200, 0, COLD)
 ALONG, DOWN = STAIR_LAP
 m.sector(rect(6272, 1040, 6464, 1120), floor=TOWER_FOOT, ceil=TOWER_FOOT + 192, **{k: v for k, v in SEAL.items() if k != "ceil"})
 W.area("sealedstair0", (6272, 1040, 6464, 1120), TOWER_FOOT)
+SEAL_LANDING = ALONG - (FLIGHT[1] - FLIGHT[0])
+assert SEAL_LANDING == (HL[3] - HL[1]) + (FOOT[3] - FOOT[1]) + 2 * ajarmap.DEPTH == 288 and 832 + SEAL_LANDING == 1120
 for k in (1, 2, 3):
     top = -DOWN * k                                                         # the flight's top: k laps down
-    ajarmap.stairs(m, (6272, 576 + ALONG * k), (6464, 576 + ALONG * k), (0, 1), top, TOWER_FOOT, steps=8, depth=32,
+    ajarmap.stairs(m, (6272, FLIGHT[0] + ALONG * k), (6464, FLIGHT[0] + ALONG * k), (0, 1), top, TOWER_FOOT, steps=8, depth=32,
                    ceil=top + 192, light=200, color=tint(COLD), **dress(wall="PU", ftex="FP", ctex="KP"))
-    y1 = 832 + ALONG * k
-    y2 = 1120 + ALONG * k if k < 3 else 832 + ALONG * k + 288
+    y1 = FLIGHT[1] + ALONG * k
+    y2 = y1 + SEAL_LANDING                                                  # (the last one: as long, the plate on it)
     fit((6272, y1, 6464, y2), [(plate_box((FOOT_MID[0], FOOT_MID[1] + STAIR_LAPS * ALONG)), PLATE_F)] if k == STAIR_LAPS else [],
         floor=top + TOWER_FOOT, **dict(SEAL, ceil=top + TOWER_FOOT + 192))
-    W.area(f"sealedflight{k}", (6272, 576 + ALONG * k, 6464, 832 + ALONG * k), top, ramp=("y", 576 + ALONG * k, top, 832 + ALONG * k, top + TOWER_FOOT))
+    W.area(f"sealedflight{k}", (6272, FLIGHT[0] + ALONG * k, 6464, FLIGHT[1] + ALONG * k), top,
+           ramp=("y", FLIGHT[0] + ALONG * k, top, FLIGHT[1] + ALONG * k, top + TOWER_FOOT))
     W.area(f"sealedstair{k}", (6272, y1, 6464, y2), top + TOWER_FOOT)
 for name_ in [a for a in W.areas if a.startswith("sealed")]:
     W.sealed.add(name_)
@@ -1124,7 +1139,9 @@ TS_IN = (6672, 1168, 7024, 1520)
 room(TS_IN, G, look("LA", "FA", "KA", 160, 192, RUST), name="strongroom6", sealed=True)
 for box in ((6656, 1152, 7040, 1168), (6656, 1520, 7040, 1536), (7024, 1168, 7040, 1520), (6656, 1168, 6672, 1280),
             (6656, 1344, 6672, 1392), (6656, 1456, 6672, 1520)):
-    m.sector(rect(*box), floor=G, ceil=G, light=160, wall=T("LA") if LOOK else "AJWALL", ftex="AJTRIMF", ctex="AJTRIMF")
+    # solid, as high as the room (a wall of no height round its steel door would keep it shut: Door_Open
+    # stops at the lowest ceiling beside it)
+    m.sector(rect(*box), floor=192, ceil=192, light=160, wall=T("LA") if LOOK else "AJWALL", ftex="AJTRIMF", ctex="AJTRIMF")
 steel_door((6656, 1280), (6656, 1344), (1, 0), G, REG_TAG[6], "toweryard", "strongroom6", thick=16)
 pane_y(1392, 1456, 6656, 6672, sill=32, top=128)
 
@@ -1277,7 +1294,7 @@ COMPANY = {
     "boiler": [IMP] * 2 + [REVENANT, MANCUBUS],
     "bpassage": [ZOMBIE] * 3,
     "cellar": [IMP] * 4 + [SPECTRE] * 2 + [CHAINGUNNER] * 2 + [KNIGHT] + [REVENANT] * 2,
-    "garden": [IMP] * 10 + [SERGEANT] * 5 + [CHAINGUNNER] * 2 + [DEMON] * 4 + [SPECTRE] * 5 + [CACO] * 3 + [KNIGHT] * 3
+    "garden": [IMP] * 7 + [SERGEANT] * 4 + [CHAINGUNNER] * 2 + [DEMON] * 4 + [SPECTRE] * 5 + [CACO] * 3 + [KNIGHT] * 3
               + [REVENANT] * 3 + [CHAINGUNNER] * 2 + [MANCUBUS, BARON],
     "toweryard": [IMP] * 4 + [SERGEANT] * 2 + [CACO, REVENANT],
 }
@@ -1309,9 +1326,17 @@ ambush(10 + TEAL, SERGEANT, "upper", 3, angle=180)                          # TE
 ambush(10 + TEAL, SPECTRE, "drawing", 2, angle=90, after=2)
 ambush(10 + ORANGE, SOUL, "pond", 3, angle=90)                              # ORANGE: the pond court
 ambush(10 + ORANGE, IMP, "pond", 2, angle=90, after=3)
+ambush(50 + 1, SERGEANT, "forecourt", 2, angle=90)                         # the duty room signed: the forecourt, the lobby
+ambush(50 + 1, IMP, "lobby", 2, angle=270, after=2, near=900)
 ambush(50 + 2, IMP, "stairhall", 3, angle=270, near=800)                    # the stack signed: the stair hall
 ambush(50 + 3, ZOMBIE, "gallery", 3, angle=0, near=900)                     # the side room signed: the gallery
 ambush(50 + 4, DEMON, "garden", 3, angle=90, near=1200)                     # the hall with no stair signed: the garden
+ambush(50 + 5, KNIGHT, "eastyard", 1, angle=180, near=1000)                 # the gallery signed: the east yard, the link
+ambush(50 + 5, IMP, "linkvest", 2, angle=90, after=2)
+ambush(50 + 6, REVENANT, "toweryard", 1, angle=180)                         # the stair signed: the tower yard
+ambush(50 + 6, IMP, "toweryard", 2, angle=180, after=2)
+ambush(50 + 7, CACO, "pond", 1, angle=180)                                  # the boathouse signed: the pond court
+ambush(50 + 7, SERGEANT, "pond", 2, angle=180, after=2)
 
 
 
@@ -1403,7 +1428,7 @@ STAGE_AREAS = [
     {"gardensteps", "garden", "nosize", "toweryard", "towerhead", "towerflight", "towerfoot"},
 ]
 COURTS = {"eastyard": "the east yard", "pond": "the pond court", "toweryard": "the tower yard"}
-APART = {"nightroom": "the night room (the way out: by the chain only)", "island": "the island (phase 2: its footbridge)",
+APART = {"nightroom": "the night room (the way out: by the chain only)", "island": "the island (by its footbridge: register 9)",
          "strongroom5": "the east strongroom (register 5)", "strongroom6": "the tower's strongroom (register 6)",
          "kiosk": "the kiosk (register 7)"}
 
@@ -1464,7 +1489,7 @@ def measure():
         lines.append(f"    stage '{name}' (steel open: {sorted(t - 1900 for t in opened) or 'none'}): {len(new)} areas more, "
                      f"one piece on foot")
         seen_before = got
-    all_open = set(REG_TAG.values()) | {LODGE_TAG}
+    all_open = set(REG_TAG.values()) | {LODGE_TAG, BRIDGE_TAG}
     dist, _ = W.dijkstra(START, opened=all_open)
     got = {a for i in dist for a in W.nodes[i]["areas"]}
     lost = sorted(set(W.areas) - got - W.sealed - set(APART))
@@ -1489,7 +1514,7 @@ def measure():
     ANSWERS.clear()
     for n, r in sorted(REGISTERS.items()):
         P, z = r["box"], r["z"]
-        opened = all_open - {r["opens"]}
+        opened = all_open - {r["opens"], r["bridge"]}
         one = []
         for name, S, D, M, key in X:
             areas, _ = reach(D["node"], opened)
@@ -1535,7 +1560,7 @@ def measure():
     for n, (S, D), ks, mid, k0 in ((5, (FRAMES[106], FRAMES[105]), (4, 5, 6), LINK_MID, LINK_LAPS),
                                    (6, (FRAMES[107], FRAMES[108]), (2, 3, 4), FOOT_MID, STAIR_LAPS)):
         L, Mk, r = crossing(S, D), Tf(), REGISTERS[n]
-        opened = all_open - {r["opens"]}
+        opened = all_open - {r["opens"], r["bridge"]}
         areas, _ = reach(D["node"], opened)
         out = []
         for k in range(1, max(ks) + 1):
@@ -1562,7 +1587,7 @@ def measure():
     for c in X:
         by_s.setdefault(c[1]["node"], []).append(c)
     for n, r in sorted(REGISTERS.items()):
-        opened = all_open - {r["opens"]}
+        opened = all_open - {r["opens"], r["bridge"]}
         count = 0
         for name1, S1, D1, M1, k1 in X:
             q1, z1 = M1(r["centre"]), r["z"] + M1.dz
@@ -1586,17 +1611,60 @@ def measure():
     return lines, bad
 
 
+def script_names():
+    """The registers' names as map19.zs has them (AjarPaper.RegisterName): they have to be these."""
+    import re
+    path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "src", "zscript", "map19.zs")
+    with open(path) as f:
+        block = re.search(r"names\[\] = \{(.*?)\};", f.read(), re.S).group(1)
+    return re.findall(r'"([^"]*)"', block)
+
+
 ANSWERS = {}
 assert LODGE_IN[0] <= REG8_C[0] - 64 and REG8_C[0] + 64 <= LODGE_IN[2] and LODGE_IN[1] <= REG8_C[1] - 64 <= REG8_C[1] + 64 <= LODGE_IN[3], REG8_C
 assert ISLAND[0] <= REG9_C[0] - 64 and REG9_C[0] + 64 <= ISLAND[2] and ISLAND[1] <= REG9_C[1] - 64 <= REG9_C[1] + 64 <= ISLAND[3], REG9_C
 
-import os as _os
 import time as _time
 _t0 = _time.time()
 MEASURE, PROBLEMS = measure()
 MEASURE[0] += f" ({_time.time() - _t0:.1f} s)"
+_names = script_names()
+for _n, _r in sorted(REGISTERS.items()):
+    if _n >= len(_names) or _names[_n] != _r["name"]:
+        PROBLEMS.append(f"register {_n} is \"{_r['name']}\" here and \"{_names[_n] if _n < len(_names) else ''}\" in map19.zs")
 if PROBLEMS:
     raise SystemExit("MAP19: " + "; ".join(PROBLEMS) + "\n" + "\n".join(MEASURE))
+
+# --- the smoke runs' places (PaperTest, map19.zs): MapSpots, each turned the way in ------------------------
+# PROG + n: where the player stands for register n's answer meant (ANSWERS; 5 and 6: after the laps);
+# 3100 + (n - 100): 32 in front of frame n; 3200 + colour: of that far side; 3301..: of the building's own
+# portals; 3401..: the courts' squeezes, turnstiles and the balcony
+TEST_SPOTS = {}
+
+
+def test_spot(tid, x, y, angle=0):
+    TEST_SPOTS[tid] = (x, y, angle)
+    m.thing(x, y, MAPSPOT, id=tid, angle=angle)
+
+
+for n, (name_, at) in sorted(ANSWERS.items()):
+    test_spot(PROG + n, at[0], at[1])
+for n, e in sorted(FRAMES.items()):
+    test_spot(3000 + n, W.nodes[e["node"]]["x"], W.nodes[e["node"]]["y"], angle_of(e["inn"]))
+for c, e in sorted(FARS.items()):
+    test_spot(3200 + c, W.nodes[e["node"]]["x"], W.nodes[e["node"]]["y"], angle_of(e["inn"]))
+OWN = ["the covered way's odd face", "the covered way's mouth", "the stretch's way in", "the stretch's way out",
+       "the boat store's odd face", "the boat store's mouth", "the big store's door"]
+for k, name_ in enumerate(OWN):
+    e = PORTS[name_]
+    test_spot(3301 + k, W.nodes[e["node"]]["x"], W.nodes[e["node"]]["y"], angle_of(e["inn"]))
+for n in (1, 2, 3, 4):
+    for k, side in ((10, "a"), (20, "b")):
+        e = PORTS[f"doorway {n}{side}"]
+        test_spot(3300 + k + n, W.nodes[e["node"]]["x"], W.nodes[e["node"]]["y"], angle_of(e["inn"]))
+for k, (i, angle) in enumerate(((EY_IN[0], 0), (EY_OUT[0], 180), (TY_IN[0], 0), (TY_OUT[0], 180), (PC_OUT[0], 270),
+                                (BAL_GAP, 0), (EY_OUT[1], 0), (TY_OUT[1], 0))):
+    test_spot(3401 + k, W.nodes[i]["x"] - (64 if k == 5 else 0), W.nodes[i]["y"], angle)
 
 I1.m, CD.m = _theirs, _cd
 
