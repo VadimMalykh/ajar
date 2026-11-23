@@ -10054,3 +10054,26 @@ mapcheck on `map_clockdept`: 0 problems each; `MAP=MAP18 MODE=1` 8 checks
 with levelExited, `MODE=7` 27, none failed; `MODE=6` views 30 (an office)
 and 33 (the drawing office) looked at: the desks and benches stand on the
 floor. Not played by hand.
+
+## MAP18: the street doors were a pair and a half (fixed 2026-11-23)
+
+Seen by Vadim when playing: behind the start, a pair of doors under PASSES
+and beside it a single leaf under "PAS". The picture of the street doors
+(`ST`) is 128 wide and MAP18 hung it on 192 of wall (3904 to 4096 at y 256),
+so it was laid one and a half times. PASSES itself is as meant: it is what
+the street doors say in the third look (ENTRANCE in the other two).
+
+- **The fix.** The picture hangs on 128, 3936 to 4064: one pair, on the
+  hall's middle (x 4000, as the start and the way to the court). That is
+  half a wall tile off the 64s, so it is a second picture, `SD`
+  (`street_doors(n, 32)` in `tools/gfx_institute.py`): the same doors with
+  the wall behind them begun 32 into its tile, and the flaking paint runs on
+  across its edges. MAP13 keeps `ST`.
+- Every other `hang()` of MAP18 (the clock, the coats, the card indexes, the
+  menu) is as wide as its picture.
+
+**Checks** (2026-11-23): the full `./build.sh` with the solver, MAP18's
+figures as before; mapcheck, thingcheck, itemcheck on `map_clockdept`: 0
+problems each; `MAP=MAP18 MODE=1` 8 checks with levelExited; two headless
+views of the wall (from the hall's middle and from the west): one pair, one
+plate, no seam in the wall. Not played by hand.

@@ -657,7 +657,8 @@ fit((3456, 256, 4544, 1280), grid((3456, 256, 4544, 1280), 2, 2, 240, 96) + [(de
 W.area("entrance", (3456, 256, 4544, 1280), G, obst=[desk, (3648, 448, 3712, 512), (4288, 448, 4352, 512),
                                                     (3648, 1024, 3712, 1088), (4288, 1024, 4352, 1088)])
 joint((3456, 320), (3456, 448), "porch", "entrance")
-hang((3904, 256), (4096, 256), "ST")                                        # the street doors, behind the start
+hang((3936, 256), (4064, 256), "SD")                                        # the street doors, behind the start: one
+                                                                            # picture's width (128), on the hall's middle
 hang((3456, 1088), (3456, 1216), "NB")                                      # the clock
 frame((4544, 896), (4544, 960), (1, 0), 118, G, "entrance")
 CLOAK_FENCE = (3344, 640, 3392, 832)
