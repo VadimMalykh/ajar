@@ -965,7 +965,7 @@ def measure():
 I1.m, CD.m = _theirs, _cd                    # MAP11's and MAP18's helpers draw on their own maps again
 MEASURE, PROBLEMS = measure()
 for _n, _name in enumerate(EXPECT):
-    m.thing(-200 + 16 * _n, 600, MAPSPOT, id=3101 + _n, args=(round(REST[_name] * 100),))
+    m.thing(32 + 32 * _n, 352, MAPSPOT, id=3101 + _n, args=(round(REST[_name] * 100),))
 if NOROOM:
     PROBLEMS.append("no room for things in " + ", ".join(sorted(set(NOROOM))))
 if PROBLEMS:

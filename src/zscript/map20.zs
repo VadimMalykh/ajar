@@ -773,9 +773,9 @@ class HighWaterTest : EventHandler
 		case 1:     // the plunge hall from the gallery's corner, dry: BLUE by the plunge, 101 and the ledge
 			Look(mo, st, 520, 470, 330, 18);
 			break;
-		case 2:     // ... with BLUE in 102: P at 224, the ledge 8 under
+		case 2:     // ... with BLUE in 102: P at 224, the ledge 8 under (from the landing at 240)
 			if (st == 1) { HangQuiet(mo, Blue(), 102); Set(TP, 224); }
-			Look(mo, st, 520, 470, 330, 18);
+			Look(mo, st, 832, 480, 300, 25);
 			break;
 		case 3:     // ... under water: the gallery stair going on down, the gauge
 			Look(mo, st, 760, 200, 240, 10, 60);
@@ -824,13 +824,13 @@ class HighWaterTest : EventHandler
 			if (st == 1) { Set(TK, 184); }
 			Look(mo, st, 4032, 2280, 270, 25);
 			break;
-		case 17:    // the wheel house from the upper yard: U, the crest, the spillway, L; dry
-			Look(mo, st, 4544, 2300, 270, 30);
+		case 17:    // the wheel house: L from its east end, the spillway coming down into it; dry
+			Look(mo, st, 5060, 1950, 150, 5, 12);
 			break;
 		case 18:    // ... the circle running (L full, the leaves in 107 and 108)
 			if (st == 1) { Free(TC); Free(TT); HangQuiet(mo, Leaf(0), 107); HangQuiet(mo, Leaf(1), 108); Set(TL, -4); }
 			if (st == 2) Free(TL);
-			Look(mo, st, 4544, 2300, 270, 30);
+			Look(mo, st, 5060, 1950, 150, 5, 12);
 			break;
 		case 19:    // the sluice and the wheel's lamp from the lower yard, the wheel turning
 			Look(mo, st, 4900, 1312, 0, 0);
