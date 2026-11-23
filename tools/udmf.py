@@ -33,6 +33,7 @@ class Map:
         # line, the sides, the edge a-b of the front sector si, the back sector (or
         # None) and the textures the line was given; it may change the line and its sides
         self.line_hook = None
+        self.chunks = []       # UDMF records put in whole: see textmap()
 
     def sector(self, poly, floor=0, ceil=192, light=200, wall="AJWALL",
                ftex="AJFLOOR", ctex="AJCEIL", color=None, side=None, id=0, special=0, raw=None, lift=0):
@@ -104,7 +105,10 @@ class Map:
             out.append(new)
         return out
 
-    def textmap(self):
+    def parts(self):
+        """The map as UDMF records: (vertices [(x, y)], linedefs, sidedefs,
+        sectors, things), each record a dict of its fields; indices are into
+        these lists. textmap() writes them; tools/lefthand.py reflects them."""
         polys = self._split()
         # line properties given for an unsplit edge apply to all its pieces
         def props_for(a, b):
@@ -258,23 +262,7 @@ class Map:
                 self.line_hook(ld, sides, a, b, si, other, dict(mid=mid, upper=upper, lower=lower))
             lines.append(ld)
 
-        def val(v):
-            if isinstance(v, bool):
-                return "true" if v else "false"
-            if isinstance(v, str):
-                return '"%s"' % v
-            return str(v)
-
-        def block(kind, d):
-            return kind + "{" + "".join(f"{k}={val(v)};" for k, v in d.items()) + "}\n"
-
-        out = ['namespace="zdoom";\n']
-        for x, y in verts:
-            out.append(block("vertex", dict(x=float(x), y=float(y))))
-        for ld in lines:
-            out.append(block("linedef", ld))
-        for sd in sides:
-            out.append(block("sidedef", sd))
+        sectors, things = [], []
         for s in self.sectors:
             d = dict(heightfloor=s["floor"], heightceiling=s["ceil"], texturefloor=s["ftex"],
                      textureceiling=s["ctex"], lightlevel=s["light"])
@@ -287,7 +275,7 @@ class Map:
                 for part in ("floor", "ceiling", "walltop", "wallbottom"):
                     d["color_" + part] = s["color"]
             d.update(s["raw"])
-            out.append(block("sector", d))
+            sectors.append(d)
         for t, least in zip(self.things, self._skills()):
             d = dict(t)
             d.pop("skill", None)
@@ -300,6 +288,45 @@ class Map:
                 d[f"skill{n}"] = True
             for f in ("single", "coop", "dm"):
                 d[f] = True
+            things.append(d)
+        return verts, lines, sides, sectors, things
+
+    def textmap(self):
+        def val(v):
+            if isinstance(v, bool):
+                return "true" if v else "false"
+            if isinstance(v, str):
+                return '"%s"' % v
+            return str(v)
+
+        def block(kind, d):
+            return kind + "{" + "".join(f"{k}={val(v)};" for k, v in d.items()) + "}\n"
+
+        verts, lines, sides, sectors, things = self.parts()
+        # pieces made elsewhere and put in whole (tools/lefthand.py: a room built
+        # reflected): their indices are moved past this map's own
+        for cv, cl, cs, csec, cth in self.chunks:
+            nv, ns, nsec = len(verts), len(sides), len(sectors)
+            verts = verts + list(cv)
+            for ld in cl:
+                ld = dict(ld, v1=ld["v1"] + nv, v2=ld["v2"] + nv)
+                for k in ("sidefront", "sideback"):
+                    if k in ld:
+                        ld[k] += ns
+                lines = lines + [ld]
+            sides = sides + [dict(sd, sector=sd["sector"] + nsec) for sd in cs]
+            sectors = sectors + list(csec)
+            things = things + list(cth)
+        out = ['namespace="zdoom";\n']
+        for x, y in verts:
+            out.append(block("vertex", dict(x=float(x), y=float(y))))
+        for ld in lines:
+            out.append(block("linedef", ld))
+        for sd in sides:
+            out.append(block("sidedef", sd))
+        for d in sectors:
+            out.append(block("sector", d))
+        for d in things:
             out.append(block("thing", d))
         return "".join(out)
 

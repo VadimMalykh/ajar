@@ -430,6 +430,25 @@ map WATER "Ajar: the water lab"
 	EventHandlers = "AjarWaterHandler", "WaterTest"
 }
 
+// The left-handed room lab (tools/map_lefthand.py, src/zscript/lefthand.zs): MAP=LEFT ./run.sh
+// Its exit (behind the door in the reflected room) is the secret one.
+map LEFT "Ajar: the left-handed room"
+{
+	next = "LEFT"
+	secretnext = "MIR"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "LeftHandTest"
+}
+
+DoomEdNums
+{
+	20150 = AjarLeftHanded
+	20151 = AjarLeftHandStatue
+}
+
 // The sound lab (tools/map_soundlab.py, src/zscript/soundlab.zs): MAP=SOUND ./run.sh
 map SOUND "Ajar: the sound lab"
 {
