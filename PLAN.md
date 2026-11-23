@@ -10477,3 +10477,142 @@ carried by a scroller or a pusher across a portal; monsters taking the
 double for the player (the outline's open question: it is `NEVERTARGET`
 and nothing sees it); the cost of the picture on the real machine; more
 than one player.
+
+## A late act in Doom II's own maps (Vadim's idea, 2026-11-23; not designed)
+
+Vadim: "reuse some classic doom maps, but with our mechanics added (spacial +
+time paradoxes)", near the end, "after map 25 maybe". Claude's view the same
+day; nothing is built and nothing is decided beyond "it goes into the plan".
+
+**As a short act of two to four maps, late, with the classic maps patched as
+they load.** Not the maps copied into the package: "Doom II mod" already says
+that nothing from `doom2.wad` is copied into the pk3, and a changed copy of
+one of id's maps in the package or on GitHub would be exactly that. The act
+needs Doom II, as the whole game does.
+
+Why it should work:
+
+- A paradox is felt most in a place the player knows by heart. After 25 maps
+  of Ajar's own places, walking into Entryway with a door under the arm is a
+  turn of its own; everybody knows where the exit is, so hanging a door and
+  stepping straight to it is funny before it is a puzzle.
+- Doom's own doors could be the frames: the classic maps are full of doors,
+  and to unhinge one of those and hang it elsewhere is the mechanic meeting
+  its ancestor.
+- The arena maps suit time. Dead Simple fought beside one's earlier selves is
+  the plain candidate, in the manner of MAP32's room 3.
+
+What is hard:
+
+- **No proof by default.** Ajar's maps come out of a generator with a solver
+  behind it: nothing can be lost, nobody is stuck. A classic map has drops,
+  lifts and one-way routes the solver knows nothing of. Each map taken needs
+  its room graph written by hand for the solver, or the rule relaxed there
+  (a door that is lost comes back, say).
+- **They are maps for fighting.** The puzzle is laid over them by where the
+  few doors and frames are; most of the map stays scenery and combat.
+- **Whether a Doom door line can be a frame is an engine question**, not
+  looked at yet: Ajar's frames are lines of its own making, 64 wide, in a
+  recess; Doom's doors come in other widths and heights, and a map loaded
+  from the IWAD has no spare lines. A lab comes first, as for the one-sided
+  doorway and the pass: load a Doom II map, make one of its doors a frame
+  from ZScript, hang a door in it, walk through both ways.
+
+A first cut, to be argued over when the act comes up: three maps, Entryway
+(MAP01) for space, Dead Simple (MAP07) for time, and one more for both. Map
+numbers and names for them, and how the act is reached, are open.
+
+## The sound lab: door sounds and music to judge by ear (built 2026-11-23)
+
+Vadim, 2026-11-23: most sounds are fine as they are, but taking and setting a
+door both use Doom's "open door" sound, "which is not matching well"; and
+music, generated or free? Claude proposed sounds of the game's own and a
+third way for music, written as notes by script; Vadim: "prepare tests map
+with door sounds to check, and with music generated as MIDI". This is that
+map. **Nothing in the game has changed: every level still plays Doom's door
+sounds and no music. Both wait for Vadim's ears.**
+
+`MAP=SOUND ./run.sh` (`tools/map_soundlab.py`, `src/zscript/soundlab.zs`). One
+bright room. North wall: four frames, RED and BLUE hung, GREEN leaning by an
+empty one, so taking, hanging and swapping are a step apart; the far sides
+are on the south wall of the same room, so nothing can be lost. East wall:
+switches **TAKE** and **SET** (each press: Doom's, A, B, C, Doom's ...; the
+sound is played and named) and **MUSIC -** / **MUSIC +** (silence and the
+tracks). What is chosen stands top right. A shotgun by the start, to hear a
+door beside a shot.
+
+### The door sounds (`tools/sfx.py`, `src/sndinfo.txt`)
+
+Made by script, not cut from recordings: no licence to keep track of, and a
+sound can be changed by a number. Standard library only, fixed seeds;
+synthesised at 44100 Hz and brought down to Doom's 11025 Hz, 16 bit. The
+parts: a wood knock (a noise burst into damped modes of a panel), a thud (the
+same with a low body), a metal clack, a hinge squeak (stick-slip through two
+resonances), a low creak (Farnell's creaking door: quickening impulses into
+wood resonances), a scrape.
+
+| | Take (`ajar/take1..3`) | Set (`ajar/set1..3`) |
+|---|---|---|
+| A | squeak and knock, 0.40 s | thud and clack, 0.45 s |
+| B | creak and pins, 0.44 s | slide and thud, 0.52 s |
+| C | pins only, 0.21 s | two pins, 0.53 s |
+
+Loudness was set by measure, since nobody could listen: every peak at -3
+dBFS, and the loudest 100 ms within 3 dB of Doom's `DSDORCLS` / `DSDOROPN`
+(-12.5 dBFS): the takes -13.4 to -12.8, the sets -12.0 to -10.2.
+
+In `ajar.zs` every door action of the player and the thief now goes through
+`PlayTake`, `PlaySet`, `PlaySwap`. The handler's `takeSound` / `setSound` are
+empty outside the lab, which means Doom's sounds as before. With the game's
+own, a swap is the take and, 7 tics later, the set. The stray door's sounds
+are untouched. **When Vadim has chosen**: set the two names for every level
+(the defaults in `TakeName` / `SetName`), and the lab's fourth choice stays
+for comparison.
+
+### The music (`tools/music.py`)
+
+A piece is written as the maps are: a tune bar by bar (`"E5/2 C5/1 | ..."`,
+note and beats), a line of chords, an accompaniment pattern (waltz, march,
+pendulum); the script writes a MIDI file of 5 to 8 KB that loops on the bar
+line. GZDoom plays it through FluidSynth and its own soundfont, as `ajar.ini`
+is set. One figure is in every piece, the doorbell: two notes a third apart,
+the higher first. Because they are notes the pieces can do what the maps do:
+`mirrored` (every note turned about D, which sends the white keys to white
+keys and major chords to minor) and `rewound` (last note first).
+
+| Lump | Piece | For | What it is |
+|---|---|---|---|
+| `AJM_LOBB` | The Lobby | the hotel, MAP01-10 | a slow waltz in C, vibraphone then clarinet, the bell opening each phrase; 118 s |
+| `AJM_LOBM` | The Lobby, mirrored | a mirror map | the same upside down: A minor, the bell rings dong, ding |
+| `AJM_INST` | The Institute | MAP11-16 | D minor, a bassoon over plucked strings, a rim click typing and a triangle at each line's end; 151 s |
+| `AJM_CLOK` | The Clock Department | the time maps | a clock ticks twice a second under a music box; the second time a vibraphone plays the tune two bars late, an earlier self; 104 s |
+| `AJM_CLKR` | The Clock Department, rewound | a replay | the same from its last note to its first |
+
+The package carries the list `ajmusic.txt` (`LUMP|Title|what it is for`) and
+the lab reads it, so a new piece needs no change to the lab. No map's
+`music` names any of them yet.
+
+### What was checked, and what was not
+
+- `MAP=SOUND MODE=1 tools/smoke.sh`: 54 checks, `soundlab=ok`: the six sounds
+  defined, the five lumps found, both selections going round, take, hang and
+  swap with each, the swap's set sound 7 tics later (0 with Doom's), the
+  music stepped through every track and back.
+- A run with sound on and a null audio device (not kept in `tools/`): GZDoom
+  decoded each WAV at its length and `S_ChangeMusic` took all five pieces on
+  FluidSynth, with no error in the log.
+- The files read back by a second parser: well formed, every track as long as
+  the piece, no note left sounding; tune notes on a beat that are not of the
+  bar's chord are the passing notes meant (14 of 130 in the Lobby).
+- Outside the lab nothing moved: MAP01 mode 1, TEST mode 1 and LAB mode 2 (the
+  thief) print the same lines as before, and the full build's proofs are the
+  same. (TEST mode 2 differs in one line from run to run, on the old package
+  too: its key press is timed by a wait.)
+- **Not checked: how any of it sounds.** No one has heard a note or a knock.
+  The thief's swap and pick-up were read, not run.
+
+To decide after hearing: which take and which set (or none: CC0 recordings
+cut by script are the fallback); whether music written this way is the way
+(the alternatives discussed: AI audio tools, free CC0 / CC BY pieces; if the
+MIDI sounds thin, the same notes can be rendered to OGG with a free
+soundfont); and if so, which pieces stay and what the other places get.
