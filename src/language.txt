@@ -1,0 +1,8 @@
+// What is said at the start of each go of a map played whole in goes
+// (third.zs, ThirdWords: <MAPNAME>_GO<k>, in place of the engine's own first lines).
+
+[enu default]
+
+MAP33_GO1 = "Go 1 of 3. The gatehouse of the power station. This go is the first part,\nthe yellow way along the north: the coal yard, the boiler house, the gantry\nover the turbine hall, and plate 1 at its end. The door with a clock on it\nthere leads to before, into the start of the next part.";
+MAP33_GO2 = "Go 2 of 3. The start again: your first go is setting off behind the glass.\nThis way is the second part, the green one through the middle: the workshop,\nthe floor of the turbine hall, and plate 2. Win the hall before your first\nself comes onto the gantry over it.";
+MAP33_GO3 = "Go 3 of 3. The start again: your first two goes are setting off behind the\nglass. This way is the third part, the red one along the south: the\nswitchyard, the duct under the turbine hall's windows, and the exit door.";

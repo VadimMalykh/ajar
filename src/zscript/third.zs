@@ -37,6 +37,9 @@
 //  * AjarThirdWin thing (20164): the AjarShutter with tag args[1] is opened
 //    by hall args[0]'s win.
 //  * AjarThirdWind thing (20165): a plate on a wall; USE winds the clock on.
+//  * The line said at the start of go k may be the map's own: the string
+//    <MAPNAME>_GO<k> of the LANGUAGE lump (src/language.txt), said in place
+//    of the first lines of the engine's (ThirdWords).
 //
 // The rules:
 //  * ONE CLOCK (ot, AjarTimeHandler's) for the whole map, 0 at the start of
@@ -70,6 +73,8 @@
 //    when they see the player), and those shutters are shut. When every
 //    post's monster is dead and no monster lives in the hall, it is won and
 //    they open. In a later go they are shut until the tic it was won then.
+//    A hall with no posts and a shutter its win opens (MAP33's coal yard and
+//    its gate) is won when no monster lives in it.
 //    A watch whose earlier self comes into its sectors while the hall is not
 //    won ends the universe.
 //  * THE END: the exit door is open while every plate is pressed and
@@ -103,6 +108,17 @@ class AjarThirdWin : AjarThirdMark {}
 // A plate on a wall: USE winds the clock on (AjarTimeHandler.ThirdWind).
 class AjarThirdWind : AjarWind
 {
+	// its own picture (gfx_time.py): two arrowheads on to a plate with a self on it
+	States
+	{
+	Spawn:
+		AJW3 A -1 Bright;
+		Stop;
+	On:
+		AJW3 B -1 Bright;
+		Stop;
+	}
+
 	override void PostBeginPlay()
 	{
 		Super.PostBeginPlay();
@@ -145,6 +161,7 @@ extend class AjarTimeHandler
 	int parts;
 	int thirdLoads;             // times a saved game was loaded into this level (tests)
 	transient bool thirdSeen;   // (not in a save: false on the first tic after a load)
+	transient double hallMs;    // what the window halls (ThirdHalls) took this tic, in ms (MAP33's tests measure it)
 	AjarThird thirdMark;
 	AjarShutter exitDoor;
 	int openTics;               // the exit door stays open so long after the plates
@@ -265,7 +282,9 @@ extend class AjarTimeHandler
 		ThirdTouch(mo);
 		if (!paradox)
 		{
+			double t0 = MSTimeF();
 			ThirdHalls();
+			hallMs = MSTimeF() - t0;
 			ThirdHold();
 			ThirdFuture(mo);
 		}
@@ -294,7 +313,7 @@ extend class AjarTimeHandler
 		ThirdShutters(true);
 		ThirdExitShut();
 		ThirdSchedule();
-		Say(String.Format("Go 1 of %d. Your part ends at plate 1; a door with a clock\non it leads to before, into the start of the next part.", parts));
+		Say(ThirdWords(1, String.Format("Go 1 of %d. Your part ends at plate 1; a door with a clock\non it leads to before, into the start of the next part.", parts)));
 		LevelLocals.MakeAutoSave();
 	}
 
@@ -324,8 +343,17 @@ extend class AjarTimeHandler
 		mo.A_StartSound("misc/teleport", CHAN_AUTO);
 		string door = had ? "\nThe " .. had.Label() .. " door does not come through: it is where it was." : "";
 		string last = tgo == parts ? "\nThe way out is the door in the last room: open while every plate\nis stood on, and ten seconds more." : "";
-		Say(String.Format("Go %d of %d. It is the start again: through the glass your earlier\nself sets off. This room's only way out is your own part.", tgo, parts) .. last .. door);
+		Say(ThirdWords(tgo, String.Format("Go %d of %d. It is the start again: through the glass your earlier\nself sets off. This room's only way out is your own part.", tgo, parts)) .. last .. door);
 		LevelLocals.MakeAutoSave();
+	}
+
+	// What is said at the start of go k: the map's own words if its LANGUAGE has
+	// <MAPNAME>_GO<k> (MAP33: where the player is and what the go is for), else `plain`.
+	static string ThirdWords(int k, string plain)
+	{
+		string key = String.Format("%s_GO%d", level.mapname.MakeUpper(), k);
+		string s = StringTable.Localize("$" .. key);
+		return s == key || s == "" ? plain : s;
 	}
 
 	// The player comes out of the box's door a few units past its line, which
@@ -647,9 +675,9 @@ extend class AjarTimeHandler
 				Actor m = postIs[p];
 				if (m && m.bIsMonster && m.health > 0) alive = true;
 			}
-			if (!any || alive || HallLives(i)) continue;
+			if ((!any && !HasWinner(i)) || alive || HallLives(i)) continue;
 			wonTic[i] = ot;
-			Say("The hall is won: the shutters it held shut open.");
+			Say(any ? "The hall is won: the shutters it held shut open." : "Nothing lives here any more: the way on opens.");
 		}
 		// a watched self comes into its place while the hall is not won
 		for (int w = 0; w < watches.Size(); w++)
@@ -662,6 +690,13 @@ extend class AjarTimeHandler
 				ThirdClock(watchTic[w])), true);
 			return;
 		}
+	}
+
+	// Does a shutter open on hall h's win (an AjarThirdWin names it)?
+	bool HasWinner(int h)
+	{
+		for (int i = 0; i < winners.Size(); i++) if (HallIx(winners[i].args[0]) == h) return true;
+		return false;
 	}
 
 	bool HallLives(int h)

@@ -85,6 +85,22 @@ def make(out):
                 w.rect(x0 + i, 9 - d, x0 + i + 1, 10 + d, lit)
         gfx.text(w, "30", 6, 16, lit)
         out[f"sprites/AJWD{fr}0.png"] = w.png(grab=(15, 30))
+    # the plate on a wall of MAP33's end rooms that winds on to just before an earlier self steps onto
+    # its plate (third.zs, AjarThirdWind): two arrowheads pointing on, to a plate with a self standing on it
+    for fr, glow in (("A", 0.85), ("B", 1.0)):
+        w = Img(30, 30, (34, 36, 42))
+        w.frame(0, 0, 30, 30, shade((206, 180, 96), glow), 2)
+        lit = shade((250, 244, 214), glow)
+        for k in range(2):                                    # the arrowheads, pointing right
+            x0 = 4 + 6 * k
+            for i in range(6):
+                d = (5 - i) // 2 + 1
+                w.rect(x0 + i, 11 - d, x0 + i + 1, 11 + d, lit)
+        w.rect(17, 21, 28, 25, shade((176, 146, 70), glow * 1.3))       # the plate
+        w.rect(17, 21, 28, 22, shade((250, 220, 120), glow))
+        w.rect(21, 11, 24, 21, lit)                           # a self on it
+        w.disc(22, 8, 2, lit)
+        out[f"sprites/AJW3{fr}0.png"] = w.png(grab=(15, 30))
     # a plate on the wall of a room of goes' box that forgets every go (AjarAnew):
     # the wind plate's face with a ring that runs back to its start
     a = Img(30, 30, (34, 36, 42))
