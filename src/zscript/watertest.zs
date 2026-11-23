@@ -417,7 +417,7 @@ class WaterTest : EventHandler
 				Check("realKey_jumpSwimsUp", mo.pos.z > p0.z + 60, String.Format("the jump key held 35 tics from the floor under water: z %.1f (level nojump)", mo.pos.z));
 				SetW(TA, 96); HangIn(blue, 101); phase = 2;
 			}
-			if (phase == 2 && !use) Pose(mo, 40, 64, 180, 10);
+			if (phase == 2 && !use && h.carried != blue) Pose(mo, 40, 64, 180, 10);
 			else if (phase == 2) { phase = 3; reachAt = tt; }
 			else if (phase == 3 && tt == reachAt + 5)
 			{
@@ -490,7 +490,8 @@ class WaterTest : EventHandler
 	}
 	void Shots(Actor mo)
 	{
-		if (At()) mo.player.cheats |= CF_GODMODE;
+		// the raft out of the way: it is solid, and shots that meet it stop on it (seen: a fireball and a rocket into A's water)
+		if (At()) { mo.player.cheats |= CF_GODMODE; let r = ThinkerIterator.Create("AjarRaft").Next(); if (r) r.Destroy(); }
 		mo.bNoGravity = true;
 		Follow();
 		Shot(mo, "shot_acrossTheSurface", (150, 450, 128), 1000, 0, (400, 100, 136), 0);
