@@ -11421,3 +11421,228 @@ seen from outside); the other is "In Phase".
   railings cannot keep the parts apart.
 - Whether the three parts have to be played in a fixed order (proposed:
   yes; the future seen needs it).
+
+## The water lab (built 2026-11-23)
+
+`tools/map_water.py` (the map), `tools/ajarwater.py` (the pieces a map puts
+down: basin, weir, raft, gauge, bulkhead), `tools/gfx_water.py` (the gauge
+texture AJGAUGE, the wheel sprite AJWH), `src/zscript/water.zs` (the
+mechanic), `src/zscript/watertest.zs` (the tests); `MAP=WATER ./run.sh`,
+`MAP=WATER MODE=1..8 tools/smoke.sh`. An engine lab for MAP20 "High Water":
+can water go through doors? **Yes. Water stands level on both sides of a
+hung door, measured from the door's sill, and it is drawn rightly through
+the door, from above it and from under it; the player wades, swims (under
+`nojump`, with the jump key), goes through a hung door under water both
+ways and uses doors under water; shots and monsters behave; a Pair lifts
+water 192 up; a circle with a spillway turns a wheel that lights a lamp and
+holds a shutter open.** Run headless only (docker, software GL): **not
+played by hand**, and the look on the real machine (the GLES backend) is not
+checked.
+
+- **How the water is drawn.** Each basin (a room that can hold water: all its
+  sectors carry one tag, its frames' and far sides' recesses too) has a
+  hidden control sector far off the map (at -6000, -6000 on); its ceiling is
+  the water's surface. A line of it carries `Sector_Set3DFloor(tag, 2, 0,
+  144)`: type 2 is a swimmable 3D floor (drawn from above and below, its
+  sides where it meets a sector without it, shoot-through, see-through),
+  alpha 144 of 255. Its top and bottom are FWATER1 (Doom II's own, animated),
+  its sides FWATER1 too; the control sector's light (150) and colour
+  (#70B8D8) tint everything under the surface. The script moves the surface
+  every tic with `Sector.MoveCeiling` (smooth, nothing jumps). A dry basin's
+  surface is put 32 under its floor (out of sight). One catch, from the
+  engine's source (`maploader/specials.cpp`): a 3D floor whose control line
+  has no upper texture is given alpha 0, so the control line is made
+  two-sided (a second dummy sector beside it). The surface goes through line
+  portals like any floor: through a hung door one sees the far basin's own
+  water at its own height, with no work of ours. **Transfer_Heights was not
+  tried**: the 3D floor did everything asked at once, and Transfer_Heights
+  draws its fake water by where the viewer stands (one sector's heights
+  decide what the whole view shows), which is the wrong thing through a
+  portal into another basin; it also cannot show two water heights side by
+  side in one view. It stays the fallback only if the 3D floor ever proves
+  too slow on the real machine (not measured).
+- **The rule** (`AjarWaterHandler`, named in WATER's MAPINFO only; does
+  nothing on other maps). A basin (`AjarBasin`, thing 20140, args tag, plan
+  area, brim, kind, depth) has a water height w, a floor (its lowest), a plan
+  area (the generator's number, taken as the same at every height) and a
+  brim (the highest the water goes). Kinds: NORMAL; RESERVOIR (fixed, its
+  water `depth` over its floor, which is the sill of the far side in it);
+  OUTFALL (fixed, always empty). Each hung plain door links its frame's
+  basin and its far side's basin; a hung Pair (both leaves hung) links the
+  basins of its two frames; nothing is linked while a door is down. Per link
+  and tic, with sA, sB the two sills (the floor at the portal line) and
+  h = max(w - s, 0): q = K (hA - hB) from the higher head to the lower,
+  K = 2048 volume a tic per unit of head; 8 K (free fall) while the lower
+  side is dry at its sill. q never takes the heads past level, the giver
+  under its sill or the taker over its brim. All of a tic's flows are
+  reckoned from the same levels and then made together, so the order of the
+  doors does not matter (an earlier version moved water door by door; a
+  basin fed by one door and drained by another then settled 6 units off).
+  The time constant of a 512 x 512 room on a fixed source is area / K = 128
+  tics (3.7 s).
+- **Weirs** (`AjarWeir`, thing 20141, args upper, lower, crest, chute tag,
+  lamp tag x 65536 + shutter tag): one way only, q = K_WEIR max(wU - crest,
+  0), K_WEIR = 2048. Its paddle wheel is a wall sprite at the spillway, turned
+  (roll) at flow / 1024 degrees a tic, at most 12. Over 4096 a tic (2 units
+  over the crest) for 3 s running the wheel counts as turning: the lamp
+  sector goes from light 96 to 255 (and a dynamic light comes on), and the
+  shutter (a door sector) goes up 96 and is held there; once the flow has
+  been under 4096 for a moment the wheel stops, the lamp goes out, and 3 s
+  after that the shutter comes down (speed 4). While water goes down the
+  chute its floors turn FWATER1 and scroll.
+- **Bulkheads.** The ordinary doors (Door_Raise) into each bay refuse to
+  open from the dry side while the basin behind holds water ("Water stands
+  behind this bulkhead.\nIt will not open from the dry side."); from the wet
+  side they open, and nothing is done about the water then (the lab never
+  opens one wet).
+- **The drowning rule** (`bDrown` on the handler, default on): a walking
+  monster whose head has been under water (its waterlevel 3) for 3 s takes 20
+  each second after until dead; flying and floating ones never. The player's
+  air is the engine's own, not changed.
+- **Rafts** (`AjarRaft`, thing 20142, F: the lowest priority, done because it
+  was quick): a solid, bridge-like flat sprite (the crate's), radius 24,
+  height 8. While the water under it is 4 or more deep its middle stays at
+  the surface; it drifts towards the door the most water leaves its basin
+  by, at min(2, outflow / (64 x depth) / 4) units a tic, and goes through the
+  door when it gets there; the player standing on it goes with it.
+- **The map.** One dry corridor, bays to the north, each behind a bulkhead,
+  each with a staff gauge (marks every 32 from the floor). R (the
+  RESERVOIR, BLUE's far side, 96 deep) and O (the OUTFALL, GREEN's far side)
+  are seen through glass in the corridor's wall. 1 *see it*: hall A (512 x
+  512, ceiling 288), frame 101 at the floor (west), 102 on a gallery 128 up
+  (north, a stair to it), 103 at the floor (east), a ledge at 208 with no
+  stair (a medikit on it); BLUE, GREEN and the raft are here. 2 *the pipe*:
+  room B (floor 0, frames 104 and 105) and room C (floor 192, frame 106),
+  the TEAL pair. 3 *the circle*: the lower pool L (floor 0) and the upper
+  pool U (floor 192) north of it; U spills over a crest at 224 down a chute
+  into L, the wheel in the chute; frame 107 at L's foot, 108 at U's head,
+  109 for BLUE in L; the ORANGE pair; a passage with a stair to U. The lamp
+  is in the corridor's ceiling by the machine room, whose shutter the wheel
+  holds open (a soulsphere inside). 4 *company*: the cell K (frame 110),
+  two imps, a pinky and a cacodemon, armoured glass from an alcove.
+  `tools/mapcheck.py map_water`: 105 sectors, 0 problems.
+
+**What the runs showed:**
+
+1. **The rule (MODE=1, 10 checks; MODE=2, 8; MODE=3, 9; all pass).** BLUE
+   in 101 (A's floor) on R (96 over its sill): A fills to 96 (95.6 after 16
+   s; 44 after 2 s, 66 after 4, 86 after 8). BLUE in 102 (the gallery, 128
+   up): A fills to 128 + 96 = 224 (224.0 after 17 s; free fall to the
+   gallery's sill, then the head). BLUE in 102 and GREEN in 103 (A's floor,
+   to O): A settles at 96 within 2 s (what comes in over the gallery equals
+   what goes out at the floor: exactly 96.000, since the gallery door then
+   feeds freely). BLUE in 101 and GREEN in 103: the drain holds A near its
+   sill, at 10.667 (= 96 / 9: K in, 8 K out). GREEN alone in 103: A drains
+   to 0 in 1 s; in 102: to the gallery's 128 (2 s); in 101: to 0 (2 s).
+   The pipe: BLUE in 105 fills B to 96 (95.9) and through the TEAL pair (104
+   in B at 0, 106 in C at 192) C to 288, 192 higher (191.9 over B). BLUE
+   taken down, the pair alone keeps both where they are (no change over 5
+   s, within 0.05). GREEN drains B to 0 and C to its sill, 192, and no
+   lower. B 96 and C 0 over their sills sharing by the pair: 48 and 240
+   each (47.8, 239.8), the volume the same to the last digit; the flow is
+   signed (from 104's side when B is higher). The circle: L filled to 96 by
+   BLUE, then the ORANGE pair hung (107 at L's foot, 108 at U's head): U
+   rises, spills over the crest, and in about 10 s it goes round steadily:
+   U 234.54 (10.54 over the crest), L 53.09, 21592 a tic up the pair and
+   over the weir, both as reckoned by hand from K and K_WEIR, no water
+   lost. The wheel turned from 5.0 s after the pair was hung (lamp 255,
+   shutter open 96). Leaf 108 taken down: the wheel stopped 6.1 s after
+   (6.1 reckoned), the lamp went out, the shutter shut 3.7 s after the
+   wheel stopped (9.7 s after the leaf); U settles at the crest (224.003)
+   and L at what is left (63.63).
+2. **A: the moving surface.** The swimmable 3D floor, moved by
+   MoveCeiling every tic: works (above). Transfer_Heights: not tried (why:
+   above).
+3. **B: seen through a hung door** (MODE=7, 14 views from fixed places, the
+   water held still for each; `build/smokeW7/` in the worktree, made again
+   by the run). Dry A looking into R through BLUE: R's water stands in the
+   doorway like the side of a tank, 96 high, its top and its side (FWATER1)
+   drawn. Both sides 48 over their sills (B and C by the pair, 192 apart):
+   one continuous surface through the doorway, from both sides. Depths that
+   differ (B 71, C 25 over the sills, held mid-flow): a step at the portal
+   line, the far water lower in the doorway. From under water (A 96, the eye
+   at 51): the near water's tint and the far water through 101 alike; under
+   the surface looking up: the surface from below. The gallery door with A
+   52 over the gallery and R 96 over its own sill: the two levels each right.
+   R through the corridor's glass: the water and the gauge (96 at the mark).
+   The circle running, from L: the surface, the chute and the wheel. The
+   cell through the armoured glass with the monsters under water. A dry
+   room's frame onto the outfall: dry both sides. Nothing looked wrong in
+   any view; the look is the software GL's in docker.
+4. **C: the player (MODE=4, 18 checks, all pass).** Waterlevel by depth:
+   1 at 8 and 24, 2 at 30 and 40, 3 at 44 and 60 (player height 56, eyes
+   at 41). The walk key for 1 s: dry 210 along; wading (24) 210; swimming
+   103 along and 20 down (level look). With no key the player sinks (100
+   to 68 in 2 s). **Up: the jump key swims up under `nojump`** (z 140 in 1
+   s from the floor), by the script and by a real key press (`+jump` from
+   the console script); the engine checks `nojump` only for a jump from the
+   ground, so no change was needed. Looking 45 up and walking: up 75 in 1 s.
+   The fly-up key (`+moveup`) also works (70 in 1 s; not bound by default).
+   **Rising water does not lift a player standing on the floor**: A filled
+   to 224 round him and he stayed on the floor (the engine's water does not
+   buoy; he must swim). Climbing out onto the ledge (208) from the surface,
+   the walk and jump keys: out with the water 8 or 24 under the ledge, not
+   with 40 or 56 (he swims at the wall); looking up and walking also gets
+   out from 8 under. Through BLUE under water, both ways: from A into R and
+   back, landing in the recess on the other side under water (waterlevel 3)
+   facing on. USE under water takes BLUE out of 101 and hangs it again, by
+   the script and by a real `+use`. Air (the engine's own): 20 s (700
+   tics), then hurts of 2, 3, 4, 5, 6, 7, 8, 8, 9 about every 0.9 s (9 hurts and 52 lost
+   in 28.6 s under). The script's keys are put into the player's command and
+   the engine's own movement (`HandleMovement`, `CheckUse`) is run with
+   them; the real presses agree with it.
+5. **D: shots and monsters (MODE=5, 6 checks; MODE=6, 6; all pass).** A
+   bullet, an imp's fireball and a rocket each hit a dummy across the
+   surface, from above into the water, from under it out of it, under
+   water, through BLUE under water, and from dry A through BLUE into R's
+   water. The cell flooded by BLUE in 110 with the monsters woken and after
+   the player (who is outside): imps and pinky walk the floor, waterlevel 2
+   at 54 deep and 3 at about 76; they do not swim up. The cacodemon floats
+   on in the water unharmed. An imp pushed through BLUE in 110 under water
+   comes out in R, still under water.
+6. **E: drowning (MODE=6).** On (the default): both imps dead 7.2 s after
+   the cell began to fill, the pinky 12.2 s; the cacodemon alive. Off: an
+   imp lives 8 s with its head under; turned on again it drowns in 9 s.
+   GREEN in 110 then drains the cell to 0 in 1.5 s.
+7. **F: a raft (MODE=8, 4 checks, all pass).** On A at 10.67 (BLUE in 101,
+   GREEN in 103) it floats with its middle at the surface, is carried to
+   103 and through it into O (where it grounds), with the player standing
+   on it the whole way. At 96 (the lintel of 103 is 96), it is carried
+   to the wall over the door and held there, still afloat. The raft is
+   solid: a fireball and a rocket shot into A's water stopped on it (seen
+   by chance in MODE=5, which now takes the raft away first).
+
+**For MAP20:**
+- Count on: depth by the frame's height (the head over the far side's sill,
+  plus the frame's own height); a drain holding a room near its sill; a
+  Pair lifting water to the higher frame's sill plus the head; a spillway
+  wheel driving a lamp and a shutter; the water drawn right through any
+  hung door; swimming with the jump key in a `nojump` map; doors used and
+  carried under water; walking monsters drowning, flyers not.
+- Times: a 512 x 512 room on a reservoir comes within 1 of its level in
+  about 16 s (half way in 3 s). Time grows with the area (at the same K):
+  plan big rooms with that, or give MAP20 its own K.
+- Avoid: a ledge more than 24 over the water the player is to climb out at;
+  counting on rising water to lift the player (he must swim); a frame or far
+  side whose recess is not tagged with its basin (the water would stop at
+  its mouth); opening a bulkhead from its wet side (not modelled).
+- The plan area is the generator's number and the same at every height: a
+  room with a gallery or a ledge fills at the wrong speed above them (the
+  levels where it settles are right; only the times are off).
+
+Runs: MODE=1..8 above, all pass (MODE=1, 2, 3, 6, 7, 8 on the full build;
+MODE=4 and 5 again after two last test-only changes, on a quick build);
+`MAP=LAB MODE=1`, `MAP=PASS MODE=1` (50) and `MAP=MAP19 MODE=1` (73) pass on
+the full build. Shared code touched: `tools/build.py` (the map),
+`tools/gfx.py` (two lines: gfx_water), `src/zscript.zs` (two includes),
+`src/mapinfo.txt` (things 20140..20142, the map entry), `src/zscript/ajar.zs`
+(one line: AjarHandler's WorldTick leaves WATER to its own test, as for
+the other labs).
+
+**Not played by hand.** Unchecked: the look on the real machine (GLES); how
+fast many 3D floors and portals draw there; sounds (there are none: no
+splash, no rushing water); a saved game with water moving; what a monster
+does in water beyond walking the floor; the wheel's turning seen moving
+(only one still view); a bulkhead opened from the wet side. The headless
+screenshots fall at slightly different tics than the script's, so each view
+holds the water still for its 70 tics.
