@@ -12195,3 +12195,94 @@ engine expects:
 The engine sets aside the room-of-goes machinery of time.zs and plate.zs
 (halls, boxes and the touch rule are not used beyond what is listed). It
 needs nothing of MAP33's coordinates.
+
+## MAP33 "Third Person": the first version, as decided (2026-11-24, after the three goes lab)
+
+Claude's, on the outline above and on what "The three goes lab" found.
+Vadim has not yet answered the outline's open questions, so the first
+version takes the outline's proposals: the power station, the name, the
+gantry over the battlefield, a fixed order of parts, and a mistake that
+costs the go (the engine's autosave at each go's start, as the lab has it).
+Each is easy to change after he has played it. **Nothing here is built.**
+
+**The engine** is the lab's, unchanged: `src/zscript/third.zs`, the
+contract in its head, the helpers in `tools/ajarthird.py`. The map is
+`tools/map_station.py`, MAP33, plain textures first (the look is a later
+task, as for MAP32).
+
+**The ground plan** (about 9000 x 5500; north is up). The gatehouse S in
+the west, the control block (E1, E2, E3 in a row, north to south) in the
+east, the turbine hall R in the middle between them. Part 1 runs along the
+north, part 2 through the middle, part 3 along the south.
+
+**Part 1, yellow: the boiler side** (about 9 minutes, about 120 monsters).
+1. *The gatehouse S.* The start. A shotgun. Box 2 and box 3 look into it
+   through glass. A sign: three figures in three colours.
+2. *The coal yard*, out of doors, about 1536 x 1280, heaps of coal as cover.
+   **Window hall 1**: the first big fight (zombiemen, sergeants, imps,
+   demons, then cacodemons over the wall). Its gate to the boiler house
+   opens when the yard is clear, so a first go cannot be run through.
+3. *The boiler house*, tall, four boilers, a catwalk 128 up. BLUE leans on
+   the floor; its far side is on the catwalk, where the way on is; a frame
+   on the floor. The one door the part needs. Hell knights, revenants,
+   chaingunners on the catwalk. The chaingun, the super shotgun.
+4. *The pump room and the ash tunnel*: close fights (demons, spectres,
+   hell knights), a second frame for BLUE as a short cut back to a cache
+   (a secret).
+5. *The stack court* at the foot of the chimney: two barons and a ring of
+   imps; an arch-vile on the higher skills. The rocket launcher.
+6. *The gantry* along R's north wall, 128 over its floor, behind a
+   railing: the future seen. The shutter at its east end (R's win).
+7. *E1*: plate 1, time door 1.
+
+**Part 2, green: the machine side** (about 6 minutes, about 110 monsters
+with R).
+1. *Box 2*, then *the gallery*: a long window onto the coal yard, where the
+   first go's fight is being fought.
+2. *The workshop*, **window hall 2**: chaingunners, demons, revenants, a
+   mancubus. VIOLET leans here; its far side is in the armoury, behind
+   bars (a plasma rifle, cells, armour for R): a door that is wanted, not
+   needed.
+3. *The pump hall and the stores*: the way round to R's west mezzanine;
+   cacodemons, hell knights. Rockets, cells, a soulsphere before the drop.
+4. *The turbine hall R*, about 2048 x 1280, two turbines as long casings
+   down its middle. The drop from the west mezzanine. Posts: four mancubi
+   on the casings, two arachnotrons in the condenser pits, a spider
+   mastermind in the pit between the turbines (not on the lowest skills),
+   six revenants and chaingunners in bays of the south and east walls,
+   three pain elementals. Nothing else: what walks would leave a body
+   where go 1 did not see one. The win opens the steel door in the east
+   wall and the gantry's shutter.
+5. *E2*: plate 2, time door 2, a plate that winds on.
+
+**Part 3, red: the cable side** (about 3 minutes, about 50 monsters).
+1. *Box 3*, then *the cable tunnel*: low and dark; spectres, imps.
+2. *The switchyard*, out of doors, transformers in rows: arachnotrons and
+   cacodemons at a distance, imps on the gantries. PINK leans here; the
+   relay room's shutter does not open, and PINK's far side is behind it:
+   the one door the part needs.
+3. *The relay room*: a window onto the workshop (go 2's fight there).
+4. *The duct* along R's south wall, behind glass: go 2's fight in R, or
+   what is left of it.
+5. *E3*: the exit door, a plate that winds on, the way out behind the door.
+
+**Doors.** Three, one to a part, none of a part's colour: BLUE, VIOLET,
+PINK. Each leans on its part's only way, before its frame, and its far side
+is fixed further on, so nothing can be lost by construction. No door joins
+two parts. What go 1 does to BLUE is seen done again from the gallery.
+
+**Signs.** Each part's corridors and doorways carry its colour. At the
+start and in each end room a case with three figures, yellow and green on
+the plates, red in the doorway. A line of text at the start of each go.
+The wind plates get a picture of their own (the lab's says "30").
+
+**Supplies**: each part gives the weapons its fights need, so that MAP33
+can be started with a pistol; reckoned as the other levels are
+(`tools/budget.py`).
+
+**Three secrets**, one to a part.
+
+**Known and left for later**: the look; a way to forget every go when a
+first go was too fast for the second to win R in time (today: begin the
+level again); the Pair behind bars between two parts; what MAP20's secret
+way out leads to is set when MAP20 is built.
