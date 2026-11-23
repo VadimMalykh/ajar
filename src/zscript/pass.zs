@@ -245,7 +245,9 @@ class AjarPassDouble : Actor
 		// the player's own frame: standing, walking, firing
 		sprite = mo.sprite;
 		frame = mo.frame;
-		bInvisible = mo.health <= 0;
+		// not drawn where it stands in the player (on him, or nearly): its sprite at the eye
+		// whites out the whole view (MAP19's views, 2026-11-23)
+		bInvisible = mo.health <= 0 || (pos - mo.pos).Length() < 8;
 		if (!mark)
 		{
 			mark = MapMarker(Spawn("MapMarker", pos));

@@ -337,6 +337,7 @@ class PaperTest : EventHandler
 		if (tic == 1)
 		{
 			mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
+			lastPc = -1;                // so that the first op starts at its tic 0
 			h = AjarHandler(EventHandler.Find("AjarHandler"));
 			paper = AjarPaper(EventHandler.Find("AjarPaper"));
 			ClearOut();
