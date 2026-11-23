@@ -11885,6 +11885,39 @@ search said of SPRITEFLIP, which the runs then confirmed.
   copy's things are flipped only if they stood there at the start), a
   savegame (the marker's state is in its fields).
 
+## Six more quiet pieces, after After Hours (2026-11-23; nobody has heard them)
+
+**Vadim** (2026-11-23): "Could you generate more melodies like the one used
+in map01, map10?" That one is After Hours (`AJM_AFTR`). Six more are in
+`tools/music.py`, the last six of `TRACKS`, written the way that one is: held
+chords two bars long over a low note, a tune of a few long notes coming in
+after eight bars, one more voice every eight bars, hardly any drums, then
+round again from the bare beginning. Each has its own key, chords,
+instruments and tune:
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_DSTB | Do Not Disturb | A, 56: a music box over strings going A minor, F minor, A minor, E; a voice moving a semitone; a slow heart on the drum. The nearest to After Hours |
+| AJM_LUGG | Left Luggage | D, 66: the one with a pulse. A fretless bass riff with room in it, electric piano, a vibraphone tune, a ride and a rim click |
+| AJM_LGHT | Light Under the Door | E, 58: a harp going round on E minor, F, E minor, D minor; strings trembling on one note; the tune on a horn, then a flute, then both. No drums |
+| AJM_FLRS | Between Floors | F sharp, 5/4, 72: five piano notes round and round whose lowest stays while the chords change; a cello tune; a held chord |
+| AJM_BELL | Night Bell | C sharp, 60: a slow twelve-bar minor blues on a church organ, a bell tolling every four bars, a desk bell at the end of each line, a cello tune |
+| AJM_WATR | Standing Water | B flat, 52: every chord a step lower than the last (B flat, A flat, G flat minor, then F), all voices sinking with them; drips on a marimba; a clarinet. Written with MAP20 in mind |
+
+**No map plays them**: `src/mapinfo.txt` is as it was. They are pieces 13 to
+18 in the sound lab (`MAP=SOUND ./run.sh`, MUSIC + and MUSIC -). Which map
+takes which is Vadim's to say once heard; pieces he likes the manner of but
+not the tune are rewritten.
+
+Checked: each is 132 to 148 s (After Hours is 128), 1.4 to 4.4 notes a second
+(After Hours 1.7); no semitone between two sounding notes lasts three steps
+in any of the six; the files read back by a second MIDI reader (every track
+ends together, no note left sounding); the lab's walkthrough `soundlab=ok`
+with 18 tracks (123 checks); GZDoom with sound on and a null device starts
+all 18 (`S_ChangeMusic` 1). **Not checked: how they sound**, least of all the
+instruments new to the game's music: music box, marimba, church organ,
+tremolo strings, horn, flute, clarinet, the warm pad, the glockenspiel.
+
 ## The three goes lab (built 2026-11-23)
 
 Map THIRD (`MAP=THIRD ./run.sh`): MAP33's whole structure, small, in plain
