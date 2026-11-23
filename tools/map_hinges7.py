@@ -536,7 +536,11 @@ def horizon(path, first, last, **ends):
 
 BACK = FRONT or "AJBRICK"
 horizon([(800, 2000), (800, 2592), (416, 2592), (416, 2944)], BACK, BACK)    # east of the hill and of the knoll
-horizon([(-992, 2592), (-992, 2000)], "AJ7XN", BACK)                         # west of the hill
+# West of the hill the strips stop 16 short of the building's line: the lane
+# is behind it there, and strips ending on the lane's own end left that end
+# open (a slit of sky by the shed, and a way through the wall into the wood).
+horizon([(-992, 2592), (-992, 2016)], "AJ7XN", BACK)                         # west of the hill
+m.line((-992, 2000), (-992, 2016), mid=BACK)
 horizon([(-480, 2944), (-480, 2592)], BACK, "AJ7XN", end=(-1, 0))            # west of the knoll
 # the knoll: VIOLET's far side looks back across the ravine at the frame
 fit((-480, 2592, 416, 2944), [
