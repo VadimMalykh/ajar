@@ -10077,3 +10077,403 @@ figures as before; mapcheck, thingcheck, itemcheck on `map_clockdept`: 0
 problems each; `MAP=MAP18 MODE=1` 8 checks with levelExited; two headless
 views of the wall (from the hall's middle and from the west): one pair, one
 plate, no seam in the wall. Not played by hand.
+
+## Ideas still unused (looked through 2026-11-23, before MAP19)
+
+Vadim, before MAP19: "check what other ideas we still have in plan and could
+use here". A list made from this file; where each is written down is in
+brackets. Nothing here is new.
+
+- **Door types**: the Flip door (designed; "Flip door"); One-way, Small (a
+  hatch: shots and sight, no walking), Heavy, Tilted (the type table).
+- **Geometries the player builds** ("Levels 11 to 30"): the canal lock
+  (water through a door; the campaign table's "water and light through
+  doors"), the train of rooms, the roundabout, the bottle; "the arrangement
+  is the map" ("Ideas for the next levels", 3).
+- **Effects**: the jigsaw wall (the one engine question still open:
+  something wider than one door through two openings); the pinwheel as a
+  thing that is built (the lab has it, no level); triangle rooms, the round
+  room, the model room.
+- **Time**: the timetable; from "Time doors": two places at once (an earlier
+  self holds the plate), the future as a warning, the future as a contract.
+- **The second round's list**: the corridor of chosen length outside a
+  timed run; the way up is down (MAP16 closed its well, MAP18's stair is
+  free).
+- **One-sided doorways**: one-way sight in a fight (wants the missile fix of
+  "The one-sided doorway lab", E), a carried door hung at one.
+- **Set-up-and-swap one step deeper** (Vadim, 2026-11-15).
+- **Kept for levels of their own**: MAP20's left-handed copy; the map in two
+  halves and three goes (21 to 30).
+- **The readers of the second round's table**, used: straightness (the
+  beam: 13, 15), the order of rooms (the crate: 17), the length of a loop
+  and of a way (the pulse and the run: 18), height (the lift: 12, 14). Not
+  used: direction (a circuit one way round); and no reader so far is the
+  player's own walk.
+
+What MAP19's outline below takes: two places at once (by paper, not by
+time), the player's walk as the reader, the pinwheel, the corridor of
+chosen length and the endless stair as things that are needed, MAP09's
+chain for the way out. Claude's candidates for MAP20 or after: water (the
+canal lock; it wants a lab of its own: a water level that moves, swum in,
+seen through a hung door), the Flip door.
+
+## MAP19 "On Paper": the pass and its double (2026-11-23, Claude's outline; Vadim chose it the same day from three proposals: see "the first version, as decided"; the lab is "The pass lab")
+
+**Vadim** (2026-11-23, MAP18 played): MAP19 "comparable size or even bigger,
+with more doors and spatial paradoxes. MAP18 has a lot of frames, but almost
+all are optional, I can pretty much finish the map without using most of
+them. For MAP19 could we do something that will force me to experiment with
+map geometry (we had something in MAP17, could be done here, other way,
+without transport, but similar idea). So big map with internal and external
+areas, with multiple interesting paradoxes on the way, part of which I can
+(or even forced) build myself. Also exit should be with door (or even
+couple), not ready as it's done in MAP18."
+
+Everything below is Claude's, to argue over. **Nothing is built and the
+engine has not been asked**: the lab (map PASS, task `pass-lab`) was started
+the same day; its results go in "The pass lab", after this section.
+
+**One idea: the pass counts your steps and knows nothing about doors.**
+MAP17's crate went where the doors sent it and was read at the end. Here
+the player is what the doors send, and what is read is where they would be
+without them.
+
+- **The pass.** Issued at the pass office, at the start. The institute
+  keeps your place by it: a white paper double stands where the pass says
+  you are. To begin with, on you.
+- **The rule.** The pass counts everything the body does (steps, turns,
+  stairs, a ride in the lift) and takes every door for a hole in the wall.
+  Step through any door of the game's (hung, a leaf of a Pair, the
+  building's own gates, the odd face of a one-sided doorway): you are at
+  its far side, and the double walks on through the wall behind the frame,
+  into whatever the building really has there. From then on it does what
+  you do, from where it is, turned as the door turned you: it steps when
+  you step and turns left when you do.
+- **It is paper.** Walls, glass, gaps and monsters are nothing to it,
+  nothing sees or hurts it, it carries nothing and opens no door. It may
+  stand in the air or in the ground.
+- **Back through the same door undoes it.** A pass desk (a brass plate in
+  the floor, one at the start and one in each part of the grounds) puts the
+  double back on you.
+- **Registers** are the locks: a signing desk on a floor plate, in a room
+  with no way in, seen through glass or a grille. The double standing on
+  one for a second, at its height, signs it, for good; passing over it
+  signs nothing. Each register opens something (a steel door, a bolt drawn
+  from inside its own room) and says what.
+- **What is shown**: the double itself, white, wherever it is in view; its
+  mark on the automap, which draws the building as it is built and is here
+  the tool and not the spoiler; a line on the screen saying how far off and
+  how many floors up or down it is; a lamp on each register.
+
+**Why this makes the player build geometry.** Where the double can be put
+is decided by the frame (what is behind its wall, which way it faces) and by
+the room the far side gives to walk in: the double's room to move is the
+player's. A register 96 behind a frame's wall is one hanging. One 700 behind
+it needs a far side with 700 of floor ahead. One off to the side needs a
+door that turns (a frame on a wall at a right angle to its far side). One a
+floor up needs a far side at the foot of a stair or by the lift. And one
+further than any room is long, or deeper than the building is high, needs a
+paradox as a pump: every lap of an endless corridor sends the double one
+corridor further, every lap of an endless stair one flight deeper. The
+building's own paradoxes pump too: MAP18's longer way back moves the double
+768 at every round trip.
+
+**So the walls have things behind them.** The long gallery really goes on
+beyond its end wall, bricked up, a register 2500 down it, seen through a
+grille; the stair really goes on down behind the wall at its foot. The
+double walks the real corridor and the real stair while the player laps the
+piece that is left.
+
+**The place**: the gatehouse and pass office (MAP18's street doors say
+PASSES), the administration block, and the grounds. To leave the institute
+the pass has to be signed off in offices that have no doors.
+- *The gatehouse and forecourt* (the start; outdoors and small buildings).
+  The way out is here and seen at once: two brass frames at the street gate.
+- *The administration block*: two or three floors, a stair, a lift, the
+  long gallery, the plans archive, offices; the sealed duty room, stack and
+  mezzanine.
+- *The grounds* (open): the avenue between two arches (the endless
+  corridor outdoors), the pond with a pavilion on an island, the water
+  tower with the stair that goes on down, the boiler house, the garages.
+- *The building's own paradoxes on the way* (fixed, as MAP18's, each
+  marked): a longer way back between the gatehouse and the block, where the
+  double is first seen to drift before any door is hung; a kiosk bigger
+  inside; the turn-round; the inside-out booth as a gazebo in the grounds.
+
+**The doors** (eight; MAP18 has five): RED (far side across the forecourt
+from the duty room's glass: a short room), GREEN (the end of a long
+corridor: a long room), BLUE (the foot of the grand stair: height), YELLOW
+(the lift's car), both TEAL and both ORANGE leaves (any two frames: the
+pumps and the turns), VIOLET and PINK (the way out). About 36 frames.
+
+**The orders**, each a register:
+1. *See it*: the duty room, 96 behind a frame in its own wall. RED, whose
+   far side looks at the duty room's glass: the player watches the double
+   walk in.
+2. *Room to walk*: the stack, 700 deep. RED's far side is too short;
+   GREEN's is long enough.
+3. *Turned*: a register off to the side of its frame.
+4. *A floor up*: the mezzanine.
+5. *Further than there is room*: down the bricked-up gallery. A Pair in the
+   gallery's two ends, and laps.
+6. *Deeper than the building*: down the bricked-up stair. A Pair at the
+   foot and the head, and laps.
+7. *Round the corner* (the secret): a pump, a quarter turn, the pump again.
+Orders 1 to 4 open the building in stages; 5 and 6 each draw the bolt of a
+strongroom, VIOLET in one and PINK in the other.
+
+**The way out**: both doors hung in the two brass frames at the gate (MAP09's
+chain, `way_through`): two doors, each won by a paradox the player built.
+
+**Everything is reached on foot** inside a stage, as in MAP18: no keys, no
+thief, nothing can be lost. The sealed rooms are the double's. No solver
+PUZZLE; the generator measures instead, in the build: for every register,
+which hangings (one crossing, then two) can put the double on it from floor
+the player can stand on, so that orders 1 to 4 have a few answers each and
+5 and 6 only the pumps.
+
+**Size**: over MAP18's: about 9000 x 5500, 900 to 1100 sectors, some 250
+monsters. Fights of the usual kind; company when a register is signed.
+
+**Open**: whether monsters should take the double for the player (a decoy);
+what the line on the screen says; the name ("On Paper" is Claude's
+candidate).
+
+**Other ways to do what Vadim asked, not taken** (Claude): water through
+doors, the level read by where it stands (the canal lock; the biggest
+unknown in the engine); locks of several kinds from what is built already
+(a target that faces away and is shot through the room that is its own
+neighbour, the way up that is down, a sight through two doors), which is
+the quickest and has no rule of its own.
+
+## The pass lab (built 2026-11-23)
+
+`tools/map_pass.py`, `src/zscript/pass.zs` (the mechanic),
+`src/zscript/passtest.zs` (the tests); `MAP=PASS ./run.sh`,
+`MAP=PASS MODE=1..5 tools/smoke.sh`. An engine test for MAP19's outline
+("MAP19 'On Paper'", above): a white double stands where the pass says the
+player is, and after every crossing of a door it goes on as if the door had
+been a hole in the wall. **It works, exactly, for every kind of door the
+game has and every way of going through them that was tried; the registers,
+the desks, the automap mark, the line on the screen and the picture of what
+the double sees all work.** Run headless only (docker, software GL): **not
+played by hand**, and the look on the real machine (the GLES backend) is not
+checked.
+
+- **How it is made.** The double is an actor (`AjarPassDouble`) put each tic
+  at T(player): T a rigid transform (a turn about the vertical, a shift, a
+  change of height), the identity to begin with. T changes only when the
+  player crosses a line portal: the portal carries a point p to
+  M(p) = dst.v2 + R(p - src.v1) (the engine's rule, heights by the portal's
+  floor alignment), and T becomes T o M^-1. T is made from the numbers of
+  the two lines only (quarter turns snapped to exact 0 and 1), never from
+  measured positions, so nothing drifts: after twenty laps of a pump it is
+  exactly 20 laps (below). A crossing is recognised by the engine's own mark
+  (a crossing clears the player's interpolation, so his previous place is
+  the landing point): only on such a tic is a portal looked for whose line
+  the tic's move, carried back through it, crossed from its front within
+  128; failing one, two portals are tried; failing that, the jump is a
+  teleport or a script and T is kept. The double looks in its own tick
+  (after the player's, before the sector movers', so a portal's floor is
+  read as it was when the player crossed); a small thinker after the movers
+  puts it where the player is once lifts have moved too (without it the
+  double rode a lift one tic behind, 4 units at the lift's speed).
+  The double is paper: `+NOBLOCKMAP +NOGRAVITY +NOINTERACTION +NEVERTARGET
+  +NOTELEPORT +DONTSPLASH`, not solid, not shootable, never moved by a
+  portal itself (it is placed, it does not walk). It is drawn as the
+  player's own sprite and frame (so its legs move when his do), turned by
+  T's turn, with the `Stencil` style in white (alpha 0.9, bright). On the
+  automap it is a `MapMarker` (the yellow ring). Scripted moves of the player
+  that are not crossings have one entry: `AjarPassDouble.Posed` (keep T,
+  the double follows) and `Reset` (T back to the identity). The handler
+  (`AjarPassHandler`) is named in the map's MAPINFO `EventHandlers` and does
+  nothing on a map without a pass desk; no other map has it.
+- **Registers** (`AjarPassRegister`, thing 20133: args half box x, half box
+  y, the tag of the door it opens, its number; its name from a table in
+  pass.zs). The double in its box, its feet within 32 of the plate's floor,
+  for 35 tics running: signed for good, "Signed in: <name>.\nIts door is
+  unbolted." in the middle of the screen, a switch sound, its lamp from red
+  to green, `Door_Open` on the tag (the door stays open). **Pass desks**
+  (`AjarPassDesk`, thing 20132, args half box x, y): the player on it, feet
+  within 32: T back to the identity and "Your pass is stamped: it is where
+  you are." (only if T was not the identity already).
+- **What is shown.** The double where it is in view. Its mark on the
+  automap. While it is more than 16 from the player, a line at the top of
+  the screen, in the player's own terms: `PASS  352 ahead  224 left  level`
+  (`up`/`down` when the height differs by half a unit or more); under it,
+  in gold, the nearest unsigned register within 1500 of the double, in the
+  double's own terms (its facing): `REGISTER 4: 540 ahead of it, 0 left,
+  128 up` (`level` within 32 of the plate). And a picture of what the double
+  sees, top right, a fifth of the screen wide (a `cameratexture` AJPASSC,
+  256 x 160, field of view 90, set to the double with
+  `TexMan.SetCameraToTexture` and drawn in `RenderOverlay` with a white
+  border), shown only while the line is; cvar `ajar_pass_inset` (default
+  on, not kept in the ini) turns it off. Neither is drawn while the automap
+  is up.
+- **The map.** Bays off one corridor, a pass desk at each end. 1 *see it*:
+  hall H1, frame 101 in its north wall, the sealed duty room S1 behind
+  (register 1 at 96 in from the wall), glass beside the frame; RED's far
+  side in H1's south wall facing the glass. 2 *room to walk*: frame 102, the
+  sealed stack S2 behind, register 2 700 in; RED's far side has some 300 of
+  floor ahead, GREEN's (a corridor 1024 long) enough. 3 *turned*: frame 103
+  in H3's east wall, at a right angle to GREEN's far side; register 3 off to
+  the side. 4 *a floor up*: frame 104, behind it a sealed room whose back
+  half is a mezzanine 128 up (register 4); BLUE's far side at the foot of a
+  stair of 128 with a lift beside it. 5 *the corridor that goes on*: C5, 768
+  long, frames 105 and 106 in its two end walls facing each other (both
+  TEAL leaves); beyond 106 the corridor goes on, sealed, 2400 more (glass
+  beside 106), register 5 near its end. 6 *the stair that goes on*: a flight
+  of 8 steps (128 down over 256), frame 107 at its foot facing up it, 108 at
+  its head facing down (both ORANGE leaves); beyond the foot's wall the stair
+  goes on down three more flights, sealed, register 6 at the bottom. 7 *the
+  building's own*: a fixed gate pair (a north wall to an east wall: a
+  quarter turn) and a one-sided doorway (as map ONESIDE's bay 1). Each
+  register's steel door opens on a closet or passage the player can walk to.
+
+**What the runs showed** ("exact" below means equal to 0.000001 or better,
+and T equal to the table at the top of passtest.zs, made by hand from the
+map's coordinates):
+
+A. **Tracking (MODE=1, 50 checks, all pass).** The double starts on the
+   player. RED hung in 101 and walked through walking, running, strafing,
+   backing (facing away), at 30 degrees and running at 30 degrees: one
+   crossing each, T exactly (0, -224, 352, 0), the double on T(player). Back
+   through the same door: T exactly the identity again, the double on the
+   player (bit for bit). Walking on from the far side, straight and turned:
+   the offset stays, the double makes the player's moves turned by T. GREEN
+   and RED in 102, GREEN in 103 (T turned 270, exact), GREEN and BLUE in 104,
+   the TEAL pair both ways (+800 and -800 along), the ORANGE pair down and up
+   the stair (+544 along with -128, and back), the gate pair (turned 270),
+   the one-sided doorway: plain face (no crossing), odd face (T (0, 0, -1200,
+   0)) and back out of its far end (identity), two crossings of a Pair 5 tics
+   apart, GREEN by 103 then RED by 101 (two portals composed: T (270, 2896,
+   2012, 0), exact). Posed exactly on a portal line, and astride one, for 35
+   tics: no crossing; walking off it the far way: one. On every tic of a
+   scripted step that crossed a portal (34 of them), the double moved exactly
+   that step turned by the new T (`crossingTicsExact`, off by 0.000000).
+   At 30 degrees through a 64-wide frame the player slides along the far
+   recess's side for two tics; the double slides with him (it follows the
+   player, not the straight line), so the slant checks compare T and the
+   double's place on T(player), not the straight line. Unexplained jumps: 0.
+B. **Registers (MODE=2, 21 checks, all pass).** 1: RED in 101, the double
+   walks into the duty room; walking it over the plate without stopping
+   signs nothing; stopped on it, signed after 35 tics, the message, lamp
+   green, the steel door open (gap 104 at the check, 188 when fully open),
+   and still signed and open after RED is taken down. 2: by RED in 102 the
+   double gets to y 656 of the stack's 1000 (RED's far side runs out of
+   floor) and signs nothing; by GREEN it gets there and signs. 3: GREEN in
+   103 puts the double 96 to the side of register 3 (it is turned); a step
+   left (the player's left) puts it on and signs. 4: GREEN in 104 puts the
+   double over the mezzanine's plate at the wrong height (128 under it):
+   nothing; BLUE in 104, then up BLUE's far side's stair: signed.
+C. **The pumps (MODE=3, 8 checks, all pass).** *Bay 5*: a lap is **800**
+   along (the 768 of the corridor plus the two recesses, 16 each: the
+   distance between the two portal lines). From a standing start in C5, at
+   a run (16.67 a tic), 3 laps and the walk on put the double on register 5
+   2000 beyond the wall; stopped after 147 tics, signed after 181 (5.2 s).
+   Every tic the double was in the sealed corridor (369) it was inside it, on
+   its floor. Twenty laps at a run: 954 tics (about 48 a lap, 1.4 s), T
+   exactly (0, 16000, 0, 0). *Bay 6*: a lap is **544 along and 128 down**
+   (the head's landing 128, the flight 256, the foot's landing 128, two
+   recesses of 16). For the double to walk the real sealed stair the sealed
+   part has to repeat with that period: its landings are 288 (128 + 16 + 16
+   + 128), not 128. So built, on all 368 tics it was on the sealed stair the
+   double stood exactly as high over its floor as the player over his (most
+   off 0.000000), climbing the steps where he did. 3 laps, register 6 at
+   -512: stopped after 122 tics, signed after 156 (4.5 s). Twenty laps: 649
+   tics (about 32 a lap, 0.9 s), T exactly (0, 0, 10880, -2560).
+D. **The rest (MODE=4, 26 checks, all pass).** Desk 1 resets T with its
+   message, says nothing a second time; desk 2 the same. The lift (BLUE in
+   104, then the lift up 128): the double rises with it exactly, and with
+   the placer thinker on the same tic (mid-ride, player z 68, double 68).
+   A hitscan and a rocket fired through the double hit a dummy behind it; an
+   imp facing the double (and not the player) stays asleep; the player walks
+   through the double; the paper flags. RED taken down after the crossing:
+   T unchanged. A teleport (`Teleport`, not a portal): T kept, the double
+   jumps with the player, counted as unexplained. Posed (keep T), reset. The
+   screen lines, read back as strings: `PASS  352 ahead  224 left  level` /
+   `REGISTER 1: 0 ahead of it, 0 left, level` with the double on register 1;
+   the player turned to the east: `PASS  224 behind  352 left  level`, the
+   register line unchanged (the double turns with him); none with the double
+   on the player; `REGISTER 4: 540 ahead of it, 0 left, 128 up` under the
+   mezzanine. With the player's own controls (the cfg holds `+forward`, and
+   `+speed` the second time, not a scripted speed): RED in 101, one
+   crossing, T exact, walking and running.
+E. **The views (MODE=5, 15 views).** 0-2: out of RED's far side, the duty
+   room through the glass and the white double in it, on the plate (lamp
+   red), closer, turned to it; the line and the picture. 3-4: bay 5 after one
+   and two laps, the double small far down the sealed corridor through the
+   glass beside 106. 5-6: bay 6 after one and two laps from the foot looking
+   up into the glass: **the double is not seen**: it is below the sealed
+   stair's top step from there (the eye at -87, the double's head at -200
+   544 on). 7: at the foot, into 107 with the double on the player: the
+   stair seen from its head, no picture, no line. 8: after GREEN by 103 the
+   double is out of sight, the line and the picture (S3's tan walls) say
+   where. 9: on BLUE's landing, the picture shows the mezzanine's floor.
+   10: the automap with the mark. 11: the double inside a wall (the 80 of
+   wall between H1 and S1): the picture shows S1 as from inside the wall,
+   the register and its plate (walls' backs are not drawn). 12: the double
+   in the void (four laps of bay 6, beyond the sealed stair's end): the
+   picture is black. 13: out of the one-sided doorway's odd face into C, the
+   double in A: the picture shows A. 14: `ajar_pass_inset 0`: no picture,
+   the line stays.
+
+F. **Nothing else changed.** Every other map's wad is byte for byte as at
+   the base commit (sha1 of all 36, from the old and new generators); the
+   pass code is not on any other map (its handler is named in map PASS's
+   MAPINFO only). The ANIMDEFS has one new line (the camera texture) for
+   every map. On the full build (`./build.sh`, with the solver, 5 min 15):
+   `MAP=ONESIDE MODE=1` 32 checks, `MAP=LAB MODE=1` 13, `MAP=MAP18 MODE=1`
+   8 with levelExited, none failed; PASS MODE=1 to 4 as above (50, 21, 8,
+   26, none failed) and MODE=5's 15 views.
+
+**The picture works headless** at once (no more than the hour asked). It
+costs a second drawing of the scene each frame while it is shown (at 256 x
+160); not measured, as the headless renderer says nothing of the real
+machine's speed. Inside a wall it shows the room beyond the wall's back as
+if the wall were not there; in the void, black. It is drawn over the HUD's
+top right corner, where nothing of ours is.
+
+**What a level may count on.** The double at T(player) for hung doors, Pair
+leaves, gates and odd faces, walking, running, at slants, backing, by the
+player's own controls, two crossings close together; back through the same
+door undoes a crossing exactly; laps of a pump add exactly the lap, however
+many. Registers signed by standing 35 tics, at the plate's height (within
+32), never by passing over; desks. The double blocks nothing, takes no shot,
+wakes nothing. Teleports and lifts move the double with the player (T kept).
+
+**What a level may not count on, and where the outline is wrong.**
+- *A lap of the endless corridor is not "one corridor"*: it is the distance
+  between the two portal lines, the corridor plus both recesses (768 + 32 =
+  800 in the lab). The "sealed corridor beyond" can be any length; the
+  register is reached at whatever lap puts it within the corridor's own
+  walk of it.
+- *The stair "that really goes on down behind the wall"* has to be built to
+  the lap: each landing in the sealed part is the head's landing plus the
+  foot's plus the two recesses (288 in the lab), or the double walks in the
+  air or in the steps. The outline's picture of a plain stair going on is
+  wrong in that measure.
+- *Seen from its foot the sealed stair hides the double* after one lap:
+  the double is below its top step. A level that wants it seen must show
+  the sealed stair from above or from the side.
+- MAP18's "longer way back moves the double 768 at every round trip" is not
+  tested here; by the rule it moves it by the distance between the odd
+  face's and the far end's lines, which for the lab's one-sided doorway is
+  1200 and comes back to nothing when walked back out (bay 7).
+- The double is put each tic, not walked: in a wall or the void it simply
+  is there. Nothing in the engine stops it, nothing reports it.
+- On the tic of a crossing at a slant the player slides on the recess's
+  side; the double does the same move. A register placed to be hit by "the
+  straight line on" through a slanted crossing may be off by a few units
+  (5.6 in a lab case before the paths were centred): plates of 64 are wide
+  enough.
+
+**Not tested / not played by hand.** Not played by hand at all; the look
+on the GLES backend; a savegame (T and the register states are kept in the
+actors' and handler's fields, which a savegame keeps, but not tried); two
+portal crossings inside one tic (the code tries two portals, but no run made
+one: 0 such tics); a crossing at the same tic as a teleport; a player
+carried by a scroller or a pusher across a portal; monsters taking the
+double for the player (the outline's open question: it is `NEVERTARGET`
+and nothing sees it); the cost of the picture on the real machine; more
+than one player.
