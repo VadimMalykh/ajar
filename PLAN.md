@@ -11646,3 +11646,169 @@ does in water beyond walking the floor; the wheel's turning seen moving
 (only one still view); a bulkhead opened from the wet side. The headless
 screenshots fall at slightly different tics than the script's, so each view
 holds the water still for its 70 tics.
+
+## MAP20 "High Water": the first version, as decided (2026-11-23)
+
+Settled by Claude on Fable after "The water lab", so that a first version
+can be built; Vadim has seen the outline's proposal ("Yes 1 is good") and
+none of what follows. The outline is "MAP20 'High Water': water through
+doors". The three questions left to him there are answered here by a
+choice that is easy to change: what walks drowns (the lab's rule, on); the
+player's air is Doom's own (20 s, then harm); the name stays.
+
+**What the lab changed in the outline.**
+- *The player is not lifted by rising water* (the engine's water does not
+  buoy; he sinks slowly when no key is held). The level promises that water
+  floats you up, so **the player floats when idle**: head under and no
+  movement key held, he rises at about 64 a second until his head is out.
+  With a key held it is the engine's swimming as it is (the jump key up,
+  the look and the walk key for anywhere), so a dive is looking down and
+  walking. The first time his head goes under: "Swim up: look up and walk,
+  or the jump key."
+- *A ledge is climbed out at only from water no more than 24 under it.*
+  Every height below is set by that.
+- *Times*: the lab's K fills a hall in a second where the door stands over
+  the water (free fall), and a big hall slowly by the head alone. MAP20
+  has its own rate: the level is tuned so that no wait is under 5 s or
+  over 25.
+- *Doors that water shuts* (the lab's bulkhead, taken further). A
+  **pressure door** opens by USE only while the water is under 16 at its
+  sill on both sides, says why when it refuses, and shuts itself when
+  water comes to it. Every ordinary way out of a basin at or under its
+  brim is one; every other way out is over the brim.
+- *The lock* is not a frame at each height: the water is raised from
+  inside, a frame at a time (below).
+
+**Heights and the doors.** The reservoir stands 96 over BLUE's far side's
+sill; the outfall is dry at GREEN's. Four doors only: BLUE, GREEN, both
+TEAL leaves. No ORANGE, no brass frame, no VIOLET: the way out is made of
+the leaves and the water. No keys, no thief, no nailer, no Stray door, no
+lift.
+
+**The places and the five stages** (plan sizes are the generator's to
+choose; heights are fixed here; floor 0 is the baths' floor).
+
+1. **The baths** (the start; "see it"). The changing room, dry. The plunge
+   hall P: floor 0, ceiling 320, about 640 x 512; frame 101 at the floor,
+   frame 102 on a gallery at 128 (a stair to it; the gallery has its own
+   door back to the changing room's upper floor); a ledge at 216 with no
+   stair, a coaming of 16 on it, and behind it the door to the pump
+   corridor: the way on. P's brim 232. P's own door from the changing room
+   is a pressure door. BLUE leans by the plunge. BLUE in 101: a pool 96
+   deep, and nothing reached. BLUE in 102: P stands at 224 and the ledge is
+   8 under water.
+2. **The pump house and the cooling hall** ("drain it"). GREEN leans in the
+   pump house. The cooling hall C, about 1024 x 768: floor -128, a walkway
+   round it at 104, a stair down from the walkway to a landing at 0 and on
+   to the floor; brim 100; **found full, at 96**. Frames 111 on the walkway
+   (104), 112 on the landing (0), 113 at the floor (-128). Both TEAL leaves
+   lean on the floor, under 224 of water. At the floor, a pressure door E2
+   to the passage and stair up to the boiler house. GREEN in 111 does
+   nothing (its sill is over the water); in 112 it leaves 128 standing; in
+   113 it empties the hall. Cells in C's floor are pressure doors too: they
+   open when the hall is dry, and what was kept in them comes out. Once
+   the player has been through E2 he can draw a bolt on the boiler house's
+   side of a dry gangway back to the pump house, so that from then on the
+   two sides are one piece on foot whatever stands in C.
+3. **The boiler house** ("the pipe"). The feed tank T, about 256 x 256,
+   floor 0, brim 272, a gauge glass on its side and a float mark at 216; a
+   manhole at its floor (a pressure door), frame 121 inside at the floor,
+   and a catwalk to its rim at 272 by a dry stair. A float in T, once the
+   water has stood at 216 or over for 2 s, raises the yard gate for good.
+   BLUE in 121 gives 96. The answer meant: a leaf in 113 and its twin in
+   121, and BLUE in 111: C stands at its brim, 228 over 113's sill, and T
+   at 228. A second answer is allowed: a leaf in 101, P held at 224 by
+   BLUE in 102. Not an answer: the same with BLUE taken down (P and T then
+   share what P has, and T stops near 187).
+4. **The lower yard and the lock** (outdoors; "the lock"). The lower yard
+   at 0 behind the yard gate; the upper yard at 192, by a squeeze stair
+   (empty hands, both ways) and by the lock; from the upper yard one may
+   always drop to the lower with a door in hand. The lock K, about 256 x
+   320: floor 0, a pressure door from the lower yard, an open sill at 192
+   onto the upper yard, brim 200; frames 131 and 135 at the floor, 133 on
+   a shelf at 88 that only a swimmer reaches. A leaf goes up like this:
+   hang it in 135 with the lock dry (a leaf alone is a shut door and joins
+   nothing); BLUE in 131, K at 96; BLUE moved to 133, K at 184; out over
+   the sill with empty hands; dive for the leaf. The water is raised by
+   the door that stands in it: each hanging lifts the water to where the
+   next frame can be reached.
+5. **The wheel house** ("the circle"; the way out). Between the yards. The
+   lower pool L: floor -96, brim -4, frames 107 (the foot of the spillway)
+   and 109 at its floor. The upper pool U: floor 128, the crest of the
+   spillway at 160, frame 108 at its floor, reached from the upper yard.
+   BLUE in 109 fills L to its brim; a leaf in 107 and its twin in 108, and
+   the water goes round (it stays in L when BLUE is taken away, so BLUE is
+   free for the lock). While the wheel turns it holds open the sluice in
+   the lower yard's wall: behind it the tunnel to the machine hall, and the
+   way out (`Exit_Normal`). The wheel has a lamp over the sluice.
+
+The river, the outfall's mouth and the water tower (the reservoir) are seen
+from the yards and are not walked. Size of the first version: about 5000 x
+4000, 400 to 600 sectors, 150 to 180 monsters on "Resident": under the
+outline's figure, to be grown once it has been played.
+
+**The swimming bath** (the secret way out; **built in this version as a
+room only**). Off the changing room: a pool pit with its floor at -160, a
+shallow end at -96 with steps up to the poolside at 0, frame 141 at the
+pit's floor and 142 at the shallow end; across the pit, rising sheer from
+its far edge, a wall of five tall panes, their sills at 0. In this version
+all five are mirrors. BLUE in 141 leaves the water 64 under the poolside
+(no climbing out at the far wall); in 142 it stands at 0 and the panes are
+swum to. The left-handed bath behind one pane, its water kept the same as
+this one's, and the door that is only there, wait for "The left-handed
+room lab" and are a task after this one. Until then the level has no secret
+way out; `secretnext` is not set.
+
+**Nothing can be lost**, by construction, and the generator checks it in
+the build:
+- every frame can be come to with empty hands whatever stands in any
+  basin: on foot, or by a dive of no more than 260 from a place where the
+  player can stand or float with his head out;
+- every basin can be left with empty hands at any level it can have (a
+  stair that goes on under water, a rim, the sill);
+- every door can be carried from any frame to any other, except up from
+  the lower yard to the upper, which is the lock's;
+- the stage gates stay open once opened (the ledge door, the gangway's
+  bolt, the yard gate); only the sluice needs the wheel turning.
+
+**The measure** (in the generator, every build; the build fails on a broken
+rule): the lab's rule of flow written again in Python, run to rest for each
+answer meant and each wrong one named above, from the levels as found:
+BLUE in 101 and in 102; GREEN in 111, 112, 113; BLUE in 121; the pipe from
+113 with BLUE in 111; the pipe from 101 with BLUE in 102 and without; BLUE
+in 131, then in 133, and in 131 alone; BLUE in 141 and in 142; the circle
+with L full and with L dry. For each: the level it settles at, the time it
+takes at the level's rate, and whether the ledge, sill, mark or pane it is
+for is within reach. The four facts of "nothing can be lost". The wheel
+turning at rest for the circle, and not without water.
+
+**Fights** (Doom's own monsters, MAP19's mix and order of weapons; what
+walks drowns):
+- the baths: a few to learn on; when P first stands over 200, cacodemons
+  come in over the water;
+- the pump house: the fight for GREEN;
+- the cooling hall: revenants and imps on the walkway while it is full;
+  when it is first dry the cells open (pinkies, hell knights, a baron).
+  Hanging BLUE on the walkway floods them: the level's own weapon, to be
+  found, not told;
+- the boiler house: chaingunners on the catwalks, and company when the
+  float trips;
+- the lower yard: the big open fight, mancubi and arachnotrons across the
+  pool, cacodemons and a pain elemental over it;
+- the lock: when K first stands over 150, lost souls and cacodemons at the
+  sill;
+- the upper yard: an arch-vile and its court;
+- the wheel: when it first turns, the sluice lets out what was behind it.
+An ambush comes when a basin first stands over, or under, a height: a new
+cause for `AjarAmbush`.
+
+**What is shown**: a staff gauge in every basin; on each pressure door a
+lamp, red while water holds it; T's gauge glass and float mark in the
+boiler house; the wheel's lamp over the sluice. Sounds, which the lab has
+none of: water running at a door that passes any, a splash on going in
+and out, the wheel.
+
+**Left out of the first version**: the raft and the current (the lab has
+them; a secret could use them); a level held by BLUE and GREEN together;
+Ajar's own company; the look (it wears MAP19's until its own look board);
+the left-handed bath.
