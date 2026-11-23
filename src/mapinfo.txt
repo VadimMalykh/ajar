@@ -311,15 +311,29 @@ map MAP17 "Made to Order"
 
 // Act 2, level 8 (tools/map_clockdept.py, src/zscript/map18.zs): the clock
 // department, where a pulse in a delay lane is the stopwatch for the run.
-// Its way out starts it again until there is a MAP19.
+// Its way out leads on to MAP19.
 map MAP18 "Time and Motion"
 {
-	next = "MAP18"
+	next = "MAP19"
 	sky1 = "SKY2", 0               // the yard and the court are open: the city
 	nointermission
 	nojump
 	nocrouch
 	music = ""
+}
+
+// Act 2, level 9 (tools/map_paper.py, src/zscript/map19.zs): the pass office,
+// where the pass's white double (pass.zs) signs the registers. Its way out
+// starts it again until there is a MAP20.
+map MAP19 "On Paper"
+{
+	next = "MAP19"
+	sky1 = "SKY2", 0               // the forecourt, the yards, the garden and the pond court are open
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "AjarPassHandler"
 }
 
 // The second secret level (tools/map_secret2.py), from MAP15's secret way

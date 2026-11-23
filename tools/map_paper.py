@@ -67,7 +67,8 @@ LINK_LAP = 544
 STAIR_LAP = (544, 128)
 LINK_LAPS, STAIR_LAPS = 5, 3                 # the laps that sign registers 5 and 6
 PLATE = 128                                  # a register's plate: a square this wide (the lab's)
-TOL_Z = 16                                   # the double is on the plate if its feet are this near it
+TOL_Z = 32                                   # the double is on the plate if its feet are this near it (pass.zs)
+MEANT_Z = 16                                 # ... and the answer meant puts it this near
 RUN = 16.7                                   # the player running, units a tic (the test runs)
 
 m = Map()
@@ -85,7 +86,9 @@ MAPSPOT = 9001
 REG_TAG = {n: 1900 + n for n in range(1, 8)}  # each register's steel door (sector tag)
 LODGE_TAG, BRIDGE_TAG = 1908, 1909           # the porter's lodge's door; the island's footbridge (phase 2)
 BRIDGE_RAIL = 1910                           # line id: the pond's railing where the footbridge lands
-REGISTER_T = 9001                            # phase 1: a register is a MapSpot (the lab's thing in phase 2)
+DESK_T, REGISTER_T = 20132, 20133           # AjarPassDesk, AjarPassRegister (src/zscript/pass.zs)
+PLATE_F = dict(ftex="GATE3", light=232)      # a register's plate in the floor (the lab's)
+DESK_F = dict(ftex="FLAT23", light=232)      # a pass desk (the lab's)
 REG_SPOT, DESK_SPOT = 1950, 1970             # their tids: + the register's number; + the desk's
 PROG, VIEW = 3000, 2900                      # MapSpots: the test run's program (map19.zs), the views
 FENCE = 48                                   # no monster nearer than this to an odd face or a gate
@@ -268,6 +271,61 @@ def port(name, a, b, out, z, node, depth=ajarmap.DEPTH, inn=None):
     c = ((a[0] + b[0]) / 2 + out[0] * depth, (a[1] + b[1]) / 2 + out[1] * depth)
     PORTS[name] = dict(c=c, inn=tuple(inn or out), z=z, node=node, name=name)
     return PORTS[name]
+
+
+# === the rule's geometry: what a crossing does to where the double is =====================================
+def rot(k, v):
+    x, y = v
+    return ((x, y), (-y, x), (-x, -y), (y, -x))[k % 4]
+
+
+class Tf:
+    """p -> rot(k, p) + t and z -> z + dz: what a crossing does to where
+    things are (quarter turns only: every portal here is square to x or y)."""
+    def __init__(self, k=0, t=(0, 0), dz=0):
+        self.k, self.t, self.dz = k % 4, t, dz
+
+    def __call__(self, p):
+        q = rot(self.k, p)
+        return (q[0] + self.t[0], q[1] + self.t[1])
+
+    def __matmul__(self, o):                                  # self after o
+        q = rot(self.k, o.t)
+        return Tf(self.k + o.k, (q[0] + self.t[0], q[1] + self.t[1]), self.dz + o.dz)
+
+    def inv(self):
+        q = rot(-self.k, self.t)
+        return Tf(-self.k, (-q[0], -q[1]), -self.dz)
+
+    def box(self, r):
+        a, b = self((r[0], r[1])), self((r[2], r[3]))
+        return (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))
+
+
+def ends(e):
+    """A portal end's line as udmf writes it (v1, v2): the front side is the
+    sector declared first (the recess; the room beyond an odd face; the
+    plain room at a mouth) and polygons are clockwise, so the front is on
+    the right of v1 -> v2; `inn` points from the front to the back."""
+    d = (e["inn"][1] * 32, -e["inn"][0] * 32)
+    c = e["c"]
+    return (c[0] - d[0], c[1] - d[1]), (c[0] + d[0], c[1] + d[1])
+
+
+def quarter(v):
+    return round(math.degrees(math.atan2(v[1], v[0])) / 90) % 4
+
+
+def crossing(S, D):
+    """In through the portal end S, out of D: the engine's rule for a line
+    portal (Line_SetPortal type 1): a point p at S's line comes out at
+    D.v2 + R(p - S.v1), R the turn that lays S's line on D's reversed; the
+    height by the two floors (the portals are aligned to the floor)."""
+    s1, s2 = ends(S)
+    d1, d2 = ends(D)
+    k = quarter((d1[0] - d2[0], d1[1] - d2[1])) - quarter((s2[0] - s1[0], s2[1] - s1[1]))
+    q = rot(k, s1)
+    return Tf(k, (d2[0] - q[0], d2[1] - q[1]), D["z"] - S["z"])
 
 
 # === the look: each area its own walls, floor, ceiling and light =====================================
@@ -469,7 +527,7 @@ def oneway(a, b, out, z, line_id, target, near, far_part, area_face, area_mouth,
     over(a, b, near)
     over(c, d, far_part)
     ODD_LINES.append((c, d))
-    fo = ((c[0] + d[0]) / 2 + out[0] * 8, (c[1] + d[1]) / 2 + out[1] * 8)
+    fo = ((c[0] + d[0]) / 2 + out[0] * 32, (c[1] + d[1]) / 2 + out[1] * 32)
     fm = ((a[0] + b[0]) / 2 - out[0] * 8, (a[1] + b[1]) / 2 - out[1] * 8)
     face = port(f"{name}'s odd face", a, b, out, z, W.node(*fo, f"{name}'s odd face", area_face), depth=thick,
                 inn=(-out[0], -out[1]))
@@ -515,24 +573,27 @@ def plaque(a, b, look_out, part, words, z=0, niche=8, high=128, top=84):
     m.line(c, d, mid=SIGNS.setdefault(key, f"AJIS{LOOK}{len(SIGNS):02d}"), exact=True)
 
 
-def register(n, name, box, z, opens):
-    """A register (phase 1: recorded, a MapSpot at its plate's middle; the
-    pass lab's thing in phase 2): the plate `box` at height z; signed, it
-    opens the steel doors tagged `opens`."""
+def register(n, name, box, z, opens, bridge=0):
+    """A register (AjarPassRegister): its plate `box` at height z (the room
+    draws it: plate_box() and PLATE_F among its features); signed, it opens
+    the steel doors tagged `opens`, and with `bridge` raises the footbridge
+    of that tag (pass.zs)."""
     c = ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
     assert box[2] - box[0] == PLATE and box[3] - box[1] == PLATE, (n, box)
     REGISTERS[n] = dict(name=name, box=box, z=z, opens=opens, centre=c)
-    m.thing(c[0], c[1], REGISTER_T, id=REG_SPOT + n, args=(n, opens))
+    m.thing(c[0], c[1], REGISTER_T, id=REG_SPOT + n, args=(PLATE // 2, PLATE // 2, opens, n, bridge))
 
 
 def plate_box(c):
     return (c[0] - PLATE // 2, c[1] - PLATE // 2, c[0] + PLATE // 2, c[1] + PLATE // 2)
 
 
-def pass_desk(x, y):
-    """A pass desk (phase 1: recorded, a MapSpot; the lab's in phase 2)."""
-    DESKS.append((x, y))
-    m.thing(x, y, MAPSPOT, id=DESK_SPOT + len(DESKS))
+def pass_desk(box):
+    """A pass desk (AjarPassDesk) on the floor `box` (the room draws it: DESK_F
+    among its features): the player on it has his pass stamped, T reset."""
+    DESKS.append(box)
+    m.thing((box[0] + box[2]) / 2, (box[1] + box[3]) / 2, DESK_T, id=DESK_SPOT + len(DESKS),
+            args=((box[2] - box[0]) // 2, (box[3] - box[1]) // 2))
 
 
 def things(kind, *spots, angle=0):
@@ -546,7 +607,8 @@ def things(kind, *spots, angle=0):
 ENTR = look("LB", "FL", "KL", 210, 256, PALE)
 PH = (512, 256, 1280, 768)
 ph_pillars = [(640, 352, 704, 416), (1088, 352, 1152, 416), (640, 608, 704, 672), (1088, 608, 1152, 672)]
-room(PH, G, ENTR, grid(PH, 2, 2, 236, 96) + [(r, solid("PI", 256)) for r in ph_pillars], name="passhall")
+DESK1 = (960, 672, 1088, 736)
+room(PH, G, ENTR, grid(PH, 2, 2, 236, 96) + [(r, solid("PI", 256)) for r in ph_pillars] + [(DESK1, DESK_F)], name="passhall")
 hang((832, 256), (960, 256), "ST")                                          # the street doors, behind the start
 hang((640, 768), (768, 768), "NB")                                          # notices
 START = W.node(896, 352, "the start", "passhall")
@@ -556,35 +618,48 @@ for name_, a, b, out in (("brass west", (512, 480), (512, 544), (-1, 0)), ("bras
     f = front(a, b, out)
     FRAMES[190 if out[0] < 0 else 191] = port(name_, a, b, out, G, W.node(f[0], f[1], name_, "passhall"))
 NR = (64, 288)                                                              # the night room: (x, y) of its south-west corner
-ajarmap.way_through(m, NR[0], NR[1], VIOLET, PINK, floor=64)
-W.area("nightroom", (NR[0], NR[1], NR[0] + 320, NR[1] + 256), 64)
+NIGHT = 128                                                                 # its floor (every standable floor is a multiple of 128 but the
+                                                                            # link hall's: see LINK_Z)
+ajarmap.way_through(m, NR[0], NR[1], VIOLET, PINK, floor=NIGHT)
+W.area("nightroom", (NR[0], NR[1], NR[0] + 320, NR[1] + 256), NIGHT)
 for colour, x, out in ((VIOLET, NR[0], (-1, 0)), (PINK, NR[0] + 320, (1, 0))):
     a, b = (x, NR[1] + 96), (x, NR[1] + 160)
     f = front(a, b, out)
-    FARS[colour] = port(f"far {ajarmap.NAMES[colour]}", a, b, out, 64, W.node(f[0], f[1], f"far side {ajarmap.NAMES[colour]}", "nightroom"))
+    FARS[colour] = port(f"far {ajarmap.NAMES[colour]}", a, b, out, NIGHT, W.node(f[0], f[1], f"far side {ajarmap.NAMES[colour]}", "nightroom"))
 # its way out on foot: a hole in its north wall, a drop into a passage to the pass hall
-m.sector(rect(192, 544, 256, 560), floor=64, ceil=160, light=150, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+m.sector(rect(192, 544, 256, 560), floor=NIGHT, ceil=NIGHT + 96, light=150, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
 room((192, 560, 448, 704), G, look("PU", "FP", "KP", 150, 128, COLD), name="nightway")
 W.arc(W.node(224, 528, "the night room's hole", "nightroom"), W.node(224, 584, "the drop", "nightway"), 56, kind="drop")
 gap((512, 640), (512, 704), (-1, 0), G, "LB", "PU", "passhall", "nightway")
-pass_desk(1000, 720)
+pass_desk(DESK1)
 
 # --- the forecourt: open; RED's far side straight across from the duty room's frame 101 -------------
 FC = (704, 832, 1280, 2048)
 OPEN = sky("LB", "FL", 224, 320)
-room(FC, G, OPEN, [((768, 896, 1216, 1984), dict(ftex=T("FC") if LOOK else "AJFLOOR"))], name="forecourt")
+# the duty room stands 64 up, and so do frame 101 and its door, on a dais along the forecourt's west
+# wall (two steps): RED in 102 would otherwise put the double on register 2 from the duty room's floor
+# (it is at RED's far side's height there; at 64 it is not, by more than the register's 32)
+DUTY_Z = 64
+DAIS = (704, 1312, 784, 1664)
+room(FC, G, OPEN, [((768, 896, 1216, 1984), dict(ftex=T("FC") if LOOK else "AJFLOOR")),
+                   (DAIS, dict(floor=DUTY_Z, **dress(side="GF", ftex="GT"))),
+                   ((784, 1312, 816, 1664), dict(floor=40, **dress(side="GF", ftex="GT"))),
+                   ((816, 1312, 848, 1664), dict(floor=16, **dress(side="GF", ftex="GT")))],
+     name="forecourt", obst=[(704, 1312, 848, 1664)])
+W.area("dais", DAIS, DUTY_Z)
+W.link(W.node(800, 1456, "the dais's steps", "dais"), W.node(864, 1456, "the dais's steps", "forecourt"), 64)
 PH_N = gap((832, 768), (960, 768), (0, 1), G, "LB", "LB", "passhall", "forecourt")
-frame((704, 1376), (704, 1440), (-1, 0), 101, G, "forecourt")
+frame((704, 1376), (704, 1440), (-1, 0), 101, DUTY_Z, "dais")
 far((1280, 1376), (1280, 1440), (1, 0), RED, G, "forecourt")
 # the duty room, sealed: glass either side of 101, its own steel door (register 1's), the chaingun
 DR = (256, 1152, 624, 1664)
-room(DR, G, look("CK", "FC", "KC", 176, 160, PAPER), [((256, 1152, 320, 1664), block(48, "UT", "US"))], name="dutyroom",
-     sealed=True)
-pane_y(1216, 1344, 624, 704)
-pane_y(1472, 1568, 624, 704)
-steel_door((704, 1600), (704, 1664), (-1, 0), G, REG_TAG[1], "forecourt", "dutyroom", thick=80)
 REG1_C = (DR[2] - 128, 1408)                                                # 128 in from the duty room's glass wall, on 101's axis
-register(1, "the duty room", plate_box(REG1_C), G, REG_TAG[1])
+room(DR, DUTY_Z, look("CK", "FC", "KC", 176, DUTY_Z + 160, PAPER), [((256, 1152, 320, 1664), block(48, "UT", "US")), (plate_box(REG1_C), PLATE_F)], name="dutyroom",
+     sealed=True)
+pane_y(1216, 1344, 624, 704, sill=48, top=208)
+pane_y(1472, 1568, 624, 704, sill=48, top=208)
+steel_door((704, 1600), (704, 1664), (-1, 0), DUTY_Z, REG_TAG[1], "dais", "dutyroom", thick=80)
+register(1, "the duty room", plate_box(REG1_C), DUTY_Z, REG_TAG[1])
 plaque((704, 1728), (704, 1856), (-1, 0), "LB", "REGISTER 1 DUTY ROOM")
 # the barrier: register 1's steel door in the forecourt's north wall, to the covered way
 
@@ -637,11 +712,18 @@ CW_NORTH = W.node(992, 2300, "the covered way, north (tests)", "cwnorth")
 LO = (640, 2560, 1408, 3200)
 LODGE = (896, 2976, 1088, 3168)
 lo_pillars = [(768, 2816, 832, 2880), (1216, 2816, 1280, 2880)]
-room(LO, G, look("LB", "FL", "KL", 205, 256, PALE), grid(LO, 2, 2, 230, 96) + [(r, solid("PI", 256)) for r in lo_pillars],
+DESK2 = (1152, 2592, 1280, 2656)
+room(LO, G, look("LB", "FL", "KL", 205, 256, PALE), grid(LO, 2, 2, 230, 96) + [(r, solid("PI", 256)) for r in lo_pillars] + [(DESK2, DESK_F)],
      holes=[LODGE], name="lobby", obst=[LODGE])
 joint((896, 2560), (1088, 2560), "cwnorth", "lobby")
 LODGE_IN = (912, 2992, 1072, 3152)
-room(LODGE_IN, G, dict(look("CK", "FC", "KC", 190, 128, PAPER), special=1024), name="lodge", sealed=True)
+# the lodge's plate: where the double stands when the player has just come out of the covered way
+# (48 north of its mouth): the odd face and the stretch's way out shift it north by the stretch's length
+CW_OUT_AT = (992, CW_MOUTH_Y + 48)
+REG8_C = crossing(CW_FACE, X_IN_P).inv()(crossing(X_OUT_P, CW_MOUTH).inv()(CW_OUT_AT))
+room(LODGE_IN, G, look("CK", "FC", "KC", 190, 128, PAPER), [(plate_box(REG8_C), dict(PLATE_F, special=1024))], name="lodge",
+     sealed=True)
+register(8, "the porter's lodge", plate_box(REG8_C), G, LODGE_TAG)
 for box in ((896, 2976, 1088, 2992), (896, 2992, 912, 3152), (1072, 2992, 1088, 3152), (896, 3152, 960, 3168), (1024, 3152, 1088, 3168)):
     m.sector(rect(*box), floor=G, ceil=128, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
 for p, q in (((896, 2976), (1088, 2976)), ((896, 2976), (896, 3168)), ((1088, 2976), (1088, 3168)), ((896, 3168), (960, 3168)),
@@ -649,16 +731,14 @@ for p, q in (((896, 2976), (1088, 2976)), ((896, 2976), (896, 3168)), ((1088, 29
              ((912, 3152), (960, 3152)), ((1024, 3152), (1072, 3152))):
     m.line(p, q, **GLASS)
 ajarmap.steel(m, (960, 3168), (1024, 3168), (0, -1), G, LODGE_TAG, thick=16)
-# the lodge's plate: where the double stands when the player has just come out of the covered way
-# (48 north of its mouth): the stretch and the doorway shift it north by the stretch's length
-CW_OUT_AT = (992, CW_MOUTH_Y + 48)
-pass_desk(1180, 2620)
+pass_desk(DESK2)
 
 # --- the gallery (the spine) ------------------------------------------------------------------------
 GA = (640, 3200, 2944, 3392)
 room(GA, G, look("CO", "FC", "KC", 190, 256, MINT), [((x, 3200, x + 64, 3392), dict(light=225)) for x in range(768, 2944, 384)],
      name="gallery")
-joint((640, 3200), (1408, 3200), "lobby", "gallery")
+joint((640, 3200), (896, 3200), "lobby", "gallery")
+joint((1088, 3200), (1408, 3200), "lobby", "gallery")
 frame((640, 3264), (640, 3328), (-1, 0), 121, G, "gallery")
 
 # --- the archive: the vestibule, the stack (sealed), the reading corridor ---------------------------
@@ -670,12 +750,15 @@ for a, b in (((1536, 2560), (1664, 2560)),):
     hang(a, b, "CI")
 ST = (1808, 2560, 2816, 2816)
 st_shelves = [((x, 2560, x + 192, 2608), solid("SK", 192)) for x in range(1856, 2752, 256)]
-room(ST, G, look("AR", "FR", "KA", 200, 192, DIM), grid(ST, 4, 1, 224, 96) + st_shelves, name="stack", sealed=True)
+REG2_C = (1728 + 864, 2688)                                                 # 864 in from the stack's west wall, on 102's axis
+room(ST, G, look("AR", "FR", "KA", 200, 192, DIM), grid(ST, 4, 1, 224, 96) + st_shelves + [(plate_box(REG2_C), PLATE_F)], name="stack", sealed=True)
 pane_x(1808, 2816, 2816, 2832)
 RC = (1760, 2832, 3008, 2992)
-room(RC, G, look("AR", "FR", "KA", 180, 192, DIM), grid(RC, 5, 1, 210, 64), name="reading")
+# a reading desk against the north wall at the east end (where a Pair in 106 and 109 would put the
+# double on register 5)
+room(RC, G, look("AR", "FR", "KA", 180, 192, DIM), grid(RC, 5, 1, 210, 64) + [((2688, 2880, 2816, 2992), block(48, "DT", "DS"))],
+     name="reading")
 far((1760, 2880), (1760, 2944), (-1, 0), GREEN, G, "reading")
-REG2_C = (1728 + 864, 2688)                                                 # 864 in from the stack's west wall, on 102's axis
 register(2, "the stack", plate_box(REG2_C), G, REG_TAG[2])
 RP = (2816, 2992, 2944, 3200)
 room(RP, G, look("CO", "FC", "KC", 180, 192, MINT), name="readingway")
@@ -690,7 +773,8 @@ room(CA, G, look("CA", "FN", "KC", 200, 256, PAPER), grid(CA, 3, 2, 236, 96) + t
 gap((3008, 2880), (3008, 2944), (1, 0), G, "AR", "CA", "reading", "canteen")
 hang((3584, 3136), (3712, 3136), "MN")
 KI = (3904, 2560, 4416, 3136)
-ovens = [((4224, 2688, 4352, 2816), solid("TK", 64)), ((4224, 2944, 4352, 3072), solid("TK", 64))]
+# the range across the kitchen's middle: also where GREEN in 106 would put the double on register 5
+ovens = [((4096, 2816, 4288, 3008), solid("TK", 64))]
 room(KI, G, look("LA", "FA", "KA", 190, 256, RUST), grid(KI, 2, 2, 224) + ovens, name="kitchen")
 gap((3840, 2752), (3840, 2880), (1, 0), G, "CA", "LA", "canteen", "kitchen")
 GS = (3392, 2176, 3520, 2496)
@@ -699,23 +783,34 @@ steel_door((3424, 2560), (3488, 2560), (0, -1), G, REG_TAG[4], "canteen", "garde
 
 # --- the link hall; the sealed gallery behind 106; the east strongroom (VIOLET) ----------------------
 LH = (3072, 3200, 3584, 3392)
-room(LH, G, look("LB", "FL", "KL", 210, 192, PALE), name="link")
-frame((3072, 3264), (3072, 3328), (-1, 0), 105, G, "link")
-frame((3584, 3264), (3584, 3328), (1, 0), 106, G, "link")
-pane_y(3208, 3256, 3584, 3712)
-pane_y(3336, 3384, 3584, 3712)
+# the link hall and the gallery sealed behind it stand 64 up (LINK_Z): every other floor the player
+# stands on is a multiple of 128, so no crossing but one by 105 or 106 can put the double on register
+# 5's plate at its height (within the register's 32)
+LINK_Z = 64
+room(LH, LINK_Z, look("LB", "FL", "KL", 210, LINK_Z + 192, PALE), name="link")
+frame((3072, 3264), (3072, 3328), (-1, 0), 105, LINK_Z, "link")
+frame((3584, 3264), (3584, 3328), (1, 0), 106, LINK_Z, "link")
+pane_y(3208, 3256, 3584, 3712, z=LINK_Z)
+pane_y(3336, 3384, 3584, 3712, z=LINK_Z)
 LINK_MID = ((LH[0] + LH[2]) / 2, (LH[1] + LH[3]) / 2)
+# a lap is the distance between the two portal lines (the pass lab): the hall and both recesses
+assert LINK_LAP == FRAMES[106]["c"][0] - FRAMES[105]["c"][0] == LH[2] - LH[0] + 2 * ajarmap.DEPTH, LINK_LAP
 LV = (2880, 3456, 3712, 3712)
-room(LV, G, look("LB", "FL", "KL", 190, 256, PALE), name="linkvest")
+DESK3 = (3392, 3504, 3520, 3568)
+room(LV, G, look("LB", "FL", "KL", 190, 256, PALE), [(DESK3, DESK_F)], name="linkvest")
 gap((2880, 3392), (2944, 3392), (0, 1), G, "CO", "LB", "gallery", "linkvest")
-gap((3296, 3392), (3360, 3392), (0, 1), G, "LB", "LB", "link", "linkvest")
-pass_desk(3440, 3500)
-plaque((3392, 3392), (3520, 3392), (0, 1), "LB", "REGISTER 5 GALLERY")
+for y1, z in ((3392, 40), (3424, 16)):                                    # its side door: two steps down to the vestibule
+    m.sector(rect(3296, y1, 3360, y1 + 32), floor=z, ceil=z + 96, light=170, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+over((3296, 3392), (3360, 3392), "LB")
+over((3296, 3456), (3360, 3456), "LB")
+W.link(W.node(3328, 3376, "the link hall's side door", "link"), W.node(3328, 3472, "the link hall's side door", "linkvest"), 96)
+pass_desk(DESK3)
+plaque((3392, 3392), (3520, 3392), (0, 1), "LB", "REGISTER 5 GALLERY", z=LINK_Z)
 SG = (3712, 3200, 6400, 3392)
-room(SG, G, look("CO", "FC", "KC", 220, 192, MINT), [((x, 3200, x + 64, 3392), dict(light=250)) for x in range(3840, 6400, 320)],
-     name="sealedgallery", sealed=True)
 REG5_C = (LINK_MID[0] + LINK_LAPS * LINK_LAP, LINK_MID[1])
-register(5, "down the bricked-up gallery", plate_box(REG5_C), G, REG_TAG[5])
+room(SG, LINK_Z, look("CO", "FC", "KC", 220, LINK_Z + 192, MINT), [((x, 3200, x + 64, 3392), dict(light=250)) for x in range(3840, 6400, 320)] + [(plate_box(REG5_C), PLATE_F)],
+     name="sealedgallery", sealed=True)
+register(5, "down the bricked-up gallery", plate_box(REG5_C), LINK_Z, REG_TAG[5])
 SR5 = (6464, 3136, 6848, 3392)
 room(SR5, G, look("LA", "FA", "KA", 160, 192, RUST), name="strongroom5", sealed=True)
 
@@ -724,7 +819,7 @@ EL = (3776, 3456, 6848, 3648)
 room(EL, G, sky("PU", "FP", 200, 320), name="lane")
 gap((3712, 3520), (3712, 3584), (1, 0), G, "LB", "PU", "linkvest", "lane")
 for x in (4224, 4864, 5504, 5984):                                          # windows into the sealed gallery
-    pane_x(x, x + 128, 3392, 3456)
+    pane_x(x, x + 128, 3392, 3456, sill=48, top=208)
 EY = (6912, 2752, 7872, 3712)
 room(EY, G, sky("LB", "FC", 224, 320), [((7104, 2944, 7680, 3520), dict(ftex=T("FL") if LOOK else "AJFLOOR"))], name="eastyard")
 steel_door((6912, 3200), (6912, 3264), (-1, 0), G, REG_TAG[5], "eastyard", "strongroom5", thick=64)
@@ -768,11 +863,12 @@ joint((1792, 4448), (1984, 4448), "flight", "toplanding")
 # beside it, behind glass for its whole length: the hall with no stair, sealed; a gallery at 256 at
 # its far end, where the stair's head would be
 NSH = (2048, 3984, 2240, 4576)
-room(NSH, G, STAIRS, [((2048, 4448, 2240, 4576), dict(floor=U, **dress(side="GF", ftex="GT")))], name="nostair", sealed=True)
+REG4_C = ((TL[0] + TL[2]) / 2 + 256, (4448 + 4576) / 2)                    # on the gallery: the top landing, as the double sees it
+room(NSH, G, STAIRS, [((2048, 4448, 2240, 4576), dict(floor=U, **dress(side="GF", ftex="GT"))), (plate_box(REG4_C), dict(PLATE_F, floor=U))],
+     name="nostair", sealed=True)
 glass((1984, 3968, 2048, 4576), [((1984, 3968), (1984, 4576)), ((2048, 3984), (2048, 4576))], sill=0, top=448)
 for p, q in (((1984, 3968), (1984, 4576)), ((2048, 3984), (2048, 4576))):
     m.line(p, q, **TALL_GLASS)
-REG4_C = ((TL[0] + TL[2]) / 2 + 256, (4448 + 4576) / 2)                    # on the gallery: the top landing, as the double sees it
 register(4, "the hall with no stair", plate_box(REG4_C), U, REG_TAG[4])
 plaque((1728, 3584), (1728, 3712), (-1, 0), "LB", "REGISTER 4 NO STAIR")
 
@@ -786,10 +882,10 @@ joint((1792, 4640), (1984, 4640), "toplanding", "upper")
 # the side room, sealed: 103 in the corridor's north wall; the room runs off to the right (east)
 frame((3968, 4832), (4032, 4832), (0, 1), 103, U, "upper")
 SR3 = (4064, 4848, 4736, 5120)
-room(SR3, U, look("CK", "FC", "KC", 184, U + 160, PAPER), [((4096, 5056, 4672, 5120), block(48, "UT", "US"))], name="sideroom",
+REG3_C = (FRAMES[103]["mouth"][0] + 560, FRAMES[103]["mouth"][1] + 96)      # 96 ahead and 560 to the right of the frame
+room(SR3, U, look("CK", "FC", "KC", 184, U + 160, PAPER), [((4096, 5056, 4672, 5120), block(48, "UT", "US")), (plate_box(REG3_C), PLATE_F)], name="sideroom",
      sealed=True)
 pane_x(4352, 4480, 4832, 4848, z=U)
-REG3_C = (FRAMES[103]["mouth"][0] + 560, FRAMES[103]["mouth"][1] + 96)      # 96 ahead and 560 to the right of the frame
 register(3, "the side room", plate_box(REG3_C), U, REG_TAG[3])
 plaque((3776, 4832), (3904, 4832), (0, 1), "CO", "REGISTER 3 SIDE ROOM", z=U)
 # the hall with no size: its four walls are the gazebo's four faces in the garden
@@ -840,10 +936,6 @@ W.arc(BAL_EDGE, W.node(5088, 4736, "under the balcony", "pond"), 48, kind="drop"
 WATER = dict(ceil=512, light=200, wall=T("LB") if LOOK else "AJWALL", ftex="FWATER1", ctex=SKY)
 fit(POND, [((5952, POND[1], 6016, ISLAND[1]), dict(id=BRIDGE_TAG))], holes=[ISLAND], floor=-24, **WATER)
 # (the strip 5952..6016 from the bank to the island is the footbridge, down in the water: phase 2 raises it)
-posts = [(ISLAND[0] + 32, ISLAND[1] + 32), (ISLAND[2] - 48, ISLAND[1] + 32), (ISLAND[0] + 32, ISLAND[3] - 48), (ISLAND[2] - 48, ISLAND[3] - 48)]
-fit(ISLAND, [((x, y, x + 16, y + 16), solid("PI", 160)) for x, y in posts] + [((5920, 4832, 6048, 4960), dict(light=240, special=1024))],
-    floor=G, **PCL)
-W.area("island", ISLAND, G)
 for p, q in (((POND[0], POND[1]), (POND[0], POND[3])), ((POND[0], POND[3]), (POND[2], POND[3])), ((POND[2], POND[3]), (POND[2], POND[1])),
              ((POND[2], POND[1]), (6016, POND[1])), ((5952, POND[1]), (POND[0], POND[1])),
              ((ISLAND[0], ISLAND[1]), (ISLAND[0], ISLAND[3])), ((ISLAND[0], ISLAND[3]), (ISLAND[2], ISLAND[3])),
@@ -851,7 +943,6 @@ for p, q in (((POND[0], POND[1]), (POND[0], POND[3])), ((POND[0], POND[3]), (PON
              ((5952, ISLAND[1]), (ISLAND[0], ISLAND[1]))):
     m.line(p, q, **RAIL)
 m.line((5952, POND[1]), (6016, POND[1]), id=BRIDGE_RAIL, **RAIL)            # where the footbridge will land: unrailed in phase 2
-REG9_C = None                                                               # the island's plate: by the boat store (below)
 # the boat store, bigger inside (MAP18's hut): its door from the court shows and leads into the big
 # store in free ground (between the garden and the block), heading east; the big store's door leads
 # back out of the little one's. The inside of the little store is reached by a plain door in its side.
@@ -879,6 +970,14 @@ W.arc(BIG_P["node"], BOAT_FACE["node"], 32, portal=180)      # the big store's d
 CROSS.append(("the boat store's door (into the big store)", BOAT_FACE, BIG_P))
 CROSS.append(("the big store's door (out of the boat store's)", BIG_P, BOAT_FACE))
 BIG_END = (BIG[2] - 48, (BIG[1] + BIG[3]) / 2)
+# the island (secret), its pavilion's posts, its plate: where the double walks out of the little store's
+# back wall and over the water with the player at the big store's far end
+REG9_C = crossing(BOAT_FACE, BIG_P).inv()(BIG_END)
+posts = [(ISLAND[0] + 32, ISLAND[1] + 32), (ISLAND[2] - 48, ISLAND[1] + 32), (ISLAND[0] + 32, ISLAND[3] - 48), (ISLAND[2] - 48, ISLAND[3] - 48)]
+fit(ISLAND, [((x, y, x + 16, y + 16), solid("PI", 160)) for x, y in posts] + [(plate_box(REG9_C), dict(PLATE_F, special=1024))],
+    floor=G, **PCL)
+W.area("island", ISLAND, G)
+register(9, "the island", plate_box(REG9_C), G, 0, bridge=BRIDGE_TAG)
 # the kiosk, sealed behind steel (register 7's), YELLOW in it, glass to see it
 fit((5136, 5136, 5360, 5360), floor=G, **look("CK", "FC", "KC", 190, 128, PAPER))
 W.area("kiosk", (5136, 5136, 5360, 5360), G)
@@ -893,11 +992,11 @@ steel_door((5216, 5120), (5280, 5120), (0, 1), G, REG_TAG[7], "pond", "kiosk", t
 # 113 in the court's east wall; the boathouse behind it, sealed, glass either side
 frame((6848, 4512), (6848, 4576), (1, 0), 113, G, "pond")
 BH = (6928, 4416, 7952, 4672)
-room(BH, G, look("PU", "FP", "KP", 170, 192, COLD), [((x, 4416, x + 64, 4672), dict(light=220)) for x in range(7040, 7952, 256)],
+REG7_C = (6848 + 864, 4544)                                                 # 864 in from the court's wall, on 113's axis
+room(BH, G, look("PU", "FP", "KP", 170, 192, COLD), [((x, 4416, x + 64, 4672), dict(light=220)) for x in range(7040, 7952, 256)] + [(plate_box(REG7_C), PLATE_F)],
      name="boathouse", sealed=True)
 pane_y(4432, 4496, 6848, 6928)
 pane_y(4592, 4656, 6848, 6928)
-REG7_C = (6848 + 864, 4544)                                                 # 864 in from the court's wall, on 113's axis
 register(7, "the boathouse", plate_box(REG7_C), G, REG_TAG[7])
 PC_OUT = turnstile((6016, 3712), (6080, 3712), (0, -1), G, "pond", "lane")
 
@@ -939,15 +1038,19 @@ GAZEBO = (4224, 960, 4416, 1152)
 HEDGE = dict(floor=64, ftex="GRASS2", **dress(side="PS"))
 hedges = [(1664, 320, 2368, 384), (3008, 320, 3904, 384), (1664, 1856, 2368, 1920), (3008, 1856, 3904, 1920),
           (4672, 448, 5504, 512), (4672, 1664, 5504, 1728), (1664, 704, 1728, 1536), (5568, 704, 5632, 1280),
-          (3328, 896, 3392, 1344), (4864, 896, 5248, 960), (4864, 1216, 5248, 1280)]
+          (3328, 896, 3392, 1344), (4864, 896, 5248, 960), (4864, 1216, 5248, 1280),
+          # beds where single crossings would put the double on register 5 (BLUE in 105; Pairs of 106 with
+          # 104 and with 111)
+          (1792, 832, 1984, 1024), (2048, 1376, 2240, 1568), (4640, 1152, 4832, 1344)]
 paths = [(2688, 64, 2816, 2176), (1536, 1024, 5696, 1088), (3392, 1088, 3520, 2176)]
-room(GD, G, GRASS, [(p, dict(ftex=T("FC") if LOOK else "AJFLOOR")) for p in paths] + [(h, HEDGE) for h in hedges],
+DESK4 = (3584, 2080, 3712, 2144)
+room(GD, G, GRASS, [(p, dict(ftex=T("FC") if LOOK else "AJFLOOR")) for p in paths] + [(h, HEDGE) for h in hedges] + [(DESK4, DESK_F)],
      holes=[ARCH_S, ARCH_N, GAZEBO], name="garden", obst=[ARCH_S, ARCH_N, GAZEBO])
 joint((3392, 2176), (3520, 2176), "gardensteps", "garden")
 frame((2720, 512), (2784, 512), (0, -1), 109, G, "garden")                  # the avenue: its south arch, facing north
 frame((2784, 1792), (2720, 1792), (0, 1), 110, G, "garden")                 # ... its north arch, facing south: 1280 apart
 frame((2240, 2176), (2304, 2176), (0, 1), 124, G, "garden")                 # in the block's garden wall
-pass_desk(3600, 2120)
+pass_desk(DESK4)
 # the gazebo: MAP18's clock tower: each face the far end of a fixed doorway whose near end is a wall
 # of the hall with no size, upstairs
 cx, cy = (NS[0] + NS[2]) // 2, (NS[1] + NS[3]) // 2
@@ -980,7 +1083,7 @@ room(HL, G, TOWER, name="towerhead")
 ajarmap.opening(m, (6208, 480), (6208, 544), (1, 0), G, thick=64)
 over((6208, 480), (6208, 544), "PU")
 over((6272, 480), (6272, 544), "PU")
-W.node(6240, 512, "the tower's door", "toweryard", "towerhead")
+W.link(W.node(6176, 512, "the tower's door, outside", "toweryard"), W.node(6296, 512, "the tower's door, inside", "towerhead"), 120)
 ajarmap.stairs(m, (6272, 576), (6464, 576), (0, 1), G, TOWER_FOOT, steps=8, depth=32, ceil=192, light=170, color=tint(COLD),
                **dress(wall="PU", ftex="FP", ctex="KP"))
 W.area("towerflight", (6272, 576, 6464, 832), G, ramp=("y", 576, G, 832, TOWER_FOOT))
@@ -991,6 +1094,9 @@ joint((6272, 832), (6464, 832), "towerflight", "towerfoot")
 frame((6336, 448), (6400, 448), (0, -1), 108, G, "towerhead")
 frame((6336, 960), (6400, 960), (0, 1), 107, TOWER_FOOT, "towerfoot")
 FOOT_MID = ((FOOT[0] + FOOT[2]) / 2, (FOOT[1] + FOOT[3]) / 2)
+# a lap of the flight: from 108's line to 107's (the head's landing, the flight, the foot's landing, two
+# recesses) and the flight's fall (the pass lab: 544 along, 128 down)
+assert STAIR_LAP == (FRAMES[107]["c"][1] - FRAMES[108]["c"][1], FRAMES[108]["z"] - FRAMES[107]["z"]), STAIR_LAP
 # behind the foot's wall the stair goes on down, sealed: three more flights of the same pitch, lit;
 # glass beside 107 to see down it
 for x1, x2 in ((6272, 6320), (6416, 6464)):
@@ -1005,8 +1111,8 @@ for k in (1, 2, 3):
                    ceil=top + 192, light=200, color=tint(COLD), **dress(wall="PU", ftex="FP", ctex="KP"))
     y1 = 832 + ALONG * k
     y2 = 1120 + ALONG * k if k < 3 else 832 + ALONG * k + 288
-    m.sector(rect(6272, y1, 6464, y2), floor=top + TOWER_FOOT, ceil=top + TOWER_FOOT + 192, light=200,
-             **{kk: v for kk, v in SEAL.items() if kk not in ("ceil", "light")})
+    fit((6272, y1, 6464, y2), [(plate_box((FOOT_MID[0], FOOT_MID[1] + STAIR_LAPS * ALONG)), PLATE_F)] if k == STAIR_LAPS else [],
+        floor=top + TOWER_FOOT, **dict(SEAL, ceil=top + TOWER_FOOT + 192))
     W.area(f"sealedflight{k}", (6272, 576 + ALONG * k, 6464, 832 + ALONG * k), top, ramp=("y", 576 + ALONG * k, top, 832 + ALONG * k, top + TOWER_FOOT))
     W.area(f"sealedstair{k}", (6272, y1, 6464, y2), top + TOWER_FOOT)
 for name_ in [a for a in W.areas if a.startswith("sealed")]:
@@ -1035,65 +1141,183 @@ ajarmap.door(m, PINK, 6848, 1344, angle=180)                                # PI
 ajarmap.pair(m, TEAL, (3072, 4448, 270), (3584, 4448, 270))                 # both TEAL leaves: the drawing office
 ajarmap.pair(m, ORANGE, (5184, 3840, 90), (6656, 5440, 180))                # both ORANGE leaves: the pond court
 
+# --- signs: at the pass desks and the turnstiles; by register 6's tower and register 7's frame --------
+plaque((1024, 768), (1152, 768), (0, 1), "LB", "PASSES STAMPED")
+plaque((1152, 2560), (1280, 2560), (0, -1), "LB", "PASSES STAMPED")
+plaque((3392, 3712), (3520, 3712), (0, 1), "LB", "PASSES STAMPED")
+plaque((3584, 2176), (3712, 2176), (0, 1), "LB", "PASSES STAMPED")
+plaque((6976, 3712), (7104, 3712), (0, 1), "LB", "WAY OUT ONLY")
+plaque((6144, 3712), (6272, 3712), (0, -1), "LB", "WAY OUT ONLY")
+plaque((5760, 768), (5760, 896), (-1, 0), "PU", "WAY OUT ONLY")
+plaque((6208, 576), (6208, 704), (1, 0), "PU", "REGISTER 6 THE STAIR")
+plaque((6848, 4672), (6848, 4800), (1, 0), "LB", "REGISTER 7 BOATHOUSE")
+
+# --- weapons in MAP18's order (shotgun, chaingun, super shotgun, rocket launcher, plasma), the rest ----
+NOROOM = []
+TAKEN = [(896, 352, 16)]                     # (x, y, radius): what stands where, for the placer below
+
+
+def item(kind, x, y):
+    m.thing(x, y, kind)
+    TAKEN.append((x, y, 16))
+
+
+def halton(i, b):
+    f, r = 1.0, 0.0
+    while i:
+        f /= b
+        r += f * (i % b)
+        i //= b
+    return r
+
+
+AVOID = [n for n in W.nodes if any(w in n["label"] for w in ("frame", "far side", "steel", "squeeze", "turnstile", "doorway",
+                                                             "odd face", "mouth", "way in", "way out", "door", "drop", "steps",
+                                                             "brass", "hole"))]
+
+
+def spot(area, r=20, k0=0):
+    """A free place for a thing of radius r in `area`: 48 off its walls,
+    clear of its furniture, of every other thing, of the doorways and
+    frames' fronts, 128 or more from any odd face or gate, not near the
+    start (a Halton sequence over the area: the same every build)."""
+    a = W.areas[area]
+    b, obs = a["box"], a["obst"]
+    for k in range(k0 + 1, k0 + 5000):
+        x = round((b[0] + 40 + r + halton(k, 2) * (b[2] - b[0] - 80 - 2 * r)) / 8) * 8
+        y = round((b[1] + 40 + r + halton(k, 3) * (b[3] - b[1] - 80 - 2 * r)) / 8) * 8
+        if any(o[0] - r - 24 < x < o[2] + r + 24 and o[1] - r - 24 < y < o[3] + r + 24 for o in obs):
+            continue
+        if any(math.hypot(x - tx, y - ty) < r + tr + 40 for tx, ty, tr in TAKEN):
+            continue
+        if any(math.hypot(x - n["x"], y - n["y"]) < 96 for n in AVOID):
+            continue
+        if any(seg_dist((x, y), a_, b_) < 128 + r for a_, b_ in ODD_LINES):
+            continue
+        if math.hypot(x - 896, y - 352) < 320:
+            continue
+        TAKEN.append((x, y, r))
+        return x, y
+    NOROOM.append(area)
+    return b[0] + 64, b[1] + 64
+
+
+def seg_dist(p, a, b):
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    t = max(0, min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy)))
+    return math.hypot(a[0] + t * dx - p[0], a[1] + t * dy - p[1])
+
+
+def scatter(area, kind, n, r=16):
+    for _ in range(n):
+        item(kind, *spot(area, r))
+
+
+item(2001, 896, 448)                                                        # shotgun: the pass hall, ahead of the start
+item(2008, 832, 448)
+item(2008, 960, 448)
+item(2002, 448, 1248)                                                       # chaingun: the duty room (register 1)
+item(2048, 512, 1568)
+item(82, 3456, 2624)                                                        # super shotgun: the canteen
+item(2049, 3328, 2624)
+item(2003, 4288, 5376)                                                      # rocket launcher: the upper store
+item(2046, 4544, 5376)
+item(2004, 1408, 5248)                                                      # plasma rifle: the long cellar's east end
+item(17, 1408, 5184)
+item(2013, 960, 3040)                                                       # a soul sphere in the porter's lodge (secret)
+item(83, 6048, 4800)                                                        # a megasphere on the island (secret)
+item(2018, 7392, 3104)                                                      # green armour: the east yard
+item(2019, 4320, 1408)                                                      # blue armour: the garden, by the gazebo
+item(8, 1408, 3600)                                                         # a backpack: the first office
+item(2013, 6848, 1440)                                                      # a soul sphere: the tower's strongroom (register 6)
+AMMO = [("passhall", 2011, 2), ("forecourt", 2008, 3), ("forecourt", 2007, 2), ("lobby", 2007, 2),
+        ("gallery", 2049, 1), ("gallery", 2048, 1), ("gallery", 2012, 1), ("lobby", 2008, 2), 
+        ("canteen", 2049, 1), ("canteen", 2012, 1), ("kitchen", 2048, 1), ("kitchen", 2011, 2), ("officew1", 2049, 1),
+        ("officew2", 2048, 1), ("lane", 2049, 1), ("eastyard", 2049, 1), ("eastyard", 2048, 1), ("linkvest", 2012, 1),
+        ("stairhall", 2049, 1), ("upper", 2049, 1), ("upper", 2046, 1), ("upper", 2012, 2), ("drawing", 2046, 1),
+        ("drawing", 2049, 1), ("nosize", 2012, 1), ("office1", 2046, 1), ("office2", 2048, 1),
+        ("upperstore", 2046, 2), ("pond", 2049, 1), ("pond", 2046, 2), ("pond", 2012, 2), ("bigstore", 2049, 1),
+        ("bigstore", 2012, 1), ("blanding", 2049, 1), ("stores", 2049, 1), ("stores", 17, 1), ("stores", 2012, 2),
+        ("boiler", 17, 1), ("blanding", 2046, 1), ("cellar", 17, 2), ("cellar", 2012, 3), ("cellar", 2047, 2),
+        ("garden", 2049, 2), ("garden", 2046, 3), ("garden", 17, 2), ("garden", 2012, 5), ("garden", 2048, 2),
+        ("toweryard", 2046, 2), ("toweryard", 2012, 2), ("toweryard", 2047, 1)]
+for area, kind, n in AMMO:
+    scatter(area, kind, n)
+
+# --- monsters, area by area (none in a sealed room, none within 128 of an odd face or a gate) --------
+COMPANY = {
+    "passhall": [ZOMBIE] * 3 + [SERGEANT] * 2,
+    "forecourt": [ZOMBIE] * 3 + [IMP] * 4 + [SERGEANT] * 2 + [DEMON],
+    "lobby": [ZOMBIE] * 2 + [IMP] * 3 + [SERGEANT] * 2 + [CHAINGUNNER],
+    "gallery": [IMP] * 5 + [ZOMBIE] * 3 + [SERGEANT] * 2 + [CHAINGUNNER] * 2 + [SPECTRE, DEMON],
+    "vestibule": [IMP],
+    "reading": [IMP] * 2 + [SPECTRE],
+    "readingway": [ZOMBIE],
+    "canteen": [IMP] * 4 + [SERGEANT] * 2 + [ZOMBIE] * 2 + [DEMON] * 2 + [CHAINGUNNER],
+    "kitchen": [IMP] * 2 + [DEMON, SPECTRE],
+    "link": [IMP] * 2 + [KNIGHT],
+    "linkvest": [ZOMBIE] * 2 + [IMP] * 2,
+    "lane": [IMP] * 4 + [SERGEANT] * 2 + [CHAINGUNNER],
+    "eastyard": [IMP] * 3 + [SERGEANT] * 2 + [KNIGHT, REVENANT],
+    "officew1": [IMP] * 2 + [SERGEANT],
+    "officew2": [IMP] * 2 + [CHAINGUNNER],
+    "basementstair": [ZOMBIE] * 2,
+    "stairhall": [IMP] * 2 + [SERGEANT],
+    "upper": [ZOMBIE] * 2 + [IMP] * 4 + [SPECTRE],
+    "nosize": [IMP] * 2 + [KNIGHT],
+    "drawing": [IMP] * 3 + [SERGEANT, REVENANT],
+    "office0": [IMP] * 2 + [SERGEANT],
+    "office1": [IMP] * 2 + [KNIGHT],
+    "office2": [IMP] * 2 + [CHAINGUNNER],
+    "upperstore": [IMP] * 2 + [REVENANT, SPECTRE],
+    "pond": [IMP] * 4 + [SERGEANT] * 3 + [CACO] * 3 + [KNIGHT] * 2 + [REVENANT] * 2 + [DEMON] * 2,
+    "bigstore": [IMP] * 2 + [SERGEANT],
+    "blanding": [IMP] * 2,
+    "stores": [IMP] * 4 + [SERGEANT] * 2 + [KNIGHT, CACO],
+    "boiler": [IMP] * 2 + [REVENANT, MANCUBUS],
+    "bpassage": [ZOMBIE] * 3,
+    "cellar": [IMP] * 4 + [SPECTRE] * 2 + [CHAINGUNNER] * 2 + [KNIGHT] + [REVENANT] * 2,
+    "garden": [IMP] * 10 + [SERGEANT] * 5 + [CHAINGUNNER] * 2 + [DEMON] * 4 + [SPECTRE] * 5 + [CACO] * 3 + [KNIGHT] * 3
+              + [REVENANT] * 3 + [CHAINGUNNER] * 2 + [MANCUBUS, BARON],
+    "toweryard": [IMP] * 4 + [SERGEANT] * 2 + [CACO, REVENANT],
+}
+RADIUS = {DEMON: 30, SPECTRE: 30, CACO: 31, MANCUBUS: 48, KNIGHT: 24, BARON: 24}
+for area, kinds in COMPANY.items():
+    a = W.areas[area]["box"]
+    for kind in kinds:
+        x, y = spot(area, RADIUS.get(kind, 20))
+        m.thing(x, y, kind, angle=round(math.degrees(math.atan2((a[1] + a[3]) / 2 - y, (a[0] + a[2]) / 2 - x)) / 45) * 45 % 360)
+
+# --- ambushes: on the first take of each door, and when a register is signed (cause 50 + its number) --
+def ambush(cause, kind, area, n, **k):
+    ajarmap.ambush(m, cause, kind, *[spot(area, RADIUS.get(kind, 20)) for _ in range(n)], **k)
+
+
+ambush(10 + RED, ZOMBIE, "forecourt", 3, angle=270)                       # RED, at the start: the forecourt wakes
+ambush(10 + RED, IMP, "forecourt", 2, angle=270, after=3)
+ambush(10 + GREEN, IMP, "reading", 2, angle=180, near=900)                  # GREEN: the reading corridor, the canteen
+ambush(10 + GREEN, DEMON, "canteen", 2, angle=180, after=3)
+ambush(10 + BLUE, KNIGHT, "stores", 2, angle=0)                             # BLUE: the basement
+ambush(10 + BLUE, REVENANT, "boiler", 1, angle=180, after=3)
+ambush(10 + YELLOW, CACO, "pond", 2, angle=270)                             # YELLOW: the pond court
+ambush(10 + YELLOW, SERGEANT, "pond", 3, angle=270, after=2)
+ambush(10 + VIOLET, KNIGHT, "eastyard", 2, angle=180)                       # VIOLET: the east yard
+ambush(10 + VIOLET, IMP, "lane", 3, angle=0, after=3)
+ambush(10 + PINK, REVENANT, "toweryard", 2, angle=180)                      # PINK: the tower yard, the garden
+ambush(10 + PINK, MANCUBUS, "garden", 1, angle=0, after=4)
+ambush(10 + TEAL, SERGEANT, "upper", 3, angle=180)                          # TEAL: the upper corridor, the drawing office
+ambush(10 + TEAL, SPECTRE, "drawing", 2, angle=90, after=2)
+ambush(10 + ORANGE, SOUL, "pond", 3, angle=90)                              # ORANGE: the pond court
+ambush(10 + ORANGE, IMP, "pond", 2, angle=90, after=3)
+ambush(50 + 2, IMP, "stairhall", 3, angle=270, near=800)                    # the stack signed: the stair hall
+ambush(50 + 3, ZOMBIE, "gallery", 3, angle=0, near=900)                     # the side room signed: the gallery
+ambush(50 + 4, DEMON, "garden", 3, angle=90, near=1200)                     # the hall with no stair signed: the garden
+
 
 
 # =================================================================================================
 # THE MEASURE: THE REGISTERS BY THE RULE'S GEOMETRY, THE STAGES, THE COURTS (checked when built)
 # =================================================================================================
-def rot(k, v):
-    x, y = v
-    return ((x, y), (-y, x), (-x, -y), (y, -x))[k % 4]
-
-
-class Tf:
-    """p -> rot(k, p) + t and z -> z + dz: what a crossing does to where
-    things are (quarter turns only: every portal here is square to x or y)."""
-    def __init__(self, k=0, t=(0, 0), dz=0):
-        self.k, self.t, self.dz = k % 4, t, dz
-
-    def __call__(self, p):
-        q = rot(self.k, p)
-        return (q[0] + self.t[0], q[1] + self.t[1])
-
-    def __matmul__(self, o):                                  # self after o
-        q = rot(self.k, o.t)
-        return Tf(self.k + o.k, (q[0] + self.t[0], q[1] + self.t[1]), self.dz + o.dz)
-
-    def inv(self):
-        q = rot(-self.k, self.t)
-        return Tf(-self.k, (-q[0], -q[1]), -self.dz)
-
-    def box(self, r):
-        a, b = self((r[0], r[1])), self((r[2], r[3]))
-        return (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))
-
-
-def ends(e):
-    """A portal end's line as udmf writes it (v1, v2): the front side is the
-    sector declared first (the recess; the room beyond an odd face; the
-    plain room at a mouth) and polygons are clockwise, so the front is on
-    the right of v1 -> v2; `inn` points from the front to the back."""
-    d = (e["inn"][1] * 32, -e["inn"][0] * 32)
-    c = e["c"]
-    return (c[0] - d[0], c[1] - d[1]), (c[0] + d[0], c[1] + d[1])
-
-
-def quarter(v):
-    return round(math.degrees(math.atan2(v[1], v[0])) / 90) % 4
-
-
-def crossing(S, D):
-    """In through the portal end S, out of D: the engine's rule for a line
-    portal (Line_SetPortal type 1): a point p at S's line comes out at
-    D.v2 + R(p - S.v1), R the turn that lays S's line on D's reversed; the
-    height by the two floors (the portals are aligned to the floor)."""
-    s1, s2 = ends(S)
-    d1, d2 = ends(D)
-    k = quarter((d1[0] - d2[0], d1[1] - d2[1])) - quarter((s2[0] - s1[0], s2[1] - s1[1]))
-    q = rot(k, s1)
-    return Tf(k, (d2[0] - q[0], d2[1] - q[1]), D["z"] - S["z"])
-
-
 def standable(area, r, z, tol=TOL_Z):
     """Whether the player can stand somewhere in the rectangle r of `area`
     with his feet within `tol` of z: the area less his radius, less its
@@ -1170,7 +1394,7 @@ def stage_sets():
 
 
 STAGE_AREAS = [
-    {"passhall", "forecourt", "nightway"},
+    {"passhall", "forecourt", "dais", "nightway"},
     {"dutyroom", "cwsouth", "cwnorth", "stretch", "lobby", "gallery", "vestibule", "reading", "readingway", "canteen",
      "kitchen", "link", "linkvest", "lane", "eastyard", "officew1", "officew2"},
     {"stairhall", "flight", "toplanding", "upper", "drawing", "office0", "office1", "office2", "upperstore", "balcony",
@@ -1259,6 +1483,8 @@ def measure():
     if near[0] < 112:
         bad.append(f"{near[1]} is {near[0]:.0f} from a one-sided doorway's face or gate")
     bad += stubs_alone()
+    if NOROOM:
+        bad.append(f"no room for things in {sorted(set(NOROOM))}")
     # --- the registers -----------------------------------------------------------------------------------
     ANSWERS.clear()
     for n, r in sorted(REGISTERS.items()):
@@ -1286,6 +1512,8 @@ def measure():
              (7, "GREEN in 113, into 113", "reading"), (9, "the boat store's door (into the big store)", "bigstore")]
     for n, name, area in meant:
         M = has(n, name, area)
+        if M and not standable(area, M.box(REGISTERS[n]["box"]), REGISTERS[n]["z"] + M.dz, MEANT_Z):
+            M = None
         if not M:
             bad.append(f"register {n}: the answer meant ({name}, standing in {area}) does not put the double on its plate")
         else:
@@ -1319,7 +1547,7 @@ def measure():
                     at = Mk(r["centre"])
                     ANSWERS[n] = (f"a Pair in {S['name'][6:]} and {D['name'][6:]}, {k} laps", at)
                     if abs(at[0] - mid[0]) > 1 or abs(at[1] - mid[1]) > 1 or abs(r["z"] + Mk.dz - W.z_at(
-                            "link" if n == 5 else "towerfoot", *mid)) > TOL_Z:
+                            "link" if n == 5 else "towerfoot", *mid)) > MEANT_Z:
                         bad.append(f"register {n}: {k} laps put the double on its plate with the player at {at}, not {mid}")
         lines.append(f"    register {n}, the laps (the player standing anywhere he can walk to from the frame he comes "
                      f"out of): {'; '.join(out)}")
@@ -1359,10 +1587,6 @@ def measure():
 
 
 ANSWERS = {}
-REG8_C = crossing(CW_FACE, X_IN_P).inv()(crossing(X_OUT_P, CW_MOUTH).inv()(CW_OUT_AT))
-register(8, "the porter's lodge", plate_box(REG8_C), G, LODGE_TAG)
-REG9_C = crossing(BOAT_FACE, BIG_P).inv()(BIG_END)
-register(9, "the island", plate_box(REG9_C), G, BRIDGE_TAG)
 assert LODGE_IN[0] <= REG8_C[0] - 64 and REG8_C[0] + 64 <= LODGE_IN[2] and LODGE_IN[1] <= REG8_C[1] - 64 <= REG8_C[1] + 64 <= LODGE_IN[3], REG8_C
 assert ISLAND[0] <= REG9_C[0] - 64 and REG9_C[0] + 64 <= ISLAND[2] and ISLAND[1] <= REG9_C[1] - 64 <= REG9_C[1] + 64 <= ISLAND[3], REG9_C
 
