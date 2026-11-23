@@ -96,10 +96,8 @@ def wind(m, x, y, angle, z=30):
     m.thing(x, y, WIND_T, angle=angle, height=float(z))
 
 
-def reach(m, start):
-    """The sectors reached on foot from sector `start`, both ways over every
-    two-sided line that does not block (heights are not looked at: a drop
-    counts as a way back up, which only makes the check stricter)."""
+def ways(m):
+    """Sector -> the sectors beside it over a two-sided line that does not block."""
     text = m.textmap()
     sides = [int(s) for s in re.findall(r"sidedef\{[^}]*?sector=(\d+);", text)]
     nxt = {}
@@ -110,7 +108,17 @@ def reach(m, start):
         k = sides[int(re.search(r"sideback=(\d+);", ld).group(1))]
         nxt.setdefault(f, set()).add(k)
         nxt.setdefault(k, set()).add(f)
-    seen, todo = {start}, [start]
+    return nxt
+
+
+def reach(m, start, nxt=None):
+    """The sectors reached on foot from sector `start` (or from any of a list
+    of them), both ways over every two-sided line that does not block (heights
+    are not looked at: a drop counts as a way back up, which only makes the
+    check stricter). `nxt`: ways(m), when it is made already."""
+    nxt = nxt if nxt is not None else ways(m)
+    starts = list(start) if isinstance(start, (list, tuple, set)) else [start]
+    seen, todo = set(starts), list(starts)
     while todo:
         for q in nxt.get(todo.pop(), ()):
             if q not in seen:
@@ -120,9 +128,11 @@ def reach(m, start):
 
 
 def apart(m, starts):
-    """No part is joined to another on foot: `starts` {part: a sector of it};
-    what is reached from each is reached from no other."""
-    got = {p: reach(m, s) for p, s in starts.items()}
+    """No part is joined to another on foot: `starts` {part: a sector of it,
+    or a list of them (a part whose way on is a door: the sectors beyond its
+    far sides too)}; what is reached from each is reached from no other."""
+    nxt = ways(m)
+    got = {p: reach(m, s, nxt) for p, s in starts.items()}
     for p in got:
         for q in got:
             assert p == q or not got[p] & got[q], f"part {p} and part {q} are joined on foot"

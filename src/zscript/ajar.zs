@@ -464,6 +464,7 @@ class AjarHandler : EventHandler
 		case 64: return "Archvile";
 		case 20004: return "AjarNailer";       // MAP16: it comes to the foot of the stair
 		case 16: return "Cyberdemon";
+		case 7: return "SpiderMastermind";      // MAP33: a post of the turbine hall (third.zs)
 		}
 		return null;
 	}
@@ -1092,7 +1093,8 @@ class AjarHandler : EventHandler
 		// Monsters would walk into the scripted smoke tests. (In a real level
 		// mode 2 is a tour of it as it is played, so it keeps them.)
 		int autotest = CVar.GetCVar("ajar_autotest").GetInt();
-		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2))
+		// (MAP33's tests play its fights in every mode: map33.zs)
+		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2) && !(level.mapname ~== "MAP33"))
 		{
 			let mi = ThinkerIterator.Create("Actor");
 			Actor a;
@@ -1332,6 +1334,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "SOUND") return;     // and the sound lab (soundlab.zs)
 		if (level.mapname ~== "WATER") return;     // and the water lab (watertest.zs)
 		if (level.mapname ~== "LEFT") return;      // and the left-handed room lab (lefthand.zs)
+		if (level.mapname ~== "MAP33") return;     // and MAP33 (map33.zs, from third.zs's tic)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);

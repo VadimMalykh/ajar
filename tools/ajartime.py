@@ -283,7 +283,9 @@ GO_OVER = 34        # how high a go's number floats over the floor under a self 
 
 def figure(m, x, y, what, *, kind=0, angle=0, scale=None, z=0):
     """A still figure for a model of a puzzle solved (shut.zs, AjarFigure):
-    `what` is "me" (the player standing), "walking" (the player mid-stride),
+    `what` is "me" (the player standing), "walking" (the player mid-stride;
+    for these two `kind` 1 to 3 is an earlier self of a map played whole in
+    goes, in its part's colour: MAP33),
     "body" (a dead monster of Doom editor number `kind`, as it lies at the
     end of its death), "plate" (a floor plate, pressed, with a warm light),
     "hung" (a door of colour `kind` standing open, as in a frame),

@@ -12286,3 +12286,239 @@ can be started with a pistol; reckoned as the other levels are
 first go was too fast for the second to win R in time (today: begin the
 level again); the Pair behind bars between two parts; what MAP20's secret
 way out leads to is set when MAP20 is built.
+
+## MAP33 "Third Person": the first playable version (built 2026-11-24)
+
+The first version as decided above, built by a worker (Claude, Opus) in the
+worktree `map33-station`. `MAP=MAP33 ./run.sh` plays it. The generator is
+`tools/map_station.py`, the tests `src/zscript/map33.zs`, the engine the
+lab's `third.zs` with the small changes listed below. Plain textures; each
+part's corridors and doorways tinted in its colour. **Not yet played by
+hand.**
+
+### The map as built
+
+About 8300 x 3100 of rooms (x -16 to 8272, y 896 to 5024) in the frame of
+about 8700 x 5400 the fight zone covers. North is up. The three parts meet
+only through glass, railings and heights (`ajarthird.apart` asserts it). The
+end rooms E1, E2, E3 are a row north to south at the east end, with glass
+between them. Monsters below are on skills 1 / 2 / 3 / 4 ("Just visiting"
+... the hardest); a post of R counts as its monster.
+
+**Part 1, yellow, along the north** (121 monsters on skill 3)
+
+| Room | Where (x, y) | Size | What is there | Monsters 1/2/3/4 |
+|---|---|---|---|---|
+| S, the gatehouse (start) | 0..768, 2560..3200 | 768 x 640 | counter, two pillars, the case of three on the west wall; shotgun, shells, a bonus | 0 |
+| corridor north | 448..576, 3200..3712 | 128 x 512 | zombiemen | 1/2/2/2 |
+| the coal yard, **window hall 1** | 256..1920, 3712..4992 | 1664 x 1280, sky | six two-tier coal heaps (32 and 72 high), the bunker's wall (176) with cacodemons behind it; the gate east (a shutter that opens when the yard is clear) | 23/33/42/47 (zombiemen, sergeants, imps, demons, cacodemons) |
+| the boiler house, **window hall 4** | 1936..3584, 3712..4992 | 1648 x 1280, 384 high | four boilers (288 high, a firing step each), the catwalk (y 4800..4992) 128 up behind a railing; BLUE leans at (3330, 3880), frame 101 in the first boiler's south face, BLUE's far side in the catwalk's north wall; chaingun on the floor, super shotgun on the catwalk | 11/18/21/22 (imps, sergeants on the floor; hell knights, revenants, chaingunners on the catwalk) |
+| the ash tunnel | 3600..4352, 3840..3968 | 752 x 128, low | from the boiler house floor | 3/4/5/6 (demons, spectres) |
+| the cache (**secret 1**) | 4352..4608, 3776..4032 | 256 x 256 | soulsphere, shells, bullets; frame 104 (BLUE hung here leads to the catwalk: a short cut back) | 0 |
+| the pump room | 3600..4608, 4352..4992 | 1008 x 640, at 128 | four pumps; stairs down east | 7/11/16/17 (demons, spectres, hell knights, imps) |
+| the stack court | 4864..6144, 3584..4864 | 1280 x 1280, sky | the chimney (an octagon, solid) in the middle; ledges (96) along the north and east walls with imps; the rocket launcher | 17/25/33/34 (two barons, the arch-vile from skill 3, imps, chaingunners, sergeants) |
+| passage, the gantry | 4928..5056, 3264..3584; 5056..7040, 3264..3392 | gantry 1984 x 128 | the gantry over R, at 0 (R's floor is -128) behind a railing; watched (AjarThirdWatch on its sectors); its shutter at the east end (R's win opens it) | 1/2/2/2 (imps in the passage) |
+| E1 | 7424..8064, 3136..3520 | 640 x 384 | plate 1 at (7808, 3328), time door 1 straight east of it, the case of three on the north wall, glass to E2 | 0 |
+
+**Part 2, green, through the middle** (111 monsters on skill 3, R's 16 posts with them)
+
+| Room | Where (x, y) | Size | What is there | Monsters 1/2/3/4 |
+|---|---|---|---|---|
+| box 2 | 448..704, 2304..2544 | 256 x 240 | glass onto S | 0 |
+| corridors | 704..1024, 2368..3504 | | shells, a bonus | 2/3/4/4 |
+| the gallery | 896..3840, 3520..3696 | 2944 x 176 | three windows onto the coal yard and one onto the boiler house's floor | 5/9/13/14 |
+| the way down to the workshop | 2752..3840, 3104..3504 | | along the workshop's north wall to its door | 2/2/3/3 |
+| the workshop, **window hall 2** | 2688..3840, 2176..3072 | 1152 x 896 | benches (40), lathes (72); VIOLET leans at (3700, 2280), frame 102 in the west wall | 17/24/33/34 (chaingunners, demons, revenants, a mancubus, imps, sergeants) |
+| the armoury | 2368..2688, 2240..2496 | 320 x 256 | behind bars, VIOLET's far side in its west wall: the plasma rifle, two cell packs, a blue armour | 0 |
+| the pump hall | 3968..4736, 2560..3136 | 768 x 576 | four pumps (80) | 11/17/21/22 (cacodemons, hell knights, ...) |
+| the stores | 3968..4736, 2112..2544 | 768 x 432 | shelves; the clerk's nook (**secret 2**, 3968..4144, 2112..2240, a gap of 32 between crates): rockets, a blue armour; a soulsphere before the drop | 8/11/16/17 |
+| the mezzanine | 4752..5056, 2304..3136 | | the drop into R (128) | 3/4/5/5 (imps) |
+| the turbine hall R, **window hall 3** | 5056..7040, 2048..3264 | 1984 x 1216, floor -128 | two turbine casings (96 high), the spider's pit (320 x 320, 40 deep), two condenser pits (192 x 192, 32 deep), six bays (96 high); the steel door (R's win) east; only posts | 7/12/16/17 posts: 4 mancubi on the casings (skills 1, 2, 1, 3), 2 arachnotrons in the condenser pits (1, 2), the spider in its pit (3), 3 revenants and 3 chaingunners in the bays (1, 1, 2, 1, 2, 3), 4 pain elementals (1, 2, 3, 4) |
+| stairs, E2 | 7056..8064, 2720..3120 | E2 640 x 400 | plate 2 at (7808, 2880), time door 2 east of it, the wind plate, the case of three on the west wall, glass to E1 and E3 | 0 |
+
+**Part 3, red, along the south** (50 monsters on skill 3)
+
+| Room | Where (x, y) | Size | What is there | Monsters 1/2/3/4 |
+|---|---|---|---|---|
+| box 3 | 64..320, 2304..2544 | 256 x 240 | glass onto S | 0 |
+| the cable tunnel | 128..1280, 1984..2288 | 1152 x 128, 96 high, trays at 72 | dark | 5/8/10/12 (spectres, imps) |
+| the switchyard | 1280..2816, 896..2112 | 1536 x 1216, sky | eight transformers (112) on plinths, the imps' gantry (160) along the south wall; PINK leans at (1400, 1860), frame 103 in the east wall; the relay room's shutter (never opens) | 13/21/26/29 (arachnotrons, cacodemons, imps, zombiemen, sergeants) |
+| the hut (**secret 3**) | 2832..2960, 928..1056 | 128 x 128 | through a low opening (72): a backpack, rockets, a medikit | 0 |
+| the relay room | 2944..3584, 1792..2160 | 640 x 368 | PINK's far side in its west wall; cabinets; glass onto the workshop | 2/3/4/4 |
+| the corridor, stairs down | 3600..5056, 1856..1984 | | | 4/4/6/6 |
+| the duct | 5056..7040, 1856..2032 | 1984 x 176, at -128 | four windows onto R | 1/3/4/4 |
+| stairs, E3, out | 7040..8272, 1856..2704 | E3 640 x 400 | the exit door (shutter, x 8064) and the way out behind it (exit line at x 8208); the wind plate; the case of three; glass to E2 | 0 |
+
+Totals: skill 1 143, skill 2 216, skill 3 282, skill 4 301 (part 1 63 / 95 /
+121 / 130, part 2 55 / 82 / 111 / 116, part 3 25 / 39 / 50 / 55).
+
+**Each part's length on foot** (`python3 tools/map_station.py --walk`: a grid
+of 16, the player's box clear of walls, steps of 24, no blocking line
+crossed; the doors' detours walked; at 583 units a second):
+part 1 12440 units, 21.3 s; part 2 10942 units, 18.8 s (the armoury is a
+detour of about 1000 more and not in it); part 3 8751 units, 15.0 s. Part 1
+is the longest and part 3 the shortest, but not by much: every part crosses
+the map from west to east, so the difference lies in the fights and the
+door detours more than in the walking.
+
+### Doors, frames, shutters
+
+- BLUE (part 1): leans in the boiler house; frame 101 in the first boiler's
+  face on the floor; its far side on the catwalk (the only way up). Frame
+  104 in the cache: BLUE hung there also leads to the catwalk.
+- VIOLET (part 2): leans in the workshop; frame 102 in its west wall; its
+  far side in the armoury (wanted, not needed).
+- PINK (part 3): leans in the switchyard; frame 103 in its east wall; its
+  far side in the relay room (the only way on).
+- The gate (tag 3351): a shutter between the yard and the boiler house,
+  opened by the yard's win (an AjarThirdWin of hall 1). The gantry's shutter
+  (3352) and the steel door (3353): R's win. The exit door (3354). The relay
+  room's shutter (3356): never opens.
+
+### Supplies (tools/budget.py, by part; each part asserts ammunition's damage at least 1.6 times its monsters' health on skill 3)
+
+| Part | Skill 3: monsters, hp, ammo as damage | Skill 1 | Health, armour | Weapons |
+|---|---|---|---|---|
+| 1 | 121, 15560, 27950 (x1.80) | 63, 7910, x3.11 | 380, 200 | shotgun, chaingun, super shotgun, rocket launcher |
+| 2 | 111, 20650, 36740 (x1.78) | 55, 8870, x3.83 | 305, 400 | plasma rifle |
+| 3 | 50, 6760, 13440 (x1.99) | 25, 3540, x3.42 | 155, 0 | backpack |
+
+A little under MAP19's x2.03 on skill 3, on purpose: the player goes
+through each time door with what he carries (the engine keeps health and
+ammunition; the lab's tests check it), so part 2 and part 3 also have what
+is left of the parts before. A pistol start of MAP33 is a pistol start of
+part 1, which has its own shotgun in S.
+
+### Signs
+
+Corridor and doorway sectors tinted in the part's colour (yellow FFE070,
+green 98EC8C, red FF9C8C; rooms in pale tints of the same). A case of three
+(`three()`: two plates with the yellow and green selves on them, the red one
+walking into a frame at the back, each with its go's number) in S's west
+wall and in each end room. The first line at each go's start comes from
+`src/language.txt` (MAP33_GO1..3). The wind plates' own picture (AJW3: two
+arrowheads on to a plate with a self on it).
+
+### mapinfo
+
+`map MAP33 "Third Person"`: next = "MAP33" (no level after it yet: its way
+out starts it again, as MAP19's did), SKY2, nointermission, nojump,
+nocrouch, music AJM_COPY (the canon: the tune's copy four bars behind).
+
+### Engine and tool changes
+
+- `third.zs`: a hall with no posts and an AjarThirdWin is won when no
+  monster lives in it (`HasWinner`; the yard's gate); the start-of-go line
+  is the map's own when its LANGUAGE has `<MAP>_GO<k>` (`ThirdWords`);
+  AjarThirdWind has its own picture (AJW3; the lab's THIRD shows it too
+  now); `hallMs`, what the halls took this tic (transient, for the tests).
+- `ajar.zs`: AmbushClass 7 = SpiderMastermind (else the spider's post spawns
+  nothing); MAP33 keeps its monsters in autotest mode 1, and the generic
+  test dispatch leaves MAP33 alone.
+- `shut.zs`: AjarFigure "me" and "walking" with args[1] 1..3 wear the
+  colours of earlier self 1..3 (AjarSelf1..3).
+- `thirdtest.zs`: MAP33's tests are called from ThirdTests.
+- `gfx_time.py`: the AJW3 picture. `mapcheck.py`: 20165 stands on a wall.
+- `ajarthird.py`: `reach()` takes several starts, `apart()` a list per part
+  (a part whose way on is a door: the sectors beyond its far side).
+- `budget.py`: importable; `reckon()` and `line()` for a part of a level;
+  the spider; a post counts as its monster.
+- `ajartime.figure`: documented kind 1..3 for "me" and "walking".
+- `build.py`, `src/mapinfo.txt`, `src/zscript.zs`: one entry each, together.
+
+### My choices (small ones the design left open)
+
+- The boiler house is window hall 4 (part 1), so that the gallery sees BLUE
+  hung again with the fight round it as it was.
+- BLUE's short cut: frame 104 in the cache at the end of the ash tunnel.
+- The posts are fenced: blockmonsters lines round the casings and bays, and
+  railings round the pits (nothing is thrown off a post or into a pit; the
+  player cannot fall into a pit either).
+- The relay room's shutter is an ordinary shutter no plate opens.
+- Music AJM_COPY, sky SKY2.
+- The pain elementals' posts stand on R's floor (they fly and leave no
+  body, so no pedestal is asserted for them).
+- Every sector carries `user_part` (1..3) for the tests.
+- Supplies: the ratio asserted is 1.6 on skill 3 in each part.
+
+### Tests (on the last build, a full `./build.sh`)
+
+Checks by hand in the tools image: `tools/mapcheck.py map_station`,
+`tools/thingcheck.py`, `tools/itemcheck.py` (0 problems each; the secrets
+reached), `tools/budget.py map_station`, and the generator's own asserts
+(the parts apart, every hall's mouths closed to monsters, each post's
+island or pit, sight of every post from the gantry, the supplies by part,
+the monster counts 110-130 / 100-120 / 45-55).
+
+- `MAP=MAP33 MODE=1 TIMEOUT=500 EXTRA="+set save_dir /out/saves"
+  tools/smoke.sh` (smoke_MAP33_1.cfg), the whole level scripted, god mode
+  and kills by script (said in the log at each go): **81 of 81**. Go 1: the
+  posts' bodies (13 of the 16 posts on skill 3; the pain elementals leave
+  none) and R's shutters open at the start; the gate shut while the yard
+  lived and open when it was clear (the hall won at 330); BLUE taken and hung, the
+  catwalk reached through it; on the gantry every body in sight (13 of 13);
+  plate 1 opens time door 1. Go 2: box 2; the posts alive and idle, R's
+  shutters shut; the first self as recorded; the yard played as puppets and
+  checked against what go 1 noted at 4 tics, the boiler house at 2, real
+  things unseen; the gate shut and open at go 1's tics; BLUE hung again at
+  its tic; VIOLET hung, the armoury, the plasma rifle; R won at 1261
+  (the steel door and the gantry's shutter open), before the first self
+  comes onto the gantry (2113); time door 2 open with both plates. Go 3:
+  two selves; R and the workshop played from their start, checked against
+  go 2's notes (workshop 4 tics, R 3), the shutters shut before and open
+  after go 2's win tic; VIOLET hung again; PINK hung, the relay room; the
+  exit door opened by the two earlier selves (at 2294; the player waiting
+  in E3); through it; the level began again.
+- `MAP=MAP33 MODE=2` (smoke_MAP33_2.cfg): go 2 stays in box 2: the gantry
+  paradox at go 2's tic 2113 (when the first self comes onto the gantry),
+  the dark after it, USE, go 2's start loaded and played: **15 of 15**.
+- `MAP=MAP33 MODE=3` (smoke_MAP33_3.cfg): the views, 24 screenshots
+  (21 rooms; R from the gantry in go 1, from its floor in go 2, from the
+  duct in go 3), and every check of mode 1: **83 of 83**.
+- `MAP=THIRD MODE=3` 51 of 51, `MAP=THIRD MODE=7` 58 of 58, `MAP=MAP32
+  MODE=10` 34 of 34.
+
+The script's clock (map33.zs): go 1 waits at the foot of the gantry until
+tic 2100 (it gets there at about 1100: see below), holds plate 1 until
+3000; go 2 holds plate 2 until 2900. Mode 3's views hold the player 70
+tics each; its cfg shoots at a view's tic + 35 (runs differ by up to about
+25 tics).
+
+### Measurements (MODE=1)
+
+- What the window halls cost a tic (third.zs's ThirdHalls, timed with
+  MSTimeF): go 1 mean 0.21 ms, worst 4.5 ms; the coal yard's fight (the
+  yard and the boiler house recorded) mean 0.19 ms, worst 1.2 ms; go 2 mean
+  0.26 ms, worst 10.5 ms; R's fight (R and the workshop recorded, the yard
+  and the boiler house played) mean 0.28 ms, worst 5.8 ms; go 3 (all four
+  played) mean 0.02 ms, worst 2.9 ms. The whole tic, wall clock between
+  tics, stayed at 28.6 ms (35 a second) on average; its worst tics (up to
+  2.1 s) are the autosaves at each go's start.
+- Each go's record (the self: 44 bytes a tic): go 1 3018 tics, 132792
+  bytes; go 2 2918 tics, 128392 bytes; go 3 2343 tics, 103092 bytes.
+- Each hall's track (40 bytes a record, 4 a tic): the coal yard 3018 tics,
+  5652 records, 238152 bytes; the boiler house 3018 tics, 3065 records,
+  134672 bytes; the workshop 2918 tics, 5663 records, 238192 bytes; R
+  2918 tics, 4813 records, 204192 bytes. 701 classes in the slots.
+- The autosave at go 3's start: 354767 bytes (go 2's: 231814; the level's
+  own at go 1: about 165000).
+- The scripted times (tics): the yard's fight 92 to 323; the boiler house's
+  524 to 671; go 1 at the foot of the gantry at about 1100; the workshop's
+  fight 402 to 623 of go 2; R's 1069 to 1261.
+
+### Not tested / not played by hand
+
+- Nobody has played it. The tests are scripted with god mode and kills by
+  script; whether the fights are fair, the supplies right and the parts'
+  times as wished is not known.
+- The scripted go 1 reached the foot of the gantry at about tic 1100 (0:31),
+  before the scripted go 2 had won R (1261, 0:36): the test waits there
+  until 2100.
+  In play the first go's fights are far longer than a script's, but a quick
+  first go can still come onto the gantry before a slow second go wins R:
+  then the gantry paradox (MODE=2), and the save at go 2's start.
+- Winding on (the wind plates in E2 and E3) is tested in the lab (THIRD
+  MODE=7) and not in MAP33.
+- The secrets are reachable by itemcheck's reckoning; no script walks into
+  them.
+- Skills other than 3: counted, not played.

@@ -267,6 +267,7 @@ extend class AjarTimeHandler
 	void ThirdTests(PlayerPawn mo)
 	{
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
+		if (mode && level.mapname ~== "MAP33") { Map33Tests(mo, mode); return; }      // map33.zs
 		if (!mode || !(level.mapname ~== "THIRD")) return;
 		SnapChecks();
 		if (ttHold > 0 && !paradox)

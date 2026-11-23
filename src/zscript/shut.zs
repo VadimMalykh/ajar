@@ -356,8 +356,9 @@ class AjarFigure : Actor
 		if (args[2]) scale = (args[2], args[2]) / 100.;
 		switch (args[0])
 		{
-		case 1:         // the player, standing, in their colours
-			if (players[consoleplayer].mo) translation = players[consoleplayer].mo.translation;
+		case 1:         // the player, standing, in their colours (args[1] 1 to 3: an earlier self's, AjarSelf1..3)
+			if (args[1] >= 1 && args[1] <= 3) A_SetTranslation(String.Format("AjarSelf%d", args[1]));
+			else if (players[consoleplayer].mo) translation = players[consoleplayer].mo.translation;
 			break;
 		case 2:         // a body: the last picture of its death
 		{
@@ -403,9 +404,10 @@ class AjarFigure : Actor
 			frame = 2;
 			bBright = true;
 			break;
-		case 7:         // the player mid-stride, in their colours
+		case 7:         // the player mid-stride, in their colours (args[1] as for 1)
 			frame = 2;
-			if (players[consoleplayer].mo) translation = players[consoleplayer].mo.translation;
+			if (args[1] >= 1 && args[1] <= 3) A_SetTranslation(String.Format("AjarSelf%d", args[1]));
+			else if (players[consoleplayer].mo) translation = players[consoleplayer].mo.translation;
 			break;
 		case 8:         // the number of a go (args[1], 1 to 3), floating over a self's head
 			sprite = GetSpriteIndex("AJGN");
