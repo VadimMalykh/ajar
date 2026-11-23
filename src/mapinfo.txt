@@ -34,6 +34,9 @@ DoomEdNums
 	20132 = AjarPassDesk              // the pass lab (pass.zs): a pass desk, that puts the double back on the player
 	20133 = AjarPassRegister          // ... and a register, signed by the double
 	20134 = AjarSoundButton           // the sound lab (soundlab.zs): a switch that picks a door sound or a track
+	20140 = AjarBasin                 // the water lab (water.zs): a basin, a room that holds water
+	20141 = AjarWeir                  // ... and a fixed overflow from one basin into another, with its wheel
+	20142 = AjarRaft                  // ... and a raft, afloat on a basin's surface
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -414,6 +417,17 @@ map PASS "Ajar: the pass"
 	nocrouch
 	music = ""
 	EventHandlers = "AjarPassHandler", "PassTest"
+}
+
+// The water lab (tools/map_water.py, src/zscript/water.zs): MAP=WATER ./run.sh
+map WATER "Ajar: the water lab"
+{
+	next = "WATER"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "AjarWaterHandler", "WaterTest"
 }
 
 // The left-handed room lab (tools/map_lefthand.py, src/zscript/lefthand.zs): MAP=LEFT ./run.sh

@@ -34,6 +34,7 @@ import map_belt
 import map_clock
 import map_oneside
 import map_pass
+import map_water
 import map_optics
 import map_mirror
 import map_time
@@ -52,7 +53,7 @@ import music_trial
 import sfx
 import solve
 
-MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "MAP10": map_hinges10, "MAP11": map_institute1, "MAP12": map_institute2, "MAP13": map_institute3, "MAP14": map_institute4, "MAP15": map_institute5, "MAP16": map_institute6, "MAP17": map_dispatch, "MAP18": map_clockdept, "MAP19": map_paper, "TEST": map_test, "LAB": map_lab, "ENG": map_eng, "LIFT": map_lift, "BELT": map_belt, "CLOCK": map_clock, "ONESIDE": map_oneside, "PASS": map_pass, "OPT": map_optics, "MIR": map_mirror, "TIME": map_time, "TDOOR": map_timedoor, "PLATE": map_plate, "PRESS": map_press, "TWOKEY": map_twokey, "SHUT": map_shut, "SHIFT": map_shift, "SOUND": map_soundlab, "LEFT": map_lefthand, "MAP31": map_secret1, "MAP32": map_secret2}
+MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04": map_hinges4, "MAP05": map_hinges5, "MAP06": map_hinges6, "MAP07": map_hinges7, "MAP08": map_hinges8, "MAP09": map_hinges9, "MAP10": map_hinges10, "MAP11": map_institute1, "MAP12": map_institute2, "MAP13": map_institute3, "MAP14": map_institute4, "MAP15": map_institute5, "MAP16": map_institute6, "MAP17": map_dispatch, "MAP18": map_clockdept, "MAP19": map_paper, "TEST": map_test, "LAB": map_lab, "ENG": map_eng, "LIFT": map_lift, "BELT": map_belt, "CLOCK": map_clock, "ONESIDE": map_oneside, "PASS": map_pass, "WATER": map_water, "OPT": map_optics, "MIR": map_mirror, "TIME": map_time, "TDOOR": map_timedoor, "PLATE": map_plate, "PRESS": map_press, "TWOKEY": map_twokey, "SHUT": map_shut, "SHIFT": map_shift, "SOUND": map_soundlab, "LEFT": map_lefthand, "MAP31": map_secret1, "MAP32": map_secret2}
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
