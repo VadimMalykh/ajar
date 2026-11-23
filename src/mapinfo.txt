@@ -31,6 +31,8 @@ DoomEdNums
 	20111 = AjarContact               // ... the contact a pulse sets off, and its metronome
 	20130 = AjarLaneContact           // MAP18 (clock.zs): a delay lane's contact, counting its own pulse's laps
 	20131 = AjarDelayShutter          // ... the night room's shutter, up while a pulse lives, and its lamps
+	20132 = AjarPassDesk              // the pass lab (pass.zs): a pass desk, that puts the double back on the player
+	20133 = AjarPassRegister          // ... and a register, signed by the double
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -383,6 +385,17 @@ map ONESIDE "Ajar: one-sided doorways"
 	nocrouch
 	music = ""
 	EventHandlers = "OneSideTest"
+}
+
+// The pass lab (tools/map_pass.py, src/zscript/pass.zs): MAP=PASS ./run.sh
+map PASS "Ajar: the pass"
+{
+	next = "PASS"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+	EventHandlers = "AjarPassHandler", "PassTest"
 }
 
 // Sight lines (tools/map_optics.py): MAP=OPT ./run.sh

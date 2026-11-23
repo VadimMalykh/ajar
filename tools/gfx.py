@@ -1308,7 +1308,8 @@ def make_all():
     # a lever is a switch: it moves when it is used, and Doom gives it a sound
     # and the big screen of MAP31's reel: what a camera in the level sees (time.zs, "the reel")
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
-                           + "cameratexture AJREEL 512 224\n").encode()
+                           + "cameratexture AJREEL 512 224\n"
+                           + "cameratexture AJPASSC 256 160\n").encode()   # what the pass's double sees (pass.zs)
     import gfx_square                                            # MAP10's square, stops and depot
     gfx_square.make(out)
     import gfx_time                                              # the time door (ajartime)
@@ -1332,7 +1333,8 @@ def make_all():
     import gfx_dispatch                                          # MAP17's line, crates, notes and board
     gfx_dispatch.make(out, map_dispatch.NOTES)
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
-                           + "cameratexture AJREEL 512 224\n").encode()
+                           + "cameratexture AJREEL 512 224\n"
+                           + "cameratexture AJPASSC 256 160\n").encode()   # what the pass's double sees (pass.zs)
     import gfx_works                                             # MAP32's look (works32.py)
     import map_secret2                                           # ... and the signs it asks for
     works = gfx_works.make(out, map_secret2.SIGNS)
