@@ -10610,3 +10610,144 @@ on "Resident"): about 9000 x 5500, 900 sectors or more, about 250
 monsters, MAP18's mix and weapons in the same order. Company on the first
 take of each door and when a register is signed. No keys, no thief, no
 nailer, no Stray door, no lift.
+
+## MAP19 "On Paper": the first playable version (built 2026-11-23)
+
+Built as decided in "MAP19 'On Paper': the first version, as decided"
+above, on branch `map19` (the generator's two drafts were written before
+/data went read-only; this is the making that was left). `MAP=MAP19
+./run.sh` in the worktree plays it; MAP18's way out now leads to it.
+
+**What is where.** 7952 x 5568 (x 0..7952, y 0..5568), floors from -512
+(the sealed stair's last landing) to 448. 889 sectors, 471 things (207
+monsters placed, the rest pickups, doors, plates and the tests' MapSpots).
+- `tools/map_paper.py`: the level and its measure, now in `tools/build.py`
+  as MAP19 (and in `gfx.py`, for its plaques and the one-sided sign: 11 new
+  pictures, `AJIS332`..`AJIS341` and `AJIY303`).
+- The laps are read off the level's lines, not written in: `LINK_LAP` is
+  frame 106's line less frame 105's (544: the link hall's 512 and its two
+  recesses of 16), `STAIR_LAP` the line of 107 against 108 (544 along, 128
+  down); the generator asserts both. The sealed gallery and the sealed
+  stair are built from them (each sealed landing 288: the lap less the
+  flight's 256), so the double walks on floor all the way down. The plates
+  of registers 5 and 6 stand where 5 and 3 laps put the double.
+- `src/zscript/pass.zs`, the hooks a level needs: `AjarPassRegister.Name`
+  and `Opened` ask `AjarPaper` on MAP19 (elsewhere as before); a register's
+  args[4] is a footbridge: when signed it raises the floors of that tag to
+  the highest beside them and clears the railing lines of that id
+  (register 9, the island); `IsSigned(n)` for the ambushes. A register
+  that opens two things gives both the same tag (register 1: the barrier
+  and the duty room's door, 1901; register 4: the garden door and the hall
+  with no size's, 1904). The message is "Signed in: <name>." and on a
+  second line what opened ("The barrier to the covered way is up." and so
+  on, as decided). The double is not drawn while it stands on the player
+  (within 8): its sprite at the eye whited out the whole view.
+- `src/zscript/ajar.zs`: ambush cause 50 + n, register n signed;
+  MAP19's scripts; the autotest is switched off at the end of MAP17, MAP18
+  and MAP19 (MAP18's test used to stop only when its way out led to MAP18).
+- `src/zscript/map19.zs`: `AjarPaper` (the register names and messages,
+  the words at the start, "Your pass is issued. It counts your steps / and
+  knows nothing about doors.", and at the first crossing that parts the
+  double from the player, "The pass took that door for a hole in the wall.
+  / On paper you are where the white figure stands."); `PaperTest`, the
+  smoke runs. The generator reads the names in `map19.zs` and the build
+  fails if they and its registers disagree.
+
+**Fights.** Skill 3: 264 monsters (imp 102, sergeant 40, zombie 29, demon
+16, knight 16, revenant 16, spectre 14, chaingunner 13, cacodemon 11,
+mancubus 3, lost soul 3, baron 1), hit points 33610, ammunition 68350
+(x2.03; MAP18 x2.10 by the same count); skill 1: 135 (x3.41). Weapons in
+MAP18's order: shotgun ahead of the start, chaingun in the duty room
+(register 1), the super shotgun in the canteen, the rocket launcher in the upper store,
+the plasma rifle at the long cellar's east end. Company on the first take
+of each door (causes 11 to 19, as decided) and on the signing of registers
+1 to 7 (51: the forecourt and the lobby; 52: the stair hall; 53: the
+gallery; 54: the garden; 55: the east yard and the link's vestibule; 56:
+the tower yard; 57: the pond court). The garden's own crowd was cut to 7
+imps and 4 sergeants to pay for 51, 55, 56 and 57.
+
+**The measure** (run in every build, 8.8 s): 66 walk areas, 354 nodes, 19
+frames, 6 far sides, 13 crossings of the building's own, 583 crossings
+measured; each stage one piece on foot; every court with its squeeze in and
+its turnstile out. Register 5's laps: "4 laps: nowhere; 5 laps: link; 6
+laps: nowhere"; register 6's: "2 laps: nowhere; 3 laps: towerfoot; 4 laps:
+toweryard" (both as at the branch's start: 4 laps down the stair also put
+the double on the plate with the player in the tower yard, which was so
+before and is left).
+
+**Checks** (2026-11-23, the full `./build.sh` with the solver, 4 min 18 s):
+- The build: no problem; MAP19's measure as above.
+- mapcheck (889 sectors, 471 things, 207 monsters, 2 secret sectors),
+  itemcheck and thingcheck on `map_paper`: 0 problems each. thingcheck
+  now lets two MapSpots share a spot (registers 2 and 7 are answered from
+  the same place, so their spots are one); nothing else changed in it.
+- `MAP=MAP19 MODE=1`: 73 checks, none failed, `wayOut=plain`,
+  `levelExited`. The answers meant in stage order: RED in 101 (the duty
+  room), into the east yard by GREEN's far side, GREEN taken down from 112
+  and out by the turnstile, GREEN in 102 (the stack), RED in 103 (the side
+  room), BLUE in 104 and up the grand stair (the hall with no stair), the
+  TEAL Pair five laps east (the gallery), the drop into the pond court with
+  GREEN, GREEN in 113 (the boathouse), YELLOW swapped in and both ORANGE
+  leaves carried through it into the tower yard, the ORANGE Pair three laps
+  down (the stair), VIOLET and PINK in the brass frames, out. Each register
+  signed some 30 tics into the wait with its message, and its door open
+  (tags 1901 and 1904: 2 sectors each). The laps T exact: (2720, 0, 0) and
+  (0, 1632, -384). The words at the start and at the parting. Company: every
+  cause came (11 to 16, 18, 19, 51, 55, 56, 57; the second waves, which
+  wait for deaths, came in part, since the run removes the monsters).
+- `MODE=2`, what must not work: 34 checks, none failed: RED in 102 does not
+  sign the stack from the forecourt nor from the dais; GREEN in 103 does
+  not sign the side room near or far; 4 and 6 laps do not sign register 5
+  (nor does running over the plate at 5 on the way to 6); 2 laps down do
+  not sign 6; passing over register 1's plate at a run signs nothing, and
+  stopping on it does; none of the rest signed.
+- `MODE=3`, the building's own: 51 checks, none failed: the covered way
+  (north 51 tics with the double ahead in the lobby, south 6), the
+  porter's lodge signed from the covered way's end and its secret found;
+  the boat store into the big store, the double out over the water onto
+  the island, register 9 signed and the footbridge up (floor to 0 in 22
+  tics, the railing gone), back out undoes it, then onto the island on
+  foot (its secret: both secrets found); the gazebo's four faces each
+  into the hall with no size and back; desks 1, 2, 3 and 4 put the double
+  back; the east yard and the tower yard each entered by the squeeze empty
+  handed and not with a door, left by the turnstile with a door and not
+  entered back by it; the pond court entered by the balcony's drop with a
+  door and left by its turnstile.
+- `MODE=4`: 17 views, looked at: the pass hall and its brass frames, RED
+  by 101 with the double behind the duty room's glass, the double ahead
+  from the covered way's end, the stack behind glass, the sealed gallery
+  through the glass after two laps, the grand stair and the hall with no
+  stair, the water tower from the foot and from the head, the pond court
+  from the balcony, the avenue, the gazebo, the east yard, the tower yard,
+  the upper corridor, the long cellar, the automap. Fixed after the first
+  look: the double drawn on the player whited out two views.
+- Fixed on the way: the tower strongroom's door could not open (the ring
+  round it was a wall of no height, and a door stops at the lowest ceiling
+  beside it: it is as high as the room now).
+- Regressions, on the same package: `MAP=PASS MODE=1..4` 50, 21, 8 and 26
+  checks, none failed (as in "The pass lab"); `MAP=MAP18 MODE=1` its 7
+  checks and `levelExited` (the same 8 lines as from `dc0512a`'s package,
+  run again beside it), and the run stops at its exit now that it leads to
+  MAP19; `MAP=ONESIDE MODE=1` 32 checks, all passed.
+- Every other map's wad (37) built byte for byte as from `dc0512a`; the new
+  entries are MAP19's wad, `map19.zs` and the 11 pictures; changed:
+  `mapinfo.txt`, `zscript.zs`, `ajar.zs`, `pass.zs`.
+
+**Departures.** 7952 x 5568, not about 9000 x 5500 (the measure's rules
+held at this size; nothing was stretched to reach it). 264 monsters on
+"Resident" against about 250: the company on signing (51, 55, 56, 57)
+was added, the garden trimmed. The answers 2 and 7 are one place (the
+reading corridor), as the design has it (the double goes into the stack
+from 102 and into the boathouse from 113 from the same floor). Register 4
+opens the hall with no size's door as well as the garden door (one tag).
+No signs with frame numbers. The footbridge is a register's args[4] in
+`pass.zs`, so any level can have one.
+
+**Not tested / not played by hand.** The runs place the player at each
+frame and hand him the doors (as MAP18's): the stages are not walked
+between answers, the strongrooms' doors are seen open but VIOLET and PINK
+are handed over, the balcony is entered at its edge. The fights (the
+scripts remove the monsters; only the first wave of each ambush is made
+to come); desks 1 to 3 in MODE 3 with T set by the script; the timings
+with real input; the look in the hardware renderer; the level from MAP18's
+way out by a real exit (MAP18's run stops at its exit). Not played by hand.
