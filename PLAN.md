@@ -10890,3 +10890,56 @@ scripts remove the monsters; only the first wave of each ambush is made
 to come); desks 1 to 3 in MODE 3 with T set by the script; the timings
 with real input; the look in the hardware renderer; the level from MAP18's
 way out by a real exit (MAP18's run stops at its exit). Not played by hand.
+
+## The sound lab, second try: recordings (built 2026-11-23, on trial in a worktree)
+
+Vadim, after playing the first lab: "both sounds and music are pretty bad,
+can we try other options?" So nothing made by script is in the lab any more:
+the six synthesised door sounds are gone, and the five MIDI pieces are out
+of the package (`tools/music.py` is still in the tree, not called, until
+Vadim says whether it was the instruments, the tunes or both). What the
+section above says about the room, the switches and the `PlayTake` /
+`PlaySet` / `PlaySwap` hook still holds; a swap's set sound now comes 9
+tics after the take.
+
+**Door sounds: cut from CC0 recordings** (`assets/sounds/kenney-rpg/`: "RPG
+sounds" by Kenney Vleugels, CC0, no credit required; `tools/sfx.py` decodes
+them through libsndfile, cuts silence, layers, brings the peak to -3 dBFS
+and writes 22050 Hz WAVs, `sndinfo.txt` and the list `ajsounds.txt`). A
+candidate is one line of the table in `sfx.py`; the lab reads the list.
+
+| | Take | Loudest 100 ms | Set | Loudest 100 ms |
+|---|---|---|---|---|
+| 1 | door opens 1, 0.80 s | -15.3 | door shuts 1, 0.65 s | -14.0 |
+| 2 | door opens 2, 0.80 s | -16.3 | door shuts 2, 0.60 s | -13.5 |
+| 3 | latch, 0.23 s | -22.1 | door shuts 3, 0.70 s | -12.0 |
+| 4 | latch, then creak, 0.35 s | -22.1 | door shuts 4, 0.59 s | -14.7 |
+| 5 | click, 0.42 s | -23.6 | shut and latch, 0.65 s | -14.0 |
+
+Doom's door is at -12.5. The recordings are not compressed, so the three
+latch and click takes are about 10 dB under it: if one of them is the right
+sound but too quiet, it gets loudness by a limiter then, not before.
+
+**Music: recorded pieces on trial, not committed.** They are 4 to 8 MB each,
+so they stay in the worktree's `trial/music/` (git-ignored) with a list,
+`tracks.txt`; `tools/music_trial.py` puts whatever audio is in that folder
+into the package as `music/AJT01...` and writes `ajmusic.txt`. A build
+without the folder (main's) has no music and the lab says so. Any file put
+there appears in the lab, which is how tracks from an AI tool, or any other
+find, get compared with these. The first six are Kevin MacLeod's
+(incompetech.com, CC BY 4.0: a credit line in the package if one stays),
+chosen by title and description, unheard, as six directions: Lobby Time
+(lobby bossa), Local Forecast - Elevator (lift music), Frost Waltz (a celesta
+waltz), Investigations (plucked strings), Gymnopedie No. 1 (Satie),
+Comfortable Mystery.
+
+Checked: the walkthrough (`soundlab=ok`, 77 checks with six tracks, 65 with
+none); a run with sound on and a null device, in which GZDoom decoded the
+ten WAVs at their lengths and started all six MP3s; MAP01, TEST and the
+thief lab print what they printed before. Not checked: how any of it
+sounds.
+
+When Vadim has chosen: the chosen take and set become the game's (the
+defaults in `TakeName` / `SetName`); the chosen music is committed, each
+piece given its maps in `mapinfo.txt`, with a credits file; `tools/music.py`
+goes or stays by his answer.
