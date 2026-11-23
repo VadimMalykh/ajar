@@ -10077,3 +10077,171 @@ figures as before; mapcheck, thingcheck, itemcheck on `map_clockdept`: 0
 problems each; `MAP=MAP18 MODE=1` 8 checks with levelExited; two headless
 views of the wall (from the hall's middle and from the west): one pair, one
 plate, no seam in the wall. Not played by hand.
+
+## Ideas still unused (looked through 2026-11-23, before MAP19)
+
+Vadim, before MAP19: "check what other ideas we still have in plan and could
+use here". A list made from this file; where each is written down is in
+brackets. Nothing here is new.
+
+- **Door types**: the Flip door (designed; "Flip door"); One-way, Small (a
+  hatch: shots and sight, no walking), Heavy, Tilted (the type table).
+- **Geometries the player builds** ("Levels 11 to 30"): the canal lock
+  (water through a door; the campaign table's "water and light through
+  doors"), the train of rooms, the roundabout, the bottle; "the arrangement
+  is the map" ("Ideas for the next levels", 3).
+- **Effects**: the jigsaw wall (the one engine question still open:
+  something wider than one door through two openings); the pinwheel as a
+  thing that is built (the lab has it, no level); triangle rooms, the round
+  room, the model room.
+- **Time**: the timetable; from "Time doors": two places at once (an earlier
+  self holds the plate), the future as a warning, the future as a contract.
+- **The second round's list**: the corridor of chosen length outside a
+  timed run; the way up is down (MAP16 closed its well, MAP18's stair is
+  free).
+- **One-sided doorways**: one-way sight in a fight (wants the missile fix of
+  "The one-sided doorway lab", E), a carried door hung at one.
+- **Set-up-and-swap one step deeper** (Vadim, 2026-11-15).
+- **Kept for levels of their own**: MAP20's left-handed copy; the map in two
+  halves and three goes (21 to 30).
+- **The readers of the second round's table**, used: straightness (the
+  beam: 13, 15), the order of rooms (the crate: 17), the length of a loop
+  and of a way (the pulse and the run: 18), height (the lift: 12, 14). Not
+  used: direction (a circuit one way round); and no reader so far is the
+  player's own walk.
+
+What MAP19's outline below takes: two places at once (by paper, not by
+time), the player's walk as the reader, the pinwheel, the corridor of
+chosen length and the endless stair as things that are needed, MAP09's
+chain for the way out. Claude's candidates for MAP20 or after: water (the
+canal lock; it wants a lab of its own: a water level that moves, swum in,
+seen through a hung door), the Flip door.
+
+## MAP19 "On Paper": the pass and its double (2026-11-23, Claude's outline; not agreed; nothing built)
+
+**Vadim** (2026-11-23, MAP18 played): MAP19 "comparable size or even bigger,
+with more doors and spatial paradoxes. MAP18 has a lot of frames, but almost
+all are optional, I can pretty much finish the map without using most of
+them. For MAP19 could we do something that will force me to experiment with
+map geometry (we had something in MAP17, could be done here, other way,
+without transport, but similar idea). So big map with internal and external
+areas, with multiple interesting paradoxes on the way, part of which I can
+(or even forced) build myself. Also exit should be with door (or even
+couple), not ready as it's done in MAP18."
+
+Everything below is Claude's, to argue over. **Nothing is built and the
+engine has not been asked**: the lab (map PASS, task `pass-lab`) was started
+the same day; its results go in "The pass lab", after this section.
+
+**One idea: the pass counts your steps and knows nothing about doors.**
+MAP17's crate went where the doors sent it and was read at the end. Here
+the player is what the doors send, and what is read is where they would be
+without them.
+
+- **The pass.** Issued at the pass office, at the start. The institute
+  keeps your place by it: a white paper double stands where the pass says
+  you are. To begin with, on you.
+- **The rule.** The pass counts everything the body does (steps, turns,
+  stairs, a ride in the lift) and takes every door for a hole in the wall.
+  Step through any door of the game's (hung, a leaf of a Pair, the
+  building's own gates, the odd face of a one-sided doorway): you are at
+  its far side, and the double walks on through the wall behind the frame,
+  into whatever the building really has there. From then on it does what
+  you do, from where it is, turned as the door turned you: it steps when
+  you step and turns left when you do.
+- **It is paper.** Walls, glass, gaps and monsters are nothing to it,
+  nothing sees or hurts it, it carries nothing and opens no door. It may
+  stand in the air or in the ground.
+- **Back through the same door undoes it.** A pass desk (a brass plate in
+  the floor, one at the start and one in each part of the grounds) puts the
+  double back on you.
+- **Registers** are the locks: a signing desk on a floor plate, in a room
+  with no way in, seen through glass or a grille. The double standing on
+  one for a second, at its height, signs it, for good; passing over it
+  signs nothing. Each register opens something (a steel door, a bolt drawn
+  from inside its own room) and says what.
+- **What is shown**: the double itself, white, wherever it is in view; its
+  mark on the automap, which draws the building as it is built and is here
+  the tool and not the spoiler; a line on the screen saying how far off and
+  how many floors up or down it is; a lamp on each register.
+
+**Why this makes the player build geometry.** Where the double can be put
+is decided by the frame (what is behind its wall, which way it faces) and by
+the room the far side gives to walk in: the double's room to move is the
+player's. A register 96 behind a frame's wall is one hanging. One 700 behind
+it needs a far side with 700 of floor ahead. One off to the side needs a
+door that turns (a frame on a wall at a right angle to its far side). One a
+floor up needs a far side at the foot of a stair or by the lift. And one
+further than any room is long, or deeper than the building is high, needs a
+paradox as a pump: every lap of an endless corridor sends the double one
+corridor further, every lap of an endless stair one flight deeper. The
+building's own paradoxes pump too: MAP18's longer way back moves the double
+768 at every round trip.
+
+**So the walls have things behind them.** The long gallery really goes on
+beyond its end wall, bricked up, a register 2500 down it, seen through a
+grille; the stair really goes on down behind the wall at its foot. The
+double walks the real corridor and the real stair while the player laps the
+piece that is left.
+
+**The place**: the gatehouse and pass office (MAP18's street doors say
+PASSES), the administration block, and the grounds. To leave the institute
+the pass has to be signed off in offices that have no doors.
+- *The gatehouse and forecourt* (the start; outdoors and small buildings).
+  The way out is here and seen at once: two brass frames at the street gate.
+- *The administration block*: two or three floors, a stair, a lift, the
+  long gallery, the plans archive, offices; the sealed duty room, stack and
+  mezzanine.
+- *The grounds* (open): the avenue between two arches (the endless
+  corridor outdoors), the pond with a pavilion on an island, the water
+  tower with the stair that goes on down, the boiler house, the garages.
+- *The building's own paradoxes on the way* (fixed, as MAP18's, each
+  marked): a longer way back between the gatehouse and the block, where the
+  double is first seen to drift before any door is hung; a kiosk bigger
+  inside; the turn-round; the inside-out booth as a gazebo in the grounds.
+
+**The doors** (eight; MAP18 has five): RED (far side across the forecourt
+from the duty room's glass: a short room), GREEN (the end of a long
+corridor: a long room), BLUE (the foot of the grand stair: height), YELLOW
+(the lift's car), both TEAL and both ORANGE leaves (any two frames: the
+pumps and the turns), VIOLET and PINK (the way out). About 36 frames.
+
+**The orders**, each a register:
+1. *See it*: the duty room, 96 behind a frame in its own wall. RED, whose
+   far side looks at the duty room's glass: the player watches the double
+   walk in.
+2. *Room to walk*: the stack, 700 deep. RED's far side is too short;
+   GREEN's is long enough.
+3. *Turned*: a register off to the side of its frame.
+4. *A floor up*: the mezzanine.
+5. *Further than there is room*: down the bricked-up gallery. A Pair in the
+   gallery's two ends, and laps.
+6. *Deeper than the building*: down the bricked-up stair. A Pair at the
+   foot and the head, and laps.
+7. *Round the corner* (the secret): a pump, a quarter turn, the pump again.
+Orders 1 to 4 open the building in stages; 5 and 6 each draw the bolt of a
+strongroom, VIOLET in one and PINK in the other.
+
+**The way out**: both doors hung in the two brass frames at the gate (MAP09's
+chain, `way_through`): two doors, each won by a paradox the player built.
+
+**Everything is reached on foot** inside a stage, as in MAP18: no keys, no
+thief, nothing can be lost. The sealed rooms are the double's. No solver
+PUZZLE; the generator measures instead, in the build: for every register,
+which hangings (one crossing, then two) can put the double on it from floor
+the player can stand on, so that orders 1 to 4 have a few answers each and
+5 and 6 only the pumps.
+
+**Size**: over MAP18's: about 9000 x 5500, 900 to 1100 sectors, some 250
+monsters. Fights of the usual kind; company when a register is signed.
+
+**Open**: whether monsters should take the double for the player (a decoy);
+what the line on the screen says; the name ("On Paper" is Claude's
+candidate).
+
+**Other ways to do what Vadim asked, not taken** (Claude): water through
+doors, the level read by where it stands (the canal lock; the biggest
+unknown in the engine); locks of several kinds from what is built already
+(a target that faces away and is shot through the room that is its own
+neighbour, the way up that is down, a sight through two doors), which is
+the quickest and has no rule of its own.
