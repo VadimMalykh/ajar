@@ -383,6 +383,20 @@ map MAP32 "Double Shift"
 	sky1 = "AJZSKY", 1             // the look's stars (gfx_works.py), drifting; the plain level has no sky
 }
 
+// The third secret level (tools/map_station.py, src/zscript/map33.zs; the
+// engine third.zs): a power station played whole in three goes. MAP20's
+// secret way out (the left-handed bath, not built yet) will lead here; until there is a level
+// after it, its way out starts it again (as MAP19's did).
+map MAP33 "Third Person"
+{
+	next = "MAP33"
+	sky1 = "SKY2", 0               // the coal yard, the stack court and the switchyard are open
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_COPY"             // the canon: the tune's copy four bars behind
+}
+
 // The Pair door's demo (tools/map_lab.py): MAP=LAB ./run.sh
 map LAB "Ajar: the lab"
 {
