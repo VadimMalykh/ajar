@@ -814,8 +814,12 @@ LV = (2880, 3456, 3712, 3712)
 DESK3 = (3392, 3504, 3520, 3568)
 room(LV, G, look("LB", "FL", "KL", 190, 256, PALE), [(DESK3, DESK_F)], name="linkvest")
 gap((2880, 3392), (2944, 3392), (0, 1), G, "CO", "LB", "gallery", "linkvest")
-for y1, z in ((3392, 40), (3424, 16)):                                    # its side door: two steps down to the vestibule
-    m.sector(rect(3296, y1, 3360, y1 + 32), floor=z, ceil=z + 96, light=170, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+# its side door: two steps down to the vestibule, under one lintel a door's height over the hall's floor. (A lintel
+# that came down with the steps let the player in and never out: a step is left only when the whole of the player
+# is off the floor above, and by then they stood under the second step's lintel, 48 over the hall's floor.)
+for y1, z in ((3392, 40), (3424, 16)):
+    m.sector(rect(3296, y1, 3360, y1 + 32), floor=z, ceil=LINK_Z + ajarmap.DOOR_H, light=170, wall="AJTRIM", ftex="AJTRIMF",
+             ctex="AJTRIMF")
 over((3296, 3392), (3360, 3392), "LB")
 over((3296, 3456), (3360, 3456), "LB")
 W.link(W.node(3328, 3376, "the link hall's side door", "link"), W.node(3328, 3472, "the link hall's side door", "linkvest"), 96)

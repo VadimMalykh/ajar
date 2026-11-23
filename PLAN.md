@@ -10891,6 +10891,44 @@ to come); desks 1 to 3 in MODE 3 with T set by the script; the timings
 with real input; the look in the hardware renderer; the level from MAP18's
 way out by a real exit (MAP18's run stops at its exit). Not played by hand.
 
+### MAP19: the link hall's side door let the player in and never out (fixed 2026-11-23)
+
+**Vadim** (2026-11-23, playing, in the link hall): "I still cannot get out of
+here. Exit is too small."
+
+- **Why.** The side door was two steps of 32 down from the hall (floor 64) to
+  the vestibule (0), each under its own lintel 96 over the step: 136, then
+  112. The engine lets a body down from a floor only when the whole of its
+  box (the player's is 32 by 32) is off that floor, and until then it has
+  to fit, at the upper floor's height, under every ceiling the box is under.
+  Off the hall the box is already under the second lintel, 48 over the
+  hall's floor, and the player is 56. Coming up he fits, so the door was a
+  trap: with both TEAL leaves hung in 105 and 106 there was no other way
+  out of the hall. The runs never walked it (they put the player in the
+  hall).
+- **Fixed** in `tools/map_paper.py`: both steps under one lintel, a door's
+  height (96) over the hall's floor.
+- **So that it is found next time**: `tools/mapcheck.py` reports `LINTEL`,
+  a step down that is shut this way (the player's box put just beyond every
+  straight piece of edge between a floor he gets to and a lower one; shut
+  when nowhere along it is free and a ceiling within 40 beyond is less than
+  56 over the upper floor; doors and sectors with an id left out). It
+  reports the old door and not the new one. `MAP=MAP19 MODE=1` now walks out
+  of the hall by the side door at a run, back in, and out at a walk (6
+  checks): on a package with the old door the player stops at y 3407.7,
+  still at 64, both times (4 of the 6 fail), with the fix all pass.
+- **Checks**: the full build; mapcheck on `map_paper` 0 problems;
+  `MAP=MAP19 MODE=1` 79 checks, `MODE=2` 34, `MODE=3` 51, none failed,
+  `levelExited`.
+- **The same check on every other map** (38 generators): one more place,
+  MAP12's store, "a hole and steps out": the hole (ceiling 64 over the
+  store's floor) opens straight onto steps 16 deep, so by the same rule the
+  player on the first step is still under the hole, in both directions. Not
+  yet asked of the engine; the next task. (MAP09's one report was a shut
+  door at the foot of a step, which opens: sectors of no height are now
+  left out.) The other problems mapcheck prints on old maps (41 `WALL`, 1
+  `VOID`) are not of this kind and were there before.
+
 ## The sound lab, second try: recordings (built 2026-11-23, on trial in a worktree)
 
 Vadim, after playing the first lab: "both sounds and music are pretty bad,
@@ -11089,6 +11127,300 @@ piece. (Asking a headless run what plays at a level's start answers "no
 music", for stock Doom II too, so that is not a check.)
 
 Still open: the title screen and the text screens have Doom's music.
+
+## MAP20 "High Water": water through doors (2026-11-23, outline; nothing built)
+
+**Vadim** (2026-11-23): "Let's start working on map20. Should be something
+special like map10 was. Also this should have another secret exit (secret
+map will be later)." Of three proposals he took the first: "Yes 1 is good."
+And on "special": it does not have to be a bus or a thing of that kind;
+that was what was special for MAP10, "for map 20 it can be anything else".
+Everything below is Claude's, to argue over. **Nothing is built and the
+engine has not been asked**: two labs were started the same day (map WATER,
+task `water-lab`; map LEFT, task `lefthand-lab`); their results go in "The
+water lab" and "The left-handed room lab", after this section.
+
+**One idea: water uses doors too.** No new rule. Core rule 4 says everything
+uses doors, and the campaign table of the first day had "water and light
+through doors". Light has had 13 and 15. What makes it the act's last
+level: in 11 to 19 a hanging joined two places and was undone by taking
+the door down. Water stays where a door put it. The building is changed,
+slowly and in sight, and the door is free again.
+
+**The rule as the player meets it**: water stands level on both sides of a
+hung door, measured from the door's sill (a door joins floor to floor).
+- *The reservoir* never runs dry and *the outfall* never fills. BLUE's far
+  side is in the reservoir, 96 or so of water over its sill; GREEN's is in
+  the outfall.
+- **The height of the frame sets the depth.** BLUE in a frame at the floor
+  makes a pool. BLUE in a frame on a gallery fills the hall to the gallery
+  and 96 over it.
+- **GREEN is a drain down to its own sill**: in a floor frame it empties the
+  room, in a frame half-way up it leaves the room half full. BLUE and GREEN
+  in one room: a level held near GREEN's sill, and a current from the one
+  to the other.
+- **A Pair is a pipe, and it lifts.** It joins sill to sill: a leaf low in
+  a full room, its twin in a frame 192 higher in another, and the second
+  room's water stands 192 over the first's.
+- **Water stays.** Take BLUE down and the pool is still there. To get it out
+  again takes GREEN, or a pipe to somewhere lower.
+- How it is reckoned (the lab builds it): every room that holds water is a
+  basin with a surface, a floor, a brim and an area; each hung door between
+  two basins passes, every tic, a volume in proportion to the difference of
+  the two depths over the sills, more freely where it falls out onto a dry
+  side. So water rises and falls over seconds, and what settles is what the
+  sentences above say.
+
+**What water does for the player.** It floats them up to ledges and frames
+no stair reaches, with a door in hand. Drained, it uncovers frames,
+hatches and what lay on the bottom. It shuts ways (a passage under water is
+a dive, a drained moat is a walk) and so the arrangement is the map once
+more ("the arrangement is the map", used by 19 for doors: here a court is
+entered when its water stands right). It carries what floats, if the lab
+finds a floating thing worth having. It drowns what walks, if that rule is
+kept (below).
+
+**The place**: the waterworks behind and under the institute, indoors and
+out, at MAP19's size or a little over (about 9000 x 5500, 900 sectors, 250
+monsters). The water tower (MAP19's grounds show it from the other side),
+the pump house, the staff baths and the swimming bath, the boiler house
+with its tall feed tank, the cooling hall of the big machine (flooded since
+the day it was left: the first room the player has to drain), the lock
+between the upper and the lower yard, the wheel house, the outfall on the
+river.
+
+**Steps**, each a thing to do, as in 11 to 13:
+1. *See it*: the baths, at the start. BLUE in the floor frame: a plunge
+   pool. BLUE in the gallery's frame: the hall fills and the player floats
+   up to the ledge with the way on.
+2. *Drain it*: the cooling hall, found full. What is needed is on its
+   floor; GREEN's frames are at three heights, and which is used decides
+   what is left standing.
+3. *The pipe*: the boiler house. The feed tank is filled from the bath
+   below it by a Pair, low leaf and high leaf, and climbed by floating.
+4. *The lock*: a chamber between two yards with a frame at each height.
+   The player rides the water up with a door in hand: the way a door is
+   carried to where no stair goes.
+5. *The circle*: the wheel house (the way out, below).
+
+**The way out: the wheel.** A spillway from an upper pool down to a lower,
+a wheel in it. A leaf at the foot and its twin at the head: the water
+falls into its own source and goes round for as long as both hang, if
+there is water enough below, and the wheel turns. The institute's
+perpetual motion machine, which the patent office never passed. While it
+turns it holds the sluice to the machine hall open: the way to 21 to 30.
+It wants three hangings at once (the Pair in the spillway, BLUE feeding
+the lower pool from a frame high enough) and the water standing right in
+two rooms, with the leaves and BLUE still needed elsewhere until then.
+Whether the last link is a brass frame and a door as well (Vadim asked of
+19 that the way out be made with doors) is open.
+
+**The secret way out: the left-handed copy** (Vadim, 2026-11-19: "for
+MAP20's secret exit"; see "MAP20's secret way out"). The swimming bath has
+a wall of mirrors, and one pane is an opening onto the bath built
+reflected. The tells: the player is not in it, nor the wave they make.
+Claude's addition, to argue over: the pane is above the tiles, out of
+reach from the floor, and is come to by flooding the bath and swimming up
+to it. Water goes through the opening as through any door, so the
+"reflection" fills as the bath does and stays true. In the left-handed
+bath one thing is not as it was: a door in the side wall, and the secret
+way out behind it. Until the secret level is made it leads on as the plain
+one does.
+
+**Fights only this level can have**: a hall that fills while it is fought
+in, the dry ground growing smaller; a cell flooded before it is entered,
+or drained to let out what was kept in the tank; a sluice opened on the
+player by an ambush, to be answered with GREEN; cacodemons and lost souls
+over water where nothing else can follow.
+
+**Nothing can be lost**: to be made true by construction, as in 19, and
+checked in the build. Every basin has a brim under its ceiling with an
+overflow to the outfall, so no room fills to the top and there is air at
+every surface. BLUE and GREEN can always be fetched by swimming, which
+needs no door. Whether the solver can carry water in its state (levels are
+numbers, not places) is not known; the generator's own measure, as 19's,
+is the likelier proof.
+
+**Waits for the labs**:
+- *Water*: a surface a script moves, in which the player swims (the levels
+  have `nojump`: how they rise is the first question); how it is drawn
+  through a hung door, level and while the two sides differ; taking and
+  hanging a door under water; shots and monsters in it; the rule of flow
+  settling at the levels written above; the wheel.
+- *The left-handed room*: a room built a second time reflected, with its
+  walls' writing and its props turned; whether the opening passes for a
+  mirror among mirrors.
+
+**Open, for Vadim**:
+- Whether what walks drowns (a monster whose head is under for three
+  seconds takes harm; the lab has it behind a switch). It makes flooding a
+  weapon, which the pitch's "disposal" promised and the institute has not
+  used; it also lets a patient player empty rooms without a fight.
+- Whether the player can drown (Doom's air supply), or dives are free.
+- The name ("High Water" is Claude's candidate; "Finding Its Level" the
+  other).
+- Company: none of Ajar's own (thief, nailer, lodger, repainter) is
+  proposed. A thief that takes BLUE while a hall is filling would be the
+  one to add.
+
+**The other two proposals, not taken** (Claude's, kept as notes):
+- *The vivarium*, "Feeding Time": the puzzle is the company. The institute
+  kept what came through the doors: cells, runs, observation rooms. The
+  bottle, the feeding hatch (the Small door), glass that shows one way (the
+  one-sided doorway in a fight), two cells set on each other; the first
+  monster too wide for a door, and the jigsaw wall as its gate (three doors
+  side by side in order are one wide opening; out of order the beast is
+  seen in shuffled strips). Wants the one test never run: something wider
+  than a door through neighbouring openings. Claude: a candidate for a
+  level of 21 to 30.
+- *The exam*, "Full Circle": one dead machine in the central hall, the
+  wings lifted from 11 to 19 as MAP10 lifted the town; it starts when the
+  beam, the crate, the pulse, the lift, the weight and the paper double all
+  arrive at once, and there are too few doors, so one hanging has to serve
+  two readers. Everything it needs is built; no new sight, and a heap of
+  ideas.
+
+## MAP33, the third secret level: the whole map in three goes (2026-11-23, outline; nothing built)
+
+From MAP20's secret way out (the left-handed bath). It takes Vadim's "Idea
+for a map of 21 to 30: the whole map in three goes, two switches and a
+door" (2026-11-22) and makes it the third secret level. **Nothing is built
+and the engine has not been asked**: a lab was started the same day (map
+THIRD, task `third-lab`); its results go in "The three goes lab", after
+this section.
+
+**Vadim** (2026-11-23):
+- The three goes map is the next secret map. And the rule for the rest of
+  the game, to Claude's question whether copies of the player stay in the
+  secret maps while 21 to 30 get time as "the door to before" (a room built
+  twice, then and now: no recording, no copy, no paradox death): "Yes,
+  let's build map33 suggested way." Claude reads the yes as both.
+- No learning room at the start: "most of the players, who found secret
+  level 3 will also find previous 2".
+- "Quite a big map, which can be went through 3 times by different paths
+  (maybe sometimes crossed, but mostly separate). And the question how do
+  we direct player to proper way?"
+- **The future seen**: "what if the very first copy at some moment will
+  cross some room, that will show corpses and other evidences of the battle
+  happened there. And only on the second go he will fight there, so in
+  first go he kind of saw future. I understand that we cannot place corpses
+  how they will be placed after real battle, but still wouldn't it be a
+  great idea".
+
+Everything below is Claude's, to argue over.
+
+**What the player is told, in one sentence**: three parts, three goes; the
+time door at the end of a part leads to before, into the start of the next
+part.
+
+**How the player is sent the right way** (Vadim's question): they cannot
+take a wrong one.
+- *The box is the start of the next part.* A time door has always led into
+  a box that looks on the hall through glass. Here box 2 and box 3 look on
+  the start hall: the player sees their earlier self set off, and the only
+  way out of the box is into its own part.
+- *No part is joined to another on foot.* Where they cross it is glass, a
+  height or a railing. So the building answers "who goes where", and inside
+  a part the player is as free as in any level: loops, side rooms, secrets.
+- *A colour for each part*: the lamps over its doors, a line on its floor,
+  and the earlier self of that go wears it. The sign at the end shows three
+  figures in the three colours: one on each plate, one walking through the
+  door.
+- *Clocks.* The go's clock is on the HUD as in MAP32, and the timetable
+  (table.zs) says when an earlier self crosses the turbine hall and when it
+  steps on its plate.
+
+**The crossing room: the future seen** (Vadim's idea, the heart of the
+level). The turbine hall, on three heights.
+- Go 1 crosses it on the crane gantry and sees the floor below after a
+  battle: bodies, wrecks, scorched walls. Go 2 comes in at the floor and
+  fights that battle. Go 3 passes under the floor in a glass duct and sees
+  whatever is true at that moment: the hall waiting, the fight (the earlier
+  self in it, as fought), or the bodies.
+- **It can be made honest.** What leaves a body stands where it cannot
+  leave: mancubi and arachnotrons on the turbine casings, a spider
+  mastermind in the pit, revenants and chaingunners in the bays of the
+  wall. What moves leaves no body: lost souls and pain elementals. So go 1
+  is shown bodies in exactly those places, and go 2 leaves bodies in
+  exactly those places. Nothing has to be remembered and compared.
+- **The knot.** The shutter at the far end of the gantry is opened by the
+  win. Go 1 finds it open and walks through: it could go on only because
+  the fight had been won. So go 2 must win before its earlier self comes
+  onto the gantry. If anything in the hall still lives at that moment, it
+  is a paradox. The hall's clock has a mark at that moment.
+- The gantry has a railing and the floor no stair to it: go 1 cannot come
+  down, go 2 cannot come up.
+
+**The end**: three small rooms with glass between them. Plate 1, plate 2,
+and the way out behind a door.
+- The rule on the sign: the door is open while both plates are stood on,
+  and ten seconds more.
+- Go 1 steps on plate 1. Nothing opens but its own time door (so a first go
+  cannot end without having stood there). Nobody has to wait: the ten
+  seconds belong to the door.
+- Go 2 has to be on plate 2 when its earlier self steps on plate 1. It sees
+  the door open in the third room, behind glass, out of reach. Its time
+  door opens.
+- Go 3 waits at the door and walks through.
+- **The parts get shorter**: about 9, 6 and 3 minutes of play (the lab and
+  the first build say what is right), so that a later self is early. A self
+  that is early winds time on, in the end rooms only (MAP31's plates).
+- A go that comes too late (the earlier self has left its plate, the door
+  has shut) is a paradox as well.
+
+**A mistake costs a part, not the map.** Every failure is the one the
+player knows, the paradox, and death is death; but the game is saved at
+the start of each go, so what is lost is that go. This hangs on the lab:
+whether a script can make the engine's autosave, and whether a loaded game
+has the earlier goes whole. If not, a part has to be put back by script, as
+"Begin anew in a fight" does for a hall.
+
+**Fights.** Each part is fought once, by the go whose part it is, and the
+player takes health, weapons and ammunition through a time door as in
+MAP31. An earlier part's fights are seen again only through glass: two or
+three window halls where the earlier go is played, monsters and all, in
+step with the clock.
+
+**Doors.** Each part has its own doors and frames and is an Ajar level in
+itself. **No door joins two parts in the first version**: a hung door
+between parts would be a way on foot. Later, perhaps, a Pair behind bars
+(sight and shots between two selves, no walking).
+
+**The place** (Claude's candidate): a power station, since three goes at
+one moment are three phases. The boiler house, the turbine hall, the
+switchyard out of doors, the cable ducts, the control room with three
+switchgear cells (the end). The colours are the three phases': yellow,
+green, red.
+
+**Size**: MAP19's or over (about 9000 x 5500, 900 sectors, 250 to 300
+monsters); part 1 about 45 per cent of it, part 2 35, part 3 20.
+
+**Name**: "Third Person" (Claude's candidate: the third self, and oneself
+seen from outside); the other is "In Phase".
+
+**Waits for the lab** (map THIRD):
+- a go that lasts ten minutes over a whole map: the record, its cost, a
+  saved game with it;
+- a time door whose box is somewhere else, at the start of the next part,
+  and one clock for the whole map;
+- a window hall: a fight of go 1 played to go 2 and go 3 in step with the
+  clock;
+- the turbine hall: bodies shown to go 1, the same monsters alive for go 2,
+  the paradox when the earlier self comes before the win, go 3's view;
+- the end: plates held by earlier selves, the door and its ten seconds, the
+  time doors that open on success, the paradox of coming too late;
+- the save at the start of a go, and what the engine loads after a death;
+- winding on in an end room.
+
+**Open, for Vadim**:
+- The place and the name.
+- Whether a paradox (and a death) costs the go, as proposed, or the level,
+  as in MAP32.
+- Whether go 1 crosses over the battlefield (the gantry, as proposed) or
+  walks among the bodies. Among them is the stronger picture, but then
+  railings cannot keep the parts apart.
+- Whether the three parts have to be played in a fixed order (proposed:
+  yes; the future seen needs it).
 
 ## The water lab (built 2026-11-23)
 
