@@ -11446,7 +11446,8 @@ seen from outside); the other is "In Phase".
 down: basin, weir, raft, gauge, bulkhead), `tools/gfx_water.py` (the gauge
 texture AJGAUGE, the wheel sprite AJWH), `src/zscript/water.zs` (the
 mechanic), `src/zscript/watertest.zs` (the tests); `MAP=WATER ./run.sh`,
-`MAP=WATER MODE=1..8 tools/smoke.sh`. An engine lab for MAP20 "High Water":
+`MAP=WATER MODE=1..8 tools/smoke.sh` (MODE=1 runs 177 s of game time and
+needs `TIMEOUT=240`; found 2026-11-23, 185 s on the wall). An engine lab for MAP20 "High Water":
 can water go through doors? **Yes. Water stands level on both sides of a
 hung door, measured from the door's sill, and it is drawn rightly through
 the door, from above it and from under it; the player wades, swims (under
@@ -12195,6 +12196,427 @@ engine expects:
 The engine sets aside the room-of-goes machinery of time.zs and plate.zs
 (halls, boxes and the touch rule are not used beyond what is listed). It
 needs nothing of MAP33's coordinates.
+
+## MAP20 "High Water": the first version, as decided (2026-11-23)
+
+Settled by Claude on Fable after "The water lab", so that a first version
+can be built; Vadim has seen the outline's proposal ("Yes 1 is good") and
+none of what follows. The outline is "MAP20 'High Water': water through
+doors". The three questions left to him there are answered here by a
+choice that is easy to change: what walks drowns (the lab's rule, on); the
+player's air is Doom's own (20 s, then harm); the name stays.
+
+**What the lab changed in the outline.**
+- *The player is not lifted by rising water* (the engine's water does not
+  buoy; he sinks slowly when no key is held). The level promises that water
+  floats you up, so **the player floats when idle**: head under and no
+  movement key held, he rises at about 64 a second until his head is out.
+  With a key held it is the engine's swimming as it is (the jump key up,
+  the look and the walk key for anywhere), so a dive is looking down and
+  walking. The first time his head goes under: "Swim up: look up and walk,
+  or the jump key."
+- *A ledge is climbed out at only from water no more than 24 under it.*
+  Every height below is set by that.
+- *Times*: the lab's K fills a hall in a second where the door stands over
+  the water (free fall), and a big hall slowly by the head alone. MAP20
+  has its own rate: the level is tuned so that no wait is under 5 s or
+  over 25.
+- *Doors that water shuts* (the lab's bulkhead, taken further). A
+  **pressure door** opens by USE only while the water is under 16 at its
+  sill on both sides, says why when it refuses, and shuts itself when
+  water comes to it. Every ordinary way out of a basin at or under its
+  brim is one; every other way out is over the brim.
+- *The lock* is not a frame at each height: the water is raised from
+  inside, a frame at a time (below).
+
+**Heights and the doors.** The reservoir stands 96 over BLUE's far side's
+sill; the outfall is dry at GREEN's. Four doors only: BLUE, GREEN, both
+TEAL leaves. No ORANGE, no brass frame, no VIOLET: the way out is made of
+the leaves and the water. No keys, no thief, no nailer, no Stray door, no
+lift.
+
+**The places and the five stages** (plan sizes are the generator's to
+choose; heights are fixed here; floor 0 is the baths' floor).
+
+1. **The baths** (the start; "see it"). The changing room, dry. The plunge
+   hall P: floor 0, ceiling 320, about 640 x 512; frame 101 at the floor,
+   frame 102 on a gallery at 128 (a stair to it; the gallery has its own
+   door back to the changing room's upper floor); a ledge at 216 with no
+   stair, a coaming of 16 on it, and behind it the door to the pump
+   corridor: the way on. P's brim 232. P's own door from the changing room
+   is a pressure door. BLUE leans by the plunge. BLUE in 101: a pool 96
+   deep, and nothing reached. BLUE in 102: P stands at 224 and the ledge is
+   8 under water.
+2. **The pump house and the cooling hall** ("drain it"). GREEN leans in the
+   pump house. The cooling hall C, about 1024 x 768: floor -128, a walkway
+   round it at 104, a stair down from the walkway to a landing at 0 and on
+   to the floor; brim 100; **found full, at 96**. Frames 111 on the walkway
+   (104), 112 on the landing (0), 113 at the floor (-128). Both TEAL leaves
+   lean on the floor, under 224 of water. At the floor, a pressure door E2
+   to the passage and stair up to the boiler house. GREEN in 111 does
+   nothing (its sill is over the water); in 112 it leaves 128 standing; in
+   113 it empties the hall. Cells in C's floor are pressure doors too: they
+   open when the hall is dry, and what was kept in them comes out. Once
+   the player has been through E2 he can draw a bolt on the boiler house's
+   side of a dry gangway back to the pump house, so that from then on the
+   two sides are one piece on foot whatever stands in C.
+3. **The boiler house** ("the pipe"). The feed tank T, about 256 x 256,
+   floor 0, brim 272, a gauge glass on its side and a float mark at 216; a
+   manhole at its floor (a pressure door), frame 121 inside at the floor,
+   and a catwalk to its rim at 272 by a dry stair. A float in T, once the
+   water has stood at 216 or over for 2 s, raises the yard gate for good.
+   BLUE in 121 gives 96. The answer meant: a leaf in 113 and its twin in
+   121, and BLUE in 111: C stands at its brim, 228 over 113's sill, and T
+   at 228. A second answer is allowed: a leaf in 101, P held at 224 by
+   BLUE in 102. Not an answer: the same with BLUE taken down (P and T then
+   share what P has, and T stops near 187).
+4. **The lower yard and the lock** (outdoors; "the lock"). The lower yard
+   at 0 behind the yard gate; the upper yard at 192, by a squeeze stair
+   (empty hands, both ways) and by the lock; from the upper yard one may
+   always drop to the lower with a door in hand. The lock K, about 256 x
+   320: floor 0, a pressure door from the lower yard, an open sill at 192
+   onto the upper yard, brim 200; frames 131 and 135 at the floor, 133 on
+   a shelf at 88 that only a swimmer reaches. A leaf goes up like this:
+   hang it in 135 with the lock dry (a leaf alone is a shut door and joins
+   nothing); BLUE in 131, K at 96; BLUE moved to 133, K at 184; out over
+   the sill with empty hands; dive for the leaf. The water is raised by
+   the door that stands in it: each hanging lifts the water to where the
+   next frame can be reached.
+5. **The wheel house** ("the circle"; the way out). Between the yards. The
+   lower pool L: floor -96, brim -4, frames 107 (the foot of the spillway)
+   and 109 at its floor. The upper pool U: floor 128, the crest of the
+   spillway at 160, frame 108 at its floor, reached from the upper yard.
+   BLUE in 109 fills L to its brim; a leaf in 107 and its twin in 108, and
+   the water goes round (it stays in L when BLUE is taken away, so BLUE is
+   free for the lock). While the wheel turns it holds open the sluice in
+   the lower yard's wall: behind it the tunnel to the machine hall, and the
+   way out (`Exit_Normal`). The wheel has a lamp over the sluice.
+
+The river, the outfall's mouth and the water tower (the reservoir) are seen
+from the yards and are not walked. Size of the first version: about 5000 x
+4000, 400 to 600 sectors, 150 to 180 monsters on "Resident": under the
+outline's figure, to be grown once it has been played.
+
+**The swimming bath** (the secret way out; **built in this version as a
+room only**). Off the changing room: a pool pit with its floor at -160, a
+shallow end at -96 with steps up to the poolside at 0, frame 141 at the
+pit's floor and 142 at the shallow end; across the pit, rising sheer from
+its far edge, a wall of five tall panes, their sills at 0. In this version
+all five are mirrors. BLUE in 141 leaves the water 64 under the poolside
+(no climbing out at the far wall); in 142 it stands at 0 and the panes are
+swum to. The left-handed bath behind one pane, its water kept the same as
+this one's, and the door that is only there, wait for "The left-handed
+room lab" and are a task after this one. Until then the level has no secret
+way out; `secretnext` is not set.
+
+**Nothing can be lost**, by construction, and the generator checks it in
+the build:
+- every frame can be come to with empty hands whatever stands in any
+  basin: on foot, or by a dive of no more than 260 from a place where the
+  player can stand or float with his head out;
+- every basin can be left with empty hands at any level it can have (a
+  stair that goes on under water, a rim, the sill);
+- every door can be carried from any frame to any other, except up from
+  the lower yard to the upper, which is the lock's;
+- the stage gates stay open once opened (the ledge door, the gangway's
+  bolt, the yard gate); only the sluice needs the wheel turning.
+
+**The measure** (in the generator, every build; the build fails on a broken
+rule): the lab's rule of flow written again in Python, run to rest for each
+answer meant and each wrong one named above, from the levels as found:
+BLUE in 101 and in 102; GREEN in 111, 112, 113; BLUE in 121; the pipe from
+113 with BLUE in 111; the pipe from 101 with BLUE in 102 and without; BLUE
+in 131, then in 133, and in 131 alone; BLUE in 141 and in 142; the circle
+with L full and with L dry. For each: the level it settles at, the time it
+takes at the level's rate, and whether the ledge, sill, mark or pane it is
+for is within reach. The four facts of "nothing can be lost". The wheel
+turning at rest for the circle, and not without water.
+
+**Fights** (Doom's own monsters, MAP19's mix and order of weapons; what
+walks drowns):
+- the baths: a few to learn on; when P first stands over 200, cacodemons
+  come in over the water;
+- the pump house: the fight for GREEN;
+- the cooling hall: revenants and imps on the walkway while it is full;
+  when it is first dry the cells open (pinkies, hell knights, a baron).
+  Hanging BLUE on the walkway floods them: the level's own weapon, to be
+  found, not told;
+- the boiler house: chaingunners on the catwalks, and company when the
+  float trips;
+- the lower yard: the big open fight, mancubi and arachnotrons across the
+  pool, cacodemons and a pain elemental over it;
+- the lock: when K first stands over 150, lost souls and cacodemons at the
+  sill;
+- the upper yard: an arch-vile and its court;
+- the wheel: when it first turns, the sluice lets out what was behind it.
+An ambush comes when a basin first stands over, or under, a height: a new
+cause for `AjarAmbush`.
+
+**What is shown**: a staff gauge in every basin; on each pressure door a
+lamp, red while water holds it; T's gauge glass and float mark in the
+boiler house; the wheel's lamp over the sluice. Sounds, which the lab has
+none of: water running at a door that passes any, a splash on going in
+and out, the wheel.
+
+**Left out of the first version**: the raft and the current (the lab has
+them; a secret could use them); a level held by BLUE and GREEN together;
+Ajar's own company; the look (it wears MAP19's until its own look board);
+the left-handed bath.
+
+## MAP20 "High Water": the first playable version (built 2026-11-23)
+
+Built as decided in "MAP20 'High Water': the first version, as decided"
+above, on branch `map20`. `MAP=MAP20 ./run.sh` in the worktree plays it;
+MAP19's way out now leads to it, and its own way out starts it again until
+there is a MAP21. The tests: `MAP=MAP20 MODE=n tools/smoke.sh
+"$PWD/build/smoke20_n"` (MODE=1, 2 and 3 with `EXTRA=-nomonsters`;
+MODE=1 needs `TIMEOUT=450`, the others `TIMEOUT=400`).
+
+**Files.**
+- `tools/map_highwater.py`: the level and its measure, in `tools/build.py`
+  as MAP20. It wears MAP19's look (`AJAR_INSTITUTE`, the `AJI..3`
+  textures through `map_institute1.dress`).
+- `tools/ajarwater.py`: four new pieces: `rate` (the level's own rate and
+  rules, thing 20143), `pressure_door` (thing 20144), `float_gate` (thing
+  20145), `water_ambush` (AjarAmbush with a basin's height as its cause).
+- `src/zscript/water.zs`, grown: `AjarWaterRate`, `AjarPressureDoor`,
+  `AjarFloatGate`; the handler takes K, FREE, the weir's K and the wheel's
+  time from the rate thing (a map without one, the lab, keeps the old
+  constants: K 2048, FREE 8, wheel 105 tics); FLOAT (the player rises 64 a
+  second while his head is under and no movement key is held; the first
+  time his head goes under: "Swim up: look up and walk, or the jump key.");
+  OVERFLOW (a basin at its brim spills what more comes, to the outfall: no
+  door's or weir's flow is held back by a full basin); the pressure doors,
+  the float, `WaterDue` (the ambush causes); the sounds.
+- `src/zscript/map20.zs`: `HighWaterTest`, MODE=1..5;
+  `tools/smoke_MAP20_1..5.cfg`.
+- `tools/sfx.py`: three sounds made there (no Doom sound copied):
+  `ajar/water`, a 2 s loop of filtered noise with small rising chirps
+  (bubbles), played at every frame whose door passes water, louder with the
+  flow (volume the square root of the flow over 64 K, 0.15 to 1);
+  `ajar/splash`, a burst of noise with the cloth whoosh under it, when the
+  player's feet go into water or come out (softer coming out);
+  `ajar/wheel`, a 1.6 s loop of a slow knock (bookPlace2 an octave down)
+  and a pot's ring two octaves down over low noise, at the wheel while it
+  spins. Pressure doors and the float use Doom's door and lift sounds by
+  their logical names.
+- `tools/gfx_water.py`: `AJFLOATM`, the float mark beside T's gauge glass
+  (a red band at 216 and "216"). The pressure doors' lamps are Doom's
+  `TLITE6_6` coloured by the sector (red while water holds the door, pale
+  green otherwise); the gauge glass is the lab's `AJGLAS` over a slot of T.
+
+**The level as built** (x east, y north; about 6100 x 3300 with the
+swimming bath to the west; 282 sectors, 344 things).
+1. *The baths.* The changing room (0..448 x 0..384, floor 0) is the start,
+   with the shotgun. Off it: the swimming bath (west) and the plunge hall P
+   (640 x 512, floor 0, ceiling 320, brim 232) through a pressure door.
+   P: frame 101 at the floor (south wall), a stair under water from the
+   floor up to the gallery at 128 (north side), frame 102 on the gallery,
+   a second stair under water along the gallery's north wall up to a
+   landing at 240 and the gallery's door (bolted on its far side); the
+   ledge at 216 behind a coaming at 232 (east side), its door (opens by
+   USE, stays open) to the pump corridor, where the first steps draw the
+   gallery's bolt. The changing room's upper floor (240) lies behind the
+   gallery's door and opens on the pump corridor. BLUE leans by the
+   plunge. The swimming bath: the pit at -160 with 141, the shallow end at
+   -96 with 142, steps to the poolside; five mirror panes in the pit's far
+   wall, sills at 0.
+2. *The pump house and the cooling hall.* The pump corridor (216) goes down
+   a stair to the pump house (104, GREEN and the super shotgun). The
+   cooling hall C (1024 x 768, floor -128, found at 96, brim 100): the
+   walkway round three sides at 104, a stair down to the landing at 0 and
+   on to the floor; 111 on the walkway, 112 on the landing, 113 at the
+   floor; both TEAL leaves on the floor. In its south wall at the floor:
+   E2 and two cells, all pressure doors (the cells open by themselves the
+   first time C is dry). E2 leads to a passage at -128 and a stair up to
+   the boiler house. The gangway: from the boiler house up to C's east
+   walkway, a steel door bolted on the boiler house's side (USE there).
+3. *The boiler house* (768 x 768, floor 0, the rocket launcher on the
+   catwalk). The feed tank T (256 x 256 inside, floor 0, brim 272): 121 in
+   its north wall at the floor, a stair inside it up to its rim (under
+   water when it is full), the manhole (a pressure door) in its west wall,
+   the gauge glass and the float mark beside it; a dry stair and a catwalk
+   to the rim. The float raises the yard gate in the north wall.
+4. *The yards and the lock.* The lower yard (1600 x 992, floor 0, open to
+   the sky, a fountain in it); the upper yard at 192 (grass, the plasma
+   rifle by the reservoir's glass). Between them: the squeeze stair (empty hands, both
+   ways), the terrace (a drop from the upper yard, any hands), the lock K
+   (320 x 320, floor 0, brim 200): its pressure door from the lower yard,
+   131 and 135 at the floor (west and east walls), the shelf at 88 with
+   133, the open sill at 192 onto the upper yard; and its own way out for
+   empty hands at any level: a squeeze in its west wall at the floor and a
+   stair behind it up to the upper yard.
+5. *The wheel house.* L (704 x 160, floor -96, brim -4) down a stair from
+   the lower yard, 109 and 107 at its floor; U (384 x 96, floor 128, brim
+   184) down a stair from the upper yard, 108 at its floor; the crest at
+   160 and the spillway down into L with the wheel. The wheel's lamp is
+   over the sluice in the lower yard's east wall; behind the sluice, the
+   tunnel and the machine hall with the way out.
+   The reservoir (BLUE's far side, 96 over its sill at 192) is seen through
+   glass from the upper yard, the outfall (GREEN's) from the lower.
+
+**The rate.** K 1000 (the lab's 2048), FREE 6 (8), the weir's K the
+level's K, the wheel turning after 192 tics (the lab's 105) over 2 K a tic;
+FLOAT and OVERFLOW on. These were set by the measure so that every wait the
+level asks for is between 5 and 25 s.
+
+**The measure** (in every build; "after" is the time to come within 1 of
+rest, "reached" the time the thing it is for comes within reach, the water
+no more than 24 under it, or the mark held 2 s):
+
+| hanging | basin, at rest | after | reached | for |
+|---|---|---|---|---|
+| BLUE in 101 | P 96 | 40.0 s | - | the ledge: no (not meant) |
+| BLUE in 102 | P 224 | 42.0 s | 17.6 s | the ledge: yes |
+| GREEN in 111 | C 96 | 0 | - | nothing moves |
+| GREEN in 112 | C 0 | 13.1 s | - | E2 still held (not meant) |
+| GREEN in 113 | C -128 | 15.5 s | 7.6 s | E2 opens: yes |
+| BLUE in 121 (C dry) | T 96 | 8.3 s | - | the float: no (not meant) |
+| TEAL 113-121, BLUE in 111 | T 228 (C 100) | 9.9 s | 7.3 s | the float: yes |
+| TEAL 101-121, BLUE in 102, from P 224 | T 224 | 43.6 s | 22.7 s | the float: yes (the second answer) |
+| TEAL 101-121 from P 224, no BLUE | T 184.7 | 7.8 s | - | the float: no (not meant) |
+| BLUE in 131 | K 96 | 14.5 s | 3.4 s | the shelf: yes; the sill: no |
+| then BLUE in 133 | K 184 | 14.4 s | 5.5 s | the sill: yes |
+| BLUE in 141 | SB -64 | 34.0 s | - | the panes: no (not meant) |
+| BLUE in 142 | SB 0 | 34.8 s | 11.1 s | the panes: yes |
+| BLUE in 109 | L -4 | 10.0 s | 10.4 s | L full: yes |
+| circle, L full, TEAL 107-108 | U 179.7 | 2.1 s | 6.1 s | the wheel turns: yes |
+| circle, L dry | U 128 | - | - | the wheel: no (not meant) |
+
+The highest each basin can stand: P 232, SB 0, C 100, T 232, K 200, L -4,
+U 184. The four facts: (1) every frame is come to by a dive of at most 260
+(the deepest: 101 and 121, 232; 113, 228); frame 133 on the shelf needs K at
+64 or over, which BLUE in 131 or 135 gives: the one frame not come to on
+foot when its basin is dry. (2) Every basin has a way out with empty hands
+at every level it can have (the generator checks the ranges: a pressure
+door under 16, a stair on under water, a ledge or sill within 24). (3) A
+door can be carried between all ten places with frames, up from the lower
+side only by the lock (a graph in the generator; squeezes are not ways for
+a door; a pressure door is, since the basin behind it can always be
+drained by GREEN at a frame on its floor). (4) The gates stay open once
+opened: by construction (Door_Open, bolts, the float), tried in MODE=3.
+The meant waits run from 5.5 s (the lock, 133) to 22.7 s (the second
+answer); the shelf's 3.4 s is not counted as a wait, since the player is
+swimming up with the water while it rises.
+
+**Fights** (skill 3, "Resident": 158 monsters, 82 on skill 1; hit points
+28220; ammunition worth 56950, x2.02 by `tools/budget.py`, MAP19 x2.03;
+health 650, armour 300). Imps 54, sergeants 14, chaingunners 14, knights
+13, demons 12, revenants 12, cacodemons 11, zombies 9, lost souls 6,
+spectres 4, mancubi 3, barons 2, arachnotrons 2, a pain elemental, an
+arch-vile. Weapons in MAP19's order: shotgun in the changing room,
+chaingun on the ledge, super shotgun and a backpack in the pump house,
+rocket launcher on the boiler house's catwalk, plasma rifle in the upper
+yard. Water ambushes (22 on skill 3): 3 cacodemons over P when it first
+stands at 200; 4 imps on C's walkway when it is first at or under -120; 3
+cacodemons and 4 imps in the boiler house when T first stands at 216; 6
+lost souls and 2 cacodemons in the upper yard when K first stands at 150.
+Taking GREEN brings 4 imps and 2 knights (cause 13). The cells hold 6
+demons, 4 knights and a baron. The sluice keeps 3 in the tunnel and 10 in
+the machine hall. Monsters stand where a Halton sequence puts them in each
+room (as in MAP19), not placed by hand.
+
+**Runs** (on the full build; MODE=1, 2, 3 with `-nomonsters`):
+- MODE=1, the whole level by the answers meant: 62 checks, all pass, and
+  `levelExited`. The levels at rest against the measure's (each within
+  0.05): P 96 and 224, C 0 and -128, T 228 (C 100), L -4, K 96 and 184, U
+  179.7; the wheel counted as turning 6.0 s after the circle closed (the
+  measure 6.1). The plunge hall's, E2's, the manhole's and the lock's
+  pressure doors open dry and shut themselves when the water comes; the
+  cells open by themselves when C is dry; the ledge door, the gallery's and
+  the gangway's bolts, the yard gate and the sluice open. Game time 300 s.
+- MODE=2, the player in the water: 40 checks, all pass (one, out onto the
+  ledge, again after a test-only change, on the full build's code with the
+  test file made again). Idle in P as it fills, the player floats and ends
+  with his head out; from P's floor under 224 he rises 64 in a second; out
+  over the coaming onto the ledge with the walk and jump keys in 33 tics; a
+  dive with GREEN to 113 under 224 of water (0.9 s, looking down, running)
+  and GREEN hung there; through the TEAL pipe from C's floor into T in 22
+  tics; the float trips; the lock as written (the leaf alone in 135, BLUE in
+  131: he floats up; onto the shelf; BLUE in 133; out over the sill empty
+  handed; a dive for the leaf; out with it); the lock's door refuses with
+  K at 184 ("The water holds this door shut."), opens dry, waits 191 tics
+  for the player standing in it with K rising, and shuts 21 tics after he
+  steps out.
+- MODE=3, nothing can be lost: 31 checks, all pass. K at 96 with BLUE taken
+  down and the player inside: the door holds, the squeeze stops him while
+  he carries BLUE, and empty handed he is out through it and up the stair
+  in 38 tics. C refilled with the player in the boiler house: E2 held, the
+  gangway opens, back on the walkway in 13 tics. The lower yard with K at
+  184: the lock's door holds; up the squeeze stair empty handed (not with
+  a door); down from the terrace with one. The ledge door, the gallery's
+  and the gangway's bolts and the yard gate still open 20 s after T was
+  drained.
+- MODE=4: 21 views and the automap, `build/f20_4/` in the worktree (named
+  v00..v21 there).
+- MODE=5, the fights' causes: 25 checks, all pass. Each water ambush comes
+  once, when its basin first reaches its height and not before (the
+  cacodemons over P within 1.4 s of 200; the imps on C's walkway at -120;
+  the boiler house's 7 when T reaches 216; the 8 at the lock at 150); 22
+  water ambushers in all, none left. The cells open when C is dry; 11 of
+  their company put on C's floor and C flooded by BLUE in 111: all six
+  demons drowned and all eleven hurt within 20 s.
+- The lab: `MAP=WATER MODE=1..8` all pass (10, 8, 9, 18, 6, 6 checks, the
+  14 views, 4); MODE=1 with `TIMEOUT=240`. `MAP=LAB MODE=1` (16 checks and
+  `levelExited`), `MAP=PASS MODE=1` (50) and `MAP=MAP19 MODE=1` (79) pass.
+- `./build.sh` (full): the solver's results as before, MAP20's measure as
+  above; `tools/mapcheck.py map_highwater`: 0 problems;
+  `tools/itemcheck.py` and `tools/thingcheck.py`: 0 problems.
+
+**Differences from the plan, and why.**
+- *The gallery's door* stands at 240, over P's brim, at the top of a
+  second stair that goes on under water from the gallery; it is bolted on
+  the far side and the first steps in the pump corridor draw the bolt. As
+  planned (a door at 128), P could stand between 16 and 208 with the
+  player in it and no way out with empty hands, and the baths had no dry
+  way back for a door. Before the ledge is first reached only BLUE is at
+  hand, and taking it down from its frame keeps it in P, so the bolt does
+  no harm then.
+- *The changing room's upper floor* is reached only through the gallery's
+  door and from the pump corridor; the changing room itself has no stair to
+  it.
+- *The lock* is 320 x 320 (planned about 256 x 320), so that the wait for
+  the sill after BLUE goes into 133 is 5.5 s, not 3. It has a second way
+  out for empty hands at any level, a squeeze at its floor and a stair
+  behind its west wall to the upper yard: with BLUE taken down at 96, the
+  pressure door holds and neither the sill nor the shelf helps. Frame 133
+  is not come to with empty hands while K is under 64 (said by the
+  measure, not fixed: BLUE in 131 or 135 always gives 96).
+- *The wheel* counts as turning after 5.5 s over twice the flow (the lab's
+  3 s), so that the circle's wait is 6.1 s, not 3.2.
+- *OVERFLOW*: a full basin spills what more comes to the outfall (the
+  outline's "overflow"), so that BLUE in 111 keeps C at its brim with the
+  pipe open, and L kept full does not stop the spill (the lab's rule holds
+  a flow back at the brim).
+- *The gangway* comes up on C's east walkway (104, over C's brim), which
+  leads round to the pump house; it is not a corridor of its own.
+- *The second answer* is measured from P at 224 (the player has raised it
+  to reach the ledge); from P dry the two waits add up.
+- *Pressure doors* open to 88 over their sill and stay open until water
+  shuts them; USE on an open one does nothing. Their lamps are Doom's
+  light flat tinted, not new art.
+- *Size*: 282 sectors, not 400 to 600: the rooms are plain boxes with the
+  look's walls; the river, the outfall's mouth and the water tower are not
+  built (the reservoir and the outfall are rooms behind glass).
+
+**Shared code touched.** `tools/build.py` (import and the map),
+`src/mapinfo.txt` (things 20143..20145, MAP19's next, the MAP20 entry),
+`src/zscript.zs` (one include), `src/zscript/ajar.zs` (ambush causes 60
+and 61, AjarHandler's WorldTick leaves MAP20 to its own test, the autotest
+stops at MAP20's end), `src/zscript/water.zs` (grown as above; the lab's
+behaviour kept: its MODE=1..8 pass), `tools/ajarwater.py`, `tools/sfx.py`,
+`tools/gfx_water.py`.
+
+**Not played by hand.** Unchecked: the sounds (the smoke runs are
+`-nosound`: their loudness, the loops' seams, whether a door's water is
+heard over the fight); how floating and climbing out feel (the tests drive
+the keys); the look on the real machine (GLES) and how fast its many 3D
+floors and portals draw there; the fights' balance and where the Halton
+sequence put things; monsters in water beyond drowning; the pressure
+doors' lamps' colours on the real renderer; a saved game with water
+moving; the water's surface is not drawn over the lamp strips of the
+pressure doors inside basins (strips 8 to 24 wide, not part of the basin):
+a visible notch at the K, E2 and cell doors when they stand in water.
 
 ## MAP33 "Third Person": the first version, as decided (2026-11-24, after the three goes lab)
 
