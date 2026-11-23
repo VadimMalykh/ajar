@@ -57,8 +57,8 @@ for name in sys.argv[1:]:
     seen = {}
     for t in m.things:
         k = (t["x"], t["y"])
-        # (a door, a porter, a figure in a glass case: a self stands on a plate figure)
-        if k in seen and t["type"] not in (20002, 20003, 20051) and seen[k] not in (20002, 20003, 20051):
+        # (a door, a porter, a figure in a glass case: a self stands on a plate figure; a MapSpot is only a mark)
+        if k in seen and t["type"] not in (20002, 20003, 20051, 9001) and seen[k] not in (20002, 20003, 20051, 9001):
             print(name, "SAME SPOT", t["type"], seen[k], k); bad += 1
         seen[k] = t["type"]
     print(name, "things check:", bad, "problems")
