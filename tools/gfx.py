@@ -1353,4 +1353,8 @@ def make_all():
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)
+    import gfx_lefthand                                          # the left-handed room lab (map LEFT); then the flipped
+    import map_lefthand                                          # copies its reflected rooms ask for (tools/lefthand.py)
+    gfx_lefthand.make(out)
+    gfx_lefthand.flip(out)
     return out
