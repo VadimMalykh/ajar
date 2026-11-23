@@ -18,3 +18,6 @@ __pycache__/
 
 # Per-machine GZDoom config made by run.sh (holds your own key bindings)
 /ajar.ini
+
+# Music on trial in the sound lab: large, local to a worktree, never committed (tools/music_trial.py)
+/trial/

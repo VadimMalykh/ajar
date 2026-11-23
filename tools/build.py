@@ -47,6 +47,7 @@ import map_secret2
 import map_shift
 import map_soundlab
 import music
+import music_trial
 import sfx
 import solve
 
@@ -115,8 +116,14 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
             z.write(p, os.path.relpath(p, src))
     for name, data in gfx.make_all().items():
         z.writestr(name, data)
-    for name, data in {**sfx.make_all(), **music.make_all()}.items():     # the door sounds and the music
+    for name, data in sfx.make_all().items():          # the door sounds, their sndinfo.txt and ajsounds.txt
         z.writestr(name, data)
+    # the music on trial, one list (ajmusic.txt) for the lab: the pieces written by tools/music.py, then any
+    # recorded file put into trial/music/ (local to a worktree, never committed)
+    tunes, own = music.make_all(), music_trial.make_all(root)
+    tunes["ajmusic.txt"] += own.pop("ajmusic.txt")
+    for name, data in {**tunes, **own}.items():
+        z.writestr(name, data, zipfile.ZIP_STORED if name.startswith("music/AJT") else zipfile.ZIP_DEFLATED)
     for name, mod in MAPS.items():
         z.writestr(f"maps/{name}.wad", mod.m.wad(name))
 print("built", out)

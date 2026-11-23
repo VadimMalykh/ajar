@@ -351,7 +351,8 @@ extend class AjarTimeHandler
 				if (!found || (f && f.door && f.door != d)) { lg.broken.Push(di); continue; }
 				DoorSet(di, f, lg.car[e], (lg.x[e], lg.y[e], lg.z[e]), lg.a[e]);
 				dHold[di] = lg.car[e] ? i : -1;
-				if (g && (f || lg.car[e])) g.A_StartSound(f ? "doors/dr1_open" : "doors/dr1_clos", CHAN_AUTO);
+				if (g && f) h.PlaySet(g);               // the game's door sounds (AjarHandler)
+				else if (g && lg.car[e]) h.PlayTake(g);
 			}
 			// its go is over: what it holds is left leaning where it went
 			AjarTake t = takes[i];

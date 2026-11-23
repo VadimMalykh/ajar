@@ -3,15 +3,25 @@
 //
 // Four switches on the east wall, each a line that activates an
 // AjarSoundButton (args[0]: 1 TAKE, 2 SET, 3 MUSIC +, 4 MUSIC -):
-//   TAKE, SET    step the sound of taking (or hanging) a door on: Doom's, A,
-//                B, C, Doom's ... (src/sndinfo.txt, tools/sfx.py), play it and
-//                say which it is. Every door action then uses it
-//                (AjarHandler.PlayTake / PlaySet / PlaySwap in ajar.zs).
+//   TAKE, SET    step the sound of taking (or hanging) a door on: the
+//                game's, 1, 2, ... n, the game's ..., the candidates listed in
+//                ajsounds.txt (tools/sfx.py: kind|logical name|its name[|pitch]:
+//                the name is the game's own, ajar/take1, or one of Doom's,
+//                misc/w_pkup; the pitch 1 if not given; Doom's old door the
+//                first), play it and say which it is, counting the game's as
+//                the first ("1 of 8: the game's: field drops"). The game's is
+//                what every level plays (AjarHandler's TAKE_SOUND ... SET_PITCH
+//                in ajar.zs, an empty takeSound / setSound); ajsounds.txt's
+//                gametake and gameset lines only name it for the lab. Every
+//                door action then uses the one chosen (AjarHandler.PlayTake /
+//                PlaySet / PlaySwap).
 //   MUSIC +, -   step through silence and the tracks listed in ajmusic.txt
-//                (tools/music.py: LUMP|Title|what it is for), start the chosen
-//                one from its beginning and say what it is.
+//                (tools/music_trial.py, from trial/music/: LUMP|Title|what it
+//                is for), start the chosen one from its beginning and say
+//                what it is. A build with none says where they go.
+// Nothing about the candidates is written here: both lists are read at load.
 // What is chosen is always on screen, top right. The level begins with
-// Doom's sounds and silence.
+// the game's sounds and silence.
 //
 // MAP=SOUND MODE=1 tools/smoke.sh: the walkthrough at the end of this file.
 
@@ -37,40 +47,43 @@ class AjarSoundButton : Actor
 
 class AjarSoundLab : EventHandler
 {
-	int take, setv;             // 0 Doom's, 1 A, 2 B, 3 C
+	int take, setv;             // 0 the game's, 1.. the candidates of ajsounds.txt
+	string gameTake, gameSet;   // ajsounds.txt's gametake and gameset: logical name, what it is, pitch
+	string gameTakeName, gameSetName;
+	double gameTakePitch, gameSetPitch;
 	int track;                  // 0 silence, 1.. the tracks of ajmusic.txt
+	Array<string> takes, takeNames, sets, setNames;     // logical sound names and what each is
+	Array<double> takePitches, setPitches;
 	Array<string> lumps, titles, whats;
 	bool changed;               // what S_ChangeMusic said the last time
 
-	clearscope static string SoundOf(bool isTake, int i)
+	clearscope static string NoMusic() { return "No music in this build: candidates go in trial/music/, then build again"; }
+
+	// a lump's lines, split at |, of `fields` fields or more: all in one array, `fields` to a line
+	static void ReadList(string name, int fields, out Array<string> res)
 	{
-		static const string takes[] = { "", "ajar/take1", "ajar/take2", "ajar/take3" };
-		static const string sets[] = { "", "ajar/set1", "ajar/set2", "ajar/set3" };
-		return isTake ? takes[i] : sets[i];
+		res.Clear();
+		int lump = Wads.CheckNumForFullName(name);
+		if (lump < 0) return;
+		string text = Wads.ReadLump(lump);
+		Array<string> lines;
+		text.Split(lines, "\n", TOK_SKIPEMPTY);
+		for (int i = 0; i < lines.Size(); i++)
+		{
+			string l = lines[i];
+			l.Replace("\r", "");
+			Array<string> f;
+			l.Split(f, "|");
+			if (f.Size() < fields) continue;
+			for (int k = 0; k < fields; k++) res.Push(f[k]);
+		}
 	}
 
-	clearscope static string NameOf(bool isTake, int i)
+	// ajsounds.txt: kind|logical name|its name[|pitch], each line as 4 fields
+	static void ReadSounds(out Array<string> res)
 	{
-		static const string takes[] = { "Doom's", "A, squeak and knock", "B, creak and pins", "C, pins only" };
-		static const string sets[] = { "Doom's", "A, thud and clack", "B, slide and thud", "C, two pins" };
-		return isTake ? takes[i] : sets[i];
-	}
-
-	AjarHandler Game() { return AjarHandler(EventHandler.Find("AjarHandler")); }
-
-	override void WorldLoaded(WorldEvent e)
-	{
-		if (e.IsSaveGame) return;
-		ReadTracks();
-	}
-
-	// ajmusic.txt: one line a track, LUMP|Title|what it is for
-	void ReadTracks()
-	{
-		lumps.Clear();
-		titles.Clear();
-		whats.Clear();
-		int lump = Wads.CheckNumForFullName("ajmusic.txt");
+		res.Clear();
+		int lump = Wads.CheckNumForFullName("ajsounds.txt");
 		if (lump < 0) return;
 		string text = Wads.ReadLump(lump);
 		Array<string> lines;
@@ -82,9 +95,76 @@ class AjarSoundLab : EventHandler
 			Array<string> f;
 			l.Split(f, "|");
 			if (f.Size() < 3) continue;
-			lumps.Push(f[0]);
-			titles.Push(f[1]);
-			whats.Push(f[2]);
+			for (int k = 0; k < 3; k++) res.Push(f[k]);
+			res.Push(f.Size() > 3 ? f[3] : "1");
+		}
+	}
+
+	// one of the game's own (ajar/...), not one of Doom's
+	clearscope static bool IsOwn(string logical) { return logical.IndexOf("ajar/") == 0; }
+
+	// the lump of a logical sound: ajar/take2 is ajtake2 (tools/sfx.py)
+	clearscope static string LumpOf(string logical)
+	{
+		string l = logical;
+		l.Replace("ajar/", "aj");
+		return l;
+	}
+
+	// "3 of 8: Doom: weapon pick-up", "1 of 8: the game's: field drops": the game's counted as the first
+	clearscope string Label(bool isTake, int i)
+	{
+		return String.Format("%d of %d: %s", i + 1, (isTake ? takes.Size() : sets.Size()) + 1,
+			i == 0 ? "the game's: " .. (isTake ? gameTakeName : gameSetName) : isTake ? takeNames[i - 1] : setNames[i - 1]);
+	}
+
+	clearscope string SoundOf(bool isTake, int i)
+	{
+		if (i == 0) return "";
+		return isTake ? takes[i - 1] : sets[i - 1];
+	}
+
+	clearscope double PitchOf(bool isTake, int i)
+	{
+		if (i == 0) return 0;
+		return isTake ? takePitches[i - 1] : setPitches[i - 1];
+	}
+
+	clearscope string Said(bool isTake, int i)
+	{
+		return (isTake ? "Take sound " : "Set sound ") .. Label(isTake, i);
+	}
+
+	AjarHandler Game() { return AjarHandler(EventHandler.Find("AjarHandler")); }
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		if (e.IsSaveGame) return;
+		ReadLists();
+	}
+
+	// ajsounds.txt: kind|logical name|its name[|pitch]; ajmusic.txt: LUMP|Title|what it is for
+	void ReadLists()
+	{
+		Array<string> f;
+		takes.Clear(); takeNames.Clear(); sets.Clear(); setNames.Clear(); takePitches.Clear(); setPitches.Clear();
+		gameTake = ""; gameSet = ""; gameTakeName = "?"; gameSetName = "?"; gameTakePitch = 0; gameSetPitch = 0;
+		ReadSounds(f);
+		for (int i = 0; i + 3 < f.Size(); i += 4)
+		{
+			double p = f[i + 3].ToDouble();
+			if (f[i] == "take") { takes.Push(f[i + 1]); takeNames.Push(f[i + 2]); takePitches.Push(p); }
+			else if (f[i] == "set") { sets.Push(f[i + 1]); setNames.Push(f[i + 2]); setPitches.Push(p); }
+			else if (f[i] == "gametake") { gameTake = f[i + 1]; gameTakeName = f[i + 2]; gameTakePitch = p; }
+			else if (f[i] == "gameset") { gameSet = f[i + 1]; gameSetName = f[i + 2]; gameSetPitch = p; }
+		}
+		lumps.Clear(); titles.Clear(); whats.Clear();
+		ReadList("ajmusic.txt", 3, f);
+		for (int i = 0; i + 2 < f.Size(); i += 3)
+		{
+			lumps.Push(f[i]);
+			titles.Push(f[i + 1]);
+			whats.Push(f[i + 2]);
 		}
 	}
 
@@ -94,21 +174,28 @@ class AjarSoundLab : EventHandler
 		if (!h) return;
 		if (what == 1)
 		{
-			take = (take + 1) % 4;
+			take = (take + 1) % (takes.Size() + 1);
 			h.takeSound = SoundOf(true, take);
+			h.takePitch = PitchOf(true, take);
 			h.PlayTake(who);
-			h.Say("Take sound: " .. NameOf(true, take));
+			h.Say(Said(true, take));
 		}
 		else if (what == 2)
 		{
-			setv = (setv + 1) % 4;
+			setv = (setv + 1) % (sets.Size() + 1);
 			h.setSound = SoundOf(false, setv);
+			h.setPitch = PitchOf(false, setv);
 			h.PlaySet(who);
-			h.Say("Set sound: " .. NameOf(false, setv));
+			h.Say(Said(false, setv));
 		}
 		else if (what == 3 || what == 4)
 		{
 			int n = lumps.Size() + 1;
+			if (n == 1)
+			{
+				h.Say(NoMusic());
+				return;
+			}
 			track = (track + (what == 3 ? 1 : n - 1)) % n;
 			if (track == 0)
 			{
@@ -126,9 +213,9 @@ class AjarSoundLab : EventHandler
 	override void RenderOverlay(RenderEvent e)
 	{
 		if (automapactive) return;
-		string m = track ? String.Format("%d/%d %s", track, lumps.Size(), titles[track - 1]) : "silence";
-		Line3(0, "take: " .. NameOf(true, take), Font.CR_GOLD);
-		Line3(1, "set: " .. NameOf(false, setv), Font.CR_GOLD);
+		string m = !lumps.Size() ? "none in this build" : track ? String.Format("%d/%d %s", track, lumps.Size(), titles[track - 1]) : "silence";
+		Line3(0, "take " .. Label(true, take), Font.CR_GOLD);
+		Line3(1, "set " .. Label(false, setv), Font.CR_GOLD);
 		Line3(2, "music: " .. m, Font.CR_GREEN);
 	}
 
@@ -138,13 +225,17 @@ class AjarSoundLab : EventHandler
 	}
 
 	// --- the walkthrough (ajar_autotest 1) -----------------------------------------
-	// Steps 10 tics apart. Music + through every track; then four rounds of
-	// TAKE and SET (each moves both sounds on one, so the four go round to
-	// Doom's again), each round taking a door from 101, hanging it in 103,
-	// taking it again and swapping it for the door in 102, and hanging that in
-	// 101; GREEN taken from where it leans; Music + once more (silence) and
-	// Music - all the way round back to silence.
-	int tic, checks, fails;
+	// Steps 10 tics apart, every count taken from the two lists. Every sound of
+	// ajsounds.txt defined and its lump there, the game's two as AjarHandler
+	// plays them, every lump of ajmusic.txt there;
+	// Music + through every track; then rounds of TAKE and SET (each moves
+	// both sounds on one; as many rounds as it takes for both to come round
+	// to the game's together, so with as many sets as takes every pair of the
+	// same number is heard together, and the game's pair), each round taking a door from
+	// 101, hanging it in 103, taking it again and swapping it for the door in
+	// 102, and hanging that in 101; GREEN taken from where it leans; Music +
+	// once more (silence) and Music - all the way round back to silence.
+	int tic, checks, fails, rounds;
 	AjarDoor d, old;
 
 	void Check(string what, bool ok, string info = "")
@@ -186,7 +277,8 @@ class AjarSoundLab : EventHandler
 		// music is off and it is always false)
 		string said = Game().said;
 		said.Replace("\n", " / ");
-		string meant = want ? String.Format("Music %d/%d: %s / %s", want, lumps.Size(), titles[want - 1], whats[want - 1]) : "Music: silence";
+		string meant = want ? String.Format("Music %d/%d: %s / %s", want, lumps.Size(), titles[want - 1], whats[want - 1])
+			: lumps.Size() ? "Music: silence" : NoMusic();
 		Check(what, track == want && there && said == meant,
 			String.Format("track %d (want %d) %s, S_ChangeMusic %d, said \"%s\"", track, want, want ? l : "silence", changed, said));
 	}
@@ -204,27 +296,51 @@ class AjarSoundLab : EventHandler
 
 		if (s == 1)
 		{
-			for (int i = 1; i <= 3; i++)
+			for (int i = 0; i < takes.Size() + sets.Size(); i++)
 			{
-				string a = SoundOf(true, i), b = SoundOf(false, i);
-				Sound sa = a, sb = b;
-				// (the length is what the engine made of the WAV; under -nosound, which loads none, every sound is 0.25 s)
-				Check("defined_take" .. i, sa != 0, String.Format("lump %s %d, length %.3f s", "ajtake" .. i,
-					Wads.CheckNumForName("ajtake" .. i, Wads.ns_sounds), S_GetLength(sa)));
-				Check("defined_set" .. i, sb != 0, String.Format("lump %s %d, length %.3f s", "ajset" .. i,
-					Wads.CheckNumForName("ajset" .. i, Wads.ns_sounds), S_GetLength(sb)));
+				bool isTake = i < takes.Size();
+				int k = isTake ? i + 1 : i + 1 - takes.Size();
+				string name = SoundOf(isTake, k), lump = LumpOf(name);
+				double p = PitchOf(isTake, k);
+				Sound snd = name;
+				// the game's own has its lump in the package; Doom's is known to the engine by name (its lump in the IWAD)
+				bool own = IsOwn(name);
+				int l = own ? Wads.CheckNumForName(lump, Wads.ns_sounds) : 0;
+				// (the length is what the engine made of the sound; under -nosound, which loads none, every sound is 0.25 s)
+				Check(String.Format("defined_%s%d", isTake ? "take" : "set", k), snd != 0 && l >= 0 && p >= 0.5 && p <= 2,
+					String.Format("%s, %s, pitch %.2f, length %.3f s: %s", name, own ? String.Format("lump %s %d", lump, l) : "Doom's",
+						p, S_GetLength(snd), isTake ? takeNames[k - 1] : setNames[k - 1]));
 			}
+			// the game's two: what ajsounds.txt names them is what AjarHandler plays with nothing chosen
+			for (int i = 0; i < 2; i++)
+			{
+				bool isTake = i == 0;
+				string name = isTake ? gameTake : gameSet, lump = LumpOf(name);
+				string plays = isTake ? h.TakeName() : h.SetName();
+				double p = isTake ? gameTakePitch : gameSetPitch, pp = isTake ? h.UsedTakePitch() : h.UsedSetPitch();
+				Sound snd = name;
+				bool own = IsOwn(name);
+				int l = own ? Wads.CheckNumForName(lump, Wads.ns_sounds) : 0;
+				Check(isTake ? "defined_gametake" : "defined_gameset", name != "" && name == plays && p == pp && snd != 0 && l >= 0,
+					String.Format("%s, %s, pitch %.2f (the handler plays %s at %.2f), length %.3f s: %s", name,
+						own ? String.Format("lump %s %d", lump, l) : "Doom's", p, plays, pp, S_GetLength(snd), Label(isTake, 0)));
+			}
+			Check("sounds", takes.Size() > 0 && sets.Size() > 0, String.Format("ajsounds.txt: %d takes, %d sets", takes.Size(), sets.Size()));
 			string all = "";
-			bool ok = n > 0;
+			bool ok = true;
 			for (int i = 0; i < n; i++)
 			{
 				int l = Wads.CheckNumForName(lumps[i], Wads.ns_music);
 				all = all .. String.Format(" %s=%d", lumps[i], l >= 0);
 				if (l < 0) ok = false;
 			}
-			Check("manifest", ok, String.Format("%d tracks:%s", n, all));
-			Check("start", take == 0 && setv == 0 && track == 0 && h.takeSound == "" && h.setSound == "" && !h.carried
-				&& h.FindFrame(101).door && h.FindFrame(102).door && !h.FindFrame(103).door && !h.FindFrame(104).door);
+			Check("manifest", ok, String.Format("ajmusic.txt: %d tracks:%s", n, all));
+			// as many rounds as it takes for both to come round to the game's together
+			rounds = 1;
+			while (rounds % (takes.Size() + 1) || rounds % (sets.Size() + 1)) rounds++;
+			Check("start", take == 0 && setv == 0 && track == 0 && h.takeSound == "" && h.setSound == "" && h.takePitch == 0 && h.setPitch == 0 && !h.carried
+				&& h.FindFrame(101).door && h.FindFrame(102).door && !h.FindFrame(103).door && !h.FindFrame(104).door,
+				String.Format("%d rounds of the door sounds", rounds));
 			return;
 		}
 		// music + through every track
@@ -235,24 +351,24 @@ class AjarSoundLab : EventHandler
 			CheckTrack(String.Format("musicNext%d", s - m0 + 1), s - m0 + 1);
 			return;
 		}
-		// four rounds of the door sounds
+		// the rounds of the door sounds
 		int r0 = m0 + n;
-		if (s >= r0 && s < r0 + 28)
+		if (s >= r0 && s < r0 + 7 * rounds)
 		{
-			int k = (s - r0) / 7, j = (s - r0) % 7, v = (k + 1) % 4;
+			int k = (s - r0) / 7, j = (s - r0) % 7;
+			int vt = (k + 1) % (takes.Size() + 1), vs = (k + 1) % (sets.Size() + 1);
 			string at = String.Format("round%d_", k + 1);
-			bool own = v != 0;
 			switch (j)
 			{
 			case 0:
 				PressAt(mo, 1);
-				Check(at .. "takeSelected", take == v && h.takeSound == SoundOf(true, v) && h.said == "Take sound: " .. NameOf(true, v),
-					String.Format("%s (%s)", NameOf(true, take), h.TakeName()));
+				Check(at .. "takeSelected", take == vt && h.takeSound == SoundOf(true, vt) && h.takePitch == PitchOf(true, vt) && h.said == Said(true, vt),
+					String.Format("%s (%s, pitch %.2f)", h.said, h.TakeName(), h.UsedTakePitch()));
 				break;
 			case 1:
 				PressAt(mo, 2);
-				Check(at .. "setSelected", setv == v && h.setSound == SoundOf(false, v) && h.said == "Set sound: " .. NameOf(false, v),
-					String.Format("%s (%s)", NameOf(false, setv), h.SetName()));
+				Check(at .. "setSelected", setv == vs && h.setSound == SoundOf(false, vs) && h.setPitch == PitchOf(false, vs) && h.said == Said(false, vs),
+					String.Format("%s (%s, pitch %.2f)", h.said, h.SetName(), h.UsedSetPitch()));
 				break;
 			case 2:
 				d = h.FindFrame(101).door;
@@ -271,7 +387,7 @@ class AjarSoundLab : EventHandler
 				old = h.FindFrame(102).door;
 				UseFrame(mo, 102);
 				Check(at .. "swap", old && h.FindFrame(102).door == d && h.carried == old
-					&& (own ? h.swapSetTics == 7 && h.swapBy == mo : h.swapSetTics == 0),
+					&& h.swapSetTics == 9 && h.swapBy == mo,
 					String.Format("%s off, %s on; set sound to come in %d tics", old ? old.Label() : "-", d ? d.Label() : "-", h.swapSetTics));
 				break;
 			case 6:
@@ -282,7 +398,7 @@ class AjarSoundLab : EventHandler
 			}
 			return;
 		}
-		int g0 = r0 + 28;
+		int g0 = r0 + 7 * rounds;
 		if (s == g0)            // GREEN, where it leans
 		{
 			AjarDoor green;
@@ -319,7 +435,8 @@ class AjarSoundLab : EventHandler
 		if (s == b0 + n + 2)
 		{
 			Pose(mo, 560, 160, 80);
-			Console.Printf("AJARTEST soundlab=%s  (%d checks, %d failed)", fails ? "FAILED" : "ok", checks, fails);
+			Console.Printf("AJARTEST soundlab=%s  (%d checks, %d failed; %d takes, %d sets, %d rounds, %d tracks)",
+				fails ? "FAILED" : "ok", checks, fails, takes.Size(), sets.Size(), rounds, n);
 		}
 	}
 }
