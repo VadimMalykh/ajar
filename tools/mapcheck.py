@@ -2,8 +2,9 @@
 
 Reports sectors that overlap, things that stand in no sector or in a sector
 too low for them, things closer than 16 to a wall or a step they cannot
-climb, and pits: floors with everything around them more than a step higher
-and nothing that could take the player out again. The picture (4 map units to a pixel, north up) shows floors by
+climb, pits: floors with everything around them more than a step higher
+and nothing that could take the player out again, and lintels: steps down
+that are shut by a ceiling too low over the upper floor. The picture (4 map units to a pixel, north up) shows floors by
 height, things as dots (red: monsters, green: the rest) and doors, frames
 and keys in white.
 """
@@ -157,6 +158,93 @@ while todo:
                 and min(a["ceil"], b["ceil"]) - max(a["floor"], b["floor"]) >= TALL):
             got.add(j)
             todo.append(j)
+
+# --- lintels ------------------------------------------------------------------------
+# A step down that cannot be taken. The engine lets a body down from a floor only
+# when the whole of its box (32 by 32 for the player) is off that floor, and until
+# then it must fit, at the upper floor's height, under every ceiling the box is
+# under. So a step down is shut when, wherever along its edge the player comes
+# off it, something within 40 beyond the edge has its ceiling less than 56 over
+# the upper floor (40: the box and 8 to stop in; a landing of just 32 is a place
+# nobody can stand still on): a lintel that comes down with the steps, a low doorway at the
+# foot of a ledge. The same way up is open (from below the player fits), so it is
+# a trap: in and never out. Looked at: every straight piece of edge (along x or y)
+# between a floor the player gets to and a lower one, the player's box put just
+# beyond it at every place along it. A place is shut by a lintel, shut by a wall
+# (no floor there, a floor more than a step up, glass or scenery) or free; the
+# edge is reported when no place is free and a lintel shuts at least one. Sectors
+# with an id and sectors with no height (doors, lifts, floors that move) are left
+# out.
+# (2026-11-23: MAP19's link hall, floor 64, had a side door of two steps of 32
+# under lintels at 136 and 112: Vadim walked in and could not walk out.)
+BOX, LAND = 32, 40
+
+
+def edge_pieces(p, q):
+    """The straight pieces (along x or y) that the polygons p and q share:
+    (axis, at, lo, hi), axis 0 for a piece along x at y = `at`."""
+    out = []
+    for a, b in zip(p, p[1:] + p[:1]):
+        for axis in (0, 1):
+            if a[1 - axis] != b[1 - axis] or a[axis] == b[axis]:
+                continue
+            for c, d in zip(q, q[1:] + q[:1]):
+                if c[1 - axis] != a[1 - axis] or d[1 - axis] != a[1 - axis]:
+                    continue
+                lo, hi = max(min(a[axis], b[axis]), min(c[axis], d[axis])), min(max(a[axis], b[axis]), max(c[axis], d[axis]))
+                if hi - lo >= BOX:
+                    out.append((axis, a[1 - axis], lo, hi))
+    return out
+
+
+def lintels():
+    n = 0
+    moves = [bool(s["id"]) or s["floor"] == s["ceil"] for s in m.sectors]
+    for i in sorted(got):
+        hi_s = m.sectors[i]
+        if moves[i]:
+            continue
+        for j in near[i]:
+            lo_s = m.sectors[j]
+            fh = hi_s["floor"]
+            if (moves[j] or lo_s["floor"] >= fh or shut[i] & shut[j]
+                    or min(hi_s["ceil"], lo_s["ceil"]) - fh < TALL):
+                continue
+            for axis, at, lo, hi in edge_pieces(polys[i], polys[j]):
+                mid = (lo + hi) / 2
+                pt = lambda along_, across: (along_, across) if axis == 0 else (across, along_)
+                side = 1 if inside(polys[j], *pt(mid + 0.25, at + 0.5)) else -1
+                reach = (lo, min(at, at + side * LAND), hi, max(at, at + side * LAND))
+                reach = reach if axis == 0 else (reach[1], reach[0], reach[3], reach[2])
+                cand = [k for k in range(len(polys)) if touch(reach, boxes[k])]
+                free, low = 0, None
+                c = lo + BOX / 2
+                while c <= hi - BOX / 2:
+                    wall, under, top = False, fh, []
+                    for da in (-15.5, -8, 0.25, 8, 15.5):
+                        for dd in (0.5, 8, 16, 24, 32, LAND - 0.5):
+                            x, y = pt(c + da, at + side * dd)
+                            k = next((k for k in cand if inside(polys[k], x, y)), None)
+                            if k is None or k == i or m.sectors[k]["floor"] - fh > STEP or (k not in got and not moves[k]):
+                                wall = True
+                            elif not moves[k]:
+                                under = max(under, m.sectors[k]["floor"])
+                                top.append((m.sectors[k]["ceil"], k))
+                    if not wall and top and min(top)[0] - under < TALL:
+                        low = min(top)
+                    elif not wall:
+                        free += 1
+                    c += 8
+                if low and not free:
+                    a, b = pt(lo, at), pt(hi, at)
+                    print(f"LINTEL the step down from sector {i} (floor {fh}) to {j} (floor {lo_s['floor']}) at {a}-{b}: within "
+                          f"{LAND} beyond it sector {low[1]} {boxes[low[1]]} has its ceiling at {low[0]}, less than {TALL} over "
+                          f"the upper floor: the way down is shut")
+                    n += 1
+    return n
+
+
+bad += lintels()
 
 group = list(range(len(polys)))
 
