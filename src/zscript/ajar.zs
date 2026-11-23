@@ -843,30 +843,39 @@ class AjarHandler : EventHandler
 	}
 
 	// --- the sounds of taking and hanging a door ---------------------------
-	// Every door action of the player's and the thief's plays through these.
-	// An empty name is Doom's sound (doors/dr1_clos to take, doors/dr1_open to
-	// hang), and so is every level's: only the sound lab (soundlab.zs, map
-	// SOUND) chooses others, the game's own (tools/sfx.py and its sndinfo.txt)
-	// or another of Doom's played at another pitch (takePitch / setPitch: 2 an
-	// octave up, 0.5 an octave down; 0, as every level has it, or 1 is the
-	// engine's own pitch, A_StartSound's 0, so nothing changes for them).
+	// Every door taken out of a frame or off the floor (take) and every door
+	// hung in a frame (set) plays through these: the player's, the thief's,
+	// and an earlier self's in a room of goes (plate.zs, GhostDoors).
+	// The game's sounds, chosen by Vadim by ear in the sound lab on
+	// 2026-11-23: the take is the game's own "field drops" (tools/sfx.py,
+	// ajar/take -> sounds/ajtake.wav), the set Doom's lift stopping
+	// (plats/pt1_stop) played at pitch 0.7. Every level has these: an empty
+	// takeSound / setSound. Only the sound lab (soundlab.zs, map SOUND) puts
+	// another name there to compare, with its pitch (takePitch / setPitch: 2
+	// an octave up, 0.5 an octave down; 1 the sound's own).
+	const TAKE_SOUND = "ajar/take";
+	const TAKE_PITCH = 1.0;
+	const SET_SOUND = "plats/pt1_stop";
+	const SET_PITCH = 0.7;
 	string takeSound, setSound;
 	double takePitch, setPitch;
 	int swapSetTics;            // a swap's set sound is still to come in this many tics
 	Actor swapBy;
 
-	string TakeName() { return takeSound != "" ? takeSound : "doors/dr1_clos"; }
-	string SetName() { return setSound != "" ? setSound : "doors/dr1_open"; }
+	clearscope string TakeName() { return takeSound != "" ? takeSound : TAKE_SOUND; }
+	clearscope string SetName() { return setSound != "" ? setSound : SET_SOUND; }
+	clearscope double UsedTakePitch() { return takeSound != "" ? takePitch : TAKE_PITCH; }
+	clearscope double UsedSetPitch() { return setSound != "" ? setPitch : SET_PITCH; }
+	// A_StartSound's pitch: 0 is the sound's own
 	static double PitchArg(double p) { return p > 0 && p != 1 ? p : 0; }
 
-	void PlayTake(Actor who) { if (who) who.A_StartSound(TakeName(), CHAN_AUTO, 0, 1.0, ATTN_NORM, PitchArg(takePitch)); }
-	void PlaySet(Actor who) { if (who) who.A_StartSound(SetName(), CHAN_AUTO, 0, 1.0, ATTN_NORM, PitchArg(setPitch)); }
+	void PlayTake(Actor who) { if (who) who.A_StartSound(TakeName(), CHAN_AUTO, 0, 1.0, ATTN_NORM, PitchArg(UsedTakePitch())); }
+	void PlaySet(Actor who) { if (who) who.A_StartSound(SetName(), CHAN_AUTO, 0, 1.0, ATTN_NORM, PitchArg(UsedSetPitch())); }
 
-	// Doom's sounds: one dr1_open, as it always was. The game's own: the
-	// door comes off (take), and a moment later the other goes on (set).
+	// A swap: the door comes off (take), and a moment later the other goes
+	// on (set).
 	void PlaySwap(Actor who)
 	{
-		if (takeSound == "" && setSound == "") { PlaySet(who); return; }
 		PlayTake(who);
 		swapBy = who;
 		swapSetTics = 9;

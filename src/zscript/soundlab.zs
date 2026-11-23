@@ -3,21 +3,25 @@
 //
 // Four switches on the east wall, each a line that activates an
 // AjarSoundButton (args[0]: 1 TAKE, 2 SET, 3 MUSIC +, 4 MUSIC -):
-//   TAKE, SET    step the sound of taking (or hanging) a door on: Doom's, 1,
-//                2, ... n, Doom's ..., the candidates listed in ajsounds.txt
-//                (tools/sfx.py: kind|logical name|its name[|pitch]: the name
-//                is the game's own, ajar/take1, or one of Doom's, misc/w_pkup;
-//                the pitch 1 if not given), play it and say which it is,
-//                counting Doom's door as the first ("2 of 8: ..."). Every door
-//                action then uses it (AjarHandler.PlayTake / PlaySet / PlaySwap
-//                in ajar.zs).
+//   TAKE, SET    step the sound of taking (or hanging) a door on: the
+//                game's, 1, 2, ... n, the game's ..., the candidates listed in
+//                ajsounds.txt (tools/sfx.py: kind|logical name|its name[|pitch]:
+//                the name is the game's own, ajar/take1, or one of Doom's,
+//                misc/w_pkup; the pitch 1 if not given; Doom's old door the
+//                first), play it and say which it is, counting the game's as
+//                the first ("1 of 8: the game's: field drops"). The game's is
+//                what every level plays (AjarHandler's TAKE_SOUND ... SET_PITCH
+//                in ajar.zs, an empty takeSound / setSound); ajsounds.txt's
+//                gametake and gameset lines only name it for the lab. Every
+//                door action then uses the one chosen (AjarHandler.PlayTake /
+//                PlaySet / PlaySwap).
 //   MUSIC +, -   step through silence and the tracks listed in ajmusic.txt
 //                (tools/music_trial.py, from trial/music/: LUMP|Title|what it
 //                is for), start the chosen one from its beginning and say
 //                what it is. A build with none says where they go.
 // Nothing about the candidates is written here: both lists are read at load.
 // What is chosen is always on screen, top right. The level begins with
-// Doom's sounds and silence.
+// the game's sounds and silence.
 //
 // MAP=SOUND MODE=1 tools/smoke.sh: the walkthrough at the end of this file.
 
@@ -43,7 +47,10 @@ class AjarSoundButton : Actor
 
 class AjarSoundLab : EventHandler
 {
-	int take, setv;             // 0 Doom's, 1.. the candidates of ajsounds.txt
+	int take, setv;             // 0 the game's, 1.. the candidates of ajsounds.txt
+	string gameTake, gameSet;   // ajsounds.txt's gametake and gameset: logical name, what it is, pitch
+	string gameTakeName, gameSetName;
+	double gameTakePitch, gameSetPitch;
 	int track;                  // 0 silence, 1.. the tracks of ajmusic.txt
 	Array<string> takes, takeNames, sets, setNames;     // logical sound names and what each is
 	Array<double> takePitches, setPitches;
@@ -104,11 +111,11 @@ class AjarSoundLab : EventHandler
 		return l;
 	}
 
-	// "2 of 8: Doom: weapon pick-up", "1 of 8: Doom's door": Doom's door counted as the first
+	// "3 of 8: Doom: weapon pick-up", "1 of 8: the game's: field drops": the game's counted as the first
 	clearscope string Label(bool isTake, int i)
 	{
 		return String.Format("%d of %d: %s", i + 1, (isTake ? takes.Size() : sets.Size()) + 1,
-			i == 0 ? "Doom's door" : isTake ? takeNames[i - 1] : setNames[i - 1]);
+			i == 0 ? "the game's: " .. (isTake ? gameTakeName : gameSetName) : isTake ? takeNames[i - 1] : setNames[i - 1]);
 	}
 
 	clearscope string SoundOf(bool isTake, int i)
@@ -141,12 +148,15 @@ class AjarSoundLab : EventHandler
 	{
 		Array<string> f;
 		takes.Clear(); takeNames.Clear(); sets.Clear(); setNames.Clear(); takePitches.Clear(); setPitches.Clear();
+		gameTake = ""; gameSet = ""; gameTakeName = "?"; gameSetName = "?"; gameTakePitch = 0; gameSetPitch = 0;
 		ReadSounds(f);
 		for (int i = 0; i + 3 < f.Size(); i += 4)
 		{
 			double p = f[i + 3].ToDouble();
 			if (f[i] == "take") { takes.Push(f[i + 1]); takeNames.Push(f[i + 2]); takePitches.Push(p); }
 			else if (f[i] == "set") { sets.Push(f[i + 1]); setNames.Push(f[i + 2]); setPitches.Push(p); }
+			else if (f[i] == "gametake") { gameTake = f[i + 1]; gameTakeName = f[i + 2]; gameTakePitch = p; }
+			else if (f[i] == "gameset") { gameSet = f[i + 1]; gameSetName = f[i + 2]; gameSetPitch = p; }
 		}
 		lumps.Clear(); titles.Clear(); whats.Clear();
 		ReadList("ajmusic.txt", 3, f);
@@ -216,11 +226,12 @@ class AjarSoundLab : EventHandler
 
 	// --- the walkthrough (ajar_autotest 1) -----------------------------------------
 	// Steps 10 tics apart, every count taken from the two lists. Every sound of
-	// ajsounds.txt defined and its lump there, every lump of ajmusic.txt there;
+	// ajsounds.txt defined and its lump there, the game's two as AjarHandler
+	// plays them, every lump of ajmusic.txt there;
 	// Music + through every track; then rounds of TAKE and SET (each moves
 	// both sounds on one; as many rounds as it takes for both to come round
-	// to Doom's together, so with as many sets as takes every pair of the same
-	// number is heard together, and Doom's pair), each round taking a door from
+	// to the game's together, so with as many sets as takes every pair of the
+	// same number is heard together, and the game's pair), each round taking a door from
 	// 101, hanging it in 103, taking it again and swapping it for the door in
 	// 102, and hanging that in 101; GREEN taken from where it leans; Music +
 	// once more (silence) and Music - all the way round back to silence.
@@ -300,6 +311,20 @@ class AjarSoundLab : EventHandler
 					String.Format("%s, %s, pitch %.2f, length %.3f s: %s", name, own ? String.Format("lump %s %d", lump, l) : "Doom's",
 						p, S_GetLength(snd), isTake ? takeNames[k - 1] : setNames[k - 1]));
 			}
+			// the game's two: what ajsounds.txt names them is what AjarHandler plays with nothing chosen
+			for (int i = 0; i < 2; i++)
+			{
+				bool isTake = i == 0;
+				string name = isTake ? gameTake : gameSet, lump = LumpOf(name);
+				string plays = isTake ? h.TakeName() : h.SetName();
+				double p = isTake ? gameTakePitch : gameSetPitch, pp = isTake ? h.UsedTakePitch() : h.UsedSetPitch();
+				Sound snd = name;
+				bool own = IsOwn(name);
+				int l = own ? Wads.CheckNumForName(lump, Wads.ns_sounds) : 0;
+				Check(isTake ? "defined_gametake" : "defined_gameset", name != "" && name == plays && p == pp && snd != 0 && l >= 0,
+					String.Format("%s, %s, pitch %.2f (the handler plays %s at %.2f), length %.3f s: %s", name,
+						own ? String.Format("lump %s %d", lump, l) : "Doom's", p, plays, pp, S_GetLength(snd), Label(isTake, 0)));
+			}
 			Check("sounds", takes.Size() > 0 && sets.Size() > 0, String.Format("ajsounds.txt: %d takes, %d sets", takes.Size(), sets.Size()));
 			string all = "";
 			bool ok = true;
@@ -310,7 +335,7 @@ class AjarSoundLab : EventHandler
 				if (l < 0) ok = false;
 			}
 			Check("manifest", ok, String.Format("ajmusic.txt: %d tracks:%s", n, all));
-			// as many rounds as it takes for both to come round to Doom's together
+			// as many rounds as it takes for both to come round to the game's together
 			rounds = 1;
 			while (rounds % (takes.Size() + 1) || rounds % (sets.Size() + 1)) rounds++;
 			Check("start", take == 0 && setv == 0 && track == 0 && h.takeSound == "" && h.setSound == "" && h.takePitch == 0 && h.setPitch == 0 && !h.carried
@@ -333,18 +358,17 @@ class AjarSoundLab : EventHandler
 			int k = (s - r0) / 7, j = (s - r0) % 7;
 			int vt = (k + 1) % (takes.Size() + 1), vs = (k + 1) % (sets.Size() + 1);
 			string at = String.Format("round%d_", k + 1);
-			bool own = vt != 0 || vs != 0;
 			switch (j)
 			{
 			case 0:
 				PressAt(mo, 1);
 				Check(at .. "takeSelected", take == vt && h.takeSound == SoundOf(true, vt) && h.takePitch == PitchOf(true, vt) && h.said == Said(true, vt),
-					String.Format("%s (%s, pitch %.2f)", h.said, h.TakeName(), h.takePitch));
+					String.Format("%s (%s, pitch %.2f)", h.said, h.TakeName(), h.UsedTakePitch()));
 				break;
 			case 1:
 				PressAt(mo, 2);
 				Check(at .. "setSelected", setv == vs && h.setSound == SoundOf(false, vs) && h.setPitch == PitchOf(false, vs) && h.said == Said(false, vs),
-					String.Format("%s (%s, pitch %.2f)", h.said, h.SetName(), h.setPitch));
+					String.Format("%s (%s, pitch %.2f)", h.said, h.SetName(), h.UsedSetPitch()));
 				break;
 			case 2:
 				d = h.FindFrame(101).door;
@@ -363,7 +387,7 @@ class AjarSoundLab : EventHandler
 				old = h.FindFrame(102).door;
 				UseFrame(mo, 102);
 				Check(at .. "swap", old && h.FindFrame(102).door == d && h.carried == old
-					&& (own ? h.swapSetTics == 9 && h.swapBy == mo : h.swapSetTics == 0),
+					&& h.swapSetTics == 9 && h.swapBy == mo,
 					String.Format("%s off, %s on; set sound to come in %d tics", old ? old.Label() : "-", d ? d.Label() : "-", h.swapSetTics));
 				break;
 			case 6:

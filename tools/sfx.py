@@ -24,12 +24,20 @@ B. Recordings turned into shapes no door makes: reversed, re-pitched,
 
 Written mono, 22050 Hz, 16-bit (44100 Hz sources are low-passed and halved).
 
+The game's own door sounds, chosen by Vadim by ear in the lab on 2026-11-23
+(GAME below): the take is B's "field drops", the set Doom's lift stopping at
+pitch 0.7. Every level plays them (AjarHandler in src/zscript/ajar.zs, whose
+TAKE_SOUND ... SET_PITCH must say the same). The rest stay candidates, to
+compare again in the lab, Doom's old door first among them.
+
 make_all() gives build.py:
-    sounds/ajtake1.wav ... sounds/ajsetN.wav   family B, in table order
-    sndinfo.txt     ajar/take1..n -> ajtake1..n, ajar/set1..n -> ajset1..n
-    ajsounds.txt    one line a candidate, kind|logical name|its name|pitch,
-                    family A then B, read by the lab (src/zscript/soundlab.zs)
-Every level still plays Doom's door sounds; only the lab chooses these.
+    sounds/ajtake.wav                          the game's take (ajar/take)
+    sounds/ajtake1.wav ... sounds/ajsetN.wav   family B's candidates, in table order
+    sndinfo.txt     ajar/take -> ajtake, ajar/take1..n -> ajtake1..n, ajar/set1..n -> ajset1..n
+    ajsounds.txt    one line a sound, kind|logical name|its name|pitch: first
+                    the game's two (kind gametake, gameset), then the
+                    candidates (take, set), family A then B, read by the lab
+                    (src/zscript/soundlab.zs)
 
     python3 tools/sfx.py DIR [IWAD]     writes the WAVs, sndinfo.txt and
                                         ajsounds.txt to DIR and prints each
@@ -55,15 +63,26 @@ LOUD = -13.0                    # dBFS, RMS of the loudest 100 ms
 CEIL = -1.2                     # dBFS, the limiter's ceiling (the peak stays under it)
 EDGE = 0.003                    # s, the fades at both ends
 
+# --- the game's own: chosen by Vadim by ear in the lab, 2026-11-23 ------------------
+# The same names and pitches as AjarHandler's TAKE_SOUND, TAKE_PITCH, SET_SOUND,
+# SET_PITCH (src/zscript/ajar.zs); the lab checks that they agree. The take's
+# recipe is take_field_drops below, written as sounds/ajtake.wav.
+GAME = [
+    # kind    its name in the lab                logical name      pitch
+    ("take", "field drops",                     "ajar/take",       1.0),
+    ("set",  "Doom's lift stops, pitch 0.7",    "plats/pt1_stop",  0.7),
+]
+
 # --- family A: Doom's own, by name and pitch ----------------------------------------
 DOOM = [
     # kind    its name in the lab             logical name (GZDoom's Doom sndinfo)  pitch
+    ("take", "Doom's door (the old one)",     "doors/dr1_clos",                      1.0),
     ("take", "Doom: weapon pick-up",          "misc/w_pkup",                         1.0),
     ("take", "Doom: fast door shuts",         "doors/dr2_clos",                      1.0),
     ("take", "Doom: lift starts, pitch 1.3",  "plats/pt1_strt",                      1.3),
+    ("set",  "Doom's door (the old one)",     "doors/dr1_open",                      1.0),
     ("set",  "Doom: lift stops",              "plats/pt1_stop",                      1.0),
     ("set",  "Doom: fast door opens",         "doors/dr2_open",                      1.0),
-    ("set",  "Doom: lift stops, pitch 0.7",   "plats/pt1_stop",                      0.7),
 ]
 
 
@@ -478,7 +497,6 @@ OWN = [
     ("take", "un-slam",           take_unslam),
     ("take", "un-slam, low",      take_unslam_low),
     ("take", "peel",              take_peel),
-    ("take", "field drops",       take_field_drops),
     ("set",  "seal",              set_seal),
     ("set",  "slam with sub",     set_slam_sub),
     ("set",  "field up, clunk",   set_field_clunk),
@@ -509,8 +527,11 @@ def make_all():
     global _made
     if _made is None:
         out, snd, listing, count = {}, [], [], {"take": 0, "set": 0}
-        snd.append("// Made by tools/sfx.py from recordings (assets/sounds/kenney-rpg, kenney-scifi; CC0): the sound\n"
-                   "// lab's door sounds. Every level still plays Doom's; the lab (soundlab.zs) chooses these.\n")
+        snd.append("// Made by tools/sfx.py from recordings (assets/sounds/kenney-rpg, kenney-scifi; CC0): the game's\n"
+                   "// take (ajar/take, every level plays it) and the sound lab's candidates (soundlab.zs).\n")
+        out["sounds/ajtake.wav"] = wav(finish(take_field_drops()))
+        snd.append(f"ajar/take\tajtake\t\t// the game's take, {GAME[0][1]}: {first_line(take_field_drops)}")
+        game = [f"game{kind}|{logical}|{name}|{pitch:g}" for kind, name, logical, pitch in GAME]
         for kind, name, logical, pitch in DOOM:
             listing.append(f"{kind}|{logical}|{name}|{pitch:g}")
         own = {"take": [], "set": []}
@@ -520,7 +541,7 @@ def make_all():
             out[f"sounds/{lump}.wav"] = wav(finish(recipe()))
             snd.append(f"ajar/{kind}{count[kind]}\t{lump}\t\t// {name}: {first_line(recipe)}")
             own[kind].append(f"{kind}|ajar/{kind}{count[kind]}|{name}|1")
-        listing = [l for l in listing if l.startswith("take")] + own["take"] + [l for l in listing if l.startswith("set")] + own["set"]
+        listing = game + [l for l in listing if l.startswith("take")] + own["take"] + [l for l in listing if l.startswith("set")] + own["set"]
         out["sndinfo.txt"] = "\n".join(snd) + "\n"
         out["ajsounds.txt"] = "\n".join(listing) + "\n"
         _made = out
@@ -572,12 +593,12 @@ if __name__ == "__main__":
     os.makedirs(out, exist_ok=True)
     print(f"{'sound':10} {'length s':>9} {'peak dBFS':>10} {'RMS 100ms':>10} {'at %':>5}  envelope by tenths (dB)          name")
     made = make_all()
-    names = iter(OWN)
+    names = iter([GAME[0][1] + " (the game's)"] + [name for kind, name, recipe in OWN])
     for path, data in made.items():
         with open(os.path.join(out, os.path.basename(path)), "wb" if isinstance(data, bytes) else "w") as f:
             f.write(data)
         if path.endswith(".wav"):
-            kind, name, recipe = next(names)
+            name = next(names)
             ln, pk, rms, at, env = wav_figures(data)
             print(f"{os.path.basename(path)[:-4]:10} {ln:9.3f} {pk:10.2f} {rms:10.2f} {at:5.0f}  {env}  {name}")
     if len(sys.argv) > 2:
