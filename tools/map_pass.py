@@ -43,7 +43,7 @@ and 106, 768 + 16 + 16 = 800; a lap of bay 6 is 544 along (head landing
 128 + flight 256 + foot landing 128 + two recesses of 16) and 128 down. For
 the double to walk the real sealed corridor and stair, the sealed part has
 to repeat with that period: the stair's landings are 128 + 16 + 16 + 128.
-The checks are in src/zscript/pass.zs (MODE=1..5 tools/smoke.sh).
+The checks are in src/zscript/passtest.zs (MODE=1..5 tools/smoke.sh).
 """
 import ajarmap
 from ajarmap import RED, GREEN, BLUE, TEAL, ORANGE, far_id, LIFT, DEPTH, STUB, DOOR_H
