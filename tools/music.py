@@ -49,7 +49,9 @@ Six more quiet ones, 2026-11-23: Vadim asked for more like After Hours (the
 piece of MAP01 and MAP10). They are the last six of TRACKS, written the way
 that one is: held chords two bars long over a low note, a tune of a few long
 notes coming in after eight bars, one more voice every eight bars, hardly any
-drums, then round again from the bare beginning. No map plays them yet.
+drums, then round again from the bare beginning. Vadim heard them in the
+lab on 2026-11-24 and gave three their maps: Do Not Disturb MAP11, Light
+Under the Door MAP19, Standing Water MAP33; the other three play nowhere yet.
 """
 import random
 import re

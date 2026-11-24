@@ -13160,3 +13160,18 @@ problems and the measure's rules hold (SB: BLUE in 142 brings it to 0 for
 the panes, BLUE in 141 to -64).
 
 Not played by hand.
+
+## Three of the quiet pieces given their maps (2026-11-24)
+
+**Vadim**, after hearing the six in the sound lab: "Put 13 on map 11, 15 -
+map 19, 18 - map 33". In `src/mapinfo.txt`:
+
+| Map | Piece now | Was |
+|---|---|---|
+| MAP11 "By Appointment" | Do Not Disturb (`AJM_DSTB`) | Carbon Copy |
+| MAP19 "On Paper" | Light Under the Door (`AJM_LGHT`) | Filing Under Fire |
+| MAP33 "Third Person" | Standing Water (`AJM_WATR`) | Carbon Copy |
+
+So Carbon Copy plays on no map now (the lab still has it), and Filing Under
+Fire only on MAP09. Left Luggage, Between Floors and Night Bell (14, 16, 17)
+have no map; Vadim has not said what he thinks of them.
