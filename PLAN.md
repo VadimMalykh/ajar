@@ -15099,6 +15099,213 @@ these are signs, not measures):
   plate, so that it never depends on how fast go 1's guards died. The
   breaker is thrown at the alarm + 200 in go 2, while the hall is full.
 
+## The yard lab: a common place on three levels (built 2026-11-25)
+
+> Vadim, 2026-11-24: "Also map itself, it's better now, but still during the go, could we have some common places 3 copies go through, maybe not alwasy separated by transparent wall, but also maybe some ouside area where whey're going on different levels (so it would be again piece of common fight maybe, if they all appear there in the same time and we have flying monsters that could go between different levels." ... "Also yes, let's try open yard in the middle" ... "Also they don't need to be on the yard together. Sometimes they can, sometimes they won't, not an issue."
+
+Step (1) of "MAP33: the yard in the middle" above: the rule and a small lab
+map. Decided on Fable, built by Claude on Opus in the task `yard-lab`.
+**Nobody has played it. MAP33 does not have the yard yet** (that is step 2):
+the rule runs only on a map with an `AjarThirdCommon` thing, so MAP33, THIRD
+and LAST play as before (run below).
+
+**The rule, as built** (third.zs's head, "A COMMON PLACE", rules 1 to 8;
+`src/zscript/common.zs`). Each part goes through one place on its own level.
+1. In go k, group k comes the first time the player (alive) stands on level
+   k: each monster in a teleport fog, awake (not ambush), its first target
+   the nearest it sees of the player and the earlier selves that are in the
+   place (the player if none); `brain/spit` at full volume; the line "They
+   come for you over the yard. / Your way on opens once every one of them is
+   dead." The tic is kept (comeTic[k]). From then what the player fires is
+   followed (last.zs's record).
+2. Part k's way (`AjarThirdWay`, an AjarShutter made `nomonsters`): open in
+   every go before k; in go k shut until every monster of group k is dead (a
+   dying pain elemental still counts as living; the lost souls it spits are
+   of its group); then it opens for good (`HoldShutter`, as a hall's win) with
+   "Nothing of them lives: your way on from the yard is open."; the tic is
+   kept (doneTic[k]). In a later go shut until doneTic[k], open after.
+3. In a later go group k comes again, at comeTic[k], as in 1 (the line "Your
+   first self is in the yard: its fight there comes again."). From then until
+   its record's last tic in the place, self k is there: shootable, never
+   harmed (`AjarLastSelf`, NODAMAGE), a target monsters may take (the engine
+   moves a monster off a target that stops being shootable), and it fires
+   again what the player fired there (6). At doneTic[k] every living monster
+   of group k dies with its death played (damage `Massacre`, so a pain
+   elemental spits no souls), with "Your first self's fight in the yard is
+   over: what was left of it falls." when anything was left. A pale stretch
+   of its record is not there.
+4. In a go before k, group k is not there; at each comer marked seen fallen a
+   body lies (an `AjarFigure` args[0] 2, the gallery's; none for a monster
+   with no body). The bodies go at the start of go k.
+5. At each go's start: the groups' monsters (wherever they went) go, and in
+   the place every monster, body, missile and dropped thing, and the
+   missiles of the selves anywhere. The kill counters lose them as the last
+   hall's do (dead ones: total and killed, and the player's kill in single
+   play, where the engine gives the player every death).
+6. What the player fires from group k's coming on, while in the place, is
+   written in the go's take (last.zs's record: bullets, shells, missiles).
+   A self fires it again while it is there, AIMED AGAIN: a hitscan turns to
+   the nearest living, shootable monster of the place it sees within 15
+   degrees (horizontally) of its angle, its pitch to the monster's middle
+   (else as the last hall's: autoaim, else as it looked); a missile keeps its
+   speed and goes to such a monster within 15 degrees of its way, else as
+   recorded. Not at the last hall. **One consumer for both**
+   (`LastSelvesFight`): each tic every event whose tic has come is fired
+   (the self in the place now, or the alarm on and the event from it) or
+   dropped; never fired late. The last hall's stagger is as before.
+7. The timetable: "k is in the yard m:ss to m:ss" in k's colour (comeTic to
+   its leaving).
+8. No paradox of its own; winding on is not refused; nothing asks the selves
+   to be there together.
+
+**The contract** (third.zs's head): `AjarThirdCommon` 20173, at most one,
+args[0] the tag of the place's sectors that are no part's level; sector tag
+3390 + k part k's level; the place is those sectors. `AjarThirdComer` 20174:
+args[0] the Doom editor number (AjarHandler.AmbushClass), args[1] the part,
+args[2] 1 seen fallen; a flyer at its height. `AjarThirdWay` 20175: args[0]
+the part, args[1] the shutter's tag. In `tools/ajarthird.py`:
+`level_tag(k)`, `common(m, x, y, tag)`, `comer(m, x, y, part, kind, angle=0,
+z=0, fallen=False, skill=None)`, `way(m, x, y, part, shutter_tag)`, `rim(m,
+a, b)` (AJRAIL, two-sided, `blockplayers` only), `sealed(m, inside, ...)`
+(asserts every two-sided line out of the place blocks monsters);
+`ways()` counts a `blockplayers` line as closed. budget, thingcheck,
+mapcheck, itemcheck and udmf's skill thinning take a comer as its monster
+(args[0]), as they do 20167.
+
+**The lab map YARD** (`tools/map_yard.py`, `MAP=YARD ./run.sh`; 109 sectors,
+76 things). Three parts as THIRD has them (start room, boxes behind glass,
+supplies, plates, time doors, the wind plate, an exit). The yard: 768 x
+1216 (x 1536..2304, y 0..1216), floor -128, open to the sky, four octagonal
+pumps 96 high as cover. Part 2 comes down stairs from the west (C2) onto the
+floor and leaves at the east by its way (a shutter at x 2304) and up
+stairs. Part 1's ledge along the north rim (y 1216..1344, floor 0), part 3's
+along the south rim (y -128..0, floor -64), each 128 deep, entered and left
+at its east end (the way at x 2304), a dead end at the west with ammunition;
+AJRAIL rims between ledge and yard. Every other way out of the yard blocks
+monsters (asserted, 5 lines and more). Groups, all skills: part 2 on the
+floor 4 demons, 2 hell knights, 2 imps (all seen fallen) and 2 cacodemons
+over it; part 1 3 cacodemons and a pain elemental over the middle (192 up);
+part 3 3 cacodemons over the middle (128 up). The generator asserts the parts
+apart, the levels tagged, the walkers on the floor's level and the yard
+closed to monsters. `mapcheck.py map_yard` 0 problems, `thingcheck.py
+map_yard` 0, `itemcheck` 0.
+
+**What changed, in which file.**
+- `src/zscript/common.zs` (new): the rule (`CommonLoaded`, `CommonBegin`,
+  `CommonClear`, `CommonTick`, `CommonCome`, `CommonOver`, `CommonWays`,
+  `CommonAim*`, `CommonSchedule`, a `WorldThingSpawned` that gives a lost soul
+  to the group of the pain elemental nearest it within 160).
+- `src/zscript/last.zs`: `FireFrom` (the record's start, from the alarm or a
+  group's coming), `AlarmOn`; `LastRecordFire` follows from either and writes
+  only while the player is in the place (or the alarm is on);
+  `LastSelvesFight` is the one consumer (above); `LastFire` takes `again`.
+  With no common place and the alarm on, the last hall behaves as before,
+  except that a pale self's events are dropped, not fired all at once when
+  it is no longer pale (the rule's "never late").
+- `src/zscript/third.zs`: the contract and rules in its head; one-line hooks
+  (loaded, tick, a go's begin, the shutters, the timetable; the selves are
+  `AjarLastSelf` with a common place too). `map32.zs`: one line
+  (`CommonDamaged`). `src/mapinfo.txt`: 20173 to 20175, map YARD.
+- `src/zscript/yardtest.zs` (new), `thirdtest.zs`/`ajar.zs` (the dispatch),
+  `tools/smoke_YARD_1.cfg` to `_3.cfg`.
+- `tools/ajarthird.py`, `tools/map_yard.py` (new), `tools/build.py`, and the
+  checks above.
+
+**The tests** (`MAP=YARD MODE=n TIMEOUT=420 tools/smoke.sh`; god mode; the
+script fires bullets each 4 tics and a rocket each 17 at the nearest group
+monster it sees, spending real ammunition so the record sees it):
+- `MODE=1`, three goes, the selves NOT meeting: **47 of 47**. Go 1 comes onto
+  its ledge late (2405), go 2 onto the floor early (191), go 3 onto its
+  ledge after the second self has left and done before the first comes
+  (1181 to 1349; first self 2405). Each go: the place empty, the counters 0
+  (total, killed, the player's), the bodies (8 in go 1, none after), the
+  ways as rule 2, the timetable (0, 1, 2 yard lines) at its start; nothing of
+  its group before the step (2403, 189, 1179 tics looked at); at the step
+  the whole group (4, 10, 3), awake, each with a target, the line; its way
+  shut until the group's end, open and held after, the line; the take's
+  shots all from the coming and in the yard (65 bullets 12 missiles, 184 and
+  5, 42 and 10). Each earlier group in each later go: not there the tic
+  before, all there at its tic with a target (on the self: 4 of 4, 8 of 10),
+  the self shootable and in the place, the line; the self fired all of its
+  record's shots in that time (112 of 112, 207 of 207), never harmed; at its
+  end nothing of it alive; its way as it was; the self not shootable the tic
+  after its leaving. Go 3 had no tic with a group-3 fight while a self was in
+  the yard; out by the exit, the level begins again.
+- `MODE=2`, the selves MEETING: **50 of 50**. The direct check in go 1: a
+  self 10 degrees off a still imp turns to it (five shots took 45); 30
+  degrees off it does not turn (took 0). Go 3 steps onto the south ledge 58
+  tics after the first self's group comes again: 398 tics on its ledge
+  while the first self is in the yard; group 1's monsters went for the
+  player 63 monster-tics and for the first self 1436. Otherwise as mode 1.
+- `MODE=3`, mode 2 with four views (`smoke_YARD_3.cfg`): **50 of 50**. Go 1
+  from the ledge's door before its step: the eight bodies on the floor
+  through the railing (small at that distance); go 1 on its ledge: its
+  cacodemons and the pain elemental over the yard; go 2 on the floor: its
+  group on it (an imp in the face, a cacodemon's ball); go 3 on the south
+  ledge looking north: group 1 and group 3 together over the yard, the
+  north ledge beyond, the timetable's yard lines in the selves' colours.
+  The first self on the far ledge is too small to make out at 90 degrees of
+  view.
+- Not broken (on this branch's build): `MAP=LAST MODE=1 TIMEOUT=320
+  EXTRA="+set save_dir /out/saves"` three times: 105 of 105, 108 of 108,
+  108 of 108 (the first run has no 0: its stagger test found no tic to
+  hurt the first self at, its go 1 having fired only from 0:16 to 0:24 and
+  the self staggered by the guards meanwhile, so its three stagger checks
+  were not made; the test picks its tic from the fight, which is not the
+  same twice); `MAP=LAST MODE=4 TIMEOUT=320` 105 of 105; `MAP=THIRD MODE=3`
+  53 of 53; `MAP=MAP33 MODE=1 TIMEOUT=500 EXTRA="+set save_dir /out/saves"`
+  250 of 250.
+- `mapcheck.py map_yard`, `thingcheck.py map_yard`, `itemcheck.py`: 0
+  problems. `./build.sh` (the full build): passes.
+
+**Measurements** (the fight is not the same twice: signs, not measures):
+- The selves' kills with aiming again (group 1 is 3 cacodemons, the pain
+  elemental and what lost souls it spits). Mode 1: go 2, of group 1's 7
+  dead the first self killed 4, 3 died of other things (infighting, the
+  souls' own), none was left at its end; go 3, the first self 6 of 8, 2 at
+  its end; the second self 6 of group 2's 10, 1 at its end, 3 other. Mode
+  2, go 3, the player also fighting group 1: the player 6 of its 10, the
+  first self 1, 1 at its end, 2 other; the second self 7 of group 2's 10.
+  The last hall lab, without aiming again: the first self 2 of 10 in go 2,
+  the selves together 5 or 6 of 10 in go 3.
+- Of the selves' shots aimed again, hits: self 1 54 of 112 and 47 of 112
+  (mode 1, go 2 and 3), 126 of 175 (mode 2, go 2), 20 of 175 when the player
+  shares its fight (mode 2, go 3); self 2 163 of 207, 162 of 189.
+- common.zs's work a tic in go 3: 0.017 ms on average, 1.0 at worst (mode
+  1), 0.016 and 0.63 (mode 2); the wall clock between tics 28.6 ms.
+
+**Not tested / not played by hand**:
+- Nobody has played it. Not known: whether a player sees the earlier self's
+  fight across the yard as "my self fighting" (in the view it is too far to
+  make out; the cacodemons' going for it is what shows it), whether the
+  bodies on the floor read in go 1, whether 15 degrees is too kind.
+- A self with a pale stretch in the yard, winding on in the yard, a save
+  loaded in the yard, a part with no group, a shotgun's or the SSG's shots
+  aimed again (the script fires only bullets and rockets), a multiplayer
+  game, skills other than 3 (the groups are on all skills in the lab).
+- The yard with the last hall on one map (MAP33's case): the consumer is one,
+  but no map has both yet.
+- MAP33 (step 2).
+
+**My choices** (Claude's on Opus, small; each easy to change):
+- The group comes on the level's sectors only; "in the place" (recording,
+  the self's being there, its leaving) counts the place's own sectors too
+  (stairs in, the pumps' tops): so part 2 records from the floor's foot and
+  self 2 is there until it is up its stairs.
+- A self is there from comeTic to its record's last tic in the place (+1),
+  computed at each go's start from the take; the group's end does not end
+  the self's being there.
+- Lost souls belong to the group of the pain elemental nearest where they
+  appear (within 160), as the engine gives them no master.
+- The end at doneTic kills with `Massacre` (no souls from a pain elemental);
+  its line only when something was left.
+- The lines, the sound (`brain/spit` at full volume, as the waves), and the
+  15 degrees' check of sight (`CheckSight`).
+- In the lab: the seen fallen are part 2's eight walkers; the cacodemons
+  over the floor are not; the ledges' ammunition at their west ends.
+- The tests' scripted fire spends the ammunition it fires (and tops up out of
+  the record, between shots), so the record is the real one.
+
 ## MAP33: the last hall with the four rules (built 2026-11-25)
 
 > Vadim, 2026-11-24, about the last fight: "any other ideas how 3 copies can help each other there, not just fighting 3 times the same fight? ... Shouldn't be as direct as we had in map32, but still something that could improve feeling of cooperation there?" And on the four ideas: "Ok all options for fight cooperation sounds interesting. Let's try all, and if something not quite working we can remove later."

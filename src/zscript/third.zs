@@ -74,6 +74,19 @@
 //    AjarThirdVent thing (20172): a point of the hall's floor that steam
 //    lever args[0]'s steam blows over, within args[1] (0: 96) of it, at its
 //    floor's height (mark that floor: a colour).
+//  * AjarThirdCommon thing (20173), at most one: A COMMON PLACE (common.zs;
+//    the lab is map YARD, tools/map_yard.py). args[0] the sector tag of every
+//    sector of the place that is no part's level (stairs into it, the tops of
+//    what stands in it). Sector tag 3390 + k: part k's LEVEL in it, where go k
+//    walks (a sector has one tag: the place is args[0] or any of these).
+//    AjarThirdComer thing (20174): a monster of part args[1]'s GROUP, Doom
+//    editor number args[0] (AjarHandler.AmbushClass), at the thing's place
+//    (a flyer at its height) and angle; args[2] 1: SEEN FALLEN.
+//    AjarThirdWay thing (20175): part args[0]'s way on from its level, the
+//    AjarShutter with tag args[1] (made `nomonsters`).
+//    Railings along the levels stop players only (ajarthird.rim:
+//    `blockplayers`), so that shots, sight and flyers pass between the levels;
+//    every other way out of the place blocks monsters (ajarthird.sealed).
 //
 // The rules:
 //  * ONE CLOCK (ot, AjarTimeHandler's) for the whole map, 0 at the start of
@@ -203,6 +216,41 @@
 //       monster in the hall is held as it is (state, place, angle; not
 //       thrust) and can be hurt and killed; sparks, the hall's light
 //       flickers. Each is a timetable line of the self that works it.
+//  * A COMMON PLACE (only with an AjarThirdCommon; common.zs has it in full):
+//    every part goes through it on its own level, and an earlier self there
+//    is really there, as at the last hall.
+//    1. In go k, group k comes the first time the player (alive) stands on
+//       level k: each monster in a teleport fog, awake, its first target the
+//       nearest it sees of the player and the earlier selves in the place (the
+//       player if none); a sound and a line. The tic is kept (comeTic[k]).
+//    2. Part k's way: open in every go before k; in go k shut until group k
+//       is dead (every monster of it; a dying pain elemental still lives, and
+//       its lost souls are of its group): then it opens, with a line, and the
+//       tic is kept (doneTic[k]). In a later go shut until doneTic[k], open
+//       after (as a hall's win: ThirdShutters).
+//    3. In a later go, group k comes again, really, at comeTic[k]. From then
+//       until its record leaves the place (its last tic in it), self k is
+//       there: it can be shot (never harmed), monsters may go for it, it fires
+//       again what the player fired there (6). At doneTic[k] whatever of group
+//       k still lives dies (its death played). A pale stretch is not there.
+//    4. In a go before k group k is not there; at each comer SEEN FALLEN a
+//       body lies (the gallery's rule); at the start of go k the bodies go.
+//    5. At each go's start the place is as at the start: the groups' monsters
+//       (wherever they went), and in the place every monster, body, missile and
+//       dropped thing, and the missiles of the groups and the selves anywhere
+//       go; the kill counters lose them (as the last hall's).
+//    6. What the player fires from group k's coming on, while in the place, is
+//       written in the go's take (the last hall's record). A self fires it
+//       again while it is there, AIMED AGAIN: a hitscan turned to the nearest
+//       living monster of the place it sees within 15 degrees (horizontally)
+//       of its angle, its pitch to the monster's middle; a missile sent at its
+//       speed to such a monster near its way, else as recorded. One consumer
+//       for the place and the last hall (LastSelvesFight): an event is fired at
+//       its tic or dropped, never late.
+//    7. The timetable: "k is in the yard m:ss to m:ss" for each earlier self
+//       that was (its group's tic to its leaving).
+//    8. No paradox of its own; winding on is not refused there; nothing asks
+//       the selves to be there together.
 
 class AjarThirdMark : Actor
 {
@@ -379,6 +427,7 @@ extend class AjarTimeHandler
 		let h = Doors();
 		for (int k = 1; k <= parts; k++) { h.Link(TimeDoorId(k), 0, TIME_TEX); h.Link(BoxDoorId(k), 0, TIME_TEX); }
 		LastLoaded();               // last.zs: a last hall?
+		CommonLoaded();             // common.zs: a common place?
 	}
 
 	clearscope static string ThirdClock(int t) { return String.Format("%d:%02d", t / 35 / 60, t / 35 % 60); }
@@ -419,6 +468,7 @@ extend class AjarTimeHandler
 		ThirdRecordSelf(mo);
 		ThirdSelves();
 		GhostDoors();               // goes.zs: the earlier selves do again what they did to doors
+		CommonTick(mo);             // common.zs: the common place's fights
 		LastTick(mo);               // last.zs: the last hall's fight
 		ThirdTouch(mo);
 		if (!paradox)
@@ -456,6 +506,7 @@ extend class AjarTimeHandler
 		ThirdShutters(true);
 		ThirdExitShut();
 		LastBegin(mo);              // last.zs
+		CommonBegin(mo);            // common.zs
 		ThirdSchedule();
 		Say(ThirdWords(1, String.Format("Go 1 of %d. Your part ends at plate 1; a door with a clock\non it leads to before, into the start of the next part.", parts)));
 		LevelLocals.MakeAutoSave();
@@ -483,6 +534,7 @@ extend class AjarTimeHandler
 		ThirdShutters(true);
 		ThirdExitShut();
 		LastBegin(mo);              // last.zs
+		CommonBegin(mo);            // common.zs
 		ThirdSchedule();
 		ThirdClearDoor(mo);
 		mo.A_SetBlend("white", 1.0, 40);
@@ -562,7 +614,7 @@ extend class AjarTimeHandler
 			Vector3 p = (t.x[ot], t.y[ot], t.z[ot]);
 			if (!g)
 			{
-				g = AjarGhost(Actor.Spawn(lastMark ? "AjarLastSelf" : "AjarGhost", p));     // (last.zs)
+				g = AjarGhost(Actor.Spawn(lastMark || commonMark ? "AjarLastSelf" : "AjarGhost", p));     // (last.zs; common.zs)
 				g.bShootable = false;
 				g.A_SetTranslation(colours[min(i, 2)]);
 				ghosts[i] = g;
@@ -932,6 +984,7 @@ extend class AjarTimeHandler
 			HoldShutter(s, want, now);
 		}
 		ThirdLocks(now);
+		CommonWays(now);            // common.zs: the ways on from its levels
 	}
 
 	// A shutter kept open (or shut) by the halls' rules; `now`: at once.
@@ -1092,6 +1145,7 @@ extend class AjarTimeHandler
 				tColor.Push(Font.CR_WHITE);
 			}
 		LastSchedule();             // last.zs
+		CommonSchedule();           // common.zs
 	}
 
 	// --- winding on ------------------------------------------------------------------

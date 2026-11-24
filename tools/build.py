@@ -63,6 +63,9 @@ MAPS["MAP33"] = map_station
 import map_last                                 # the last fight lab (third.zs, last.zs)
 MAPS["LAST"] = map_last
 
+import map_yard                                 # the yard lab: a common place (third.zs, common.zs)
+MAPS["YARD"] = map_yard
+
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
 
