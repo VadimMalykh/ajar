@@ -3,7 +3,7 @@
 
 [enu default]
 
-MAP33_GO1 = "Go 1 of 3. The gatehouse of the power station. This go is the first part,\nthe yellow way along the north: the coal yard, the boiler house, the gantry\nover the turbine hall, and plate 1 at its end. The door with a clock on it\nthere leads to before, into the start of the next part.";
-MAP33_GO2 = "Go 2 of 3. The start again: your first go is setting off behind the glass.\nThis way is the second part, the green one through the middle: the workshop,\nthe floor of the turbine hall, and plate 2. Win the hall before your first\nself comes onto the gantry over it.";
-MAP33_GO3 = "Go 3 of 3. The start again: your first two goes are setting off behind the\nglass. This way is the third part, the red one along the south: the\nswitchyard, the cooling pond and its tower, the duct under the turbine\nhall's windows, and the exit door.";
+MAP33_GO1 = "Go 1 of 3. The gatehouse of the power station. This go is the first part,\nthe yellow way along the north: the coal yard, the boiler house, the gantry,\nstand 1 over the switchgear hall. Plate 1 there rings the alarm: hold it\n30 seconds in all, and the door with a clock on it opens, into the next part.";
+MAP33_GO2 = "Go 2 of 3. The start again: your first go is setting off behind the glass.\nThis way is the second part, the green one through the middle: the workshop,\nthe turbine hall (win it before your first self is on the gantry), stand 2:\nat the alarm hold plate 2, 15 seconds in all while plate 1 is held.";
+MAP33_GO3 = "Go 3 of 3. The start again: your first two goes are setting off behind the\nglass. This way is the third part, the red one along the south: the\nswitchyard, the pond and its tower, the duct, stand 3. At the alarm its gate\nopens: cross the hall to the exit door, open while both plates are held.";
 THIRD_WINDHINT = "Your earlier self is %s away.\nThe plate on the wall winds the clock on.";

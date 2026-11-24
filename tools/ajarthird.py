@@ -14,6 +14,7 @@ WIN_T = 20164       # AjarThirdWin: a shutter a hall's win opens
 WIND_T = 20165      # AjarThirdWind: a plate on a wall that winds the clock on
 LAST_T = 20166      # AjarThirdLast: the last hall, where every go fights the same fight (one to a map)
 GUARD_T = 20167     # AjarThirdGuard: a monster of the last hall, there from the alarm
+LOCK_T = 20168      # AjarThirdLock: a window hall's lobby, two shutters that lock the player in with its fight
 FIGHT = 9           # the fight number of the AjarZone over the whole map (the paradox's room)
 
 
@@ -86,6 +87,22 @@ def win(m, x, y, h, shutter_tag):
     m.thing(x, y, WIN_T, args=(h, shutter_tag))
 
 
+def lock(m, x, y, h, outer, inner, lobby):
+    """Window hall h's way in is a LOBBY (third.zs, AjarThirdLock): `lobby`
+    the tag of its sectors (give it to the hall as its second tag, so that
+    they are in the hall: recorded, and its monsters may come into them),
+    `outer` the tag of the AjarShutter between it and the way the player
+    comes, `inner` that of the one between it and the hall (counted in the
+    hall too). In the hall's go: the outer one open and the inner one shut
+    until the player stands in the lobby clear of the outer one; then the
+    outer one shuts, and once it is shut the inner one opens. Both open at
+    the win, for good. In a later go as they were then, tic by tic; before
+    the hall's go as at its start. Make the outer one worked from the
+    lobby's side (its face a-b there): whoever is under it when it shuts is
+    put into the lobby."""
+    m.thing(x, y, LOCK_T, args=(h, outer, inner, lobby))
+
+
 def plate(m, x, y, n):
     """Plate n (the end of part n), on the floor."""
     m.thing(x, y, ajartime.PLATE_T, args=(0, 0, 0, n))
@@ -114,10 +131,14 @@ def last(m, x, y, hall_tag, *, first=30, later=15, gate=0):
     m.thing(x, y, LAST_T, args=(hall_tag, first, later, gate))
 
 
-def guard(m, x, y, kind, angle=0, z=0):
+def guard(m, x, y, kind, angle=0, z=0, skill=None):
     """A monster of Doom editor number `kind` in the last hall: it comes at
-    the alarm, here, facing `angle`, awake. `z` over the floor (a flyer)."""
-    m.thing(x, y, GUARD_T, angle=angle, args=(kind,), **({"height": float(z)} if z else {}))
+    the alarm, here, facing `angle`, awake. `z` over the floor (a flyer).
+    `skill` n: there from difficulty n up (Map.thing's; without it on all)."""
+    kw = {"height": float(z)} if z else {}
+    if skill:
+        kw["skill"] = skill
+    m.thing(x, y, GUARD_T, angle=angle, args=(kind,), **kw)
 
 
 def railing(m, a, b):

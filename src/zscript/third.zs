@@ -37,6 +37,12 @@
 //  * AjarThirdWin thing (20164): the AjarShutter with tag args[1] is opened
 //    by hall args[0]'s win.
 //  * AjarThirdWind thing (20165): a plate on a wall; USE winds the clock on.
+//  * AjarThirdLock thing (20168): a window hall's LOBBY. args[0] the hall's
+//    number, args[1] the tag of the outer AjarShutter (between the lobby and
+//    the way the player comes), args[2] the inner one's (between the lobby
+//    and the hall), args[3] the lobby's sector tag (also the hall's second
+//    tag: the lobby is in the hall). The inner shutter's sector counts as in
+//    the hall too.
 //  * The line said at the start of go k may be the map's own: the string
 //    <MAPNAME>_GO<k> of the LANGUAGE lump (src/language.txt), said in place
 //    of the first lines of the engine's (ThirdWords).
@@ -88,6 +94,17 @@
 //    its gate) is won when no monster lives in it.
 //    A watch whose earlier self comes into its sectors while the hall is not
 //    won ends the universe.
+//  * LOBBIES (AjarThirdLock; MAP33's coal yard, boiler house and workshop, in
+//    place of lines no monster crosses at open doorways): in the hall's go,
+//    at its start, the outer shutter is open and the inner one shut. Once the
+//    player (alive) stands in the lobby clear of the outer shutter, it shuts
+//    (whoever is under it is put into the lobby; a monster under it holds it
+//    up); once it is shut the inner one opens and stays open. At the hall's
+//    win both open for good. The tics it locked (the outer began to shut)
+//    and opened (the inner began to open) are kept as wonTic is; in a later
+//    go the shutters are as they were at each tic (also when winding on),
+//    before the hall's go as at its start. A hall with a lobby is won when
+//    nothing of it lives (as one with an AjarThirdWin).
 //  * THE END: the exit door is open while every plate is pressed and
 //    args[2] seconds more (keyed, shut.zs: it beeps its last three seconds).
 //    Time door k opens, in go k, once the player stands on plate k while
@@ -142,6 +159,7 @@ class AjarThirdHall : AjarThirdMark {}
 class AjarThirdPost : AjarThirdMark {}
 class AjarThirdWatch : AjarThirdMark {}
 class AjarThirdWin : AjarThirdMark {}
+class AjarThirdLock : AjarThirdMark {}
 
 // A plate on a wall: USE winds the clock on (AjarTimeHandler.ThirdWind).
 class AjarThirdWind : AjarWind
@@ -224,6 +242,9 @@ extend class AjarTimeHandler
 	Array<AjarThirdWatch> watches;
 	Array<int> watchTic;        // the tic of this go at which the watched self comes into it (-1: never)
 	Array<AjarThirdWin> winners;
+	// the lobbies (AjarThirdLock): the tic of the hall's go its outer shutter began to shut, and its inner one to open (-1: not)
+	Array<AjarThirdLock> locks;
+	Array<int> lockTic, lockOpen;
 
 	// the schedule: what the earlier selves will do in this go (ThirdSchedule)
 	Array<int> plFrom, plTo, plSelf;    // the spans an earlier self stands on its plate
@@ -281,6 +302,18 @@ extend class AjarTimeHandler
 		let ni = ThinkerIterator.Create("AjarThirdWin");
 		AjarThirdWin wn;
 		while (wn = AjarThirdWin(ni.Next())) winners.Push(wn);
+		// a lobby: its inner shutter's sector is in the hall (the lobby is, by the hall's second tag)
+		let li = ThinkerIterator.Create("AjarThirdLock");
+		AjarThirdLock lk;
+		while (lk = AjarThirdLock(li.Next()))
+		{
+			locks.Push(lk); lockTic.Push(-1); lockOpen.Push(-1);
+			int hx = HallIx(lk.args[0]);
+			if (hx < 0 || !lk.args[2]) continue;
+			let it = level.CreateSectorTagIterator(lk.args[2]);
+			int s;
+			while ((s = it.Next()) >= 0) secHall[s] = hx + 1;
+		}
 		let h = Doors();
 		for (int k = 1; k <= parts; k++) { h.Link(TimeDoorId(k), 0, TIME_TEX); h.Link(BoxDoorId(k), 0, TIME_TEX); }
 		LastLoaded();               // last.zs: a last hall?
@@ -391,7 +424,8 @@ extend class AjarTimeHandler
 		mo.A_SetBlend("white", 1.0, 40);
 		mo.A_StartSound("misc/teleport", CHAN_AUTO);
 		string door = had ? "\nThe " .. had.Label() .. " door does not come through: it is where it was." : "";
-		string last = tgo == parts ? "\nThe way out is the door in the last room: open while every plate\nis stood on, and ten seconds more." : "";
+		string last = tgo < parts ? "" : lastMark ? "\nThe way out is the door across the last hall: open while every plate\nis held, and ten seconds more."
+			: "\nThe way out is the door in the last room: open while every plate\nis stood on, and ten seconds more.";
 		Say(ThirdWords(tgo, String.Format("Go %d of %d. It is the start again: through the glass your earlier\nself sets off. This room's only way out is your own part.", tgo, parts)) .. last .. door);
 		LevelLocals.MakeAutoSave();
 	}
@@ -513,6 +547,7 @@ extend class AjarTimeHandler
 				hTrack[i] = new("AjarTrack");
 				hTrack[i].box = 100 + i;
 				wonTic[i] = -1;
+				for (int k = 0; k < locks.Size(); k++) if (HallIx(locks[k].args[0]) == i) { lockTic[k] = -1; lockOpen[k] = -1; }
 			}
 			else if (part < tgo && hTrack[i]) ThirdFreezeHall(i);
 		}
@@ -746,10 +781,11 @@ extend class AjarTimeHandler
 		}
 	}
 
-	// Does a shutter open on hall h's win (an AjarThirdWin names it)?
+	// Does a shutter open on hall h's win (an AjarThirdWin names it, or it has a lobby)?
 	bool HasWinner(int h)
 	{
 		for (int i = 0; i < winners.Size(); i++) if (HallIx(winners[i].args[0]) == h) return true;
+		for (int i = 0; i < locks.Size(); i++) if (HallIx(locks[i].args[0]) == h) return true;
 		return false;
 	}
 
@@ -795,12 +831,60 @@ extend class AjarTimeHandler
 			if (hi < 0 || !s) continue;
 			int part = halls[hi].args[1];
 			bool want = tgo < part || (tgo == part && wonTic[hi] >= 0) || (tgo > part && wonTic[hi] >= 0 && ot >= wonTic[hi]);
-			s.keyed = want ? HELD_OPEN : 0;
-			if (!now) continue;
-			s.Know();
-			if (want) { s.want = true; s.Move(s.High()); }
-			else s.ShutNow();
+			HoldShutter(s, want, now);
 		}
+		ThirdLocks(now);
+	}
+
+	// A shutter kept open (or shut) by the halls' rules; `now`: at once.
+	void HoldShutter(AjarShutter s, bool open, bool now)
+	{
+		s.keyed = open ? HELD_OPEN : 0;
+		if (!now) return;
+		s.Know();
+		if (open) { s.want = true; s.Move(s.High()); }
+		else s.ShutNow();
+	}
+
+	// The lobbies (AjarThirdLock; the head's rules). In the hall's go (not `now`) the player standing in the
+	// lobby clear of the outer shutter locks it; the inner opens once the outer is shut.
+	void ThirdLocks(bool now)
+	{
+		for (int i = 0; i < locks.Size(); i++)
+		{
+			AjarThirdLock lk = locks[i];
+			int hi = HallIx(lk.args[0]);
+			AjarShutter o = FindShutter(lk.args[1]), n = FindShutter(lk.args[2]);
+			if (hi < 0 || !o || !n) continue;
+			int part = halls[hi].args[1];
+			bool won = wonTic[hi] >= 0, outer, inner;
+			if (tgo < part) { outer = true; inner = false; }
+			else if (tgo == part)
+			{
+				if (!now && !won && lockTic[i] < 0 && InLobby(lk, o)) lockTic[i] = ot;
+				if (!now && lockTic[i] >= 0 && lockOpen[i] < 0 && o.IsShut()) lockOpen[i] = ot;
+				outer = won || lockTic[i] < 0;
+				inner = won || lockOpen[i] >= 0;
+			}
+			else
+			{
+				bool w = won && ot >= wonTic[hi];
+				outer = w || lockTic[i] < 0 || ot < lockTic[i];
+				inner = w || (lockOpen[i] >= 0 && ot >= lockOpen[i]);
+			}
+			HoldShutter(o, outer, now);
+			HoldShutter(n, inner, now);
+		}
+	}
+
+	// Is the player (alive) in the lobby, clear of its outer shutter?
+	bool InLobby(AjarThirdLock lk, AjarShutter o)
+	{
+		let mo = players[consoleplayer].mo;
+		if (!mo || mo.health <= 0 || !SecTagged(mo.pos.xy, lk.args[3])) return false;
+		o.Know();
+		double r = mo.radius;
+		return mo.pos.x + r <= o.x1 || mo.pos.x - r >= o.x2 || mo.pos.y + r <= o.y1 || mo.pos.y - r >= o.y2;
 	}
 
 	// --- the end -------------------------------------------------------------------
