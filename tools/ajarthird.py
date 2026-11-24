@@ -19,6 +19,9 @@ FALLEN_T = 20169    # AjarThirdFallen: a monster of a later part, seen dead befo
 SHARE_T = 20170     # AjarThirdShare: one item for the three selves of a last hall, shown on each stand
 LEVER_T = 20171     # AjarThirdLever: a plate on a stand's wall that works one of the last hall's machines
 VENT_T = 20172      # AjarThirdVent: a point of a last hall's floor that a steam lever blows over
+COMMON_T = 20173    # AjarThirdCommon: a COMMON PLACE the parts go through on their own levels (one to a map)
+COMER_T = 20174     # AjarThirdComer: a monster of a part's group there, come when that part's go stands on its level
+WAY_T = 20175       # AjarThirdWay: a part's way on from its level, a shutter its group's death opens
 FIGHT = 9           # the fight number of the AjarZone over the whole map (the paradox's room)
 
 
@@ -252,12 +255,13 @@ def closed(m, tag_a, tag_b):
 
 
 def ways(m):
-    """Sector -> the sectors beside it over a two-sided line that does not block."""
+    """Sector -> the sectors beside it over a two-sided line that does not
+    block (players: a rim, `blockplayers`, is closed to a walk)."""
     text = m.textmap()
     sides = [int(s) for s in re.findall(r"sidedef\{[^}]*?sector=(\d+);", text)]
     nxt = {}
     for ld in re.findall(r"linedef\{([^}]*)\}", text):
-        if "sideback" not in ld or "blocking=true" in ld:
+        if "sideback" not in ld or "blocking=true" in ld or "blockplayers=true" in ld:      # (a rim: closed to a walk)
             continue
         f = sides[int(re.search(r"sidefront=(\d+);", ld).group(1))]
         k = sides[int(re.search(r"sideback=(\d+);", ld).group(1))]
@@ -292,3 +296,71 @@ def apart(m, starts):
         for q in got:
             assert p == q or not got[p] & got[q], f"part {p} and part {q} are joined on foot"
     return got
+
+
+def level_tag(k):
+    """The sector tag of part k's LEVEL in the map's common place: where go k
+    walks there (its floor, its ledge). A sector has one tag, so a level's
+    sectors do not carry the place's tag: the place is that tag or any of
+    these."""
+    return 3390 + k
+
+
+def common(m, x, y, tag):
+    """The map's COMMON PLACE (third.zs, AjarThirdCommon; common.zs): every
+    sector with `tag` (what is in it and no part's level: stairs into it, the
+    tops of pumps) or with a level_tag(k). Each part k goes through it on its
+    own level; its group (comer()) comes the first time go k stands on level
+    k, and comes again in later goes at that tic, while the earlier self k is
+    there and fires again what it fired there. At most one to a map. Close
+    every way out of it to monsters (sealed())."""
+    m.thing(x, y, COMMON_T, args=(tag,))
+
+
+def comer(m, x, y, part, kind, angle=0, z=0, fallen=False, skill=None):
+    """A monster of Doom editor number `kind` in `part`'s GROUP at the common
+    place: it comes here, facing `angle`, `z` over the floor (a flyer), awake,
+    the first time go `part` stands on its level, and again in every later go
+    at that tic. `fallen`: SEEN FALLEN, a body lies here in the goes before
+    `part`'s (if it leaves one). `skill` n: there from difficulty n up
+    (Map.thing's; without it the monster is thinned as its kind is)."""
+    kw = {"height": float(z)} if z else {}
+    if skill:
+        kw["skill"] = skill
+    m.thing(x, y, COMER_T, angle=angle, args=(kind, part, 1 if fallen else 0), **kw)
+
+
+def way(m, x, y, part, shutter_tag):
+    """Part `part`'s way on from its level in the common place: the
+    AjarShutter of `shutter_tag` (ajartime.shutter, `nomonsters=True`). Open
+    in the goes before `part`'s; in its go shut until its group is dead; in
+    later goes as it was then."""
+    m.thing(x, y, WAY_T, args=(part, shutter_tag))
+
+
+def rim(m, a, b):
+    """A railing along a level's edge in the common place: a two-sided line
+    that stops players only (`blockplayers`): shots, sight and flying
+    monsters pass it. ways() counts it as closed to a walk."""
+    m.line(a, b, mid="AJRAIL", midboth=True, blockplayers=True, dontpegbottom=True)
+
+
+def sealed(m, tags):
+    """Every two-sided line between a sector with one of `tags` and one
+    without blocks monsters (`blockmonsters` or `blocking`): nothing that
+    walks or flies leaves the common place. Returns how many there are."""
+    text = m.textmap()
+    stags = [int(t.group(1)) if t else 0 for t in
+             (re.search(r"\bid=(-?\d+);", s) for s in re.findall(r"sector\{([^}]*)\}", text))]
+    sides = [int(s) for s in re.findall(r"sidedef\{[^}]*?sector=(\d+);", text)]
+    n = 0
+    for ld in re.findall(r"linedef\{([^}]*)\}", text):
+        if "sideback" not in ld:
+            continue
+        f = stags[sides[int(re.search(r"sidefront=(\d+);", ld).group(1))]] in tags
+        k = stags[sides[int(re.search(r"sideback=(\d+);", ld).group(1))]] in tags
+        if f == k:
+            continue
+        assert "blocking=true" in ld or "blockmonsters=true" in ld, f"a way out of the common place is open to monsters: {ld}"
+        n += 1
+    return n

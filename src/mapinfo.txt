@@ -53,6 +53,9 @@ DoomEdNums
 	20170 = AjarThirdShare            // ... one item for the selves of a last hall, shown on each stand
 	20171 = AjarThirdLever            // ... a lever on a stand's wall: one of the last hall's machines
 	20172 = AjarThirdVent             // ... a point of the floor a steam lever blows over
+	20173 = AjarThirdCommon           // ... a common place the parts go through on their own levels (common.zs; the lab YARD)
+	20174 = AjarThirdComer            // ... a monster of a part's group there
+	20175 = AjarThirdWay              // ... a part's way on from its level, a shutter its group's death opens
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -618,6 +621,17 @@ map THIRD "Ajar: three goes"
 map LAST "Ajar: the last fight"
 {
 	next = "LAST"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The yard lab (tools/map_yard.py): a common place the three parts go through,
+// each on its own level (common.zs). MAP=YARD ./run.sh
+map YARD "Ajar: the yard"
+{
+	next = "YARD"
 	nointermission
 	nojump
 	nocrouch

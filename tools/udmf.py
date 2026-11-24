@@ -73,10 +73,10 @@ class Map:
         kind is always kept. Ajar's own monsters are part of the puzzle and
         are never thinned. A fallen thing (20169, ajarthird.fallen) is
         thinned as the monster it stands for (args[1]), in its place in the
-        order."""
+        order; so is a common place's comer (20174, ajarthird.comer: args[0])."""
         seen, out = {}, []
         for t in self.things:
-            kind = t["args"][1] if t["type"] == 20169 else t["type"]
+            kind = t["args"][1] if t["type"] == 20169 else t["args"][0] if t["type"] == 20174 else t["type"]
             if "skill" in t:
                 out.append(t["skill"])
             elif kind in MONSTERS:
