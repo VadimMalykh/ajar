@@ -6,7 +6,10 @@
 //     nearest, shot at for six tics and then killed; elsewhere whatever of the
 //     go's part comes in sight (or within 320) on the way, one each 4 tics.
 //     Checks the gate, the doors, the future seen, the halls played in step,
-//     the plates and the exit; measures the halls' cost and the records' sizes.
+//     the plates and the exit; go 3 through the cooling pond and the cooling
+//     tower (window hall 5: its exit shut while anything lives in it); the wind
+//     plate told of once in go 2 and not in go 1; measures the halls' cost and
+//     the records' sizes.
 //  2  go 2 too slow (it stays in box 2): the gantry paradox when the first
 //     self comes onto it; then USE (smoke_MAP33_2.cfg): go 2's start loaded.
 //  3  as 1, with views: two dozen places where a player would stand, each held
@@ -23,6 +26,8 @@ extend class AjarTimeHandler
 	const M33_GSHUT = 3352;
 	const M33_STEEL = 3353;
 	const M33_GANTRY_TAG = 3346;
+	const M33_TSHUT = 3357;     // the cooling tower's exit (window hall 5's win opens it)
+	const M33_TF = -64;         // the tower's floor
 	// the script's clock: go 1 waits at the foot of the gantry until M33_GANTRY
 	// (go 2 has won R by then), holds plate 1 until M33_LEAVE1, go 2 plate 2
 	// until M33_LEAVE2 (go 3 is through the exit door by then)
@@ -35,6 +40,7 @@ extend class AjarTimeHandler
 	double m3BestD;
 	Actor m3Aim;
 	bool m3Done, m3Shots, m3GateBad, m3GateSeen, m3Through, m3ExitSeen, m3DoorSeen;
+	bool m3TowerBad, m3TowerSeen, m3WindBad, m3WindLogged;
 	int m3Pdx, m3RFrom, m3RTo, m3PlateAt;
 	Array<bool> m3PostSeen;
 	// a view: held m3Hold tics, then back to where the script was
@@ -53,7 +59,7 @@ extend class AjarTimeHandler
 		/* 2 to BLUE */                            2110, 4000,  3000, 3900,  3330, 3880,  -1, -1,
 		/* 3 to frame 101 */                       3000, 4100,  2288, 4120,  2288, 4170,  -1, -1,
 		/* 4 the catwalk, the pump room, the stack court, the foot of the gantry */
-		                                          2272, 4930,  3560, 4900,  3650, 4896,  3650, 4672,  4600, 4672,  4880, 4672,  4990, 4600,  4990, 3600,  4992, 3450,  -1, -1,
+		                                          2272, 4930,  3560, 4900,  3650, 4896,  3650, 4672,  4600, 4672,  4880, 4672,  5000, 4600,  5230, 4450,  5240, 4000,  5200, 3800,  4992, 3700,  4992, 3450,  -1, -1,
 		/* 5 onto the gantry */                    4992, 3330,  5100, 3330,  6000, 3330,  -1, -1,
 		/* 6 along it to E1, plate 1 */            7000, 3330,  7240, 3330,  7500, 3330,  7808, 3328,  -1, -1,
 		/* 7 through time door 1 */                8000, 3328,  8150, 3328,  -1, -1,
@@ -66,11 +72,15 @@ extend class AjarTimeHandler
 		/* 13 the steel door, E2, plate 2 */       5150, 2848,  6900, 2848,  7000, 2880,  7100, 2880,  7350, 2880,  7600, 2880,  7808, 2880,  -1, -1,
 		/* 14 through time door 2 */               8000, 2880,  8150, 2880,  -1, -1,
 		/* 15 box 3, the cable tunnel, PINK */     192, 2400,  192, 2280,  192, 2050,  1270, 2050,  1350, 2040,  1400, 1880,  -1, -1,
-		/* 16 to frame 103 */                      1450, 1720,  2750, 1720,  2760, 1440,  -1, -1,
-		/* 17 the relay room, the corridor, the duct */
-		                                          3100, 1920,  3590, 1920,  3700, 1920,  4860, 1920,  5070, 1920,  5700, 1950,  -1, -1,
-		/* 18 along the duct, up to E3 */          7000, 1950,  7550, 1920,  7550, 2270,  7550, 2400,  -1, -1,
-		/* 19 through the exit door */             7900, 2528,  8040, 2528,  8150, 2528,  8250, 2528,  -1, -1
+		/* 16 to frame 103 */                      1450, 1720,  2560, 1720,  2600, 1560,  2760, 1440,  -1, -1,
+		/* 17 the relay room's south door, the steps, the pond */
+		                                          3100, 1920,  3488, 1920,  3488, 1810,  3488, 1740,  3488, 1680,  -1, -1,
+		/* 18 through the water to the outfall */  3700, 1520,  4000, 1400,  4300, 1040,  4400, 1024,  4470, 1024,  -1, -1,
+		/* 19 the drop into the tower */           4560, 1024,  4640, 1024,  -1, -1,
+		/* 20 the tower's exit, the passage, the steps down, the duct */
+		                                          4700, 1150,  4850, 1300,  4830, 1480,  4800, 1580,  4800, 1700,  4800, 1920,  4950, 1920,  5070, 1920,  5700, 1950,  -1, -1,
+		/* 21 along the duct, up to E3 */          7000, 1950,  7550, 1920,  7550, 2270,  7550, 2400,  -1, -1,
+		/* 22 through the exit door */             7900, 2528,  8040, 2528,  8150, 2528,  8250, 2528,  -1, -1
 	};
 
 	int RouteBase(int n)
@@ -134,7 +144,7 @@ extend class AjarTimeHandler
 		{
 			m3Aim = LiveIn(mo, h);
 			m3AimAt = o;
-			if (!m3Aim) { mo.pitch = 0; return true; }
+			if (!m3Aim) { mo.pitch = 0; return !HallLives(h); }     // (not while a pain elemental is dying: its lost souls are to come)
 		}
 		Face(mo, m3Aim);
 		mo.vel.xy = (0, 0);
@@ -220,7 +230,7 @@ extend class AjarTimeHandler
 	}
 
 	// --- the checks every tic -----------------------------------------------------------
-	static const string HALL33[] = { "", "yard", "workshop", "r", "boiler" };
+	static const string HALL33[] = { "", "yard", "workshop", "r", "boiler", "tower" };
 
 	// A window hall of an earlier part, at a tic its own go noted it: the same, as puppets; its real things unseen.
 	void SnapChecks33()
@@ -232,7 +242,7 @@ extend class AjarTimeHandler
 			for (int s = 0; s < snT.Size(); s++)
 				if (snH[s] == h && snT[s] == ot)
 				{
-					string n = HALL33[clamp(halls[h].args[0], 0, 4)];
+					string n = HALL33[clamp(halls[h].args[0], 0, 5)];
 					Check(n .. "AsItWas", SameAsSnap(h));
 					Check(n .. "RealUnseen", HallThings(h, true) == 0);
 					break;
@@ -344,12 +354,14 @@ extend class AjarTimeHandler
 		int yard = HallIx(1), r = HallIx(3);
 		if (o == 2)
 		{
-			Check("goOneBegun", tgo == 1 && parts == 3 && plates.Size() == 2 && halls.Size() == 4 && exitDoor && !Selves3());
+			Check("goOneBegun", tgo == 1 && parts == 3 && plates.Size() == 2 && halls.Size() == 5 && exitDoor && !Selves3());
 			Console.Printf("AJARTEST info posts %d, bodies %d (of %d that leave one), monsters in the level %d", posts.Size(), Bodies33(), WantBodies33(), level.total_monsters);
 			// the future seen: a body at each post that leaves one, nothing alive in R, its shutters open
 			Check("bodiesInR", posts.Size() >= 14 && Bodies33() == WantBodies33() && !HallLives(r) && Open3(M33_GSHUT) && Open3(M33_STEEL));
 			Check("gateShutAtTheStart", Shut3(M33_GATE) && HallLives(yard));
+			Check("towerOpenBeforeItsGo", Open3(M33_TSHUT) && halls.Size() == 5);
 		}
+		if (windSays) m3WindBad = true;         // (the wind plate is not told of in go 1)
 		// the gate: shut while anything lives in the yard
 		if (o > 2 && wonTic[yard] < 0)
 		{
@@ -388,6 +400,7 @@ extend class AjarTimeHandler
 			Check("gateShutUntilTheYardIsClear", m3GateSeen && !m3GateBad);
 			Check("gateOpensWhenClear", Open3(M33_GATE) && !HallLives(yard));
 			m3Step = 3;
+			View33(mo, "the coal yard after its fight: the heaps, the bowed bunker wall, the west bank", 1800, 3800, 160, 2);
 		}
 		if (m3Step == 3 && Walk33(mo, 1))
 		{
@@ -421,6 +434,7 @@ extend class AjarTimeHandler
 			if (Walk33(mo, 4)) m3Step = 9;
 			if (m3Route == 4 && m3Ix == 3 && Once33(3)) View33(mo, "the pump room", 3660, 4920, 315, 2);
 			if (m3Route == 4 && m3Ix == 7 && Once33(4)) View33(mo, "the stack court: the chimney's foot", 4950, 4650, 315, -6);
+			if (m3Route == 4 && m3Ix == 10 && Once33(11)) View33(mo, "the stack court from the south: the imps' ledge round the north-east", 5300, 3800, 45, -4);
 		}
 		if (m3Step == 9)
 		{
@@ -463,6 +477,16 @@ extend class AjarTimeHandler
 		int o = ot;
 		int yard = HallIx(1), boil = HallIx(4), r = HallIx(3);
 		if (o == 0) Check("boxTwo", tgo == 2 && BoxOf(mo) == 2 && takes.Size() == 2);
+		if (o == 0) Check("noWindLineInGoOne", !m3WindBad);
+		if (windSays && !m3WindLogged)
+		{
+			m3WindLogged = true;
+			int who;
+			int next = ThirdWindNext(who);
+			Console.Printf("AJARTEST info the wind plate told of at %d of go 2 (the player at (%d,%d)); the next step onto a plate at %d: \"%s\"",
+				windSaid, mo.pos.x, mo.pos.y, next, Doors().said);
+			Check("windLineSaidInGoTwo", windSays == 1 && windSaid == o && next - o > 350 && Doors().said.IndexOf("winds the clock on") >= 0);
+		}
 		if (o == 1)
 		{
 			Check("rAliveAndIdle", PostsLiving() == posts.Size() && PostsIdle33() && !Bodies33() && Shut3(M33_GSHUT) && Shut3(M33_STEEL) && !tdOpen);
@@ -542,7 +566,12 @@ extend class AjarTimeHandler
 		if (m3Step == 10)
 		{
 			if (o == m3PlateAt + 4) View33(mo, "E2: the first self on plate 1, through the glass", 7700, 2960, 80, 0);
-			if (o >= M33_LEAVE2 && tdOpen) { m3Step = 11; Console.Printf("AJARTEST info go 2 on plate 2 from %d to %d", m3PlateAt, o); }
+			if (o >= M33_LEAVE2 && tdOpen)
+			{
+				m3Step = 11;
+				Console.Printf("AJARTEST info go 2 on plate 2 from %d to %d", m3PlateAt, o);
+				Check("windLineSaidOnceInGoTwo", windSays == 1);
+			}
 		}
 		if (m3Step == 11) Walk33(mo, 14);
 	}
@@ -563,6 +592,14 @@ extend class AjarTimeHandler
 		if (wonTic[r] > 0 && o == wonTic[r] - 1) Check("shuttersShutBeforeRWasWon", Shut3(M33_STEEL) && Shut3(M33_GSHUT));
 		if (wonTic[r] >= 0 && o == wonTic[r] + 13) Check("shuttersOpenAsRWasWon", Open3(M33_STEEL) && Open3(M33_GSHUT));
 		if (wonTic[yard] >= 0 && o == wonTic[yard] + 40) Check("gateOpenAsTheYardWasWon3", Open3(M33_GATE));
+		// the tower's exit: shut while anything lives in the tower
+		int tower = HallIx(5);
+		if (o == 2) Check("towerShutAtGoThree", tower >= 0 && Shut3(M33_TSHUT) && HallLives(tower) && hTrack[tower]);
+		if (o > 2 && tower >= 0 && wonTic[tower] < 0)
+		{
+			m3TowerSeen = true;
+			if (!Shut3(M33_TSHUT) || !HallLives(tower)) m3TowerBad = true;
+		}
 		if (exitOpened && !m3ExitSeen)
 		{
 			m3ExitSeen = true;
@@ -599,6 +636,7 @@ extend class AjarTimeHandler
 				h.FindFrame(103).Activate(mo);
 				Check("pinkHung", pink.frame == h.FindFrame(103) && !h.carried);
 				m3Step = 2;
+				View33(mo, "the switchyard from PINK's frame: the gravel banks along the north", 2700, 1440, 150, 2);
 			}
 		}
 		if (m3Step == 2)
@@ -614,32 +652,74 @@ extend class AjarTimeHandler
 		if (m3Step == 3)
 		{
 			Clear33(mo);
-			if (Walk33(mo, 17)) m3Step = 4;
+			if (Walk33(mo, 17)) { m3Step = 4; View33(mo, "the cooling pond from the foot of the steps", 3488, 1690, 290, -2); }
 		}
 		if (m3Step == 4)
 		{
-			// in the duct, at go 2's fight in R
+			// through the water: the pond's fight, killed as it comes in sight
 			Clear33(mo);
-			if (o >= (m3RFrom + m3RTo) / 2)
+			if (Walk33(mo, 18))
 			{
-				View33(mo, "the duct: go 2's fight in R through the glass (go 3)", 5700, 1950, 90, 0);
 				m3Step = 5;
+				Check("outfallReached", PartAt(mo.pos.xy) == 3 && mo.floorz == -8);
+				View33(mo, "the outfall: the cooling tower from the channel, before the drop", 4500, 1024, 0, -8);
 			}
 		}
 		if (m3Step == 5)
 		{
 			Clear33(mo);
-			if (Walk33(mo, 18)) { m3Step = 6; m3Mark = o; }
+			Walk33(mo, 19);
+			if (mo.pos.x > 4560 && mo.pos.z <= M33_TF + 1)
+			{
+				int tower = HallIx(5);
+				Check("droppedIntoTheTower", mo.floorz == M33_TF && HallAt(mo.pos.xy) == tower && Shut3(M33_TSHUT) && HallLives(tower));
+				m3Step = 6; m3From = o; m3Route = -1;
+				View33(mo, "the cooling tower from its floor: the cyberdemon on the basin, the ring ledge", 4620, 1024, 0, 6);
+			}
 		}
-		if (m3Step == 6)
+		if (m3Step == 6 && Fight33(mo, HallIx(5), false)) { m3Step = 7; Console.Printf("AJARTEST info the tower's fight: %d to %d", m3From, o); }
+		if (m3Step == 7)
+		{
+			int tower = HallIx(5);
+			if (wonTic[tower] < 0 || o < wonTic[tower] + 40) return;
+			Check("towerShutUntilItIsClear", m3TowerSeen && !m3TowerBad);
+			Check("towerOpensWhenClear", Open3(M33_TSHUT) && !HallLives(tower));
+			Console.Printf("AJARTEST info the tower won at %d of go 3", wonTic[tower]);
+			m3Step = 8;
+		}
+		if (m3Step == 8)
+		{
+			Clear33(mo);
+			if (Walk33(mo, 20))
+			{
+				Check("throughTheTowerIntoTheDuct", PartAt(mo.pos.xy) == 3 && mo.floorz == -128);
+				m3Step = 9;
+			}
+		}
+		if (m3Step == 9)
+		{
+			// in the duct, at go 2's fight in R (or after it)
+			Clear33(mo);
+			if (o >= (m3RFrom + m3RTo) / 2)
+			{
+				View33(mo, "the duct: go 2's fight in R through the glass (go 3)", 5700, 1950, 90, 0);
+				m3Step = 10;
+			}
+		}
+		if (m3Step == 10)
+		{
+			Clear33(mo);
+			if (Walk33(mo, 21)) { m3Step = 11; m3Mark = o; }
+		}
+		if (m3Step == 11)
 		{
 			if (exitDoor.IsOpen() && o > m3Mark + 4)
 			{
 				View33(mo, "E3: the exit door open; E2 and E1 through the glass", 7520, 2380, 60, 0);
-				m3Step = 7;
+				m3Step = 12;
 			}
 		}
-		if (m3Step == 7) Walk33(mo, 19);
+		if (m3Step == 12) Walk33(mo, 22);
 	}
 
 	// --- mode 2: go 2 too slow ------------------------------------------------------------
