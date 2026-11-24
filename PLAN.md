@@ -14001,6 +14001,106 @@ every build. A double that walks within 16 of a plate on a stair (the measure
 takes a stair as a slope) signs as before. The shifts of two crossings and
 doors carried while walking are still not in the rule. Not played by hand.
 
+## MAP33: the gallery seen as the second self leaves it (2026-11-24)
+
+**Vadim**, playing go 1, standing in the coal yard and looking through the
+gallery's window at a living zombieman at 0:20: "map33 - this hallway I
+always pass as #2 earlier, so when #1 is seeing it something should have
+happened already. The same about similar next one."
+
+The hallway is the gallery, part 2's corridor (896, 3520)-(3840, 3696). Go 1
+sees it through two windows from the coal yard and through a third from the
+boiler house's floor ("the similar next one"). Its monsters were ordinary
+ones, alive in go 1, although the second self runs through the gallery in the
+first seconds of its clock, before the first self can look in.
+
+**Decided** (on Fable): go 1 sees the gallery as the second self will have
+left it: each of its monsters lies dead where it stood. It is the future seen,
+as the turbine hall's posts are, but without a hall, a win or a paradox.
+**Nothing is enforced**: no watch, no end of the universe, no message. If the
+second self leaves a gallery monster alive (or never kills it), go 1 still
+saw it dead, and nothing follows (Claude's choice, on Fable; easy to change to
+a watch later).
+
+**Built.**
+
+- `src/zscript/third.zs`: a new thing AjarThirdFallen (20169; args[0] the
+  part whose go meets the monster, args[1] its Doom editor number as a
+  post's, the angle its facing). In every go before that part's a body lies
+  at it (the AjarFigure a post gets; nothing for a monster that leaves no
+  body); at the start of that part's go the body goes and the monster stands
+  there alive on the floor, with no target and NOT in ambush (an ordinary
+  monster of a corridor: it may wake at a sound); later goes find what that
+  go left. Its own arrays in AjarTimeHandler (`fallenAt`, `fallenIs`; the name
+  `fallen` was taken in time.zs), filled in ThirdLoaded, handled by
+  `ThirdFallenBegin()` where ThirdPosts is called (ThirdBegin, ThirdNextGo).
+  It is in no hall's win, not in ThirdFuture, HallLives or the watches;
+  `posts` and `postIs` are as they were. The contract in the head says so (a
+  bullet after AjarThirdPost, a paragraph under THE FUTURE SEEN).
+- `src/mapinfo.txt`: 20169 = AjarThirdFallen.
+- `tools/ajarthird.py`: `FALLEN_T = 20169`, `fallen(m, x, y, part, kind,
+  angle=0, **kw)` (kw to Map.thing: `skill=`).
+- `tools/map_station.py`: the gallery's 14 monsters (13 on skill 3, a
+  sergeant `skill=4`) are `ajarthird.fallen(..., 2, kind, angle=180)` at the
+  same places with the same skills (`gallery_mon`); a monster in no part is
+  checked for fallen things too; two lines in the module's docstring. The
+  corridor from box 2 and the way down to the workshop are not seen from part
+  1 and keep ordinary monsters.
+- `tools/udmf.py`: `_skills()` thins a fallen thing as the monster it stands
+  for, in its place in the order, so that every thing of the map keeps its
+  difficulty: compared thing by thing with the map before (661 things, place,
+  kind, angle and lowest skill all the same). Part 2's monsters by skill
+  1..4: 55 / 82 / 111 / 116, as before.
+- `tools/budget.py`: STAND_IN has 20169 (args[1] the kind): part 2's
+  monsters, health and the 1.6 rule reckoned as before. `tools/thingcheck.py`:
+  a fallen thing is checked as its monster, among the others.
+  `tools/mapcheck.py`: its box (radius) and the steps under it as its
+  monster's. `tools/itemcheck.py`: not a pickup.
+
+**The tests** (`src/zscript/map33.zs`, added to the modes; no check weakened):
+
+- Go 1 (MODE=1 and 3; also run in 2 and 4, whose go 1 is the same script), at
+  the start and again once the script is in the coal yard: a body (an
+  AjarFigure within 8) at every fallen thing whose monster leaves one, every
+  one of them does, and no living monster in the gallery's box
+  (`galleryDeadAtTheStart`, `galleryDeadFromTheYard`).
+- Go 2 at its start: no body left at any fallen thing; at each its monster
+  alive, of the right class (the replacement of its kind), within 1 of its
+  place, with no target; the living monsters in the box as many as the fallen
+  things (13 on skill 3) (`galleryAliveGoTwo`).
+- Go 3 at its start: nothing spawned again: every monster in the box, living
+  or dead, existed at go 2's start, and less those that were then outside it
+  they are no more than the fallen things; no body at them
+  (`galleryNotSpawnedAgain`). On the run: 15 dead in the box, 2 of them come in
+  from the corridor from box 2 during go 2, 0 new.
+- MODE=3: two views more in go 1, after the coal yard's fight (from (1500,
+  3740), the yard's east window) and after the boiler house's fight (from
+  (2150, 3740), its window), each looking east-south-east along the gallery
+  (`tools/smoke_MAP33_3.cfg`: 42 screenshots, its waits from a run's log).
+- Route 8 (go 2 through the gallery): a monster standing in the way for 15
+  tics is killed by script and said, as at the lobbies and the crossing. It
+  did not happen on these runs.
+
+Results on the last build: the full `./build.sh`; mapcheck on `map_station`
+0 problems (598 sectors), thingcheck 0, itemcheck 0, budget as before.
+MAP33 MODE=1 250 checks passed, none failed (the level ended); MODE=2 48;
+MODE=3 263 with 42 views (the level ended); MODE=4 137; THIRD MODE=3 53;
+LAST MODE=1 58: none failed. The two new views looked at: through the coal
+yard's window a body in the gallery's middle distance and more beyond it,
+along the glass; through the boiler house's window three bodies and its
+box of bullets in the gallery beside the boiler house's own dead. Go 1 at the foot of
+the gantry: at 1177 in MODE=1, at about 2280 in MODE=3 (it waits there until
+2500; the two views more cost it 140 tics, so 220 are left).
+
+**Known and left.** The relay room seen from the workshop and the duct seen
+from the turbine hall (part 3's places seen by go 2: their monsters alive)
+are as they were: the third self is not always there first.
+
+**Not tested / not played by hand.** Not played by hand. Skills other than 3:
+counted (the skills compared thing by thing), not played. Whether a gallery
+monster woken by a sound in go 2 leaves the gallery before the second self
+comes is not looked at (it is an ordinary monster of part 2 either way).
+
 ## MAP20: buoys, the fountain, a bigger wheel (built 2026-11-24)
 
 Decided by Claude (Fable) with Vadim's "Let's go" to a list of ideas on

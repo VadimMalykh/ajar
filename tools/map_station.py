@@ -44,6 +44,8 @@ lobby between two shutters (AjarThirdLock, ajarthird.lock): the outer one
 shuts behind the player, then the inner one opens, and both stay open once
 the hall is won; their other ways on are win shutters. So no monster of
 these halls leaves them and no invisible line stands in an open doorway.
+The gallery's monsters (part 2) are fallen things (ajarthird.fallen): go 1 sees
+them through its windows dead, as go 2, which passes there first, leaves them.
 
 The yards out of doors (the coal yard, the stack court, the switchyard) and
 the pond are natural(): banks heaped against their walls in terraces
@@ -1067,13 +1069,22 @@ area(GALLERY, [((896 + 192 * i, 3520, 896 + 192 * i + 64, 3552), dict(ceil=128))
      ceil=160, light=176, color=G_ROOM)
 for a, b in (((960, 3712), (1344, 3712)), ((1472, 3712), (1856, 3712)), ((2112, 3712), (2560, 3712))):
     ajartime.glass(m, a, b, (0, -1), G, top=128)
-mon(3001, [(3300, 3600), (3500, 3640), (3700, 3580)], angle=180)
-mon(3004, [(3200, 3640), (3420, 3560), (3620, 3640)], angle=180)
-mon(9, [(3560, 3600), (3760, 3640)], angle=180)
-mon(9, [(3360, 3600)], angle=180, skill=4)
-mon(3001, [(2400, 3600), (2600, 3640)], angle=180)
-mon(9, [(2800, 3580)], angle=180)
-mon(3004, [(3000, 3600), (1800, 3600)], angle=180)
+# its monsters are fallen things (ajarthird.fallen): go 1 sees the gallery through its windows as go 2 will
+# have left it, a body at each (after Vadim's play of go 1: "this hallway I always pass as #2 earlier")
+
+
+def gallery_mon(kind, pts, angle=0, skill=None):
+    for x, y in pts:
+        ajarthird.fallen(m, x, y, 2, kind, angle=angle, **({"skill": skill} if skill else {}))
+
+
+gallery_mon(3001, [(3300, 3600), (3500, 3640), (3700, 3580)], angle=180)
+gallery_mon(3004, [(3200, 3640), (3420, 3560), (3620, 3640)], angle=180)
+gallery_mon(9, [(3560, 3600), (3760, 3640)], angle=180)
+gallery_mon(9, [(3360, 3600)], angle=180, skill=4)
+gallery_mon(3001, [(2400, 3600), (2600, 3640)], angle=180)
+gallery_mon(9, [(2800, 3580)], angle=180)
+gallery_mon(3004, [(3000, 3600), (1800, 3600)], angle=180)
 items(2008, (1100, 3560), (1200, 3560), (2000, 3640), (2100, 3640))
 items(2007, (1600, 3640), (2420, 3650))
 items(2012, (2900, 3640))
@@ -1649,7 +1660,7 @@ MONSTERS3 = {p: sum(SUPPLY[p, 3]["monsters"].values()) for p in BY_PART}
 assert 110 <= MONSTERS3[1] <= 130 and 100 <= MONSTERS3[2] <= 120 and 95 <= MONSTERS3[3] <= 110, MONSTERS3
 # every monster of the level is in one of the parts
 for t in m.things:
-    if t["type"] in MONSTERS or t["type"] == ajarthird.POST_T:
+    if t["type"] in MONSTERS or t["type"] in (ajarthird.POST_T, ajarthird.FALLEN_T):
         assert part_of(t["x"], t["y"]), ("a monster in no part", t)
 
 # The last hall: in no part's count; its guards by skill, their health against each stand's supplies

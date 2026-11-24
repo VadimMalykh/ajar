@@ -23,6 +23,8 @@ for name in sys.argv[1:]:
     T = [dict(t, type=t["args"][1], late=True) if t["type"] == 20030 else t for t in m.things]
     # a guard of a last hall (ajarthird.guard) is checked as what it will be, among the others
     T = [dict(t, type=t["args"][0]) if t["type"] == 20167 else t for t in T]
+    # a fallen thing (ajarthird.fallen) stands where its monster will: checked as it, among the others
+    T = [dict(t, type=t["args"][1]) if t["type"] == 20169 else t for t in T]
     T = [t for t in T if t["type"] in R]
     bad = 0
     for i, a in enumerate(T):
