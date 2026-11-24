@@ -101,6 +101,34 @@ def make(out):
         w.rect(21, 11, 24, 21, lit)                           # a self on it
         w.disc(22, 8, 2, lit)
         out[f"sprites/AJW3{fr}0.png"] = w.png(grab=(15, 30))
+    # the levers on the stands of a last hall (last.zs, AjarThirdLever), in the wind plate's style: A ready,
+    # B spent (in this go), C not yet (before the alarm, or an earlier self's to work). AJLV: a steam
+    # valve's wheel (spent: turned, a red frame); AJBK: a breaker's handle (ready: up; spent: thrown down)
+    import math
+    for fr, glow, rim in (("A", 1.0, (206, 180, 96)), ("B", 0.7, (170, 60, 50)), ("C", 0.55, (206, 180, 96))):
+        v = Img(30, 30, (34, 36, 42))
+        v.frame(0, 0, 30, 30, shade(rim, glow), 2)
+        lit = shade((250, 244, 214), glow)
+        turn = 0.4 if fr == "B" else 0.0
+        for k in range(80):                                   # the wheel's rim
+            a = 2 * math.pi * k / 80
+            v.rect(int(15 + 9 * math.cos(a)), int(15 + 9 * math.sin(a)), int(15 + 9 * math.cos(a)) + 2, int(15 + 9 * math.sin(a)) + 2, lit)
+        for k in range(4):                                    # four spokes
+            a = turn + math.pi / 2 * k
+            for r in range(2, 9):
+                v.rect(int(15.5 + r * math.cos(a)), int(15.5 + r * math.sin(a)), int(15.5 + r * math.cos(a)) + 1, int(15.5 + r * math.sin(a)) + 1, lit)
+        v.disc(15, 15, 2, shade((250, 220, 120), glow))       # the hub
+        out[f"sprites/AJLV{fr}0.png"] = v.png(grab=(15, 30))
+        b = Img(30, 30, (34, 36, 42))
+        b.frame(0, 0, 30, 30, shade(rim, glow), 2)
+        b.rect(8, 6, 22, 24, shade((90, 96, 104), glow))      # the box
+        b.frame(8, 6, 22, 24, shade((150, 156, 166), glow), 1)
+        b.rect(10, 14, 20, 16, shade((20, 20, 24), 1.0))      # its slot
+        down = fr == "B"
+        y0, y1 = (15, 25) if down else (5, 15)
+        b.rect(14, y0, 16, y1, lit)                           # the handle
+        b.rect(11, (25 if down else 3), 19, (28 if down else 6), shade((250, 220, 120) if not down else (200, 70, 60), glow))   # its grip
+        out[f"sprites/AJBK{fr}0.png"] = b.png(grab=(15, 30))
     # a plate on the wall of a room of goes' box that forgets every go (AjarAnew):
     # the wind plate's face with a ring that runs back to its start
     a = Img(30, 30, (34, 36, 42))

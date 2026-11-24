@@ -14794,3 +14794,307 @@ second self's fight on the floor is met by the third only if it is quick.
 fight's four rules are merged: it uses their fire record). (2) MAP33's middle
 rebuilt (after the gallery's change and the last hall's are merged: the same
 files).
+
+## The last fight lab: four ways the selves help each other (built 2026-11-24)
+
+> Vadim, 2026-11-24: "Also about the last (common) battle. I understand that it's already done that way (for exmple most of mosters are fixed, so #1 keep targeting them even when they already fighting with #2. This is smart, yes. But still, any other ideas how 3 copies can help each other there, not just fighting 3 times the same fight? Any ideas? Shouldn't be as direct as we had in map32, but still something that could improve feeling of cooperation there?"
+
+Claude (on Fable) proposed four; Vadim: "Ok all options for fight
+cooperation sounds interesting. Let's try all, and if something not quite
+working we can remove later." Decided on Fable, built by Claude on Opus in
+the task `last-coop`, on the lab map LAST only. **Nobody has played it.
+MAP33's own last hall does not have any of the four yet** (that is the next
+task): each rule is driven by things in the map or by an argument, so a map
+without them plays exactly as before, and a rule is taken out of a map by
+removing its things. MAP33 and THIRD were run and pass as before.
+
+**The four rules, as built** (third.zs's head, rules 9 to 12; last.zs):
+
+A. **Waves by plates: each go a different fight.** A guard's wave is its
+   args[1] (0 or 1: wave 1). The alarm brings wave 1 only. Wave k (1 < k <
+   parts) comes at the first tic, from the alarm on, that plate k is
+   pressed in the go: in go k by the player standing on it (the go's own
+   record, as the alarm in go 1), in a later go by self k at the tic its
+   record has (a pale stretch presses nothing). So it never comes in go 1;
+   and if plate k is already pressed when the alarm rings, it comes with the
+   alarm (then its line goes under the alarm's). The last wave comes in the
+   last go only, the first tic the player stands in a sector with the hall's
+   tag (in LAST the steps below stand 3's gate: when the third self starts
+   down). A wave comes as the alarm's guards do (teleport fog, awake, the
+   first target by `LastFirstTarget`), with `brain/spit` at full volume and
+   a line ("Plate 2 is held: more of them come." / "They have seen you on
+   the floor: more of them come."). Cleared at each go's start with the
+   rest, the kill counters as before. On a map with waves the timetable has
+   a line for each earlier self that fired: "k fires from m:ss to m:ss (n
+   shots)".
+B. **One share for three.** `AjarThirdShare` things, one on each stand,
+   together one item (args[0]: 0 an invulnerability sphere, 1 a
+   megasphere). At each go's start a copy (`AjarShareCopy`: the item's
+   picture, alpha 0.4, not SPECIAL) stands at each. At the alarm, if no
+   earlier self took it, they become real (full alpha, SPECIAL,
+   `misc/spawn`); the player touching one takes the item (the real item is
+   spawned there and touched: its own pickup, message, sound and flash),
+   every copy goes in an item fog, and the go's take has the tic. If an
+   earlier self took it, the copies stay pale all the go and all go at its
+   tic (the pickup sound from that self); the alarm's line says "The sphere
+   is your first self's: it takes it at 0:51."; the timetable "1 takes the
+   sphere 0:51".
+C. **Guard your earlier selves (the soft form).** `AjarThirdLast` args[4] n
+   (0: never, as before). An earlier self (`AjarLastSelf`) sums the damage
+   that hits it from the alarm on (not its own, another self's or a
+   player's), falling by 1 a tic. At n it is STAGGERED for 105 tics: the
+   fire events of its record in them are skipped (not fired later), its sum
+   is held at 0, it flickers every 4 tics between pale (alpha 0.35, the
+   player's pain picture PLAY G) and as it is, the player's pain sound plays
+   from it, and the first time in a go a line: "Your first self is hit hard:
+   it holds its fire for three seconds. Keep them off it." It still stands
+   where its record has it and presses its plate. Never harmed.
+D. **A lever on each stand: the hall's machines.** `AjarThirdLever`, a
+   plate on a stand's wall worked with USE (as the wind plate): args[0] its
+   number, args[1] 1 steam or 2 breaker, args[2] steam: the number of its
+   vents, args[3] the seconds (0: steam 6, breaker 5). It works once a go,
+   from the alarm on (before: "The steam valve does nothing yet: the hall's
+   machines wake with the alarm."; after: "... is spent in this go."); the
+   take has its number and tic, and in every later go it works by itself
+   then (it is that self's: the player cannot work it, a line says whose).
+   Pictures (gfx_time.py, the wind plate's style): AJLV a valve wheel, AJBK
+   a breaker's handle; A ready (bright), B spent (red frame; the wheel
+   turned, the handle down), C not yet (dim: before the alarm, or an
+   earlier self's). STEAM: for its seconds, every 4 tics 6 damage (type
+   `AjarSteam`) to every living monster and player on the floor within
+   reach of a vent of its number (`AjarThirdVent`, args[0] the number,
+   args[1] the reach, 0: 96; "on the floor": within 8 of the vent's
+   height), never an earlier self; three puffs a tic (`AjarSteam`: the
+   IWAD's PUFF smoke, translucent, rising) at random points of the vents'
+   circles, `vile/firestrt` at the start and every second. BREAKER: for its
+   seconds every living monster in a sector with the hall's tag (new ones
+   too) is held: `tics = -1` and its velocity 0 each tic, DONTTHRUST on;
+   it can be hurt and killed (its death plays: only the living are held);
+   at the end `tics = 1` and its DONTTHRUST as it was. Sparks (`AjarSpark`:
+   the IWAD's plasma burst, small, added) at random points of each held
+   monster, now and then `weapons/plasmaf`; the hall's sectors' light
+   flickers (a dip of 56 one time in three, every 3 tics) and comes back;
+   `weapons/plasmax` at full volume when thrown. The timetable: "1 opens the
+   steam valve 0:57", "2 throws the breaker 0:22".
+
+**The contract** (third.zs's head): `AjarThirdGuard` args[1] the wave;
+`AjarThirdLast` args[4] the stagger; `AjarThirdShare` 20170 (args[0] the
+item); `AjarThirdLever` 20171 (number, kind, vents, seconds); `AjarThirdVent`
+20172 (number, reach). Helpers in `tools/ajarthird.py`: `guard(...,
+wave=1)` (wave 1 writes args as before), `last(..., stagger=0)`,
+`share(m, x, y, kind=0)`, `lever(m, x, y, angle, n, kind, tag=0, seconds=0,
+z=30)` (tag: the vents' number), `vent(m, x, y, n, reach=0)`. The steam's
+"piece of the hall's floor" is said by vents, not a tag: a sector has one
+tag, and the strip must stay in the hall.
+
+**The lab's cast and things** (`tools/map_last.py`, all skills):
+- Wave 1, at the alarm, all standing where they cannot leave, each in sight
+  of plate 1: the two mancubi on their pedestals, the two revenants in the
+  east bays, two chaingunners in two new bays 72 high (64 x 128, a
+  monster-blocking mouth): one in the west wall north of stand 2 (x 960..1024,
+  y 832..960: it sees stand 1 across the hall), one in the south wall east of
+  stand 3 (x 1600..1728, y -64..0: it sees stand 1 and stand 2).
+- Wave 2: the two cacodemons over the middle, two hell knights on the
+  floor (1480, 860) and (1200, 600), on green patches.
+- Wave 3: a baron at the exit door (1952, 704) and four demons (1888, 416),
+  (2000, 896), (1728, 640), (1560, 440), on red patches; three of them on the
+  steam's strip, two beside it.
+- The patches: 64 x 64 sectors of the hall's tag under each walking guard
+  of wave 2 (green, 0x70F070) and 3 (red, 0xFF6060).
+- The share: an invulnerability sphere, on each stand near its back wall:
+  (1690, 1184), (856, 344), (1240, -164).
+- Lever 1, steam, on stand 1's east wall (1726, 1100); its strip x
+  1856..2048, y 288..1024 before the exit door, its floor blue (0xA8C8F8),
+  twelve vents (x 1904 and 2000, y 352 to 992 by 128). Lever 2, the
+  breaker, on stand 2's south wall (960, 322). Nothing on stand 3.
+- `ajarthird.last(..., stagger=60)`.
+- The generator asserts that wave 1 stands on a pedestal or in a bay, that
+  no patch is on an island and no vent on a block. `mapcheck.py map_last`
+  and `thingcheck.py map_last`: 0 problems (102 sectors, 81 things; mapcheck
+  knows 20171 is on a wall).
+
+**What changed, in which file.**
+- `src/zscript/last.zs`: the four rules (`LastWave`, `LastWaves`; the
+  share's `LastShareBegin`, `LastShareAlarm`, `LastShareTick`,
+  `LastShareTaken`, `AjarShareCopy`; `AjarLastSelf`'s sum and
+  `LastStagger`; the levers' `AjarThirdLever`, `LastLeverBegin`,
+  `LastLeverUsed`, `LeverGo`, `LastMachines`, `LastSteam`, `LastStun`,
+  `LastStunEnd`, `AjarSteam`, `AjarSpark`, `AjarThirdVent`); `AjarThirdTake`
+  extended with the share's tic and the levers worked; `LastSay` (a line said
+  in the same tic as another goes under it); `LastDamaged` counts the
+  steam's damage; the timetable's new lines; its head.
+- `src/zscript/third.zs`: its head only (the contract and rules 9 to 12).
+- `src/zscript/lasttest.zs`: the tests below. `tools/smoke_LAST_4.cfg`: the
+  views' new times.
+- `tools/ajarthird.py`, `tools/map_last.py` (above), `tools/gfx_time.py`
+  (AJLV, AJBK), `tools/mapcheck.py` (20171 on a wall), `src/mapinfo.txt`
+  (20170 to 20172).
+
+**The tests** (on the last full build; `MAP=LAST MODE=n tools/smoke.sh`,
+god mode as before; the script's shots as before). Modes 1 to 4 keep what
+they checked; what the new cast changes is changed (the alarm brings 6, not
+12; go 2's script steps onto plate 2 30 tics after the alarm in modes 1 and
+4, so its sum check allows that; the go-3 timetable has 8 lines in mode 1).
+- `MODE=1 TIMEOUT=320 EXTRA="+set save_dir /out/saves"`, run twice: **108 of
+  108** both times. Over and above the old checks:
+  - A: the alarm brings wave 1 only (6, awake, each with a target); no
+    wave 2 or 3 at any tic of go 1 (2391 tics looked at) nor wave 3 in go
+    2; wave 2 at the tic the player first stands on plate 2 in go 2 (the
+    alarm + 42: 4 guards), and in go 3 at that same tic by the second self's
+    record (`waveAt`), with no wave 2 before it; wave 3 at the tic the third
+    self first stands in the hall (the alarm + 1410: 5 guards), none before;
+    the hall empty and the counters 0 at each go's start (as before); the
+    fire lines of the timetable in go 2 and go 3 as the takes have them.
+  - B: three pale copies at each go's start; walked onto before the alarm in
+    go 1: nothing; real at the alarm; taken in go 1 at the alarm + 1214:
+    every copy gone, the player invulnerable, the take has the tic; in go 2
+    and go 3 pale from the start, walked onto after the alarm: nothing, all
+    there one tic before the first self's tic and all gone at it; the
+    alarm's line ("The sphere is your first self's: it takes it at 0:51.")
+    and the timetable's ("1 takes the sphere 0:51").
+  - C: in go 2 a guard hurts the first self by 60 at a tic (the first from
+    the alarm + 100) where its record stands on plate 1 and has 3 or more
+    shots in the next 105 tics: staggered at the next tic, the line; for 105
+    tics none of its shots fired and all skipped (29 of 29), plate 1 pressed
+    throughout; 37 fired in the 200 tics after. The stagger's line once for
+    each self staggered in go 2 and go 3. In go 3 with args[4] set to 0 for
+    four tics, the second self hurt by 500 is not staggered (MAP33's case).
+  - D: the steam valve used before the alarm: refused, said, nothing in the
+    take; at the alarm + 1450 it works (6 seconds, spent picture, the take
+    has it); used again: "spent", nothing more; after 100 tics an imp on the
+    strip took 150 of the steam, one off it 0, a self put on it 0; the steam
+    stops at its end. In go 2 the breaker at the alarm + 200: 9 or 10 of the
+    hall's monsters held, none moved, turned, changed state (but into pain)
+    or fired a missile for its 175 tics; a mancubus killed by the script's
+    fire meanwhile dies (its death plays); 70 tics after, 6 of them act
+    again and the hall's light is as it was. The steam works by itself in
+    go 2 and go 3, and the breaker in go 3, at the tics of the records, the
+    player 540 to 965 away; their timetable lines. In go 3 the third self,
+    in BUDDHA rather than god mode, was 23 tics deep on the strip while the
+    steam blew and took 27 of it (its armour took the rest), and nothing
+    while off the strip.
+- `MODE=2 EXTRA="+set save_dir /out/saves"`, the stand's save: **49 of 49**
+  (with wave 2 coming with the alarm in go 2: the script is on plate 2
+  before it).
+- `MODE=3 TIMEOUT=320`, winding and too late: **64 of 64**; wave 2 comes
+  with the alarm in go 2 and go 3 (plate 2 pressed before it) and the
+  alarm's line keeps its place over the wave's; the share not taken in go 1
+  and taken in go 2 (the alarm + 86): go 3 has it as the second self's
+  (pale, said, the timetable, gone at its tic).
+- `MODE=4 TIMEOUT=320`, the views and the checks of mode 1: **105 of 105**. The
+  views (`smoke_LAST_4.cfg`, eleven): the seven old ones (go 2's fight
+  view now at the alarm + 900, after its time door; the crossing's now on
+  the strip in the steam) and four more: the share and the steam valve on
+  stand 1 just after the alarm (go 1); wave 2 coming, its green patches
+  and the red ones beyond (go 3, from stand 3); the breaker's stun (go 3,
+  the second self's); the second self staggered on stand 2, seen from stand
+  3 at 40 degrees of view (go 3: the script hurts it for the view). Looked
+  at: the sphere and the valve read; the green patches are faint at that
+  distance, the red ones a little better; the steam is grey smoke, seen but
+  not striking; the staggered self reads as pale beside the railing.
+- Not broken: `MAP=MAP33 MODE=1 TIMEOUT=500 EXTRA="+set save_dir /out/saves"` 246 of 246, `MAP=THIRD MODE=3` 53 of 53.
+- `mapcheck.py map_last`, `thingcheck.py map_last`: 0 problems.
+
+**Measurements** (MODE=1, two runs; the fight is not the same twice, so
+these are signs, not measures):
+- Go 1 with wave 1 alone is short: the player's script killed the six
+  standing guards within about 10 seconds of the alarm (its take's fire
+  line "1 fires from 0:16 to 0:25 (93 shots)" and "0:16 to 0:26 (98)").
+  So the first self fires again only in the first 10 seconds of each later
+  go; after that it holds its plate and does nothing.
+- What the earlier selves killed. Go 2: the first self 2 of the 10 in the
+  hall in each run (a mancubus and a chaingunner), the player the rest.
+  Go 3, the third self not firing until it crosses at the alarm + 1400:
+  run 1 the first self 2 and the second 3 (5 of the 10 of waves 1 and 2),
+  run 2 the first self 4 and the second 2 (6 of 10). Neither killed any of
+  wave 3 (it comes when the third self steps down, after the second self's
+  last shot at 0:39 to 1:01).
+- The stagger (60, falling by 1 a tic): go 2, the first self 1 and 2 times
+  (one of them the script's); go 3, the first self 4 and 0 times, the
+  second 1 and 4 times. So most goes have a self held for three seconds at
+  least once without the player doing anything about it.
+- The steam meets wave 3 when the third self steps down just before go 1's
+  tic: wave 3 took 276 and 312 of its 1600 health from the steam (the baron
+  and two demons stand on the strip; the demons leave it at once for the
+  player); none died of it.
+- The breaker held 9 and 10 monsters in go 2 (at the alarm + 200).
+- last.zs's work in go 3's fight: 0.021 ms a tic on average, 0.15 at worst
+  (was 0.018 and 1.4 before); the wall clock between tics 28.6 ms on
+  average.
+
+**Not tested / not played by hand**:
+- Nobody has played it. Not known: whether wave 1 alone (six standing
+  monsters) makes go 1 worth playing, whether the green and red patches are
+  read as "they will come here", whether a player in go 1 thinks of the
+  valve and of when to open it, whether the stagger is seen from another
+  stand.
+- Real USE on a lever (the script calls `Used`, as the wind plate's tests
+  do), and real walking onto a copy of the share by a person (the script
+  walks the player onto it; the touch is the engine's).
+- A megasphere as the share (args[0] 1); a lever with seconds of its own; a
+  breaker thrown while a wave comes (the new guards are held too, by the
+  code; not run); two steam levers.
+- The stagger of a self while its record has it off its plate; a self
+  staggered by damage from a monster's infighting splash (counted, as any
+  monster's).
+- MAP33 with any of the four (the next task).
+- Saves: a save made in a go with the steam blowing or the hall stunned is
+  not loaded by any test (the arrays are saved; the hall's light is the
+  saved level's, and `hallLight` is read at the level's load).
+- Skills other than 3 (the cast is the same on all).
+
+**My choices** (Claude's on Opus, small; each easy to change):
+- Wave k comes at plate k's first press **from the alarm on**; pressed
+  before the alarm, it comes with the alarm (the hall stays empty before
+  the alarm, as rule 1 says). Go 2's test steps onto plate 2 30 tics after
+  the alarm so that the two moments differ; mode 3's stands on it before.
+- The wave's sound `brain/spit` at full volume; the lines as above. A line
+  said in the same tic as another goes under it (`LastSay`), so the alarm's
+  line is not lost when wave 2 comes with it.
+- The fire line of the timetable only on a map with waves (MAP33's
+  timetable is checked for its count of lines, and the rule should not
+  change a map without its things).
+- The lab's two chaingunner bays: the west wall north of stand 2 and the
+  south wall east of stand 3 (above). The wave 2 knights' and wave 3's
+  places; the patches' colours (green 0x70F070, red 0xFF6060), tinting the
+  floor only (udmf's `color`).
+- The share: a copy is my own actor showing the item's picture (PINV or
+  MEGA), not the item; taking it spawns the real item there and lets it be
+  touched, so the pickup is the engine's. Copies go in an item fog. The
+  self's take: the pickup sound from the self. The item is "the sphere" or
+  "the megasphere" in the lines.
+- An earlier self's lever, like its share, is its own in the later goes:
+  the player cannot work it before its tic (a line says whose).
+- The stagger counts damage from anything but the self itself, the other
+  selves and players (a self's own rocket splash would stagger it
+  otherwise). While staggered the sum is held at 0. The look: every 4 tics
+  pale (0.35) with the pain picture, then as it is; the sound
+  `player/male/pain100_1` (the compatibility name of the player's pain).
+- The steam's place is said by vents (`AjarThirdVent`, 20172, a reach each,
+  96 by default) with the same number as the lever's args[2]: a sector has
+  one tag, and the strip must stay in the hall. "On the floor" is within 8
+  of the vent's height, so a monster on a block or in a bay beside the strip
+  is not hurt, nor a flyer. The steam's reach goes 48 past the tinted strip
+  on its west side (vents 48 in from its edge, reach 96).
+- Steam: damage type `AjarSteam`, no source (it angers nobody); the puffs
+  the IWAD's PUFF smoke (B to D), translucent 0.75, 2.4 times, rising, four
+  a tic; `vile/firestrt` as the hiss.
+- The breaker: held by `tics = -1` each tic, velocity 0, DONTTHRUST for the
+  stun (so that a hit does not slide it); released with `tics = 1`.
+  Monsters that come into the hall during it are held too. Sparks
+  (`AjarSpark`, the plasma burst PLSE, small) and the hall's light dipping;
+  `weapons/plasmax` when thrown, `weapons/plasmaf` now and then.
+- The levers' pictures: three frames each (ready, spent, not yet), made in
+  `gfx_time.py` beside the wind plate's.
+- The lever's lines: "Steam blows over the marked floor: 6 seconds.", "The
+  breaker is thrown: everything in the hall stands stunned for 5 seconds.",
+  with "Your first self opens the steam valve." before it when a self works
+  it.
+- Tests: the go-3 crossing starts at the alarm + 1400 (was 1600), just
+  before go 1's steam at + 1450, so that the steam meets wave 3 and the
+  third self; the selves' kills are counted alone until then. Go 3 crosses
+  in BUDDHA, not god mode, so that the steam's damage to the player is real.
+  The stagger test picks its tic (from the alarm + 100) where the first
+  self's record has at least 3 shots in the 105 tics and stands on its
+  plate, so that it never depends on how fast go 1's guards died. The
+  breaker is thrown at the alarm + 200 in go 2, while the hall is full.

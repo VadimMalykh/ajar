@@ -16,10 +16,19 @@ alarm opens it), steps down to L's floor, and a plate that winds on. The
 exit door is in L's east wall: the third self crosses about 900 units of
 floor to it.
 L: 1024 x 1024, its floor 96 under the stands, which are open to it along
-their whole fronts behind railings. Its guards come at the alarm: two
+their whole fronts behind railings, among four low blocks. Its guards come
+in waves (PLAN.md, "The last fight lab: four ways the selves help each
+other"): at the alarm wave 1, all standing where they cannot leave (two
 mancubi on pedestals, two revenants in bays of the east wall beside the exit
-door, two cacodemons over the middle, four demons and two hell knights on
-the floor, among four low blocks.
+door, two chaingunners in bays of the west and the south wall); when plate
+2 is first pressed in a go (go 2 and 3) wave 2, two cacodemons over the
+middle and two hell knights on green patches of the floor; in go 3 when the
+third self first stands on the floor wave 3, a baron and four demons on red
+patches between the foot of the steps and the exit door. The share: an
+invulnerability sphere on each stand, one for the three. Lever 1 (steam) on
+stand 1 blows over the blue strip before the exit door (its vents); lever 2
+(the breaker) on stand 2 stuns the hall. An earlier self hit by 60 is
+staggered.
 """
 import ajarmap
 import ajartime
@@ -96,15 +105,45 @@ ajarmap.stairs(m, (1280, 16), (1408, 16), (0, 1), 0, FL, steps=6, depth=16, ceil
 # --- the last hall L ---------------------------------------------------------------
 PEDESTALS = [(1600, 736, 1792, 928), (1792, 64, 1984, 256)]                 # the mancubi's, 72 high
 BAYS = [(2048, 448, 2112, 576), (2048, 832, 2112, 960)]                     # the revenants', 72 high
+CG_BAYS = [(960, 832, 1024, 960), (1600, -64, 1728, 0)]                     # the chaingunners', 72 high: west wall, south wall
 BLOCKS = [(1376, 256, 1504, 320), (1632, 224, 1696, 352), (1664, 496, 1792, 560), (1920, 464, 1984, 592)]   # cover, 64 high
 STEPS = (1280, 0, 1408, 112)                                                # the gate and the steps
-for r in ajarthird.tiles(1024, 0, 2048, 1024, PEDESTALS + BLOCKS + [STEPS]):
+GREEN = 0x70F070    # the floor where a walking guard of wave 2 comes
+RED = 0xFF6060      # ... of wave 3
+STRIP = (1856, 288, 2048, 1024)                                             # the steam's strip before the exit door, 192 wide
+STEAMY = 0xA8C8F8   # its floor
+VENTS = [(x, y) for x in (1904, 2000) for y in range(352, 1024, 128)]      # its vents: 96 reach, so the strip is covered
+
+# the guards (all skills: the lab's cast): (kind, x, y, angle, z over the floor, wave)
+GUARDS = [(67, 1696, 832, 225, 0, 1), (67, 1888, 160, 135, 0, 1),           # wave 1, at the alarm: mancubi on the pedestals,
+          (66, 2080, 512, 180, 0, 1), (66, 2080, 896, 180, 0, 1),           # revenants in the east bays,
+          (65, 992, 896, 0, 0, 1), (65, 1664, -32, 90, 0, 1),               # chaingunners in the west and the south bay
+          (3005, 1480, 520, 90, 200, 2), (3005, 1620, 700, 180, 200, 2),    # wave 2, plate 2: cacodemons over the middle,
+          (69, 1480, 860, 270, 0, 2), (69, 1200, 600, 0, 0, 2),             # hell knights on the floor
+          (3003, 1952, 704, 180, 0, 3),                                     # wave 3, the third self on the floor: a baron at the exit door,
+          (3002, 1888, 416, 180, 0, 3), (3002, 2000, 896, 180, 0, 3),       # demons
+          (3002, 1728, 640, 180, 0, 3), (3002, 1560, 440, 270, 0, 3)]
+WALKS = {69, 3003, 3002}
+PATCHES = [((x - 32, y - 32, x + 32, y + 32), GREEN if w == 2 else RED) for k, x, y, a, z, w in GUARDS if w > 1 and k in WALKS]
+
+def overlap(p, q):
+    return p[0] < q[2] and q[0] < p[2] and p[1] < q[3] and q[1] < p[3]
+
+
+for r in ajarthird.tiles(1024, 0, 2048, 1024, PEDESTALS + BLOCKS + [STEPS, STRIP] + [p for p, c in PATCHES]):
     m.sector(rect(*r), floor=FL, ceil=LC, light=170, color=HALL, id=HALLT)
+for r in ajarthird.tiles(*STRIP, [b for b in BLOCKS if overlap(b, STRIP)] + [p for p, c in PATCHES if overlap(p, STRIP)]):
+    m.sector(rect(*r), floor=FL, ceil=LC, light=170, color=STEAMY, id=HALLT)
+for p, c in PATCHES:
+    m.sector(rect(*p), floor=FL, ceil=LC, light=170, color=c, id=HALLT)
 for p in PEDESTALS:
     m.sector(rect(*p), floor=FL + 72, ceil=LC, light=180, color=HALL, side="AJBOLT", id=HALLT)
-for b in BAYS:
+for b in BAYS + CG_BAYS:
     m.sector(rect(*b), floor=FL + 72, ceil=FL + 200, light=160, color=HALL, side="AJBOLT", id=HALLT)
+for b in BAYS:
     m.line((b[0], b[1]), (b[0], b[3]), blockmonsters=True)
+m.line((CG_BAYS[0][2], CG_BAYS[0][1]), (CG_BAYS[0][2], CG_BAYS[0][3]), blockmonsters=True)
+m.line((CG_BAYS[1][0], CG_BAYS[1][3]), (CG_BAYS[1][2], CG_BAYS[1][3]), blockmonsters=True)
 for b in BLOCKS:
     m.sector(rect(*b), floor=FL + 64, ceil=LC, light=180, color=HALL, side="AJBOLT", id=HALLT)
 # the railings: each stand's whole front (stand 3's either side of its gate)
@@ -119,17 +158,25 @@ m.sector(rect(2192, 640, 2256, 768), floor=FL, ceil=FL + 128, light=230, color=P
 m.line((2192, 640), (2192, 768), special=243, playercross=True)
 m.line((2256, 640), (2256, 768), mid="AJEXIT", exact=True)
 
-# the guards (all skills: the lab's cast)
-GUARDS = [(67, 1696, 832, 225, 0), (67, 1888, 160, 135, 0),                 # mancubi on the pedestals
-          (66, 2080, 512, 180, 0), (66, 2080, 896, 180, 0),                 # revenants in the bays
-          (3005, 1480, 520, 90, 200), (3005, 1620, 700, 180, 200),          # cacodemons over the middle
-          (3002, 1200, 820, 0, 0), (3002, 1320, 420, 90, 0), (3002, 1840, 640, 180, 0), (3002, 1500, 680, 270, 0),
-          (69, 1900, 880, 180, 0), (69, 1200, 600, 0, 0)]                   # demons and hell knights on the floor
-for kind, x, y, a, z in GUARDS:
-    ajarthird.guard(m, x, y, kind, a, z)
-assert all(p[0] + 64 <= x <= p[2] - 64 and p[1] + 64 <= y <= p[3] - 64 for p, (k, x, y, a, z) in zip(PEDESTALS, GUARDS))
-assert all(b[0] + 24 <= x <= b[2] - 24 and b[1] + 24 <= y <= b[3] - 24 for b, (k, x, y, a, z) in zip(BAYS, GUARDS[2:]))
-ajarthird.last(m, 1536, 900, HALLT, gate=GATE)
+for kind, x, y, a, z, w in GUARDS:
+    ajarthird.guard(m, x, y, kind, a, z, wave=w)
+# wave 1 stands where it cannot leave: on a pedestal or in a bay, 64 or more over the floor
+STANDING = PEDESTALS + BAYS + CG_BAYS
+assert all(any(p[0] + 20 <= x <= p[2] - 20 and p[1] + 20 <= y <= p[3] - 20 for p in STANDING) for k, x, y, a, z, w in GUARDS if w == 1)
+# a walking guard of a later wave stands in the middle of its patch, clear of every island
+assert all(not (p[0] < q[2] and q[0] < p[2] and p[1] < q[3] and q[1] < p[3]) for p, c in PATCHES for q in PEDESTALS + BLOCKS + [STEPS])
+# the levers: the steam valve on stand 1's east wall (its vents, number 1, on the strip), the breaker on
+# stand 2's south wall
+ajarthird.lever(m, 1726, 1100, 180, 1, 1, tag=1)
+ajarthird.lever(m, 960, 322, 90, 2, 2)
+for x, y in VENTS:
+    ajarthird.vent(m, x, y, 1)
+assert all(not any(b[0] <= x <= b[2] and b[1] <= y <= b[3] for b in BLOCKS) for x, y in VENTS)          # (on the floor, not on a block)
+# the share: one invulnerability sphere for the three selves, a copy on each stand near its back wall
+SHARES = [(1690, 1184), (856, 344), (1240, -164)]
+for x, y in SHARES:
+    ajarthird.share(m, x, y)
+ajarthird.last(m, 1536, 900, HALLT, gate=GATE, stagger=60)
 ajarthird.third(m, 1536, 960, EXIT, OUT, (300, -300, 2400, 1600))
 
 # no part is joined to another on foot (glass, the railings are not ways):
