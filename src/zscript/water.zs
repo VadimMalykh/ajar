@@ -43,6 +43,15 @@
 // links and no water of its own: its surface is put where the other's is,
 // every tic, after the flows (MAP20's left-handed bath, behind the opening
 // in the swimming bath's panes: PLAN.md, "MAP20: the secret way out").
+//
+// In a level (a map with an AjarWaterRate: MAP20; not the lab) the handler also puts a buoy (AjarBuoy)
+// in every NORMAL basin that no FOLLOW basin follows (so none in MAP20's swimming bath, where nothing may
+// move by itself, and none in the reservoir or the outfall), at the basin thing's own spot: it rides the
+// surface, a third of it under, and rests on the floor when the basin is dry. Scenery only. A weir's
+// fountain: the sectors tagged FOUNTAIN + the weir's chute tag (MAP20's lower yard) are dry at rest and
+// show water, with a jet in their middle (AjarFountainJet), while the weir's wheel counts as turning.
+// The wheel is drawn 128 across (AJWH); the lab shows it at half that, a level as large as its chute lets
+// it be, up to WHEEL_MAX (PLAN.md, "MAP20: buoys, the fountain, a bigger wheel").
 
 class AjarBasin : Actor
 {
@@ -93,6 +102,10 @@ class AjarWeir : Actor
 	Array<int> chute;          // the chute's sectors, by index
 	Array<string> chuteDry;    // ... and their own floors
 	double scroll;
+	Array<int> fountain;       // the fountain's sectors (tag FOUNTAIN + the chute's tag), by index
+	Array<string> fountainDry; // ... and their own floors
+	Vector3 fountainAt;        // the middle of the fountain, on its floor
+	AjarFountainJet jet;       // there while the wheel turns
 
 	Default
 	{
@@ -100,6 +113,7 @@ class AjarWeir : Actor
 		Radius 32;
 		Height 64;
 		RenderStyle "Normal";
+		Scale 0.5;             // the sprite is 128 across: the lab's wheel stays 64 (a level's: AjarWaterHandler.WheelSize)
 	}
 	States
 	{
@@ -150,6 +164,83 @@ class AjarRaft : Actor
 	Spawn:
 		AJB0 A -1;
 		Stop;
+	}
+}
+
+// A buoy (a level's: put by the handler, never by the map): a red-and-white ball at its basin thing's
+// spot, standing on the surface with DRAFT of it under while there is that much water there, on the
+// floor otherwise. Scenery: not solid, not shootable, not in the blockmap, counts as nothing.
+class AjarBuoy : Actor
+{
+	const DRAFT = 8;           // a third of its 24 under water
+	AjarBasin basin;
+	double floorAt;            // the floor at its spot
+	double phase;              // its rocking, so that no two rock together
+
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +NOINTERACTION +ROLLSPRITE +ROLLCENTER +DONTSPLASH
+		Radius 12;
+		Height 24;
+		RenderStyle "Normal";
+	}
+	States
+	{
+	Spawn:
+		AJBY A -1;
+		Stop;
+	}
+
+	bool Afloat() { return basin && basin.Wet() && basin.w - DRAFT > floorAt; }
+	double Want() { return Afloat() ? basin.w - DRAFT : floorAt; }
+
+	void Ride()
+	{
+		SetOrigin((pos.xy, Want()), true);
+		roll = Afloat() ? 4 * sin(level.maptime * 3.1 + phase) : 0;
+	}
+}
+
+// A fountain's jet (the handler's, while its weir's wheel turns): a sprite about 96 high, spray falling
+// back into the bowl as particles, and the sound of running water. Nothing solid.
+class AjarFountainJet : Actor
+{
+	Default
+	{
+		+NOBLOCKMAP +NOGRAVITY +NOINTERACTION +DONTSPLASH
+		Radius 16;
+		Height 96;
+		RenderStyle "Translucent";
+		Alpha 0.9;
+	}
+	States
+	{
+	Spawn:
+		AJFJ ABCD 3;
+		Loop;
+	}
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		A_StartSound("ajar/water", CHAN_BODY, CHANF_LOOPING, 0.8, ATTN_NORM);
+	}
+
+	override void Tick()
+	{
+		Super.Tick();
+		for (int i = 0; i < 4; i++)
+		{
+			double a = frandom(0, 360), v = frandom(1.2, 2.6);
+			A_SpawnParticle(0xE0F0F8, 0, 30, frandom(2, 4), 0, 0, 0, frandom(78, 90), v * cos(a), v * sin(a),
+				frandom(0.2, 1.6), 0, 0, -0.25, 0.8, 0.02);
+		}
+	}
+
+	override void OnDestroy()
+	{
+		A_StopSound(CHAN_BODY);
+		Super.OnDestroy();
 	}
 }
 
@@ -242,11 +333,17 @@ class AjarWaterHandler : EventHandler
 	const CTL = 6000;          // basin tag t's control sector: tag CTL + t
 	const FLOAT_UP = 64. / 35; // the player rises this much a tic when he floats (FLOAT)
 	const SOUND_SLOT = 7;      // the channel a frame's running water and a wheel's turning play on
+	const FOUNTAIN = 7000;     // a weir's fountain: the sectors tagged FOUNTAIN + its chute's tag (ajarwater.FOUNTAIN)
+	const WHEEL_MAX = 160;     // a level's wheel is drawn this wide, or as wide as its chute lets it be, less WHEEL_ROOM
+	const WHEEL_ROOM = 6;
+	const WHEEL_PX = 127;      // the sprite's paddles' tips, from one to the other (AJWH, 128 px)
 
 	// the level's rate and rules: the constants above, unless an AjarWaterRate says otherwise
 	double kFlow, freeFall, kWeir, wheelFlow;
 	int wheelTics;
 	bool bFloat, bOverflow;
+	bool bLevel;               // a level's (an AjarWaterRate is there): buoys, a fountain, the wheel as large as fits
+	Array<AjarBuoy> buoys;
 	Array<AjarPressureDoor> pdoors;
 	Array<AjarFloatGate> floats;
 	Array<int> lastWater;      // by player: his waterlevel last tic (the splash)
@@ -311,6 +408,7 @@ class AjarWaterHandler : EventHandler
 		kFlow = K; freeFall = FREE; kWeir = K_WEIR; wheelFlow = WHEEL_FLOW; wheelTics = WHEEL_TICS;
 		let ri = ThinkerIterator.Create("AjarWaterRate");
 		let rate = AjarWaterRate(ri.Next());
+		bLevel = rate != null;
 		if (rate)
 		{
 			if (rate.args[0]) { kFlow = rate.args[0]; kWeir = kFlow; wheelFlow = 2 * kWeir; }
@@ -366,8 +464,11 @@ class AjarWaterHandler : EventHandler
 			let ci = level.CreateSectorTagIterator(wr.args[3]);
 			int s;
 			while ((s = ci.Next()) >= 0) { wr.chute.Push(s); wr.chuteDry.Push(TexMan.GetName(level.sectors[s].GetTexture(Sector.floor))); }
+			if (bLevel) WheelSize(wr);
+			SetupFountain(wr);
 			weirs.Push(wr);
 		}
+		if (bLevel) PutBuoys();
 		let pi = ThinkerIterator.Create("AjarPressureDoor");
 		AjarPressureDoor pd;
 		while (pd = AjarPressureDoor(pi.Next())) SetupPressureDoor(pd);
@@ -397,6 +498,87 @@ class AjarWaterHandler : EventHandler
 		pd.side[0] = BasinOfTag(pd.args[1]);
 		pd.side[1] = BasinOfTag(pd.args[2]);
 		pdoors.Push(pd);
+	}
+
+	// A level's wheel: WHEEL_MAX across, or less if its chute (across the wheel's plane) is narrower.
+	// The paddles reach every way as it turns, so the chute's width bounds it whatever its height.
+	void WheelSize(AjarWeir wr)
+	{
+		Vector2 along = (cos(wr.angle + 90), sin(wr.angle + 90));
+		double lo = 1e9, hi = -1e9;
+		for (int i = 0; i < wr.chute.Size(); i++)
+		{
+			Sector sec = level.sectors[wr.chute[i]];
+			for (int j = 0; j < sec.lines.Size(); j++)
+			{
+				Line l = sec.lines[j];
+				for (int e = 0; e < 2; e++)
+				{
+					double d = ((e ? l.v2.p : l.v1.p) - wr.pos.xy) dot along;
+					lo = min(lo, d); hi = max(hi, d);
+				}
+			}
+		}
+		double room = wr.chute.Size() ? 2 * min(-lo, hi) - WHEEL_ROOM : WHEEL_MAX;
+		double across = clamp(room, 32, WHEEL_MAX);
+		wr.scale = (across / WHEEL_PX, across / WHEEL_PX);
+	}
+
+	// A weir's fountain: its sectors, their dry floors, its middle
+	void SetupFountain(AjarWeir wr)
+	{
+		let fi = level.CreateSectorTagIterator(FOUNTAIN + wr.args[3]);
+		int s;
+		Vector2 lo = (1e9, 1e9), hi = (-1e9, -1e9);
+		while ((s = fi.Next()) >= 0)
+		{
+			Sector sec = level.sectors[s];
+			wr.fountain.Push(s);
+			wr.fountainDry.Push(TexMan.GetName(sec.GetTexture(Sector.floor)));
+			for (int j = 0; j < sec.lines.Size(); j++)
+			{
+				Line l = sec.lines[j];
+				for (int e = 0; e < 2; e++)
+				{
+					Vector2 p = e ? l.v2.p : l.v1.p;
+					lo = (min(lo.x, p.x), min(lo.y, p.y));
+					hi = (max(hi.x, p.x), max(hi.y, p.y));
+				}
+			}
+		}
+		if (!wr.fountain.Size()) return;
+		Vector2 mid = (lo + hi) / 2;
+		wr.fountainAt = (mid, level.PointInSector(mid).floorplane.ZatPoint(mid));
+	}
+
+	// the fountain plays while the wheel turns: water on its floor, the jet in its middle
+	void PlayFountain(AjarWeir wr)
+	{
+		if (!wr.fountain.Size()) return;
+		TextureID wet = TexMan.CheckForTexture("FWATER1", TexMan.Type_Any);
+		for (int i = 0; i < wr.fountain.Size(); i++)
+			level.sectors[wr.fountain[i]].SetTexture(Sector.floor, wr.turning ? wet : TexMan.CheckForTexture(wr.fountainDry[i], TexMan.Type_Any));
+		if (wr.turning && !wr.jet) wr.jet = AjarFountainJet(Actor.Spawn("AjarFountainJet", wr.fountainAt));
+		else if (!wr.turning && wr.jet) { wr.jet.Destroy(); wr.jet = null; }
+	}
+
+	// a buoy in every NORMAL basin that no FOLLOW basin follows, at the basin thing's spot
+	void PutBuoys()
+	{
+		for (int i = 0; i < basins.Size(); i++)
+		{
+			let b = basins[i];
+			if (b.args[3] != 0) continue;
+			bool followed = false;
+			for (int j = 0; j < basins.Size(); j++) if (basins[j].Follows() && basins[j].follow == b) followed = true;
+			if (followed) continue;
+			let by = AjarBuoy(Actor.Spawn("AjarBuoy", (b.pos.xy, 0)));
+			by.basin = b;
+			by.floorAt = level.PointInSector(b.pos.xy).floorplane.ZatPoint(b.pos.xy);
+			by.phase = 97 * buoys.Size();
+			by.SetOrigin((b.pos.xy, by.Want()), false);
+			buoys.Push(by);
+		}
 	}
 
 	// --- the water -------------------------------------------------------------------------
@@ -523,6 +705,7 @@ class AjarWaterHandler : EventHandler
 			sec.SetTexture(Sector.floor, wr.flow > 256 ? wet : TexMan.CheckForTexture(wr.chuteDry[i], TexMan.Type_Any));
 			sec.SetYOffset(Sector.floor, wr.scroll);
 		}
+		PlayFountain(wr);
 	}
 
 	// the surface where the basin's water is (under its floor when dry)
@@ -619,6 +802,7 @@ class AjarWaterHandler : EventHandler
 		Follow();
 		for (int i = 0; i < weirs.Size(); i++) Wheel(weirs[i]);
 		for (int i = 0; i < basins.Size(); i++) Show(basins[i]);
+		for (int i = 0; i < buoys.Size(); i++) if (buoys[i]) buoys[i].Ride();
 		Drowning();
 		Rafts();
 		Running();
@@ -718,8 +902,12 @@ class AjarWaterHandler : EventHandler
 			for (int i = 0; i < pd.door.lines.Size(); i++)
 			{
 				Line l = pd.door.lines[i];
-				lo = (min(lo.x, l.v1.p.x, l.v2.p.x), min(lo.y, l.v1.p.y, l.v2.p.y));
-				hi = (max(hi.x, l.v1.p.x, l.v2.p.x), max(hi.y, l.v1.p.y, l.v2.p.y));
+				for (int e = 0; e < 2; e++)
+				{
+					Vector2 p = e ? l.v2.p : l.v1.p;
+					lo = (min(lo.x, p.x), min(lo.y, p.y));
+					hi = (max(hi.x, p.x), max(hi.y, p.y));
+				}
 			}
 			if (a.pos.x + a.radius > lo.x && a.pos.x - a.radius < hi.x && a.pos.y + a.radius > lo.y && a.pos.y - a.radius < hi.y)
 				return true;

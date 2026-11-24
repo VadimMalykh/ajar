@@ -8,7 +8,8 @@
 //          refusing, opening dry and shutting itself (on no one), the float gate
 //   MODE=3 "nothing can be lost": K at 96 with BLUE taken down and the player inside; C refilled
 //          with the player on the boiler house's side; the lower yard with K full; the gates
-//   MODE=4 a tour of fixed views (tools/smoke_MAP20_4.cfg shoots at 78 + 80 n)
+//   MODE=4 a tour of fixed views (tools/smoke_MAP20_4.cfg shoots at 78 + 80 n); from view 21 the fountain
+//          playing, the wheel close, the circle broken and the fountain dry again (two checks)
 //   MODE=5 the fights' causes: each water ambush once and when it should; the cells; drowning
 //   MODE=6 (EXTRA=-nomonsters) the secret way out: BLUE in 142, the swim to the fourth pane and through
 //          it into the left-handed bath, its water at the bath's level every tic, the way back, a mirror
@@ -16,11 +17,14 @@
 //          the copy's door, the secret, the Exit_Secret line (PLAN.md, "MAP20: the secret way out, built")
 //   MODE=7 views of the pane wall for tools/highwater_compare.py (tools/smoke_MAP20_7.cfg shoots at
 //          78 + 80 n), as built and with AJAR_SBMIRROR=1 (the fourth pane a mirror); the notch views
+// MODE=1 also checks the buoys (one in each of P, C, T, K, L, U, at the surface or on the floor, none in the
+// swimming bath or its copy) and the fountain (dry before the wheel turns, playing while it turns)
 class HighWaterTest : EventHandler
 {
 	const TP = 21; const TC = 22; const TT = 23; const TK = 24; const TL = 25; const TU = 26; const TSB = 27;
 	const PD_P = 41; const PD_E2 = 42; const PD_CA = 43; const PD_CB = 44; const PD_T = 45; const PD_K = 46;
 	const GD_TAG = 61; const GW_TAG = 62; const LEDGE_TAG = 63; const YARD_TAG = 64; const SLUICE = 65;
+	const FOUNTAIN_TAG = 7067;  // the lower yard's fountain (map_highwater.FOUNTAIN_TAG: water.zs FOUNTAIN + the chute's 67)
 	const FRONT = 1000;         // + frame number: before the frame, facing it (map_highwater.test_spot)
 	const EXPECT = 3100;        // + n: the measure's levels at rest (map_highwater.EXPECT)
 	const E_P102 = 1; const E_C112 = 2; const E_C113 = 3; const E_PIPE = 4; const E_K131 = 5; const E_K133 = 6;
@@ -64,6 +68,72 @@ class HighWaterTest : EventHandler
 	string Levels()
 	{
 		return String.Format("P %.2f C %.2f T %.2f K %.2f L %.2f U %.2f SB %.2f", W(TP), W(TC), W(TT), W(TK), W(TL), W(TU), W(TSB));
+	}
+
+	// --- the buoys and the fountain ------------------------------------------------------------
+	static const int BUOYED[] = { TP, TC, TT, TK, TL, TU };
+	AjarBuoy BuoyOf(int tag)
+	{
+		for (int i = 0; i < wh.buoys.Size(); i++) if (wh.buoys[i] && wh.buoys[i].basin && wh.buoys[i].basin.Tag() == tag) return wh.buoys[i];
+		return null;
+	}
+	// the buoy of basin `tag`: with DRAFT of it under the surface while there is that much water at its spot, else on the floor
+	bool BuoyRides(string name, int tag)
+	{
+		let by = BuoyOf(tag);
+		if (!by) { Check(name, false, "no buoy"); return true; }
+		double fl = FloorAt(by.pos.xy), w = W(tag);
+		bool afloat = B(tag).Wet() && w - AjarBuoy.DRAFT > fl;
+		bool ok = afloat ? abs(by.pos.z + AjarBuoy.DRAFT - w) < 2 : abs(by.pos.z - fl) < 1;
+		Check(name, ok, String.Format("basin %d: the water %.2f, the floor there %.1f, the buoy's foot %.2f (%s)",
+			tag, w, fl, by.pos.z, afloat ? "afloat" : "on the floor"));
+		return true;
+	}
+	void BuoysAtLoad()
+	{
+		int mine = 0;
+		for (int i = 0; i < 6; i++) if (BuoyOf(BUOYED[i])) mine++;
+		Check("buoysSix", mine == 6 && wh.buoys.Size() == 6, String.Format("%d of the six, %d in all", mine, wh.buoys.Size()));
+		int inBath = 0;
+		for (int i = 0; i < wh.buoys.Size(); i++)
+		{
+			let by = wh.buoys[i];
+			if (!by) continue;
+			let t = by.basin ? by.basin.Tag() : 0;
+			if (t == TSB || t == TSBL || (by.pos.x < 0 && by.pos.y < 700) || InCopy(by.pos.xy)) inBath++;
+		}
+		Check("noBuoyInTheBaths", inBath == 0, String.Format("%d in the swimming bath or its copy", inBath));
+		int near = 0;
+		for (int i = 0; i < wh.buoys.Size(); i++)
+		{
+			let by = wh.buoys[i];
+			for (int j = 0; by && j < wh.frames.Size(); j++)
+			{
+				Line l = h.FindLine(wh.frames[j].args[0]);
+				if (l && ((l.v1.p + l.v2.p) / 2 - by.pos.xy).Length() < 48 + by.radius) near++;
+			}
+		}
+		Check("buoysClearOfTheFrames", near == 0, String.Format("%d within 48 of a frame's mouth", near));
+		for (int i = 0; i < 6; i++) BuoyRides(String.Format("buoyAsFound_%d", BUOYED[i]), BUOYED[i]);
+	}
+	bool FountainWet()
+	{
+		let s = SectorOf(FOUNTAIN_TAG);
+		return s && TexMan.GetName(s.GetTexture(Sector.floor)) ~== "FWATER1";
+	}
+	AjarFountainJet Jet()
+	{
+		let it = ThinkerIterator.Create("AjarFountainJet");
+		return AjarFountainJet(it.Next());
+	}
+	void FountainCheck(string name, bool playing)
+	{
+		let s = SectorOf(FOUNTAIN_TAG);
+		let j = Jet();
+		bool ok = s && FountainWet() == playing && (j != null) == playing;
+		if (ok && playing) ok = abs(j.pos.x - 4608) < 1 && abs(j.pos.y - 1376) < 1 && abs(j.pos.z - 16) < 1;
+		Check(name, ok, String.Format("floor %s, jet %s, the wheel %s", s ? TexMan.GetName(s.GetTexture(Sector.floor)) : "no sector",
+			j ? PStr(j.pos) : "none", wh.weirs.Size() && wh.weirs[0].turning ? "turning" : "still"));
 	}
 
 	void PoseF(Actor mo, double x, double y, double ang, double z = -1e9)
@@ -292,6 +362,8 @@ class HighWaterTest : EventHandler
 				String.Format("K %.0f, FREE %.0f, float %d, overflow %d, wheel %d tics", wh.kFlow, wh.freeFall, wh.bFloat, wh.bOverflow, wh.wheelTics));
 			Check("asFound", W(TP) == 0 && W(TC) == 96 && W(TT) == 0 && W(TK) == 0 && W(TL) == -96 && W(TU) == 128 && W(TSB) == -160, Levels());
 			Check("measureCarried", Measured(E_P102) > 200, String.Format("P with BLUE in 102: %.2f", Measured(E_P102)));
+			BuoysAtLoad();
+			FountainCheck("fountainDryAtRest", false);
 			Next();
 		}
 		// 1. the baths: P's door opens dry; BLUE in 101: 96, the ledge not reached; in 102: 224
@@ -302,6 +374,7 @@ class HighWaterTest : EventHandler
 		if (Op() && Rest("P_blue101", TP, Measured(E_P101))) Next();
 		if (Op())
 		{
+			BuoyRides("buoy_P96", TP);
 			Check("ledgeNotReachedAt96", W(TP) < 232 - 24, Levels());
 			Next();
 		}
@@ -311,6 +384,7 @@ class HighWaterTest : EventHandler
 		if (Op() && Rest("P_blue102", TP, Measured(E_P102))) Next();
 		if (Op())
 		{
+			BuoyRides("buoy_P224", TP);
 			Check("ledgeReached", W(TP) >= 232 - 24, Levels());
 			Next();
 		}
@@ -343,12 +417,14 @@ class HighWaterTest : EventHandler
 		if (Op() && Rest("C_green112", TC, Measured(E_C112))) Next();
 		if (Op())
 		{
+			BuoyRides("buoy_C0", TC);
 			Check("E2heldAt0", PD(PD_E2).held && PD(PD_CA).held, String.Format("water at E2's sill %.1f", PD(PD_E2).WaterAt(0)));
 			Next();
 		}
 		if (Op() && PoseAt(mo, FRONT + 113)) Next();
 		if (Op() && Hang(mo, "greenIn113", green, 113)) Next();
 		if (Op() && Rest("C_green113", TC, Measured(E_C113))) Next();
+		if (Op() && BuoyRides("buoy_C_dry", TC)) Next();
 		if (Op() && DoorState("cellAOpensItself", PD_CA, true)) Next();
 		if (Op() && DoorState("cellBOpensItself", PD_CB, true)) Next();
 		if (Op() && UsePD(mo, "E2opensDry", PD_E2, true)) Next();
@@ -377,6 +453,8 @@ class HighWaterTest : EventHandler
 		if (Op())
 		{
 			Check("C_atItsBrim", abs(W(TC) - 100) < 0.5, Levels());
+			BuoyRides("buoy_C100", TC);
+			BuoyRides("buoy_T228", TT);
 			Check("E2shutItself", PD(PD_E2).held && Opening(PD_E2) <= 0.01, String.Format("opening %.1f", Opening(PD_E2)));
 			Check("manholeShutItself", Opening(PD_T) <= 0.01, String.Format("opening %.1f", Opening(PD_T)));
 			Next();
@@ -389,6 +467,7 @@ class HighWaterTest : EventHandler
 		if (Op() && PoseAt(mo, FRONT + 109)) Next();
 		if (Op() && Hang(mo, "blueIn109", blue, 109)) Next();
 		if (Op() && Rest("L_blue109", TL, Measured(E_L109))) Next();
+		if (Op() && BuoyRides("buoy_L_full", TL)) Next();
 		if (Op() && TakeDown(mo, "blueOutOf109", blue)) Next();
 		if (Op() && Stand(mo, 70)) Next();
 		if (Op())
@@ -407,6 +486,7 @@ class HighWaterTest : EventHandler
 		if (Op())
 		{
 			Check("lockDoorShutItself", Opening(PD_K) <= 0.01, String.Format("opening %.1f", Opening(PD_K)));
+			BuoyRides("buoy_K96", TK);
 			Check("shelfInReach", W(TK) >= 88 - 24, Levels());
 			Check("sillNotInReach", W(TK) < 192 - 24, Levels());
 			Next();
@@ -417,6 +497,9 @@ class HighWaterTest : EventHandler
 		if (Op())
 		{
 			Check("sillInReach", W(TK) >= 192 - 24, Levels());
+			BuoyRides("buoy_K184", TK);
+			BuoyRides("buoy_U_dry", TU);
+			FountainCheck("fountainDryBeforeTheWheel", false);
 			Check("ambushAtTheSillDue", AjarWaterHandler.WaterDue(60, Key(TK, 150)), Levels());
 			Next();
 		}
@@ -431,14 +514,22 @@ class HighWaterTest : EventHandler
 			let wr = wh.weirs[0];
 			if (!wr.turning && opT < 700) return;
 			Check("wheelTurns", wr.turning, String.Format("after %.1f s (the measure 6.1 s from the hanging); spill %.0f a tic; %s", opT / 35., wr.flow, Levels()));
+			FountainCheck("fountainPlaysOnceTheWheelTurns", true);
 			Next();
 		}
 		if (Op() && Rest("U_circle", TU, Measured(E_CIRCLE), 700)) Next();
+		if (Op())
+		{
+			BuoyRides("buoy_U_circle", TU);
+			BuoyRides("buoy_L_circle", TL);
+			Next();
+		}
 		if (Op() && DoorState("sluiceOpen", SLUICE, true, 140)) Next();
 		if (Op())
 		{
 			let wr = wh.weirs[0];
 			Check("wheelStillTurning", wr.turning, String.Format("spill %.0f a tic", wr.flow));
+			FountainCheck("fountainStillPlaying", true);
 			PoseF(mo, 5150, 1312, 0);
 			Next();
 		}
@@ -865,6 +956,22 @@ class HighWaterTest : EventHandler
 			break;
 		case 20:    // through the sluice: the tunnel and the machine hall
 			Look(mo, st, 5240, 1312, 0, 0);
+			break;
+		case 21:    // the fountain playing while the wheel turns, the wheel's lamp and the sluice beyond it
+			if (st == 70) FountainCheck("viewFountainPlays", true);
+			Look(mo, st, 4368, 1232, 31, 15, 40);         // on the curb's south-west corner
+			break;
+		case 22:    // the wheel close, from L (the circle running)
+			Look(mo, st, 4896, 1960, 90, -18, -10);
+			break;
+		case 23:    // the circle broken (the leaf out of 108): from U's west end as U drains to the crest, its buoy,
+			// the wheel edge on beyond the crest
+			if (st == 1) { TakeDoor(mo, Leaf(1)); if (h.carried) h.BeltPutBack(h.carried); }
+			Look(mo, st, 4440, 2200, 0, 8, 150);
+			break;
+		case 24:    // the fountain dry again, the wheel stopped
+			if (st == 70) FountainCheck("viewFountainDryOnceTheCircleIsBroken", false);
+			Look(mo, st, 4368, 1232, 31, 15, 40);
 			break;
 		}
 	}

@@ -14000,3 +14000,114 @@ duty room leaves it 18 off register 2 (2 over); the measure guards both in
 every build. A double that walks within 16 of a plate on a stair (the measure
 takes a stair as a slope) signs as before. The shifts of two crossings and
 doors carried while walking are still not in the rule. Not played by hand.
+
+## MAP20: buoys, the fountain, a bigger wheel (built 2026-11-24)
+
+Decided by Claude (Fable) with Vadim's "Let's go" to a list of ideas on
+2026-11-24; built by Claude on Opus in the task `map20-buoys`. Three small
+moving things, nothing else changed: no room, height, frame, door, basin,
+rate, monster or item. Light ripples over standing water, which were on the
+same list, are not built.
+
+**What is built.**
+- *A buoy in every basin* (`AjarBuoy`, water.zs). The water handler puts
+  them at load, in a level only (a map with an `AjarWaterRate`: MAP20; the
+  lab WATER has none, the simpler choice, so its runs are untouched): one in
+  every basin of kind NORMAL that no FOLLOW basin follows, at the basin
+  thing's own spot. In MAP20 that is P, C, T, K, L and U; not the swimming
+  bath (its copy follows it, and nothing in the bath may move by itself),
+  not the reservoir or the outfall. Each tic, after the surfaces are moved,
+  it stands with DRAFT 8 of its 24 under the surface while there is that
+  much water at its spot, and on the floor there otherwise; afloat it rocks
+  4 degrees either way (its roll), each buoy in its own phase. Not solid,
+  not shootable, not in the blockmap, no counters, not an item: scenery. No
+  basin's spot needed moving (none is inside anything, the nearest frame's
+  mouth is 128 away, T's 121), so no argument was added for it. The sprite
+  AJBY (tools/gfx_water.py): a safe-water ball 24 across in red and white
+  stripes from pole to pole, lit from the upper left, an iron rod and a red
+  ball on top (24 x 34, its origin at the ball's bottom).
+- *The fountain plays only while the wheel turns.* Its bowl (the inner
+  sector, 4384..4832 x 1248..1504, floor 16: shape, heights and curb as
+  they were) is dry stone at rest (Doom II's FLAT5_4, which the build uses
+  elsewhere; the look may restyle it) and carries the tag FOUNTAIN_TAG =
+  ajarwater.FOUNTAIN (7000) + the weir's chute tag (67). The handler finds
+  a weir's fountain by that tag, and while the wheel counts as turning (the
+  condition that lights the lamp and holds the sluice open) the bowl's
+  floor is FWATER1 and a jet (`AjarFountainJet`) stands in its middle
+  (4608, 1376, 16): the sprite AJFJ (64 x 96, four frames, 3 tics each,
+  translucent: a column breaking into a crown that falls back), four
+  particles a tic of spray falling into the bowl, and `ajar/water` looping
+  at it (volume 0.8). When the wheel stops, the jet is gone and the floor
+  is dry stone again, at once. Nothing solid.
+- *A bigger wheel.* AJWH is drawn again at 128 px, four samples a pixel
+  each way: eight paddles of two boards with an iron edge and bolts on the
+  ends of eight tapering spokes with iron straps, a wooden rim between two
+  iron bands, a hub with a ring and four bolts; wood and grey iron only. The
+  lab shows it at half (scale 0.5, 64 across as before). In a level the
+  handler draws it as large as the chute lets it be, up to 160 across:
+  the wheel's plane runs across the spillway (it faces up and down it), and
+  the spillway is 128 wide (x 4832..4960), so **160 does not fit**: it is
+  122 across (the chute's width less 6; scale 0.96), its centre at 104 as
+  before, its lowest point 43, 11 over the spillway's step at its plane.
+  From U it is seen edge on (as before); from L face on.
+
+**Files.** `src/zscript/water.zs` (AjarBuoy, AjarFountainJet, the weir's
+fountain and scale, the handler's `bLevel`, `buoys`, `WheelSize`,
+`SetupFountain`, `PlayFountain`, `PutBuoys`), `tools/gfx_water.py` (the
+wheel, `buoy`, `jet`), `tools/ajarwater.py` (FOUNTAIN, the docstring),
+`tools/map_highwater.py` (FOUNTAIN_TAG, and the fountain's inner sector:
+FLAT5_4 and the tag), `src/zscript/map20.zs` (the checks, views 21..24),
+`tools/smoke_MAP20_4.cfg` (four shots more).
+
+**The checks** (`HighWaterTest`). MODE=1: at load `buoysSix` (one in each
+of P, C, T, K, L, U, six in all), `noBuoyInTheBaths` (none in the swimming
+bath, its copy or with their tags), `buoysClearOfTheFrames` (none within 48
+of a frame's mouth), each buoy as found (C's afloat at 96, the others on
+their floors), `fountainDryAtRest`; then each basin's buoy at each level at
+rest the run reaches: P 96 and 224, C 0, dry, 100, T 228, L full, K 96 and
+184, U dry, U and L in the circle (each within 2 of DRAFT under the surface,
+or within 1 of the floor); `fountainDryBeforeTheWheel`,
+`fountainPlaysOnceTheWheelTurns` (FWATER1, the jet at its middle),
+`fountainStillPlaying` with the sluice open. No mode breaks the circle, so
+MODE=1 checks the first two; MODE=4 view 23 breaks it (the leaf out of 108)
+and views 21 and 24 check the fountain playing and dry again
+(`viewFountainPlays`, `viewFountainDryOnceTheCircleIsBroken`: the wheel
+stopped and the bowl dry within 150 tics of the leaf coming down).
+
+**The runs** (on the full build, `./build.sh` with the solver; MODE=1, 2,
+3, 4, 6, 7 with `-nomonsters`):
+- The build: MAP20's measure and the bath's checks as before (8 mirror
+  lines, nothing stands in the bath, the copy's 30 sectors, 5 walls and 3
+  flats).
+- `tools/itemcheck.py map_highwater` and `tools/thingcheck.py
+  map_highwater`: 0 problems. `tools/mapcheck.py map_highwater`: 292
+  sectors, **10 problems, the same 10 on the commit the task started
+  from**: SLOTs at the basins' hidden control sectors (32 wide, at -6000,
+  off the map), found by the SLOT check that came after MAP20 was last
+  checked. Not touched here.
+- MAP20 MODE=1 (TIMEOUT=450): 87 checks (62 + 25), none failed, and
+  `levelExited`. MODE=2: 40, none failed. MODE=3: 31, none failed. MODE=5:
+  25, none failed. MODE=6: 35, none failed, out by the secret way (the
+  copy off the bath by 0.000000000 at most, the secret 1 of 1); it needed
+  TIMEOUT=900 here (cut off at 400 on the first try, with other sessions'
+  runs on the machine; the game time is as before). MODE=4: 25 views and the automap
+  (26 shots; views 21..24 new) and its two checks pass.
+- MODE=7 against `AJAR_SBMIRROR=1` (tools/highwater_compare.py): the
+  still-water views 23..31 differ by 2, 2, 10, 7, 7, 22, 10, 10, 21 pixels,
+  the player before each pane 23, 15, 33, 163, 16, along the wall 1693,
+  BLUE in 142 1598: the numbers of "MAP20: the secret way out, built" to
+  the pixel. (Views 0..8, with the water animated, differ by the
+  animation's phase as that section says.) Both runs end with a script
+  error after the last shot (view 32 reads past `VX`): as before, harmless.
+- The lab: `MAP=WATER MODE=1..8` pass (10, 8, 9, 18, 6, 6 checks, the 14
+  views, 4); MODE=1 with TIMEOUT=240.
+
+**Left out.** Light ripples over standing water. No buoy in the lab. The
+fountain starts and stops at once (no rising or dying jet, the floor wet or
+dry in one tic). The buoys do not drift; they keep their spot.
+
+**Not played by hand.** Unchecked: the sound of the fountain (the runs are
+`-nosound`), how the jet and its particles look on the real machine (GLES)
+and from far off; whether the rocking buoys read as afloat in play; the
+wheel at 122 turning (only still shots); the buoys seen through hung doors
+(no view looks at one through a door).
