@@ -13003,3 +13003,160 @@ tics each; its cfg shoots at a view's tic + 35 (runs differ by up to about
 - The secrets are reachable by itemcheck's reckoning; no script walks into
   them.
 - Skills other than 3: counted, not played.
+
+## MAP20: the secret way out, built (2026-11-24)
+
+Built by Claude on Opus in the task `map20-secret`, on "MAP20: the secret
+way out, as decided" above. Not played by hand: everything below is what
+the scripted runs and the screenshots show.
+
+**What is built** (tools/map_highwater.py, `swimming_bath`): the swimming
+bath is made by one function, twice. Once into the level (tag 3, TSB), and
+once into a Map of its own that `lefthand.left_handed` reflects in the
+panes' glass (x -848) and moves by (32, -2048), so that a room point
+(x, y) is the copy's (-1664 - x, y - 2048). The copy is 30 sectors at
+(-1664, -2112)..(-768, -1192), off the automap until entered (the
+AjarLeftHanded marker, as in the lab). The fourth pane (y 320..384) is a
+Line_SetPortal pair, 1440 in the room and 1441 in the copy, each with a
+48-deep stub behind it; the other four panes are mirrors with a blocking
+line before the glass, as they were. The pure shift is what makes the
+portal a reflection: the copy is already mirrored, and the portal only
+carries the view over. In the copy the frames 141 and 142 are empty
+recesses (the blank frame, blocking, no AjarFrame), its door from the
+changing room does not open, and it has the one thing more: in the north
+wall (y 640) by the shallow end, x -480..-416 in room terms, a door in a
+trim surround (an ordinary Door_Raise, the bath's own wall over it), a
+passage 128 long whose first part is the secret sector (special 1024),
+and a line with Exit_Secret (244) crossed by the player at its end.
+
+**How the copy's water is kept**: the copy is a basin of its own tag (30)
+with a new kind in water.zs and tools/ajarwater.py, FOLLOW (3): its
+`depth` names the basin it follows (TSB), it has no links, no area and no
+brim, and every tic, right after the water moves (`Apply`), its surface is
+set to the followed basin's (`Follow`). Its 3D floor is the same swimmable
+water as any basin's. MODE=6 measures it every tic of the run: the most
+the copy was ever off the bath was 0.000000000.
+
+**The build's checks** (`bath_checks`, a line in the build's output and
+problems that stop it): the only mirror lines in the bath and its copy are
+in the glass's plane (8 as built, 10 with the switch); the bath's and the
+copy's lines carry no special but the portal, the mirror, the doors and
+Exit_Secret; no thing stands in the bath but the gauge's MapSpots, the
+basins' and the frames' own; the copy's source has no things; no sector
+special but the secret, no light of its own on a floor or ceiling; and
+every wall and flat in the copy is one of the game's generated ones (5 wall
+textures, 3 flats; all flipped but the water's FWATER1, the exception the
+decision allows). mapcheck: MAP20 292 sectors, 0 problems; the copy's
+source alone 30 sectors, 1 secret sector, 0 problems; itemcheck and
+thingcheck 0 problems.
+
+**The switch**: `AJAR_SBMIRROR=1 ./build.sh` makes the fourth pane a
+mirror like the others (for the comparison only; build.sh passes on only
+`AJAR_` and capitals, so there is no second underscore). The build says so
+in its line about the opening.
+
+**The comparison** (MAP20 MODE=7, 32 screenshots, tools/highwater_compare.py
+on a run as built and one with the switch; a pixel differs when a channel
+differs by more than 24 of 255; 819x512 = 419328 pixels a view):
+
+- The three poolside places (straight on from the east, from the north
+  walk, from the south end), player hidden, with the water still (see
+  below): dry 2, 7 and 10 pixels; at -64 2, 7 and 10; at 0 10, 22 and 21.
+  These are a few pixels along the pane's edges where the mirror's
+  frame line is drawn and the portal's is not; nothing in the pane itself.
+- With the water as it is in the game (FWATER1, animated), views 0..8 on
+  the last build: dry 2, 7, 10; at -64 2, 7, 9; at 0 12, 30, 20. An
+  earlier pair of runs gave up to 13650 and 23615 from the south end at
+  -64 and at 0, where the surface fills the view; that is the animation
+  and not the opening: two runs of the same build then differed by as
+  much in the same views (13617 and 22605), since the engine animates the
+  flat by the clock and two runs do not always show the same frame of it
+  (the last three runs happened to). With the surface a still flat
+  (AJLBFLOR, the lab's floor, in both baths; views 23..31) two runs of one
+  build differ by 0 pixels in every view, and as built against the switch
+  by the few edge pixels above. So the water does not give the opening
+  away in these views: the copy's surface is at the room's to the last
+  digit (MODE=6), and what it draws is the same picture.
+- The same three places with the player drawn, at 0: 10, 22 and 21
+  pixels differ, none of them where he is reflected. From the first two
+  places he is not seen in any pane (he stands before a mullion or too
+  far aside); from the south end he is, in a pane that is not the
+  fourth, 527 pixels, the same in both builds. As built the player is in four
+  panes and not in the fourth: before each pane in turn (views 12..16) the
+  two builds differ by 23, 15, 33, 163 and 16 pixels, the 163 being his
+  reflection in the fourth pane, missing as built (small: he stands 520
+  from the glass).
+- Along the wall (view 17), the copy's door is in the fourth pane:
+  1693 pixels (0.40%), box (410, 0, 458, 332): the door and its surround,
+  where the mirror shows the blank wall. From the north walk with
+  BLUE hung in 142 (view 18), 1598 pixels: the door hung in the room is not
+  in the fourth pane (the copy's 142 is an empty recess).
+
+**MODE=6** (MAP20, `-nomonsters`, on the last build: 35 checks, 0 failed): the opening is a
+pure shift (turn 0; (-848, 352) goes to (-816, -1696)); 111 of the copy's
+lines are off the automap at load and on it once entered; the copy follows
+the bath; one secret; no frames in the copy. BLUE in 142 brings the bath
+to 0 (-0.114 at rest), the copy with it; the player swims to the fourth
+pane and through it (landing 4.94 from where the shift puts him, a tic's
+walk; turn 0), is in the copy's water (waterlevel 2), swims back through
+(4.80 off) into the bath's water. A mirror pane is a wall (he stops at
+x -816). Through the opening a rocket hits a dummy in the copy (2), a
+plasma ball (1), a hitscan (1, the puff at x -948); at a mirror the
+rocket stops at x -810 and the puff is at -828, the dummy behind it not
+hit. In again; BLUE in 141 behind him brings the bath and the copy to
+-63.886, and he cannot get back (the sill 64 over the water); GREEN in
+141 drains them both (-159.991); he cannot get back dry either; he walks
+from the copy's fourth pane to its door in 4.0 s along the pit's new
+steps and the shallow end, it opens, he walks through the secret into the
+Exit_Secret line, and the level is left for `secretnext` with the secret
+found (1 of 1).
+
+**The notch**: the lamp strips of a pressure door (ajarwater.pressure_door,
+8 to 24 wide) had only the lamp's tag, so the basin's 3D floor (which goes
+into the sectors with the basin's tag) was not in them, and the water's
+surface stopped short of the door on each side. Each strip on a basin's
+side now carries that basin's tag too (`moreids`). Before and after, from
+the same places: P at 48 at its pressure door 23457 pixels, K at 48 at its
+door 8865, C at -64 at E2 and the cells 1022, in each case the surface
+now running up to the door. One thing follows from it: a strip under water
+is lit as the water is, like the rest of the basin; a strip on the dry side
+is as it was.
+
+**secretnext**: `map MAP33` is in main's mapinfo (merged into the task
+once, before the last build; the only conflict was the end of this file,
+both sides kept), so MAP20's `secretnext` is "MAP33"; MODE=6 on the last
+build leaves the level for MAP33 (secretnext MAP33, next MAP20).
+
+**Differences from the decision, and why** (each a small piece of
+geometry that keeps the design):
+- The bath's way in from the changing room is a door (in a trim surround,
+  opening by use), not an open doorway: through an open one the changing
+  room and P's pressure door lamps were seen in the four mirror panes,
+  and in the fourth pane they could not be (the copy has no changing
+  room). In the copy the same door does not open.
+- The pit has steps (4 of 24, at its north end) up to the shallow end: a
+  dry pit was a 64 rise to the shallow end, a trap, so "nothing can be
+  lost" and "its steps reach the door at any level" would not have held.
+- The bath's monsters and items (3 zombies, a sergeant, 2 clips and a
+  shell box) are in the changing room: "nothing in the bath moves by
+  itself".
+- The copy's water is a basin of its own (FOLLOW) and not the same tag
+  as the room's: the decision says it is not a basin of its own; it is one
+  only in that water.zs draws and swims it as one, its level is the bath's
+  every tic and it has no links.
+- The door's surround's upper is the bath's wall, not trim (a first build
+  had a dark column up to the ceiling, more of a tell than a door).
+
+**Shared code touched**: src/zscript/water.zs (FOLLOW: `Follows`,
+`follow`, `Follow`, one line in setup and one in WorldTick);
+tools/ajarwater.py (FOLLOW; the lamp strips' `moreids`, which every
+pressure door in MAP20 gets); src/mapinfo.txt (MAP20's secretnext and its
+comment, MAP33's comment). Not touched: tools/lefthand.py, tools/build.py,
+src/zscript.zs.
+
+**The runs** (on the last build): MAP20 MODE=1 (TIMEOUT=450), 2, 3 and 5
+pass as before, LEFT MODE=1 and WATER MODE=3 too; the full build has 0
+problems and the measure's rules hold (SB: BLUE in 142 brings it to 0 for
+the panes, BLUE in 141 to -64).
+
+Not played by hand.

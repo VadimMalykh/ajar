@@ -270,6 +270,7 @@ def swimming_bath(mm, tag, copy=False):
         # surround), a short passage, the secret sector, and the line with Exit_Secret
         x1, x2 = SB_DOOR
         mm.sector(rect(x1, 640, x2, 648), floor=0, ceil=96, light=170, **TRIM)
+        mm.line((x1, 640), (x2, 640), upper=SBL.get("wall", "AJWALL"))                           # the bath's own wall over it
         d = mm.sector(rect(x1, 648, x2, 664), floor=0, ceil=0, light=160, wall="AJHDOR", ftex="AJTRIMF", ctex="AJTRIMF")
         mm.sector(rect(x1 - 16, 664, x2 + 16, 792), floor=0, ceil=128, light=200, special=1024, **TRIM)   # secret
         mm.sector(rect(x1 - 16, 792, x2 + 16, 856), floor=0, ceil=128, light=200, **TRIM)
