@@ -71,6 +71,7 @@ TP, TC, TT, TK, TL, TU, TSB, TR, TO = 21, 22, 23, 24, 25, 26, 27, 28, 29     # b
 PD_P, PD_E2, PD_CA, PD_CB, PD_T, PD_K = 41, 42, 43, 44, 45, 46                # pressure doors (sector tags)
 LAMP0 = 50              # + (pressure door tag - 40): its two lamps
 GD_TAG, GW_TAG, LEDGE_TAG, YARD_TAG, SLUICE, WLAMP, CHUTE = 61, 62, 63, 64, 65, 66, 67
+FOUNTAIN_TAG = W.FOUNTAIN + CHUTE        # the lower yard's fountain: dry at rest, plays while the wheel turns (water.zs)
 MAPSPOT = 9001
 NAMES = {TP: "P (the plunge hall)", TC: "C (the cooling hall)", TT: "T (the feed tank)", TK: "K (the lock)",
          TL: "L (the lower pool)", TU: "U (the upper pool)", TSB: "the swimming bath", TR: "the reservoir",
@@ -604,7 +605,7 @@ UY_Z, K_SILL, K_SHELF, K_BRIM = 192, 192, 88, 200
 L_FLOOR, L_BRIM, U_FLOOR, CREST, U_BRIM = -96, -4, 128, 160, 184
 FOUNTAIN = (4352, 1216, 4864, 1536)
 CD.fit(LY, [(FOUNTAIN, dict(floor=40, **(dict(side="AJVBU", ftex="AJVFK") if LOOK else {}))),   # a fountain's basin: its curb is 40 high
-            ((4384, 1248, 4832, 1504), dict(floor=16, ftex="FWATER1")),
+            ((4384, 1248, 4832, 1504), dict(floor=16, ftex="AJVFK" if LOOK else "FLAT5_4", id=FOUNTAIN_TAG)),   # dry at rest (water.zs)
             ((5168, 1280, 5184, 1344), dict(ceil=112, ctex="TLITE6_5", light=96, id=WLAMP))],   # the wheel's lamp
        floor=0, **YARD)
 area("ly", LY, 0)

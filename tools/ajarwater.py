@@ -26,7 +26,12 @@ tic by the script.
         `chute` is the tag of the spillway's sectors (they look wet and
         scroll while water goes down them: give them no basin tag), `lamp`
         the tag of a sector that is lit while the wheel turns, `shutter` the
-        tag of a door sector it holds open while it turns.
+        tag of a door sector it holds open while it turns. Its fountain, if
+        it has one: the sectors tagged FOUNTAIN + `chute` are dry at rest and
+        show water, with a jet in their middle, while the wheel turns. In a
+        level (with rate()) the wheel is drawn as large as the chute lets
+        it be, up to 160 across, and every NORMAL basin that no FOLLOW
+        basin follows gets a buoy at its thing's spot (water.zs).
     gauge(m, a, b)
         the painted staff gauge (AJGAUGE: depth marks every 32, from the
         floor) on the 64-long wall piece a-b
@@ -61,6 +66,7 @@ BASIN_T, WEIR_T, RAFT_T = 20140, 20141, 20142      # AjarBasin, AjarWeir, AjarRa
 NORMAL, RESERVOIR, OUTFALL, FOLLOW = 0, 1, 2, 3
 CTL = 6000                              # the control sector of basin tag t has the tag CTL + t
 BULKHEAD = 9000                         # the dry side of a bulkhead into basin tag t: line id BULKHEAD + t
+FOUNTAIN = 7000                         # a weir's fountain: the sectors tagged FOUNTAIN + its chute's tag
 SURFACE, SIDE = "FWATER1", "FWATER1"     # the water's top (Doom II's own, animated) and its sides (a flat, on a wall)
 ALPHA = 144                             # how opaque the water is (of 255)
 UNDER_LIGHT, UNDER_COLOR = 150, 0x70B8D8    # the light under the surface, and its tint

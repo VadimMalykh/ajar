@@ -20,7 +20,7 @@
 //    name: AjarPassRegister.Name), args[4] (if set) the tag of a floor it
 //    raises to its highest neighbour (a footbridge) and the id of the lines
 //    that stop being railings then. Signed for good once the double has
-//    stood in the box, feet within 32 of the plate's floor, for 35 tics
+//    stood in the box, feet within 32 of the plate's floor (Tolerance: MAP19 16), for 35 tics
 //    running. A level names its registers and says what each opens
 //    (Name, Opened: MAP19's are AjarPaper's, map19.zs).
 //
@@ -380,6 +380,13 @@ class AjarPassRegister : Actor
 		return String.Format("register %d", n);
 	}
 
+	// how near its plate the double's feet must be: the lab's 32; a level may say less (MAP19: AjarPaper.PLATE_TOL)
+	clearscope static int Tolerance()
+	{
+		if (level.mapname ~== "MAP19") return AjarPaper.PLATE_TOL;
+		return 32;
+	}
+
 	// the message's second line: what signing it opened
 	static string Opened(int n)
 	{
@@ -406,7 +413,7 @@ class AjarPassRegister : Actor
 
 	bool OnIt(Actor a)
 	{
-		return a && abs(a.pos.x - pos.x) <= args[0] && abs(a.pos.y - pos.y) <= args[1] && abs(a.pos.z - plateZ) <= 32;
+		return a && abs(a.pos.x - pos.x) <= args[0] && abs(a.pos.y - pos.y) <= args[1] && abs(a.pos.z - plateZ) <= Tolerance();
 	}
 
 	override void Tick()
@@ -522,7 +529,7 @@ class AjarPassHandler : EventHandler
 		Vector2 f = Actor.AngleToVector(dbl.angle);
 		double ahead = d.x * f.x + d.y * f.y, left = -d.x * f.y + d.y * f.x;
 		double up = r.plateZ - dbl.pos.z;
-		string h = abs(up) <= 32 ? "level" : Along(up, "up", "down");
+		string h = abs(up) <= AjarPassRegister.Tolerance() ? "level" : Along(up, "up", "down");
 		return String.Format("REGISTER %d: %s, %s, %s", r.args[3], Along(ahead, "ahead of it", "behind it"), Along(left, "left", "right"), h);
 	}
 

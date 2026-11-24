@@ -13841,6 +13841,277 @@ views, MODE=4 135. LAST MODE=1..4: 58, 46, 51, 55; THIRD MODE=3
 three times 53 each, MODE=7 58: none failed. The walk: part 1 13231 units,
 part 2 10878, part 3 10915, the secrets 832 + 855 + 215.
 
+### MAP19: finished without BLUE, register 4 signed by accident (fixed 2026-11-24)
+
+**Vadim**, after playing: "I was able to finish map19 without even taking blue
+door (and I'm still have no idea where it is) and also with about 30 enemies
+left."
+
+- **Why, first: register 4 was signed by accident.** After he signed register 2
+  (the stack) with GREEN in 102, the double kept that shift: the player plus
+  (0, -224), at the same height. With it, the patch x 2048..2176, y
+  4672..4800 of the upper corridor (just beyond the head of the grand stair)
+  puts the double on register 4's plate; he stood there a second, "Signed in:
+  the hall with no stair" came with no BLUE, and the garden opened. The measure
+  listed it ("GREEN in 102, into 102 (standing in upper)"), and register 3
+  leaked the same way (the upper store, and the corridor by the side room the
+  other way round). The build only checked that the answers meant work, not
+  that nothing a player does anyway works too.
+- **Why, second: registers 3 and 4 were on nobody's way out.** The way out
+  needs registers 1, 2, 7, 6 and 5: the pond court was entered by the balcony's
+  drop from the upper floor (open after register 2), the tower yard through
+  YELLOW, and one Pair does both pumps. So the basement, BLUE and the garden
+  could be left, and their monsters with them.
+
+**A new rule in the measure** (`tools/map_paper.py`, it fails the build): no
+register is signed by accident. For each register n of 1..7, an accidental
+answer is a way the double gets onto n's plate (at its height, the measure's
+usual test) by a shift the player carries anyway: (a) the meant hanging of
+another register, both ways (RED in 101, GREEN in 102, RED in 103, BLUE in 104,
+GREEN in 113, "into the frame" and "into its far side"); (b) the building's own
+passages as they are really walked: the covered way going north as a whole (the
+odd face, the stretch, its way out: the composite the porter's lodge is
+measured with), the covered way's odd face alone (standing in the stretch), the
+boat store's door into the big store, each of the gazebo's eight doorways (half
+a passage that cannot be made alone, as the stretch's way out without its way
+in, is not a case); and only while n can still be unsigned: the crossing's near
+side and the standing place both reached with the steel doors that can be open
+before n (`BEFORE`: before 1 none; 2 {1}; 3 {1, 2, 5}; 4 {1, 2, 3, 5}; 7 {1, 2,
+3, 4, 5}; 5 all but 5; 6 all but 6; the lodge's and the footbridge's as open,
+as everywhere in the measure). Registers 8 and 9 are outside it. On the map as
+it was it found four: register 3 by GREEN in 102 (into 102, standing in the
+upper store; into its far side, standing in the upper corridor), register 4 by
+GREEN in 102 (into 102, standing in the upper corridor), and register 7 by the
+covered way going north (784 north), standing in the east yard against its
+north wall (on the plate's south edge, exactly, at the same height). Every rule
+the measure had stays.
+
+**How it was met: tried and dropped first.** GREEN in 102 had to carry a change
+of height, so frame 102 and the stack were moved off the ground floor's height.
+Under the lab's tolerance (32) the measure is clean only 97 or more away either
+way: raised 104 to 160 were clean (under 97 GREEN in 102 put the double on
+register 5's plate at 64 from the east lane); sunk, -16 to -32 kept the leaks
+upstairs, -36 to -96 gave register 5 answers of one crossing (out of 102 onto
+any floor at 0, the double about 64 up), -97 to -144 were clean, -160 not.
+Built and looked at: raised 112, the stack's floor edge hid the double to the
+shoulders from the reading corridor, even looking up; sunk -97, the corridor's
+floor edge did the same from the answer's place (y 2912, looking 10 down: only
+what is over -74 shows, the head and shoulders). Register 2's picture is the
+player walking the corridor and watching the double walk the stack beside him,
+so both were dropped.
+
+**What changed** (`tools/map_paper.py`, `src/zscript/map19.zs`,
+`src/zscript/pass.zs`, `tools/smoke_MAP19_4.cfg`):
+
+- **MAP19's registers take the double within 16 of a plate** (the lab's stay
+  32). `pass.zs`: `AjarPassRegister.Tolerance()`, 32 unless the map is MAP19,
+  where it is `AjarPaper.PLATE_TOL` (16, in `map19.zs`); the register's test
+  and its HUD line ("level") use it, nothing else in `pass.zs` changed (the
+  desks keep 32). The generator's `TOL_Z` is 16; `MEANT_Z` was already 16, so
+  every answer meant was already that near.
+- **The stack one low step up**: frame 102 on a dais 23 high (`STACK_Z`) along
+  the vestibule's east wall (1632..1728 x 2624..2752, one step from the
+  vestibule's floor), the stack, its plate and its shelves 23 up with it (its
+  ceiling at 192 as built). Scanned under tolerance 16: 32, 24, 28, 36 and 40
+  fail (RED in 102 into its far side signs register 2 with the player in the
+  duty room at 64: the double 2h - 64 off the plate there), 16 fails (the leaks
+  upstairs), 20, 21, 22 and 23 are clean; 23 is the clean one nearest 32. The
+  answer meant is unchanged (GREEN in 102, the player in the reading corridor
+  at 0, the double in the stack, the plate 864 in), RED in 102 still does not
+  sign it. The vestibule is its first size again (its imp has room: it stands
+  at 1536, 2752 now). The glass between the corridor and the stack goes from
+  the stack's floor (23) to 144: the 23 of wall under it is the step itself.
+- **Register 7**: frame 113, the boathouse, its plate, its two panes and its
+  plaque stand 64 further north on the pond court's east wall (`BH_DY`): the
+  covered way's case is at the same height, so no tolerance closes it (tried:
+  without `BH_DY` the measure fails on it). The answer meant (GREEN in 113,
+  walked in the reading corridor at the same place as register 2's) is
+  unchanged.
+- **The balcony's door.** The open gap (128 wide) at the upper corridor's east
+  end is a steel door on register 4's tag (1904, with the garden door and the
+  hall with no size's), 64 wide in the gap's middle (4864, 4704..4768), 64
+  thick, corridor side "upper", far side "balcony". So the chain is 1 -> 2 (the
+  stair hall, the upper floor) -> 3 (the basement, BLUE) -> 4 (the garden, the
+  hall with no size, the balcony) -> the pond court -> 7 (YELLOW) -> the tower
+  yard -> 6; register 5 is free once the upper floor is open. A plaque
+  "REGISTER 4 BALCONY" beside it on the corridor's north wall (4736..4864),
+  made as the other register plaques (one new picture, `AJIS342`). The smoke
+  spot 3406 is 32 before the door.
+- **The stages**: "the stair hall and the upper floor" adds 9 areas (was 13),
+  "the garden, the balcony and the grounds" 11 (was 7: the balcony, the pond
+  court, the little and the big boat store moved there); each one piece on foot
+  with a way back; every court with its way in and its turnstile out.
+- **The message**: register 4 says "The garden and the balcony are unbolted."
+- Nothing else of the fights, items or doors changed. Placed things that moved
+  (the placer finds new free spots when a room or a frame moves): the
+  vestibule's imp (1600, 2664 -> 1536, 2752), and in the pond court a
+  revenant, a hell knight and a demon trade three spots among them (frame
+  113's front moved).
+
+**The measure after** (889 sectors, 67 walk areas, 360 nodes): accidental
+answers "register 1 none, ... register 7 none". Answers of one crossing
+register 1 28 (29 before), 2 10 (72), 3 22 (27), 4 15 (16), 5 and 6 none, 7 19
+(25), 8 50 (62), 9 13 (16); none new for 3 and 4, and none of what is left is a
+shift carried anyway (the nearest: "the stretch's way out (out of the mouth)"
+alone, half a passage, and for register 4 the gazebo's doorways, behind its own
+door). The laps as before (5: only 5 laps, from the link hall; 6: 3 laps, and
+4 from the tower yard as before); the lodge and the island as decided. Two
+crossings in a row: 1 1815, 2 830, 3 1977, 4 881, 5 1745, 6 311, 7 2846, 8
+4815, 9 3214.
+
+**Checks** (the full `./build.sh`, about 3 minutes):
+- The build: no problem; MAP19's measure as above.
+- mapcheck (889 sectors, 471 things, 207 monsters, 2 secret sectors), itemcheck
+  and thingcheck on `map_paper`: 0 problems each.
+- `MAP=MAP19 MODE=1`: 88 checks, none failed, `levelExited`; tag 1904 counts
+  its three doors, and the drop into the pond court goes through the balcony's
+  door after register 4 is signed.
+- `MODE=2`: 60 checks (34 + 26), none failed. New: GREEN in 102, the stack
+  signed, the player stands 2 s at each old leak: the upper corridor (2112,
+  4736), where the double stands on the middle of register 4's plate at 279
+  against 256; the upper store (4560, 5200); the corridor by the side room
+  (4560, 4704); and, the pass stamped, the other way (in by GREEN's far side,
+  out on the dais at 23: the double on the middle of register 3's plate at
+  233); registers 3 and 4 stay unsigned at each. The tolerance itself: T set
+  by the script, the double on the middle of register 3's plate 17 over it is
+  not signed in 2 s, 16 over it is signed in 34 tics. The balcony's door: a run
+  at it before register 4 stops at x 4847.7 in the corridor; register 4 signed
+  by BLUE in 104, the three doors of 1904 open, the same run drops into the
+  court.
+- `MODE=3`: 52 checks (51 + 1: the balcony's door opened by the script, since
+  this run signs no register 4), none failed.
+- `MODE=4`: 19 views (two new: the balcony's door and its plaque from the upper
+  corridor; the stack from close to the glass), looked at. View 4, the answer's
+  place on GREEN's far side axis (2592, 2912), a level look south: the double
+  stands whole on the red plate behind the glass, feet on it, the register's
+  lamp over it, the shelves beyond; the 23 of the step shows as a band under the
+  glass. From close (2592, 2856) it is larger, whole. The pond court from the
+  balcony, the door and its plaque.
+- `MAP=PASS MODE=1` 50 checks and `MODE=2` 21, none failed (the lab's tolerance
+  unchanged).
+- The package against main's (`ea736f6`): only `maps/MAP19.wad`,
+  `zscript/map19.zs` and `zscript/pass.zs` differ, and `textures/AJIS342.png`
+  (the plaque) is new.
+
+**Not tested / not played by hand.** The runs pose the player (as before). The
+margins are thin by construction: GREEN in 102 kept on upstairs leaves the
+double 23 off registers 3 and 4 (7 over the tolerance), and RED in 102 from the
+duty room leaves it 18 off register 2 (2 over); the measure guards both in
+every build. A double that walks within 16 of a plate on a stair (the measure
+takes a stair as a slope) signs as before. The shifts of two crossings and
+doors carried while walking are still not in the rule. Not played by hand.
+
+## MAP20: buoys, the fountain, a bigger wheel (built 2026-11-24)
+
+Decided by Claude (Fable) with Vadim's "Let's go" to a list of ideas on
+2026-11-24; built by Claude on Opus in the task `map20-buoys`. Three small
+moving things, nothing else changed: no room, height, frame, door, basin,
+rate, monster or item. Light ripples over standing water, which were on the
+same list, are not built.
+
+**What is built.**
+- *A buoy in every basin* (`AjarBuoy`, water.zs). The water handler puts
+  them at load, in a level only (a map with an `AjarWaterRate`: MAP20; the
+  lab WATER has none, the simpler choice, so its runs are untouched): one in
+  every basin of kind NORMAL that no FOLLOW basin follows, at the basin
+  thing's own spot. In MAP20 that is P, C, T, K, L and U; not the swimming
+  bath (its copy follows it, and nothing in the bath may move by itself),
+  not the reservoir or the outfall. Each tic, after the surfaces are moved,
+  it stands with DRAFT 8 of its 24 under the surface while there is that
+  much water at its spot, and on the floor there otherwise; afloat it rocks
+  4 degrees either way (its roll), each buoy in its own phase. Not solid,
+  not shootable, not in the blockmap, no counters, not an item: scenery. No
+  basin's spot needed moving (none is inside anything, the nearest frame's
+  mouth is 128 away, T's 121), so no argument was added for it. The sprite
+  AJBY (tools/gfx_water.py): a safe-water ball 24 across in red and white
+  stripes from pole to pole, lit from the upper left, an iron rod and a red
+  ball on top (24 x 34, its origin at the ball's bottom).
+- *The fountain plays only while the wheel turns.* Its bowl (the inner
+  sector, 4384..4832 x 1248..1504, floor 16: shape, heights and curb as
+  they were) is dry stone at rest (Doom II's FLAT5_4, which the build uses
+  elsewhere; the look may restyle it) and carries the tag FOUNTAIN_TAG =
+  ajarwater.FOUNTAIN (7000) + the weir's chute tag (67). The handler finds
+  a weir's fountain by that tag, and while the wheel counts as turning (the
+  condition that lights the lamp and holds the sluice open) the bowl's
+  floor is FWATER1 and a jet (`AjarFountainJet`) stands in its middle
+  (4608, 1376, 16): the sprite AJFJ (64 x 96, four frames, 3 tics each,
+  translucent: a column breaking into a crown that falls back), four
+  particles a tic of spray falling into the bowl, and `ajar/water` looping
+  at it (volume 0.8). When the wheel stops, the jet is gone and the floor
+  is dry stone again, at once. Nothing solid.
+- *A bigger wheel.* AJWH is drawn again at 128 px, four samples a pixel
+  each way: eight paddles of two boards with an iron edge and bolts on the
+  ends of eight tapering spokes with iron straps, a wooden rim between two
+  iron bands, a hub with a ring and four bolts; wood and grey iron only. The
+  lab shows it at half (scale 0.5, 64 across as before). In a level the
+  handler draws it as large as the chute lets it be, up to 160 across:
+  the wheel's plane runs across the spillway (it faces up and down it), and
+  the spillway is 128 wide (x 4832..4960), so **160 does not fit**: it is
+  122 across (the chute's width less 6; scale 0.96), its centre at 104 as
+  before, its lowest point 43, 11 over the spillway's step at its plane.
+  From U it is seen edge on (as before); from L face on.
+
+**Files.** `src/zscript/water.zs` (AjarBuoy, AjarFountainJet, the weir's
+fountain and scale, the handler's `bLevel`, `buoys`, `WheelSize`,
+`SetupFountain`, `PlayFountain`, `PutBuoys`), `tools/gfx_water.py` (the
+wheel, `buoy`, `jet`), `tools/ajarwater.py` (FOUNTAIN, the docstring),
+`tools/map_highwater.py` (FOUNTAIN_TAG, and the fountain's inner sector:
+FLAT5_4 and the tag), `src/zscript/map20.zs` (the checks, views 21..24),
+`tools/smoke_MAP20_4.cfg` (four shots more).
+
+**The checks** (`HighWaterTest`). MODE=1: at load `buoysSix` (one in each
+of P, C, T, K, L, U, six in all), `noBuoyInTheBaths` (none in the swimming
+bath, its copy or with their tags), `buoysClearOfTheFrames` (none within 48
+of a frame's mouth), each buoy as found (C's afloat at 96, the others on
+their floors), `fountainDryAtRest`; then each basin's buoy at each level at
+rest the run reaches: P 96 and 224, C 0, dry, 100, T 228, L full, K 96 and
+184, U dry, U and L in the circle (each within 2 of DRAFT under the surface,
+or within 1 of the floor); `fountainDryBeforeTheWheel`,
+`fountainPlaysOnceTheWheelTurns` (FWATER1, the jet at its middle),
+`fountainStillPlaying` with the sluice open. No mode breaks the circle, so
+MODE=1 checks the first two; MODE=4 view 23 breaks it (the leaf out of 108)
+and views 21 and 24 check the fountain playing and dry again
+(`viewFountainPlays`, `viewFountainDryOnceTheCircleIsBroken`: the wheel
+stopped and the bowl dry within 150 tics of the leaf coming down).
+
+**The runs** (on the full build, `./build.sh` with the solver; MODE=1, 2,
+3, 4, 6, 7 with `-nomonsters`):
+- The build: MAP20's measure and the bath's checks as before (8 mirror
+  lines, nothing stands in the bath, the copy's 30 sectors, 5 walls and 3
+  flats).
+- `tools/itemcheck.py map_highwater` and `tools/thingcheck.py
+  map_highwater`: 0 problems. `tools/mapcheck.py map_highwater`: 292
+  sectors, **10 problems, the same 10 on the commit the task started
+  from**: SLOTs at the basins' hidden control sectors (32 wide, at -6000,
+  off the map), found by the SLOT check that came after MAP20 was last
+  checked. Not touched here.
+- MAP20 MODE=1 (TIMEOUT=450): 87 checks (62 + 25), none failed, and
+  `levelExited`. MODE=2: 40, none failed. MODE=3: 31, none failed. MODE=5:
+  25, none failed. MODE=6: 35, none failed, out by the secret way (the
+  copy off the bath by 0.000000000 at most, the secret 1 of 1); it needed
+  TIMEOUT=900 here (cut off at 400 on the first try, with other sessions'
+  runs on the machine; the game time is as before). MODE=4: 25 views and the automap
+  (26 shots; views 21..24 new) and its two checks pass.
+- MODE=7 against `AJAR_SBMIRROR=1` (tools/highwater_compare.py): the
+  still-water views 23..31 differ by 2, 2, 10, 7, 7, 22, 10, 10, 21 pixels,
+  the player before each pane 23, 15, 33, 163, 16, along the wall 1693,
+  BLUE in 142 1598: the numbers of "MAP20: the secret way out, built" to
+  the pixel. (Views 0..8, with the water animated, differ by the
+  animation's phase as that section says.) Both runs end with a script
+  error after the last shot (view 32 reads past `VX`): as before, harmless.
+- The lab: `MAP=WATER MODE=1..8` pass (10, 8, 9, 18, 6, 6 checks, the 14
+  views, 4); MODE=1 with TIMEOUT=240.
+
+**Left out.** Light ripples over standing water. No buoy in the lab. The
+fountain starts and stops at once (no rising or dying jet, the floor wet or
+dry in one tic). The buoys do not drift; they keep their spot.
+
+**Not played by hand.** Unchecked: the sound of the fountain (the runs are
+`-nosound`), how the jet and its particles look on the real machine (GLES)
+and from far off; whether the rocking buoys read as afloat in play; the
+wheel at 122 turning (only still shots); the buoys seen through hung doors
+(no view looks at one through a door).
+
 ## Look: MAP20, Municipal (built 2026-11-24)
 
 > Vadim, 2026-11-24, on MAP20's decoration: "I noticed that some doors are actually doom doors there. Could it be beneficial to also have other doom elements here and there. This also can be kind of precoursor of our later idea of repeating some classic doom maps." Claude (Fable) proposed the rule "what looks like Doom behaves like Doom" (Doom doors are the ones that open by USE and stay where they are; a coloured leaf in a frame is the one that is carried) and a leak that grows towards the level's end, and the look Municipal out of three (Municipal; Post Box, flooded; Hydro). Vadim: "For Doom - the last. Go with Municipal and we'll see." And for the maps after it: "Also I think would be interesting in all following maps also here and there see some doom elements, until finally at some map we make that classic maps." So from MAP20 on every level carries some of Doom's own elements, more as the levels go on, until the act in Doom II's own maps ("A late act in Doom II's own maps"); and until that act a Doom door is never a frame, so that unhinging one there is new.
