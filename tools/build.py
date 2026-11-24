@@ -60,6 +60,9 @@ MAPS = {"MAP01": map_hinges1, "MAP02": map_hinges2, "MAP03": map_hinges3, "MAP04
 import map_station                              # MAP33 "Third Person" (third.zs)
 MAPS["MAP33"] = map_station
 
+import map_last                                 # the last fight lab (third.zs, last.zs)
+MAPS["LAST"] = map_last
+
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
 

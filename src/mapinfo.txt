@@ -46,6 +46,8 @@ DoomEdNums
 	20163 = AjarThirdWatch            // ... where an earlier self must not come before a hall is won
 	20164 = AjarThirdWin              // ... a shutter a hall's win opens
 	20165 = AjarThirdWind             // ... a plate on a wall that winds the clock on
+	20166 = AjarThirdLast             // ... the last hall, where every go fights one fight (last.zs; the lab LAST)
+	20167 = AjarThirdGuard            // ... a monster of the last hall, there from the alarm
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -600,6 +602,17 @@ map SHUT "Ajar: the shutter"
 map THIRD "Ajar: three goes"
 {
 	next = "THIRD"
+	nointermission
+	nojump
+	nocrouch
+	music = ""
+}
+
+// The last fight lab (tools/map_last.py): three selves of the player fight one
+// fight together, at the last hall (last.zs). MAP=LAST ./run.sh
+map LAST "Ajar: the last fight"
+{
+	next = "LAST"
 	nointermission
 	nojump
 	nocrouch

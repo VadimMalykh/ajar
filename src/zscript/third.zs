@@ -40,6 +40,17 @@
 //  * The line said at the start of go k may be the map's own: the string
 //    <MAPNAME>_GO<k> of the LANGUAGE lump (src/language.txt), said in place
 //    of the first lines of the engine's (ThirdWords).
+//  * AjarThirdLast thing (20166), at most one: THE LAST HALL (last.zs; the
+//    lab is map LAST, tools/map_last.py). args[0] the sector tag of the hall
+//    (its floor, pits, pedestals, bays: where its monsters are), args[1] the
+//    seconds plate 1 must be held (0: 30), args[2] the seconds a later plate
+//    must be held while the earlier ones are (0: 15), args[3] the tag of an
+//    AjarShutter the alarm opens (the last stand's gate; 0 none).
+//    AjarThirdGuard thing (20167): a monster of the last hall, Doom editor
+//    number args[0] (AjarHandler.AmbushClass), at the thing's place (a flyer
+//    at its height) and angle. Sector tag 3360 + k: stand k, where go k
+//    stands at the last hall (its plate, its time door), open to the hall
+//    behind a railing nobody crosses (ajarthird.railing).
 //
 // The rules:
 //  * ONE CLOCK (ot, AjarTimeHandler's) for the whole map, 0 at the start of
@@ -93,6 +104,31 @@
 //    selves did to doors meanwhile is done; window halls are put as they are
 //    then; the shutters, the exit door and the plates as the records have
 //    them. No price (the lab).
+//  * THE LAST HALL (only with an AjarThirdLast; last.zs has it in full):
+//    every go fights it anew and the earlier selves fight in it really.
+//    1. It is empty until plate 1 is first pressed in a go (go 1: by the
+//       player; later: by the first self at its record's tic): the alarm.
+//       Each guard's monster comes in a teleport fog, awake, its first
+//       target the nearest it sees of the player and the earlier selves; the
+//       gate (args[3]) opens for the go; a sound and a line.
+//    2. At each go's start the hall is as at the start: what an earlier go
+//       left (monsters, bodies, missiles, drops) goes, the kill counters lose
+//       it, the gate is shut. Nothing of it is recorded or played by puppets.
+//    3. From the alarm a go's record has what the player fired (bullets,
+//       shells, their missiles: time.zs's RecordTake), and in later goes the
+//       earlier self fires it again, really, from the alarm; it can be shot
+//       then (what it shoots turns on it) and is never harmed. Before the
+//       alarm it is as above.
+//    4. Time door 1 opens once the player has stood on plate 1 args[1]
+//       seconds in all since the alarm; time door k (1 < k < parts) once on
+//       plate k args[2] seconds in all while plates 1 .. k-1 are pressed. The
+//       HUD shows the sum. The exit door and too late as above.
+//    5. The first time in a go the player comes onto their stand: a save.
+//    6. No winding on once the alarm is on in the go, nor into it.
+//    7. The timetable: one line an earlier self (its first step on its plate,
+//       the seconds it stood there that counted), and in the last go the
+//       first and the last moment the exit door is open.
+//    8. Paradoxes as above; an earlier self cannot die.
 
 class AjarThirdMark : Actor
 {
@@ -239,6 +275,7 @@ extend class AjarTimeHandler
 		while (wn = AjarThirdWin(ni.Next())) winners.Push(wn);
 		let h = Doors();
 		for (int k = 1; k <= parts; k++) { h.Link(TimeDoorId(k), 0, TIME_TEX); h.Link(BoxDoorId(k), 0, TIME_TEX); }
+		LastLoaded();               // last.zs: a last hall?
 	}
 
 	clearscope static string ThirdClock(int t) { return String.Format("%d:%02d", t / 35 / 60, t / 35 % 60); }
@@ -279,6 +316,7 @@ extend class AjarTimeHandler
 		ThirdRecordSelf(mo);
 		ThirdSelves();
 		GhostDoors();               // goes.zs: the earlier selves do again what they did to doors
+		LastTick(mo);               // last.zs: the last hall's fight
 		ThirdTouch(mo);
 		if (!paradox)
 		{
@@ -312,6 +350,7 @@ extend class AjarTimeHandler
 		ThirdPosts();
 		ThirdShutters(true);
 		ThirdExitShut();
+		LastBegin(mo);              // last.zs
 		ThirdSchedule();
 		Say(ThirdWords(1, String.Format("Go 1 of %d. Your part ends at plate 1; a door with a clock\non it leads to before, into the start of the next part.", parts)));
 		LevelLocals.MakeAutoSave();
@@ -337,6 +376,7 @@ extend class AjarTimeHandler
 		ThirdPosts();
 		ThirdShutters(true);
 		ThirdExitShut();
+		LastBegin(mo);              // last.zs
 		ThirdSchedule();
 		ThirdClearDoor(mo);
 		mo.A_SetBlend("white", 1.0, 40);
@@ -413,7 +453,7 @@ extend class AjarTimeHandler
 			Vector3 p = (t.x[ot], t.y[ot], t.z[ot]);
 			if (!g)
 			{
-				g = AjarGhost(Actor.Spawn("AjarGhost", p));
+				g = AjarGhost(Actor.Spawn(lastMark ? "AjarLastSelf" : "AjarGhost", p));     // (last.zs)
 				g.bShootable = false;
 				g.A_SetTranslation(colours[min(i, 2)]);
 				ghosts[i] = g;
@@ -745,7 +785,8 @@ extend class AjarTimeHandler
 		}
 		if (exitDoor) exitDoor.keyed = max(0, exitUntil - ot);
 		// this go's time door: once the player stands on its plate while the earlier ones are pressed
-		if (tgo < parts && !tdOpen && tgo <= plates.Size() && plates[tgo - 1] && plates[tgo - 1].mine && PlatesHeld(tgo - 1))
+		// (a map with a last hall: by the sum, last.zs's LastPlates)
+		if (!lastMark && tgo < parts && !tdOpen && tgo <= plates.Size() && plates[tgo - 1] && plates[tgo - 1].mine && PlatesHeld(tgo - 1))
 		{
 			tdOpen = true;
 			Doors().Link(TimeDoorId(tgo), BoxDoorId(tgo + 1), TIME_TEX);
@@ -820,23 +861,25 @@ extend class AjarTimeHandler
 				tColor.Push(colours[min(s, 2)]);
 			}
 		}
-		for (int s = 0; s < plFrom.Size(); s++)
+		for (int s = 0; s < plFrom.Size() && !lastMark; s++)        // (a last hall has its own lines: LastSchedule)
 		{
 			tLine.Push(String.Format("%d on plate %d  %s - %s", plSelf[s] + 1, plSelf[s] + 1, ThirdClock(plFrom[s]), ThirdClock(plTo[s])));
 			tColor.Push(colours[min(plSelf[s], 2)]);
 		}
-		if (tgo == parts && n)
+		if (tgo == parts && n && !lastMark)
 			for (int s = 0; s < heldFrom.Size(); s++)
 			{
 				tLine.Push(String.Format("the exit door open  %s - %s", ThirdClock(heldFrom[s] + 1), ThirdClock(heldTo[s] + openTics)));
 				tColor.Push(Font.CR_WHITE);
 			}
+		LastSchedule();             // last.zs
 	}
 
 	// --- winding on ------------------------------------------------------------------
 	void ThirdWind(PlayerPawn mo)
 	{
 		if (paradox || tgo < 2) { Say("Nothing is playing: there is nothing to wind on to."); return; }
+		if (LastNoWind()) return;   // last.zs: not in the last fight
 		int next = -1, who = -1;
 		for (int s = 0; s < plFrom.Size(); s++)
 			if (plFrom[s] - WIND_LEAD > ot && (next < 0 || plFrom[s] < next)) { next = plFrom[s]; who = plSelf[s]; }
@@ -909,5 +952,6 @@ extend class AjarTimeHandler
 		for (int i = 0; i < tLine.Size(); i++)
 			Screen.DrawText(SmallFont, tColor[i], 320 - SmallFont.StringWidth(tLine[i]) / 2, 26 + BigFont.GetHeight() + 10 * i, tLine[i],
 				DTA_VirtualWidth, 640, DTA_VirtualHeight, 400);
+		LastOverlay(e);             // last.zs: a plate's sum
 	}
 }
