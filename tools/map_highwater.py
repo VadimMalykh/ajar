@@ -646,16 +646,23 @@ for _x in (EX + 8, EX + 24):
            repeatspecial=True)
 for _y in EXIT_MOUTH:
     m.line((EX, _y), (EX + 24, _y), mid="DOORTRAK", dontpegbottom=True)
-# the night room: 256 by 320, its west wall's middle the door's back (its way in, y 1280..1344), the brass
-# doorway joining its south and north ends (Exit_Normal at both mouths, x 6168..6232 at y 1152 and 1472)
-NIGHT = (EX + 24, EXIT_MOUTH[0] - 128)              # its south-west corner, (6072, 1152)
+# the night room's side of the door, as the hall's: a strip 8 deep as high as the door (its threshold: the night
+# room's carpet under, its starry ceiling over, its wall on the two short sides, laid from the floor as the room's),
+# so that from inside too the door's back is EXITDOOR, under the night room's wall
+NIGHT_STRIP = (EX + 24, EXIT_MOUTH[0], EX + 32, EXIT_MOUTH[1])
+m.sector(rect(*NIGHT_STRIP), floor=0, ceil=EXIT_H, light=180, wall="AJXW2", ftex="AJXR2", ctex="AJXC2",
+         raw=dict(rotationfloor=90.0, rotationceiling=90.0))
+for _y in EXIT_MOUTH:
+    m.line((NIGHT_STRIP[0], _y), (NIGHT_STRIP[2], _y), dontpegbottom=True)
+# the night room: 256 by 320, its west wall's middle the strip (its way in, y 1280..1344), the brass doorway
+# joining its south and north ends (Exit_Normal at both mouths, x 6176..6240 at y 1152 and 1472)
+NIGHT = (NIGHT_STRIP[2], EXIT_MOUTH[0] - 128)      # its south-west corner, (6080, 1152)
 NIGHT_BOX = (NIGHT[0], NIGHT[1] - ajarmap.DEPTH - ajarmap.STUB, NIGHT[0] + 256, NIGHT[1] + 320 + ajarmap.DEPTH + ajarmap.STUB)
 NIGHT_SECTORS = range(len(m.sectors), len(m.sectors) + 13)  # its 9 cells and its doorway's 2 recesses and 2 stubs
 ajarmap.way_out(m, *NIGHT, None, turned=True)
 assert len(m.sectors) == NIGHT_SECTORS.stop
-# from inside, the wall over the door is the night room's own, hung from its ceiling as the walls beside it
-# (as a Doom secret door: the door's back is that wall, and the opening's top rises through it)
-m.line((NIGHT[0], EXIT_MOUTH[0]), (NIGHT[0], EXIT_MOUTH[1]), upper="AJXW2", dontpegtop=True)
+# the wall over the strip, from inside, hung from the room's ceiling as the walls beside it (the stars run on)
+m.line((NIGHT[0], EXIT_MOUTH[0]), (NIGHT[0], EXIT_MOUTH[1]), dontpegtop=True)
 area("mh", MH, 0)
 # the outfall (GREEN's far side), seen from the lower yard through glass
 basin(TO, 256, kind=W.OUTFALL, at=(5408, 1664))

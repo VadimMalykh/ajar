@@ -346,8 +346,8 @@ class HighWaterTest : EventHandler
 	{
 		if (testing1)
 		{
-			// last seen in the brass doorway's north end (its mouth at y 1472, x 6168..6232), and the plain next map
-			bool byWayOut = lastPos.x > 6168 && lastPos.x < 6232 && lastPos.y > 1400;
+			// last seen in the brass doorway's north end (its mouth at y 1472, x 6176..6240), and the plain next map
+			bool byWayOut = lastPos.x > 6176 && lastPos.x < 6240 && lastPos.y > 1400;
 			Check("exitByTheWayOut", byWayOut && e.NextMap ~== level.NextMap && !(e.NextMap ~== level.NextSecretMap),
 				String.Format("last seen at %s; next map %s (next %s, secretnext %s)", PStr(lastPos), e.NextMap, level.NextMap, level.NextSecretMap));
 			Summary();
@@ -355,7 +355,7 @@ class HighWaterTest : EventHandler
 		}
 		if (!testing6) return;
 		// the Exit_Secret line is at y 792 of the bath in the copy; the plain way out is far east (the night room
-		// behind the Doom exit door, x 6072..6328)
+		// behind the Doom exit door, x 6080..6336)
 		bool bySecret = InCopy(lastPos.xy) && lastPos.y > 792 + CY - 24;
 		Check("exitBySecretWayOut", bySecret && e.NextMap ~== level.NextSecretMap,
 			String.Format("last seen at %s; next map %s (secretnext %s, next %s)", PStr(lastPos), e.NextMap, level.NextSecretMap, level.NextMap));
@@ -576,13 +576,14 @@ class HighWaterTest : EventHandler
 			if (opT >= 200) { testing1 = false; Check("levelExitedInTime", false, PStr(mo.pos)); Next(); }
 		}
 	}
-	// the night room (map_highwater.NIGHT: ajarmap.way_out turned, its south-west corner at (6072, 1152), 256 by
-	// 320; its floor and carpet AJXG2, AJXR2; the brass doorway's mouths at y 1152 and 1472, x 6168..6232)
-	const NIGHT_RUNNER = 6200;
+	// the night room (map_highwater.NIGHT: ajarmap.way_out turned, its south-west corner at (6080, 1152), 256 by
+	// 320, behind the door and the strip on its side, x 6072..6080; its floor and carpet AJXG2, AJXR2; the brass
+	// doorway's mouths at y 1152 and 1472, x 6176..6240)
+	const NIGHT_RUNNER = 6208;
 	bool InNightRoom(Actor mo)
 	{
 		string f = TexMan.GetName(mo.CurSector.GetTexture(Sector.floor));
-		return mo.pos.x > 6072 && mo.pos.x < 6328 && mo.pos.y > 1152 && mo.pos.y < 1472 && (f ~== "AJXG2" || f ~== "AJXR2");
+		return mo.pos.x > 6080 && mo.pos.x < 6336 && mo.pos.y > 1152 && mo.pos.y < 1472 && (f ~== "AJXG2" || f ~== "AJXR2");
 	}
 	// the exit door's sector (x 6056..6072, y 1280..1344): how far it is open
 	double ExitDoorOpening()
@@ -1096,14 +1097,14 @@ class HighWaterTest : EventHandler
 			break;
 		case 42:    // ... from inside the night room: the door's opening, the room's wall over it, the hall beyond
 			if (st == 70) Info(String.Format("view 42: the exit door's opening %.1f", ExitDoorOpening()));
-			Look(mo, st, 6290, 1290, 172, 0);
+			Look(mo, st, 6298, 1290, 172, 0);
 			break;
 		case 43:    // down the night room to the brass doorway's north end: the room again in it, and your back
-			Look(mo, st, 6200, 1200, 90, 0);
+			Look(mo, st, 6208, 1200, 90, 0);
 			break;
-		case 44:    // the door shut again, from inside: its back is the night room's wall
+		case 44:    // the door shut again, from inside: its back, EXITDOOR, under the night room's wall
 			if (st == 70) Info(String.Format("view 44: the exit door's opening %.1f", ExitDoorOpening()));
-			Look(mo, st, 6240, 1312, 180, 0);
+			Look(mo, st, 6248, 1312, 180, 0);
 			break;
 		}
 	}
