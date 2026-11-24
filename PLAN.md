@@ -13840,3 +13840,204 @@ workshop's snapshots, its fight's length); MODE=2 46, MODE=3 263 with 40
 views, MODE=4 135. LAST MODE=1..4: 58, 46, 51, 55; THIRD MODE=3
 three times 53 each, MODE=7 58: none failed. The walk: part 1 13231 units,
 part 2 10878, part 3 10915, the secrets 832 + 855 + 215.
+
+## Look: MAP20, Municipal (built 2026-11-24)
+
+> Vadim, 2026-11-24, on MAP20's decoration: "I noticed that some doors are actually doom doors there. Could it be beneficial to also have other doom elements here and there. This also can be kind of precoursor of our later idea of repeating some classic doom maps." Claude (Fable) proposed the rule "what looks like Doom behaves like Doom" (Doom doors are the ones that open by USE and stay where they are; a coloured leaf in a frame is the one that is carried) and a leak that grows towards the level's end, and the look Municipal out of three (Municipal; Post Box, flooded; Hydro). Vadim: "For Doom - the last. Go with Municipal and we'll see." And for the maps after it: "Also I think would be interesting in all following maps also here and there see some doom elements, until finally at some map we make that classic maps." So from MAP20 on every level carries some of Doom's own elements, more as the levels go on, until the act in Doom II's own maps ("A late act in Doom II's own maps"); and until that act a Doom door is never a frame, so that unhinging one there is new.
+
+**The decision.** Vadim chose the look Municipal for MAP20 and asked for Doom's
+own elements here and there, more as the levels go on. Fable settled the
+design; a worker on Opus built it in the worktree `map20-look`. Fable
+changed three things from its own proposal: the bolted doors (AJBOLT) and
+the shutters (AJSHUT) keep Ajar's art, since the player knows them from
+MAP11 to MAP19 and a Doom face on a door that USE does not open would
+mislead, so only the gangway's bolt got a Doom switch; nothing stands on
+the cooling hall's floor (no furniture anywhere); the light ripples on the
+walls were not built.
+
+**The rule.** The look changes textures and hangs pictures. No room, floor,
+ceiling, frame, door, basin, light, thing, monster or item moved. Three
+changes of geometry only, all named below, and the walls cut for pictures.
+AJAR_INSTITUTE=0 (LOOK 0) builds the level with its plain walls as before;
+every other LOOK builds Municipal. The three geometry changes are in both.
+
+**What it is.** A town's waterworks and public baths built round 1900 to
+1930, older than the institute that took them over. Colours warm and
+neutral only (cream and white glaze, oxblood, black, brick red, maroon iron,
+brass, buff stone, soot): the doors are BLUE, GREEN and TEAL and the water is
+blue, so nothing else is. Frames, far sides, AJTRIM and AJFRAME are as they
+were.
+
+Every course, tide line, stain and plaque is at an absolute height: each wall
+texture has a height H and the height z0 of its top row, and the map's line
+hook gives every side the offset that puts it there, whatever the sector's
+floor (Doom's pegging rules; the build fails if a wall shows a height its
+texture does not cover). The patterns are laid by world position, symmetric,
+64 wide: no seams where a wall is cut.
+
+**By stage** (tools/gfx_highwater.py; every name AJV...):
+
+1. The baths. The changing room and its upper floor: cream tile to 96 over
+   the floor under an oxblood capping, cream plaster over it, a cornice, red
+   quarry tile on the floor, a plaster ceiling. The plunge hall P: white tile
+   floor to roof, a black course under every 64 of height (the wall is the
+   gauge), an oxblood course under its brim 232, an iron frieze, a ceiling
+   of iron trusses and glass. The swimming bath: the same family (white
+   tile, a black course under the poolside, oxblood at 96 over it, a tiled
+   floor with black lane lines); DEEP END and SHALLOW END painted on the
+   pool's north wall under the rim. All AJ textures, 64-periodic flats,
+   nothing animated, no things: bath_checks() passes; its copy flips them.
+2. The engine house (the pump corridor, the pump house, the passage from
+   E2): cream-painted brick over a maroon dado at each floor, the pump
+   house's walls riveted maroon plate to 64 with a black band, red and
+   black chequer quarry floors, boarded ceilings on iron beams. The cooling
+   hall C is a tank: riveted maroon plate where it is dry, below its tide
+   line at 96 (absolute) wet black and brown with lime runs and a crust at
+   the line; the walkway (104) chequer plate, the basin's floor concrete
+   with silt and drains.
+3. The boiler house: red brick on an engineering brick plinth, a black
+   iron tie, soot growing upward; brick paving; three boilers' fronts on
+   its south wall (fire doors, gauges, the steam main); the feed tank T in
+   riveted black plate to its rim 272, its float mark (AJFLOATM, redrawn on
+   the tank's own plates: the red band at 216 and its number as before).
+4. The yards: red brick on a stone plinth, a stone band 128 over the floor,
+   a coping; granite setts in the lower yard, dry grass in the upper (its
+   own flat, AJVFL, in place of GRASS1). The upper yard's east wall round
+   the reservoir's glass is the water tower's foot: dark engineering brick,
+   a stone band, riveted tank plates high up, the plate RESERVOIR over a
+   stone lintel. The lower yard's east wall over the outfall's glass: a
+   brick culvert's arch and the plate OUTFALL. The outfall room a damp
+   brick vault with an old tide stain; the reservoir room riveted plate,
+   dark where the water stands.
+5. The lock K, the squeeze, its stair and terrace, the wheel house (L, U,
+   the spillway): dressed buff stone, stained and crusted up to where the
+   water can stand (K 200, L -4, U 184; the squeeze, the terrace and the
+   opening clean), tarred timber on the spillway up to 192.
+6. The cells, the tunnel, the machine hall: Doom (below).
+
+**The high-water plaques** (brass, HIGH WATER and a year, the top edge and a
+black mark run out past it exactly at the level; each level is the measure's
+own rest, checked to be a whole height, from map_highwater's run names):
+
+| Basin | Level | Year | From | Where |
+|---|---|---|---|---|
+| P | 224 | 1928 | `P_HIGH` = run "BLUE in 102" | the east wall by the ledge, x 1120 |
+| C | 96 | 1936 | `C_HIGH` = run "GREEN in 111" (= `C_FOUND`) | on the tide line, south wall by E2 |
+| K | 184 | 1947 | `K_HIGH[0]` = run "then BLUE in 133" | the lock's south wall, one over the other |
+| K | 96 | 1911 | `K_HIGH[1]` = run "BLUE in 131 (alone)" | under it |
+| L | -4 | 1953 | `L_HIGH` = run "BLUE in 109" (= `L_BRIM`) | L's south wall |
+
+**Pictures.** The changing room: two banks of lockers (1 to 4, 9 to 12), a
+board RULES OF THE BATHS (1. NO RUNNING. 2. NO DIVING AT THE SHALLOW END. 3.
+DOORS ARE NOT TO BE BROUGHT INTO THE WATER. BY ORDER) and a clock. The boiler
+house: three boilers' fronts; on its east wall the section drawing
+WATERWORKS: LEVELS, drawn from the generator's own figures (BASINS' floors
+and brims, FRAMES' sills by basin, the reservoir's level against a height
+scale: P, C, T, K, L, U, each frame a small numbered door at its sill). The
+wheel house: framed, PATENT OFFICE, APPLICATION 1904, PERPETUAL MOTION,
+stamped REFUSED. The tunnel: a plate END OF INSTITUTE PREMISES at the seam.
+
+**Plates over the ways** (enamel, the words of what is beyond, just over the
+way's head): SWIMMING BATH, PLUNGE (beside its Doom door, an arrow), PUMPS
+(three), COOLING HALL (three), BOILERS, YARD (two), LOCK (beside its door),
+WHEEL HOUSE (two), MACHINE HALL (beside the sluice), OUTFALL, RESERVOIR.
+
+**Doom's elements and the rule.** "What looks like Doom behaves like Doom":
+a Doom door opens by USE and stays where it is; a coloured leaf in a frame is
+the one that is carried. So:
+
+- The pressure doors (ajarwater.pressure_door) and the ledge door show one
+  Doom door, SPCDOOR1 (the brown one, of SPCDOOR1..4 by looking: 2 is grey,
+  3 has green lights, 4 is busier), scaled so the whole door fills its
+  96-high mouth (scaley_top 128/96; the ledge door's face toward P 104 high,
+  toward the corridor 128); DOORTRAK jambs as before; the wall over the
+  mouth and the lamp strips' sides SUPPORT2 in place of AJTRIM; the lamps
+  TLITE6_6 stay. ajarwater.pressure_door has a new `strip=` (the strips' wall
+  and floor) beside `look=`, both defaulting to what they were: the lab
+  WATER builds as before.
+- Bolted doors (AJBOLT) and shutters (AJSHUT) keep Ajar's art.
+- The gangway's bolt: a Doom switch, SW1BRIK, on the gangway's north wall
+  beside the bolted door, on the top step's piece of wall (Door_Open(62, 32)
+  by USE, as the door's own line; the engine turns it to SW2BRIK).
+- The leak grows to the level's end: the cells are Doom's stone (MARBLE1,
+  cell B MARBLE2, DEM1_6 floors, FLOOR7_2 ceilings) with MARBFACE on cell B's
+  back wall; the tunnel is the yard's brick until x 5408, then SUPPORT3 ribs
+  and MARBGRAY with FLOOR4_8 and TLITE6_1, the seam's plate on the brick
+  side; the machine hall is a Doom room (MARBGRAY between SUPPORT3, FLOOR4_8,
+  TLITE6_1); the exit is Doom's (below). No DOORBLU, DOORRED or DOORYEL
+  anywhere, nothing of Doom in the swimming bath.
+- Doom II's marble is green, against the colour rule; the cells keep the
+  names asked for (MARBLE1/2, MARBFACE, DEM1_6, FLOOR7_2) since they are
+  the leak; the tunnel and the hall use the grey MARBGRAY.
+
+**The three changes of geometry** (in both looks):
+
+1. The gangway's switch: the gangway's north wall cut at x 3408 (a piece of
+   wall 20 long beside the top step's 28); the top step's piece has
+   Door_Open(GW_TAG, 32) by USE.
+2. The exit: the machine hall's east wall is solid but for a Doom exit door,
+   its mouth y 1280..1344: a strip 8 deep as high as the door (72), the door
+   16 thick (EXITDOOR, Door_Raise by USE, DOORTRAK jambs), an exit room 96
+   deep and 128 wide behind it (EXITSTON, FLOOR4_8, TLITE6_1) with the
+   Exit_Normal line across its middle (x 6120). The open strip with its
+   crossing line at x 6048 is gone. HighWaterTest MODE=1 walks to x 5990,
+   USEs the door (check exitDoorOpens), waits 40 tics and walks on into
+   the exit.
+3. Doom's EXIT sign: a box 16 x 32 hung from the hall's ceiling (256) down
+   to 240 at x 5992..6008, before the door (EXITSIGN on its faces, METAL on
+   its ends, CEIL5_1 under it). The hall is split around it for that
+   (CD.fit), its floor, ceiling and light as they were; area("mh") and its
+   monsters do not move.
+
+**Files.** tools/gfx_highwater.py (new: the walls, flats, pictures, plates,
+plaques, the section drawing); tools/map_highwater.py (the materials by
+room, the line hook that lays every look texture at its height, the
+pictures hung, the three changes, eight more view spots 2023..2030);
+tools/gfx.py (calls it, before the flipped copies); tools/gfx_water.py
+(float_mark(base=)); tools/ajarwater.py (strip=); src/zscript/map20.zs
+(MODE=1's exit; MODE=4's views 21..36); tools/smoke_MAP20_4.cfg (16 shots
+more).
+
+**Nothing moved** (a scratch comparison of MAP20's TEXTMAP before, at
+ea736f6, and after, textures and texture offsets left out; LOOK 3, and LOOK 0
+the same but for the tunnel's split):
+
+- things: 341 before, 349 after; the 8 more are the view spots 2023..2030
+  (MapSpots); every other thing identical.
+- sectors: 322 before, 330 after. Gone: the old strip east of the hall
+  (0/256, light 250). New: the exit door (0/0, 190), the strip before it
+  (0/72, 190), the exit room in two (0/72, 250, for the crossing line), the
+  sign box (0/240, 190) and three more pieces of the hall around it (0/256,
+  190), the tunnel's Doom half (0/128, 140; LOOK 3 only). Every other
+  sector identical (floor, ceiling, light, tags, specials).
+- line specials: 73 before, 76 after; new: the switch's Door_Open(62, 32)
+  and the exit door's two Door_Raise(0, 16, 150); the Exit_Normal is one as
+  before.
+
+**Runs** (the full build; MAP20's own checks run in it: the measure, the
+bath's checks, the look's heights):
+
+- `./build.sh`: built. The map alone with `AJAR_INSTITUTE=0` (LOOK 0): generated, no problems.
+- `tools/mapcheck.py map_highwater`: 10 problems, all "SLOT a body 32 wide
+  stands in (-5968..-4784, -6000..-5968)", the same ten at ea736f6 before
+  this work (mapcheck's own frame; not of this change). None new.
+- `tools/itemcheck.py`, `tools/thingcheck.py`: 0 problems.
+- MAP20 MODE=1 (-nomonsters, 450): 63 checks, none failed, exitDoorOpens
+  and levelExited. MODE=2: 40, none failed. MODE=3: 31, none failed.
+  MODE=5 (400): 25, none failed (at the default 170 s it stops at 19, out of
+  time). MODE=6: 25, none failed. MODE=7 (500): its 32 views.
+  MODE=4: the 37 views and the automap.
+- MAP=WATER MODE=1 (240): 10 checks, none failed.
+- The secret's opening against a real mirror (tools/highwater_compare.py,
+  as built and `AJAR_SBMIRROR=1`): with the water still (views 23..31) 2 to
+  37 pixels of 419328 differ, along the pane's edges, as before the look:
+  the copy's flipped look walls go on where the bath's end. Views 17, 18, 22
+  1468, 1493, 3247 (the copy's door and BLUE, as before); views with the
+  animated water up to 13652 (the animation, as before).
+
+**Left out.** No furniture; no light ripples; the bolted doors and shutters
+as they were; the K and L plaques' numbers are the measure's runs and not
+new constants. The tank's float mark keeps its red band and number, on the
+tank's plates.
+
+Not played by hand.

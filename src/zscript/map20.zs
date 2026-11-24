@@ -444,7 +444,6 @@ class HighWaterTest : EventHandler
 		}
 		if (Op())
 		{
-			if (opT == 0) Summary();
 			mo.vel.xy = (RUN, 0);
 			if (mo.pos.x >= 5990 || opT >= 120) Next();
 		}
@@ -459,6 +458,7 @@ class HighWaterTest : EventHandler
 		}
 		if (Op())
 		{
+			if (opT == 0) Summary();
 			mo.vel.xy = (RUN, 0);
 			if (opT >= 120) { Check("levelExitedInTime", false, PStr(mo.pos)); Next(); }
 		}
