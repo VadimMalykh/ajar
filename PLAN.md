@@ -14473,7 +14473,8 @@ the EXIT sign's box, the machine hall, its monsters and its area as they
 were; the player still comes out of the tunnel and sees Doom's exit door
 across the hall. Behind the door, in place of Doom's exit room, the night
 room of every early level (`ajarmap.way_out`), straight ahead and turned a
-quarter: the door opens on the middle of its west wall, the brass doorway's
+quarter: the door opens on the middle of its west wall (through a strip 8
+deep on the room's side, as on the hall's), the brass doorway's
 two ends are to the left and right (north and south), and walking into
 either ends the level. The secret way out (the swimming bath's
 `Exit_Secret`) is as it was, and nothing else in the level moved.
@@ -14495,84 +14496,95 @@ either ends the level. The secret way out (the swimming bath's
   are the same either way. Not turned, it builds as before: every other
   map's wad is byte for byte main's.
 - `tools/map_highwater.py`: the exit room's two sectors and its
-  `Exit_Normal` line are gone (`EXIT_ROOM`, `EXIT_LINE`). `NIGHT = (EX + 24,
-  EXIT_MOUTH[0] - 128)`, (6072, 1152): `ajarmap.way_out(m, *NIGHT, None,
-  turned=True)` (no far side; the door is the way in, as MAP18's shutter).
-  The room covers x 6072..6328, y 1152..1472; its doorway's recesses and
-  stubs x 6168..6232, y 1088..1152 and 1472..1536 (`NIGHT_BOX`). Nothing
+  `Exit_Normal` line are gone (`EXIT_ROOM`, `EXIT_LINE`). `NIGHT =
+  (NIGHT_STRIP[2], EXIT_MOUTH[0] - 128)`, (6080, 1152), behind the strip on
+  the room's side of the door (below): `ajarmap.way_out(m, *NIGHT, None,
+  turned=True)` (no far side; the strip before the door is the way in, as
+  MAP18's shutter). The room covers x 6080..6336, y 1152..1472; its
+  doorway's recesses and stubs x 6176..6240, y 1088..1152 and 1472..1536
+  (`NIGHT_BOX`). Nothing
   else of the level reaches there: the generator checks it every build (no
   sector but the night room's 13, `NIGHT_SECTORS`, has its box in
   `NIGHT_BOX`; a problem stops the build). The mouths, `Exit_Normal`, are
-  at y 1152 and 1472, x 6168..6232.
-- The door between two looks. A side shows one upper texture, so from the
-  night room the door's face and the wall over the open door are one
-  texture. It is the night room's wall: the door's line (x 6072) has
-  `upper="AJXW2"` and is upper-unpegged, hung from the room's ceiling like
-  the walls beside it (Doom's secret-door way): shut, the door's back is
-  the starry wall; open, the opening's top rises through it to 68, and over
-  it is the room's wall. From the hall nothing changed. The look's hook
-  leaves the night room alone (none of its textures are the look's; nothing
-  is tinted or retextured by room there).
+  at y 1152 and 1472, x 6176..6240.
+- The door between two looks: a door from both sides (Fable, on reading
+  the first try: "a door that opens by USE should look like a door from
+  both sides"; with the night room's wall on the door's back, a player who
+  let it shut behind him saw no way back, and he may want one: the secret
+  way out, kills left behind). On the room's side, as on the hall's, a
+  strip 8 deep as high as the door (`NIGHT_STRIP`, x 6072..6080, y
+  1280..1344, floor 0, ceiling 72, light 180 as the carpet's cell): its
+  floor the carpet (AJXR2), its ceiling the night room's (AJXC2), both
+  turned as the room's, so that it reads as the door's threshold; its two
+  short side walls the night room's wall, laid from the floor
+  (lower-unpegged) so that its gold skirting runs on with the room's. The
+  door's face to it is EXITDOOR, as on the hall's side (pegged: it rises
+  with the door, to 68). Over the strip, from inside, the night room's wall
+  (AJXW2, the strip's own wall shown as the upper on the room's side),
+  upper-unpegged and hung from the room's ceiling like the walls beside
+  it, so the stars run on. The door still rises to 68 (both strips 72).
+  From the hall nothing changed. The look's hook leaves the strip and the
+  night room alone (none of their textures are the look's; nothing is
+  tinted or retextured by room there).
 - `src/zscript/map20.zs`, MODE=1: after `exitDoorOpens` it walks
-  (`Toward`) through the door to the carpet's middle (6200, 1312) and
+  (`Toward`) through the door to the carpet's middle (6208, 1312) and
   checks `inTheNightRoom` (inside the room's box, on AJXG2 or AJXR2), then
   turns north and walks into the doorway's north end; when the level ends,
-  `exitByTheWayOut` (last seen in that end, past y 1400 between x 6168 and
-  6232, the next map the plain `next`, not `secretnext`) and the summary.
+  `exitByTheWayOut` (last seen in that end, past y 1400 between x 6176 and
+  6240, the next map the plain `next`, not `secretnext`) and the summary.
   `levelExitedInTime` fails if it has not ended 200 tics after the turn.
 - MODE=4: views 41..44 (the door opened at the start of view 41; its
   opening is written to the log at 41, 42 and 44): 41 the door open from
-  the hall (5880, 1312) looking east; 42 from inside (6290, 1290) looking
-  west at the open door; 43 down the room from (6200, 1200) to the north
-  end; 44 the door shut again from inside. View 39 (the door shut and the
+  the hall (5880, 1312) looking east; 42 from inside (6298, 1290) looking
+  west at the open door; 43 down the room from (6208, 1200) to the north
+  end; 44 the door shut again from inside (6248, 1312). View 39 (the door shut and the
   sign, from the hall) stays as the look's record. `tools/smoke_MAP20_4.cfg`
   4 shots more: 45 views and the automap, 46 shots.
 - The generator's checks: `EXITS` is the basins' ways out with empty hands
   and `bath_checks()` looks only inside the swimming bath (`SB_BOX`): neither
   names the plain way out, and both pass as before.
 
-**What the views show** (as seen): 41, the door open in the hall's marble
-and SUPPORT3, the night room straight behind it: the gold carpet, the starry
-east wall. 42, from inside, the opening in the starry west wall with the
-room's own wall over it, the hall's floor and marble beyond, a candelabrum
-either side. 43, the brass doorway's north end at the end of the carpet, the
-room again in it and the player's own back, small, walking away, the two
-far candelabra repeated. 44, the door shut: the west wall whole and starry,
-the door's piece a little lighter (it is the carpet's cell, light 180, as
-where the carpet meets the room's ends elsewhere).
+**What the views show** (as seen, the strip built): 41, the door open in
+the hall's marble and SUPPORT3, the night room straight behind it: the gold
+carpet, the starry east wall. 42, from inside, the open door in the starry
+west wall, the room's own wall over it, the hall's floor and marble beyond,
+a candelabrum either side. 43, the brass doorway's north end at the end of
+the carpet, the room again in it and the player's own back, small, walking
+away, the far candelabra repeated (the shut door's EXITDOOR at the left
+edge). 44, the door shut, from inside: EXITDOOR in the west wall under the
+starry wall, the carpet running up to it over the threshold.
 
-**The checks** (the full `./build.sh` in the worktree):
+**The checks** (the full `./build.sh` in the worktree, with the strip):
 - The build: no problem; MAP20's measure as before.
 - MAP20's TEXTMAP against main's (a scratch comparison of sectors, things
-  and lines): sectors 330 to 341 (the exit room's two gone, the night
-  room's 9 cells and 4 recess pieces new), things 349 to 355 (four
-  candelabra, the doorway's frame and fixed door), lines: only those of the
-  exit room gone and the night room's new, and the door's line at x 6072
-  with the night room's wall over it. Everything else the same.
-- mapcheck on `map_highwater`: 311 sectors (300 on main's generator), 354
+  and lines): sectors 330 to 342 (the exit room's two gone; the night
+  room's 9 cells and 4 recess pieces and the strip new), things 349 to 355
+  (four candelabra, the doorway's frame and fixed door), lines: only those
+  of the exit room gone and the strip's and the night room's new; the
+  door's line at x 6072 as before (EXITDOOR toward the strip, as toward the
+  exit room). Everything else the same.
+- mapcheck on `map_highwater`: 312 sectors (300 on main's generator), 354
   things (348), 130 monsters, the same 10 problems as main's (the SLOTs at
   y -6000..-5968, mapcheck's own frame), none new. itemcheck, thingcheck:
   0 problems each (as main's).
 - MAP20 MODE=1 (-nomonsters, 450): 90 checks (88 + `inTheNightRoom` and
-  `exitByTheWayOut`), none failed; `exitDoorOpens`, `levelExited`; last seen
-  at (6213, 1470), next map MAP20 (`next`; `secretnext` MAP33).
-- MODE=2: 40 checks, none failed (40). MODE=3: 31, none failed (31).
-- MODE=5 (450): 25, none failed (25). MODE=6 (-nomonsters, 500): 35, none
-  failed (35), `exitBySecretWayOut` (next map MAP33) and `levelExited`
-  (a first try at 300 s, beside MODE=5, ran out of time half way, nothing
-  failed). MODE=7 (500): its 32 views.
+  `exitByTheWayOut`), none failed; `exitDoorOpens`, `inTheNightRoom` at
+  (6200, 1312) on AJXR2, `levelExited`; last seen at (6221, 1470), next map
+  MAP20 (`next`; `secretnext` MAP33).
 - MODE=4: 45 views and the automap; the fountain's two checks pass; the
   door's opening 68 at views 41 and 42, 0 at view 44.
 - The package against main's (`a80f28e`, main's own build after it): 2979
   files each, only `maps/MAP20.wad` and `zscript/map20.zs` differ.
-- MAP03 MODE=1 (a level that ends by `way_out()` not turned): 18 checks,
-  none failed, `inExitRoom` and `levelExited`.
+- Run on the first try (the room at 6072, no strip), not again since the
+  strip touches nothing they use: MODE=2 40 checks (40 before), MODE=3 31
+  (31), MODE=5 (450) 25 (25), MODE=6 (-nomonsters, 500) 35 (35) and out by
+  the secret way (MAP33), MODE=7 (500) its 32 views, none failed; MAP03
+  MODE=1 (a level that ends by `way_out()` not turned) 18 checks, none
+  failed, `inExitRoom` and `levelExited`.
 
-**Departures.** The door's back from inside is the night room's wall, not
-EXITDOOR: one side has one upper texture, and the brief's "the wall over the
-door must be the night room's" wins. EXITDOOR's back would have needed a
-strip 8 deep on the room's side as on the hall's, the room 8 further east.
-View 39 is kept and four views added, rather than view 39 changed.
+**Departures.** View 39 is kept and four views added, rather than view 39
+changed: it is the look's record of the shut door and the sign. The night
+room stands 8 east of where first asked, (6080, 1152), for the strip.
 
 **Corrections** (sentences elsewhere this makes untrue, 2026-11-24): in
 "Look: MAP20, Municipal", "The three changes of geometry", item 2: behind
