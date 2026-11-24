@@ -865,20 +865,21 @@ STAIRS = look("LB", "FE", "KE", 190, 448, STEEL)
 SH = (1728, 3456, 2304, 3904)
 PIER = (1824, 3856, 1952, 3936)
 room(SH, G, STAIRS, grid(SH, 2, 1, 220, 96), holes=[PIER], name="stairhall", obst=[PIER])
-for box in ((1792, 3904, 1824, 3936), (1952, 3904, 1984, 3936)):
-    m.sector(rect(*box), floor=G, **{k: v for k, v in STAIRS.items()})
+# The way up is west of the pier, 96 wide, from the hall's own west wall (the flight and its landing
+# are as wide: 1728..1984). Until 2026-11-24 the flight was 1792..1984 and the way two slots of 32
+# either side of the pier: a player is 32 wide, so only the test, set down on the axis, got through.
+m.sector(rect(1728, 3904, 1824, 3936), floor=G, **{k: v for k, v in STAIRS.items()})
 steel_door((2112, 3392), (2176, 3392), (0, 1), G, REG_TAG[2], "gallery", "stairhall", thick=64)
 far((1856, 3936), (1920, 3936), (0, -1), BLUE, G, None)                     # its front is the flight's first step
 frame((2112, 3904), (2176, 3904), (0, 1), 104, G, "stairhall")
-ajarmap.stairs(m, (1792, 3936), (1984, 3936), (0, 1), G, U, steps=16, depth=32, ceil=448, light=190,
+ajarmap.stairs(m, (1728, 3936), (1984, 3936), (0, 1), G, U, steps=16, depth=32, ceil=448, light=190,
                color=tint(STEEL), **dress(wall="LB", ftex="FE", ctex="KE"))
-W.area("flight", (1792, 3904, 1984, 4448), G, ramp=("y", 3936, G, 4448, U))
-W.node(1808, 3920, "the stair's foot, west", "stairhall", "flight")
-W.node(1968, 3920, "the stair's foot, east", "stairhall", "flight")
+W.area("flight", (1728, 3904, 1984, 4448), G, ramp=("y", 3936, G, 4448, U))
+W.node(1776, 3920, "the stair's foot", "stairhall", "flight")
 FARS[BLUE]["node"] = W.node(1888, 3968, "far side BLUE", "flight")
-TL = (1792, 4448, 1984, 4640)
+TL = (1728, 4448, 1984, 4640)
 room(TL, U, STAIRS, name="toplanding")
-joint((1792, 4448), (1984, 4448), "flight", "toplanding")
+joint((1728, 4448), (1984, 4448), "flight", "toplanding")
 # beside it, behind glass for its whole length: the hall with no stair, sealed; a gallery at 256 at
 # its far end, where the stair's head would be
 NSH = (2048, 3984, 2240, 4576)
@@ -897,7 +898,7 @@ plaque((1728, 3584), (1728, 3712), (-1, 0), "LB", "REGISTER 4 NO STAIR")
 UC = (1600, 4640, 4864, 4832)
 room(UC, U, look("CO", "FC", "KC", 176, U + 192, MINT), [((x, 4640, x + 64, 4832), dict(light=210)) for x in range(1728, 4864, 512)],
      name="upper")
-joint((1792, 4640), (1984, 4640), "toplanding", "upper")
+joint((1728, 4640), (1984, 4640), "toplanding", "upper")
 # the side room, sealed: 103 in the corridor's north wall; the room runs off to the right (east)
 frame((3968, 4832), (4032, 4832), (0, 1), 103, U, "upper")
 SR3 = (4064, 4848, 4736, 5120)
