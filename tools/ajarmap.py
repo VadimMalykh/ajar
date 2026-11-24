@@ -339,7 +339,7 @@ def way_round(m, x, y, colour, *, frame=HOME, n=WAY_OUT, floor=0):
 AMBUSH_T = 20030    # AjarAmbush: a monster that is not there yet
 
 
-def ambush(m, cause, kind, *spots, angle=0, after=0, near=0):
+def ambush(m, cause, kind, *spots, angle=0, after=0, near=0, skill=None):
     """Monsters of Doom editor number `kind` that come in a flash at `spots`
     when the player takes something: `cause` is a room key's number (1..4),
     or 10 plus the colour of a door, taken for the first time; or 20 plus the
@@ -355,10 +355,14 @@ def ambush(m, cause, kind, *spots, angle=0, after=0, near=0):
     three in four on 2. Keep the spots clear of walls and of each other;
     one whose place is taken waits until it is free. `after`: seconds they
     hold back once the thing is taken: a second wave, when the first looked
-    like all of it."""
+    like all of it. `skill`: the lowest difficulty they are there on,
+    instead of the thinning (MAP19's cyberdemon and arch-vile, 2026-11-24);
+    they still take their turns in the count, so that the thinning of the
+    ambushers after them is as it would be with thinned ones in their place."""
     for x, y in spots:
         i = m.ambushers = getattr(m, "ambushers", -1) + 1
-        m.thing(x, y, AMBUSH_T, angle=angle, args=(cause, kind, after, near), skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
+        m.thing(x, y, AMBUSH_T, angle=angle, args=(cause, kind, after, near),
+                skill=skill if skill is not None else 1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
 
 
 LINE_T = 20006      # AjarLine: the middle of the room a chain runs through

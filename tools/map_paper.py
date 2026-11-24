@@ -33,7 +33,7 @@ Places, south to north (x east, y north; about 8000 x 5600):
     gallery (121), the archive (the stack behind glass, 102; the reading
     corridor, GREEN's far side), the canteen and kitchen, the link hall (105,
     106; the sealed gallery behind 106; the east strongroom, VIOLET), offices,
-    the east lane (open) to the east yard (112, GREEN hung)
+    the east lane (open) to the east yard (112, GREEN hung; four stone piers)
   the stair hall (BLUE's far side, 104; the hall with no stair behind glass)
     and the upper floor (the side room, 103; the drawing office, TEAL; the
     hall with no size; 122; the balcony over the pond court)
@@ -864,7 +864,14 @@ gap((3712, 3520), (3712, 3584), (1, 0), G, "LB", "PU", "linkvest", "lane")
 for x in (4224, 4864, 5504, 5984):                                          # windows into the sealed gallery
     pane_x(x, x + 128, 3392, 3456, sill=48, top=208)
 EY = (6912, 2752, 7872, 3712)
-room(EY, G, sky("LB", "FC", 224, 320), [((7104, 2944, 7680, 3520), dict(ftex=T("FL") if LOOK else "AJFLOOR"))], name="eastyard")
+# four stone piers, 64 square and 96 high, at the corners of the yard's inner square: cover from VIOLET's
+# ambush (its cyberdemon's head shows over them; 2026-11-24). Off the axis between the strongroom's door
+# and 112, 192 from every wall; obstacles of the walk, so spot() keeps things off them
+EY_IN_SQ = (7104, 2944, 7680, 3520)
+PIER = dict(up=96, **dress(side="LB", ftex="FP"))
+EY_PIERS = [(x, y, x + 64, y + 64) for x in (EY_IN_SQ[0], EY_IN_SQ[2] - 64) for y in (EY_IN_SQ[1], EY_IN_SQ[3] - 64)]
+room(EY, G, sky("LB", "FC", 224, 320), [(EY_IN_SQ, dict(ftex=T("FL") if LOOK else "AJFLOOR"))] + [(p, PIER) for p in EY_PIERS],
+     name="eastyard")
 steel_door((6912, 3200), (6912, 3264), (-1, 0), G, REG_TAG[5], "eastyard", "strongroom5", thick=64)
 pane_y(3296, 3360, 6848, 6912, sill=32, top=128)
 frame((7872, 3200), (7872, 3264), (1, 0), 112, G, "eastyard")
@@ -1244,19 +1251,25 @@ AVOID = [n for n in W.nodes if any(w in n["label"] for w in ("frame", "far side"
                                                              "brass", "hole"))]
 
 
-def spot(area, r=20, k0=0):
+def spot(area, r=20, k0=0, within=None, gap=40):
     """A free place for a thing of radius r in `area`: 48 off its walls,
-    clear of its furniture, of every other thing, of the doorways and
-    frames' fronts, 128 or more from any odd face or gate, not near the
-    start (a Halton sequence over the area: the same every build)."""
+    clear of its furniture, of every other thing (by `gap` between them), of
+    the doorways and frames' fronts, 128 or more from any odd face or gate,
+    not near the start (a Halton sequence over the area: the same every
+    build). `within`: only in that part of the area (a box). A smaller `gap`
+    still keeps two bodies' square boxes apart while it is over 0.42 of
+    their radii's sum (20 for two of radius 20): VIOLET's wave in the
+    narrow lane needs it (2026-11-24; with 40 only 2 of its 8 had room)."""
     a = W.areas[area]
     b, obs = a["box"], a["obst"]
+    if within:
+        b = (max(b[0], within[0]), max(b[1], within[1]), min(b[2], within[2]), min(b[3], within[3]))
     for k in range(k0 + 1, k0 + 5000):
         x = round((b[0] + 40 + r + halton(k, 2) * (b[2] - b[0] - 80 - 2 * r)) / 8) * 8
         y = round((b[1] + 40 + r + halton(k, 3) * (b[3] - b[1] - 80 - 2 * r)) / 8) * 8
         if any(o[0] - r - 24 < x < o[2] + r + 24 and o[1] - r - 24 < y < o[3] + r + 24 for o in obs):
             continue
-        if any(math.hypot(x - tx, y - ty) < r + tr + 40 for tx, ty, tr in TAKEN):
+        if any(math.hypot(x - tx, y - ty) < r + tr + gap for tx, ty, tr in TAKEN):
             continue
         if any(math.hypot(x - n["x"], y - n["y"]) < 96 for n in AVOID):
             continue
@@ -1276,9 +1289,22 @@ def seg_dist(p, a, b):
     return math.hypot(a[0] + t * dx - p[0], a[1] + t * dy - p[1])
 
 
-def scatter(area, kind, n, r=16):
+def scatter(area, kind, n, r=16, within=None):
     for _ in range(n):
-        item(kind, *spot(area, r))
+        item(kind, *spot(area, r, within=within))
+
+
+def hold(area, x, y, r):
+    """A fixed place for a thing of radius r in `area`, kept from spot() from
+    now on: it must be as clear as spot() would have it."""
+    b, obs = W.areas[area]["box"], W.areas[area]["obst"]
+    assert b[0] + 48 + r <= x <= b[2] - 48 - r and b[1] + 48 + r <= y <= b[3] - 48 - r, (area, x, y)
+    assert not any(o[0] - r - 24 < x < o[2] + r + 24 and o[1] - r - 24 < y < o[3] + r + 24 for o in obs), (area, x, y)
+    assert not any(math.hypot(x - tx, y - ty) < r + tr + 40 for tx, ty, tr in TAKEN), (area, x, y)
+    assert not any(math.hypot(x - n["x"], y - n["y"]) < 96 for n in AVOID), (area, x, y)
+    assert not any(seg_dist((x, y), a_, b_) < 128 + r for a_, b_ in ODD_LINES), (area, x, y)
+    TAKEN.append((x, y, r))
+    return x, y
 
 
 item(2001, 896, 448)                                                        # shotgun: the pass hall, ahead of the start
@@ -1298,6 +1324,17 @@ item(2018, 7392, 3104)                                                      # gr
 item(2019, 4320, 1408)                                                      # blue armour: the garden, by the gazebo
 item(8, 1408, 3600)                                                         # a backpack: the first office
 item(2013, 6848, 1440)                                                      # a soul sphere: the tower's strongroom (register 6)
+# the east strongroom, against VIOLET's ambush (2026-11-24): along its west wall a rocket launcher between two boxes
+# of rockets, along its north wall a cell pack, a box of shells and a soul sphere (VIOLET at 6656, 3264; the door
+# in the east wall at 3200..3264)
+for kind, x, y in ((2046, 6512, 3184), (2003, 6512, 3264), (2046, 6512, 3344), (17, 6592, 3344), (2049, 6672, 3344),
+                   (2013, 6752, 3344)):
+    item(kind, x, y)
+# VIOLET's ambush's fixed places (below), kept from everything else: the cyberdemon in the yard's middle on the
+# strongroom door's axis, seen through the doorway; the arch-vile in the yard's north-east corner
+CYBER, VILE = 16, 64
+CYBER_AT = hold("eastyard", 7456, 3232, 40)
+VILE_AT = hold("eastyard", 7744, 3584, 20)
 AMMO = [("passhall", 2011, 2), ("forecourt", 2008, 3), ("forecourt", 2007, 2), ("lobby", 2007, 2),
         ("gallery", 2049, 1), ("gallery", 2048, 1), ("gallery", 2012, 1), ("lobby", 2008, 2), 
         ("canteen", 2049, 1), ("canteen", 2012, 1), ("kitchen", 2048, 1), ("kitchen", 2011, 2), ("officew1", 2049, 1),
@@ -1349,16 +1386,25 @@ COMPANY = {
               + [REVENANT] * 3 + [CHAINGUNNER] * 2 + [MANCUBUS, BARON],
     "toweryard": [IMP] * 4 + [SERGEANT] * 2 + [CACO, REVENANT],
 }
-RADIUS = {DEMON: 30, SPECTRE: 30, CACO: 31, MANCUBUS: 48, KNIGHT: 24, BARON: 24}
+RADIUS = {DEMON: 30, SPECTRE: 30, CACO: 31, MANCUBUS: 48, KNIGHT: 24, BARON: 24, CYBER: 40}
 for area, kinds in COMPANY.items():
     a = W.areas[area]["box"]
     for kind in kinds:
         x, y = spot(area, RADIUS.get(kind, 20))
         m.thing(x, y, kind, angle=round(math.degrees(math.atan2((a[1] + a[3]) / 2 - y, (a[0] + a[2]) / 2 - x)) / 45) * 45 % 360)
 
+# --- supplies for VIOLET's ambush (2026-11-24; the strongroom's are above): scattered in the yard and in the
+# lane's east end, where its second wave comes
+LANE_EAST = (6080, EL[1], 6784, EL[3])
+for kind, n in ((2046, 1), (17, 1), (2049, 1), (2012, 2)):
+    scatter("eastyard", kind, n)
+for kind in (2049, 2048, 2012):
+    scatter("lane", kind, 1, within=LANE_EAST)
+
+
 # --- ambushes: on the first take of each door, and when a register is signed (cause 50 + its number) --
-def ambush(cause, kind, area, n, **k):
-    ajarmap.ambush(m, cause, kind, *[spot(area, RADIUS.get(kind, 20)) for _ in range(n)], **k)
+def ambush(cause, kind, area, n, within=None, gap=40, **k):
+    ajarmap.ambush(m, cause, kind, *[spot(area, RADIUS.get(kind, 20), within=within, gap=gap) for _ in range(n)], **k)
 
 
 ambush(10 + RED, ZOMBIE, "forecourt", 3, angle=270)                       # RED, at the start: the forecourt wakes
@@ -1369,8 +1415,19 @@ ambush(10 + BLUE, KNIGHT, "stores", 2, angle=0)                             # BL
 ambush(10 + BLUE, REVENANT, "boiler", 1, angle=180, after=3)
 ambush(10 + YELLOW, CACO, "pond", 2, angle=270)                             # YELLOW: the pond court
 ambush(10 + YELLOW, SERGEANT, "pond", 3, angle=270, after=2)
-ambush(10 + VIOLET, KNIGHT, "eastyard", 2, angle=180)                       # VIOLET: the east yard
-ambush(10 + VIOLET, IMP, "lane", 3, angle=0, after=3)
+# VIOLET: the east yard and the lane's east end, 21 strong (Vadim, 2026-11-24: "bigger ambush ... arch-vile and
+# cyberdemon"). The cyberdemon (80 wide: no way out of the yard is) is seen through the strongroom's doorway;
+# it and the arch-vile from "Short stay" up, the rest thinned as ambushers are. 21 in all keeps the thinning of
+# the ambushers after these as it was with 5 (ajarmap.ambush: every one takes its turn in the count)
+ajarmap.ambush(m, 10 + VIOLET, CYBER, CYBER_AT, angle=180, skill=2)
+ambush(10 + VIOLET, KNIGHT, "eastyard", 2, angle=180)
+ambush(10 + VIOLET, IMP, "eastyard", 4, angle=180)
+ambush(10 + VIOLET, IMP, "lane", 4, within=LANE_EAST, gap=20, angle=0, after=3)
+ambush(10 + VIOLET, CHAINGUNNER, "lane", 2, within=LANE_EAST, gap=20, angle=0, after=3)
+ambush(10 + VIOLET, REVENANT, "lane", 2, within=LANE_EAST, gap=20, angle=0, after=3)
+ambush(10 + VIOLET, DEMON, "eastyard", 3, angle=180, after=5)
+ambush(10 + VIOLET, CACO, "eastyard", 2, angle=180, after=5)
+ajarmap.ambush(m, 10 + VIOLET, VILE, VILE_AT, angle=225, after=9, skill=2)
 ambush(10 + PINK, REVENANT, "toweryard", 2, angle=180)                      # PINK: the tower yard, the garden
 ambush(10 + PINK, MANCUBUS, "garden", 1, angle=0, after=4)
 ambush(10 + TEAL, SERGEANT, "upper", 3, angle=180)                          # TEAL: the upper corridor, the drawing office
