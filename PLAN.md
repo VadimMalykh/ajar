@@ -13176,6 +13176,33 @@ So Carbon Copy plays on no map now (the lab still has it), and Filing Under
 Fire only on MAP09. Left Luggage, Between Floors and Night Bell (14, 16, 17)
 have no map; Vadim has not said what he thinks of them.
 
+### MAP19: nobody got up the grand stair (fixed 2026-11-24)
+
+**Vadim**, playing, register 2 signed: "I cannot go upstairs, it's too narrow
+for me to pass."
+
+- **What was wrong.** BLUE's far side stands in a pier at the stair's foot.
+  The flight was 192 wide (1792..1984), the pier 128, so the way up was two
+  slots of 32 either side of it. A player is 32 wide: only a body set down
+  exactly on a slot's axis passes, which is what the test did (it is posed,
+  and it came onto the flight through BLUE, never on foot from the hall).
+  So the level stopped at register 2 for a player.
+- **What changed** (`tools/map_paper.py`, the stair hall): the flight and
+  the top landing start at the hall's own west wall (1728..1984, 256 wide);
+  the way up is west of the pier, 96 wide; the east slot is closed (the pier
+  joins the east wall). BLUE's far side, 104 and the glass to the hall with
+  no stair are where they were, so the measure's answers are the same.
+- **The test** (`src/zscript/map19.zs`, MODE 1): after register 2 it walks up
+  the stair from the hall and down again, off the way's axis (x 1756 up,
+  1796 down): `stairHall_upTheGrandStairOnFoot` and three more.
+- **Checks.** `MAP=MAP19 MODE=1` 83 checks (79 + 4), `MODE=2` 34, `MODE=3`
+  51, none failed; `MODE=4` its 17 views. The built map looked through for
+  other openings under 48 wide that a player would have to pass: none (what
+  is left are edges of lights and sills, and two in the sealed gallery).
+- **A lesson for the generator.** "One piece on foot" is checked on nodes and
+  areas, not on widths. A way meant for the player is 48 wide at least (a
+  squeeze), better 64; a test that must prove a way walks it off its axis.
+
 ## MAP33: after Vadim's first play (2026-11-24): natural yards, a longer part 3
 
 Vadim, after his first play of the first playable version:

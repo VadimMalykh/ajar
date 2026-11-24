@@ -408,6 +408,14 @@ class PaperTest : EventHandler
 		if (Op() && WalkTo(mo, "reg2_walkToTheAnswer", 2592, 2912)) Next();
 		if (Op() && WaitSigned("reg2_signedByGREEN", 2)) Next();
 		if (Op() && DoorUp("reg2_stairHallOpen", 1902, 1)) Next();
+		// up the grand stair on foot, past BLUE's pier and off the way's axis (2026-11-24: the way was two
+		// slots 32 wide, which nobody but a test set down in the middle of one could pass)
+		if (Op()) { PoseF(mo, 1756, 3760, 90); Next(); }
+		if (Op() && WalkTo(mo, "stairHall_upTheGrandStairOnFoot", 1756, 4544)) Next();
+		if (Op()) { Check("stairHall_onTheTopLandingOnFoot", abs(mo.pos.z - 256) < 0.001, PStr(mo.pos)); Next(); }
+		if (Op()) { PoseF(mo, 1796, 4544, 270); Next(); }
+		if (Op() && WalkTo(mo, "stairHall_downTheGrandStairOnFoot", 1796, 3760)) Next();
+		if (Op()) { Check("stairHall_backInTheHallOnFoot", abs(mo.pos.z) < 0.001, PStr(mo.pos)); Next(); }
 		// the upper floor: RED in 103, the double into the side room
 		if (Op() && DeskAt(mo, "desk2_resetsAgain", 2)) Next();
 		if (Op() && TakeDoor(mo, red)) Next();
