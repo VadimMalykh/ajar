@@ -522,10 +522,15 @@ class PaperTest : EventHandler
 		if (Op() && TakeDoor(mo, pink)) Next();
 		if (Op() && Stand(mo, 6)) Next();
 		if (Op() && HangIn(mo, "pinkHungIn191", 191)) Next();
-		if (Op() && Stand(mo, 240)) Next();
+		// VIOLET's ambush (2026-11-24): its last wave, the arch-vile, holds back 9 s, so up to 20 + 25 + 315 = 360
+		// tics after VIOLET was first carried; every one of them must have come (the cyberdemon and the arch-vile
+		// are there from "Short stay" up)
+		if (Op() && Stand(mo, 400)) Next();
 		if (Op())
 		{
 			Company("11 12 13 14 15 16 18 19 51 55 56 57", "52 53 54");
+			int left15 = AmbushLeft(15);
+			Check("company15_all", ambushAt[15] > 0 && left15 == 0, String.Format("%d of %d came, %d left", ambushAt[15] - left15, ambushAt[15], left15));
 			Check("allSeven", Reg(1).signed && Reg(2).signed && Reg(3).signed && Reg(4).signed && Reg(5).signed && Reg(6).signed && Reg(7).signed);
 			Summary();
 			Next();
