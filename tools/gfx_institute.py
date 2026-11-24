@@ -21,6 +21,7 @@ Furniture, from the side (aligned unless marked):
   US 48 the cloakroom's counter     B4, B6, B9  a bench of the lab, 48, 64, 96
   TS 32 a table     GF 128 the gallery's front: the servery
   SK 256 a stack of the archive     TK 64 a tank     PS 64 a platform
+  SR 64 a step's or a low dais's front, cut off at any height (plain, not aligned)
   MC 128x256 the machine (one face, not aligned)
 Pictures (one to a wall piece, on the room's wall, not aligned):
   ST 128 the street doors    MO 256 the lobby's long wall    NB 128 clock, notices
@@ -462,6 +463,19 @@ def servery(n):
         rnd = random.Random(1333)
         drips(im, rnd, 2, (90, 70, 44), 84, 34)
     im.noise(2, 1330 + n)
+    return im
+
+
+def riser(n):
+    """The front of a step or of a low dais, up to 64 high and good cut off
+    at any height (a step's side is drawn from its top down): a metal nosing,
+    under it the gallery's floor (GT), darker. Not the gallery's front: on
+    MAP19's dais that showed the top of a kitchen hatch on every step."""
+    c = shade({1: shade(OAK, 1.15), 2: (150, 158, 150), 3: LINO}[n], 0.7)
+    im = Img(64, 64, c)
+    im.rect(0, 0, 64, 3, METAL[n])
+    im.rect(0, 3, 64, 4, shade(c, 0.5))
+    im.noise(3, 1345 + n)
     return im
 
 
@@ -1340,6 +1354,7 @@ def make(out, signs={}, faces={}, looks=LOOKS):
         put("textures", name("PS", n), cabinet(n, 64, "platform"))
         put("textures", name("TS", n), table(n))
         put("textures", name("GF", n), servery(n))
+        put("textures", name("SR", n), riser(n))
         put("textures", name("SK", n), stack(n))
         put("textures", name("TK", n), tank(n))
         put("textures", name("MC", n), machine(n))

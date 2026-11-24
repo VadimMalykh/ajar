@@ -656,9 +656,9 @@ OPEN = sky("LB", "FL", 224, 320)
 DUTY_Z = 64
 DAIS = (704, 1312, 784, 1664)
 room(FC, G, OPEN, [((768, 896, 1216, 1984), dict(ftex=T("FC") if LOOK else "AJFLOOR")),
-                   (DAIS, dict(floor=DUTY_Z, **dress(side="GF", ftex="GT"))),
-                   ((784, 1312, 816, 1664), dict(floor=40, **dress(side="GF", ftex="GT"))),
-                   ((816, 1312, 848, 1664), dict(floor=16, **dress(side="GF", ftex="GT")))],
+                   (DAIS, dict(floor=DUTY_Z, **dress(side="SR", ftex="GT"))),
+                   ((784, 1312, 816, 1664), dict(floor=40, **dress(side="SR", ftex="GT"))),
+                   ((816, 1312, 848, 1664), dict(floor=16, **dress(side="SR", ftex="GT")))],
      name="forecourt", obst=[(704, 1312, 848, 1664)])
 W.area("dais", DAIS, DUTY_Z)
 W.link(W.node(800, 1456, "the dais's steps", "dais"), W.node(864, 1456, "the dais's steps", "forecourt"), 64)
