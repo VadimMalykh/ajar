@@ -14327,3 +14327,135 @@ secret way; MODE=4 its 41 views, the fountain's two checks pass (playing:
 FWATER1 and the jet; dry again: AJVFK); MAP=WATER MODE=1 10. MODE=7 was not
 run again on the joined tree: each task ran it alone, and neither's part
 in the bath is touched by the other.
+
+## MAP19: VIOLET's ambush, bigger (built 2026-11-24)
+
+> Vadim, 2026-11-24, playing MAP19: "after I got violet door can we make bigger ambush? With lots of monsters, arch-vile and cyberdemon?"
+
+Decided by Claude (Fable) the same day; built by Claude on Opus in the task
+`map19-violet-ambush`. Nothing of the level's geometry moved but four piers
+in the east yard; no frame, door, register or way changed.
+
+**What was decided.** VIOLET stands in the east strongroom (`strongroom5`);
+its steel door opens on the east yard, whose ways out (the turnstile to the
+lane, the squeeze in from it, frame 112) are all 64 or less. Taking VIOLET
+the first time (cause 15) used to bring two hell knights to the yard and
+three imps to the lane. Now 21:
+
+| when | where | what |
+|---|---|---|
+| at once | the yard's middle, on the strongroom door's axis: (7456, 3232), facing west | 1 cyberdemon |
+| at once | the yard, by `spot()` | 2 hell knights, 4 imps |
+| `after=3` | the lane's east end only (x 6080..6784), facing east | 4 imps, 2 chaingunners, 2 revenants |
+| `after=5` | the yard | 3 demons, 2 cacodemons |
+| `after=9` | the yard's north-east corner: (7744, 3584), facing south-west | 1 arch-vile |
+
+The cyberdemon is seen through the doorway the moment the door is taken. It
+is 80 wide and cannot leave the yard: the yard is its arena, and the
+turnstile is the way to run with the door. The cyberdemon and the arch-vile
+are there from "Short stay" (2) up, not on "Just visiting"; the rest are
+thinned as ambushers always are.
+
+*Cover.* An arch-vile in a bare 960 x 960 yard is damage nobody can avoid,
+so the yard has four stone piers, 64 x 64 and 96 high (not to the sky: the
+cyberdemon's head shows over them), at the corners of its inner square
+(7104, 2944, 7680, 3520): (7104, 2944, 7168, 3008), (7616, 2944, 7680,
+3008), (7104, 3456, 7168, 3520), (7616, 3456, 7680, 3520). They are
+symmetric about the yard's middle, clear of the axis y 3200..3264 between
+the strongroom's door and 112, and 192 from every wall.
+
+*Supplies.* In the strongroom, along its west wall a rocket launcher between
+two boxes of rockets, along its north wall a cell pack, a box of shells and
+a soul sphere. In the yard, scattered: a box of rockets, a cell pack, a box
+of shells, two medikits (its box of shells, box of bullets and green armour
+stay). In the lane's east end, scattered: a box of shells, a box of bullets,
+a medikit.
+
+**What is built** (`tools/map_paper.py`, `tools/ajarmap.py`,
+`src/zscript/map19.zs`):
+- `ajarmap.ambush()` takes `skill=`: when given, it is the things' lowest
+  difficulty instead of the thinning. They still take their turn in the
+  count `m.ambushers`, so 21 ambushers where there were 5 (16 more, a
+  multiple of four) leave every ambusher after them on the difficulty it had.
+  Without `skill=` nothing changes: every other map's wad is byte for byte
+  main's.
+- The piers are features of the yard's `room()`: `PIER = dict(up=96,
+  **dress(side="LB", ftex="FP"))`, the yard's own wall on their sides and
+  the lane's paving on top in the look (the yard's wall and floor without
+  one), listed after the inner square, which fit() cuts around them. The
+  walk takes them as obstacles (`room()`), so `spot()` keeps things off them.
+- `spot()` takes `within` (only in that part of the area) and `gap` (between
+  things, 40 as before). `hold(area, x, y, r)` puts a fixed place in `TAKEN`
+  and asserts it is as clear as `spot()` would have it (walls, obstacles,
+  things, the nodes `spot()` avoids, odd faces). The two fixed places are
+  held before the level's scattered ammunition, so nothing is put on them.
+  `CYBER, VILE = 16, 64`; `RADIUS[CYBER] = 40`.
+- The strongroom's six things are fixed: rockets (6512, 3184), the rocket
+  launcher (6512, 3264), rockets (6512, 3344), the cell pack (6592, 3344),
+  shells (6672, 3344), the soul sphere (6752, 3344); the nearest to VIOLET
+  (6656, 3264) is the shells, 81 away. The yard's and the lane's are
+  scattered after the placed monsters and before the ambushes. Of what was
+  in the yard before, only register 5's hell knight (cause 55) moved, from
+  (7552, 3216) to (7472, 3336); the placed monsters, the box of shells, the
+  box of bullets and the green armour kept their places.
+- As built, cause 15: the cyberdemon (7456, 3232) and the arch-vile (7744,
+  3584) where decided; the hell knights (7416, 3584), (7208, 2880); the
+  yard's imps (7632, 3152), (7520, 2968), (7312, 3248), (7048, 3064); the
+  lane's imps (6504, 3568), (6648, 3552), (6344, 3584), (6152, 3576), its
+  chaingunners (6584, 3584), (6712, 3520), its revenants (6344, 3520),
+  (6704, 3584); the demons (7264, 3608), (7672, 2832), (7568, 3376), the
+  cacodemons (7368, 2920), (7408, 3016). On "Just visiting" 10 of the 19
+  thinned ones come, on "Short stay" 14 of them and the two big ones.
+- The test (MODE=1): after VIOLET and PINK are hung in the brass frames the
+  run stands 400 tics (was 240): the arch-vile holds back up to 20 + 25 +
+  35 x 9 = 360 tics after VIOLET is first carried. Then, beside the
+  `Company(...)` line, `company15_all`: no ambusher of cause 15 left.
+
+**Departure.** In the lane's east end (192 wide, x 6080..6784), with
+`spot()`'s 40 between things, only 2 of the second wave's 8 had room (the
+build failed: "no room for things in ['lane']"). That wave is placed with
+`gap=20`: two bodies of radius 20 then stand 60 or more apart, so their
+square boxes never overlap (60 > 40 x 1.42); in the game an ambusher whose
+place is taken would wait anyway. Its where, what and when are as decided.
+
+**The budget** (`tools/budget.py map_paper`), before: skill 3 264 monsters,
+hp 33610, x2.03; after:
+- `skill3: 280 monsters, hp 40600; ammo dmg 79350 (x1.95) sh568 bu815 ro90
+  ce1020; heal 940 armor 300; SG CG SSG RL PL BACKPACK RL`
+- `skill1: 143 monsters, hp 19310; ammo dmg 72400 (x3.75) sh488 bu680 ro90
+  ce1020; heal 940 armor 300; SG CG SSG RL PL BACKPACK RL`
+
+x1.95 is over the x1.90 asked, so nothing was added to the yard's scatter.
+
+**The checks** (on the full `./build.sh`):
+- The build: no problem. MAP19's measure as before but for: 895 sectors (889),
+  376 nodes (360: the piers' corners), and two crossings in a row on a plate's
+  middle register 1 1812 (1815), 5 1742 (1745), 7 2845 (2846), 8 4807 (4815),
+  9 3210 (3214): places in the yard that are pier now. Answers of one
+  crossing, accidental answers, the laps, the stages and the courts the same.
+- mapcheck on `map_paper`: 895 sectors, 501 things, 207 monsters, 2 secret
+  sectors, 0 problems (nothing about the piers). itemcheck and thingcheck:
+  0 problems each. (mapcheck's picture, `mapcheck.py map_paper out.png`,
+  stops with a TypeError in `gfx.rect` on this map: not this change's.)
+- `MAP=MAP19 MODE=1`: 89 checks (88 + `company15_all`), none failed,
+  `levelExited`. The smoke run passes no skill (GZDoom's default, "Resident"; the
+  five of cause 15 that are there from 3 up came, so it is 3 or more), and
+  all 21 ambushers of cause 15 came, the log has
+  `ambusher=Cyberdemon cause=15` and `ambusher=Archvile cause=15`, and
+  `company15_all` says "21 of 21 came, 0 left".
+- `MODE=2`: 60 checks, none failed. `MODE=3`: 52 checks, none failed.
+- `MODE=4`: the views ran (19 shots, `viewsDone`). View 12, the east yard from
+  (7000, 2850) looking north-east, shows three of the piers whole and the
+  fourth behind the nearest: they stand on the inner square's brown floor at
+  its corners, square and upright, their sides the pale plaster of the
+  yard's wall (the top 96 of LB: its green dado and skirt are not on them),
+  their tops not seen from eye height. No view looks at the yard from the
+  strongroom's door.
+- The package against main's (`e969ec7`): only `maps/MAP19.wad` and
+  `zscript/map19.zs` differ (2979 files each).
+
+**Not tested.** The fight itself is not played: the test removes every
+ambusher as it comes, so nothing says how hard the yard is, whether the
+piers are cover enough from the arch-vile, or how the cyberdemon's rockets
+and the lane's wave meet a player running out by the turnstile. Not played
+by hand.
