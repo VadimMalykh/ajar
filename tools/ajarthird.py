@@ -15,6 +15,7 @@ WIND_T = 20165      # AjarThirdWind: a plate on a wall that winds the clock on
 LAST_T = 20166      # AjarThirdLast: the last hall, where every go fights the same fight (one to a map)
 GUARD_T = 20167     # AjarThirdGuard: a monster of the last hall, there from the alarm
 LOCK_T = 20168      # AjarThirdLock: a window hall's lobby, two shutters that lock the player in with its fight
+FALLEN_T = 20169    # AjarThirdFallen: a monster of a later part, seen dead before its go
 FIGHT = 9           # the fight number of the AjarZone over the whole map (the paradox's room)
 
 
@@ -72,6 +73,17 @@ def post(m, x, y, h, kind, angle=0):
     monster stands there idle. Put it where it cannot leave (a pedestal 64
     high, a pit) or give it a monster that leaves no body."""
     m.thing(x, y, POST_T, angle=angle, args=(h, kind))
+
+
+def fallen(m, x, y, part, kind, angle=0, **kw):
+    """An ordinary monster of Doom editor number `kind` in `part`, at x, y,
+    facing `angle`, that an earlier go sees before its own go comes there
+    (through glass): in every go before `part`'s a body lies there (if it
+    leaves one), as that go will leave it; at the start of `part`'s go it
+    stands there alive, with no target and not in ambush; later goes find what
+    that go left. Nothing is enforced (no hall, no win, no watch). `kw` goes
+    to Map.thing (`skill=`)."""
+    m.thing(x, y, FALLEN_T, angle=angle, args=(part, kind), **kw)
 
 
 def watch(m, x, y, tag, h, go=1):

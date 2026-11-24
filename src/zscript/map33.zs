@@ -19,6 +19,10 @@
 //     rockets with the ammunition they spend taken, so that the record sees
 //     them); in go 3 the player does not fire. The wind plate told of once in
 //     go 2 and not in go 1; measures the halls' cost and the records' sizes.
+//     The gallery (AjarThirdFallen, part 2's corridor seen from part 1): in go
+//     1 a body at each fallen thing and nothing living in it (at the start and
+//     in the coal yard); at go 2's start each one's monster alive in its place
+//     and no body; at go 3's start nothing spawned again.
 //  2  go 2 too slow (it stays in box 2): the gantry paradox when the first
 //     self comes onto it; then USE (smoke_MAP33_2.cfg): go 2's start loaded.
 //  3  as 1, with views: places where a player would stand, each held 70 tics
@@ -77,6 +81,10 @@ extend class AjarTimeHandler
 	Vector2 m3Was;
 	int m3KillBy[24];           // [8 * (go - 1) + 4 * (walks or flies) + killer]: 0 the player, 1 self 1, 2 self 2, 3 other
 	Array<int> m3Counted;
+	// the gallery (AjarThirdFallen): checked from the coal yard; the monsters at go 2's start, and whether each was in it
+	bool m3GalYard;
+	Array<Actor> m3GoTwoMon;
+	Array<bool> m3GoTwoIn;
 
 	// --- the route ------------------------------------------------------------------
 	// Routes as pairs of x, y; each ends at the first -1, -1 (routes are numbered in order).
@@ -325,6 +333,63 @@ extend class AjarTimeHandler
 			if (!m || !m.bIsMonster || m.health <= 0 || m.target || !m.bAmbush) return false;
 		}
 		return postIs.Size() > 0;
+	}
+
+	// --- the gallery: part 2's corridor, seen from part 1 as go 2 leaves it (third.zs, AjarThirdFallen) ---
+	static bool InGallery33(Vector2 p) { return p.x >= 896 && p.x <= 3840 && p.y >= 3520 && p.y <= 3696; }
+
+	// The monsters in the gallery's box (`living`: only those alive).
+	int GalleryMonsters33(bool living)
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bIsMonster && (!living || a.health > 0) && InGallery33(a.pos.xy)) n++;
+		return n;
+	}
+
+	// The fallen things with a body (an AjarFigure) lying within 8 of them.
+	int FallenFigures33()
+	{
+		int n = 0;
+		for (int i = 0; i < fallenAt.Size(); i++)
+		{
+			let it = ThinkerIterator.Create("AjarFigure");
+			Actor f;
+			bool got = false;
+			while (!got && (f = Actor(it.Next()))) got = (f.pos.xy - fallenAt[i].pos.xy).Length() < 8;
+			if (got) n++;
+		}
+		return n;
+	}
+
+	int FallenWant33()
+	{
+		int n = 0;
+		for (int i = 0; i < fallenAt.Size(); i++) if (LeavesBody(AjarHandler.AmbushClass(fallenAt[i].args[1]))) n++;
+		return n;
+	}
+
+	// The fallen things whose monster stands at them alive, of the right class.
+	int FallenAlive33()
+	{
+		int n = 0;
+		for (int i = 0; i < fallenAt.Size(); i++)
+		{
+			Actor a = fallenIs[i];
+			class<Actor> c = Actor.GetReplacement(AjarHandler.AmbushClass(fallenAt[i].args[1]));
+			if (a && a.bIsMonster && a.health > 0 && a.GetClass() == c && (a.pos.xy - fallenAt[i].pos.xy).Length() < 1 && !a.target) n++;
+		}
+		return n;
+	}
+
+	// go 1: a body at each fallen thing (every one of the gallery's leaves one), nothing living in the gallery
+	void GalleryGoOne33(string when)
+	{
+		int figs = FallenFigures33(), want = FallenWant33(), living = GalleryMonsters33(true);
+		Console.Printf("AJARTEST info the gallery %s (go 1): %d fallen things, %d leave a body, %d bodies there; %d monsters living in it",
+			when, fallenAt.Size(), want, figs, living);
+		Check("galleryDead" .. when, fallenAt.Size() >= 13 && want == fallenAt.Size() && figs == want && !living);
 	}
 
 	// --- the lobbies (third.zs, AjarThirdLock) -----------------------------------------------
@@ -597,7 +662,10 @@ extend class AjarTimeHandler
 			for (int k = 0; k < locks.Size(); k++) if (!Open3(locks[k].args[1]) || !Shut3(locks[k].args[2])) lobbies = false;
 			Check("lobbiesAtTheStart", lobbies && locks.Size() == 3);
 			Check("workshopWayOnOpenBeforeItsGo", Open3(3382) && Shut3(3380) && Shut3(3381));
+			GalleryGoOne33("AtTheStart");
 		}
+		// the gallery again, from the coal yard (the script in it: its fight begins)
+		if (!m3GalYard && m3Step >= 1 && HallAt(mo.pos.xy) == yard) { m3GalYard = true; GalleryGoOne33("FromTheYard"); }
 		if (windSays) m3WindBad = true;         // (the wind plate is not told of in go 1)
 		// the gate: shut while anything lives in the yard
 		if (o > 2 && wonTic[yard] < 0)
@@ -644,14 +712,21 @@ extend class AjarTimeHandler
 			m3Step = 3;
 			View33(mo, "the coal yard after its fight: the heaps, the bowed bunker wall, the west bank", 1800, 3800, 160, 2);
 		}
-		if (m3Step == 3 && Walk33(mo, 1)) m3Step = 21;
+		if (m3Step == 3 && m3Shots && m3Hold <= 0 && Once33(14))
+			View33(mo, "the gallery through the coal yard's east window (go 1): its monsters dead, as go 2 leaves them", 1500, 3740, 345, 4);
+		else if (m3Step == 3 && Walk33(mo, 1)) m3Step = 21;
 		if (m3Step == 21 && Lobby33(mo, 4, (1890, 4416), (2008, 4416), 0, (2110, 4416), "the boiler house")) m3Step = 22;
 		if (m3Step == 22 && Walk33(mo, 23))
 		{
 			m3Step = 4; m3From = o;
 			View33(mo, "the boiler house: the boilers, the catwalk", 2120, 3760, 45, -4);
 		}
-		if (m3Step == 4 && Fight33(mo, boil, true)) { m3Step = 5; Console.Printf("AJARTEST info the boiler house's fight: %d to %d", m3From, o); }
+		if (m3Step == 4 && Fight33(mo, boil, true))
+		{
+			m3Step = 5;
+			Console.Printf("AJARTEST info the boiler house's fight: %d to %d", m3From, o);
+			View33(mo, "the gallery through the boiler house's window (go 1): its monsters dead, as go 2 leaves them", 2150, 3740, 345, 4);
+		}
 		if (m3Step == 5)
 		{
 			if (wonTic[boil] < 0) return;
@@ -778,6 +853,15 @@ extend class AjarTimeHandler
 			Check("yardHidden", HallThings(yard, true) == 0 && HallThings(yard, false) > 0 && HallPuppets(yard) > 0);
 			Check("blueAsAtTheStart", !Door32(2).frame && !Door32(2).carried);
 			Check("hallEmptyAgain", LastLoose() == 0 && LastLiving() == 0 && lastGate && lastGate.IsShut() && takes.Size() == 2);
+			// the gallery: each fallen thing's monster alive at it, no body left; noted for go 3
+			int alive = FallenAlive33(), figs = FallenFigures33(), living = GalleryMonsters33(true);
+			Console.Printf("AJARTEST info the gallery at go 2's start: %d fallen things, %d monsters alive at them, %d bodies there; %d monsters living in it",
+				fallenAt.Size(), alive, figs, living);
+			Check("galleryAliveGoTwo", fallenAt.Size() >= 13 && alive == fallenAt.Size() && !figs && living == fallenAt.Size());
+			m3GoTwoMon.Clear(); m3GoTwoIn.Clear();
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next())) if (a.bIsMonster) { m3GoTwoMon.Push(a); m3GoTwoIn.Push(InGallery33(a.pos.xy)); }
 		}
 		// the gate as the yard was won in go 1
 		if (wonTic[yard] > 0 && o == wonTic[yard] - 1) Check("gateShutBeforeTheYardWasWon", Shut3(M33_GATE));
@@ -803,8 +887,15 @@ extend class AjarTimeHandler
 			if (o > 26)
 			{
 				Clear33(mo);
-				if (Walk33(mo, 8)) m3Step = 20;
+				if (Walk33(mo, 8)) { m3Step = 20; m3NoMove = 0; }
 				if (m3Route == 8 && m3Ix == 4 && Once33(6)) View33(mo, "the gallery: the coal yard's fight through the glass (played)", 1150, 3560, 60, 0);
+				else if (m3Step == 0 && m3Route == 8)
+				{
+					// a monster of the gallery (alive from this go's start: AjarThirdFallen) in the way: killed by script (said)
+					if ((mo.pos.xy - m3Was).Length() < 1) m3NoMove++; else m3NoMove = 0;
+					m3Was = mo.pos.xy;
+					if (m3NoMove > 15) { KillNear33(mo); m3NoMove = 0; }
+				}
 			}
 		}
 		if (m3Step == 20)
@@ -924,6 +1015,23 @@ extend class AjarTimeHandler
 			Check("pinkAsAtTheStart", !Door32(6).frame);
 			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
 			Check("timetableLines", tLine.Size() == 3);
+			// the gallery: nothing spawned again (a monster that came into it from elsewhere in go 2 is told apart)
+			int n = 0, living = 0, came = 0, fresh = 0;
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next()))
+			{
+				if (!a.bIsMonster || !InGallery33(a.pos.xy)) continue;
+				n++;
+				if (a.health > 0) living++;
+				int k = m3GoTwoMon.Find(a);
+				if (k == m3GoTwoMon.Size()) fresh++;
+				else if (!m3GoTwoIn[k]) came++;
+			}
+			int figs = FallenFigures33();
+			Console.Printf("AJARTEST info the gallery at go 3's start: %d monsters in it (%d living), %d came in from elsewhere in go 2, %d new since go 2's start; %d fallen things, %d bodies there",
+				n, living, came, fresh, fallenAt.Size(), figs);
+			Check("galleryNotSpawnedAgain", m3GoTwoMon.Size() > 0 && !fresh && n - came <= fallenAt.Size() && !figs);
 		}
 		if (wonTic[r] > 0 && o == wonTic[r] - 1) Check("shuttersShutBeforeRWasWon", Shut3(M33_STEEL) && Shut3(M33_GSHUT));
 		if (wonTic[r] >= 0 && o == wonTic[r] + 13) Check("shuttersOpenAsRWasWon", Open3(M33_STEEL) && Open3(M33_GSHUT));

@@ -49,6 +49,7 @@ DoomEdNums
 	20166 = AjarThirdLast             // ... the last hall, where every go fights one fight (last.zs; the lab LAST)
 	20167 = AjarThirdGuard            // ... a monster of the last hall, there from the alarm
 	20168 = AjarThirdLock             // ... a window hall's lobby: two shutters that lock the player in with its fight
+	20169 = AjarThirdFallen           // ... a monster of a later part seen dead before its go (MAP33's gallery)
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker

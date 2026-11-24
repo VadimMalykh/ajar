@@ -71,13 +71,16 @@ class Map:
         "Night shift"). Of each kind of Doom monster, in the order they were
         placed, 1 keeps every second one and 2 three in four; the first of a
         kind is always kept. Ajar's own monsters are part of the puzzle and
-        are never thinned."""
+        are never thinned. A fallen thing (20169, ajarthird.fallen) is
+        thinned as the monster it stands for (args[1]), in its place in the
+        order."""
         seen, out = {}, []
         for t in self.things:
+            kind = t["args"][1] if t["type"] == 20169 else t["type"]
             if "skill" in t:
                 out.append(t["skill"])
-            elif t["type"] in MONSTERS:
-                i = seen[t["type"]] = seen.get(t["type"], -1) + 1
+            elif kind in MONSTERS:
+                i = seen[kind] = seen.get(kind, -1) + 1
                 out.append(1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
             else:
                 out.append(1)
