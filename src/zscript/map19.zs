@@ -416,6 +416,18 @@ class PaperTest : EventHandler
 		if (Op()) { PoseF(mo, 1796, 4544, 270); Next(); }
 		if (Op() && WalkTo(mo, "stairHall_downTheGrandStairOnFoot", 1796, 3760)) Next();
 		if (Op()) { Check("stairHall_backInTheHallOnFoot", abs(mo.pos.z) < 0.001, PStr(mo.pos)); Next(); }
+		// into the drawing office on foot from the upper corridor, off the way in's axis (x 3328), round the
+		// counter by the gap between it and the west bench (x 3136..3200, walked at 3172, off its axis) and to
+		// the front of 122 (2026-11-24: the counter stood 32 from the north wall, straight across the way in,
+		// and nobody got in). The room's monsters are gone (ClearOut, as everywhere in the test); its ambushes
+		// wait for TEAL, not taken yet here, and stand nowhere (NOBLOCKMAP); the TEAL leaves on its floor are
+		// not solid. So nothing but the walls and the furniture is in the way, as for a player who has cleared it.
+		if (Op()) { PoseF(mo, 3304, 4736, 270); Next(); }
+		if (Op() && WalkTo(mo, "drawing_inFromTheCorridorOnFoot", 3304, 4424)) Next();
+		if (Op() && WalkTo(mo, "drawing_alongTheCounterOnFoot", 3172, 4424)) Next();
+		if (Op() && WalkTo(mo, "drawing_betweenCounterAndBenchOnFoot", 3172, 4192)) Next();
+		if (Op() && WalkTo(mo, "drawing_toTheFrontOf122OnFoot", 3296, 4128)) Next();
+		if (Op()) { Check("drawing_inTheRoomBefore122", abs(mo.pos.z - 256) < 0.001 && Inside(mo.pos, 2944, 4096, 3712, 4512), PStr(mo.pos)); Next(); }
 		// the upper floor: RED in 103, the double into the side room
 		if (Op() && DeskAt(mo, "desk2_resetsAgain", 2)) Next();
 		if (Op() && TakeDoor(mo, red)) Next();

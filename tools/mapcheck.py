@@ -3,8 +3,11 @@
 Reports sectors that overlap, things that stand in no sector or in a sector
 too low for them, things closer than 16 to a wall or a step they cannot
 climb, pits: floors with everything around them more than a step higher
-and nothing that could take the player out again, and lintels: steps down
-that are shut by a ceiling too low over the upper floor. The picture (4 map units to a pixel, north up) shows floors by
+and nothing that could take the player out again, lintels: steps down
+that are shut by a ceiling too low over the upper floor, and slots: places a
+body 32 wide (the player) gets into and one 48 wide does not, and parts only
+the narrower one gets to (nothing the player might walk into is to be under
+48). The picture (4 map units to a pixel, north up) shows floors by
 height, things as dots (red: monsters, green: the rest) and doors, frames
 and keys in white.
 """
@@ -272,6 +275,158 @@ for g in members.values():
     print(f"PIT sectors {g} {[boxes[i] for i in g][:3]}: floor {sorted({m.sectors[i]['floor'] for i in g})}, "
           f"everything around {min(rims)} or more higher, and no way out")
     bad += 1
+
+
+# --- slots ---------------------------------------------------------------------------
+# A place a body 32 wide (the player) can stand in and one 48 wide cannot: a gap
+# between furniture and a wall, a nook. The engine lets the player through 32
+# exactly, but nobody steers through it, so nothing he might walk into is to be
+# under 48. Looked at on a grid of 8: each cell takes its sector's floor and
+# ceiling (a sector with floor == ceiling and an id is a door, taken as open,
+# 128 high; no sector is void). A body of half-width r stands at a grid vertex
+# when the cells under it have no void, 56 or more between the lowest ceiling
+# and the highest floor (F(r), where it stands) and no blocking line runs
+# through its inside. A SLOT is a vertex where r = 16 stands and no vertex
+# within 8 has r = 24 standing within a step (24) of it; neighbouring ones are
+# reported as one. Also a SLOT: a part cut off for the wider body, i.e. within
+# one piece the narrow body walks (4-neighbours, steps of 24, no drops), the
+# wider body's pieces, counted only where it stands as high as the narrow one
+# (else the tops of furniture would count): every one but the largest.
+# Things in the way are not looked at. On maps with slanting lines or corners
+# off the grid of 8 the cells are taken by their middles and it is approximate.
+# (2026-11-24: MAP19's drawing office could not be entered, its counter 32 from
+# the wall across the way in; the second such place on that map.)
+SG, NARROW, WIDE = 8, 16, 24
+
+
+def slots():
+    n = 0
+    pts = [p for poly in polys for p in poly]
+    blocking = [tuple(k) for k, p in m.lineprops.items() if len(k) == 2 and p.get("blocking")]
+    odd = any(p[0] % SG or p[1] % SG for p in pts) or any(
+        a[0] != b[0] and a[1] != b[1] for poly in polys for a, b in zip(poly, poly[1:] + poly[:1])) or any(
+        a[0] != b[0] and a[1] != b[1] for a, b in blocking)
+    if odd:
+        print("SLOT note: slanting lines or corners off the grid of 8 here: the slots are approximate")
+    gx0 = int(min(p[0] for p in pts)) // SG * SG - 64
+    gy0 = int(min(p[1] for p in pts)) // SG * SG - 64
+    nx = (int(max(p[0] for p in pts)) - gx0) // SG + 16            # cells; the margin's are void
+    ny = (int(max(p[1] for p in pts)) - gy0) // SG + 16
+    VF, VC = 10 ** 9, -10 ** 9
+    floor = [[VF] * nx for _ in range(ny)]
+    ceil = [[VC] * nx for _ in range(ny)]
+    h = SG / 2
+    for poly, s in zip(polys, m.sectors):
+        f, c = s["floor"], s["ceil"]
+        if f == c and s["id"]:
+            c = f + 128
+        edges = list(zip(poly, poly[1:] + poly[:1]))
+        ylo, yhi = min(p[1] for p in poly), max(p[1] for p in poly)
+        for j in range(max(0, int((ylo - gy0 - h) // SG)), min(ny, int((yhi - gy0) // SG) + 1)):
+            yc = gy0 + j * SG + h
+            xs = sorted(a[0] + (yc - a[1]) * (b[0] - a[0]) / (b[1] - a[1]) for a, b in edges if (a[1] > yc) != (b[1] > yc))
+            fr, cr = floor[j], ceil[j]
+            for xa, xb in zip(xs[::2], xs[1::2]):
+                for i in range(max(0, -int(-(xa - gx0 - h) // SG)), min(nx, -int(-(xb - gx0 - h) // SG))):
+                    fr[i], cr[i] = f, c
+    wv, hv = nx + 1, ny + 1                                         # vertices; vertex i has cells i-1 and i on its sides
+
+    def stand(r):
+        """Flat lists over the vertices: F (the floor the body stands on) and ok."""
+        k = r // SG
+        pad = lambda row, v: [v] * k + row + [v] * k
+        fx = [list(map(max, *[pad(row, VF)[t:t + wv] for t in range(2 * k)])) for row in floor]
+        cx = [list(map(min, *[pad(row, VC)[t:t + wv] for t in range(2 * k)])) for row in ceil]
+        fx = [[VF] * wv] * k + fx + [[VF] * wv] * k
+        cx = [[VC] * wv] * k + cx + [[VC] * wv] * k
+        F, ok = [], []
+        for j in range(hv):
+            fr = list(map(max, *fx[j:j + 2 * k]))
+            cr = list(map(min, *cx[j:j + 2 * k]))
+            F += fr
+            ok += [cc - ff >= TALL for ff, cc in zip(fr, cr)]
+        for a, b in blocking:                                       # no blocking line through the body's inside
+            if a[0] == b[0] or a[1] == b[1]:
+                segs = [(a, b)]
+            else:                                                   # slanting: pieces of at most 4 along it
+                steps = int(max(abs(b[0] - a[0]), abs(b[1] - a[1])) // 4) + 1
+                q = [(a[0] + (b[0] - a[0]) * t / steps, a[1] + (b[1] - a[1]) * t / steps) for t in range(steps + 1)]
+                segs = [(p, p) for p in q]
+            for p, q in segs:
+                x1, x2 = sorted((p[0], q[0]))
+                y1, y2 = sorted((p[1], q[1]))
+                # vertices whose open square of half-width r meets the segment
+                i1, i2 = int((x1 - r - gx0) // SG) + 1, -int(-(x2 + r - gx0) // SG) - 1
+                j1, j2 = int((y1 - r - gy0) // SG) + 1, -int(-(y2 + r - gy0) // SG) - 1
+                for j in range(max(0, j1), min(hv, j2 + 1)):
+                    for i in range(max(0, i1), min(wv, i2 + 1)):
+                        ok[j * wv + i] = False
+        return F, ok
+
+    def pieces(F, ok):
+        comp = [-1] * len(ok)
+        sizes = []
+        for s0 in [i for i, v in enumerate(ok) if v]:
+            if comp[s0] >= 0:
+                continue
+            c = len(sizes)
+            comp[s0] = c
+            todo = [s0]
+            size = 0
+            while todo:
+                s = todo.pop()
+                size += 1
+                f = F[s]
+                for t in (s + 1, s - 1, s + wv, s - wv):            # the margin's vertices never stand: no wrap
+                    if ok[t] and comp[t] < 0 and -STEP <= F[t] - f <= STEP:
+                        comp[t] = c
+                        todo.append(t)
+            sizes.append(size)
+        return comp
+
+    F1, ok1 = stand(NARROW)
+    F2, ok2 = stand(WIDE)
+    d = (WIDE - NARROW) // SG
+    near_ = [dj * wv + di for dj in range(-d, d + 1) for di in range(-d, d + 1)]
+    slot = set()
+    for s in [i for i, v in enumerate(ok1) if v]:
+        f = F1[s]
+        if not any(ok2[s + o] and -STEP <= F2[s + o] - f <= STEP for o in near_):
+            slot.add(s)
+
+    def box(group, grow):
+        xs_, ys_ = [gx0 + s % wv * SG for s in group], [gy0 + s // wv * SG for s in group]
+        return (min(xs_) - grow, min(ys_) - grow, max(xs_) + grow, max(ys_) + grow)
+
+    seen = set()
+    for s0 in sorted(slot):
+        if s0 in seen:
+            continue
+        seen.add(s0)
+        todo, group = [s0], []
+        while todo:
+            s = todo.pop()
+            group.append(s)
+            for t in (s + 1, s - 1, s + wv, s - wv):
+                if t in slot and t not in seen:
+                    seen.add(t)
+                    todo.append(t)
+        print(f"SLOT a body 32 wide stands in {box(group, NARROW)} (floor {F1[s0]}), one {2 * WIDE} wide nowhere there")
+        n += 1
+    c1, c2 = pieces(F1, ok1), pieces(F2, ok2)
+    parts = {}
+    for s in range(len(ok1)):
+        if ok1[s] and ok2[s] and F1[s] == F2[s]:
+            parts.setdefault(c1[s], {}).setdefault(c2[s], []).append(s)
+    for p in parts.values():
+        for part in sorted(p.values(), key=len, reverse=True)[1:]:
+            print(f"SLOT cut off for a body {2 * WIDE} wide: its middle stands in {box(part, 0)} (floor {F2[part[0]]}), "
+                  f"no way to it from the rest of where it walks but for one 32 wide")
+            n += 1
+    return n
+
+
+bad += slots()
 
 if len(sys.argv) > 2:
     im = gfx.Img(W, H, (16, 16, 24))
