@@ -432,6 +432,9 @@ extend class AjarTimeHandler
 			Actor a = null;
 			for (int i = 0; i < postIs.Size() && !a; i++) if (postIs[i] && postIs[i].health > 0) a = postIs[i];
 			if (!a) a = LiveIn(mo, r);
+			// (and one of R's that flew out of it, a lost soul in C2: the hall is not won while it lives, third.zs's HallLives)
+			for (int i = 0; i < hallOwn.Size() && !a; i++) if (hallOwn[i] && hallOwn[i].health > 0 && hallOwnOf[i] == r) a = hallOwn[i];
+			if (!a && HallLives(r)) return;         // (a pain elemental still dying: its lost souls are to come)
 			if (!a) { t3Step = 2; NewRoute(); return; }
 			if (a != ttAim) { ttAim = a; ttFightFrom = o; }
 			Face(mo, a);

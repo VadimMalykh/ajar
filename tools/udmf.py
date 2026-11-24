@@ -59,9 +59,10 @@ class Map:
         self.cuts.update(tuple(p) for p in points)
 
     def thing(self, x, y, type, angle=0, **props):
-        """`skill=N` (1 to 4): the thing is only there from that difficulty up.
-        Without it, Doom's monsters are thinned on the two easier ones (see
-        _skills); everything else is there on all of them."""
+        """`skill=N` (1 to 4): the thing is only there from that difficulty up
+        (and with `upto=K` only up to K). Without it, Doom's monsters are
+        thinned on the two easier ones (see _skills); everything else is there
+        on all of them."""
         self.things.append(dict(x=x, y=y, type=type, angle=angle, **props))
 
     def _skills(self):
@@ -85,13 +86,21 @@ class Map:
     # ------------------------------------------------------------------
     def _split(self):
         allv = {v for p in self.polys for v in p} | self.cuts
+        # the vertices by cells of 64, so that an edge looks only at those near it
+        # (MAP33's natural rooms have thousands); the result is as if all were looked at
+        cells = {}
+        for v in allv:
+            cells.setdefault((int(v[0] // 64), int(v[1] // 64)), []).append(v)
         out = []
         for poly in self.polys:
             new = []
             for a, b in zip(poly, poly[1:] + poly[:1]):
                 dx, dy = b[0] - a[0], b[1] - a[1]
                 mids = []
-                for v in allv:
+                near = [v for ix in range(int(min(a[0], b[0]) // 64), int(max(a[0], b[0]) // 64) + 1)
+                        for iy in range(int(min(a[1], b[1]) // 64), int(max(a[1], b[1]) // 64) + 1)
+                        for v in cells.get((ix, iy), ())]
+                for v in near:
                     if v in (a, b):
                         continue
                     px, py = v[0] - a[0], v[1] - a[1]
@@ -279,12 +288,13 @@ class Map:
         for t, least in zip(self.things, self._skills()):
             d = dict(t)
             d.pop("skill", None)
+            upto = d.pop("upto", 5)             # there only up to that difficulty (MAP33: barons in a cyberdemon's place)
             d["x"], d["y"] = float(d["x"]), float(d["y"])
             args = d.pop("args", ())
             for i, v in enumerate(args):
                 if v:
                     d[f"arg{i}"] = v
-            for n in range(least, 6):
+            for n in range(least, upto + 1):
                 d[f"skill{n}"] = True
             for f in ("single", "coop", "dm"):
                 d[f] = True
