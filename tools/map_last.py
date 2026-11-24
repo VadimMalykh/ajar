@@ -87,7 +87,7 @@ m.sector(rect(400, 960, 560, 1168), ceil=160, light=200, color=P3)           # R
 supplies(424, 984)
 m.sector(rect(448, -160, 512, 960), ceil=128, light=180, color=P3)           # C3, south
 m.sector(rect(512, -160, 1152, -96), ceil=128, light=170, color=P3)          # ... and east
-STAND3 = stand(3, (1152, -192, 1536, 0), (1440, -128, 1504, -64), color=P3)
+STAND3 = stand(3, (1152, -192, 1536, 0), (1408, -128, 1472, -64), color=P3)     # (its pillar 64 off the east wall: it was 32, a slot)
 ajarthird.wind(m, 1534, -160, 180)
 # the gate in stand 3's railing, and the steps down behind it to L's floor
 ajartime.shutter(m, (1280, 0), (1408, 0), (0, 1), 0, GATE, nomonsters=True, color=P3)

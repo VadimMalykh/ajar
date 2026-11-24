@@ -13727,3 +13727,116 @@ it. `itemcheck` had reckoned it reached, and no script walked in.
   build runs it (about 4 s). With the old gap it stops the build ("no walk" to
   the nook); with the new one: part 1 12525 units, part 2 10942, part 3 9759,
   the secrets 832 + 855 + 215.
+
+## MAP33: the last fight in the level, and doors at the fight halls (2026-11-24)
+
+Built as decided in "MAP33: the last fight together, as decided" (Vadim: "Let's
+do A") and after Vadim's question about monsters piled in an open doorway
+("yes, let's make the doors, otherwise it's looking strange"). The lab's
+rules (last.zs, "The last fight lab") now play in MAP33 itself.
+
+**The end.** Everything east of the turbine hall (x over 7040) is rebuilt;
+E1, E2 and E3 are gone.
+
+- The switchgear hall L (7808, 2368)-(8960, 3392), floor -96, its own tag.
+  Three stands round it, each 96 over the hall's floor: 1 on the north
+  (8192, 3392)-(8576, 3584), reached by a corridor north from the gantry's
+  end and then east; 2 on the west (7616, 2688)-(7808, 3072), at the end of
+  R's passage, lengthened to 7616; 3 on the south (8192, 2176)-(8576, 2368),
+  at the end of part 3's corridor from the duct. Each has a railing along its
+  whole front, a 64 x 64 pillar and its stand tag; plates 1 and 2 are 64
+  behind their railings, time doors on stands 1 and 2, wind plates on stands
+  2 and 3, a case of three on each.
+- Stand 3's gate is the alarm's shutter, closed to monsters, with six steps
+  of 16 down behind it to the floor. The exit door is in the east wall at y
+  2816..2944, a short room behind it and the exit.
+- `ajarthird.last` with its defaults: 30 seconds on plate 1, 15 on plate 2.
+- Six switchgear cabinets on the floor: 64 high, 128 x 64, AJBOLT, 96 or more
+  apart and from the walls; four pedestals 72 high (arachnotrons, mancubi),
+  eight bays 72 high in the walls (revenants on the east, chaingunners
+  north and south). The crossing (stand 3's steps, between the cabinets, to
+  the exit door) has cover from each standing guard somewhere: checked.
+- The guards, by skill (the lowest skill each is in; AjarThirdGuard, spawned
+  at the alarm): skill 1: 9 (hp 2970): an arachnotron, a mancubus, 2
+  revenants, a chaingunner, a cacodemon, 2 demons, a hell knight; skill 2:
+  18 (hp 6110): and an arachnotron, a revenant, 2 chaingunners, a cacodemon,
+  2 demons, a hell knight, a baron; skill 3: 25 (hp 8280): and a mancubus, a
+  revenant, a chaingunner, a cacodemon, 2 demons, a hell knight; skill 4: 28
+  (hp 10080): and a cacodemon, a pain elemental, a second baron. Every
+  standing guard is in sight of plate 1 or plate 2 and of some point of the
+  crossing (generator asserts).
+- The supplies, in the corridor before each stand: stand 1 a box of
+  bullets, a soulsphere, a blue armour, 2 boxes of rockets, 4 boxes of
+  shells (damage 7100, 0.86 of skill 3's guards); stand 2 a soulsphere, a
+  blue armour, 2 cell packs, 2 boxes of rockets (5400); stand 3 a
+  soulsphere, a blue armour, 2 cell packs, 2 boxes of rockets, a medikit
+  (5400). The guards are in no part's count and not in the 1.6 rule: their
+  own row in the build's measures.
+- The go texts (language.txt MAP33_GO1..3) tell of the stands and the
+  plates; the last go's line about the way out names the door across the
+  hall (third.zs, when the map has a last mark).
+
+**The lobbies (doors).** A new engine thing AjarThirdLock (20168,
+`ajarthird.lock(m, x, y, hall, outer, inner, lobby)`): in the hall's go the
+outer shutter stands open and the inner one shut; when the player stands in
+the lobby clear of the outer shutter, it shuts, and once it is shut the inner
+one opens. At the win both open for good. The tics are kept like the win's
+and played again in later goes (also when winding); a lock counts as a
+winner of its hall.
+
+- The coal yard: the lobby is the corridor's last 128 before the yard. The
+  boiler house: the passage behind the gate is its lobby; its catwalk exit
+  and the ash tunnel's mouth are win shutters. The workshop: the west end of
+  its north corridor; its way east to the pump hall is a win shutter.
+- No monster-only line stands across an open doorway of these three halls
+  any more (a generator check). The turbine hall and the cooling tower stay
+  as they were.
+
+**Pockets.** mapcheck's SLOT now finds none in MAP33 (it found 31) nor in
+LAST (1). The closing changes no way and no fight:
+
+- bank(): a terrace's front has no dents (a station nearer the wall than the
+  line between its neighbours is filled up to it; where that would come too
+  near what the bank avoids, the run is cut back to the wall), and two runs
+  of a terrace come down to the wall 64 or more apart. This took 23. The
+  switchyard's north bank keeps 56 off the transformers' plinths.
+- The pond's west bank is 64 or more from its neighbours along the wall (it
+  was 30 and 20).
+- The cooling tower's wall goes straight across its corners at 0, 90 and 270
+  degrees, and the ring ledge ends square beside the outfall.
+- The stores: the crates east of the clerk's nook reach the first shelf's
+  end (the 32 between them).
+- LAST: stand 3's pillar is 64 off the east wall (it was 32); the lab's
+  script walks round it to the wind plate.
+- The lab's gate (LAST) is closed to monsters since the merge: its demons
+  climbed stand 3's steps and left the fight in go 1 and go 2.
+
+**The tests** (src/zscript/map33.zs; lasttest.zs's alarm checks and fire are
+shared):
+
+- MODE=1: the whole level. The lobbies (as at the start until locked, the
+  ways on shut until the win, no monster of the hall out of it at any tic,
+  open at the win, in later goes at the tics recorded), the gate, the
+  tower, and the end as lasttest.zs checks LAST: the hall empty at each go's
+  start, the alarm at plate 1 with every guard awake, the sums and the time
+  doors, the earlier selves firing again (really), stand 3's gate, the exit
+  door's spans, the crossing, the level's end. The script's fire in the
+  last hall is lasttest.zs's FireL (the ammunition given is said in the
+  log); go 3 does not fire and crosses from the alarm + 600.
+- MODE=2: the gantry paradox, then go 2's start loaded.
+- MODE=3: as 1, with views: each stand in the fight, the crossing, each
+  lobby from outside and inside (go 1 waits 400 longer at the gantry's foot,
+  so that go 2, held up by its views, is on its stand before the alarm).
+- MODE=4 (new): the stand's save: killed on stand 2 after the alarm in go 2,
+  USE, the save at the stand loaded, the go plays on through its time door
+  into go 3.
+- Where a monster of a lobby's hall stands in the doorway the script walks
+  through, it is killed by script and said (as at the crossing).
+
+Results on the last build: mapcheck 0 problems on MAP33 (598 sectors) and on
+LAST; thingcheck, itemcheck and budget clean. MAP33 MODE=1 three times: 244,
+246 and 244 checks passed, none failed (the count differs with the
+workshop's snapshots, its fight's length); MODE=2 46, MODE=3 263 with 40
+views, MODE=4 135. LAST MODE=1..4: 58, 46, 51, 55; THIRD MODE=3
+three times 53 each, MODE=7 58: none failed. The walk: part 1 13231 units,
+part 2 10878, part 3 10915, the secrets 832 + 855 + 215.

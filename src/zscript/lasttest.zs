@@ -52,9 +52,9 @@ extend class AjarTimeHandler
 		/* 60: through time door 2 */           870, 416,  760, 416,  -1, -1,
 		/* 66: box 3, R3, C3, stand 3 */        480, 1240,  480, 1150,  430, 990,  540, 990,  540, 1024,  430, 1024,  480, 940,  480, -128,  1100, -128,  1200, -128,  1344, -60,  -1, -1,
 		/* 90: across the floor, out */        1344, -20,  1344, 40,  1344, 130,  1344, 400,  1560, 420,  1600, 620,  1850, 650,  2040, 704,  2100, 704,  2230, 704,  -1, -1,
-		/* 112: to stand 3's wind plate */      1500, -160,  -1, -1,
-		/* 116: to stand 2's wind plate */      870, 420,  870, 670,  900, 672,  -1, -1,
-		/* 124: from it onto plate 2 */          870, 670,  870, 512,  960, 512,  -1, -1
+		/* 112: to stand 3's wind plate */      1344, -160,  1500, -160,  -1, -1,
+		/* 118: to stand 2's wind plate */      870, 420,  870, 670,  900, 672,  -1, -1,
+		/* 126: from it onto plate 2 */          870, 670,  870, 512,  960, 512,  -1, -1
 	};
 
 	bool WalkL(PlayerPawn mo, int n)
@@ -85,7 +85,7 @@ extend class AjarTimeHandler
 			if (a.player || a is "AjarGhost") continue;
 			let inv = Inventory(a);
 			if (!(a.bIsMonster || a.bMissile || a.bCorpse || (inv && !inv.owner && inv.bDropped))) continue;
-			if (a.bIsMonster || InLast(a.pos.xy)) n++;
+			if (InLast(a.pos.xy) || guardIs.Find(a) < guardIs.Size()) n++;
 		}
 		return n;
 	}
@@ -250,7 +250,8 @@ extend class AjarTimeHandler
 				if (guardIs[i] && guardIs[i].target) who = who .. (guardIs[i].target.player ? "P" : guardIs[i].target is "AjarGhost" ? "S" : "?");
 			Console.Printf("AJARTEST info alarm go=%d at %d (from the record %d): guards %d, awake %d, with a target %d (%s)", tgo, alarmTic, alarmAt,
 				LastLiving(), awake, aimed, who);
-			Check(String.Format("alarmGuards%d", tgo), LastLiving() == guards.Size() && guards.Size() == 12 && awake == 12 && aimed == 12);
+			int want = level.mapname ~== "LAST" ? 12 : guards.Size();        // (MAP33: as many as its skill has)
+			Check(String.Format("alarmGuards%d", tgo), LastLiving() == guards.Size() && guards.Size() == want && want > 0 && awake == want && aimed == want);
 			if (tgo == 1) ltAlarm1 = alarmTic;
 			else Check(String.Format("alarmAtFirstSelf%d", tgo), alarmTic == alarmAt && alarmTic == ltAlarm1 && SelfAsRecord(0) && plates[0].pressed);
 		}
@@ -397,7 +398,7 @@ extend class AjarTimeHandler
 		// mode 3: wind on, before the alarm
 		if (ltStep == 10)
 		{
-			if (!WalkL(mo, 116)) return;
+			if (!WalkL(mo, 118)) return;
 			AjarThirdWind wp = null;
 			let it = ThinkerIterator.Create("AjarThirdWind");
 			AjarThirdWind q;
@@ -412,7 +413,7 @@ extend class AjarTimeHandler
 			NewRoute();
 			return;
 		}
-		if (ltStep == 11 && WalkL(mo, 124)) ltStep = 2;
+		if (ltStep == 11 && WalkL(mo, 126)) ltStep = 2;
 		if (ltStep == 2)
 		{
 			if (alarmTic < 0) return;
