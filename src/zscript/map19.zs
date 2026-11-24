@@ -21,6 +21,10 @@
 
 class AjarPaper : EventHandler
 {
+	// a register here is signed with the double's feet within 16 of its plate (the lab's 32: AjarPassRegister.Tolerance);
+	// the answers meant are all within 16, and GREEN in 102 then needs only a low step to sign nothing by accident
+	const PLATE_TOL = 16;
+
 	int partedAt;               // the tic the pass first parted from the player (0: not yet)
 	bool introSaid;
 
@@ -602,8 +606,9 @@ class PaperTest : EventHandler
 			Next();
 		}
 		// GREEN in 102 kept on upstairs (2026-11-24: Vadim, the stack signed, stood beyond the grand stair's head and
-		// register 4 signed itself; the stack now stands 112 up, and GREEN in 102 carries that): the stack signed, the
-		// player stands 2 s at each patch where it used to put the double on register 3's or 4's plate
+		// register 4 signed itself; the stack now stands 23 up, GREEN in 102 carries that, and a plate here takes the
+		// double within 16, AjarPaper.PLATE_TOL): the stack signed, the player stands 2 s at each patch where it used to
+		// put the double on register 3's or 4's plate (now 23 off it)
 		if (Op() && DeskAt(mo, "desk2_resetsForTheLeaks", 2)) Next();
 		if (Op() && TakeDoor(mo, green)) Next();
 		if (Op() && PoseAt(mo, FRONT + 102)) Next();
@@ -626,7 +631,7 @@ class PaperTest : EventHandler
 		// ... and the other way, as the third patch was found: the pass stamped, in by GREEN's far side, out of 102
 		if (Op() && DeskAt(mo, "desk3_resetsBeforeTheOtherWay", 3)) Next();
 		if (Op() && Through(mo, "greenFarSide_into102", FARS + 3, 1)) Next();
-		if (Op()) { Check("green102_outOnTheDais", abs(mo.pos.z - 112) < 0.001 && TIs(0, 0, 224, -112), String.Format("player %s, %s", PStr(mo.pos), TStr())); Next(); }
+		if (Op()) { Check("green102_outOnTheDais", abs(mo.pos.z - 23) < 0.001 && TIs(0, 0, 224, -23), String.Format("player %s, %s", PStr(mo.pos), TStr())); Next(); }
 		if (Op()) { PoseF(mo, 4560, 4704, 0); Next(); }
 		if (Op() && Stand(mo, 70)) Next();
 		if (Op() && NotSigned("reg3_notByGREEN102_backways_corridorBySideRoom", 3)) Next();
@@ -652,6 +657,13 @@ class PaperTest : EventHandler
 		if (Op() && Forward(mo, 3406, 18)) Next();
 		if (Op() && Stand(mo, 30)) Next();
 		if (Op()) { Check("balconyDoor_openAfterRegister4", Inside(mo.pos, 4928, 3712, 6848, 5568) && mo.pos.z == 0, PStr(mo.pos)); Next(); }
+		// the tolerance itself (16 here, the lab's 32): T set by the script so that the double stands on the middle of
+		// register 3's plate 17 over it (not signed), then 16 over it (signed)
+		if (Op()) { PoseF(mo, 4560, 4704, 90); dbl.tAng = 0; dbl.tOff = (0, 224); dbl.tDz = 17; dbl.Posed(mo); Info("T set by the script: 17 over register 3's plate"); Next(); }
+		if (Op() && Stand(mo, 70)) Next();
+		if (Op() && NotSigned("reg3_notSigned17Over", 3)) Next();
+		if (Op()) { dbl.tDz = 16; dbl.Posed(mo); Info("T set by the script: 16 over register 3's plate"); Next(); }
+		if (Op() && WaitSigned("reg3_signed16Over", 3)) Next();
 	}
 
 	// --- MODE=3: the building's own ---------------------------------------------------------
@@ -826,10 +838,11 @@ class PaperTest : EventHandler
 			ViewCross(mo, st, 2, 3301, 2);
 			Look(mo, st, 992, 2288, 90);
 			break;
-		case 4:     // the reading corridor, GREEN by 102: the stack and the double behind glass, 112 up (looking up)
+		case 4:     // the reading corridor, GREEN by 102, where the answer is made (on the far side's axis, y 2912), a level
+		            // look straight at the glass: the double on register 2's plate, 23 up, seen whole
 			if (st == 1) Hang(mo, h.DoorOf(3), 102);
 			ViewCross(mo, st, 2, FRONT + 102, 1);
-			Look(mo, st, 2400, 2970, 300, -14);
+			Look(mo, st, 2592, 2912, 270);
 			break;
 		case 5:     // the link hall after two laps: the double down the sealed gallery, through the glass
 			if (st == 1) { Hang(mo, h.LabLeaf(8, 0), 105); Hang(mo, h.LabLeaf(8, 1), 106); }
@@ -880,12 +893,17 @@ class PaperTest : EventHandler
 		case 16:    // the upper corridor's east end: the balcony's door (register 4's) and its plaque
 			Look(mo, st, 4560, 4704, 20);
 			break;
-		case 17:    // the automap (the cfg opens it), after RED by 101: the double's mark
+		case 17:    // ... and from close to the glass
+			if (st == 1) Hang(mo, h.DoorOf(3), 102);
+			ViewCross(mo, st, 2, FRONT + 102, 1);
+			Look(mo, st, 2592, 2856, 290);
+			break;
+		case 18:    // the automap (the cfg opens it), after RED by 101: the double's mark
 			if (st == 1) Hang(mo, h.DoorOf(1), 101);
 			ViewCross(mo, st, 2, FRONT + 101, 1);
 			Look(mo, st, 1104, 1408, 185);
 			break;
 		}
-		if (tic == 3 + 80 * 18) Console.Printf("AJARTEST viewsDone=1");
+		if (tic == 3 + 80 * 19) Console.Printf("AJARTEST viewsDone=1");
 	}
 }

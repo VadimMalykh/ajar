@@ -73,7 +73,8 @@ from udmf import MONSTERS, Map, rect
 # portal lines below, where those are made.
 LINK_LAPS, STAIR_LAPS = 5, 3                 # the laps that sign registers 5 and 6
 PLATE = 128                                  # a register's plate: a square this wide (the lab's)
-TOL_Z = 32                                   # the double is on the plate if its feet are this near it (pass.zs)
+TOL_Z = 16                                   # the double is on the plate if its feet are this near it (pass.zs: MAP19's own,
+                                             # AjarPaper.PLATE_TOL; the lab's is 32)
 MEANT_Z = 16                                 # ... and the answer meant puts it this near
 RUN = 16.7                                   # the player running, units a tic (the test runs)
 
@@ -758,14 +759,17 @@ joint((1088, 3200), (1408, 3200), "lobby", "gallery")
 frame((640, 3264), (640, 3328), (-1, 0), 121, G, "gallery")
 
 # --- the archive: the vestibule, the stack (sealed), the reading corridor ---------------------------
-VE = (1472, 2432, 1728, 2816)                                               # (2026-11-24: 128 longer south, for the dais's steps)
-# frame 102 and the stack behind it stand STACK_Z up, the frame on a dais along the vestibule's east wall with
-# steps up from the west (as frame 101 on the duty room's): GREEN in 102 carries that change of height, so that
-# it puts the double on no plate from where the player goes on with it hung (2026-11-24: at the same height, the
-# upper corridor beyond the grand stair's head put it on register 4's plate and signed it by accident, and two
-# patches upstairs on register 3's). The answer meant is the same: the player in the reading corridor at 0, the
-# double in the stack at STACK_Z.
-STACK_Z = 112
+VE = (1472, 2560, 1728, 2816)
+# frame 102 and the stack behind it stand STACK_Z up, the frame on a low dais along the vestibule's east wall (one
+# step, as frame 101 on the duty room's): GREEN in 102 carries that change of height, and with this level's
+# registers' tolerance of 16 (TOL_Z) it puts the double on no plate from where the player goes on with it hung
+# (2026-11-24: at the same height, the upper corridor beyond the grand stair's head put it on register 4's plate
+# and signed it by accident, and two patches upstairs on register 3's). Under the lab's 32 only 97 and more up or
+# down separated it, and there the stack's floor edge or the corridor's hid the double; 23 is the clean height
+# nearest 32 (24 to 40: RED in 102 into its far side signed register 2 from the duty room's floor at 64; 16 and
+# under: the leaks upstairs again). The answer meant is the same: the player in the reading corridor at 0, the
+# double in the stack at STACK_Z, seen whole through the glass.
+STACK_Z = 23
 VDAIS = (1632, 2624, 1728, 2752)
 V_RISES = -(-STACK_Z // 24)                                                 # steps of 24 at most, the dais the last
 V_STEP = 24
@@ -779,14 +783,14 @@ W.link(W.node(VDAIS[0] + 16, 2688, "the vestibule's steps", "vdais"), W.node(V_F
        VDAIS[0] - V_FOOT + 40)
 gap((1408, 2624), (1408, 2752), (1, 0), G, "LB", "AR", "lobby", "vestibule")
 frame((1728, 2656), (1728, 2720), (1, 0), 102, STACK_Z, "vdais")
-for a, b in (((1536, 2432), (1664, 2432)),):
+for a, b in (((1536, 2560), (1664, 2560)),):
     hang(a, b, "CI")
 ST = (1808, 2560, 2816, 2816)
 st_shelves = [((x, 2560, x + 192, 2608), solid("SK", STACK_Z + 192)) for x in range(1856, 2752, 256)]
 REG2_C = (1728 + 864, 2688)                                                 # 864 in from the stack's west wall, on 102's axis
 room(ST, STACK_Z, look("AR", "FR", "KA", 200, STACK_Z + 192, DIM), grid(ST, 4, 1, 224, 96) + st_shelves + [plate(REG2_C)], name="stack",
      sealed=True)
-pane_x(1808, 2816, 2816, 2832, sill=48, top=192)                            # to the corridor's ceiling: the double walks STACK_Z up
+pane_x(1808, 2816, 2816, 2832, sill=STACK_Z, top=144)                       # from the stack's floor: the double seen whole
 RC = (1760, 2832, 3008, 2992)
 # a reading desk against the north wall at the east end (where a Pair in 106 and 109 would put the
 # double on register 5)
@@ -1041,7 +1045,7 @@ steel_door((5216, 5120), (5280, 5120), (0, 1), G, REG_TAG[7], "pond", "kiosk", t
 # 113 in the court's east wall; the boathouse behind it, sealed, glass either side
 # (2026-11-24: 113, the boathouse, its glass and its plaque 64 further north than first built: the covered way
 # walked north (a shift of 784 north) put the double on the plate's south edge with the player against the east
-# yard's north wall; now no place in the east yard does)
+# yard's north wall, at the same height (no tolerance helps); now no place in the east yard does)
 BH_DY = 64
 frame((6848, 4512 + BH_DY), (6848, 4576 + BH_DY), (1, 0), 113, G, "pond")
 BH = (6928, 4416 + BH_DY, 7952, 4672 + BH_DY)
