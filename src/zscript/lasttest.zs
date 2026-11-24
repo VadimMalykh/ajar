@@ -221,9 +221,12 @@ extend class AjarTimeHandler
 	}
 
 	// --- a view held for a screenshot (the cfg shoots in its middle) -------------------
-	void ShotL(PlayerPawn mo, string what, Vector2 at, double ang, double pitch)
+	double ltFov;
+	void ShotL(PlayerPawn mo, string what, Vector2 at, double ang, double pitch, double fov = 0)
 	{
 		Look(mo, at, ang, pitch);
+		ltFov = fov;
+		if (fov > 0) { mo.player.DesiredFOV = fov; mo.player.FOV = fov; }
 		Console.Printf("AJARTEST info view %s t=%d ot=%d go=%d", what, thirdT, ot, tgo);
 		ltHold = 120;
 		ltHoldA = ang; ltHoldP = pitch; ltHoldAt = at;
@@ -262,6 +265,7 @@ extend class AjarTimeHandler
 			mo.angle = ltHoldA;
 			mo.pitch = ltHoldP;
 			if (!ltHold) mo.pitch = 0;
+			if (!ltHold && ltFov > 0) { mo.player.DesiredFOV = 90; mo.player.FOV = 90; ltFov = 0; }
 			return;
 		}
 		if (mode == 1 || mode == 4) Last1(mo, mode == 4);
@@ -486,6 +490,7 @@ extend class AjarTimeHandler
 	// the next STAGGER_TICS and has at least 3 shots in them and one in the 200 after, a guard hurts it
 	// by the threshold: it fires none of them, its plate stays pressed, the line once, it fires again after.
 	const L_STAG = 100;
+	const L_NOSTAG = 400;       // go 3: args[4] 0 for a moment at the alarm + this
 	int RecordShots(AjarTake t, int from, int to)
 	{
 		int n = 0;
@@ -566,14 +571,14 @@ extend class AjarTimeHandler
 		if (tgo != 3 || alarmTic < 0 || ghosts.Size() < 2 || !ghosts[1]) return;
 		let ls = AjarLastSelf(ghosts[1]);
 		int a = ot - alarmTic;
-		if (a == 100 && ls.staggerTo <= ot)
+		if (a == L_NOSTAG && ls.staggerTo <= ot)
 		{
 			ltStagN = ls.staggers;
 			lastMark.args[4] = 0;
 			ls.DamageMobj(guardIs[0], guardIs[0], 500, 'None');
 		}
-		if (a > 100 && a <= 103 && lastMark.args[4] == 0 && (ls.staggerTo > ot || ls.staggers != ltStagN)) ltStagOff = -1000;
-		if (a == 104 && lastMark.args[4] == 0)
+		if (a > L_NOSTAG && a <= L_NOSTAG + 3 && lastMark.args[4] == 0 && (ls.staggerTo > ot || ls.staggers != ltStagN)) ltStagOff = -1000;
+		if (a == L_NOSTAG + 4 && lastMark.args[4] == 0)
 		{
 			Check("noStaggerWithZero", ls.staggers == ltStagN && ls.staggerTo <= ot && ltStagOff >= 0 && ls.health == ls.SpawnHealth());
 			ls.dmgSum = 0;
@@ -689,18 +694,17 @@ extend class AjarTimeHandler
 		int i = LeverIx(2);
 		if (a == L_BREAK)
 		{
-			ltOldMissiles.Clear();
-			let it = ThinkerIterator.Create("Actor");
-			Actor m;
-			while (m = Actor(it.Next())) if (m.bMissile) ltOldMissiles.Push(m);
 			Lever(2).Used(mo);
 			Check("breakerWorks", lvUsed[i] == ot && stunUntil == ot + 175 && Lever(2).shown == 2 && TakeHasLever(takes[1], 2, ot));
 		}
 		if (a == L_BREAK + 1)
 		{
-			ltSnap.Clear(); ltSnapX.Clear(); ltSnapY.Clear(); ltSnapA.Clear(); ltSnapS.Clear();
+			// (the first tic it holds them: what flies now was fired before, and flies on)
+			ltSnap.Clear(); ltSnapX.Clear(); ltSnapY.Clear(); ltSnapA.Clear(); ltSnapS.Clear(); ltOldMissiles.Clear();
 			let it = ThinkerIterator.Create("Actor");
 			Actor m;
+			while (m = Actor(it.Next())) if (m.bMissile) ltOldMissiles.Push(m);
+			it = ThinkerIterator.Create("Actor");
 			while (m = Actor(it.Next()))
 				if (m.bIsMonster && m.health > 0 && secLastHall[m.CurSector.Index()])
 				{
@@ -725,7 +729,12 @@ extend class AjarTimeHandler
 			let it = ThinkerIterator.Create("Actor");
 			Actor m;
 			while (m = Actor(it.Next()))
-				if (m.bMissile && ltSnap.Find(m.target) < ltSnap.Size() && ltOldMissiles.Find(m) == ltOldMissiles.Size()) { ltStunBad++; ltOldMissiles.Push(m); }
+				if (m.bMissile && ltSnap.Find(m.target) < ltSnap.Size() && ltOldMissiles.Find(m) == ltOldMissiles.Size())
+				{
+					ltStunBad++;
+					ltOldMissiles.Push(m);
+					Console.Printf("AJARTEST info stunned %s fired a %s at %d", m.target.GetClassName(), m.GetClassName(), a);
+				}
 		}
 		if (a == L_BREAK + 60)
 		{
@@ -899,6 +908,7 @@ extend class AjarTimeHandler
 			}
 			if (!tdOpen && plateSum == LastNeed() - 1) Check("doorOneShutBefore", !tdOpen);
 			if (views && a == 600) { ShotL(mo, "stand 1 in the fight (go 1)", mo.pos.xy, 270, 14); return; }
+			if (views && a == 100) { ShotL(mo, "the share and the steam valve on stand 1 (go 1)", (1600, 1088), 25, 8); return; }
 			if (a == leave)
 			{
 				AjarTake t = takes[0];
@@ -1016,7 +1026,7 @@ extend class AjarTimeHandler
 				Check("doorTwoAtSum", plateSum == LastNeed() && (!checks || a >= LastNeed() + (on - off) - 10));
 			}
 			if (!tdOpen && plateSum == LastNeed() - 1) Check("doorTwoShutBefore", !tdOpen);
-			if (views && a == 700) { ShotL(mo, "stand 2 in the fight (go 2)", mo.pos.xy, 0, 12); return; }
+			if (views && a == 900) { ShotL(mo, "stand 2 in the fight (go 2)", mo.pos.xy, 0, 12); return; }
 			if (tdOpen && (a == L_LEAVE2 || (quick && o == ltDoorAt + 50))) { ltStep = 3; NewRoute(); mo.pitch = 0; }
 		}
 		if (ltStep == 3) WalkL(mo, 60);
@@ -1059,6 +1069,19 @@ extend class AjarTimeHandler
 			Check("twoSelvesFiring", takes[0].next > 0 && takes[1].next > 0 && Selves3() == 2);
 		}
 		if (alarmTic < 0 && o == alarmAt - 1 && lastGate) Check("gateShutBeforeAlarm", lastGate.IsShut());
+		if (views && alarmTic >= 0 && ltStep == 1)
+		{
+			int a = o - alarmTic;
+			if (o == waveTic[2] + 1) { ShotL(mo, "wave 2 comes, the patches (go 3)", (1344, -30), 92, 6); return; }
+			if (o == lvSelfTic[LeverIx(2)] + 5) { ShotL(mo, "the breaker's stun (go 3)", (1344, -30), 75, 6); return; }
+			if (a == 750)
+			{
+				let ls = AjarLastSelf(ghosts[1]);
+				if (ls && ls.staggerTo <= o) ls.DamageMobj(guardIs[0], guardIs[0], lastMark.args[4], 'None');
+				ShotL(mo, "the second self staggered (go 3)", (1344, -60), 124, -2, 40);
+				return;
+			}
+		}
 		if (ltStep == 0 && WalkL(mo, 66)) { ltStep = 1; ltMark = o; }
 		if (ltStep == 1)
 		{
@@ -1102,10 +1125,10 @@ extend class AjarTimeHandler
 		}
 		if (ltStep == 2)
 		{
-			if (views && ltHold == 0 && !ltWound && SecTagged(mo.pos.xy, lastMark.args[0]) && mo.pos.x > 1550)
+			if (views && ltHold == 0 && !ltWound && ltDeep >= 10)
 			{
-				ltWound = true;     // (here: the crossing's view is taken)
-				ShotL(mo, "the crossing (go 3)", mo.pos.xy, 30, 4);
+				ltWound = true;     // (here: the crossing's view is taken, on the strip in the steam)
+				ShotL(mo, "the crossing: steam on the strip (go 3)", mo.pos.xy, 200, 6);
 				return;
 			}
 			// something stands in the way: it is killed by script (said)

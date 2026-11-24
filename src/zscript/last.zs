@@ -97,7 +97,7 @@ class AjarThirdLever : Actor
 // Steam over the floor: a puff of the IWAD's bullet smoke, rising, pale.
 class AjarSteam : Actor
 {
-	Default { +NOINTERACTION +NOBLOCKMAP +NOGRAVITY RenderStyle "Translucent"; Alpha 0.55; Scale 1.8; }
+	Default { +NOINTERACTION +NOBLOCKMAP +NOGRAVITY RenderStyle "Translucent"; Alpha 0.75; Scale 2.4; }
 	States
 	{
 	Spawn:
@@ -781,7 +781,7 @@ extend class AjarTimeHandler
 		for (int k = 0; k < vents.Size(); k++) if (vents[k] && vents[k].args[0] == grp) vs.Push(vents[k]);
 		if (!vs.Size()) return;
 		int o = ot - lvUsed[i];
-		for (int k = 0; k < 3; k++)
+		for (int k = 0; k < 4; k++)
 		{
 			AjarThirdVent v = vs[random[AjarLast](0, vs.Size() - 1)];
 			double r = VentReach(v) * sqrt(frandom[AjarLast](0, 1)), a = frandom[AjarLast](0, 360);

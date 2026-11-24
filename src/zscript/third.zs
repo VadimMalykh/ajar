@@ -51,12 +51,24 @@
 //    (its floor, pits, pedestals, bays: where its monsters are), args[1] the
 //    seconds plate 1 must be held (0: 30), args[2] the seconds a later plate
 //    must be held while the earlier ones are (0: 15), args[3] the tag of an
-//    AjarShutter the alarm opens (the last stand's gate; 0 none).
+//    AjarShutter the alarm opens (the last stand's gate; 0 none), args[4]
+//    the damage that staggers an earlier self (0: never).
 //    AjarThirdGuard thing (20167): a monster of the last hall, Doom editor
 //    number args[0] (AjarHandler.AmbushClass), at the thing's place (a flyer
-//    at its height) and angle. Sector tag 3360 + k: stand k, where go k
-//    stands at the last hall (its plate, its time door), open to the hall
-//    behind a railing nobody crosses (ajarthird.railing).
+//    at its height) and angle, of wave args[1] (0 or 1: wave 1). Sector tag
+//    3360 + k: stand k, where go k stands at the last hall (its plate, its
+//    time door), open to the hall behind a railing nobody crosses
+//    (ajarthird.railing).
+//    AjarThirdShare thing (20170): a place of the hall's SHARE, args[0] what
+//    it is (0 an invulnerability sphere, 1 a megasphere); all of the map's
+//    together are one item (one on each stand).
+//    AjarThirdLever thing (20171): a plate on a stand's wall (as a wind
+//    plate), args[0] its number n (unique), args[1] its kind (1 steam, 2
+//    breaker), args[2] steam: the number of its vents, args[3] the seconds
+//    it lasts (0: steam 6, breaker 5).
+//    AjarThirdVent thing (20172): a point of the hall's floor that steam
+//    lever args[0]'s steam blows over, within args[1] (0: 96) of it, at its
+//    floor's height (mark that floor: a colour).
 //
 // The rules:
 //  * ONE CLOCK (ot, AjarTimeHandler's) for the whole map, 0 at the start of
@@ -148,6 +160,38 @@
 //       the seconds it stood there that counted), and in the last go the
 //       first and the last moment the exit door is open.
 //    8. Paradoxes as above; an earlier self cannot die.
+//    The ways the selves help each other (each only with its things or
+//    argument: a map without them plays as above; PLAN.md, "The last fight
+//    lab: four ways the selves help each other"):
+//    9. WAVES: the alarm brings wave 1 only. Wave k (1 < k < parts) comes at
+//       the first tic, from the alarm on, plate k is pressed in the go (go
+//       k: the player on it; a later go: self k by its record, not in a pale
+//       stretch); so never in go 1. The last wave (parts) in the last go
+//       only, the first tic the player stands in the hall (its tag). Each as
+//       the alarm's (fog, awake, first target), a sound and a line; cleared
+//       at each go's start with the rest. On a map with waves the timetable
+//       has a line an earlier self that fired: its first and last shot.
+//    10. THE SHARE: at each go's start a pale copy at each share thing, not
+//       to be taken. At the alarm they become real, unless an earlier self
+//       took it in its go (the first in the records): then they stay pale
+//       and all go at its tic (said at the alarm; the timetable). The player
+//       touching a real copy takes the item; every copy goes; the record has
+//       the tic.
+//    11. THE STAGGER (args[4] n > 0): an earlier self sums the damage that
+//       hits it from the alarm (not its own, another self's or a player's),
+//       falling by 1 a tic; at n it is staggered for 105 tics: the shots of
+//       its record in them are not fired (nor later), it flickers pale with
+//       the player's pain picture, the pain sound, a line the first time in
+//       a go. It stands and presses its plate as its record has it.
+//    12. THE LEVERS: USE works one once a go, from the alarm on (before: a
+//       line); the record has the tic, and in every later go it works by
+//       itself then (it is that self's: the player cannot work it). STEAM:
+//       for its seconds, every 4 tics 6 damage to each living monster and
+//       player on the floor within reach of its vents (never an earlier
+//       self), puffs and a hiss. BREAKER: for its seconds every living
+//       monster in the hall is held as it is (state, place, angle; not
+//       thrust) and can be hurt and killed; sparks, the hall's light
+//       flickers. Each is a timetable line of the self that works it.
 
 class AjarThirdMark : Actor
 {
