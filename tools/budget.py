@@ -30,7 +30,7 @@ def reckon(things, skills, level):
     hp = 0; cnt = {}; am = dict(sh=0, bu=0, ro=0, ce=0); heal = 0; arm = 0; weap = []
     for t, s in zip(things, skills):
         if s > level or level > t.get("upto", 9): continue
-        ty = t["args"][1] if t["type"] in STAND_IN else t["type"]
+        ty = t["args"][1] if t["type"] in STAND_IN else t["args"][0] if t["type"] == 20167 else t["type"]     # (20167: a last hall's guard)
         if ty in HP:
             hp += HP[ty]; cnt[NAME[ty]] = cnt.get(NAME[ty], 0) + 1
             if ty in DROP: am[DROP[ty][0]] += DROP[ty][1]

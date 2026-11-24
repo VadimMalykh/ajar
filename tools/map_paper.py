@@ -903,7 +903,9 @@ joint((1728, 4640), (1984, 4640), "toplanding", "upper")
 frame((3968, 4832), (4032, 4832), (0, 1), 103, U, "upper")
 SR3 = (4064, 4848, 4736, 5120)
 REG3_C = (FRAMES[103]["mouth"][0] + 560, FRAMES[103]["mouth"][1] + 96)      # 96 ahead and 560 to the right of the frame
-room(SR3, U, look("CK", "FC", "KC", 184, U + 160, PAPER), [((4096, 5056, 4672, 5120), block(48, "UT", "US")), plate(REG3_C)], name="sideroom",
+# (its bench starts at the west wall: 32 from it was a nook a player could get into and not out of; sealed or
+# not, nothing he might walk into is under 48)
+room(SR3, U, look("CK", "FC", "KC", 184, U + 160, PAPER), [((4064, 5056, 4672, 5120), block(48, "UT", "US")), plate(REG3_C)], name="sideroom",
      sealed=True)
 pane_x(4352, 4480, 4832, 4848, z=U)
 register(3, "the side room", plate_box(REG3_C), U, REG_TAG[3])
@@ -914,9 +916,11 @@ room(NS, U, look("EX", "FE", "KE", 196, U + 192, STEEL), [((2560, 4288, 2688, 44
 # its door is register 4's, as the garden's: through its walls it is the garden (the gazebo), and the
 # garden is the stage register 4 opens (a departure: the design's door here is a plain one)
 steel_door((2464, 4640), (2528, 4640), (0, -1), U, REG_TAG[4], "upper", "nosize", thick=96, near="CO", far_part="EX")
-# the drawing office: both TEAL leaves; 122
+# the drawing office: both TEAL leaves; 122. The counter stands in line with the benches, 160 clear of the
+# way in and 64 from each bench: a player is 32 wide, and nothing he might walk into is under 48 (it stood 32
+# from the north wall, straight across the way in, and nobody got in: 2026-11-24)
 DO = (2944, 4096, 3712, 4512)
-do_benches = [((3008, 4224, 3136, 4352), block(48)), ((3520, 4224, 3648, 4352), block(48)), ((3200, 4416, 3456, 4480), block(48, "UT", "US"))]
+do_benches = [((3008, 4224, 3136, 4352), block(48)), ((3520, 4224, 3648, 4352), block(48)), ((3200, 4288, 3456, 4352), block(48, "UT", "US"))]
 room(DO, U, look("LA", "FA", "KA", 188, U + 192, RUST), grid(DO, 2, 1, 224, 96) + do_benches, name="drawing")
 gap((3264, 4640), (3392, 4640), (0, -1), U, "CO", "LA", "upper", "drawing", thick=128)
 frame((3264, 4096), (3328, 4096), (0, -1), 122, U, "drawing")
@@ -993,7 +997,8 @@ BIG_END = (BIG[2] - 48, (BIG[1] + BIG[3]) / 2)
 # the island (secret), its pavilion's posts, its plate: where the double walks out of the little store's
 # back wall and over the water with the player at the big store's far end
 REG9_C = crossing(BOAT_FACE, BIG_P).inv()(BIG_END)
-posts = [(ISLAND[0] + 32, ISLAND[1] + 32), (ISLAND[2] - 48, ISLAND[1] + 32), (ISLAND[0] + 32, ISLAND[3] - 48), (ISLAND[2] - 48, ISLAND[3] - 48)]
+# (48 in from the railed edge: at 32 they left four nooks a player is just as wide as; nothing under 48)
+posts = [(ISLAND[0] + 48, ISLAND[1] + 48), (ISLAND[2] - 64, ISLAND[1] + 48), (ISLAND[0] + 48, ISLAND[3] - 64), (ISLAND[2] - 64, ISLAND[3] - 64)]
 fit(ISLAND, [((x, y, x + 16, y + 16), solid("PI", 160)) for x, y in posts] + [plate(REG9_C, special=1024)],
     floor=G, **PCL)
 W.area("island", ISLAND, G)
@@ -1062,8 +1067,9 @@ hedges = [(1664, 320, 2368, 384), (3008, 320, 3904, 384), (1664, 1856, 2368, 192
           (4672, 448, 5504, 512), (4672, 1664, 5504, 1728), (1664, 704, 1728, 1536), (5568, 704, 5632, 1280),
           (3328, 896, 3392, 1344), (4864, 896, 5248, 960), (4864, 1216, 5248, 1280),
           # beds where single crossings would put the double on register 5 (BLUE in 105; Pairs of 106 with
-          # 104 and with 111)
-          (1792, 832, 1984, 1024), (2048, 1376, 2240, 1568), (4640, 1152, 4832, 1344)]
+          # 104 and with 111); the third runs on to meet the hedge east of it (a gap of 32 between them was a
+          # slot a player is just as wide as: nothing he might walk into is under 48)
+          (1792, 832, 1984, 1024), (2048, 1376, 2240, 1568), (4640, 1152, 4864, 1344)]
 paths = [(2688, 64, 2816, 2176), (1536, 1024, 5696, 1088), (3392, 1088, 3520, 2176)]
 DESK4 = (3584, 2080, 3712, 2144)
 room(GD, G, GRASS, [(p, dict(ftex=T("FC") if LOOK else "AJFLOOR")) for p in paths] + [(h, HEDGE) for h in hedges] + [(DESK4, DESK_F)],
@@ -1509,6 +1515,13 @@ def measure():
     lost = sorted(set(W.areas) - got - W.sealed - set(APART))
     if lost:
         bad.append(f"areas nobody reaches on foot: {lost}")
+    # every node too, not only every area: an area counts as reached as soon as a node it shares with another
+    # area is (a gap's middle), and so the drawing office passed while its counter shut the way in (2026-11-24)
+    apart = W.sealed | set(APART)
+    unreached = [n for i, n in enumerate(W.nodes) if i not in dist and not n["areas"] & apart]
+    if unreached:
+        bad.append("nodes nobody reaches on foot: "
+                   + ", ".join(f"{n['label']} ({'/'.join(sorted(n['areas']))}) at ({n['x']:g}, {n['y']:g})" for n in unreached))
     # --- the courts: in with empty hands, out with a door in hand ----------------------------------------
     for area, name in COURTS.items():
         ins = [kind for i, j, c, kind in W.arcs if area in W.nodes[j]["areas"] and area not in W.nodes[i]["areas"]]
