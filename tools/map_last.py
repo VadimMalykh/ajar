@@ -90,7 +90,7 @@ m.sector(rect(512, -160, 1152, -96), ceil=128, light=170, color=P3)          # .
 STAND3 = stand(3, (1152, -192, 1536, 0), (1440, -128, 1504, -64), color=P3)
 ajarthird.wind(m, 1534, -160, 180)
 # the gate in stand 3's railing, and the steps down behind it to L's floor
-ajartime.shutter(m, (1280, 0), (1408, 0), (0, 1), 0, GATE, color=P3)
+ajartime.shutter(m, (1280, 0), (1408, 0), (0, 1), 0, GATE, nomonsters=True, color=P3)
 ajarmap.stairs(m, (1280, 16), (1408, 16), (0, 1), 0, FL, steps=6, depth=16, ceil=LC, light=170, color=HALL, id=HALLT)
 
 # --- the last hall L ---------------------------------------------------------------
