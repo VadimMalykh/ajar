@@ -7,7 +7,9 @@
 //   1  the whole level by the answers meant, in the order of the stages, and
 //      out by VIOLET and PINK in the brass frames
 //   2  what must not work: RED in 102, GREEN in 103, 4 and 6 laps for 5, 2
-//      laps for 6, walking over a plate without stopping
+//      laps for 6, walking over a plate without stopping; GREEN in 102 kept on
+//      upstairs (registers 3 and 4 not signed by it); the balcony's door shut
+//      before register 4 and open after
 //   3  the building's own: the covered way, the porter's lodge, the boat
 //      store and the island, the gazebo, the desks, the courts' ways in and
 //      out, the drop from the balcony, the two secrets
@@ -34,7 +36,7 @@ class AjarPaper : EventHandler
 	static string Opened(int n)
 	{
 		static const string what[] = { "Its door is unbolted.", "The barrier to the covered way is up.", "The stair hall is unbolted.",
-			"The basement is unbolted.", "The garden door is unbolted.", "The east strongroom is unbolted.",
+			"The basement is unbolted.", "The garden and the balcony are unbolted.", "The east strongroom is unbolted.",
 			"The tower's strongroom is unbolted.", "The kiosk is unbolted.", "The lodge is unbolted.", "The footbridge is up." };
 		return what[clamp(n, 0, 9)];
 	}
@@ -447,7 +449,7 @@ class PaperTest : EventHandler
 		if (Op() && WalkTo(mo, "reg4_upTheGrandStair", 1888, 4512)) Next();
 		if (Op()) { Check("reg4_onTheTopLanding", abs(mo.pos.z - 256) < 0.001 && abs(dbl.pos.z - 256) < 0.001, String.Format("player %s, double %s", PStr(mo.pos), PStr(dbl.pos))); Next(); }
 		if (Op() && WaitSigned("reg4_signedByBLUE", 4)) Next();
-		if (Op() && DoorUp("reg4_gardenDoorOpen", 1904, 2)) Next();
+		if (Op() && DoorUp("reg4_gardenNoSizeAndBalconyOpen", 1904, 3)) Next();        // the garden's, the hall with no size's, the balcony's
 		// register 5: a TEAL leaf in 105 and 106, five laps east
 		if (Op() && TakeDoor(mo, h.LabLeaf(8, 0))) Next();
 		if (Op() && Stand(mo, 6)) Next();
@@ -469,12 +471,13 @@ class PaperTest : EventHandler
 		if (Op() && WalkTo(mo, "linkHall_outAtAWalk", 3312.5, 3488, 200, 3)) Next();
 		if (Op() && Stand(mo, 8)) Next();
 		if (Op()) { Check("linkHall_downAgain", mo.pos.z == 0, PStr(mo.pos)); Next(); }
-		// register 7: GREEN taken down from 102, over the balcony into the pond court, hung in 113
+		// register 7: GREEN taken down from 102, through the balcony's door (register 4's, open since) and over the
+		// balcony into the pond court, hung in 113
 		if (Op() && DeskAt(mo, "desk3_resetsThirdTime", 3)) Next();
 		if (Op() && TakeDoor(mo, green)) Next();
 		if (Op() && Forward(mo, 3406, 18)) Next();
 		if (Op() && Stand(mo, 30)) Next();
-		if (Op()) { Check("dropIntoThePondCourtWithGreen", Inside(mo.pos, 4928, 3712, 6848, 5568) && mo.pos.z == 0 && h.carried == green, PStr(mo.pos)); Next(); }
+		if (Op()) { Check("throughTheBalconyDoorIntoThePondCourtWithGreen", Inside(mo.pos, 4928, 3712, 6848, 5568) && mo.pos.z == 0 && h.carried == green, PStr(mo.pos)); Next(); }
 		if (Op() && PoseAt(mo, FRONT + 113)) Next();
 		if (Op() && HangIn(mo, "greenHungIn113", 113)) Next();
 		if (Op() && Through(mo, "green113_cross", FRONT + 113, 1)) Next();
@@ -598,6 +601,57 @@ class PaperTest : EventHandler
 			Check("noneOfTheRestSigned", !Reg(2).signed && !Reg(3).signed && !Reg(5).signed && !Reg(6).signed);
 			Next();
 		}
+		// GREEN in 102 kept on upstairs (2026-11-24: Vadim, the stack signed, stood beyond the grand stair's head and
+		// register 4 signed itself; the stack now stands 112 up, and GREEN in 102 carries that): the stack signed, the
+		// player stands 2 s at each patch where it used to put the double on register 3's or 4's plate
+		if (Op() && DeskAt(mo, "desk2_resetsForTheLeaks", 2)) Next();
+		if (Op() && TakeDoor(mo, green)) Next();
+		if (Op() && PoseAt(mo, FRONT + 102)) Next();
+		if (Op() && HangIn(mo, "greenHungIn102", 102)) Next();
+		if (Op() && Through(mo, "green102_cross", FRONT + 102, 1)) Next();
+		if (Op() && WalkTo(mo, "green102_toTheStackAnswer", 2592, 2912)) Next();
+		if (Op() && WaitSigned("reg2_signedByGREEN", 2)) Next();
+		if (Op()) { PoseF(mo, 2112, 4736, 0); Next(); }
+		if (Op() && Stand(mo, 70)) Next();
+		if (Op() && NotSigned("reg4_notByGREEN102_upperCorridor", 4)) Next();
+		if (Op() && NotSigned("reg3_notByGREEN102_upperCorridor", 3)) Next();
+		if (Op()) { PoseF(mo, 4560, 5200, 90); Next(); }
+		if (Op() && Stand(mo, 70)) Next();
+		if (Op() && NotSigned("reg3_notByGREEN102_upperStore", 3)) Next();
+		if (Op() && NotSigned("reg4_notByGREEN102_upperStore", 4)) Next();
+		if (Op()) { PoseF(mo, 4560, 4704, 0); Next(); }
+		if (Op() && Stand(mo, 70)) Next();
+		if (Op() && NotSigned("reg3_notByGREEN102_corridorBySideRoom", 3)) Next();
+		if (Op() && NotSigned("reg4_notByGREEN102_corridorBySideRoom", 4)) Next();
+		// ... and the other way, as the third patch was found: the pass stamped, in by GREEN's far side, out of 102
+		if (Op() && DeskAt(mo, "desk3_resetsBeforeTheOtherWay", 3)) Next();
+		if (Op() && Through(mo, "greenFarSide_into102", FARS + 3, 1)) Next();
+		if (Op()) { Check("green102_outOnTheDais", abs(mo.pos.z - 112) < 0.001 && TIs(0, 0, 224, -112), String.Format("player %s, %s", PStr(mo.pos), TStr())); Next(); }
+		if (Op()) { PoseF(mo, 4560, 4704, 0); Next(); }
+		if (Op() && Stand(mo, 70)) Next();
+		if (Op() && NotSigned("reg3_notByGREEN102_backways_corridorBySideRoom", 3)) Next();
+		if (Op() && NotSigned("reg4_notByGREEN102_backways_corridorBySideRoom", 4)) Next();
+		// the balcony's door (register 4's): shut before register 4 is signed, a walk at it stops in the corridor ...
+		if (Op() && Forward(mo, 3406, 18)) Next();
+		if (Op() && Stand(mo, 10)) Next();
+		if (Op())
+		{
+			Check("balconyDoor_shutBeforeRegister4", !Reg(4).signed && Inside(mo.pos, 4700, 4640, 4864, 4832) && abs(mo.pos.z - 256) < 0.001, PStr(mo.pos));
+			Next();
+		}
+		// ... and open after: register 4 by its answer (BLUE in 104, up the grand stair), then the walk drops into the court
+		if (Op() && DeskAt(mo, "desk3_resetsForRegister4", 3)) Next();
+		if (Op() && TakeDoor(mo, h.DoorOf(2))) Next();
+		if (Op() && Stand(mo, 6)) Next();
+		if (Op() && PoseAt(mo, FRONT + 104)) Next();
+		if (Op() && HangIn(mo, "blueHungIn104", 104)) Next();
+		if (Op() && Through(mo, "blue104_cross", FRONT + 104, 1)) Next();
+		if (Op() && WalkTo(mo, "reg4_upTheGrandStair", 1888, 4512)) Next();
+		if (Op() && WaitSigned("reg4_signedByBLUE", 4)) Next();
+		if (Op() && DoorUp("reg4_gardenNoSizeAndBalconyOpen", 1904, 3)) Next();
+		if (Op() && Forward(mo, 3406, 18)) Next();
+		if (Op() && Stand(mo, 30)) Next();
+		if (Op()) { Check("balconyDoor_openAfterRegister4", Inside(mo.pos, 4928, 3712, 6848, 5568) && mo.pos.z == 0, PStr(mo.pos)); Next(); }
 	}
 
 	// --- MODE=3: the building's own ---------------------------------------------------------
@@ -705,6 +759,9 @@ class PaperTest : EventHandler
 		if (Op()) { Check("towerYard_outByTurnstileWithADoor", Inside(mo.pos, 1536, 64, 5696, 2176) && mo.pos.z == 0 && h.carried == red, PStr(mo.pos)); Next(); }
 		if (Op() && Forward(mo, 3408, 12)) Next();
 		if (Op()) { Check("towerYard_notBackByTurnstile", Inside(mo.pos, 1536, 64, 5698, 2176), PStr(mo.pos)); Next(); }
+		// the balcony's door is register 4's (2026-11-24), not signed in this run: opened by the script
+		if (Op()) { level.ExecuteSpecial(11 /* Door_Open */, null, null, false, 1904, 64); Next(); }
+		if (Op() && DoorUp("balconyDoor_openedByTheScript", 1904, 3)) Next();
 		if (Op() && Forward(mo, 3406, 18)) Next();
 		if (Op() && Stand(mo, 30)) Next();
 		if (Op()) { Check("pondCourt_inByTheDropWithADoor", Inside(mo.pos, 4928, 3712, 6848, 5568) && mo.pos.z == 0 && h.carried == red, PStr(mo.pos)); Next(); }
@@ -769,10 +826,10 @@ class PaperTest : EventHandler
 			ViewCross(mo, st, 2, 3301, 2);
 			Look(mo, st, 992, 2288, 90);
 			break;
-		case 4:     // the reading corridor, GREEN by 102: the stack and the double behind glass
+		case 4:     // the reading corridor, GREEN by 102: the stack and the double behind glass, 112 up (looking up)
 			if (st == 1) Hang(mo, h.DoorOf(3), 102);
 			ViewCross(mo, st, 2, FRONT + 102, 1);
-			Look(mo, st, 2400, 2970, 300);
+			Look(mo, st, 2400, 2970, 300, -14);
 			break;
 		case 5:     // the link hall after two laps: the double down the sealed gallery, through the glass
 			if (st == 1) { Hang(mo, h.LabLeaf(8, 0), 105); Hang(mo, h.LabLeaf(8, 1), 106); }
@@ -820,12 +877,15 @@ class PaperTest : EventHandler
 		case 15:    // the basement: the long cellar
 			Look(mo, st, 800, 5250, 0);
 			break;
-		case 16:    // the automap (the cfg opens it), after RED by 101: the double's mark
+		case 16:    // the upper corridor's east end: the balcony's door (register 4's) and its plaque
+			Look(mo, st, 4560, 4704, 20);
+			break;
+		case 17:    // the automap (the cfg opens it), after RED by 101: the double's mark
 			if (st == 1) Hang(mo, h.DoorOf(1), 101);
 			ViewCross(mo, st, 2, FRONT + 101, 1);
 			Look(mo, st, 1104, 1408, 185);
 			break;
 		}
-		if (tic == 3 + 80 * 17) Console.Printf("AJARTEST viewsDone=1");
+		if (tic == 3 + 80 * 18) Console.Printf("AJARTEST viewsDone=1");
 	}
 }

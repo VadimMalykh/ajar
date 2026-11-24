@@ -49,7 +49,9 @@ No PUZZLE: ten doors and nineteen frames are too many states. Instead this
 module checks, when it is built, the facts the design rests on (MEASURE): the
 stages open in order, each in one piece on foot; every court has a way in
 with empty hands and a way out for a door; and the registers, by the rule's
-geometry (rectangle arithmetic under quarter turns); the build fails if not.
+geometry (rectangle arithmetic under quarter turns), among them that no
+register is signed by a shift the player carries anyway before it can be
+(BEFORE); the build fails if not.
 """
 import heapq
 import math
@@ -756,24 +758,42 @@ joint((1088, 3200), (1408, 3200), "lobby", "gallery")
 frame((640, 3264), (640, 3328), (-1, 0), 121, G, "gallery")
 
 # --- the archive: the vestibule, the stack (sealed), the reading corridor ---------------------------
-VE = (1472, 2560, 1728, 2816)
-room(VE, G, look("AR", "FR", "KA", 170, 256, DIM), name="vestibule")
+VE = (1472, 2432, 1728, 2816)                                               # (2026-11-24: 128 longer south, for the dais's steps)
+# frame 102 and the stack behind it stand STACK_Z up, the frame on a dais along the vestibule's east wall with
+# steps up from the west (as frame 101 on the duty room's): GREEN in 102 carries that change of height, so that
+# it puts the double on no plate from where the player goes on with it hung (2026-11-24: at the same height, the
+# upper corridor beyond the grand stair's head put it on register 4's plate and signed it by accident, and two
+# patches upstairs on register 3's). The answer meant is the same: the player in the reading corridor at 0, the
+# double in the stack at STACK_Z.
+STACK_Z = 112
+VDAIS = (1632, 2624, 1728, 2752)
+V_RISES = -(-STACK_Z // 24)                                                 # steps of 24 at most, the dais the last
+V_STEP = 24
+V_FOOT = VDAIS[0] - (V_RISES - 1) * V_STEP
+v_steps = [((V_FOOT + i * V_STEP, VDAIS[1], V_FOOT + (i + 1) * V_STEP, VDAIS[3]),
+            dict(floor=round(STACK_Z * (i + 1) / V_RISES), **dress(side="SR", ftex="GT"))) for i in range(V_RISES - 1)]
+room(VE, G, look("AR", "FR", "KA", 170, 256, DIM), [(VDAIS, dict(floor=STACK_Z, **dress(side="SR", ftex="GT")))] + v_steps,
+     name="vestibule", obst=[(V_FOOT, VDAIS[1], VDAIS[2], VDAIS[3])])
+W.area("vdais", VDAIS, STACK_Z)
+W.link(W.node(VDAIS[0] + 16, 2688, "the vestibule's steps", "vdais"), W.node(V_FOOT - 24, 2688, "the vestibule's steps", "vestibule"),
+       VDAIS[0] - V_FOOT + 40)
 gap((1408, 2624), (1408, 2752), (1, 0), G, "LB", "AR", "lobby", "vestibule")
-frame((1728, 2656), (1728, 2720), (1, 0), 102, G, "vestibule")
-for a, b in (((1536, 2560), (1664, 2560)),):
+frame((1728, 2656), (1728, 2720), (1, 0), 102, STACK_Z, "vdais")
+for a, b in (((1536, 2432), (1664, 2432)),):
     hang(a, b, "CI")
 ST = (1808, 2560, 2816, 2816)
-st_shelves = [((x, 2560, x + 192, 2608), solid("SK", 192)) for x in range(1856, 2752, 256)]
+st_shelves = [((x, 2560, x + 192, 2608), solid("SK", STACK_Z + 192)) for x in range(1856, 2752, 256)]
 REG2_C = (1728 + 864, 2688)                                                 # 864 in from the stack's west wall, on 102's axis
-room(ST, G, look("AR", "FR", "KA", 200, 192, DIM), grid(ST, 4, 1, 224, 96) + st_shelves + [plate(REG2_C)], name="stack", sealed=True)
-pane_x(1808, 2816, 2816, 2832)
+room(ST, STACK_Z, look("AR", "FR", "KA", 200, STACK_Z + 192, DIM), grid(ST, 4, 1, 224, 96) + st_shelves + [plate(REG2_C)], name="stack",
+     sealed=True)
+pane_x(1808, 2816, 2816, 2832, sill=48, top=192)                            # to the corridor's ceiling: the double walks STACK_Z up
 RC = (1760, 2832, 3008, 2992)
 # a reading desk against the north wall at the east end (where a Pair in 106 and 109 would put the
 # double on register 5)
 room(RC, G, look("AR", "FR", "KA", 180, 192, DIM), grid(RC, 5, 1, 210, 64) + [((2688, 2880, 2816, 2992), block(48, "DT", "DS"))],
      name="reading")
 far((1760, 2880), (1760, 2944), (-1, 0), GREEN, G, "reading")
-register(2, "the stack", plate_box(REG2_C), G, REG_TAG[2])
+register(2, "the stack", plate_box(REG2_C), STACK_Z, REG_TAG[2])
 RP = (2816, 2992, 2944, 3200)
 room(RP, G, look("CO", "FC", "KC", 180, 192, MINT), name="readingway")
 joint((2816, 2992), (2944, 2992), "reading", "readingway")
@@ -936,8 +956,10 @@ USTORE = (3968, 5184, 4800, 5568)
 us_shelves = [((x, 5248, x + 64, 5504), solid("SK", U + 192)) for x in (4160, 4416, 4672)]
 room(USTORE, U, look("AR", "FR", "KA", 156, U + 192, DIM), us_shelves, name="upperstore")
 gap((3904, 5312), (3904, 5376), (1, 0), U, "AR", "AR", "office2", "upperstore")
-# the balcony at the corridor's east end, over the pond court: a drop of 256, one way
-BAL_GAP = gap((4864, 4672), (4864, 4800), (1, 0), U, "CO", "LB", "upper", "balcony")
+# the balcony at the corridor's east end, over the pond court: a drop of 256, one way. Its door is register 4's
+# (2026-11-24; it was an open gap 128 wide, and the pond court, register 7, the tower yard and register 6 came
+# straight after register 2: the way out passed registers 3 and 4, the basement, BLUE and the garden by)
+BAL_DOOR = steel_door((4864, 4704), (4864, 4768), (1, 0), U, REG_TAG[4], "upper", "balcony", thick=64)
 
 # =================================================================================================
 # THE POND COURT (open; in by the balcony only, out by a turnstile into the east lane)
@@ -1017,13 +1039,17 @@ for p, q in (((5120, 5120), (5216, 5120)), ((5280, 5120), (5376, 5120)), ((5120,
     m.line(p, q, **GLASS)
 steel_door((5216, 5120), (5280, 5120), (0, 1), G, REG_TAG[7], "pond", "kiosk", thick=16)
 # 113 in the court's east wall; the boathouse behind it, sealed, glass either side
-frame((6848, 4512), (6848, 4576), (1, 0), 113, G, "pond")
-BH = (6928, 4416, 7952, 4672)
-REG7_C = (6848 + 864, 4544)                                                 # 864 in from the court's wall, on 113's axis
-room(BH, G, look("PU", "FP", "KP", 170, 192, COLD), [((x, 4416, x + 64, 4672), dict(light=220)) for x in range(7040, 7952, 256)] + [plate(REG7_C)],
+# (2026-11-24: 113, the boathouse, its glass and its plaque 64 further north than first built: the covered way
+# walked north (a shift of 784 north) put the double on the plate's south edge with the player against the east
+# yard's north wall; now no place in the east yard does)
+BH_DY = 64
+frame((6848, 4512 + BH_DY), (6848, 4576 + BH_DY), (1, 0), 113, G, "pond")
+BH = (6928, 4416 + BH_DY, 7952, 4672 + BH_DY)
+REG7_C = (6848 + 864, 4544 + BH_DY)                                         # 864 in from the court's wall, on 113's axis
+room(BH, G, look("PU", "FP", "KP", 170, 192, COLD), [((x, BH[1], x + 64, BH[3]), dict(light=220)) for x in range(7040, 7952, 256)] + [plate(REG7_C)],
      name="boathouse", sealed=True)
-pane_y(4432, 4496, 6848, 6928)
-pane_y(4592, 4656, 6848, 6928)
+pane_y(4432 + BH_DY, 4496 + BH_DY, 6848, 6928)
+pane_y(4592 + BH_DY, 4656 + BH_DY, 6848, 6928)
 register(7, "the boathouse", plate_box(REG7_C), G, REG_TAG[7])
 PC_OUT = turnstile((6016, 3712), (6080, 3712), (0, -1), G, "pond", "lane")
 
@@ -1187,7 +1213,8 @@ plaque((6976, 3712), (7104, 3712), (0, 1), "LB", "WAY OUT ONLY")
 plaque((6144, 3712), (6272, 3712), (0, -1), "LB", "WAY OUT ONLY")
 plaque((5760, 768), (5760, 896), (-1, 0), "PU", "WAY OUT ONLY")
 plaque((6208, 576), (6208, 704), (1, 0), "PU", "REGISTER 6 THE STAIR")
-plaque((6848, 4672), (6848, 4800), (1, 0), "LB", "REGISTER 7 BOATHOUSE")
+plaque((6848, 4672 + BH_DY), (6848, 4800 + BH_DY), (1, 0), "LB", "REGISTER 7 BOATHOUSE")
+plaque((4736, 4832), (4864, 4832), (0, 1), "CO", "REGISTER 4 BALCONY", z=U)   # beside the balcony's door (the last: it adds a picture)
 
 # --- weapons in MAP18's order (shotgun, chaingun, super shotgun, rocket launcher, plasma), the rest ----
 NOROOM = []
@@ -1435,18 +1462,24 @@ def stage_sets():
     return [("the gatehouse", set()), ("the block's ground floor", {REG_TAG[1]}),
             ("the stair hall and the upper floor", {REG_TAG[1], REG_TAG[2]}),
             ("the basement", {REG_TAG[1], REG_TAG[2], REG_TAG[3]}),
-            ("the garden and the grounds", {REG_TAG[1], REG_TAG[2], REG_TAG[3], REG_TAG[4]})]
+            ("the garden, the balcony and the grounds", {REG_TAG[1], REG_TAG[2], REG_TAG[3], REG_TAG[4]})]
 
 
 STAGE_AREAS = [
     {"passhall", "forecourt", "dais", "nightway"},
-    {"dutyroom", "cwsouth", "cwnorth", "stretch", "lobby", "gallery", "vestibule", "reading", "readingway", "canteen",
+    {"dutyroom", "cwsouth", "cwnorth", "stretch", "lobby", "gallery", "vestibule", "vdais", "reading", "readingway", "canteen",
      "kitchen", "link", "linkvest", "lane", "eastyard", "officew1", "officew2"},
-    {"stairhall", "flight", "toplanding", "upper", "drawing", "office0", "office1", "office2", "upperstore", "balcony",
-     "pond", "littlestore", "bigstore"},
+    {"stairhall", "flight", "toplanding", "upper", "drawing", "office0", "office1", "office2", "upperstore"},
     {"basementstair", "basestairs", "blanding", "stores", "boiler", "bpassage", "cellar"},
-    {"gardensteps", "garden", "nosize", "toweryard", "towerhead", "towerflight", "towerfoot"},
+    {"gardensteps", "garden", "nosize", "toweryard", "towerhead", "towerflight", "towerfoot", "balcony", "pond", "littlestore",
+     "bigstore"},
 ]
+# the chain: the steel doors that can be open before register n is signed (the lodge's and the footbridge's
+# are taken as open, as everywhere in the measure). 1 -> 2 -> 3 -> 4 -> the pond court -> 7 -> the tower yard
+# -> 6; 5 is free once the upper floor is open (TEAL is there)
+BEFORE = {1: (), 2: (1,), 3: (1, 2, 5), 4: (1, 2, 3, 5), 7: (1, 2, 3, 4, 5), 5: (1, 2, 3, 4, 6, 7), 6: (1, 2, 3, 4, 5, 7)}
+# the answers meant that a player carries on with anyway: (register, the door, the frame)
+MEANT_HUNG = ((1, RED, 101), (2, GREEN, 102), (3, RED, 103), (4, BLUE, 104), (7, GREEN, 113))
 COURTS = {"eastyard": "the east yard", "pond": "the pond court", "toweryard": "the tower yard"}
 APART = {"nightroom": "the night room (the way out: by the chain only)", "island": "the island (by its footbridge: register 9)",
          "strongroom5": "the east strongroom (register 5)", "strongroom6": "the tower's strongroom (register 6)",
@@ -1552,6 +1585,39 @@ def measure():
         r["one"] = one
         lines.append(f"    register {n} ({r['name']}): {len(one)} answers of one crossing"
                      + "".join(f"\n        {name} (standing in {', '.join(w)})" for name, key, w, M in one))
+    # --- no register signed by accident (2026-11-24: register 4 was, by GREEN in 102 kept on the upper floor):
+    # a shift the player carries anyway, the meant hanging of another register (both ways) or a passage of the
+    # building's own as it is really walked, must not put the double on a plate while that register can still
+    # be unsigned (both the crossing's near side and the standing place reached with the doors of BEFORE)
+    carried = []
+    for k, colour, f in MEANT_HUNG:
+        carried.append((f"{NAME[colour]} in {f}, into {f}", FRAMES[f], FARS[colour], crossing(FRAMES[f], FARS[colour]), k))
+        carried.append((f"{NAME[colour]} in {f}, into its far side", FARS[colour], FRAMES[f], crossing(FARS[colour], FRAMES[f]), k))
+    carried.append(("the covered way going north (the odd face, the stretch, its way out)", CW_FACE, CW_MOUTH,
+                    crossing(X_OUT_P, CW_MOUTH) @ crossing(CW_FACE, X_IN_P), 0))
+    carried.append(("the covered way's odd face (into the stretch, standing in it)", CW_FACE, X_IN_P, crossing(CW_FACE, X_IN_P), 0))
+    carried += [(name, S, D, crossing(S, D), 0) for name, S, D in CROSS
+                if name.startswith("fixed doorway") or name.startswith("the boat store's door")]
+    accidental = []
+    for n in sorted(BEFORE):
+        r = REGISTERS[n]
+        opened = {REG_TAG[k] for k in BEFORE[n]} | {LODGE_TAG, BRIDGE_TAG}
+        near_, _ = W.dijkstra(START, opened=opened)
+        found = []
+        for name, S, D, M, owner in carried:
+            if owner == n or S["node"] not in near_:
+                continue
+            areas, _ = reach(D["node"], opened)
+            where = [a for a in sorted(areas) if standable(a, M.box(r["box"]), r["z"] + M.dz)]
+            if where:
+                found.append(f"{name} (standing in {', '.join(where)})")
+        accidental.append((n, found))
+        if found:
+            bad.append(f"register {n} is signed by accident (steel open before it: {list(BEFORE[n]) or 'none'}): {found}")
+    lines.append(f"    accidental answers ({len(carried)} shifts carried anyway: the answers meant of the others, both ways; the "
+                 f"covered way north, whole and into the stretch; the boat store's door; the gazebo's eight): "
+                 + ", ".join(f"register {n} {len(f) or 'none'}" for n, f in accidental)
+                 + "".join(f"\n        register {n}: {x}" for n, f in accidental for x in f))
     # what each register was meant for (PLAN.md), and what it must not be
     def has(n, name, area=None):
         for nm, key, where, M in REGISTERS[n]["one"]:
@@ -1690,8 +1756,8 @@ for n in (1, 2, 3, 4):
         e = PORTS[f"doorway {n}{side}"]
         test_spot(3300 + k + n, W.nodes[e["node"]]["x"], W.nodes[e["node"]]["y"], angle_of(e["inn"]))
 for k, (i, angle) in enumerate(((EY_IN[0], 0), (EY_OUT[0], 180), (TY_IN[0], 0), (TY_OUT[0], 180), (PC_OUT[0], 270),
-                                (BAL_GAP, 0), (EY_OUT[1], 0), (TY_OUT[1], 0))):
-    test_spot(3401 + k, W.nodes[i]["x"] - (64 if k == 5 else 0), W.nodes[i]["y"], angle)
+                                (BAL_DOOR[0], 0), (EY_OUT[1], 0), (TY_OUT[1], 0))):
+    test_spot(3401 + k, W.nodes[i]["x"] - (8 if k == 5 else 0), W.nodes[i]["y"], angle)    # (3406: 32 before the balcony's door)
 
 I1.m, CD.m = _theirs, _cd
 

@@ -13840,3 +13840,138 @@ workshop's snapshots, its fight's length); MODE=2 46, MODE=3 263 with 40
 views, MODE=4 135. LAST MODE=1..4: 58, 46, 51, 55; THIRD MODE=3
 three times 53 each, MODE=7 58: none failed. The walk: part 1 13231 units,
 part 2 10878, part 3 10915, the secrets 832 + 855 + 215.
+
+### MAP19: finished without BLUE, register 4 signed by accident (fixed 2026-11-24)
+
+**Vadim**, after playing: "I was able to finish map19 without even taking blue
+door (and I'm still have no idea where it is) and also with about 30 enemies
+left."
+
+- **Why, first: register 4 was signed by accident.** After he signed register 2
+  (the stack) with GREEN in 102, the double kept that shift: the player plus
+  (0, -224), at the same height. With it, the patch x 2048..2176, y
+  4672..4800 of the upper corridor (just beyond the head of the grand stair)
+  puts the double on register 4's plate; he stood there a second, "Signed in:
+  the hall with no stair" came with no BLUE, and the garden opened. The measure
+  listed it ("GREEN in 102, into 102 (standing in upper)"), and register 3
+  leaked the same way (the upper store, and the corridor by the side room the
+  other way round). The build only checked that the answers meant work, not
+  that nothing a player does anyway works too.
+- **Why, second: registers 3 and 4 were on nobody's way out.** The way out
+  needs registers 1, 2, 7, 6 and 5: the pond court was entered by the balcony's
+  drop from the upper floor (open after register 2), the tower yard through
+  YELLOW, and one Pair does both pumps. So the basement, BLUE and the garden
+  could be left, and their monsters with them.
+
+**What changed** (`tools/map_paper.py`, `src/zscript/map19.zs`,
+`tools/smoke_MAP19_4.cfg`):
+
+- **A new rule in the measure** (it fails the build): no register is signed by
+  accident. For each register n of 1..7, an accidental answer is a way the
+  double gets onto n's plate (at its height, the measure's usual test) by a
+  shift the player carries anyway: (a) the meant hanging of another register,
+  both ways (RED in 101, GREEN in 102, RED in 103, BLUE in 104, GREEN in 113,
+  "into the frame" and "into its far side"); (b) the building's own passages as
+  they are really walked: the covered way going north as a whole (the odd face,
+  the stretch, its way out: the composite the porter's lodge is measured with),
+  the covered way's odd face alone (standing in the stretch), the boat store's
+  door into the big store, each of the gazebo's eight doorways (half a passage
+  that cannot be made alone, as the stretch's way out without its way in, is
+  not a case); and only while n can still be unsigned: the crossing's near side
+  and the standing place both reached with the steel doors that can be open
+  before n (`BEFORE`: before 1 none; 2 {1}; 3 {1, 2, 5}; 4 {1, 2, 3, 5}; 7 {1,
+  2, 3, 4, 5}; 5 all but 5; 6 all but 6; the lodge's and the footbridge's as
+  open, as everywhere in the measure). Registers 8 and 9 are outside it. On the
+  map as it was it found four: register 3 by GREEN in 102 (into 102, standing
+  in the upper store; into its far side, standing in the upper corridor),
+  register 4 by GREEN in 102 (into 102, standing in the upper corridor), and
+  register 7 by the covered way going north (shift 784 north), standing in the
+  east yard against its north wall (on the plate's south edge, exactly). The
+  measure's line now: "accidental answers (21 shifts carried anyway ...):
+  register 1 none, ... register 7 none". Every rule it had stays.
+- **Lever 1, the stack's height.** Frame 102 stands on a dais 112 up
+  (`STACK_Z`) along the vestibule's east wall (1632..1728 x 2624..2752), with
+  four steps of 22 or 23 up from the west (24 deep each, as the duty room's
+  dais has its steps); the stack, its plate, its shelves and its ceiling are
+  112 up with it, and register 2's plate is at 112. So GREEN in 102 carries a
+  change of height: going on from the reading corridor's side the double is 112
+  over the player, the other way 112 under. 112 because the measure is clean
+  with it: under 97 GREEN in 102 put the double on register 5's plate (64) from
+  the east lane, and every height from 104 to 160 tried was clean; 112 keeps
+  the steps under 24 and the double at least 48 from every plate height from
+  the floors at 0, 64, 256 and -256. The answer meant is the same: GREEN in
+  102, the player in the reading corridor at 0, the double in the stack, the
+  plate 864 in; RED in 102 still does not sign it (the heights of frame, stack
+  and RED's far side keep their differences). The vestibule is 128 longer to
+  the south (1472..1728 x 2432..2816; it was 2560..) so that its imp has room
+  beside the steps; its picture moved with the south wall. The window from the
+  reading corridor into the stack goes from 48 to the corridor's ceiling (192;
+  it was 16..144), so the double is seen walking up there, from the chest up.
+- **Lever 2, for register 7**: frame 113, the boathouse, its plate, its two
+  panes and its plaque stand 64 further north on the pond court's east wall
+  (`BH_DY`), so that no place in the east yard is where the covered way's shift
+  needs the player. The answer meant (GREEN in 113, walked in the reading
+  corridor at the same place as register 2's) is unchanged. No furniture was
+  added (lever 3 not used).
+- **The balcony's door.** The open gap (128 wide) at the upper corridor's east
+  end is a steel door on register 4's tag (1904, with the garden door and the
+  hall with no size's), 64 wide in the gap's middle (4864, 4704..4768), 64
+  thick, corridor side "upper", far side "balcony". So the chain is 1 -> 2
+  (the stair hall, the upper floor) -> 3 (the basement, BLUE) -> 4 (the garden,
+  the hall with no size, the balcony) -> the pond court -> 7 (YELLOW) -> the
+  tower yard -> 6; register 5 is free once the upper floor is open. A plaque
+  "REGISTER 4 BALCONY" beside it on the corridor's north wall (4736..4864),
+  made as the other register plaques (one new picture, `AJIS342`). The smoke
+  spot 3406 is 32 before the door.
+- **The stages**: "the stair hall and the upper floor" adds 9 areas (was 13),
+  "the garden, the balcony and the grounds" 11 (was 7: the balcony, the pond
+  court, the little and the big boat store moved there); each one piece on foot
+  with a way back; every court with its way in and its turnstile out.
+- **The message**: register 4 says "The garden and the balcony are unbolted."
+- Nothing else of the fights, items or doors changed. Placed things that moved
+  (the placer finds new free spots when a room or a frame moves): the
+  vestibule's imp (1600, 2664 -> 1600, 2576), and in the pond court a
+  revenant, a hell knight and a demon trade three spots among them (frame
+  113's front moved).
+
+**The measure after** (893 sectors, 67 walk areas, 374 nodes): answers of one
+crossing register 1 29 (29 before), 2 20 (72), 3 22 (27), 4 15 (16), 5 and 6
+none, 7 19 (25), 8 51 (62), 9 13 (16). What is left for registers 3 and 4 is
+listed in the build's log; none of it is a shift carried anyway (the nearest:
+"the stretch's way out (out of the mouth)" alone, half a passage, and for
+register 4 the gazebo's doorways, which are behind its own door). The laps as
+before; two crossings in a row: 1 2225, 2 2403, 3 2228, 4 989, 5 2112, 6 337,
+7 3045, 8 5228, 9 3530.
+
+**Checks** (the full `./build.sh`, about 3 minutes):
+- The build: no problem; MAP19's measure as above.
+- mapcheck (893 sectors, 471 things, 207 monsters, 2 secret sectors), itemcheck
+  and thingcheck on `map_paper`: 0 problems each.
+- `MAP=MAP19 MODE=1`: 88 checks, none failed, `levelExited`; tag 1904 now
+  counts its three doors, and the drop into the pond court goes through the
+  balcony's door after register 4 is signed.
+- `MODE=2`: 58 checks (34 + 24), none failed. New: GREEN in 102, the stack
+  signed, the player stands 2 s at each old leak: the upper corridor (2112,
+  4736), where the double stands on the middle of register 4's plate but at
+  368 against 256; the upper store (4560, 5200); the corridor by the side room
+  (4560, 4704); and, the pass stamped, the other way (in by GREEN's far side,
+  out on the dais at 112: the double on the middle of register 3's plate at
+  144); registers 3 and 4 stay unsigned at each. The balcony's door: a run at
+  it before register 4 stops at x 4847.7 in the corridor; register 4 signed by
+  BLUE in 104, the three doors of 1904 open, the same run drops into the court.
+- `MODE=3`: 52 checks (51 + 1: the balcony's door opened by the script, since
+  this run signs no register 4), none failed.
+- `MODE=4`: 18 views (one new: the balcony's door and its plaque from the
+  upper corridor), looked at: the stack from the reading corridor (now looking
+  up, the double behind the glass 112 up), the pond court from the balcony,
+  the door and plaque.
+- `MAP=PASS MODE=1`: 50 checks, none failed.
+- The package against main's (`ea736f6`): only `maps/MAP19.wad` and
+  `zscript/map19.zs` differ, and `textures/AJIS342.png` (the plaque) is new.
+
+**Not tested / not played by hand.** The runs pose the player (as before): the
+vestibule's new steps are not walked by a script (mapcheck finds no slot or
+lintel there); whether the double, seen from the chest up through the stack's
+window, still reads as "walking beside him" is for Vadim to say; the shifts of
+two crossings and doors carried while walking are still not in the rule. Not
+played by hand.
