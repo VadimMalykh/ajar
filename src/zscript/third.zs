@@ -92,7 +92,9 @@
 //    paleTo: seen through, presses nothing, not touched); what the earlier
 //    selves did to doors meanwhile is done; window halls are put as they are
 //    then; the shutters, the exit door and the plates as the records have
-//    them. No price (the lab).
+//    them. No price (the lab). From go 2, the first time in a go the player is
+//    within 512 of a wind plate and sees it while the next such step is more than
+//    ten seconds away, that is said (ThirdWindHint; text THIRD_WINDHINT).
 
 class AjarThirdMark : Actor
 {
@@ -190,6 +192,9 @@ extend class AjarTimeHandler
 	// the schedule: what the earlier selves will do in this go (ThirdSchedule)
 	Array<int> plFrom, plTo, plSelf;    // the spans an earlier self stands on its plate
 	int heldLast;               // the last tic at which plates 1..go-1 are all held by earlier selves
+	Array<AjarThirdWind> winds; // the plates on walls that wind the clock on
+	int windSaid;               // the tic of this go at which the wind plate was told of (-1: not yet; ThirdWindHint)
+	int windSays;               // how often it was told of in this go (the tests: once)
 	Array<int> heldFrom, heldTo;        // the spans they are
 	Array<string> tLine;        // the timetable's lines, and their colours (Font.CR_*)
 	Array<int> tColor;
@@ -234,6 +239,9 @@ extend class AjarTimeHandler
 		let wi = ThinkerIterator.Create("AjarThirdWatch");
 		AjarThirdWatch w;
 		while (w = AjarThirdWatch(wi.Next())) { watches.Push(w); watchTic.Push(-1); }
+		let wpi = ThinkerIterator.Create("AjarThirdWind");
+		AjarThirdWind wp;
+		while (wp = AjarThirdWind(wpi.Next())) winds.Push(wp);
 		let ni = ThinkerIterator.Create("AjarThirdWin");
 		AjarThirdWin wn;
 		while (wn = AjarThirdWin(ni.Next())) winners.Push(wn);
@@ -292,6 +300,7 @@ extend class AjarTimeHandler
 		{
 			ThirdShutters(false);
 			ThirdEnd(mo);
+			if (!paradox) ThirdWindHint(mo);
 		}
 		ThirdTests(mo);
 		if (!paradox) ot++;
@@ -373,6 +382,8 @@ extend class AjarTimeHandler
 
 	void ThirdExitShut()
 	{
+		windSaid = -1;
+		windSays = 0;
 		exitUntil = 0;
 		exitOpened = false;
 		tdOpen = false;
@@ -453,6 +464,7 @@ extend class AjarTimeHandler
 	// held still and unseen until then.
 	void ThirdHallsBegin()
 	{
+		hallOwn.Clear(); hallOwnOf.Clear();
 		for (int i = 0; i < halls.Size(); i++)
 		{
 			int part = halls[i].args[1];
@@ -675,7 +687,9 @@ extend class AjarTimeHandler
 				Actor m = postIs[p];
 				if (m && m.bIsMonster && m.health > 0) alive = true;
 			}
-			if ((!any && !HasWinner(i)) || alive || HallLives(i)) continue;
+			if (!any && !HasWinner(i)) continue;
+			bool lives = HallLives(i);              // (every tic: it follows the hall's monsters)
+			if (alive || lives) continue;
 			wonTic[i] = ot;
 			Say(any ? "The hall is won: the shutters it held shut open." : "Nothing lives here any more: the way on opens.");
 		}
@@ -699,12 +713,35 @@ extend class AjarTimeHandler
 		return false;
 	}
 
+	// Does anything of hall h live? Its monsters are followed wherever they go
+	// (hallOwn: a lost soul that flew out of the hall still lives for its win),
+	// and a pain elemental that is dying still counts: its lost souls are to
+	// come (it leaves no body, so it is gone when it is done). Without both a
+	// hall was won and then alive again (THIRD MODE=3, about one run in two
+	// once the tic's random numbers fell otherwise).
+	Array<Actor> hallOwn;
+	Array<int> hallOwnOf;
 	bool HallLives(int h)
 	{
+		bool lives = false;
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
-		while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0 && HallAt(a.pos.xy) == h) return true;
-		return false;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || HallAt(a.pos.xy) != h) continue;
+			if (a.health > 0)
+			{
+				lives = true;
+				if (hallOwn.Find(a) == hallOwn.Size()) { hallOwn.Push(a); hallOwnOf.Push(h); }
+			}
+			else if (a is "PainElemental") lives = true;
+		}
+		for (int i = hallOwn.Size() - 1; i >= 0; i--)
+		{
+			if (!hallOwn[i] || hallOwn[i].health <= 0) { hallOwn.Delete(i); hallOwnOf.Delete(i); continue; }
+			if (hallOwnOf[i] == h) lives = true;
+		}
+		return lives;
 	}
 
 	// The shutters a hall's win opens: open before its go, shut in it until
@@ -837,14 +874,44 @@ extend class AjarTimeHandler
 	void ThirdWind(PlayerPawn mo)
 	{
 		if (paradox || tgo < 2) { Say("Nothing is playing: there is nothing to wind on to."); return; }
-		int next = -1, who = -1;
-		for (int s = 0; s < plFrom.Size(); s++)
-			if (plFrom[s] - WIND_LEAD > ot && (next < 0 || plFrom[s] < next)) { next = plFrom[s]; who = plSelf[s]; }
+		int who;
+		int next = ThirdWindNext(who);
 		if (next < 0) { Say("No earlier self steps onto its plate after this:\nthere is nothing to wind on to."); return; }
 		ThirdWindTo(mo, next - WIND_LEAD);
 		mo.A_SetBlend("white", 0.5, 14);
 		mo.A_StartSound("switches/normbutn", CHAN_AUTO);
 		Say(String.Format("The clock goes on to %s: two seconds before\nyour earlier self %d steps onto plate %d.", ThirdClock(ot), who + 1, who + 1));
+	}
+
+	// The next tic an earlier self steps onto its plate that winding on would go to (-1: none),
+	// and which self.
+	int ThirdWindNext(out int who)
+	{
+		int next = -1;
+		who = -1;
+		for (int s = 0; s < plFrom.Size(); s++)
+			if (plFrom[s] - WIND_LEAD > ot && (next < 0 || plFrom[s] < next)) { next = plFrom[s]; who = plSelf[s]; }
+		return next;
+	}
+
+	// Said once a go (from go 2): near a wind plate, in sight of it, while the next step of an
+	// earlier self onto its plate is more than ten seconds away (after Vadim's first play of MAP33:
+	// he waited for his earlier selves and did not see what the plate is for).
+	void ThirdWindHint(PlayerPawn mo)
+	{
+		if (tgo < 2 || windSaid >= 0 || mo.health <= 0) return;
+		bool near = false;
+		for (int i = 0; i < winds.Size() && !near; i++)
+			near = winds[i] && mo.Distance3D(winds[i]) <= 512 && mo.CheckSight(winds[i], SF_IGNOREVISIBILITY);
+		if (!near) return;
+		int who;
+		int next = ThirdWindNext(who);
+		if (next < 0 || next - ot <= 35 * 10) return;
+		windSaid = ot;
+		windSays++;
+		string s = StringTable.Localize("$THIRD_WINDHINT");
+		if (s == "THIRD_WINDHINT" || s == "") s = "Your earlier self is %s away. The plate on the wall winds the clock on.";
+		Say(String.Format(s, ThirdClock(next - ot)));
 	}
 
 	// The clock goes on to `to` at once. (Also the tests' way to sample a long go.)
