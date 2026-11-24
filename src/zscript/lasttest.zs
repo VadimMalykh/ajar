@@ -45,6 +45,9 @@ extend class AjarTimeHandler
 	// the waves: the tic go 2's wave 2 came; in this go the player's first tic on plate 2 from the alarm, the
 	// first in the hall; ticks a wave was there that should not have been
 	int ltWave2, ltOn2, ltInHall, ltWaveBad, ltWaveSeen;
+	// the stagger: the script's (go 2): its tic, the self's counts then, the tics its plate was not pressed
+	int ltStagAt, ltStagFired, ltStagSkipped, ltStagN, ltStagOff, ltStagDone;
+	int ltStagNat[6];           // natural staggers by go and self (2 * (go - 1) + self)
 	int ltShareGo;              // the go and tic the player took the share (the script's)
 	int ltShareTic;
 	int ltExitBad, ltExitSeen;
@@ -239,6 +242,7 @@ extend class AjarTimeHandler
 	{
 		if (ltGo == tgo) return false;
 		if (ltGo) PrintKills(ltGo);
+		if (ltGo == 2 && (CVar.GetCVar("ajar_autotest").GetInt() == 1 || CVar.GetCVar("ajar_autotest").GetInt() == 4)) StaggerReport(2);
 		if (ltGo && ltGo < 3 && ltWaveSeen)
 		{
 			Console.Printf("AJARTEST info go %d: %d tics looked at for the waves, %d with a wave that should not be there", ltGo, ltWaveSeen, ltWaveBad);
@@ -446,6 +450,106 @@ extend class AjarTimeHandler
 		return found == takes.Size() - 1;
 	}
 
+	// --- the stagger (mode 1 and 4) -----------------------------------------------------
+	// Go 2: once from the alarm + L_STAG, at a tic when self 1 is not staggered, stands on plate 1 for
+	// the next STAGGER_TICS and has at least 3 shots in them and one in the 200 after, a guard hurts it
+	// by the threshold: it fires none of them, its plate stays pressed, the line once, it fires again after.
+	const L_STAG = 100;
+	int RecordShots(AjarTake t, int from, int to)
+	{
+		int n = 0;
+		for (int e = 0; e < t.evTic.Size(); e++) if (t.evTic[e] > from && t.evTic[e] <= to) n++;
+		return n;
+	}
+	void StaggerTest(PlayerPawn mo)
+	{
+		if (tgo != 2 || alarmTic < 0 || ghosts.Size() < 1) return;
+		let ls = AjarLastSelf(ghosts[0]);
+		if (!ls) return;
+		AjarTake t = takes[0];
+		int o = ot;
+		if (!ltStagAt && o >= alarmTic + L_STAG && ls.staggerTo <= o)
+		{
+			bool on = true;
+			for (int j = o + 1; j <= o + STAGGER_TICS + 1 && on; j++) on = j < t.x.Size() && OnAt(plates[0], t, j);
+			if (!on || RecordShots(t, o, o + STAGGER_TICS) < 3 || RecordShots(t, o + STAGGER_TICS + 1, o + STAGGER_TICS + 200) < 1) return;
+			Actor by = null;
+			for (int i = 0; i < guardIs.Size() && !by; i++) if (guardIs[i] && guardIs[i].health > 0) by = guardIs[i];
+			ltStagAt = o;
+			ltStagN = ls.staggers;
+			ltStagFired = ls.fired;
+			ltStagSkipped = ls.skipped;
+			ls.DamageMobj(by, by, lastMark.args[4], 'None');
+			Console.Printf("AJARTEST info go 2: a %s hurts the first self by %d at %d (the alarm + %d); staggered so far %d", by ? by.GetTag() : "nothing",
+				lastMark.args[4], o, o - alarmTic, ltStagN);
+			return;
+		}
+		if (!ltStagAt || ltStagDone) return;
+		if (o == ltStagAt + 1)
+		{
+			Check("staggeredAtThreshold", ls.staggers == ltStagN + 1 && ls.staggerFrom == o && ls.staggerTo == o + STAGGER_TICS && ls.dmgSum == 0
+				&& (ltStagN > 0 || SaidNow().IndexOf("Your first self is hit hard") >= 0));
+		}
+		if (o > ltStagAt && o < ltStagAt + 1 + STAGGER_TICS && !plates[0].pressed) ltStagOff++;
+		if (o == ltStagAt + STAGGER_TICS)
+		{
+			int want = RecordShots(t, ltStagAt, ltStagAt + STAGGER_TICS);
+			Console.Printf("AJARTEST info go 2: the first self staggered %d tics: fired %d, skipped %d of its record's %d shots; plate 1 not pressed %d tics",
+				STAGGER_TICS, ls.fired - ltStagFired, ls.skipped - ltStagSkipped, want, ltStagOff);
+			Check("staggerHoldsFire", ls.fired == ltStagFired && ls.skipped - ltStagSkipped == want && want >= 3 && !ltStagOff && ls.staggerTo == o + 1);
+			ltStagFired = ls.fired;
+		}
+		if (o == ltStagAt + STAGGER_TICS + 200)
+		{
+			ltStagDone = 1;
+			Console.Printf("AJARTEST info go 2: after the stagger the first self fired %d in 200 tics (staggered again: %d)", ls.fired - ltStagFired, ls.staggers - ltStagN - 1);
+			Check("staggerFiresAgain", ls.fired > ltStagFired);
+		}
+	}
+
+	// Each tic: how often each self was staggered in this go, the lines said; at a go's end (StaggerReport)
+	// the line once a self staggered.
+	int ltStagLines;
+	void StaggerCount()
+	{
+		if (tgo < 2 || tgo > 3) return;
+		for (int i = 0; i < ghosts.Size() && i < 2; i++)
+		{
+			let ls = AjarLastSelf(ghosts[i]);
+			if (ls) ltStagNat[2 * (tgo - 1) + i] = max(ltStagNat[2 * (tgo - 1) + i], ls.staggers);
+		}
+		ltStagLines = staggerLines;
+	}
+	void StaggerReport(int go)
+	{
+		if (go < 2 || go > 3) return;
+		int said = (ltStagNat[2 * (go - 1)] > 0) + (ltStagNat[2 * (go - 1) + 1] > 0);
+		Console.Printf("AJARTEST info go %d: staggered, self 1 %d times, self 2 %d (the script's one among them in go 2); lines %d", go,
+			ltStagNat[2 * (go - 1)], ltStagNat[2 * (go - 1) + 1], ltStagLines);
+		Check(String.Format("staggerSaidOnce%d", go), ltStagLines == said && (go != 2 || ltStagNat[2] > 0));
+	}
+
+	// Go 3: with args[4] 0 (MAP33's) a self hurt far over it is not staggered.
+	void NoStaggerTest(PlayerPawn mo)
+	{
+		if (tgo != 3 || alarmTic < 0 || ghosts.Size() < 2 || !ghosts[1]) return;
+		let ls = AjarLastSelf(ghosts[1]);
+		int a = ot - alarmTic;
+		if (a == 100 && ls.staggerTo <= ot)
+		{
+			ltStagN = ls.staggers;
+			lastMark.args[4] = 0;
+			ls.DamageMobj(guardIs[0], guardIs[0], 500, 'None');
+		}
+		if (a > 100 && a <= 103 && lastMark.args[4] == 0 && (ls.staggerTo > ot || ls.staggers != ltStagN)) ltStagOff = -1000;
+		if (a == 104 && lastMark.args[4] == 0)
+		{
+			Check("noStaggerWithZero", ls.staggers == ltStagN && ls.staggerTo <= ot && ltStagOff >= 0 && ls.health == ls.SpawnHealth());
+			ls.dmgSum = 0;
+			lastMark.args[4] = 60;
+		}
+	}
+
 	// --- mode 1 (and 4: with views) ------------------------------------------------------
 	void Last1(PlayerPawn mo, bool views)
 	{
@@ -453,6 +557,9 @@ extend class AjarTimeHandler
 		AlarmChecks(mo);
 		WaveChecks(mo);
 		ShareChecks(mo);
+		StaggerTest(mo);
+		NoStaggerTest(mo);
+		StaggerCount();
 		if (tgo == 1) Go1L(mo, views, L_LEAVE1, extras: true);
 		else if (tgo == 2) Go2L(mo, views, true);
 		else if (tgo == 3) Go3L(mo, views, false);
@@ -783,6 +890,7 @@ extend class AjarTimeHandler
 		if (ltStep >= 2 && Through(mo) && ltDone < 1)
 		{
 			ltDone = 1;
+			if (!late) StaggerReport(3);
 			Console.Printf("AJARTEST info through the exit door at %d (the exit door open until %d)", o, exitUntil);
 			Check("throughTheExitDoor", tgo == 3 && !paradox);
 			Console.Printf("AJARTEST info the exit door: %d samples, %d not as the timetable", ltExitSeen, ltExitBad);

@@ -151,7 +151,7 @@ assert all(not (p[0] < q[2] and q[0] < p[2] and p[1] < q[3] and q[1] < p[3]) for
 SHARES = [(1690, 1184), (856, 344), (1240, -164)]
 for x, y in SHARES:
     ajarthird.share(m, x, y)
-ajarthird.last(m, 1536, 900, HALLT, gate=GATE)
+ajarthird.last(m, 1536, 900, HALLT, gate=GATE, stagger=60)
 ajarthird.third(m, 1536, 960, EXIT, OUT, (300, -300, 2400, 1600))
 
 # no part is joined to another on foot (glass, the railings are not ways):

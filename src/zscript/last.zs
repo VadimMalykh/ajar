@@ -44,14 +44,24 @@ class AjarShareCopy : Actor
 }
 
 // An earlier self at a last hall: an AjarGhost (shootable from the alarm on,
-// never harmed) that counts what hits it (the tests).
+// never harmed) that counts what hits it (the tests) and sums the damage
+// that hits it from the alarm on (not its own nor another self's or a
+// player's): AjarThirdLast args[4] of it staggers it (LastStagger).
 class AjarLastSelf : AjarGhost
 {
 	int hits;
+	int dmgSum;                 // falls by 1 a tic; held at 0 while it is staggered
+	int staggerFrom, staggerTo; // staggered from .. to (this go's tics; staggerTo <= ot: not)
+	int staggers;               // how often in this go
+	int fired, skipped;         // of its record's fire events: fired again, and skipped while staggered
 
 	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
 	{
-		if (bShootable) hits++;
+		if (bShootable)
+		{
+			hits++;
+			if (source != self && !(source is "AjarGhost") && !(source && source.player)) dmgSum += max(0, damage);
+		}
 		return Super.DamageMobj(inflictor, source, damage, mod, flags, angle);
 	}
 }
@@ -71,6 +81,7 @@ extend class AjarTimeHandler
 	// this go by the record of the self that pressed plate k (waveAt[k], -1: not by a record)
 	int waves;
 	Array<int> waveTic, waveAt;
+	int staggerLines;           // the stagger's lines said in this go (the tests: one a self staggered)
 	// the share (AjarThirdShare): its places, the copies shown there in this go, the earlier self that
 	// takes it in this go and when (-1: none), the tic it was taken or went in this go (-1: not yet)
 	Array<AjarThirdShare> shares;
@@ -145,6 +156,7 @@ extend class AjarTimeHandler
 			for (int j = alarmAt; j < t.x.Size() && waveAt[k] < 0; j++) if (OnAt(plates[k - 1], t, j) && !PaleAt(t, j)) waveAt[k] = j;
 		}
 		LastShareBegin();
+		staggerLines = 0;
 	}
 
 	// What an earlier go left in the hall goes: the guards' monsters wherever
@@ -437,8 +449,48 @@ extend class AjarTimeHandler
 			bool pale = PaleAt(t, ot);
 			g.bShootable = alarmTic >= 0 && !pale;
 			if (!g.bShootable) continue;
-			for (; t.next < t.evTic.Size() && t.evTic[t.next] <= ot; t.next++) LastFire(g, t, t.next);
+			let ls = AjarLastSelf(g);
+			bool held = ls && LastStagger(ls, i);
+			for (; t.next < t.evTic.Size() && t.evTic[t.next] <= ot; t.next++)
+			{
+				if (held) { ls.skipped++; continue; }
+				LastFire(g, t, t.next);
+				if (ls) ls.fired++;
+			}
 		}
+	}
+
+	// A self hit hard is STAGGERED (AjarThirdLast args[4] n, 0: never): once the damage summed from the
+	// alarm (falling by 1 a tic) reaches n, for STAGGER_TICS it fires nothing of its record (skipped, not
+	// fired later), flickers between pale with the player's pain picture and as it is, and says so with
+	// the player's pain sound; the sum is 0 again. It stands and presses its plate as its record has it.
+	// True while it is.
+	const STAGGER_TICS = 105;
+	bool LastStagger(AjarLastSelf ls, int i)
+	{
+		int n = lastMark.args[4];
+		if (n <= 0) return false;
+		if (ls.staggerTo <= ot && ls.dmgSum >= n)
+		{
+			ls.staggerFrom = ot;
+			ls.staggerTo = ot + STAGGER_TICS;
+			ls.staggers++;
+			ls.A_StartSound("player/male/pain100_1", CHAN_VOICE);
+			if (ls.staggers == 1 && ++staggerLines)
+				LastSay(String.Format("Your %s self is hit hard: it holds its fire for three seconds.\nKeep them off it.", Nth(i)));
+		}
+		if (ls.staggerTo <= ot)
+		{
+			if (ls.dmgSum > 0) ls.dmgSum--;
+			return false;
+		}
+		ls.dmgSum = 0;
+		if ((ot - ls.staggerFrom) / 4 % 2 == 0)
+		{
+			ls.A_SetRenderStyle(PALE_ALPHA, STYLE_Translucent);
+			ls.frame = 6;               // PLAY G: the player's pain picture
+		}
+		return true;
 	}
 
 	void LastFire(AjarGhost g, AjarTake t, int e)
