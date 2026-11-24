@@ -66,7 +66,7 @@ for t in m.things:
         bad += 1
         continue
     sec = m.sectors[s[0]]
-    ty = t["args"][1] if t["type"] == 20169 else t["type"]     # (a fallen thing, ajarthird.fallen: where its monster will stand)
+    ty = t["args"][1] if t["type"] == 20169 else t["args"][0] if t["type"] == 20174 else t["type"]     # (a fallen thing, ajarthird.fallen, or a comer, ajarthird.comer: where its monster will stand)
     r = RADIUS.get(ty, 20 if ty in MONSTERS else 16)
     if t["type"] in (20001, 20002) or t["type"] in ON_WALL:
         continue

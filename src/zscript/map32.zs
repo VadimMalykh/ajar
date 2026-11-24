@@ -120,6 +120,7 @@ extend class AjarTimeHandler
 		Actor a = e.Thing, s = e.DamageSource;
 		GsDamaged(a, s, e.Damage);      // MODE=9
 		LastDamaged(e);                 // last.zs: who hurt a last hall's guard
+		CommonDamaged(e);               // common.zs: who hurt a common place's monster, and the selves' hits there
 		if (!a || !s || !a.bIsMonster || e.Damage <= 0 || !InPen32(a)) return;
 		if (s is "AjarGhost") penHitsGhost++;
 		else if (s.player && (e.DamageFlags & DMG_FORCED)) penFell++;      // (Fell: not a shot of mine)

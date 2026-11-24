@@ -25,6 +25,9 @@ for name in sys.argv[1:]:
     T = [dict(t, type=t["args"][0]) if t["type"] == 20167 else t for t in T]
     # a fallen thing (ajarthird.fallen) stands where its monster will: checked as it, among the others
     T = [dict(t, type=t["args"][1]) if t["type"] == 20169 else t for t in T]
+    # a comer of a common place (ajarthird.comer) is checked as the monster it will be, at its height (a flyer):
+    # the groups of the parts can all be there at once
+    T = [dict(t, type=t["args"][0]) if t["type"] == 20174 else t for t in T]
     T = [t for t in T if t["type"] in R]
     bad = 0
     for i, a in enumerate(T):
@@ -36,7 +39,7 @@ for name in sys.argv[1:]:
             d = max(abs(a["x"] - b["x"]), abs(a["y"] - b["y"]))      # Doom's boxes
             if d < R[a["type"]] + R[b["type"]]:
                 sb = sec(b["x"], b["y"])
-                if sa and sb and abs(sa["floor"] - sb["floor"]) < 56:
+                if sa and sb and abs(sa["floor"] + a.get("height", 0) - sb["floor"] - b.get("height", 0)) < 56:
                     print(name, "STUCK", a["type"], (a["x"], a["y"]), b["type"], (b["x"], b["y"])); bad += 1
     # a leaning door is taken from in front: no lamp or column may stand in it
     import ajarmap

@@ -269,6 +269,7 @@ extend class AjarTimeHandler
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		if (mode && level.mapname ~== "MAP33") { Map33Tests(mo, mode); return; }      // map33.zs
 		if (mode && level.mapname ~== "LAST") { LastTests(mo, mode); return; }        // lasttest.zs
+		if (mode && level.mapname ~== "YARD") { YardTests(mo, mode); return; }        // yardtest.zs
 		if (!mode || !(level.mapname ~== "THIRD")) return;
 		SnapChecks();
 		if (ttHold > 0 && !paradox)

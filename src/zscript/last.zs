@@ -354,13 +354,7 @@ extend class AjarTimeHandler
 		alarmTic = ot;
 		LastWave(mo, 1);
 		if (lastGate) lastGate.keyed = HELD_OPEN;
-		// what the player fires is recorded from now
-		lastClip = mo.CountInv("Clip");
-		lastShell = mo.CountInv("Shell");
-		lastShots.Clear();
-		let it = ThinkerIterator.Create("Actor");
-		Actor a;
-		while (a = Actor(it.Next())) if (a.bMissile && a.target == mo) lastShots.Push(a);
+		FireFrom(mo);               // what the player fires is recorded from now
 		mo.A_StartSound("brain/sight", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
 		int need = LastNeed() / 35;
 		string s;
@@ -546,14 +540,34 @@ extend class AjarTimeHandler
 		return best;
 	}
 
+	// What the player fires is followed from now (the alarm; a common place's group coming): what they
+	// carry, and the missiles they have in flight already (not theirs to write down).
+	void FireFrom(PlayerPawn mo)
+	{
+		lastClip = mo.CountInv("Clip");
+		lastShell = mo.CountInv("Shell");
+		lastShots.Clear();
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bMissile && a.target == mo) lastShots.Push(a);
+	}
+
+	bool AlarmOn() { return lastMark && alarmTic >= 0; }
+
 	// time.zs's RecordTake, the part of it that writes down what was fired: bullets, shells, the player's missiles.
+	// From the alarm; and in a common place (common.zs) from its group's coming, written while the player is in it.
 	void LastRecordFire(PlayerPawn mo)
 	{
-		if (alarmTic < 0) return;
+		bool alarm = AlarmOn();
+		if (!alarm && !CommonFollows()) return;
+		bool write = alarm || CommonWrites(mo);
 		AjarTake t = takes[takes.Size() - 1];
 		int clip = mo.CountInv("Clip"), shell = mo.CountInv("Shell");
-		for (int i = clip; i < lastClip; i++) Fired(t, 1, null, mo.pos, (0, 0, 0));
-		if (shell < lastShell) Fired(t, lastShell - shell >= 2 ? 3 : 2, null, mo.pos, (0, 0, 0));
+		if (write)
+		{
+			for (int i = clip; i < lastClip; i++) Fired(t, 1, null, mo.pos, (0, 0, 0));
+			if (shell < lastShell) Fired(t, lastShell - shell >= 2 ? 3 : 2, null, mo.pos, (0, 0, 0));
+		}
 		lastClip = clip; lastShell = shell;
 		for (int i = lastShots.Size() - 1; i >= 0; i--) if (!lastShots[i]) lastShots.Delete(i);
 		let it = ThinkerIterator.Create("Actor");
@@ -562,28 +576,35 @@ extend class AjarTimeHandler
 		{
 			if (!a.bMissile || a.target != mo || lastShots.Find(a) < lastShots.Size()) continue;
 			lastShots.Push(a);
-			Fired(t, 0, a.GetClass(), a.pos, a.vel);
+			if (write) Fired(t, 0, a.GetClass(), a.pos, a.vel);
 		}
 	}
 
 	// From the alarm the earlier selves can be shot (and are never harmed), and
-	// fire again what they fired then, really (as time.zs's PlayGhosts).
+	// fire again what they fired then, really (as time.zs's PlayGhosts); so do
+	// they in a common place's fight (common.zs, CommonThere), aimed again there.
+	// The one consumer of the records' fire: each tic every event whose tic has
+	// come is fired (the self in the common place's fight now, or the alarm on
+	// and the event written from it) or dropped, never fired late.
 	void LastSelvesFight()
 	{
+		bool alarm = AlarmOn();
 		for (int i = 0; i < takes.Size() - 1 && i < ghosts.Size(); i++)
 		{
 			AjarGhost g = ghosts[i];
 			if (!g) continue;
 			AjarTake t = takes[i];
 			bool pale = PaleAt(t, ot);
-			g.bShootable = alarmTic >= 0 && !pale;
-			if (!g.bShootable) continue;
+			bool yard = CommonThere(i);
+			g.bShootable = (alarm || yard) && !pale;
 			let ls = AjarLastSelf(g);
-			bool held = ls && LastStagger(ls, i);
+			bool held = alarm && g.bShootable && ls && LastStagger(ls, i);
 			for (; t.next < t.evTic.Size() && t.evTic[t.next] <= ot; t.next++)
 			{
+				int e = t.next;
+				if (pale || t.evTic[e] < ot || !(yard || (alarm && t.evTic[e] >= alarmTic))) continue;     // dropped
 				if (held) { ls.skipped++; continue; }
-				LastFire(g, t, t.next);
+				LastFire(g, t, e, yard);
 				if (ls) ls.fired++;
 			}
 		}
@@ -622,7 +643,8 @@ extend class AjarTimeHandler
 		return true;
 	}
 
-	void LastFire(AjarGhost g, AjarTake t, int e)
+	// `again`: in a common place's fight, aimed again (common.zs).
+	void LastFire(AjarGhost g, AjarTake t, int e, bool again = false)
 	{
 		int kind = t.evKind[e];
 		if (kind == 0)
@@ -632,20 +654,27 @@ extend class AjarTimeHandler
 			if (!m) return;
 			m.target = g;
 			m.vel = (t.evx[e], t.evy[e], t.evz[e]);
+			if (again) CommonAimMissile(g, m);      // common.zs: to a monster of the place near its way
 			m.angle = VectorAngle(m.vel.x, m.vel.y);
 			m.A_StartSound(m.SeeSound, CHAN_VOICE);
 			return;
 		}
-		// a hitscan aims as the player's did (autoaim): at a monster along its angle, else as it looked
-		FTranslatedLineTarget lt;
-		double pitch = g.AimLineAttack(g.angle, 8192, lt);
-		if (!lt.linetarget || !lt.linetarget.bIsMonster) pitch = g.pitch;
+		// a hitscan aims as the player's did (autoaim): at a monster along its angle, else as it looked;
+		// `again`: first at a monster of the common place near its angle (common.zs)
+		double ang = g.angle, pitch;
+		if (!again || !CommonAimHitscan(g, ang, pitch))
+		{
+			FTranslatedLineTarget lt;
+			pitch = g.AimLineAttack(g.angle, 8192, lt);
+			if (!lt.linetarget || !lt.linetarget.bIsMonster) pitch = g.pitch;
+		}
 		int n = kind == 1 ? 1 : kind == 2 ? 7 : 20;
 		double sh = kind == 1 ? 2.8 : kind == 2 ? 5.6 : 11.2, sv = kind == 3 ? 7.1 : 0;
 		for (int j = 0; j < n; j++)
-			g.LineAttack(g.angle + frandom[AjarGhost](-sh, sh), 8192, pitch + frandom[AjarGhost](-sv, sv),
+			g.LineAttack(ang + frandom[AjarGhost](-sh, sh), 8192, pitch + frandom[AjarGhost](-sv, sv),
 				5 * random[AjarGhost](1, 3), 'Hitscan', "BulletPuff");
 		g.A_StartSound(kind == 1 ? "weapons/chngun" : kind == 2 ? "weapons/shotgf" : "weapons/sshotf", CHAN_WEAPON);
+		if (again) CommonFired(g);
 	}
 
 	// The first time in a go the player comes onto their stand: a save, so
