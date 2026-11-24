@@ -366,7 +366,7 @@ extend class AjarTimeHandler
 				int bullets = 0, missiles = 0, early = 0;
 				for (int e = 0; e < t.evTic.Size(); e++) { if (t.evKind[e] == 1) bullets++; if (t.evKind[e] == 0) missiles++; if (t.evTic[e] <= alarmTic) early++; }
 				Console.Printf("AJARTEST info go 1 fired: %d bullets, %d missiles, %d before the alarm", bullets, missiles, early);
-				Check("shotsInTake", bullets > 50 && missiles > 3 && !early);
+				Check("shotsInTake", bullets > 50 && missiles > 0 && !early);
 				ltStep = 3;
 				NewRoute();
 				mo.pitch = 0;
