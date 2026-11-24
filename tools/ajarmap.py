@@ -199,7 +199,7 @@ def doorway(m, n, a1, a2, a_out, a_floor, b1, b2, b_out, b_floor, *, a_color=Non
 WAY_OUT = 9         # the doorway number of every level's way out
 
 
-def way_out(m, x, y, colour, *, floor=0):
+def way_out(m, x, y, colour, *, floor=0, turned=False):
     """The way out, the same in every level: far sides have a colour, the
     way out has none. A night room (ink walls and ceiling with gold stars,
     dark floor with brass inlay, gold runner), 320 by 256 with its south-west
@@ -214,21 +214,42 @@ def way_out(m, x, y, colour, *, floor=0):
     plain wall, and the caller makes the way in (a room touching it there
     opens onto it).
 
+    `turned` (MAP20): the same room turned a quarter, x and y changed over
+    about its south-west corner: 256 by 320, the way in in the middle of its
+    west wall (y + 128 .. y + 192), the doorway joining its south and north
+    ends. Its flats are turned with it (the sectors' rotation), so the room
+    looks as it does elsewhere.
+
     It uses doorway number WAY_OUT (line ids 159 and 259). `floor`: the
     room's floor, where it is not 0 (MAP18's is in the basement)."""
-    room(m, [x, x + 128, x + 192, x + 320], [y, y + 96, y + 160, y + 256],
-         lambda i, j: j == 1 or (i == 1 and j == 0),
-         ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
-         **(dict(floor=floor) if floor else {}))
+    def P(dx, dy):                      # a point of the room, (dx, dy) from its corner as it lies along x
+        return (x + dy, y + dx) if turned else (x + dx, y + dy)
+
+    def O(ox, oy):                      # a direction, the same way
+        return (oy, ox) if turned else (ox, oy)
+
+    first = len(m.sectors)
+    along, across, runner = [0, 128, 192, 320], [0, 96, 160, 256], lambda i, j: j == 1 or (i == 1 and j == 0)
+    if turned:
+        room(m, [x + v for v in across], [y + v for v in along], lambda i, j: runner(j, i),
+             ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
+             **(dict(floor=floor) if floor else {}))
+    else:
+        room(m, [x + v for v in along], [y + v for v in across], runner,
+             ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
+             **(dict(floor=floor) if floor else {}))
     if colour:
-        recess(m, (x + 128, y), (x + 192, y), (0, -1), floor, far_id(colour), 150 + WAY_OUT, far_colour=colour)
-    doorway(m, WAY_OUT, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor,
-            (x, y + 96), (x, y + 160), (-1, 0), floor, trim=("AJXA", "AJXAF"))
-    for xx in (x, x + 320):
-        m.line((xx, y + 96), (xx, y + 160), special=243, args=(), playeruse=False, repeatspecial=False,
+        recess(m, P(128, 0), P(192, 0), O(0, -1), floor, far_id(colour), 150 + WAY_OUT, far_colour=colour)
+    doorway(m, WAY_OUT, P(320, 96), P(320, 160), O(1, 0), floor,
+            P(0, 96), P(0, 160), O(-1, 0), floor, trim=("AJXA", "AJXAF"))
+    for xx in (0, 320):
+        m.line(P(xx, 96), P(xx, 160), special=243, args=(), playeruse=False, repeatspecial=False,
                playercross=True)
     for cx, cy in ((32, 48), (32, 208), (288, 48), (288, 208)):
-        m.thing(x + cx, y + cy, 35)                               # candelabra
+        m.thing(*P(cx, cy), 35)                                   # candelabra
+    if turned:
+        for s in m.sectors[first:]:
+            s["raw"] = dict(s["raw"], rotationfloor=90.0, rotationceiling=90.0)
 
 
 HOME, HOME_MOUTH = 190, 590

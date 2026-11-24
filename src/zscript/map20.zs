@@ -2,14 +2,16 @@
 // MAP=MAP20 MODE=n tools/smoke.sh "$PWD/build/smoke20_n" (PLAN.md, the MAP20 write-up)
 //   MODE=1 (EXTRA=-nomonsters) the whole level by the answers meant, stage by stage, each
 //          level at rest read against the generator's measure (its MapSpots 3101..: args[0]
-//          the level x 100), to the wheel turning, the sluice open and the way out
+//          the level x 100), to the wheel turning, the sluice open and the way out: the Doom exit
+//          door USEd, through it into the night room, and into the brass doorway's north end
 //   MODE=2 the player in the water: floating up when idle, out onto the ledge, a dive to 113
 //          with GREEN, a swim through the TEAL pipe, the lock as written, a pressure door
 //          refusing, opening dry and shutting itself (on no one), the float gate
 //   MODE=3 "nothing can be lost": K at 96 with BLUE taken down and the player inside; C refilled
 //          with the player on the boiler house's side; the lower yard with K full; the gates
 //   MODE=4 a tour of fixed views (tools/smoke_MAP20_4.cfg shoots at 78 + 80 n); from view 21 the fountain
-//          playing, the wheel close, the circle broken and the fountain dry again (two checks)
+//          playing, the wheel close, the circle broken and the fountain dry again (two checks); views 41..44
+//          the way out: the exit door open from the hall, the night room behind it
 //   MODE=5 the fights' causes: each water ambush once and when it should; the cells; drowning
 //   MODE=6 (EXTRA=-nomonsters) the secret way out: BLUE in 142, the swim to the fourth pane and through
 //          it into the left-handed bath, its water at the bath's level every tic, the way back, a mirror
@@ -336,13 +338,24 @@ class HighWaterTest : EventHandler
 		if (mode != 4 && mode != 7 && pc >= k) Summary();
 	}
 
-	// the exit lines crossed (MODE=6: the level ends by the secret way, not the plain one)
+	// the exit lines crossed (MODE=1: the level ends by the night room's doorway; MODE=6: by the secret way, not the
+	// plain one)
 	Vector3 lastPos;
-	bool testing6;
+	bool testing1, testing6;
 	override void WorldUnloaded(WorldEvent e)
 	{
+		if (testing1)
+		{
+			// last seen in the brass doorway's north end (its mouth at y 1472, x 6176..6240), and the plain next map
+			bool byWayOut = lastPos.x > 6176 && lastPos.x < 6240 && lastPos.y > 1400;
+			Check("exitByTheWayOut", byWayOut && e.NextMap ~== level.NextMap && !(e.NextMap ~== level.NextSecretMap),
+				String.Format("last seen at %s; next map %s (next %s, secretnext %s)", PStr(lastPos), e.NextMap, level.NextMap, level.NextSecretMap));
+			Summary();
+			return;
+		}
 		if (!testing6) return;
-		// the Exit_Secret line is at y 792 of the bath in the copy; the plain way out is far east (a Doom exit door, x 6048)
+		// the Exit_Secret line is at y 792 of the bath in the copy; the plain way out is far east (the night room
+		// behind the Doom exit door, x 6080..6336)
 		bool bySecret = InCopy(lastPos.xy) && lastPos.y > 792 + CY - 24;
 		Check("exitBySecretWayOut", bySecret && e.NextMap ~== level.NextSecretMap,
 			String.Format("last seen at %s; next map %s (secretnext %s, next %s)", PStr(lastPos), e.NextMap, level.NextSecretMap, level.NextMap));
@@ -547,12 +560,36 @@ class HighWaterTest : EventHandler
 			}
 			if (opT >= 40) Next();
 		}
-		if (Op())
+		if (Op())     // through the door, straight into the night room, to the runner down its middle
 		{
-			if (opT == 0) Summary();
-			mo.vel.xy = (RUN, 0);
-			if (opT >= 120) { Check("levelExitedInTime", false, PStr(mo.pos)); Next(); }
+			if (Toward(mo, (NIGHT_RUNNER, 1312)) || opT >= 200)
+			{
+				Check("inTheNightRoom", InNightRoom(mo), String.Format("%s on %s", PStr(mo.pos), TexMan.GetName(mo.CurSector.GetTexture(Sector.floor))));
+				Next();
+			}
 		}
+		if (Op())     // a quarter turn to the left and on into the brass doorway's north end: the level ends
+		{
+			testing1 = true;
+			lastPos = mo.pos;
+			Toward(mo, (NIGHT_RUNNER, 1700));
+			if (opT >= 200) { testing1 = false; Check("levelExitedInTime", false, PStr(mo.pos)); Next(); }
+		}
+	}
+	// the night room (map_highwater.NIGHT: ajarmap.way_out turned, its south-west corner at (6080, 1152), 256 by
+	// 320, behind the door and the strip on its side, x 6072..6080; its floor and carpet AJXG2, AJXR2; the brass
+	// doorway's mouths at y 1152 and 1472, x 6176..6240)
+	const NIGHT_RUNNER = 6208;
+	bool InNightRoom(Actor mo)
+	{
+		string f = TexMan.GetName(mo.CurSector.GetTexture(Sector.floor));
+		return mo.pos.x > 6080 && mo.pos.x < 6336 && mo.pos.y > 1152 && mo.pos.y < 1472 && (f ~== "AJXG2" || f ~== "AJXR2");
+	}
+	// the exit door's sector (x 6056..6072, y 1280..1344): how far it is open
+	double ExitDoorOpening()
+	{
+		let s = level.PointInSector((6064, 1312));
+		return s.ceilingplane.ZatPoint((6064, 1312)) - s.floorplane.ZatPoint((6064, 1312));
 	}
 	// the machine hall's exit door: the first line with Door_Raise (12) east of x 6040
 	bool UseExitDoor(Actor mo)
@@ -1050,6 +1087,24 @@ class HighWaterTest : EventHandler
 			break;
 		case 40:    // ... the hall from its east end
 			Look(mo, st, 5990, 1450, 200, 0);
+			break;
+		// the way out (PLAN.md, "MAP20: our way out behind the Doom exit door"): the door opened at the start of
+		// view 41 is open (34 tics up, 150 waiting) through view 42 and shut again by view 44
+		case 41:    // the exit door open, from the machine hall: the night room straight behind it
+			if (st == 1) UseExitDoor(mo);
+			if (st == 70) Info(String.Format("view 41: the exit door's opening %.1f", ExitDoorOpening()));
+			Look(mo, st, 5880, 1312, 0, 0);
+			break;
+		case 42:    // ... from inside the night room: the door's opening, the room's wall over it, the hall beyond
+			if (st == 70) Info(String.Format("view 42: the exit door's opening %.1f", ExitDoorOpening()));
+			Look(mo, st, 6298, 1290, 172, 0);
+			break;
+		case 43:    // down the night room to the brass doorway's north end: the room again in it, and your back
+			Look(mo, st, 6208, 1200, 90, 0);
+			break;
+		case 44:    // the door shut again, from inside: its back, EXITDOOR, under the night room's wall
+			if (st == 70) Info(String.Format("view 44: the exit door's opening %.1f", ExitDoorOpening()));
+			Look(mo, st, 6248, 1312, 180, 0);
 			break;
 		}
 	}
