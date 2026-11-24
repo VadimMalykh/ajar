@@ -13297,16 +13297,18 @@ MAP33_GO3's first line names the pond and the tower.
   go 3); the pond walked through the water to the outfall (floor -8), the
   drop into the tower, through its exit, the passage and the steps into the
   duct at -128; the rest as before. The wind line: not said in go 1; said
-  once in go 2 in E2 (at tic 1454, the first self 0:23 away from plate 1).
+  once in go 2 in E2 (at tic 1465, the first self 0:23 away from plate 1).
 - `MAP=MAP33 MODE=2`: **16 of 16**.
-- `MAP=MAP33 MODE=3`: **95 of 95**, 30 screenshots (new: the coal yard after
+- `MAP=MAP33 MODE=3`: **95 of 95** (89 to 95 between runs: the halls'
+  checks are made while a hall is in sight), 30 screenshots (new: the coal yard after
   its fight, the stack court from the south, the switchyard from PINK's
   frame, the pond from the foot of the steps, the tower from the outfall
   and from its floor).
-- `MAP=THIRD MODE=3` THIRD3 of THIRD3, `MAP=THIRD MODE=7` THIRD7 of THIRD7.
+- `MAP=THIRD MODE=3` 51 of 51, `MAP=THIRD MODE=7` 58 of 58 (the lab, with
+  the wind line in it too).
 
 The script's clock is unchanged (M33_LEAVE1 3000, M33_LEAVE2 2900): the
-scripted go 3 is through the tower by about tic 520 and waits in E3 for its
+scripted go 3 is through the tower by about tic 520 (MODE=3: 540) and waits in E3 for its
 earlier selves, as before. A plan picture of the level (floors by height,
 things as dots): `build/map33_plan.png` in the worktree (not committed).
 
