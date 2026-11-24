@@ -13375,3 +13375,76 @@ pain elementals as posts, so this could happen in play.
 - On the last build: `MAP=THIRD MODE=3` four runs, 53 of 53 each;
   `MAP=THIRD MODE=7` two runs, 58 of 58; `MAP=MAP33 MODE=1` two runs, 91 of
   91; `MODE=2` 16 of 16; `MODE=3` 97 of 97.
+
+### MAP19: the drawing office could not be entered; every slot under 48 found (fixed 2026-11-24)
+
+**Vadim**, playing, at the drawing office's way in from the upper corridor:
+"map19 is this intended that I cannot go here?" Then: "Could you check all
+other places with 32 width that I cannot go through? It's not the first one
+on this map already."
+
+- **What was wrong.** The drawing office's counter (3200, 4416, 3456, 4480)
+  stood 32 from the room's north wall (y 4512), straight across the way in
+  (x 3264..3392): a slot of 32 either way round it, and a player is 32 wide.
+  So nobody got in, to frame 122 or anything else in the room. The measure
+  passed it: a stage's areas count as reached as soon as one node they share
+  is, and the way in's node is both "upper" and "drawing", but no walk line
+  left it into the room (frame 122's node and the ten corners round the
+  furniture were all unreached).
+- **What changed** (`tools/map_paper.py`; a comment at each place):
+  - the drawing office: the counter moves south to (3200, 4288, 3456, 4352),
+    in line with the two benches, 160 clear in front of the way in, 64 from
+    each bench;
+  - the garden: the bed (4640, 1152, 4832, 1344) stood 32 from the hedge
+    east of it; it runs on to meet it, (4640, 1152, 4864, 1344) (it may not
+    shrink: it covers a place register 5's rule needs covered);
+  - the side room (sealed): its bench stood 32 from the west wall; it starts
+    at the wall, (4064, 5056, 4672, 5120);
+  - the island: the pavilion's posts stood 32 from the railed edge, four
+    nooks of 32; they stand 48 in (register 9's plate is clear of them).
+- **Two checks, so that it is found next time.**
+  - The measure (fails the build): with every steel door open, every node
+    of an area that is neither sealed nor apart must be reached on foot
+    ("nodes nobody reaches on foot: ..."). On the old map it named exactly
+    the eleven drawing office nodes; now it is silent.
+  - `tools/mapcheck.py`, a new report **SLOT** (a problem, like PIT and
+    LINTEL): on a grid of 8, a place a body 32 wide stands (no void, 56 of
+    headroom, no blocking line through it) and no body 48 wide stands within
+    8 of it at a step's height; and, within one piece the narrow body walks,
+    every part the wide body walks but the largest ("cut off for a body 48
+    wide", counted only where both stand as high, so that the tops of
+    furniture do not count). A door (floor = ceiling, an id) is taken as
+    open; things are not looked at. On maps with slanting lines or corners
+    off the grid of 8 it prints a note that it is approximate there. On the
+    old MAP19: 8 slots (two by the counter, the side room, the garden, four
+    on the island) and the drawing office cut off; now none. About 15 s for
+    MAP19 with the generator, under a minute for the biggest (MAP31).
+- **The other maps** (mapcheck run on every one, nothing fixed here): SLOT
+  lines MAP01 0, MAP02 2, MAP03 4, MAP04 4, MAP05 1, MAP06 1, MAP07 7,
+  MAP08 3, MAP09 10, MAP10 8, MAP11 1, MAP12 0, MAP13 6, MAP14 0, MAP15 2,
+  MAP16 3, MAP17 2, MAP18 2, MAP19 0, MAP20 10, MAP31 2, MAP32 4, MAP33 2
+  (as the branch had it), TEST 0, LAB 0, ENG 17, LIFT 0, BELT 0, CLOCK 1,
+  ONESIDE 0, PASS 0, WATER 8, OPT 4, MIR 0, TIME 0, TDOOR 0, PLATE 0,
+  PRESS 0, TWOKEY 0, SHUT 0, THIRD 0, SHIFT 0, SOUND 0, LEFT 0. Some are
+  scenery nobody walks in (MAP20's and WATER's row at y -6000); each is to
+  be looked at with its map.
+- **The measure** after the change: the stages the same. Frame 122 is now
+  reached, so answers through it are counted that were not before: register 2
+  72 answers of one crossing (67), register 7 25 (24), register 8 62 (60),
+  register 9 16 (15), each new one with 122 in it; registers 1, 3, 4 the same,
+  5 and 6 still none. The garden, side room and island changes alone change
+  no answer. Two crossings in a row: register 1 2336, 2 5457, 3 2664, 4 1204,
+  5 2262, 6 370, 7 3768, 8 6610, 9 4363 (were 2201, 5029, 2280, 988, 2136,
+  172, 3472, 6113, 4005).
+- **The test** (`src/zscript/map19.zs`, MODE 1): after the stair walk it is
+  set down in the upper corridor off the way in's axis (x 3304) and walks in,
+  along the counter, through the gap between it and the west bench (x 3172,
+  off that gap's axis) and to the front of 122: `drawing_inFromTheCorridorOnFoot`
+  and four more. The room's monsters are gone, as everywhere in the test; its
+  ambushes wait for TEAL.
+- **Checks.** `MAP=MAP19 MODE=1` 88 checks (83 + 5), `MODE=2` 34, `MODE=3`
+  51, none failed; `MODE=4` its 17 views. mapcheck, thingcheck and itemcheck
+  on `map_paper`: 0 problems each.
+- **The rule.** Nothing a player can walk into is under 48 wide: a gap
+  between two pieces of furniture, or between one and a wall, is either
+  closed or 48 and more. mapcheck's SLOT says where it is not.
