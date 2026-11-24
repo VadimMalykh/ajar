@@ -21,7 +21,8 @@ extend class AjarTimeHandler
 	const L_OFF = 300;          // ... steps off it at the alarm + this,
 	const L_ON = 400;           // ... and on again
 	const L_LEAVE1 = 1800;      // go 1 leaves plate 1 at the alarm + this (mode 1, 3 and 4)
-	const L_PLATE2 = 540;       // go 2 steps onto plate 2 (before the alarm)
+	const L_PLATE2 = 540;       // go 2 steps onto plate 2 (before the alarm; modes 2 and 3)
+	const L_STEP2 = 30;         // ... in modes 1 and 4: it waits beside it and steps on at the alarm + this (wave 2)
 	const L_HOLD2 = 300;        // go 2 does not fire until the alarm + this
 	const L_LEAVE2 = 1700;      // go 2 leaves plate 2 at the alarm + this
 	const L_CROSS = 1600;       // go 3 crosses from the alarm + this
@@ -35,8 +36,12 @@ extend class AjarTimeHandler
 	bool ltTurned, ltAlarmChecked, ltDoorChecked, ltWound;
 	Array<Actor> ltFirst;       // each guard's first target
 	Array<int> ltCounted;       // guards whose death is counted (by index)
-	// kills by kind (0 mancubus, 1 revenant, 2 cacodemon, 3 demon, 4 hell knight) and killer (0 the player, 1 self 1, 2 self 2, 3 other)
-	int ltKills[60];             // [20 * (go - 1) + 4 * kind + killer]
+	// kills by kind (0 mancubus, 1 revenant, 2 cacodemon, 3 demon, 4 hell knight, 5 chaingunner, 6 baron) and killer
+	// (0 the player, 1 self 1, 2 self 2, 3 other)
+	int ltKills[84];             // [28 * (go - 1) + 4 * kind + killer]
+	// the waves: the tic go 2's wave 2 came; in this go the player's first tic on plate 2 from the alarm, the
+	// first in the hall; ticks a wave was there that should not have been
+	int ltWave2, ltOn2, ltInHall, ltWaveBad, ltWaveSeen;
 	int ltExitBad, ltExitSeen;
 	double ltMsSum, ltMsMax, ltTicSum, ltTicMax, ltLastMs;
 	int ltMsN;
@@ -96,7 +101,24 @@ extend class AjarTimeHandler
 		if (a is "Revenant") return 1;
 		if (a is "Cacodemon") return 2;
 		if (a is "Demon") return 3;
+		if (a is "ChaingunGuy") return 5;
+		if (a is "HellKnight") return 4;
+		if (a is "BaronOfHell") return 6;
 		return 4;
+	}
+
+	// the guards of wave w there now (alive or dead), and in the map
+	int WaveIn(int w)
+	{
+		int n = 0;
+		for (int i = 0; i < guardIs.Size(); i++) if (guardIs[i] && GuardWave(i) == w) n++;
+		return n;
+	}
+	int WaveOf(int w)
+	{
+		int n = 0;
+		for (int i = 0; i < guards.Size(); i++) if (GuardWave(i) == w) n++;
+		return n;
 	}
 
 	// Every guard dead since the last look: counted by its killer.
@@ -112,17 +134,17 @@ extend class AjarTimeHandler
 			int k = 3;
 			if (by == mo) k = 0;
 			else for (int s = 0; s < ghosts.Size() && s < 2; s++) if (ghosts[s] && by == ghosts[s]) k = s + 1;
-			ltKills[20 * (min(tgo, 3) - 1) + 4 * KindOf(a) + k]++;
+			ltKills[28 * (min(tgo, 3) - 1) + 4 * KindOf(a) + k]++;
 		}
 	}
 
 	void PrintKills(int go)
 	{
-		static const string kinds[] = { "mancubus", "revenant", "cacodemon", "demon", "hell knight" };
-		static const int many[] = { 2, 2, 2, 4, 2 };
-		for (int k = 0; k < 5; k++)
+		static const string kinds[] = { "mancubus", "revenant", "cacodemon", "demon", "hell knight", "chaingunner", "baron" };
+		static const int many[] = { 2, 2, 2, 4, 2, 2, 1 };
+		for (int k = 0; k < 7; k++)
 			Console.Printf("AJARTEST info kills go=%d %s (of %d): the player %d, self 1 %d, self 2 %d, other %d", go, kinds[k], many[k],
-				ltKills[20 * (go - 1) + 4 * k + 0], ltKills[20 * (go - 1) + 4 * k + 1], ltKills[20 * (go - 1) + 4 * k + 2], ltKills[20 * (go - 1) + 4 * k + 3]);
+				ltKills[28 * (go - 1) + 4 * k + 0], ltKills[28 * (go - 1) + 4 * k + 1], ltKills[28 * (go - 1) + 4 * k + 2], ltKills[28 * (go - 1) + 4 * k + 3]);
 	}
 
 	// --- the player's fire (the script's) ------------------------------------------
@@ -212,6 +234,13 @@ extend class AjarTimeHandler
 	{
 		if (ltGo == tgo) return false;
 		if (ltGo) PrintKills(ltGo);
+		if (ltGo && ltGo < 3 && ltWaveSeen)
+		{
+			Console.Printf("AJARTEST info go %d: %d tics looked at for the waves, %d with a wave that should not be there", ltGo, ltWaveSeen, ltWaveBad);
+			Check(String.Format("noLaterWave%d", ltGo), ltWaveSeen > 1000 && !ltWaveBad);
+		}
+		ltWaveSeen = ltWaveBad = 0;
+		ltOn2 = ltInHall = -1;
 		ltGo = tgo;
 		ltStep = 0;
 		ltSumOff = ltSumOn = -1;
@@ -250,8 +279,10 @@ extend class AjarTimeHandler
 				if (guardIs[i] && guardIs[i].target) who = who .. (guardIs[i].target.player ? "P" : guardIs[i].target is "AjarGhost" ? "S" : "?");
 			Console.Printf("AJARTEST info alarm go=%d at %d (from the record %d): guards %d, awake %d, with a target %d (%s)", tgo, alarmTic, alarmAt,
 				LastLiving(), awake, aimed, who);
-			int want = level.mapname ~== "LAST" ? 12 : guards.Size();        // (MAP33: as many as its skill has)
-			Check(String.Format("alarmGuards%d", tgo), LastLiving() == guards.Size() && guards.Size() == want && want > 0 && awake == want && aimed == want);
+			int want = level.mapname ~== "LAST" ? 6 : guards.Size();         // (MAP33: as many as its skill has, all of wave 1)
+			Check(String.Format("alarmGuards%d", tgo), LastLiving() == WaveOf(1) && WaveOf(1) == want && want > 0 && awake == want && aimed == want
+				&& WaveIn(1) == want && LastLiving() == WaveIn(1));
+			if (waves > 1) Check(String.Format("alarmWaveOneOnly%d", tgo), waveTic[1] == alarmTic && WaveIn(2) + WaveIn(3) == 0 && waveTic[2] < 0 && waveTic[3] < 0);
 			if (tgo == 1) ltAlarm1 = alarmTic;
 			else Check(String.Format("alarmAtFirstSelf%d", tgo), alarmTic == alarmAt && alarmTic == ltAlarm1 && SelfAsRecord(0) && plates[0].pressed);
 		}
@@ -264,11 +295,64 @@ extend class AjarTimeHandler
 		}
 	}
 
+	// --- the waves (mode 1 and 4) -------------------------------------------------------
+	// Wave 2 never in go 1; in go 2 at the player's first tic on plate 2 from the alarm; in go 3 at
+	// that same tic (the second self's record). Wave 3 in go 3 only, at the player's first tic in the hall.
+	void WaveChecks(PlayerPawn mo)
+	{
+		int o = ot;
+		ltWaveSeen++;
+		if (tgo == 1 && WaveIn(2) + WaveIn(3)) ltWaveBad++;
+		if (tgo == 2 && WaveIn(3)) ltWaveBad++;
+		if (tgo == 2 && alarmTic >= 0 && ltOn2 < 0 && OnAt(plates[1], takes[takes.Size() - 1], o))
+		{
+			ltOn2 = o;
+			ltWave2 = waveTic[2];
+			Console.Printf("AJARTEST info go 2: on plate 2 first at %d (the alarm + %d), wave 2 at %d: %d guards", o, o - alarmTic, waveTic[2], WaveIn(2));
+			Check("waveTwoAtPlateTwo", waveTic[2] == o && WaveIn(2) == WaveOf(2) && WaveOf(2) == 4 && o > alarmTic);
+		}
+		if (tgo == 2 && alarmTic >= 0 && ltOn2 < 0 && WaveIn(2)) ltWaveBad++;
+		if (tgo == 3)
+		{
+			if (o == 2) Check("waveTwoFromRecord", waveAt[2] == ltWave2 && ltWave2 > alarmAt);
+			if (o < ltWave2 && WaveIn(2)) ltWaveBad++;
+			if (o == ltWave2)
+			{
+				Console.Printf("AJARTEST info go 3: wave 2 at %d (go 2's %d): %d guards", waveTic[2], ltWave2, WaveIn(2));
+				Check("waveTwoAtSelfTwo", waveTic[2] == o && WaveIn(2) == 4 && !plates[1].mine && SelfAsRecord(1));
+			}
+			bool inHall = SecTagged(mo.pos.xy, lastMark.args[0]);
+			if (!inHall && ltInHall < 0 && WaveIn(3)) ltWaveBad++;
+			if (inHall && ltInHall < 0)
+			{
+				ltInHall = o;
+				Console.Printf("AJARTEST info go 3: in the hall first at %d (the alarm + %d), wave 3 at %d: %d guards; before it %d tics bad", o, o - alarmTic,
+					waveTic[3], WaveIn(3), ltWaveBad);
+				Check("waveThreeOnTheFloor", waveTic[3] == o && WaveIn(3) == WaveOf(3) && WaveOf(3) == 5 && !ltWaveBad);
+			}
+		}
+	}
+
+	// The timetable's fire lines: one an earlier self, its first and last shot and their number.
+	bool FireLinesRight()
+	{
+		int found = 0;
+		for (int i = 0; i < takes.Size() - 1; i++)
+		{
+			AjarTake t = takes[i];
+			int n = t.evTic.Size();
+			string want = String.Format("%d fires from %s to %s (%d shots)", i + 1, ThirdClock(t.evTic[0]), ThirdClock(t.evTic[n - 1]), n);
+			for (int l = 0; l < tLine.Size(); l++) if (tLine[l] == want) found++;
+		}
+		return found == takes.Size() - 1;
+	}
+
 	// --- mode 1 (and 4: with views) ------------------------------------------------------
 	void Last1(PlayerPawn mo, bool views)
 	{
 		NewGoL();
 		AlarmChecks(mo);
+		WaveChecks(mo);
 		if (tgo == 1) Go1L(mo, views, L_LEAVE1);
 		else if (tgo == 2) Go2L(mo, views, true);
 		else if (tgo == 3) Go3L(mo, views, false);
@@ -387,12 +471,18 @@ extend class AjarTimeHandler
 			Console.Printf("AJARTEST info go 2 begins: monsters %d killed %d, the player's kills %d", level.total_monsters, level.killed_monsters, mo.player.killcount);
 			Check("countersRight", level.total_monsters == 0 && level.killed_monsters == 0 && mo.player.killcount == 0);
 		}
+		if (o == 2 && checks)
+		{
+			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
+			Check("timetableTwo", FireLinesRight() && tLine.Size() == 2);
+		}
 		if (ltStep == 0 && WalkL(mo, 34)) { ltStep = 1; ltMark = o; }
 		if (ltStep == 1)
 		{
 			if (o == ltMark + 2) Check("standSaveTwo", standSaved && alarmTic < 0);
 			if (wind && !ltWound && o == ltMark + 3) { ltStep = 10; NewRoute(); return; }
 			if (views && o == 400) { ShotL(mo, "stand 2 before the alarm (go 2)", (880, 450), 10, 14); return; }
+			if (checks && (alarmTic < 0 || o < alarmTic + L_STEP2)) return;          // (modes 1 and 4: beside it until the alarm + L_STEP2)
 			if (o >= L_PLATE2 && WalkL(mo, 56)) ltStep = 2;
 		}
 		// mode 3: wind on, before the alarm
@@ -421,7 +511,7 @@ extend class AjarTimeHandler
 			int off = L_OFF, on = L_ON;
 			if (checks)
 			{
-				if (a == off) Check("sumWhilePlateOneOn", plateSum >= off - 2 && plates[1].mine);
+				if (a == off) Check("sumWhilePlateOneOn", ltOn2 > alarmTic && plateSum >= off - (ltOn2 - alarmTic) - 3 && plates[1].mine);
 				if (a == off + 10) ltSumOff = plateSum;
 				if (a == on - 1) Check("sumOnlyWithPlateOne", plateSum == ltSumOff && plates[1].mine && !plates[0].pressed);
 				if (a == L_HOLD2)
@@ -480,7 +570,7 @@ extend class AjarTimeHandler
 		if (o == 2)
 		{
 			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
-			Check("timetableLines", tLine.Size() == 3);
+			Check("timetableLines", tLine.Size() == 5 && FireLinesRight());
 		}
 		// the exit door as the timetable has it (sampled; not within 15 tics of a change)
 		if (o % 35 == 3 && exitDoor)

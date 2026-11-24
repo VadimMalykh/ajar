@@ -35,6 +35,11 @@ extend class AjarTimeHandler
 	AjarShutter lastGate;       // the alarm's shutter (args[3])
 	int alarmTic;               // the tic of this go the alarm rang (-1: not yet)
 	int alarmAt;                // the tic it rings in this go, from the first self's record (-1: go 1, not known)
+	// the waves (AjarThirdGuard args[1]): the highest of the map's guards (1: no waves), the tic of
+	// this go wave w came (waveTic[w], -1: not yet), and when wave k (1 < k < parts) is to come in
+	// this go by the record of the self that pressed plate k (waveAt[k], -1: not by a record)
+	int waves;
+	Array<int> waveTic, waveAt;
 	int plateSum;               // the tics the player has stood on their plate in this go, that count
 	bool standSaved;            // the save at the stand is made in this go
 	int lastClip, lastShell;    // what the player carried a tic ago (what was fired: time.zs's RecordTake)
@@ -53,10 +58,14 @@ extend class AjarTimeHandler
 		let it = ThinkerIterator.Create("AjarThirdGuard");
 		AjarThirdGuard g;
 		while (g = AjarThirdGuard(it.Next())) { guards.Push(g); guardIs.Push(null); guardHitBy.Push(null); guardSelfDmg.Push(0); }
+		waves = 1;
+		for (int i = 0; i < guards.Size(); i++) waves = max(waves, GuardWave(i));
 		lastGate = lastMark.args[3] ? FindShutter(lastMark.args[3]) : null;
 		alarmTic = -1;
 		alarmAt = -1;
 	}
+
+	int GuardWave(int i) { return max(1, guards[i].args[1]); }
 
 	int LastNeed() { return 35 * (tgo == 1 ? (lastMark.args[1] ? lastMark.args[1] : 30) : (lastMark.args[2] ? lastMark.args[2] : 15)); }
 
@@ -85,6 +94,16 @@ extend class AjarTimeHandler
 		{
 			AjarTake t = takes[0];
 			for (int j = 0; j < t.x.Size() && alarmAt < 0; j++) if (OnAt(plates[0], t, j) && !PaleAt(t, j)) alarmAt = j;
+		}
+		// wave k (1 < k < parts) comes in a later go than k at the first tic, from the alarm on, its self
+		// k stands on plate k (as the alarm: a pale stretch presses nothing)
+		waveTic.Clear(); waveAt.Clear();
+		for (int w = 0; w <= parts; w++) { waveTic.Push(-1); waveAt.Push(-1); }
+		for (int k = 2; k < parts && k <= plates.Size() && alarmAt >= 0; k++)
+		{
+			if (tgo <= k || !plates[k - 1] || k > takes.Size() - 1) continue;
+			AjarTake t = takes[k - 1];
+			for (int j = alarmAt; j < t.x.Size() && waveAt[k] < 0; j++) if (OnAt(plates[k - 1], t, j) && !PaleAt(t, j)) waveAt[k] = j;
 		}
 	}
 
@@ -134,6 +153,7 @@ extend class AjarTimeHandler
 		double t0 = MSTimeF();
 		LastRecordFire(mo);         // (from the tic after the alarm)
 		if (alarmTic < 0 && LastRings(mo)) LastAlarm(mo);
+		LastWaves(mo);
 		LastSelvesFight();
 		LastStandSave(mo);
 		LastPlates(mo);
@@ -152,9 +172,32 @@ extend class AjarTimeHandler
 	void LastAlarm(PlayerPawn mo)
 	{
 		alarmTic = ot;
+		LastWave(mo, 1);
+		if (lastGate) lastGate.keyed = HELD_OPEN;
+		// what the player fires is recorded from now
+		lastClip = mo.CountInv("Clip");
+		lastShell = mo.CountInv("Shell");
+		lastShots.Clear();
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bMissile && a.target == mo) lastShots.Push(a);
+		mo.A_StartSound("brain/sight", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
+		int need = LastNeed() / 35;
+		if (tgo == 1) Say(String.Format("The alarm. Hold the plate: %d seconds in all.", need));
+		else if (tgo < parts) Say(String.Format("The alarm. Hold plate %d while your earlier selves hold theirs:\n%d seconds in all.", tgo, need));
+		else Say("The alarm. The exit door is open while every plate is held:\nget across to it.");
+	}
+
+	// Wave w's guards come (wave 1: the alarm's): each in a teleport fog,
+	// awake, its first target the nearest it sees. How many came.
+	int LastWave(PlayerPawn mo, int w)
+	{
+		waveTic[w] = ot;
+		int n = 0;
 		for (int i = 0; i < guards.Size(); i++)
 		{
 			AjarThirdGuard gd = guards[i];
+			if (GuardWave(i) != w) continue;
 			class<Actor> cls = AjarHandler.AmbushClass(gd.args[0]);
 			if (!cls) continue;
 			Actor m = Actor.Spawn(cls, gd.pos, ALLOW_REPLACE);
@@ -171,20 +214,32 @@ extend class AjarTimeHandler
 			guardIs[i] = m;
 			guardHitBy[i] = null;
 			guardSelfDmg[i] = 0;
+			n++;
 		}
-		if (lastGate) lastGate.keyed = HELD_OPEN;
-		// what the player fires is recorded from now
-		lastClip = mo.CountInv("Clip");
-		lastShell = mo.CountInv("Shell");
-		lastShots.Clear();
-		let it = ThinkerIterator.Create("Actor");
-		Actor a;
-		while (a = Actor(it.Next())) if (a.bMissile && a.target == mo) lastShots.Push(a);
-		mo.A_StartSound("brain/sight", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
-		int need = LastNeed() / 35;
-		if (tgo == 1) Say(String.Format("The alarm. Hold the plate: %d seconds in all.", need));
-		else if (tgo < parts) Say(String.Format("The alarm. Hold plate %d while your earlier selves hold theirs:\n%d seconds in all.", tgo, need));
-		else Say("The alarm. The exit door is open while every plate is held:\nget across to it.");
+		return n;
+	}
+
+	// The later waves (a map whose guards have them), from the alarm on: wave
+	// k (1 < k < parts) the first time plate k is pressed (in go k by the
+	// player, as the alarm in go 1; later by self k at its record's tic); the
+	// last wave in the last go, the first time the player stands in the hall.
+	void LastWaves(PlayerPawn mo)
+	{
+		if (waves < 2 || alarmTic < 0) return;
+		for (int k = 2; k <= min(waves, parts); k++)
+		{
+			if (waveTic[k] >= 0) continue;
+			bool now;
+			if (k < parts)
+				now = k <= plates.Size() && plates[k - 1] && ((tgo == k && mo.health > 0 && OnAt(plates[k - 1], takes[takes.Size() - 1], ot))
+					|| (tgo > k && waveAt[k] >= 0 && ot >= waveAt[k]));
+			else
+				now = tgo == parts && mo.health > 0 && SecTagged(mo.pos.xy, lastMark.args[0]);
+			if (!now || !LastWave(mo, k)) continue;
+			mo.A_StartSound("brain/spit", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
+			if (k < parts) Say(String.Format("Plate %d is held: more of them come.", k));
+			else Say("They have seen you on the floor: more of them come.");
+		}
 	}
 
 	// A monster's first target: the nearest of the player and the earlier
@@ -335,6 +390,14 @@ extend class AjarTimeHandler
 			tLine.Push(String.Format("%d steps on plate %d  %s%s; stands %d s in all", i + 1, i + 1, ThirdClock(first),
 				i == 0 ? ": the alarm" : "", sum / 35));
 			tColor.Push(colours[min(i, 2)]);
+			// (a map with waves: when it fires, the fight being another in each go)
+			AjarTake t = takes[i];
+			int ne = t.evTic.Size();
+			if (waves > 1 && ne)
+			{
+				tLine.Push(String.Format("%d fires from %s to %s (%d shots)", i + 1, ThirdClock(t.evTic[0]), ThirdClock(t.evTic[ne - 1]), ne));
+				tColor.Push(colours[min(i, 2)]);
+			}
 		}
 		if (tgo == parts && n && heldFrom.Size())
 		{

@@ -15,6 +15,9 @@ WIND_T = 20165      # AjarThirdWind: a plate on a wall that winds the clock on
 LAST_T = 20166      # AjarThirdLast: the last hall, where every go fights the same fight (one to a map)
 GUARD_T = 20167     # AjarThirdGuard: a monster of the last hall, there from the alarm
 LOCK_T = 20168      # AjarThirdLock: a window hall's lobby, two shutters that lock the player in with its fight
+SHARE_T = 20170     # AjarThirdShare: one item for the three selves of a last hall, shown on each stand
+LEVER_T = 20171     # AjarThirdLever: a plate on a stand's wall that works one of the last hall's machines
+VENT_T = 20172      # AjarThirdVent: a point of a last hall's floor that a steam lever blows over
 FIGHT = 9           # the fight number of the AjarZone over the whole map (the paradox's room)
 
 
@@ -120,25 +123,63 @@ def stand_tag(k):
     return 3360 + k
 
 
-def last(m, x, y, hall_tag, *, first=30, later=15, gate=0):
+def last(m, x, y, hall_tag, *, first=30, later=15, gate=0, stagger=0):
     """The last hall (third.zs, AjarThirdLast): every sector with `hall_tag`
     (its floor, pedestals, bays). Empty until plate 1 is first pressed in a
     go: the alarm, and its guards come. Time door 1 opens once plate 1 has
     been stood on `first` seconds in all since the alarm; time door k > 1
     once plate k has been stood on `later` seconds in all while the earlier
     plates are pressed. `gate`: the tag of an AjarShutter (ajartime.shutter)
-    that the alarm opens for the rest of the go (the last stand's way down)."""
-    m.thing(x, y, LAST_T, args=(hall_tag, first, later, gate))
+    that the alarm opens for the rest of the go (the last stand's way down).
+    `stagger` n: an earlier self that has taken n damage (summed from the
+    alarm, falling by 1 a tic) is staggered: it holds its fire for three
+    seconds (0: never, as before)."""
+    m.thing(x, y, LAST_T, args=(hall_tag, first, later, gate, stagger))
 
 
-def guard(m, x, y, kind, angle=0, z=0, skill=None):
-    """A monster of Doom editor number `kind` in the last hall: it comes at
-    the alarm, here, facing `angle`, awake. `z` over the floor (a flyer).
-    `skill` n: there from difficulty n up (Map.thing's; without it on all)."""
+def guard(m, x, y, kind, angle=0, z=0, skill=None, wave=1):
+    """A monster of Doom editor number `kind` in the last hall: it comes,
+    here, facing `angle`, awake, with its `wave`: wave 1 at the alarm; wave k
+    (1 < k < the number of parts) the first time plate k is pressed in a go
+    from the alarm on (so never in go 1); the last wave in the last go only,
+    the first time the player stands in the hall (a sector with its tag).
+    `z` over the floor (a flyer). `skill` n: there from difficulty n up
+    (Map.thing's; without it on all)."""
     kw = {"height": float(z)} if z else {}
     if skill:
         kw["skill"] = skill
-    m.thing(x, y, GUARD_T, angle=angle, args=(kind,), **kw)
+    m.thing(x, y, GUARD_T, angle=angle, args=(kind,) if wave == 1 else (kind, wave), **kw)
+
+
+def share(m, x, y, kind=0):
+    """One of the places of the last hall's SHARE (third.zs, AjarThirdShare):
+    every share thing of the map together is one item, `kind` 0 an
+    invulnerability sphere, 1 a megasphere. Put one on each stand, clear of
+    the plate, the time door and the wind plate. At each go's start a pale
+    copy stands at each, not to be taken; at the alarm they become real
+    unless an earlier self took it (then they vanish at the tic it did); the
+    first self to take one has it, and every copy goes."""
+    m.thing(x, y, SHARE_T, args=(kind,))
+
+
+def lever(m, x, y, angle, n, kind, tag=0, seconds=0, z=30):
+    """Lever n (unique in the map) of the last hall (third.zs,
+    AjarThirdLever): a plate on a stand's wall facing `angle`, `z` over the
+    floor, worked with USE once a go from the alarm on; in every later go it
+    works again by itself at the tic it was worked. `kind` 1 STEAM: for
+    `seconds` (0: 6) steam blows over the floor round every vent (vent())
+    whose number is `tag`, hurting whatever lives there but the earlier
+    selves; 2 BREAKER: for `seconds` (0: 5) every monster in the hall is
+    stunned (it can be hurt and killed); `tag` unused. Stand it 2 off the
+    wall."""
+    m.thing(x, y, LEVER_T, angle=angle, height=float(z), args=(n, kind, tag, seconds))
+
+
+def vent(m, x, y, n, reach=0):
+    """A vent of steam lever group `n` (lever(..., tag=n)): the steam blows
+    over the floor within `reach` (0: 96) of it, at its floor's height. Mark
+    the floor they cover (a colour), so that it can be told."""
+    m.thing(x, y, VENT_T, args=(n, reach))
 
 
 def railing(m, a, b):
