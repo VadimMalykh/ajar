@@ -27,6 +27,9 @@ extend class AjarTimeHandler
 	const L_LEAVE2 = 1700;      // go 2 leaves plate 2 at the alarm + this
 	const L_CROSS = 1600;       // go 3 crosses from the alarm + this
 	const L_DIE = 100;          // mode 2: killed on stand 2 at the alarm + this
+	const L_SHARE1 = 1200;      // go 1 (modes 1 and 4) takes the share at the alarm + this
+	const L_SHARE2 = 60;        // go 2 (mode 3) takes it at the alarm + this
+	const L_NOTMINE = 500;      // go 2 and 3 (modes 1 and 4) walk onto a pale copy at the alarm + this
 
 	int ltGo, ltStep, ltMark, ltHold, ltDone, ltAlarm1, ltDied;
 	double ltHoldA, ltHoldP;
@@ -42,6 +45,8 @@ extend class AjarTimeHandler
 	// the waves: the tic go 2's wave 2 came; in this go the player's first tic on plate 2 from the alarm, the
 	// first in the hall; ticks a wave was there that should not have been
 	int ltWave2, ltOn2, ltInHall, ltWaveBad, ltWaveSeen;
+	int ltShareGo;              // the go and tic the player took the share (the script's)
+	int ltShareTic;
 	int ltExitBad, ltExitSeen;
 	double ltMsSum, ltMsMax, ltTicSum, ltTicMax, ltLastMs;
 	int ltMsN;
@@ -280,9 +285,18 @@ extend class AjarTimeHandler
 			Console.Printf("AJARTEST info alarm go=%d at %d (from the record %d): guards %d, awake %d, with a target %d (%s)", tgo, alarmTic, alarmAt,
 				LastLiving(), awake, aimed, who);
 			int want = level.mapname ~== "LAST" ? 6 : guards.Size();         // (MAP33: as many as its skill has, all of wave 1)
-			Check(String.Format("alarmGuards%d", tgo), LastLiving() == WaveOf(1) && WaveOf(1) == want && want > 0 && awake == want && aimed == want
-				&& WaveIn(1) == want && LastLiving() == WaveIn(1));
-			if (waves > 1) Check(String.Format("alarmWaveOneOnly%d", tgo), waveTic[1] == alarmTic && WaveIn(2) + WaveIn(3) == 0 && waveTic[2] < 0 && waveTic[3] < 0);
+			// (plate 2 already pressed at the alarm: wave 2 comes with it)
+			bool with2 = waves > 1 && waveTic[2] == alarmTic;
+			int all = want + (with2 ? WaveOf(2) : 0);
+			Check(String.Format("alarmGuards%d", tgo), LastLiving() == all && WaveOf(1) == want && want > 0 && awake == all && aimed == all
+				&& WaveIn(1) == want);
+			if (waves > 1 && !with2) Check(String.Format("alarmWaveOneOnly%d", tgo), waveTic[1] == alarmTic && WaveIn(2) + WaveIn(3) == 0 && waveTic[2] < 0 && waveTic[3] < 0);
+			if (with2)
+			{
+				Console.Printf("AJARTEST info go %d: plate 2 pressed at the alarm, wave 2 with it; said: %s", tgo, SaidNow());
+				Check(String.Format("alarmWithWaveTwo%d", tgo), tgo >= 2 && plates[1].pressed && WaveIn(2) == WaveOf(2) && WaveIn(3) == 0 && waveTic[3] < 0
+					&& SaidNow().IndexOf("The alarm.") == 0 && SaidNow().IndexOf("Plate 2 is held") > 0);
+			}
 			if (tgo == 1) ltAlarm1 = alarmTic;
 			else Check(String.Format("alarmAtFirstSelf%d", tgo), alarmTic == alarmAt && alarmTic == ltAlarm1 && SelfAsRecord(0) && plates[0].pressed);
 		}
@@ -333,6 +347,91 @@ extend class AjarTimeHandler
 		}
 	}
 
+	// --- the share ---------------------------------------------------------------------
+	int ShareCopiesNow(bool real)
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("AjarShareCopy");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bSpecial == real && (real ? a.alpha == 1.0 : a.alpha < 0.5)) n++;
+		return n;
+	}
+	int ShareCopiesAll() { return ShareCopiesNow(true) + ShareCopiesNow(false); }
+	Actor ShareCopyNear(Vector2 p)
+	{
+		let it = ThinkerIterator.Create("AjarShareCopy");
+		Actor a, best = null;
+		while (a = Actor(it.Next())) if (!best || (a.pos.xy - p).Length() < (best.pos.xy - p).Length()) best = a;
+		return best;
+	}
+	string SaidNow() { let h = Doors(); return h ? h.said : ""; }
+
+	// Every go: pale copies at its start; real at the alarm if nobody earlier takes it; an earlier
+	// self's: gone at its tic, said at the alarm, in the timetable.
+	void ShareChecks(PlayerPawn mo)
+	{
+		int o = ot;
+		if (o == 2)
+		{
+			Console.Printf("AJARTEST info go %d begins: share copies %d (pale %d), the self that takes it %d at %d", tgo, ShareCopiesAll(), ShareCopiesNow(false), shareSelf, shareTic);
+			bool want = tgo == 1 ? shareSelf < 0 : ltShareGo > 0 && ltShareGo < tgo && shareSelf == ltShareGo - 1 && shareTic == ltShareTic;
+			Check(String.Format("sharePaleAtStart%d", tgo), ShareCopiesNow(false) == 3 && ShareCopiesAll() == 3 && shareGone < 0 && (ltShareGo == 0 || ltShareGo >= tgo || want));
+			if (ltShareGo > 0 && ltShareGo < tgo)
+			{
+				string line = String.Format("%d takes the sphere  %s", ltShareGo, ThirdClock(ltShareTic));
+				bool has = false;
+				for (int l = 0; l < tLine.Size(); l++) if (tLine[l] == line) has = true;
+				Check(String.Format("shareInTimetable%d", tgo), has && want);
+			}
+		}
+		if (alarmTic >= 0 && o == alarmTic + 1)
+		{
+			if (shareSelf < 0) Check(String.Format("shareRealAtAlarm%d", tgo), ShareCopiesNow(true) == 3);
+			else
+			{
+				string line = String.Format("The sphere is your %s self's: it takes it at %s.", Nth(shareSelf), ThirdClock(shareTic));
+				Console.Printf("AJARTEST info said at the alarm: %s", SaidNow());
+				Check(String.Format("shareSaidAtAlarm%d", tgo), SaidNow().IndexOf(line) >= 0 && ShareCopiesNow(false) == 3);
+			}
+		}
+		if (shareSelf >= 0 && o == shareTic - 1) Check(String.Format("shareThereBefore%d", tgo), ShareCopiesNow(false) == 3 && shareGone < 0);
+		if (shareSelf >= 0 && o == shareTic)
+		{
+			Console.Printf("AJARTEST info go %d: the %s self takes the share at %d: copies left %d", tgo, Nth(shareSelf), o, ShareCopiesAll());
+			Check(String.Format("shareGoesAtSelfTic%d", tgo), ShareCopiesAll() == 0 && shareGone == o);
+		}
+	}
+
+	// The script's player walks onto the copy nearest `at` (true while on the way), and back
+	bool ShareWalk(PlayerPawn mo, Vector2 at)
+	{
+		Actor c = ShareCopyNear(at);
+		if (!c) return false;
+		Toward(mo, c.pos.xy, 6);
+		return true;
+	}
+
+	// Onto a pale copy after the alarm (an earlier self's): nothing.
+	void NotMineCheck(PlayerPawn mo)
+	{
+		Actor c = ShareCopyNear(mo.pos.xy);
+		double d = c ? (c.pos.xy - mo.pos.xy).Length() : -1;
+		Console.Printf("AJARTEST info go %d after the alarm: the player %d from a pale copy (the %s self's at %d); copies %d", tgo, d, Nth(shareSelf), shareTic, ShareCopiesAll());
+		Check(String.Format("shareNotTheirs%d", tgo), c && d < 8 && ShareCopiesNow(false) == 3 && shareGone < 0 && shareSelf >= 0 && ot < shareTic);
+	}
+
+	// The player takes the share: every copy gone, they have the item, the record has the tic.
+	void ShareTakenCheck(PlayerPawn mo)
+	{
+		if (ltShareGo || shareGone < 0 || shareSelf >= 0) return;
+		ltShareGo = tgo;
+		ltShareTic = shareGone;
+		let t = AjarThirdTake(takes[takes.Size() - 1]);
+		Console.Printf("AJARTEST info go %d: the player took the share at %d (the alarm + %d)", tgo, shareGone, shareGone - alarmTic);
+		Check(String.Format("shareTakenGo%d", tgo), ShareCopiesAll() == 0 && mo.FindInventory("PowerInvulnerable") != null && t.shareAt == shareGone + 1
+			&& shareGone == ot);
+	}
+
 	// The timetable's fire lines: one an earlier self, its first and last shot and their number.
 	bool FireLinesRight()
 	{
@@ -353,7 +452,8 @@ extend class AjarTimeHandler
 		NewGoL();
 		AlarmChecks(mo);
 		WaveChecks(mo);
-		if (tgo == 1) Go1L(mo, views, L_LEAVE1);
+		ShareChecks(mo);
+		if (tgo == 1) Go1L(mo, views, L_LEAVE1, extras: true);
 		else if (tgo == 2) Go2L(mo, views, true);
 		else if (tgo == 3) Go3L(mo, views, false);
 	}
@@ -415,7 +515,8 @@ extend class AjarTimeHandler
 		}
 	}
 
-	void Go1L(PlayerPawn mo, bool views, int leave, bool wind = false)
+	// `extras` (modes 1 and 4): the share and the levers
+	void Go1L(PlayerPawn mo, bool views, int leave, bool wind = false, bool extras = false)
 	{
 		int o = ot;
 		if (ltStep == 0 && WalkL(mo, 0)) { ltStep = 1; ltMark = o; }
@@ -423,6 +524,15 @@ extend class AjarTimeHandler
 		{
 			if (o == ltMark + 2) Check("standSaveOne", standSaved);
 			if (o >= 300 && o <= 345) { RailTest(mo, o - 300); return; }
+			// the share is not to be taken before the alarm: onto the copy and back
+			if (extras && o > 345 && o < 370) { ShareWalk(mo, (1690, 1184)); return; }
+			if (extras && o == 370)
+			{
+				Actor c = ShareCopyNear(mo.pos.xy);
+				Console.Printf("AJARTEST info go 1 before the alarm: the player %d from a pale copy; copies %d", c ? (c.pos.xy - mo.pos.xy).Length() : -1, ShareCopiesAll());
+				Check("shareNotBeforeAlarm", c && (c.pos.xy - mo.pos.xy).Length() < 8 && ShareCopiesNow(false) == 3 && shareGone < 0 && !mo.FindInventory("PowerInvulnerable"));
+			}
+			if (extras && o > 370 && o < 398) { Toward(mo, (1560, 1190)); return; }
 			if (views && o == 400) { ShotL(mo, "stand 1 before the alarm (go 1)", (1560, 1150), 250, 12); return; }
 			if (o >= L_ALARM - 40 && WalkL(mo, 20)) { ltStep = 2; }
 		}
@@ -432,7 +542,9 @@ extend class AjarTimeHandler
 			int a = o - alarmTic;
 			// on, off at L_OFF, on again at L_ON: the sum counts only on the plate and does not fall
 			if (a > L_OFF && a < L_ON) StayAt(mo, (1680, 1088));
+			else if (extras && a >= L_SHARE1 && shareGone < 0) ShareWalk(mo, (1690, 1184));
 			else StayAt(mo, (1600, 1088));
+			if (extras) ShareTakenCheck(mo);
 			FireL(mo, o);
 			if (a == L_OFF + 10) ltSumOff = plateSum;
 			if (a == L_ON - 1) Check("sumOnlyOnPlate", ltSumOff > 0 && plateSum == ltSumOff && !plates[0].mine && !tdOpen);
@@ -462,7 +574,7 @@ extend class AjarTimeHandler
 
 	// go 2: `checks` the first self's fire (mode 1)
 	int ltDoorAt;
-	void Go2L(PlayerPawn mo, bool views, bool checks, bool wind = false, bool die = false, bool quick = false)
+	void Go2L(PlayerPawn mo, bool views, bool checks, bool wind = false, bool die = false, bool quick = false, bool share = false)
 	{
 		int o = ot;
 		if (o == 1)
@@ -474,7 +586,7 @@ extend class AjarTimeHandler
 		if (o == 2 && checks)
 		{
 			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
-			Check("timetableTwo", FireLinesRight() && tLine.Size() == 2);
+			Check("timetableTwo", FireLinesRight() && tLine.Size() == 3);
 		}
 		if (ltStep == 0 && WalkL(mo, 34)) { ltStep = 1; ltMark = o; }
 		if (ltStep == 1)
@@ -546,7 +658,12 @@ extend class AjarTimeHandler
 				TestWind(mo, wp);
 				Check("windRefusedTwo", ot == was && takes[takes.Size() - 1].x.Size() == len && alarmTic >= 0);
 			}
-			StayAt(mo, (960, 512));
+			// mode 3 takes the share; modes 1 and 4 walk onto a copy that is the first self's
+			if (share && a >= L_SHARE2 && shareGone < 0) ShareWalk(mo, (856, 344));
+			else if (checks && a >= L_NOTMINE && a < L_NOTMINE + 40) ShareWalk(mo, (856, 344));
+			else StayAt(mo, (960, 512));
+			if (share) ShareTakenCheck(mo);
+			if (checks && a == L_NOTMINE + 40) NotMineCheck(mo);
 			if (a >= L_HOLD2) FireL(mo, o);
 			if (!ltDoorChecked && tdOpen)
 			{
@@ -570,8 +687,11 @@ extend class AjarTimeHandler
 		if (o == 2)
 		{
 			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
-			Check("timetableLines", tLine.Size() == 5 && FireLinesRight());
+			Check("timetableLines", tLine.Size() == 5 + (shareSelf >= 0) && FireLinesRight());
 		}
+		if (!late && alarmTic >= 0 && o >= alarmTic + L_NOTMINE && o < alarmTic + L_NOTMINE + 40) { ShareWalk(mo, (1240, -164)); return; }
+		if (!late && alarmTic >= 0 && o == alarmTic + L_NOTMINE + 40) NotMineCheck(mo);
+		if (!late && alarmTic >= 0 && o > alarmTic + L_NOTMINE + 40 && o < alarmTic + L_NOTMINE + 80 && ltStep == 1) { Toward(mo, (1344, -60)); return; }
 		// the exit door as the timetable has it (sampled; not within 15 tics of a change)
 		if (o % 35 == 3 && exitDoor)
 		{
@@ -719,8 +839,9 @@ extend class AjarTimeHandler
 		}
 		if (NewGoL()) ltWound = false;
 		AlarmChecks(mo);
+		ShareChecks(mo);
 		if (tgo == 1) Go1L(mo, false, L_LEAVE1);
-		else if (tgo == 2) Go2L(mo, false, false, wind: true);
+		else if (tgo == 2) Go2L(mo, false, false, wind: true, share: true);
 		else if (tgo == 3) Go3L(mo, false, true, wind: true);
 	}
 }

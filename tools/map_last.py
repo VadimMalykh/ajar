@@ -147,6 +147,10 @@ STANDING = PEDESTALS + BAYS + CG_BAYS
 assert all(any(p[0] + 20 <= x <= p[2] - 20 and p[1] + 20 <= y <= p[3] - 20 for p in STANDING) for k, x, y, a, z, w in GUARDS if w == 1)
 # a walking guard of a later wave stands in the middle of its patch, clear of every island
 assert all(not (p[0] < q[2] and q[0] < p[2] and p[1] < q[3] and q[1] < p[3]) for p, c in PATCHES for q in PEDESTALS + BLOCKS + [STEPS])
+# the share: one invulnerability sphere for the three selves, a copy on each stand near its back wall
+SHARES = [(1690, 1184), (856, 344), (1240, -164)]
+for x, y in SHARES:
+    ajarthird.share(m, x, y)
 ajarthird.last(m, 1536, 900, HALLT, gate=GATE)
 ajarthird.third(m, 1536, 960, EXIT, OUT, (300, -300, 2400, 1600))
 

@@ -11,6 +11,37 @@
 
 class AjarThirdLast : AjarThirdMark {}
 class AjarThirdGuard : AjarThirdMark {}
+class AjarThirdShare : AjarThirdMark {}
+
+// What a go's record has of the last hall besides where the player was and
+// what they fired: the tic they took the share (+ 1; 0: not taken).
+extend class AjarThirdTake
+{
+	int shareAt;
+}
+
+// A copy of the share, at a share thing: pale and not to be taken, or real
+// (SPECIAL: the player who touches it takes the item, AjarTimeHandler.LastShareTaken).
+class AjarShareCopy : Actor
+{
+	Default { Radius 20; Height 45; }
+	States
+	{
+	Spawn:
+		PINV ABCD 6 Bright;
+		Loop;
+	Mega:
+		MEGA ABCD 6 Bright;
+		Loop;
+	}
+
+	override void Touch(Actor toucher)
+	{
+		let h = AjarTimeHandler(EventHandler.Find("AjarTimeHandler"));
+		let mo = PlayerPawn(toucher);
+		if (h && mo && mo.player && mo.health > 0 && bSpecial) h.LastShareTaken(mo, self);
+	}
+}
 
 // An earlier self at a last hall: an AjarGhost (shootable from the alarm on,
 // never harmed) that counts what hits it (the tests).
@@ -40,6 +71,11 @@ extend class AjarTimeHandler
 	// this go by the record of the self that pressed plate k (waveAt[k], -1: not by a record)
 	int waves;
 	Array<int> waveTic, waveAt;
+	// the share (AjarThirdShare): its places, the copies shown there in this go, the earlier self that
+	// takes it in this go and when (-1: none), the tic it was taken or went in this go (-1: not yet)
+	Array<AjarThirdShare> shares;
+	Array<Actor> shareCopies;
+	int shareSelf, shareTic, shareGone;
 	int plateSum;               // the tics the player has stood on their plate in this go, that count
 	bool standSaved;            // the save at the stand is made in this go
 	int lastClip, lastShell;    // what the player carried a tic ago (what was fired: time.zs's RecordTake)
@@ -60,6 +96,9 @@ extend class AjarTimeHandler
 		while (g = AjarThirdGuard(it.Next())) { guards.Push(g); guardIs.Push(null); guardHitBy.Push(null); guardSelfDmg.Push(0); }
 		waves = 1;
 		for (int i = 0; i < guards.Size(); i++) waves = max(waves, GuardWave(i));
+		let si = ThinkerIterator.Create("AjarThirdShare");
+		AjarThirdShare sh;
+		while (sh = AjarThirdShare(si.Next())) shares.Push(sh);
 		lastGate = lastMark.args[3] ? FindShutter(lastMark.args[3]) : null;
 		alarmTic = -1;
 		alarmAt = -1;
@@ -105,6 +144,7 @@ extend class AjarTimeHandler
 			AjarTake t = takes[k - 1];
 			for (int j = alarmAt; j < t.x.Size() && waveAt[k] < 0; j++) if (OnAt(plates[k - 1], t, j) && !PaleAt(t, j)) waveAt[k] = j;
 		}
+		LastShareBegin();
 	}
 
 	// What an earlier go left in the hall goes: the guards' monsters wherever
@@ -154,6 +194,7 @@ extend class AjarTimeHandler
 		LastRecordFire(mo);         // (from the tic after the alarm)
 		if (alarmTic < 0 && LastRings(mo)) LastAlarm(mo);
 		LastWaves(mo);
+		LastShareTick();
 		LastSelvesFight();
 		LastStandSave(mo);
 		LastPlates(mo);
@@ -183,9 +224,113 @@ extend class AjarTimeHandler
 		while (a = Actor(it.Next())) if (a.bMissile && a.target == mo) lastShots.Push(a);
 		mo.A_StartSound("brain/sight", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
 		int need = LastNeed() / 35;
-		if (tgo == 1) Say(String.Format("The alarm. Hold the plate: %d seconds in all.", need));
-		else if (tgo < parts) Say(String.Format("The alarm. Hold plate %d while your earlier selves hold theirs:\n%d seconds in all.", tgo, need));
-		else Say("The alarm. The exit door is open while every plate is held:\nget across to it.");
+		string s;
+		if (tgo == 1) s = String.Format("The alarm. Hold the plate: %d seconds in all.", need);
+		else if (tgo < parts) s = String.Format("The alarm. Hold plate %d while your earlier selves hold theirs:\n%d seconds in all.", tgo, need);
+		else s = "The alarm. The exit door is open while every plate is held:\nget across to it.";
+		LastSay(s .. LastShareAlarm());
+	}
+
+	// What the last hall says: a line said in the same tic as another (wave 2 with the alarm, a lever
+	// with a wave) goes under it, not over it.
+	string lastSaid;
+	int lastSaidTic, lastSaidGo;
+	void LastSay(string s)
+	{
+		if (lastSaidTic == ot && lastSaidGo == tgo && lastSaid != "") s = lastSaid .. "\n" .. s;
+		lastSaid = s;
+		lastSaidTic = ot;
+		lastSaidGo = tgo;
+		Say(s);
+	}
+
+	// --- the share: one item for every self -------------------------------------------
+	static string Nth(int i)
+	{
+		static const string nth[] = { "first", "second", "third", "fourth", "fifth" };
+		return nth[clamp(i, 0, 4)];
+	}
+	string ShareName() { return shares.Size() && shares[0].args[0] == 1 ? "megasphere" : "sphere"; }
+
+	// A go begins: a pale copy at each share thing, not to be taken; the earlier self that takes it
+	// in this go (the first in the records to have taken it: only one can have).
+	void LastShareBegin()
+	{
+		for (int i = 0; i < shareCopies.Size(); i++) if (shareCopies[i]) shareCopies[i].Destroy();
+		shareCopies.Clear();
+		shareSelf = shareTic = shareGone = -1;
+		if (!shares.Size()) return;
+		for (int i = 0; i < takes.Size() - 1; i++)
+		{
+			let t = AjarThirdTake(takes[i]);
+			if (t && t.shareAt > 0 && (shareTic < 0 || t.shareAt - 1 < shareTic)) { shareTic = t.shareAt - 1; shareSelf = i; }
+		}
+		for (int i = 0; i < shares.Size(); i++)
+		{
+			Actor c = Actor.Spawn("AjarShareCopy", shares[i].pos);
+			if (!c) continue;
+			if (shares[0].args[0] == 1) c.SetStateLabel("Mega");
+			c.bSpecial = false;
+			c.A_SetRenderStyle(0.4, STYLE_Translucent);
+			shareCopies.Push(c);
+		}
+	}
+
+	// The alarm: the copies become real, unless an earlier self takes it in this go (said).
+	string LastShareAlarm()
+	{
+		if (!shareCopies.Size()) return "";
+		if (shareSelf >= 0)
+			return String.Format("\nThe %s is your %s self's: it takes it at %s.", ShareName(), Nth(shareSelf), ThirdClock(shareTic));
+		for (int i = 0; i < shareCopies.Size(); i++)
+		{
+			Actor c = shareCopies[i];
+			if (!c) continue;
+			c.bSpecial = true;
+			c.A_SetRenderStyle(1.0, STYLE_Normal);
+			c.A_StartSound("misc/spawn", CHAN_AUTO);
+		}
+		return "";
+	}
+
+	// Every copy goes, each in an item's flash.
+	void ShareGo()
+	{
+		shareGone = ot;
+		for (int i = 0; i < shareCopies.Size(); i++)
+		{
+			Actor c = shareCopies[i];
+			if (!c) continue;
+			Actor.Spawn("ItemFog", c.pos, ALLOW_REPLACE);
+			c.Destroy();
+		}
+		shareCopies.Clear();
+	}
+
+	// The earlier self that takes it does, at its record's tic (it is never in a pale stretch: the
+	// player took it, they were not winding).
+	void LastShareTick()
+	{
+		if (shareSelf < 0 || shareGone >= 0 || alarmTic < 0 || ot < shareTic) return;
+		if (shareSelf < ghosts.Size() && ghosts[shareSelf]) ghosts[shareSelf].A_StartSound("misc/p_pkup", CHAN_AUTO);
+		ShareGo();
+	}
+
+	// The player touches a real copy: they take the item (as if it were the item itself), the copies go,
+	// the record has the tic.
+	void LastShareTaken(PlayerPawn mo, Actor copy)
+	{
+		if (shareSelf >= 0 || shareGone >= 0 || alarmTic < 0) return;
+		class<Inventory> cls = shares[0].args[0] == 1 ? "Megasphere" : "InvulnerabilitySphere";
+		let it = Inventory(Actor.Spawn(cls, copy.pos));
+		if (it)
+		{
+			it.Touch(mo);
+			if (it && !it.bDestroyed && !it.owner) it.Destroy();
+		}
+		let t = AjarThirdTake(takes[takes.Size() - 1]);
+		if (t) t.shareAt = ot + 1;
+		ShareGo();
 	}
 
 	// Wave w's guards come (wave 1: the alarm's): each in a teleport fog,
@@ -237,8 +382,8 @@ extend class AjarTimeHandler
 				now = tgo == parts && mo.health > 0 && SecTagged(mo.pos.xy, lastMark.args[0]);
 			if (!now || !LastWave(mo, k)) continue;
 			mo.A_StartSound("brain/spit", CHAN_AUTO, CHANF_DEFAULT, 1, ATTN_NONE);
-			if (k < parts) Say(String.Format("Plate %d is held: more of them come.", k));
-			else Say("They have seen you on the floor: more of them come.");
+			if (k < parts) LastSay(String.Format("Plate %d is held: more of them come.", k));
+			else LastSay("They have seen you on the floor: more of them come.");
 		}
 	}
 
@@ -396,6 +541,11 @@ extend class AjarTimeHandler
 			if (waves > 1 && ne)
 			{
 				tLine.Push(String.Format("%d fires from %s to %s (%d shots)", i + 1, ThirdClock(t.evTic[0]), ThirdClock(t.evTic[ne - 1]), ne));
+				tColor.Push(colours[min(i, 2)]);
+			}
+			if (shareSelf == i)
+			{
+				tLine.Push(String.Format("%d takes the %s  %s", i + 1, ShareName(), ThirdClock(shareTic)));
 				tColor.Push(colours[min(i, 2)]);
 			}
 		}
