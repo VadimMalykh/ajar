@@ -33,6 +33,13 @@
 //     (smoke_MAP33_4.cfg), the save made at the stand is loaded (before the
 //     alarm), the go plays on to its time door and go 3 begins.
 // The parts are told apart by the sectors' user_part (map_station.py).
+// The last hall's four rules (PLAN.md, "MAP33: the last hall with the four rules"), in modes 1, 3 and 4,
+// with lasttest.zs's checks: the waves (wave 1 alone at the alarm, wave 2 at the player's first step on
+// plate 2 in go 2 and at the second self's in go 3, wave 3 when the third self first stands on the
+// hall's floor); the share (pale copies, real at the alarm in go 1, taken by go 1's script at the alarm
+// + M33_SHARE, the first self's in go 2 and 3: walked onto, nothing, gone at its tic); the levers (go 1
+// opens the steam valve at the alarm + M33_VALVE, go 2 throws the breaker at + M33_BREAK; each works by
+// itself in the later goes; the steam meets wave 3 at go 3's crossing); the staggers counted.
 
 extend class AjarTimeHandler
 {
@@ -54,6 +61,15 @@ extend class AjarTimeHandler
 	const M33_QUIET = 300;
 	const M33_CROSS = 600;
 	const M33_DIE = 100;        // mode 4: killed on stand 2 at the alarm + this
+	// the four rules: go 1 opens the steam valve at the alarm + M33_VALVE and go 2 throws the breaker at +
+	// M33_BREAK (so that in go 3 both meet wave 3 as the third self crosses); go 1 takes the share at +
+	// M33_SHARE (after go 3's crossing: its plate is left meanwhile); go 2 waits on the first self's copy of
+	// it until + M33_STEP2, then steps onto plate 2 (wave 2); go 3 walks onto its copy at + M33_NOTMINE3
+	const M33_VALVE = 585;
+	const M33_BREAK = 595;
+	const M33_SHARE = 900;
+	const M33_STEP2 = 10;
+	const M33_NOTMINE3 = 470;
 
 	int m3T, m3Step, m3Go, m3Mark, m3From, m3AimAt, m3Killed;
 	int m3Route, m3Ix, m3Prog;
@@ -79,7 +95,9 @@ extend class AjarTimeHandler
 	bool m3Gave, m3Quick, m3Crossed;
 	int m3Alarm, m3Died, m3NoMove, m3ExitBad, m3ExitSeen2;
 	Vector2 m3Was;
-	int m3KillBy[24];           // [8 * (go - 1) + 4 * (walks or flies) + killer]: 0 the player, 1 self 1, 2 self 2, 3 other
+	int m3KillBy[36];           // [12 * (go - 1) + 4 * (wave - 1) + killer]: 0 the player, 1 self 1, 2 self 2, 3 other
+	int m3Mode, m3Phase, m3Leg; // the mode; the script's phase and leg on a stand (go 2 and 3)
+	int m3TurnAt;               // the tic a guard first turned on an earlier self that shot it, in this go (0: not yet)
 	Array<int> m3Counted;
 	// the gallery (AjarThirdFallen): checked from the coal yard; the monsters at go 2's start, and whether each was in it
 	bool m3GalYard;
@@ -106,8 +124,8 @@ extend class AjarTimeHandler
 		/* 11 the armoury: the plasma rifle */     2560, 2368,  2420, 2368,  -1, -1,
 		/* 12 the pump hall, the stores, the mezzanine, down into R */
 		                                          2760, 2880,  3800, 2880,  3870, 2880,  4000, 2880,  4352, 2880,  4352, 2600,  4352, 2520,  4700, 2520,  4700, 2368,  4800, 2368,  4960, 2368,  5150, 2400,  -1, -1,
-		/* 13 the steel door, the passage, stand 2, plate 2 */
-		                                          5150, 2848,  6900, 2848,  7000, 2880,  7100, 2880,  7350, 2880,  7600, 2880,  7744, 2880,  -1, -1,
+		/* 13 the steel door, the passage, stand 2 beside plate 2 (stepped on after the alarm: wave 2) */
+		                                          5150, 2848,  6900, 2848,  7000, 2880,  7100, 2880,  7350, 2880,  7600, 2880,  7660, 2870,  -1, -1,
 		/* 14 through time door 2 */               7700, 3008,  7560, 3008,  -1, -1,
 		/* 15 box 3, the cable tunnel, PINK */     192, 2400,  192, 2280,  192, 2050,  1270, 2050,  1350, 2040,  1400, 1880,  -1, -1,
 		/* 16 to frame 103 */                      1450, 1720,  2560, 1720,  2600, 1560,  2760, 1440,  -1, -1,
@@ -532,9 +550,7 @@ extend class AjarTimeHandler
 	}
 
 	// --- the last hall ---------------------------------------------------------------------
-	static bool Stands33(Actor a) { return a is "Arachnotron" || a is "Fatso" || a is "Revenant" || a is "ChaingunGuy"; }
-
-	// Every guard dead since the last look: counted by its killer, and whether it stood.
+	// Every guard dead since the last look: counted by its killer, and its wave (wave 1 is every guard that stands).
 	void Kills33(PlayerPawn mo)
 	{
 		while (m3Counted.Size() < guardIs.Size()) m3Counted.Push(0);
@@ -547,21 +563,47 @@ extend class AjarTimeHandler
 			int k = 3;
 			if (by == mo) k = 0;
 			else for (int s = 0; s < ghosts.Size() && s < 2; s++) if (ghosts[s] && by == ghosts[s]) k = s + 1;
-			m3KillBy[8 * (clamp(tgo, 1, 3) - 1) + (Stands33(a) ? 0 : 4) + k]++;
+			m3KillBy[12 * (clamp(tgo, 1, 3) - 1) + 4 * (clamp(GuardWave(i), 1, 3) - 1) + k]++;
 		}
 	}
 
 	void PrintKills33(int go)
 	{
-		int st = 0, mv = 0;
-		for (int i = 0; i < guards.Size(); i++)
+		static const string what[] = { "", "standing", "plate 2's", "the floor's" };
+		for (int w = 1; w <= 3; w++)
 		{
-			class<Actor> c = AjarHandler.AmbushClass(guards[i].args[0]);
-			if (c && (c is "Arachnotron" || c is "Fatso" || c is "Revenant" || c is "ChaingunGuy")) st++; else mv++;
+			int b = 12 * (go - 1) + 4 * (w - 1);
+			Console.Printf("AJARTEST info kills go=%d wave %d, %s (of %d): the player %d, self 1 %d, self 2 %d, other %d",
+				go, w, what[w], WaveOf(w), m3KillBy[b], m3KillBy[b + 1], m3KillBy[b + 2], m3KillBy[b + 3]);
 		}
-		int b = 8 * (go - 1);
-		Console.Printf("AJARTEST info kills go=%d standing (of %d): the player %d, self 1 %d, self 2 %d, other %d; walking or flying (of %d): the player %d, self 1 %d, self 2 %d, other %d",
-			go, st, m3KillBy[b], m3KillBy[b + 1], m3KillBy[b + 2], m3KillBy[b + 3], mv, m3KillBy[b + 4], m3KillBy[b + 5], m3KillBy[b + 6], m3KillBy[b + 7]);
+	}
+
+	// --- the four rules (last.zs; the lab's checks, lasttest.zs) --------------------------------------
+	// Every tic of modes 1, 3 and 4, before a view's hold (so that nothing checked at a tic is skipped by
+	// one): the waves, the share's copies, the levers (each worked again by itself in the later goes), the
+	// staggers counted; go 1's steam valve and go 2's breaker (the lab's tests at MAP33's tics; mode 3 opens
+	// the valve without the test's dummies, which would stand in its views).
+	void Extras33(PlayerPawn mo)
+	{
+		WaveChecks(mo);
+		ShareChecks(mo);
+		LeverChecks(mo);
+		StaggerCount();
+		if (ltTurned && !m3TurnAt) m3TurnAt = ot;
+		if (alarmTic < 0) return;
+		int a = ot - alarmTic;
+		if (tgo == 1) SteamTest(mo, a, M33_VALVE, !m3Shots);
+		else if (tgo == 2) BreakerTest(mo, a, M33_BREAK);
+	}
+
+	// The staggers of a go (a number: the fight differs each run), and the rule's line once a self staggered.
+	void StaggerReport33(int go)
+	{
+		if (go < 2 || go > 3) return;
+		int said = (ltStagNat[2 * (go - 1)] > 0) + (ltStagNat[2 * (go - 1) + 1] > 0);
+		Console.Printf("AJARTEST info go %d: staggered (hit by %d from the alarm, falling by 1 a tic), self 1 %d times, self 2 %d; the line said %d times",
+			go, lastMark.args[4], ltStagNat[2 * (go - 1)], ltStagNat[2 * (go - 1) + 1], ltStagLines);
+		Check(String.Format("staggerSaidOnce%d", go), ltStagLines == said);
 	}
 
 	// The script's ammunition for the last fight, once a go (said): what the stand's supplies would give and more.
@@ -597,6 +639,7 @@ extend class AjarTimeHandler
 				wonTic.Size() > 0 ? wonTic[0] : -9, wonTic.Size() > 1 ? wonTic[1] : -9, wonTic.Size() > 2 ? wonTic[2] : -9, wonTic.Size() > 3 ? wonTic[3] : -9,
 				tdOpen, exitDoor && exitDoor.IsOpen(), plates.Size() > 0 && plates[0].pressed, plates.Size() > 1 && plates[1].pressed, m3Killed, mo.health, thirdLoads,
 				alarmTic, LastLiving(), plateSum);
+		m3Mode = mode;
 		if (mode == 2) { Map33Paradox(mo, t); return; }
 		if (mode == 4) { Map33StandSave(mo, t); return; }
 		m3Shots = mode == 3;
@@ -615,6 +658,7 @@ extend class AjarTimeHandler
 		HungAgain33();
 		LockChecks33();
 		AlarmChecks(mo);            // lasttest.zs: the last hall at each go's start and at the alarm
+		Extras33(mo);
 		Kills33(mo);
 		if (tgo == 1) Checks33One(mo);
 		else if (tgo == 2) Checks33Two(mo);
@@ -631,6 +675,15 @@ extend class AjarTimeHandler
 		if (m3Go == 1) { Report33(0, "go 1"); Report33(3, "the coal yard's fight (go 1: the yard and the boiler house recorded)"); }
 		if (m3Go == 2) { Report33(1, "go 2"); Report33(4, "R's fight (go 2: R and the workshop recorded, the yard and the boiler house played)"); }
 		if (m3Go >= 1) PrintKills33(m3Go);
+		if (m3Go == 2 && m3Mode != 2) StaggerReport33(2);
+		if (m3Go && m3Go < 3 && ltWaveSeen)
+		{
+			Console.Printf("AJARTEST info go %d: %d tics looked at for the waves, %d with a wave that should not be there", m3Go, ltWaveSeen, ltWaveBad);
+			Check(String.Format("noLaterWave%d", m3Go), ltWaveSeen > 1000 && !ltWaveBad);
+		}
+		ltWaveSeen = ltWaveBad = 0;
+		ltOn2 = ltInHall = -1;
+		m3Phase = m3Leg = m3TurnAt = 0;
 		if (tgo >= 2) Sizes33(String.Format("at go %d's start", tgo));
 		m3Go = tgo;
 		m3Step = 0;
@@ -663,6 +716,11 @@ extend class AjarTimeHandler
 			Check("lobbiesAtTheStart", lobbies && locks.Size() == 3);
 			Check("workshopWayOnOpenBeforeItsGo", Open3(3382) && Shut3(3380) && Shut3(3381));
 			GalleryGoOne33("AtTheStart");
+			// the last hall's four rules: the cast by waves (skill 3), the share, the levers and vents, the stagger
+			Console.Printf("AJARTEST info the last hall: %d guards, by wave %d, %d, %d; share copies %d; levers %d, vents %d; stagger %d",
+				guards.Size(), WaveOf(1), WaveOf(2), WaveOf(3), ShareCopiesAll(), levers.Size(), vents.Size(), lastMark.args[4]);
+			Check("lastHallRules", guards.Size() == 25 && waves == 3 && WaveOf(1) == WaveWant(1) && WaveOf(2) == WaveWant(2) && WaveOf(3) == WaveWant(3)
+				&& ShareCopiesAll() == 3 && levers.Size() == 2 && vents.Size() == 6 && lastMark.args[4] == 60);
 		}
 		// the gallery again, from the coal yard (the script in it: its fight begins)
 		if (!m3GalYard && m3Step >= 1 && HallAt(mo.pos.xy) == yard) { m3GalYard = true; GalleryGoOne33("FromTheYard"); }
@@ -779,6 +837,13 @@ extend class AjarTimeHandler
 			if (o >= m3Mark + 8)
 			{
 				if (m3Route == 6 && m3Ix == 5 && Once33(12)) View33(mo, "the corridor to stand 1: its supplies", 7400, 3520, 0, 0);
+				// on stand 1 before the alarm: the steam valve does nothing yet
+				if (m3Mode != 2 && m3Route == 6 && m3Ix >= 6 && alarmTic < 0 && Once33(15))
+				{
+					Lever(1).Used(mo);
+					Check("leverRefusedBeforeAlarm", lvUsed[LeverIx(1)] < 0 && SaidNow().IndexOf("does nothing yet") >= 0 && Lever(1).shown == 0
+						&& !AjarThirdTake(takes[0]).leverN.Size());
+				}
 				if (Walk33(mo, 6))
 				{
 					int seen = 0, want = 0;
@@ -800,14 +865,18 @@ extend class AjarTimeHandler
 		int o = ot;
 		if (o == m3Mark + 2) Check("standSaveOne", standSaved && SecTagged(mo.pos.xy, StandTag(1)));       // (the alarm rings as the plate is come to)
 		Arm33(mo);
-		StayAt(mo, (8448, 3456));
+		bool extras = m3Mode != 2;
+		// (modes 1, 3, 4: the share taken at the alarm + M33_SHARE, then back onto the plate)
+		if (extras && alarmTic >= 0 && o - alarmTic >= M33_SHARE && shareGone < 0) ShareWalk(mo, (8544, 3544));
+		else StayAt(mo, (8448, 3456));
 		if (alarmTic < 0)
 		{
 			if (o == m3Mark + 30) Check("alarmAtPlateOne", false);
 			return;
 		}
 		int a = o - alarmTic;
-		if (a == 1) Check("alarmAtPlateOne", alarmTic <= m3Mark + 3 && plates[0].mine && lastGate && LastLiving() == guards.Size());
+		if (a == 1) Check("alarmAtPlateOne", alarmTic <= m3Mark + 3 && plates[0].mine && lastGate && LastLiving() == WaveOf(1) && WaveIn(1) == WaveOf(1));
+		if (extras) ShareTakenCheck(mo);
 		FireL(mo, o);
 		if (!ltDoorChecked && tdOpen)
 		{
@@ -817,7 +886,9 @@ extend class AjarTimeHandler
 			Check("doorOneAtSum", plateSum == LastNeed() && LastNeed() == 35 * 30 && a >= LastNeed() - 1);
 		}
 		if (!tdOpen && plateSum == LastNeed() - 1) Check("doorOneShutBefore", !tdOpen);
+		if (a == 100) View33(mo, "stand 1 (go 1): the share's sphere, real since the alarm, and the steam valve on the east wall", 8448, 3456, 18, 8);
 		if (a == 600) View33(mo, "stand 1 in the fight (go 1): plate 1 held, the hall below", 8448, 3456, 250, 16);
+		if (a == M33_VALVE + 100) View33(mo, "the hall from stand 1 (go 1): the green and red patches; the steam over the blue strip before the exit door", 8448, 3456, 290, 22);
 		if (a == M33_HOLD1 || (m3Quick && tdOpen && o == m3PlateAt + 50))
 		{
 			AjarTake t = takes[0];
@@ -948,19 +1019,37 @@ extend class AjarTimeHandler
 		if (m3Step == 11) Walk33(mo, 14);
 	}
 
-	// go 2 on stand 2: plate 2 held from before the alarm; not firing until the alarm + M33_QUIET (what the first
-	// self does), then firing; leaves at the alarm + M33_HOLD2 (m3Quick: the door + 50). `die`: killed at the alarm + M33_DIE.
+	// go 2 on stand 2: until the alarm + M33_STEP2 on the pale copy of the share (the first self's: nothing
+	// happens), then onto plate 2 (wave 2 comes) by the stand's west side, held from then; not firing until the
+	// alarm + M33_QUIET (what the first self does), then firing; leaves at the alarm + M33_HOLD2 (m3Quick: the
+	// door + 50). `die`: killed at the alarm + M33_DIE.
 	void Last33Two(PlayerPawn mo, bool die = false)
 	{
 		int o = ot;
 		if (o == m3Mark + 2) Check("standSaveTwo", standSaved && SecTagged(mo.pos.xy, StandTag(2)) && alarmTic < 0);
 		if (o == m3Mark + 4) View33(mo, "stand 2 before the alarm (go 2): plate 2, stand 1 across the hall", 7744, 2880, 20, 8);
+		if (o == m3Mark + 80) View33(mo, "stand 2 (go 2): the share's pale copy (the first self's) by the pillar, the breaker beside the wind plate", 7780, 2716, 128, 4);
 		Arm33(mo);
 		if (die && m3Died) return;
-		StayAt(mo, (7744, 2880));
+		Vector2 copy = (7648, 2752);
+		Vector2 plate = (7744, 2880);
+		Vector2 side = (7660, 2870);
+		if (m3Phase == 0)
+		{
+			if (alarmTic >= 0 && o >= alarmTic + M33_STEP2 && (mo.pos.xy - copy).Length() < 8) { NotMineCheck(mo); m3Phase = 1; m3Leg = 0; }
+			else if (m3Leg == 0) { if (Toward(mo, side)) m3Leg = 1; }
+			else StayAt(mo, copy);
+		}
+		if (m3Phase == 1)
+		{
+			if (m3Leg == 0) { if (Toward(mo, side)) m3Leg = 1; }
+			else if (Toward(mo, plate)) m3Phase = 2;
+		}
+		if (m3Phase == 2) StayAt(mo, plate);
 		if (alarmTic < 0) return;
 		int a = o - alarmTic;
-		if (a == 10) Check("sumWhilePlateOneOn", plateSum >= 9 && plates[1].mine && plates[0].pressed);
+		if (ltOn2 > alarmTic && o == ltOn2 + 30) Check("sumWhilePlateOneOn", plateSum >= 27 && plates[1].mine && plates[0].pressed);
+		if (ltOn2 > alarmTic && o == ltOn2 + 40) View33(mo, "wave 2 on its green patches, from plate 2 (go 2): the knights on the floor, the cacodemons over it", 7744, 2880, 5, 14);
 		if (a == M33_QUIET)
 		{
 			int dmg = 0;
@@ -969,7 +1058,10 @@ extend class AjarTimeHandler
 			Console.Printf("AJARTEST info go 2, %d tics after the alarm: the first self did %d damage, was hit %d times, its health %d; it fired %d of %d",
 				a, dmg, g ? g.hits : -1, g ? g.health : -1, takes[0].next, takes[0].evTic.Size());
 			Check("selfFiresAgain", dmg > 0 && takes[0].next > 0);
-			Check("turnsOnSelf", ltTurned);
+			// (wave 1 alone at the alarm: fewer guards, most aimed at the first self from the start, and those it
+			// shoots first die first; if none has turned yet, looked at until go 2 leaves its plate)
+			if (ltTurned) Check("turnsOnSelf", true);
+			else Console.Printf("AJARTEST info go 2: no guard turned on the first self yet at the alarm + %d: looked at until the plate is left", a);
 			Check("selfHitUnharmed", g && g.hits > 0 && g.health == g.SpawnHealth() && g.bShootable);
 		}
 		if (die && a == M33_DIE)
@@ -995,6 +1087,8 @@ extend class AjarTimeHandler
 		{
 			Console.Printf("AJARTEST info go 2 on plate 2 from %d to %d", m3Mark, o);
 			Check("windLineSaidOnceInGoTwo", windSays == 1);
+			Console.Printf("AJARTEST info go 2: a guard first turned on the first self at %d (the alarm + %d)", m3TurnAt, m3TurnAt - alarmTic);
+			if (!ltTurned || m3TurnAt - alarmTic > M33_QUIET) Check("turnsOnSelf", ltTurned);       // (not checked at + M33_QUIET)
 			m3Step = 11;
 			mo.pitch = 0;
 		}
@@ -1014,7 +1108,10 @@ extend class AjarTimeHandler
 			Check("workshopPlayed", HallPuppets(work) > 0 && HallThings(work, true) == 0);
 			Check("pinkAsAtTheStart", !Door32(6).frame);
 			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
-			Check("timetableLines", tLine.Size() == 3);
+			// (the plates and the exit door; with waves a fire line each earlier self; the share's line; a line a lever)
+			int machines = 0;
+			for (int l = 0; l < levers.Size(); l++) if (lvSelf[l] >= 0) machines++;
+			Check("timetableLines", tLine.Size() == 3 + 2 + (shareSelf >= 0) + machines && FireLinesRight() && shareSelf == 0 && machines == 2);
 			// the gallery: nothing spawned again (a monster that came into it from elsewhere in go 2 is told apart)
 			int n = 0, living = 0, came = 0, fresh = 0;
 			let it = ThinkerIterator.Create("Actor");
@@ -1079,6 +1176,20 @@ extend class AjarTimeHandler
 			Check("throughTheExitDoor", tgo == 3 && !paradox && m3Crossed);
 			Console.Printf("AJARTEST info the exit door: %d samples, %d not as the timetable", m3ExitSeen2, m3ExitBad);
 			Check("exitAsTimetable", m3ExitSeen2 > 20 && !m3ExitBad);
+			// the steam (the first self's valve, by itself at its tic) and wave 3 on its strip; the breaker (the second self's)
+			int w3 = 0, w3hp = 0, w3dead = 0, w3hurt = 0;
+			for (int g = 0; g < guards.Size(); g++)
+			{
+				if (GuardWave(g) != 3) continue;
+				w3 += guardSteam[g];
+				if (guardSteam[g] > 0) w3hurt++;
+				if (guardIs[g]) { w3hp += guardIs[g].SpawnHealth(); if (guardIs[g].health <= 0) w3dead++; }
+			}
+			int v = LeverIx(1), b = LeverIx(2);
+			Console.Printf("AJARTEST info go 3, the steam from %d to %d, the breaker's stun from %d; wave 3 came at %d: it took %d of its %d health from the steam (%d of its %d monsters hurt by it), %d of it dead at the door; the steam did %d to monsters in all",
+				lvUsed[v], lvUntil[v], lvUsed[b], waveTic[3], w3, w3hp, w3hurt, WaveOf(3), w3dead, steamToMonster);
+			Check("steamHurtsWaveThree", w3 > 0 && lvSelf[v] == 0 && lvUsed[v] == lvSelfTic[v]);
+			if (m3Mode != 2) StaggerReport33(3);
 			PrintKills33(3);
 			Sizes33("at the exit");
 			Report33(2, "go 3");
@@ -1186,7 +1297,19 @@ extend class AjarTimeHandler
 			// on stand 3, not firing, until the alarm + M33_CROSS with the exit door open
 			if (o == m3Mark + 2) Check("standSaveThree", standSaved && SecTagged(mo.pos.xy, StandTag(3)) && alarmTic < 0);
 			if (o == m3Mark + 4) View33(mo, "stand 3 before the alarm (go 3): the gate shut, the hall empty", 8384, 2300, 60, 10);
-			StayAt(mo, (8384, 2300));
+			if (o == m3Mark + 80) View33(mo, "stand 3 (go 3): the share's pale copy in the corner behind the pillar", 8544, 2348, 268, 12);
+			if (o == m3Mark + 156) View33(mo, "the hall from stand 3's east end (go 3): the red patches (the strip before the exit door is behind the cabinets)", 8544, 2348, 50, 14);
+			// onto stand 3's copy of the share (the first self's: nothing) round the pillar's west and south, and back
+			int a = alarmTic >= 0 ? o - alarmTic : -1;
+			if (a == M33_NOTMINE3 || a == M33_NOTMINE3 + 51) m3Leg = 0;
+			if (a >= M33_NOTMINE3 && a <= M33_NOTMINE3 + 50)
+			{
+				if (m3Leg == 0) { if (Toward(mo, (8420, 2212))) m3Leg = 1; }
+				else StayAt(mo, (8544, 2208));
+				if (a == M33_NOTMINE3 + 50) NotMineCheck(mo);
+			}
+			else if (a > M33_NOTMINE3 + 50 && m3Leg == 0) { if (Toward(mo, (8420, 2212))) m3Leg = 1; }
+			else StayAt(mo, (8384, 2300));
 			if (alarmTic >= 0 && o == alarmTic + 300) View33(mo, "stand 3 in the fight (go 3): both earlier selves firing again", 8384, 2300, 70, 10);
 			if (alarmTic >= 0 && o >= alarmTic + M33_CROSS && exitDoor.IsOpen())
 			{
@@ -1272,6 +1395,7 @@ extend class AjarTimeHandler
 			if (tgo == 2)
 			{
 				AlarmChecks(mo);
+				Extras33(mo);
 				if (Hold33(mo)) return;
 				Go33Two(mo, false);
 			}
@@ -1285,6 +1409,7 @@ extend class AjarTimeHandler
 		NewGo33(mo);
 		LockChecks33();
 		AlarmChecks(mo);
+		Extras33(mo);
 		if (tgo == 1) { Checks33One(mo); Go33One(mo); }
 		else if (tgo == 2)
 		{

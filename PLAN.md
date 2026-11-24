@@ -15305,3 +15305,190 @@ monster it sees, spending real ammunition so the record sees it):
   over the floor are not; the ledges' ammunition at their west ends.
 - The tests' scripted fire spends the ammunition it fires (and tops up out of
   the record, between shots), so the record is the real one.
+
+## MAP33: the last hall with the four rules (built 2026-11-25)
+
+> Vadim, 2026-11-24, about the last fight: "any other ideas how 3 copies can help each other there, not just fighting 3 times the same fight? ... Shouldn't be as direct as we had in map32, but still something that could improve feeling of cooperation there?" And on the four ideas: "Ok all options for fight cooperation sounds interesting. Let's try all, and if something not quite working we can remove later."
+
+The four rules of "The last fight lab: four ways the selves help each other"
+(last.zs, unchanged) are now in MAP33's switchgear hall, as decided on Fable;
+built by Claude on Opus in the task `map33-last-coop`. **Nobody has played
+it.** Only the last hall's section of `tools/map_station.py` and its checks
+changed; the rest of the map is as it was.
+
+**What was built** (`tools/map_station.py`, the last hall's section):
+- **Waves** (the cast and its skills unchanged; only each guard's wave set,
+  and wave 3's places moved). Wave 1 at the alarm: every guard that stands,
+  the 4 on pedestals (2 arachnotrons, 2 mancubi) and the 8 in bays (4
+  revenants, 4 chaingunners). Wave 2 at plate 2's first press from the alarm
+  on: the 4 cacodemons, the pain elemental, the 3 hell knights (on the floor
+  at (8100, 2960), (8460, 2800), (8360, 3100), where they were). Wave 3 in go
+  3 when the third self first stands on the hall's floor (the first of stand
+  3's steps): the 6 demons, (8880, 2720) and (8740, 2880) skill 1, (8740, 3056)
+  and (8620, 2720) skill 2, (8620, 3010) and (8912, 2560) skill 3; the 2
+  barons, (8880, 2848) skill 2, (8880, 3040) skill 4. By skill (the lowest
+  skill each is in): skill 1 wave 1 5, wave 2 2, wave 3 2; skill 3 12, 6, 7
+  (25); skill 4 12, 8, 8 (28). The build's guards row is as before (9 / 18 /
+  25 / 28; hp 2970 / 6110 / 8280 / 10080).
+- **The patches**: under each walking guard of wave 2 (green, 0x30FF30) and 3
+  (red, 0xFF2828), a 64 x 64 sector of its own with the hall's tag; its floor
+  the game's lit plate (AJLITE, the light panel of the ceilings, its frame on
+  the patch's edges by the floor's panning), tinted on the floor only
+  (`color_floor`; the rest of the sector as the hall), at full light
+  (`lightfloor` 255, absolute). 11 patches: 3 green, 8 red.
+- **The steam's strip** before the exit door: x 8704..8960, y 2688..3072 (the
+  last 256 of the crossing, the door's 128 and 128 to each side), sectors of
+  its own with the hall's tag round the two cabinets in it and its red
+  patches, its floor AJLITE tinted pale blue (0x78B4FF), full light. Six vents
+  (`ajarthird.vent`, number 1, reach 96): (8768, 2720), (8768, 2880), (8768,
+  3040), (8896, 2752), (8896, 2880), (8896, 3008), all on the floor. The red
+  patches whose middles are within 256 of the door's middle lie on it: the
+  baron (8880, 2848), the demons (8880, 2720), (8740, 2880), the second
+  baron (8880, 3040); (8740, 3056) lies half on it.
+- **The share** (one invulnerability sphere): a copy on stand 1 at (8544,
+  3544), in the corner east of time door 1; on stand 2 at (7648, 2752), west
+  of the pillar by the back wall; on stand 3 at (8544, 2208), in the corner
+  behind the pillar. Each with a 48-wide square of the stand's floor round it.
+- **The levers**: lever 1, the steam valve, on stand 1's east wall (8574,
+  3440), facing west; lever 2, the breaker, on stand 2's north wall (7780,
+  3070), facing south, 68 east of the wind plate. None on stand 3. Each with
+  the engine's defaults (steam 6 s, breaker 5 s).
+- **The stagger**: `ajarthird.last(..., stagger=60)`.
+- **The generator's new asserts**: wave 1 is exactly the guards that stand;
+  wave 2 the flyers and knights, wave 3 the demons and barons; each of wave
+  3 east of the hall's middle, at x 8608 or more (the crossing's middle is at
+  8640, 2770) and 256 or more from the foot of stand 3's steps (8384, 2480);
+  each patch in the hall, clear of the pedestals, cabinets and steps and of
+  the other patches; the red patches by the door on the strip; each vent on
+  the hall's floor; every point of the strip's floor (on a grid of 8) within
+  96 of a vent; each copy of the share with its 48-wide square on its stand's
+  floor, within 48 of its back wall, 96 from its plate and wind plate, 48 from
+  its time door's mouth and its case's; each lever on its stand, 96 from its
+  time door and case, 64 from its wind plate. The sight and cover checks and
+  L_SPACES are as they were (the patches and the strip are floor at the
+  floor's height).
+- **The go texts** (`src/language.txt`): not changed; nothing in them is wrong
+  now (they tell of the plates, the alarm and the exit door; the engine says
+  its own lines for the waves, the share and the levers).
+
+**The tests** (`src/zscript/map33.zs`; lasttest.zs's checks shared). In modes
+1, 3 and 4 a new `Extras33` runs every tic before a view's hold: lasttest.zs's
+`WaveChecks`, `ShareChecks`, `LeverChecks`, `StaggerCount`, and the lab's
+`SteamTest` (go 1) and `BreakerTest` (go 2) at MAP33's tics. The script:
+- Go 1 on stand 1 (before the alarm) uses the valve: refused, said, nothing
+  in its record. At the alarm + 585 it opens the steam valve (`M33_VALVE`; the
+  lab's three dummies on and off the strip in modes 1 and 4, none in mode 3's
+  views); at + 900 (`M33_SHARE`) it walks onto the sphere's copy and back
+  onto plate 1.
+- Go 2 waits on stand 2's pale copy of the share (route 13 ends beside plate
+  2, no longer on it); at the alarm + 10 the copy is checked (an earlier
+  self's: nothing), and the player walks onto plate 2 (about the alarm + 33:
+  wave 2). At + 595 (`M33_BREAK`) it throws the breaker.
+- Go 3 walks onto stand 3's copy at the alarm + 470 round the pillar, is
+  checked at + 520, comes back, and crosses from + 600 as before; in go 3 the
+  steam (the first self's) blows from + 585 and the breaker (the second
+  self's) holds the hall from + 595, so wave 3 comes (+ 608) into both.
+- What was brought up to date: `alarmAtPlateOne` (the guards at the alarm are
+  wave 1's 12, not all 25); lasttest.zs's `AlarmChecks` (MAP33's count is
+  `WaveWant(1)`, 12 on skill 3, not `guards.Size()`), `WaveChecks` (the waves'
+  sizes by map: LAST 4 and 5, MAP33 6 and 7); `sumWhilePlateOneOn` (30 tics
+  after the player's first tic on plate 2, the sum 27 or more; it was 10 tics
+  after the alarm, 9 or more, when go 2 stood on the plate before the
+  alarm); `timetableLines` in go 3 (3 + the two fire lines + the share's +
+  the two levers' = 8, and the fire lines as the records have them);
+  `turnsOnSelf` (see below). lasttest.zs's `SteamTest` and `BreakerTest` take
+  the tic (and MAP33's dummies' places) as arguments; LAST's calls are as
+  before.
+- New checks: `lastHallRules` (25 guards on skill 3, 12 / 6 / 7 by wave, 3
+  waves, 3 copies, 2 levers, 6 vents, stagger 60), `leverRefusedBeforeAlarm`,
+  `alarmWaveOneOnly1..3`, `noLaterWave1`, `noLaterWave2`, `waveTwoAtPlateTwo`,
+  `waveTwoFromRecord`, `waveTwoAtSelfTwo`, `waveThreeOnTheFloor`,
+  `sharePaleAtStart1..3`, `shareRealAtAlarm1`, `shareTakenGo1`,
+  `shareInTimetable2..3`, `shareSaidAtAlarm2..3`, `shareNotTheirs2..3`,
+  `shareThereBefore2..3`, `shareGoesAtSelfTic2..3`, `leversAtAlarm1..3`,
+  `leversInTimetable2..3`, `leverWorks`, `leverOnce`, `steamOnStripOnly`,
+  `steamStops`, `breakerWorks`, `stunnedCanBeKilled`, `breakerHolds`,
+  `actAgainAfterStun`, `leverBySelf2_1`, `leverBySelf3_1`, `leverBySelf3_2`,
+  `staggerSaidOnce2`, `staggerSaidOnce3` (the line once for each self that
+  staggered), `steamHurtsWaveThree` (wave 3 took steam damage in go 3, from
+  the first self's valve at its tic). The kills are counted by wave.
+- `turnsOnSelf` (a guard turns on the first self that shot it): with wave 1
+  alone at the alarm, most of the 12 aim at the first self from the start and
+  the chaingunners it shoots first die first, so on one run in three no guard
+  had turned by the alarm + 300 (it did at + 213 and + 45 on the others). It
+  is checked at + 300 when it has happened by then, else when go 2 leaves its
+  plate (said in the log).
+- MODE=3: views more (48 in all; was 42): stand 1 after the alarm, the sphere
+  and the valve; the hall from stand 1 with the patches and the steam over the
+  strip (go 1, the alarm + 685); stand 2 before the alarm, the pale copy and
+  the breaker beside the wind plate; wave 2 on its green patches from plate 2
+  (go 2, 40 tics after the first step on it); stand 3, the pale copy behind
+  the pillar; the hall from stand 3's east end, the red patches (go 3,
+  before the alarm). The crossing's view (go 3) is now on the strip in
+  the steam with wave 3 held. `tools/smoke_MAP33_3.cfg`: rebuilt from a run's
+  log (waits = each view's t + 35, then the differences). Go 1 at the foot of
+  the gantry: 2290 of 2500 (as before: no view was added before it).
+
+**Results** (the full build of 2026-11-25, in the worktree):
+- `./build.sh`: built; the last hall's guards row as before (skill 1 9, 2
+  18, 3 25, 4 28). `mapcheck`: 643 sectors, 672 things, 327 monsters, 3
+  secret sectors, 0 problems; `thingcheck`, `itemcheck`: 0 problems;
+  `budget`: as before.
+- MAP33 MODE=1 (twice, with saves): 293 passed, 0 failed, both; MODE=2: 49
+  passed, 0 failed; MODE=3: 308 passed, 0 failed, 48 views (twice); MODE=4: 164
+  passed, 0 failed. LAST MODE=1: 108 passed, 0 failed.
+- Measured (skill 3, the script's play): wave 2 at about the alarm + 33; the
+  share taken in go 1 at the alarm + 914; in go 3 the steam from the alarm +
+  585 to + 795, the breaker's stun from + 595, wave 3 at + 608: wave 3 took
+  582, 636 and 726 of its 1900 health from the steam in three runs (4 of its
+  7 hurt, 4 dead at the door each time; one demon in the way at (8612, 2727)
+  is killed by the script's player each run). The breaker held 11 to 14 of
+  the hall in go 2. Staggered: in go 2 the first self 3 to 5 times, in go 3
+  the first self 1 to 4 times, the second 0 or 1. Go 1's steam dummies: the
+  imp on the strip took 150, the one off it 0, the self 0. A guard first
+  turned on the first self at the alarm + 45, + 213, + 253 (and once not by
+  + 300: see `turnsOnSelf`). Go 1 at the foot of the gantry 2282 to 2290 of
+  its 2500 in MODE=3.
+- The views: the green and red patches are plain from stand 1, plate 2 and
+  stand 3 (bright, the panel's frame on them); the strip is plainly pale blue
+  under the steam in go 3's crossing view. From the stands the strip is
+  mostly hidden by the switchgear cabinets: none of the views from above
+  shows it well, and a player on a stand may not see where the steam blows.
+
+**Not tested / not played by hand**:
+- Nobody has played it. Not known: whether wave 1 alone (twelve standing
+  guards) is a good go 1; whether a player in go 1 thinks of the valve and
+  of when to open it (the script opens it when go 3 will cross: a player
+  does not know that tic); whether the patches are read as "they will come
+  here"; whether the stagger is seen from another stand; whether the sphere
+  in a corner is found.
+- Real USE on a lever and real walking onto a copy by a person (the script
+  calls `Used` from the plate and walks the player onto the copies, as in the
+  lab).
+- Skills other than 3 (the waves by skill are counted by the build, not run).
+- A save loaded with the steam blowing or the hall stunned (as in the lab).
+- MODE=2 (the gantry paradox) does not reach the hall; its go 1 does not
+  take the share nor work the valve (as before).
+
+**My choices** (Claude's on Opus; each easy to change):
+- Wave 3's places (above): all at x 8620 or more, four of the seven on skill 3
+  on the strip or half on it, one at the north and one at the south of the
+  east side beside it. The baron at (8880, 2848) stands south of the
+  crossing's line, so that the way to the door is not always blocked.
+- The patches: AJLITE (the light panel) as their floor, so that they differ
+  from the hall's floor by picture as well as colour; tinted on the floor
+  only, full light on the floor only. Strong green and red.
+- The strip: also AJLITE, pale blue (the grating AJZPLT was tried first and
+  was dark from stand 1). Its vents: two rows of three, on the floor round
+  the two cabinets in it.
+- The share's places and the levers' (above). Stand 2's breaker is on the
+  north wall beside the wind plate (the south wall is the case's, the west
+  wall the passage's and the time door's).
+- The script's tics: the valve at the alarm + 585 and the breaker at + 595,
+  so that in go 3 both meet wave 3 as the third self crosses (+ 600); the
+  share at + 900, after the crossing (a self off its plate shuts the exit
+  door). In play the player chooses these; the script's choice shows the
+  rules working together, not how a player will use them.
+- Go 2 waits on the share's copy, not on its plate, until the alarm + 10, so
+  that wave 2 comes at a step of its own (the lab did the same with its
+  plate).
