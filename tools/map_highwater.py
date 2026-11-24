@@ -625,8 +625,10 @@ else:
     S(TUNNEL, 0, look("TN", 140, 128, COLD))
 area("tunnel", TUNNEL, 0)
 # the machine hall, and the way out: a Doom exit door in the middle of its east wall (a strip as high as the
-# door before it, the door 16 thick, Door_Raise by USE), a small room behind it with the Exit_Normal line, and
-# Doom's EXIT sign on a box hung from the hall's ceiling before the door (nothing stands or walks so high)
+# door before it, the door 16 thick, Door_Raise by USE), Doom's EXIT sign on a box hung from the hall's ceiling
+# before the door (nothing stands or walks so high), and behind the door our own way out, the night room
+# (ajarmap.way_out), turned a quarter so that the door opens straight into it (Vadim, 2026-11-24: "door can be
+# marked this way, yes, but inside should be our portal exit")
 MH = (5600, 1056, 6048, 1568)
 EXIT_MOUTH, EXIT_H = (1280, 1344), 72               # EXITDOOR is 72 high
 SIGNBOX = (5992, 1296, 6008, 1328)                  # (EXITSIGN's sign is its left 32)
@@ -644,12 +646,16 @@ for _x in (EX + 8, EX + 24):
            repeatspecial=True)
 for _y in EXIT_MOUTH:
     m.line((EX, _y), (EX + 24, _y), mid="DOORTRAK", dontpegbottom=True)
-EXIT_ROOM = (EX + 24, 1248, EX + 120, 1376)
-EXIT_LINE = EX + 72
-for _x1, _x2 in ((EXIT_ROOM[0], EXIT_LINE), (EXIT_LINE, EXIT_ROOM[2])):     # (in two: the line is their edge)
-    m.sector(rect(_x1, EXIT_ROOM[1], _x2, EXIT_ROOM[3]), floor=0, ceil=EXIT_H, light=250, wall="EXITSTON",
-             ftex="FLOOR4_8", ctex="TLITE6_1")
-m.line((EXIT_LINE, EXIT_ROOM[1]), (EXIT_LINE, EXIT_ROOM[3]), special=243, playercross=True)   # Exit_Normal
+# the night room: 256 by 320, its west wall's middle the door's back (its way in, y 1280..1344), the brass
+# doorway joining its south and north ends (Exit_Normal at both mouths, x 6168..6232 at y 1152 and 1472)
+NIGHT = (EX + 24, EXIT_MOUTH[0] - 128)              # its south-west corner, (6072, 1152)
+NIGHT_BOX = (NIGHT[0], NIGHT[1] - ajarmap.DEPTH - ajarmap.STUB, NIGHT[0] + 256, NIGHT[1] + 320 + ajarmap.DEPTH + ajarmap.STUB)
+NIGHT_SECTORS = range(len(m.sectors), len(m.sectors) + 13)  # its 9 cells and its doorway's 2 recesses and 2 stubs
+ajarmap.way_out(m, *NIGHT, None, turned=True)
+assert len(m.sectors) == NIGHT_SECTORS.stop
+# from inside, the wall over the door is the night room's own, hung from its ceiling as the walls beside it
+# (as a Doom secret door: the door's back is that wall, and the opening's top rises through it)
+m.line((NIGHT[0], EXIT_MOUTH[0]), (NIGHT[0], EXIT_MOUTH[1]), upper="AJXW2", dontpegtop=True)
 area("mh", MH, 0)
 # the outfall (GREEN's far side), seen from the lower yard through glass
 basin(TO, 256, kind=W.OUTFALL, at=(5408, 1664))
@@ -831,7 +837,8 @@ L_HIGH = "BLUE in 109"          # L at its brim, -4
 hang(m, (4800, 1920), (4864, 1920), (0, -1), "plaque", "AJVWL", level=L_HIGH, year=1953)
 hang(m, (4544, 2080), (4672, 2080), (0, 1), "patent", "AJVWL")
 # stage 6: Doom leaks in. The tunnel's brick ends at the seam (a plate says so), then SUPPORT3 ribs and marble;
-# the cells are Doom's stone with a demon's face; the machine hall is a Doom room; the exit is Doom's
+# the cells are Doom's stone with a demon's face; the machine hall is a Doom room; the exit door is Doom's (behind
+# it, our night room)
 hang(m, (SEAM - 64, TUNNEL[3]), (SEAM, TUNNEL[3]), (0, 1), "seam", "AJVTN")
 for _y in (TUNNEL[1], TUNNEL[3]):
     pieces((SEAM, _y), (TUNNEL[2], _y), [(32, "SUPPORT3"), (64, None), (32, "SUPPORT3"), (64, None)])
@@ -1454,6 +1461,11 @@ for _n, _name in enumerate(EXPECT):
     m.thing(32 + 32 * _n, 352, MAPSPOT, id=3101 + _n, args=(round(REST[_name] * 100),))
 if NOROOM:
     PROBLEMS.append("no room for things in " + ", ".join(sorted(set(NOROOM))))
+# the night room's ground (NIGHT_BOX) is its own: nothing else of the level reaches into it
+for _i, _p in enumerate(m.polys):
+    if _i not in NIGHT_SECTORS and min(q[0] for q in _p) < NIGHT_BOX[2] and max(q[0] for q in _p) > NIGHT_BOX[0] \
+            and min(q[1] for q in _p) < NIGHT_BOX[3] and max(q[1] for q in _p) > NIGHT_BOX[1]:
+        PROBLEMS.append(f"sector {_i} reaches into the night room's ground {NIGHT_BOX}")
 if PROBLEMS:
     raise SystemExit("MAP20: " + "; ".join(PROBLEMS) + "\n" + "\n".join(MEASURE))
 
