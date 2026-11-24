@@ -16,10 +16,19 @@ alarm opens it), steps down to L's floor, and a plate that winds on. The
 exit door is in L's east wall: the third self crosses about 900 units of
 floor to it.
 L: 1024 x 1024, its floor 96 under the stands, which are open to it along
-their whole fronts behind railings. Its guards come at the alarm: two
+their whole fronts behind railings, among four low blocks. Its guards come
+in waves (PLAN.md, "The last fight lab: four ways the selves help each
+other"): at the alarm wave 1, all standing where they cannot leave (two
 mancubi on pedestals, two revenants in bays of the east wall beside the exit
-door, two cacodemons over the middle, four demons and two hell knights on
-the floor, among four low blocks.
+door, two chaingunners in bays of the west and the south wall); when plate
+2 is first pressed in a go (go 2 and 3) wave 2, two cacodemons over the
+middle and two hell knights on green patches of the floor; in go 3 when the
+third self first stands on the floor wave 3, a baron and four demons on red
+patches between the foot of the steps and the exit door. The share: an
+invulnerability sphere on each stand, one for the three. Lever 1 (steam) on
+stand 1 blows over the blue strip before the exit door (its vents); lever 2
+(the breaker) on stand 2 stuns the hall. An earlier self hit by 60 is
+staggered.
 """
 import ajarmap
 import ajartime
@@ -101,6 +110,9 @@ BLOCKS = [(1376, 256, 1504, 320), (1632, 224, 1696, 352), (1664, 496, 1792, 560)
 STEPS = (1280, 0, 1408, 112)                                                # the gate and the steps
 GREEN = 0x70F070    # the floor where a walking guard of wave 2 comes
 RED = 0xFF6060      # ... of wave 3
+STRIP = (1856, 288, 2048, 1024)                                             # the steam's strip before the exit door, 192 wide
+STEAMY = 0xA8C8F8   # its floor
+VENTS = [(x, y) for x in (1904, 2000) for y in range(352, 1024, 128)]      # its vents: 96 reach, so the strip is covered
 
 # the guards (all skills: the lab's cast): (kind, x, y, angle, z over the floor, wave)
 GUARDS = [(67, 1696, 832, 225, 0, 1), (67, 1888, 160, 135, 0, 1),           # wave 1, at the alarm: mancubi on the pedestals,
@@ -114,8 +126,14 @@ GUARDS = [(67, 1696, 832, 225, 0, 1), (67, 1888, 160, 135, 0, 1),           # wa
 WALKS = {69, 3003, 3002}
 PATCHES = [((x - 32, y - 32, x + 32, y + 32), GREEN if w == 2 else RED) for k, x, y, a, z, w in GUARDS if w > 1 and k in WALKS]
 
-for r in ajarthird.tiles(1024, 0, 2048, 1024, PEDESTALS + BLOCKS + [STEPS] + [p for p, c in PATCHES]):
+def overlap(p, q):
+    return p[0] < q[2] and q[0] < p[2] and p[1] < q[3] and q[1] < p[3]
+
+
+for r in ajarthird.tiles(1024, 0, 2048, 1024, PEDESTALS + BLOCKS + [STEPS, STRIP] + [p for p, c in PATCHES]):
     m.sector(rect(*r), floor=FL, ceil=LC, light=170, color=HALL, id=HALLT)
+for r in ajarthird.tiles(*STRIP, [b for b in BLOCKS if overlap(b, STRIP)] + [p for p, c in PATCHES if overlap(p, STRIP)]):
+    m.sector(rect(*r), floor=FL, ceil=LC, light=170, color=STEAMY, id=HALLT)
 for p, c in PATCHES:
     m.sector(rect(*p), floor=FL, ceil=LC, light=170, color=c, id=HALLT)
 for p in PEDESTALS:
@@ -147,6 +165,13 @@ STANDING = PEDESTALS + BAYS + CG_BAYS
 assert all(any(p[0] + 20 <= x <= p[2] - 20 and p[1] + 20 <= y <= p[3] - 20 for p in STANDING) for k, x, y, a, z, w in GUARDS if w == 1)
 # a walking guard of a later wave stands in the middle of its patch, clear of every island
 assert all(not (p[0] < q[2] and q[0] < p[2] and p[1] < q[3] and q[1] < p[3]) for p, c in PATCHES for q in PEDESTALS + BLOCKS + [STEPS])
+# the levers: the steam valve on stand 1's east wall (its vents, number 1, on the strip), the breaker on
+# stand 2's south wall
+ajarthird.lever(m, 1726, 1100, 180, 1, 1, tag=1)
+ajarthird.lever(m, 960, 322, 90, 2, 2)
+for x, y in VENTS:
+    ajarthird.vent(m, x, y, 1)
+assert all(not any(b[0] <= x <= b[2] and b[1] <= y <= b[3] for b in BLOCKS) for x, y in VENTS)          # (on the floor, not on a block)
 # the share: one invulnerability sphere for the three selves, a copy on each stand near its back wall
 SHARES = [(1690, 1184), (856, 344), (1240, -164)]
 for x, y in SHARES:

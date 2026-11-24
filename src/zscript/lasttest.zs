@@ -14,6 +14,27 @@
 //  4  the views: mode 1 with views held for smoke_LAST_4.cfg's screenshots.
 // Kills by script, where a check needs one, are said in the log.
 
+// The steam's test dummies (go 1): what the steam did to them, apart from anything else.
+class AjarSteamImp : DoomImp
+{
+	int steamed;
+	Default { Health 1000; +NOPAIN }
+	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
+	{
+		if (mod == 'AjarSteam') steamed += damage;
+		return Super.DamageMobj(inflictor, source, damage, mod, flags, angle);
+	}
+}
+class AjarSteamSelf : AjarLastSelf
+{
+	int steamed;
+	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
+	{
+		if (mod == 'AjarSteam') steamed += damage;
+		return Super.DamageMobj(inflictor, source, damage, mod, flags, angle);
+	}
+}
+
 extend class AjarTimeHandler
 {
 	// the scripted clock (ot of each go)
@@ -25,8 +46,10 @@ extend class AjarTimeHandler
 	const L_STEP2 = 30;         // ... in modes 1 and 4: it waits beside it and steps on at the alarm + this (wave 2)
 	const L_HOLD2 = 300;        // go 2 does not fire until the alarm + this
 	const L_LEAVE2 = 1700;      // go 2 leaves plate 2 at the alarm + this
-	const L_CROSS = 1600;       // go 3 crosses from the alarm + this
+	const L_CROSS = 1400;       // go 3 crosses from the alarm + this (just before go 1's steam)
 	const L_DIE = 100;          // mode 2: killed on stand 2 at the alarm + this
+	const L_VALVE = 1450;       // go 1 (modes 1 and 4) opens the steam valve at the alarm + this
+	const L_BREAK = 200;        // go 2 (modes 1 and 4) throws the breaker at the alarm + this
 	const L_SHARE1 = 1200;      // go 1 (modes 1 and 4) takes the share at the alarm + this
 	const L_SHARE2 = 60;        // go 2 (mode 3) takes it at the alarm + this
 	const L_NOTMINE = 500;      // go 2 and 3 (modes 1 and 4) walk onto a pale copy at the alarm + this
@@ -48,6 +71,14 @@ extend class AjarTimeHandler
 	// the stagger: the script's (go 2): its tic, the self's counts then, the tics its plate was not pressed
 	int ltStagAt, ltStagFired, ltStagSkipped, ltStagN, ltStagOff, ltStagDone;
 	int ltStagNat[6];           // natural staggers by go and self (2 * (go - 1) + self)
+	// the levers: the steam's dummies (an imp on the strip, one off it, a self on it); the breaker's
+	// snapshot of the hall's monsters; the one killed while stunned; the player on the strip in go 3
+	Actor ltImpOn, ltImpOff, ltSelfOn, ltKilled;
+	int ltImpHp, ltStunBad, ltDeep, ltSteamOff, ltSteamWas;
+	State ltKilledState;
+	Array<Actor> ltSnap, ltOldMissiles;
+	Array<double> ltSnapX, ltSnapY, ltSnapA;
+	Array<State> ltSnapS;
 	int ltShareGo;              // the go and tic the player took the share (the script's)
 	int ltShareTic;
 	int ltExitBad, ltExitSeen;
@@ -550,6 +581,202 @@ extend class AjarTimeHandler
 		}
 	}
 
+	// --- the levers ------------------------------------------------------------------------
+	AjarThirdLever Lever(int n)
+	{
+		for (int i = 0; i < levers.Size(); i++) if (levers[i].args[0] == n) return levers[i];
+		return null;
+	}
+	int LeverIx(int n) { return levers.Find(Lever(n)); }
+	bool TakeHasLever(AjarTake t, int n, int tic)
+	{
+		let tt = AjarThirdTake(t);
+		for (int e = 0; tt && e < tt.leverN.Size(); e++) if (tt.leverN[e] == n && tt.leverTic[e] == tic) return true;
+		return false;
+	}
+
+	// Every go: what each lever shows at the alarm; an earlier self's lever works at its record's tic
+	// (the player nowhere near), and its timetable line.
+	void LeverChecks(PlayerPawn mo)
+	{
+		int o = ot;
+		if (o == 2 && tgo >= 2)
+		{
+			bool ok = true;
+			for (int n = 1; n <= 2; n++)
+			{
+				int i = LeverIx(n);
+				if (lvSelf[i] < 0) continue;
+				string line = String.Format("%d %s the %s  %s", lvSelf[i] + 1, n == 2 ? "throws" : "opens", LeverName(levers[i]), ThirdClock(lvSelfTic[i]));
+				bool has = false;
+				for (int l = 0; l < tLine.Size(); l++) if (tLine[l] == line) has = true;
+				ok = ok && has && TakeHasLever(takes[lvSelf[i]], n, lvSelfTic[i]);
+			}
+			Console.Printf("AJARTEST info go %d begins: lever 1 is self %d's at %d, lever 2 self %d's at %d", tgo, lvSelf[LeverIx(1)] + 1, lvSelfTic[LeverIx(1)],
+				lvSelf[LeverIx(2)] + 1, lvSelfTic[LeverIx(2)]);
+			Check(String.Format("leversInTimetable%d", tgo), ok && lvSelf[LeverIx(1)] == 0 && (tgo == 2 || lvSelf[LeverIx(2)] == 1)
+				&& Lever(1).shown == 0 && Lever(2).shown == 0);
+		}
+		if (alarmTic >= 0 && o == alarmTic + 1)
+			Check(String.Format("leversAtAlarm%d", tgo), Lever(1).shown == (tgo == 1 ? 1 : 0) && Lever(2).shown == (tgo <= 2 ? 1 : 0));
+		for (int n = 1; n <= 2; n++)
+		{
+			int i = LeverIx(n);
+			if (lvSelf[i] < 0 || o != lvSelfTic[i]) continue;
+			Console.Printf("AJARTEST info go %d: lever %d works by itself at %d (self %d's record); the player %d from it", tgo, n, o, lvSelf[i] + 1,
+				mo.Distance2D(levers[i]));
+			Check(String.Format("leverBySelf%d_%d", tgo, n), lvUsed[i] == o && levers[i].shown == 2 && mo.Distance2D(levers[i]) > 256
+				&& (n == 1 || stunUntil == o + 175) && (n == 2 || lvUntil[i] == o + 210));
+		}
+	}
+
+	// Go 1: the steam valve refused before the alarm; at the alarm + L_VALVE it works, once; the
+	// steam hurts an imp on the strip and not one off it nor a self on it, and stops.
+	void SteamTest(PlayerPawn mo, int a)
+	{
+		int i = LeverIx(1);
+		if (a == L_VALVE - 1)
+		{
+			ltImpOn = Actor.Spawn("AjarSteamImp", (1952, 400, -96));
+			ltImpOff = Actor.Spawn("AjarSteamImp", (1650, 420, -96));
+			ltSelfOn = Actor.Spawn("AjarSteamSelf", (1990, 800, -96));
+			for (int k = 0; k < 2; k++)
+			{
+				Actor z = k ? ltImpOff : ltImpOn;
+				z.tics = -1;
+				z.health = 1000;
+				z.bNoPain = true;
+			}
+			ltSelfOn.bShootable = true;
+		}
+		if (a == L_VALVE)
+		{
+			Lever(1).Used(mo);
+			Console.Printf("AJARTEST info go 1: the steam valve at %d: %s", ot, SaidNow());
+			Check("leverWorks", lvUsed[i] == ot && lvUntil[i] == ot + 210 && Lever(1).shown == 2 && TakeHasLever(takes[0], 1, ot) && SaidNow().IndexOf("Steam blows") >= 0);
+		}
+		if (a == L_VALVE + 4)
+		{
+			int was = lvUsed[i];
+			Lever(1).Used(mo);
+			Check("leverOnce", lvUsed[i] == was && SaidNow().IndexOf("spent") >= 0 && AjarThirdTake(takes[0]).leverN.Size() == 1);
+		}
+		if (a == L_VALVE + 100)
+		{
+			Console.Printf("AJARTEST info go 1, steam 100 tics: the imp on the strip took %d of it, the one off it %d, the self on it %d (hit by anything %d times)",
+				AjarSteamImp(ltImpOn).steamed, AjarSteamImp(ltImpOff).steamed, AjarSteamSelf(ltSelfOn).steamed, AjarLastSelf(ltSelfOn).hits);
+			Check("steamOnStripOnly", AjarSteamImp(ltImpOn).steamed >= 6 * 20 && AjarSteamImp(ltImpOff).steamed == 0 && AjarSteamSelf(ltSelfOn).steamed == 0
+				&& ltSelfOn.health == ltSelfOn.SpawnHealth());
+		}
+		if (a == L_VALVE + 214) ltImpHp = AjarSteamImp(ltImpOn).steamed;
+		if (a == L_VALVE + 250)
+		{
+			Check("steamStops", AjarSteamImp(ltImpOn).steamed == ltImpHp && ot > lvUntil[i] && ltImpHp > 0);
+			for (int k = 0; k < 2; k++)
+			{
+				Actor z = k ? ltImpOff : ltImpOn;
+				z.ClearCounters();
+				z.Destroy();
+			}
+			ltSelfOn.Destroy();
+		}
+	}
+
+	// Go 2: at the alarm + L_BREAK the breaker; for its 5 seconds no monster in the hall moves, turns
+	// or attacks; one is killed meanwhile by the script's fire and dies; after it they act again.
+	void BreakerTest(PlayerPawn mo, int a)
+	{
+		int i = LeverIx(2);
+		if (a == L_BREAK)
+		{
+			ltOldMissiles.Clear();
+			let it = ThinkerIterator.Create("Actor");
+			Actor m;
+			while (m = Actor(it.Next())) if (m.bMissile) ltOldMissiles.Push(m);
+			Lever(2).Used(mo);
+			Check("breakerWorks", lvUsed[i] == ot && stunUntil == ot + 175 && Lever(2).shown == 2 && TakeHasLever(takes[1], 2, ot));
+		}
+		if (a == L_BREAK + 1)
+		{
+			ltSnap.Clear(); ltSnapX.Clear(); ltSnapY.Clear(); ltSnapA.Clear(); ltSnapS.Clear();
+			let it = ThinkerIterator.Create("Actor");
+			Actor m;
+			while (m = Actor(it.Next()))
+				if (m.bIsMonster && m.health > 0 && secLastHall[m.CurSector.Index()])
+				{
+					ltSnap.Push(m); ltSnapX.Push(m.pos.x); ltSnapY.Push(m.pos.y); ltSnapA.Push(m.angle); ltSnapS.Push(m.CurState);
+				}
+			ltStunBad = 0;
+		}
+		if (a > L_BREAK + 1 && a < L_BREAK + 175)
+		{
+			for (int k = 0; k < ltSnap.Size(); k++)
+			{
+				Actor m = ltSnap[k];
+				if (!m || m.health <= 0) continue;
+				bool moved = abs(m.pos.x - ltSnapX[k]) > 0.5 || abs(m.pos.y - ltSnapY[k]) > 0.5 || abs(m.angle - ltSnapA[k]) > 0.01;
+				bool acts = m.CurState != ltSnapS[k] && !m.InStateSequence(m.CurState, m.FindState("Pain"));
+				if (moved || acts)
+				{
+					ltStunBad++;
+					if (ltStunBad < 5) Console.Printf("AJARTEST info stunned %s at %d: moved %d, state changed %d", m.GetClassName(), a, moved, acts);
+				}
+			}
+			let it = ThinkerIterator.Create("Actor");
+			Actor m;
+			while (m = Actor(it.Next()))
+				if (m.bMissile && ltSnap.Find(m.target) < ltSnap.Size() && ltOldMissiles.Find(m) == ltOldMissiles.Size()) { ltStunBad++; ltOldMissiles.Push(m); }
+		}
+		if (a == L_BREAK + 60)
+		{
+			for (int k = 0; k < ltSnap.Size() && !ltKilled; k++) if (ltSnap[k] && ltSnap[k].health > 0) ltKilled = ltSnap[k];
+			if (ltKilled)
+			{
+				Console.Printf("AJARTEST info go 2, stunned: the script's fire kills a %s (health %d)", ltKilled.GetClassName(), ltKilled.health);
+				Face(mo, ltKilled);
+				ltKilled.DamageMobj(mo, mo, ltKilled.health + 100, 'Hitscan');
+			}
+		}
+		if (a == L_BREAK + 61 && ltKilled) ltKilledState = ltKilled.CurState;
+		if (a == L_BREAK + 100)
+			Check("stunnedCanBeKilled", ltKilled && ltKilled.health <= 0 && ltKilled.CurState != ltKilledState && ltKilled.tics != -1 || (ltKilled && ltKilled.bCorpse && ltKilled.CurState != ltKilledState));
+		if (a == L_BREAK + 174)
+		{
+			Console.Printf("AJARTEST info go 2: the breaker held %d monsters of the hall, %d times one moved, turned, attacked or fired", ltSnap.Size(), ltStunBad);
+			Check("breakerHolds", ltSnap.Size() >= 3 && !ltStunBad && stunned.Size() >= ltSnap.Size() - 1);
+		}
+		if (a == L_BREAK + 245)
+		{
+			int moved = 0;
+			for (int k = 0; k < ltSnap.Size(); k++)
+			{
+				Actor m = ltSnap[k];
+				if (!m || m.health <= 0) continue;
+				if ((m.pos.xy - (ltSnapX[k], ltSnapY[k])).Length() > 4 || (m.CurState != ltSnapS[k] && !m.InStateSequence(m.CurState, m.FindState("Pain")))) moved++;
+			}
+			bool lit = true;
+			for (int k = 0; k < hallSecs.Size(); k++) lit = lit && level.sectors[hallSecs[k]].lightlevel == hallLight[k];
+			Console.Printf("AJARTEST info go 2, 70 tics after the stun: %d of the held monsters act again; the hall's light as it was %d", moved, lit);
+			Check("actAgainAfterStun", moved > 0 && lit && !stunned.Size());
+		}
+	}
+
+	// Go 3, crossing (BUDDHA, not god: it is hurt): the steam (go 1's, by itself) hurts the player on
+	// the strip, never off it.
+	void StripTest(PlayerPawn mo)
+	{
+		mo.player.cheats = (mo.player.cheats & ~CF_GODMODE) | CF_BUDDHA;
+		if (mo.health < 50) { mo.health = 100; mo.player.health = 100; }
+		int i = LeverIx(1);
+		bool steam = lvUsed[i] >= 0 && ot < lvUntil[i];
+		bool deep = mo.pos.x >= 1872 && mo.pos.x <= 2040 && mo.pos.y >= 304 && mo.pos.y <= 1008 && mo.pos.z <= -88;
+		bool off = true;
+		for (int k = 0; k < vents.Size(); k++) if ((mo.pos.xy - vents[k].pos.xy).Length() <= VentReach(vents[k]) + 24) off = false;
+		if (steam && deep) ltDeep++;
+		if (off && steamToPlayer > ltSteamWas) ltSteamOff++;
+		ltSteamWas = steamToPlayer;
+	}
+
 	// --- mode 1 (and 4: with views) ------------------------------------------------------
 	void Last1(PlayerPawn mo, bool views)
 	{
@@ -560,6 +787,7 @@ extend class AjarTimeHandler
 		StaggerTest(mo);
 		NoStaggerTest(mo);
 		StaggerCount();
+		LeverChecks(mo);
 		if (tgo == 1) Go1L(mo, views, L_LEAVE1, extras: true);
 		else if (tgo == 2) Go2L(mo, views, true);
 		else if (tgo == 3) Go3L(mo, views, false);
@@ -631,6 +859,12 @@ extend class AjarTimeHandler
 		{
 			if (o == ltMark + 2) Check("standSaveOne", standSaved);
 			if (o >= 300 && o <= 345) { RailTest(mo, o - 300); return; }
+			if (extras && o == 346)
+			{
+				Lever(1).Used(mo);
+				Check("leverRefusedBeforeAlarm", lvUsed[LeverIx(1)] < 0 && SaidNow().IndexOf("does nothing yet") >= 0 && Lever(1).shown == 0
+					&& !AjarThirdTake(takes[0]).leverN.Size());
+			}
 			// the share is not to be taken before the alarm: onto the copy and back
 			if (extras && o > 345 && o < 370) { ShareWalk(mo, (1690, 1184)); return; }
 			if (extras && o == 370)
@@ -652,6 +886,7 @@ extend class AjarTimeHandler
 			else if (extras && a >= L_SHARE1 && shareGone < 0) ShareWalk(mo, (1690, 1184));
 			else StayAt(mo, (1600, 1088));
 			if (extras) ShareTakenCheck(mo);
+			if (extras) SteamTest(mo, a);
 			FireL(mo, o);
 			if (a == L_OFF + 10) ltSumOff = plateSum;
 			if (a == L_ON - 1) Check("sumOnlyOnPlate", ltSumOff > 0 && plateSum == ltSumOff && !plates[0].mine && !tdOpen);
@@ -693,7 +928,7 @@ extend class AjarTimeHandler
 		if (o == 2 && checks)
 		{
 			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
-			Check("timetableTwo", FireLinesRight() && tLine.Size() == 3);
+			Check("timetableTwo", FireLinesRight() && tLine.Size() == 4);
 		}
 		if (ltStep == 0 && WalkL(mo, 34)) { ltStep = 1; ltMark = o; }
 		if (ltStep == 1)
@@ -771,6 +1006,7 @@ extend class AjarTimeHandler
 			else StayAt(mo, (960, 512));
 			if (share) ShareTakenCheck(mo);
 			if (checks && a == L_NOTMINE + 40) NotMineCheck(mo);
+			if (checks) BreakerTest(mo, a);
 			if (a >= L_HOLD2) FireL(mo, o);
 			if (!ltDoorChecked && tdOpen)
 			{
@@ -794,7 +1030,9 @@ extend class AjarTimeHandler
 		if (o == 2)
 		{
 			for (int i = 0; i < tLine.Size(); i++) Console.Printf("AJARTEST info timetable: %s", tLine[i]);
-			Check("timetableLines", tLine.Size() == 5 + (shareSelf >= 0) && FireLinesRight());
+			int machines = 0;
+			for (int l = 0; l < levers.Size(); l++) if (lvSelf[l] >= 0) machines++;
+			Check("timetableLines", tLine.Size() == 5 + (shareSelf >= 0) + machines && FireLinesRight());
 		}
 		if (!late && alarmTic >= 0 && o >= alarmTic + L_NOTMINE && o < alarmTic + L_NOTMINE + 40) { ShareWalk(mo, (1240, -164)); return; }
 		if (!late && alarmTic >= 0 && o == alarmTic + L_NOTMINE + 40) NotMineCheck(mo);
@@ -887,10 +1125,24 @@ extend class AjarTimeHandler
 			}
 			if (WalkL(mo, 90)) ltStep = 3;
 		}
+		if (ltStep >= 2 && !late && ltDone < 1) StripTest(mo);
 		if (ltStep >= 2 && Through(mo) && ltDone < 1)
 		{
 			ltDone = 1;
 			if (!late) StaggerReport(3);
+			if (!late)
+			{
+				int w3 = 0, w3hp = 0, w3dead = 0;
+				for (int g = 0; g < guards.Size(); g++)
+				{
+					if (GuardWave(g) != 3) continue;
+					w3 += guardSteam[g];
+					if (guardIs[g]) { w3hp += guardIs[g].SpawnHealth(); if (guardIs[g].health <= 0) w3dead++; }
+				}
+				Console.Printf("AJARTEST info go 3, the steam: %d tics deep on the strip while it blew, the player hurt %d by it (%d times off the strip); wave 3 took %d of its %d health from it, %d of it dead at the door",
+					ltDeep, steamToPlayer, ltSteamOff, w3, w3hp, w3dead);
+				Check("steamHurtsPlayerOnStrip", ltDeep >= 8 && steamToPlayer >= 6 && !ltSteamOff);
+			}
 			Console.Printf("AJARTEST info through the exit door at %d (the exit door open until %d)", o, exitUntil);
 			Check("throughTheExitDoor", tgo == 3 && !paradox);
 			Console.Printf("AJARTEST info the exit door: %d samples, %d not as the timetable", ltExitSeen, ltExitBad);

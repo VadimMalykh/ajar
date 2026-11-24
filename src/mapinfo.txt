@@ -50,6 +50,8 @@ DoomEdNums
 	20167 = AjarThirdGuard            // ... a monster of the last hall, there from the alarm
 	20168 = AjarThirdLock             // ... a window hall's lobby: two shutters that lock the player in with its fight
 	20170 = AjarThirdShare            // ... one item for the selves of a last hall, shown on each stand
+	20171 = AjarThirdLever            // ... a lever on a stand's wall: one of the last hall's machines
+	20172 = AjarThirdVent             // ... a point of the floor a steam lever blows over
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
