@@ -31,7 +31,16 @@ round the hall, on pedestals, in bays and on the floor among the switchgear
 cabinets. Go 1 holds plate 1 30 seconds in all (its time door opens then), go 2
 plate 2 15 seconds while plate 1 is held, and go 3 crosses the hall from
 stand 3's gate (shut to monsters) to the exit door in the east wall, open while
-both plates are held.
+both plates are held. The lab's four ways the selves help each other are in
+it (PLAN.md, "MAP33: the last hall with the four rules"): the guards come in
+waves (wave 1 at the alarm: every guard that stands; wave 2 at plate 2's first
+press from the alarm on: the flyers and the knights, on green patches; wave 3
+in go 3 when the third self steps onto the hall's floor: the demons and the
+barons, on red patches before the exit door); one invulnerability sphere for
+the three, a copy on each stand; an earlier self hit by 60 holds its fire for
+three seconds; a steam valve on stand 1 (it blows over the blue strip before
+the exit door) and a breaker on stand 2 (it stuns the hall), each worked once a
+go and again by itself in the later goes.
 
 Window halls (third.zs): 1 the coal yard (part 1; its gate opens when it is
 clear), 2 the workshop (part 2; seen from the relay room), 3 the turbine hall
@@ -58,8 +67,12 @@ mouths, and the lobbies' halls with no monster-only line in an open way;
 every post where its monster cannot leave and in sight from the gantry; the
 supplies of each part against its monsters (tools/budget.py), the last hall's
 guards apart; every standing guard in sight of a plate and of the crossing,
-the crossing with cover from each; each part's length on foot (python3
-tools/map_station.py --walk).
+the crossing with cover from each; wave 1 the standing guards, wave 3 east of
+the crossing's middle and 256 or more from the foot of stand 3's steps, the
+patches clear of the islands and the red ones by the door on the strip, the
+strip's floor all within the steam's reach, the share's copies and the levers
+clear of the plates, time doors, wind plates and cases; each part's length on
+foot (python3 tools/map_station.py --walk).
 """
 import heapq
 import math
@@ -1454,6 +1467,7 @@ SUPPLY3 = [(2013, 7820, 2288), (2019, 7880, 2288), (17, 7940, 2270), (17, 7940, 
 # THE LAST HALL L: the switchgear hall, where the three goes fight one fight together
 # (third.zs, last.zs; the lab is map LAST). Stand 1 (part 1) on its north side, stand 2
 # (part 2) on its west, stand 3 (part 3) on its south; the exit door in its east wall.
+# With the lab's four rules (last.zs): waves, the share, the stagger, the levers (below).
 # =====================================================================================
 L_BOX = (7808, 2368, 8960, 3392)
 FL, LCEIL = -96, 384            # its floor (the stands are at the ground) and its ceiling
@@ -1508,8 +1522,65 @@ BAY_MOUTH = [((8960, 2624), (8960, 2752)), ((8960, 3008), (8960, 3136)), ((8960,
 SWITCHGEAR = [(8448, 2592, 8576, 2656), (8672, 2752, 8800, 2816), (8672, 2944, 8800, 3008),
             (8160, 2752, 8288, 2816), (8384, 2944, 8512, 3008), (8224, 2592, 8352, 2656)]
 CAB_H = 64
-for r in ajarthird.tiles(*L_BOX, PEDESTALS + SWITCHGEAR + [STEPS]):
+
+# The guards (ajarthird.guard): (kind, x, y, angle, z over the floor, skill, where it stands: None walks or
+# flies, wave). Waves by plates (last.zs; PLAN.md "MAP33: the last hall with the four rules"): wave 1 at the
+# alarm, every guard that stands (pedestals, bays); wave 2 when plate 2 is first pressed from the alarm on
+# (go 2 and 3): the cacodemons, the pain elemental, the hell knights; wave 3 in go 3, when the third self
+# first stands on the hall's floor (stand 3's steps are the hall's): the demons and the barons, on the east
+# half between the middle of the crossing and the exit door.
+MIDR = lambda r: ((r[0] + r[2]) // 2, (r[1] + r[3]) // 2)
+GUARDS = [(68, *MIDR(PEDESTALS[0]), 135, 0, 1, PEDESTALS[0], 1), (68, *MIDR(PEDESTALS[1]), 225, 0, 2, PEDESTALS[1], 1),
+          (67, *MIDR(PEDESTALS[2]), 45, 0, 1, PEDESTALS[2], 1), (67, *MIDR(PEDESTALS[3]), 315, 0, 3, PEDESTALS[3], 1),
+          # (in a bay: 24 in from its mouth, so that it is seen at a slant)
+          (66, 8984, MIDR(BAYS[0])[1], 180, 0, 1, BAYS[0], 1), (66, 8984, MIDR(BAYS[1])[1], 180, 0, 1, BAYS[1], 1),
+          (66, 8984, MIDR(BAYS[2])[1], 180, 0, 2, BAYS[2], 1), (66, 8984, MIDR(BAYS[3])[1], 180, 0, 3, BAYS[3], 1),
+          (65, MIDR(BAYS[4])[0], 3416, 270, 0, 1, BAYS[4], 1), (65, MIDR(BAYS[5])[0], 3416, 270, 0, 2, BAYS[5], 1),
+          (65, MIDR(BAYS[6])[0], 2344, 90, 0, 2, BAYS[6], 1), (65, MIDR(BAYS[7])[0], 2344, 90, 0, 3, BAYS[7], 1),
+          # wave 2: over the middle, and the knights on the floor (green patches)
+          (3005, 8400, 2880, 180, 200, 1, None, 2), (3005, 8600, 3200, 180, 220, 2, None, 2),
+          (3005, 8150, 2700, 90, 200, 3, None, 2), (3005, 8540, 2780, 90, 240, 4, None, 2),
+          (71, 8400, 3220, 270, 230, 4, None, 2),
+          (69, 8100, 2960, 0, 0, 1, None, 2), (69, 8460, 2800, 180, 0, 2, None, 2), (69, 8360, 3100, 270, 0, 3, None, 2),
+          # wave 3 (red patches): before the exit door, on the steam's strip and beside it
+          (3002, 8880, 2720, 180, 0, 1, None, 3), (3002, 8740, 2880, 180, 0, 1, None, 3),
+          (3002, 8740, 3056, 180, 0, 2, None, 3), (3002, 8620, 2720, 180, 0, 2, None, 3),
+          (3002, 8620, 3010, 180, 0, 3, None, 3), (3002, 8912, 2560, 180, 0, 3, None, 3),
+          (3003, 8880, 2848, 180, 0, 2, None, 3), (3003, 8880, 3040, 180, 0, 4, None, 3)]
+WALKS = {69, 3002, 3003}
+# the marks on the floor where a walking guard of wave 2 (green) or 3 (red) comes: a 64 x 64 sector of its own
+# with the hall's tag, a lit plate (AJLITE, the game's own) at full light, strongly tinted
+GREEN, RED = 0x30FF30, 0xFF2828
+PATCHES = [((x - 32, y - 32, x + 32, y + 32), GREEN if w == 2 else RED) for k, x, y, a, z, sk, place, w in GUARDS
+           if w > 1 and k in WALKS]
+# the steam's strip before the exit door: the last 256 of the crossing, across the door's width and 128 to each
+# side (x 8704..8960, y 2688..3072); its floor the lit plates (AJLITE) tinted pale blue at full light (a grating,
+# AJZPLT, was tried: dark, it was not told from the hall's floor from stand 1); six vents (reach 96) cover it,
+# on the floor round the two cabinets in it
+STRIP = (8704, 2688, 8960, 3072)
+STEAMY = 0x78B4FF
+VENTS = [(8768, 2720), (8768, 2880), (8768, 3040), (8896, 2752), (8896, 2880), (8896, 3008)]
+
+
+def overlap(p, q):
+    return p[0] < q[2] and q[0] < p[2] and p[1] < q[3] and q[1] < p[3]
+
+
+def marked(r, ftex, colour, pan=False):
+    """A piece of the hall's floor told apart: its own floor picture, tinted, at full light (the rest as the hall)."""
+    raw = dict(color_floor=colour, lightfloor=255, lightfloorabsolute=True)
+    if pan:                     # (the picture's frame on the patch's edges)
+        raw.update(xpanningfloor=float(-r[0] % 64), ypanningfloor=float(r[3] % 64))
+    m.sector(rect(*r), floor=FL, ceil=LCEIL, light=170, color=HALLC, ftex=ftex, id=LASTT, raw=raw)
+
+
+ISLANDS = PEDESTALS + SWITCHGEAR + [STEPS]
+for r in ajarthird.tiles(*L_BOX, ISLANDS + [STRIP] + [p for p, c in PATCHES]):
     m.sector(rect(*r), floor=FL, ceil=LCEIL, light=170, color=HALLC, id=LASTT)
+for r in ajarthird.tiles(*STRIP, [c for c in ISLANDS if overlap(c, STRIP)] + [p for p, c in PATCHES if overlap(p, STRIP)]):
+    marked(r, "AJLITE", STEAMY)
+for p, c in PATCHES:
+    marked(p, "AJLITE", c, pan=True)
 for p in PEDESTALS:
     m.sector(rect(*p), floor=FL + 72, ceil=LCEIL, light=180, color=HALLC, side="AJBOLT", ftex="AJTRIMF", id=LASTT)
     for a, b in (((p[0], p[1]), (p[2], p[1])), ((p[2], p[1]), (p[2], p[3])), ((p[2], p[3]), (p[0], p[3])),
@@ -1527,25 +1598,22 @@ m.sector(rect(9104, 2816, 9168, 2944), floor=FL, ceil=FL + 128, light=230, color
 m.line((9104, 2816), (9104, 2944), special=243, playercross=True)
 m.line((9168, 2816), (9168, 2944), mid="AJEXIT", exact=True)
 
-# the guards (ajarthird.guard): (kind, x, y, angle, z over the floor, skill, where it stands: None walks or flies)
-MIDR = lambda r: ((r[0] + r[2]) // 2, (r[1] + r[3]) // 2)
-GUARDS = [(68, *MIDR(PEDESTALS[0]), 135, 0, 1, PEDESTALS[0]), (68, *MIDR(PEDESTALS[1]), 225, 0, 2, PEDESTALS[1]),
-          (67, *MIDR(PEDESTALS[2]), 45, 0, 1, PEDESTALS[2]), (67, *MIDR(PEDESTALS[3]), 315, 0, 3, PEDESTALS[3]),
-          # (in a bay: 24 in from its mouth, so that it is seen at a slant)
-          (66, 8984, MIDR(BAYS[0])[1], 180, 0, 1, BAYS[0]), (66, 8984, MIDR(BAYS[1])[1], 180, 0, 1, BAYS[1]),
-          (66, 8984, MIDR(BAYS[2])[1], 180, 0, 2, BAYS[2]), (66, 8984, MIDR(BAYS[3])[1], 180, 0, 3, BAYS[3]),
-          (65, MIDR(BAYS[4])[0], 3416, 270, 0, 1, BAYS[4]), (65, MIDR(BAYS[5])[0], 3416, 270, 0, 2, BAYS[5]),
-          (65, MIDR(BAYS[6])[0], 2344, 90, 0, 2, BAYS[6]), (65, MIDR(BAYS[7])[0], 2344, 90, 0, 3, BAYS[7]),
-          (3005, 8400, 2880, 180, 200, 1, None), (3005, 8600, 3200, 180, 220, 2, None),
-          (3005, 8150, 2700, 90, 200, 3, None), (3005, 8540, 2780, 90, 240, 4, None),
-          (71, 8400, 3220, 270, 230, 4, None),
-          (3002, 8160, 2520, 90, 0, 1, None), (3002, 8480, 3220, 270, 0, 1, None), (3002, 8000, 2880, 0, 0, 2, None),
-          (3002, 8600, 2880, 180, 0, 2, None), (3002, 8300, 3260, 270, 0, 3, None), (3002, 8600, 2510, 90, 0, 3, None),
-          (69, 8100, 2960, 0, 0, 1, None), (69, 8460, 2800, 180, 0, 2, None), (69, 8360, 3100, 270, 0, 3, None),
-          (3003, 8820, 2880, 180, 0, 2, None), (3003, 8540, 2860, 180, 0, 4, None)]
-for kind, x, y, a, z, sk, place in GUARDS:
-    ajarthird.guard(m, x, y, kind, a, z, skill=sk)
-ajarthird.last(m, 9040, 2860, LASTT, gate=ALARM)
+for kind, x, y, a, z, sk, place, w in GUARDS:
+    ajarthird.guard(m, x, y, kind, a, z, skill=sk, wave=w)
+# The share (one invulnerability sphere for the three selves): a copy on each stand near its back wall, clear
+# of the plate, the time door, the wind plate, the case of three and the pillar
+SHARES = {1: (8544, 3544), 2: (7648, 2752), 3: (8544, 2208)}
+for x, y in SHARES.values():
+    ajarthird.share(m, x, y)
+# The levers (the hall's machines): 1, the steam valve, on stand 1's east wall (its vents, number 1, on the
+# strip); 2, the breaker, on stand 2's north wall, east of the wind plate. None on stand 3.
+LEVER1, LEVER2 = (8574, 3440), (7780, 3070)
+ajarthird.lever(m, *LEVER1, 180, 1, 1, tag=1)
+ajarthird.lever(m, *LEVER2, 270, 2, 2)
+for x, y in VENTS:
+    ajarthird.vent(m, x, y, 1)
+# (an earlier self hit by 60, summed from the alarm and falling by 1 a tic, holds its fire for three seconds)
+ajarthird.last(m, 9040, 2860, LASTT, gate=ALARM, stagger=60)
 
 ajarthird.third(m, 9040, 2900, EXIT, OUT, (-1264, 0, 9400, 5400))      # (its middle on the pump hall's floor)
 
@@ -1704,7 +1772,7 @@ def along(path, step=16):
 CROSS_PTS = [p for p in along(CROSSING) if L_BOX[0] < p[0] < L_BOX[2] and p[1] > 2480]     # (on the hall's floor)
 EYES = [(*PLATE1, G + 41), (*PLATE2, G + 41)]
 COVER = {}
-for kind, x, y, a, z, sk, place in GUARDS:
+for kind, x, y, a, z, sk, place, w in GUARDS:
     r, hgt = ajartime.RADIUS[kind], ajartime.HEIGHT[kind]
     if place is None:
         assert stands(x, y, r + 8, FL), ("a guard with no room on the floor", kind, x, y)
@@ -1724,6 +1792,68 @@ for i, c in enumerate(SWITCHGEAR):
     assert L_BOX[0] + 96 <= c[0] and c[2] <= L_BOX[2] - 96 and L_BOX[1] + 96 <= c[1] and c[3] <= L_BOX[3] - 96, c
     for o in SWITCHGEAR[i + 1:] + PEDESTALS + [STEPS]:
         assert c[2] + 96 <= o[0] or o[2] + 96 <= c[0] or c[3] + 96 <= o[1] or o[3] + 96 <= c[1], ("cabinets too near", c, o)
+
+
+# --- the four rules in the hall: waves, patches, the steam's strip, the share, the levers ----------
+def seg_dist(p, a, b):
+    """The distance from point p to the segment a-b."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    t = max(0, min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy)))
+    return math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy)
+
+
+# wave 1 is every guard that stands (on a pedestal or in a bay) and only those; wave 2 the flyers and the knights,
+# wave 3 the demons and the barons
+assert all((w == 1) == (place is not None) for kind, x, y, a, z, sk, place, w in GUARDS)
+assert all(w == (2 if kind in (3005, 71, 69) else 3) for kind, x, y, a, z, sk, place, w in GUARDS if place is None)
+# wave 3 on the east half, between the middle of the crossing and the exit door, none within 256 of the foot
+# of stand 3's steps
+_c = along(CROSSING, 4)
+MIDCROSS = _c[len(_c) // 2]
+FOOT = ((GATE3[0] + GATE3[1]) / 2, STEPS[3])
+for kind, x, y, a, z, sk, place, w in GUARDS:
+    if w == 3:
+        assert x > (L_BOX[0] + L_BOX[2]) / 2 and x >= MIDCROSS[0] - 32 and math.hypot(x - FOOT[0], y - FOOT[1]) >= 256, ("wave 3's place", kind, x, y)
+# a patch in the hall, clear of every island and of the other patches; a walking guard in its middle
+for i, (p, c) in enumerate(PATCHES):
+    assert L_BOX[0] <= p[0] and p[2] <= L_BOX[2] and L_BOX[1] <= p[1] and p[3] <= L_BOX[3], p
+    assert not any(overlap(p, q) for q in ISLANDS) and not any(overlap(p, q) for q, d in PATCHES[i + 1:]), ("a patch on an island", p)
+# the red patches near the exit door (their middles within 256 of the door's) lie on the steam's strip
+DOOR_MID = (8960, 2880)
+for p, c in PATCHES:
+    mx, my = (p[0] + p[2]) / 2, (p[1] + p[3]) / 2
+    if c == RED and math.hypot(mx - DOOR_MID[0], my - DOOR_MID[1]) <= 256:
+        assert STRIP[0] <= mx <= STRIP[2] and STRIP[1] <= my <= STRIP[3], ("a red patch by the door off the strip", p)
+# the vents: on the hall's floor (not on a cabinet), and every point of the strip's floor within the reach
+# (96) of one, so that the steam is where the floor is blue
+for x, y in VENTS:
+    s = sec_at(x, y)
+    assert s is not None and m.sectors[s]["floor"] == FL and m.sectors[s]["id"] == LASTT, ("a vent off the floor", x, y)
+for px in range(STRIP[0] + 4, STRIP[2], 8):
+    for py in range(STRIP[1] + 4, STRIP[3], 8):
+        s = sec_at(px, py)
+        if s is not None and m.sectors[s]["floor"] == FL:
+            assert any(math.hypot(px - vx, py - vy) <= 96 for vx, vy in VENTS), ("the strip beyond the steam", px, py)
+# the share: a copy on each stand's floor with 24 clear all round (a 48-wide square), near its back wall,
+# clear of the plate, the time door, the wind plate and the case of three
+TIME_MOUTH = {1: ((8448, 3584), (8512, 3584)), 2: ((7616, 2976), (7616, 3040))}
+CASE_MOUTH = {1: ((8224, 3584), (8400, 3584)), 2: ((7632, 2688), (7792, 2688)), 3: ((8288, 2176), (8448, 2176))}
+WINDS = {2: WIND2, 3: WIND3}
+PLATES = {1: PLATE1, 2: PLATE2}
+BACK = {1: ((8192, 3584), (8576, 3584)), 2: ((7616, 2688), (7616, 3072)), 3: ((8192, 2176), (8576, 2176))}
+for k, (x, y) in SHARES.items():
+    assert stands(x, y, 24, G) and m.sectors[sec_at(x, y)]["id"] == ST[k - 1], ("the share's copy has no room", k)
+    assert seg_dist((x, y), *BACK[k]) <= 48, ("the share's copy not near the back wall", k)
+    assert k not in PLATES or math.hypot(x - PLATES[k][0], y - PLATES[k][1]) >= 96
+    assert k not in TIME_MOUTH or seg_dist((x, y), *TIME_MOUTH[k]) >= 48
+    assert k not in WINDS or math.hypot(x - WINDS[k][0], y - WINDS[k][1]) >= 96
+    assert seg_dist((x, y), *CASE_MOUTH[k]) >= 48, ("the share's copy at the case", k)
+# the levers: 2 off a wall of their stand, clear of its time door, its wind plate and its case
+for k, (x, y) in ((1, LEVER1), (2, LEVER2)):
+    s = sec_at(x, y)
+    assert s is not None and m.sectors[s]["id"] == ST[k - 1]
+    assert seg_dist((x, y), *TIME_MOUTH[k]) >= 96 and seg_dist((x, y), *CASE_MOUTH[k]) >= 96
+    assert k not in WINDS or math.hypot(x - WINDS[k][0], y - WINDS[k][1]) >= 64
 
 # --- each part's length on foot (python3 tools/map_station.py --walk) ---------------------------
 RUN = 583            # units a second, running (MAP08's measure)

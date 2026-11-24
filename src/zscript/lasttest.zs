@@ -159,6 +159,12 @@ extend class AjarTimeHandler
 		for (int i = 0; i < guards.Size(); i++) if (GuardWave(i) == w) n++;
 		return n;
 	}
+	// how many a wave is to have: LAST's cast (all skills); MAP33's on skill 3, the tests' (map_station.py)
+	int WaveWant(int w)
+	{
+		if (level.mapname ~== "LAST") return w == 1 ? 6 : w == 2 ? 4 : 5;
+		return w == 1 ? 12 : w == 2 ? 6 : 7;
+	}
 
 	// Every guard dead since the last look: counted by its killer.
 	void CountKills(PlayerPawn mo)
@@ -323,7 +329,7 @@ extend class AjarTimeHandler
 				if (guardIs[i] && guardIs[i].target) who = who .. (guardIs[i].target.player ? "P" : guardIs[i].target is "AjarGhost" ? "S" : "?");
 			Console.Printf("AJARTEST info alarm go=%d at %d (from the record %d): guards %d, awake %d, with a target %d (%s)", tgo, alarmTic, alarmAt,
 				LastLiving(), awake, aimed, who);
-			int want = level.mapname ~== "LAST" ? 6 : guards.Size();         // (MAP33: as many as its skill has, all of wave 1)
+			int want = WaveWant(1);         // (MAP33: its standing guards on skill 3)
 			// (plate 2 already pressed at the alarm: wave 2 comes with it)
 			bool with2 = waves > 1 && waveTic[2] == alarmTic;
 			int all = want + (with2 ? WaveOf(2) : 0);
@@ -362,7 +368,7 @@ extend class AjarTimeHandler
 			ltOn2 = o;
 			ltWave2 = waveTic[2];
 			Console.Printf("AJARTEST info go 2: on plate 2 first at %d (the alarm + %d), wave 2 at %d: %d guards", o, o - alarmTic, waveTic[2], WaveIn(2));
-			Check("waveTwoAtPlateTwo", waveTic[2] == o && WaveIn(2) == WaveOf(2) && WaveOf(2) == 4 && o > alarmTic);
+			Check("waveTwoAtPlateTwo", waveTic[2] == o && WaveIn(2) == WaveOf(2) && WaveOf(2) == WaveWant(2) && o > alarmTic);
 		}
 		if (tgo == 2 && alarmTic >= 0 && ltOn2 < 0 && WaveIn(2)) ltWaveBad++;
 		if (tgo == 3)
@@ -372,7 +378,7 @@ extend class AjarTimeHandler
 			if (o == ltWave2)
 			{
 				Console.Printf("AJARTEST info go 3: wave 2 at %d (go 2's %d): %d guards", waveTic[2], ltWave2, WaveIn(2));
-				Check("waveTwoAtSelfTwo", waveTic[2] == o && WaveIn(2) == 4 && !plates[1].mine && SelfAsRecord(1));
+				Check("waveTwoAtSelfTwo", waveTic[2] == o && WaveIn(2) == WaveWant(2) && !plates[1].mine && SelfAsRecord(1));
 			}
 			bool inHall = SecTagged(mo.pos.xy, lastMark.args[0]);
 			if (!inHall && ltInHall < 0 && WaveIn(3)) ltWaveBad++;
@@ -381,7 +387,7 @@ extend class AjarTimeHandler
 				ltInHall = o;
 				Console.Printf("AJARTEST info go 3: in the hall first at %d (the alarm + %d), wave 3 at %d: %d guards; before it %d tics bad", o, o - alarmTic,
 					waveTic[3], WaveIn(3), ltWaveBad);
-				Check("waveThreeOnTheFloor", waveTic[3] == o && WaveIn(3) == WaveOf(3) && WaveOf(3) == 5 && !ltWaveBad);
+				Check("waveThreeOnTheFloor", waveTic[3] == o && WaveIn(3) == WaveOf(3) && WaveOf(3) == WaveWant(3) && !ltWaveBad);
 			}
 		}
 	}
@@ -635,16 +641,22 @@ extend class AjarTimeHandler
 		}
 	}
 
-	// Go 1: the steam valve refused before the alarm; at the alarm + L_VALVE it works, once; the
-	// steam hurts an imp on the strip and not one off it nor a self on it, and stops.
-	void SteamTest(PlayerPawn mo, int a)
+	// Go 1: the steam valve refused before the alarm; at the alarm + `at` it works, once; the
+	// steam hurts an imp on the strip and not one off it nor a self on it, and stops (`dummies`:
+	// without them only the valve and its checks: MAP33's views). LAST's strip, or MAP33's.
+	void SteamTest(PlayerPawn mo, int a, int at = L_VALVE, bool dummies = true)
 	{
 		int i = LeverIx(1);
-		if (a == L_VALVE - 1)
+		bool m33 = level.mapname ~== "MAP33";
+		if (a == at - 1 && dummies)
 		{
-			ltImpOn = Actor.Spawn("AjarSteamImp", (1952, 400, -96));
-			ltImpOff = Actor.Spawn("AjarSteamImp", (1650, 420, -96));
-			ltSelfOn = Actor.Spawn("AjarSteamSelf", (1990, 800, -96));
+			Vector3 pOn = (1952, 400, -96);
+			Vector3 pOff = (1650, 420, -96);
+			Vector3 pSelf = (1990, 800, -96);
+			if (m33) { pOn = (8840, 2800, -96); pOff = (8560, 2800, -96); pSelf = (8880, 2960, -96); }
+			ltImpOn = Actor.Spawn("AjarSteamImp", pOn);
+			ltImpOff = Actor.Spawn("AjarSteamImp", pOff);
+			ltSelfOn = Actor.Spawn("AjarSteamSelf", pSelf);
 			for (int k = 0; k < 2; k++)
 			{
 				Actor z = k ? ltImpOff : ltImpOn;
@@ -654,27 +666,27 @@ extend class AjarTimeHandler
 			}
 			ltSelfOn.bShootable = true;
 		}
-		if (a == L_VALVE)
+		if (a == at)
 		{
 			Lever(1).Used(mo);
 			Console.Printf("AJARTEST info go 1: the steam valve at %d: %s", ot, SaidNow());
 			Check("leverWorks", lvUsed[i] == ot && lvUntil[i] == ot + 210 && Lever(1).shown == 2 && TakeHasLever(takes[0], 1, ot) && SaidNow().IndexOf("Steam blows") >= 0);
 		}
-		if (a == L_VALVE + 4)
+		if (a == at + 4)
 		{
 			int was = lvUsed[i];
 			Lever(1).Used(mo);
 			Check("leverOnce", lvUsed[i] == was && SaidNow().IndexOf("spent") >= 0 && AjarThirdTake(takes[0]).leverN.Size() == 1);
 		}
-		if (a == L_VALVE + 100)
+		if (a == at + 100 && dummies)
 		{
 			Console.Printf("AJARTEST info go 1, steam 100 tics: the imp on the strip took %d of it, the one off it %d, the self on it %d (hit by anything %d times)",
 				AjarSteamImp(ltImpOn).steamed, AjarSteamImp(ltImpOff).steamed, AjarSteamSelf(ltSelfOn).steamed, AjarLastSelf(ltSelfOn).hits);
 			Check("steamOnStripOnly", AjarSteamImp(ltImpOn).steamed >= 6 * 20 && AjarSteamImp(ltImpOff).steamed == 0 && AjarSteamSelf(ltSelfOn).steamed == 0
 				&& ltSelfOn.health == ltSelfOn.SpawnHealth());
 		}
-		if (a == L_VALVE + 214) ltImpHp = AjarSteamImp(ltImpOn).steamed;
-		if (a == L_VALVE + 250)
+		if (a == at + 214 && dummies) ltImpHp = AjarSteamImp(ltImpOn).steamed;
+		if (a == at + 250 && dummies)
 		{
 			Check("steamStops", AjarSteamImp(ltImpOn).steamed == ltImpHp && ot > lvUntil[i] && ltImpHp > 0);
 			for (int k = 0; k < 2; k++)
@@ -687,17 +699,17 @@ extend class AjarTimeHandler
 		}
 	}
 
-	// Go 2: at the alarm + L_BREAK the breaker; for its 5 seconds no monster in the hall moves, turns
+	// Go 2: at the alarm + `at` the breaker; for its 5 seconds no monster in the hall moves, turns
 	// or attacks; one is killed meanwhile by the script's fire and dies; after it they act again.
-	void BreakerTest(PlayerPawn mo, int a)
+	void BreakerTest(PlayerPawn mo, int a, int at = L_BREAK)
 	{
 		int i = LeverIx(2);
-		if (a == L_BREAK)
+		if (a == at)
 		{
 			Lever(2).Used(mo);
 			Check("breakerWorks", lvUsed[i] == ot && stunUntil == ot + 175 && Lever(2).shown == 2 && TakeHasLever(takes[1], 2, ot));
 		}
-		if (a == L_BREAK + 1)
+		if (a == at + 1)
 		{
 			// (the first tic it holds them: what flies now was fired before, and flies on)
 			ltSnap.Clear(); ltSnapX.Clear(); ltSnapY.Clear(); ltSnapA.Clear(); ltSnapS.Clear(); ltOldMissiles.Clear();
@@ -712,7 +724,7 @@ extend class AjarTimeHandler
 				}
 			ltStunBad = 0;
 		}
-		if (a > L_BREAK + 1 && a < L_BREAK + 175)
+		if (a > at + 1 && a < at + 175)
 		{
 			for (int k = 0; k < ltSnap.Size(); k++)
 			{
@@ -736,7 +748,7 @@ extend class AjarTimeHandler
 					Console.Printf("AJARTEST info stunned %s fired a %s at %d", m.target.GetClassName(), m.GetClassName(), a);
 				}
 		}
-		if (a == L_BREAK + 60)
+		if (a == at + 60)
 		{
 			for (int k = 0; k < ltSnap.Size() && !ltKilled; k++) if (ltSnap[k] && ltSnap[k].health > 0) ltKilled = ltSnap[k];
 			if (ltKilled)
@@ -746,15 +758,15 @@ extend class AjarTimeHandler
 				ltKilled.DamageMobj(mo, mo, ltKilled.health + 100, 'Hitscan');
 			}
 		}
-		if (a == L_BREAK + 61 && ltKilled) ltKilledState = ltKilled.CurState;
-		if (a == L_BREAK + 100)
+		if (a == at + 61 && ltKilled) ltKilledState = ltKilled.CurState;
+		if (a == at + 100)
 			Check("stunnedCanBeKilled", ltKilled && ltKilled.health <= 0 && ltKilled.CurState != ltKilledState && ltKilled.tics != -1 || (ltKilled && ltKilled.bCorpse && ltKilled.CurState != ltKilledState));
-		if (a == L_BREAK + 174)
+		if (a == at + 174)
 		{
 			Console.Printf("AJARTEST info go 2: the breaker held %d monsters of the hall, %d times one moved, turned, attacked or fired", ltSnap.Size(), ltStunBad);
 			Check("breakerHolds", ltSnap.Size() >= 3 && !ltStunBad && stunned.Size() >= ltSnap.Size() - 1);
 		}
-		if (a == L_BREAK + 245)
+		if (a == at + 245)
 		{
 			int moved = 0;
 			for (int k = 0; k < ltSnap.Size(); k++)
