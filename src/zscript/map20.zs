@@ -10,6 +10,12 @@
 //          with the player on the boiler house's side; the lower yard with K full; the gates
 //   MODE=4 a tour of fixed views (tools/smoke_MAP20_4.cfg shoots at 78 + 80 n)
 //   MODE=5 the fights' causes: each water ambush once and when it should; the cells; drowning
+//   MODE=6 (EXTRA=-nomonsters) the secret way out: BLUE in 142, the swim to the fourth pane and through
+//          it into the left-handed bath, its water at the bath's level every tic, the way back, a mirror
+//          pane is a wall, shots through the opening and at a mirror, the bath drained behind the player,
+//          the copy's door, the secret, the Exit_Secret line (PLAN.md, "MAP20: the secret way out, built")
+//   MODE=7 views of the pane wall for tools/highwater_compare.py (tools/smoke_MAP20_7.cfg shoots at
+//          78 + 80 n), as built and with AJAR_SBMIRROR=1 (the fourth pane a mirror); the notch views
 class HighWaterTest : EventHandler
 {
 	const TP = 21; const TC = 22; const TT = 23; const TK = 24; const TL = 25; const TU = 26; const TSB = 27;
@@ -20,6 +26,10 @@ class HighWaterTest : EventHandler
 	const E_P102 = 1; const E_C112 = 2; const E_C113 = 3; const E_PIPE = 4; const E_K131 = 5; const E_K133 = 6;
 	const E_L109 = 7; const E_CIRCLE = 8; const E_P101 = 9; const E_T121 = 10; const E_PIPE_NOBLUE = 11;
 	const E_SB142 = 12; const E_SB141 = 13;
+	const TSBL = 30;            // the left-handed bath (a FOLLOW basin: the swimming bath's level)
+	const PANE4 = 1440; const PANE4_FAR = 1441;     // the fourth pane's portal line, and its image in the copy
+	const CX = -1664; const CY = -2048;                 // a point (x, y) of the bath is (CX - x, y + CY) in the copy
+	const GLASS = -848;
 	const WALKKEY = 0x1900;
 	const RUNKEY = 0x3200;
 	const RUN = 16.7;
@@ -250,8 +260,26 @@ class HighWaterTest : EventHandler
 		else if (mode == 3) Lost(mo);
 		else if (mode == 4) Views(mo);
 		else if (mode == 5) Fights(mo);
+		else if (mode == 6) Secret(mo);
+		else if (mode == 7) PaneViews(mo);
 		Drive(mo);
-		if (mode != 4 && pc >= k) Summary();
+		if (mode != 4 && mode != 7 && pc >= k) Summary();
+	}
+
+	// the exit lines crossed (MODE=6: the level ends by the secret way, not the plain one)
+	Vector3 lastPos;
+	bool testing6;
+	override void WorldUnloaded(WorldEvent e)
+	{
+		if (!testing6) return;
+		// the Exit_Secret line is at y 792 of the bath in the copy; the plain way out is far east (x 6048)
+		bool bySecret = InCopy(lastPos.xy) && lastPos.y > 792 + CY - 24;
+		Check("exitBySecretWayOut", bySecret && e.NextMap ~== level.NextSecretMap,
+			String.Format("last seen at %s; next map %s (secretnext %s, next %s)", PStr(lastPos), e.NextMap, level.NextSecretMap, level.NextMap));
+		Check("copyKeptAtTheBathsLevelEveryTic", maxDev < 1e-9, String.Format("the most it was off: %.9f", maxDev));
+		Check("secretFound", level.found_secrets == 1 && level.total_secrets == 1, String.Format("%d of %d", level.found_secrets, level.total_secrets));
+		finished = false;
+		Summary();
 	}
 
 	// --- MODE=1: the whole level by the answers meant ------------------------------------------
@@ -941,5 +969,343 @@ class HighWaterTest : EventHandler
 			Check("eachWaterAmbushOnce", left == 0 && total > 0, String.Format("%d ambushers, %d left", total, left));
 			Next();
 		}
+	}
+
+	// --- MODE=6: the secret way out -------------------------------------------------------------
+	Vector2 Copy(double x, double y) { return (CX - x, y + CY); }
+	bool InCopy(Vector2 p) { return p.y < -1000; }
+	AjarLeftHanded Marker()
+	{
+		let it = ThinkerIterator.Create("AjarLeftHanded");
+		return AjarLeftHanded(it.Next());
+	}
+	// walks (keys held) towards (x, y); true once within r
+	bool Toward(Actor mo, Vector2 to, int key = WALKKEY, int b = 0, double r = 12)
+	{
+		Vector2 d = to - mo.pos.xy;
+		if (d.Length() < r) return true;
+		mo.angle = VectorAngle(d.x, d.y);
+		Keys(key, b);
+		return false;
+	}
+	double maxDev;              // the most the copy's water was off the bath's, any tic
+	Vector3 prev;
+	bool crossed;
+	int crossT;
+	LeftHandDummy dummyIn, dummyBehind;
+	Actor shot;
+	Vector3 shotLast;
+	bool shotGone;
+	int wp;
+
+	// over the sill of the pane before the player and through it: `dir` 180 into the copy, 0 back out;
+	// the landing is checked against the portal's shift (32, -2048) and the walk goes on `after` tics
+	bool Through(Actor mo, string name, double dir, int after = 35)
+	{
+		Line a = h.FindLine(PANE4), b = h.FindLine(PANE4_FAR);
+		bool into = dir == 180;
+		if (opT == 0) { crossed = false; prev = mo.pos; }
+		mo.angle = dir;
+		if (!crossed)
+		{
+			if (InCopy(mo.pos.xy) == into && (mo.pos.xy - prev.xy).Length() > 200)
+			{
+				crossed = true;
+				crossT = opT;
+				Vector2 shift = into ? (32, -2048) : (-32, 2048);
+				double e = (mo.pos.xy - (prev.xy + shift)).Length();
+				Check(name, e < 24 && abs(Actor.DeltaAngle(mo.angle, dir)) < 0.001,
+					String.Format("before %s, after %s facing %.1f: the shift says %s, off by %.2f (a tic's walk); turn %.3f; water %.1f",
+					PStr(prev), PStr(mo.pos), mo.angle, PStr((prev.xy + shift, prev.z)), e, LeftHandTest.Turn(into ? a : b, into ? b : a), W(TSB)));
+			}
+			else
+			{
+				prev = mo.pos;
+				Keys(WALKKEY, BT_JUMP);
+				if (opT < 350) return false;
+				Check(name, false, String.Format("not through after %d tics: player %s, water %.1f", opT, PStr(mo.pos), W(TSB)));
+				return true;
+			}
+		}
+		Keys(WALKKEY);
+		return opT - crossT >= after;
+	}
+
+	bool Shoot(Actor mo, string name, class<Actor> type, double y, LeftHandDummy want, LeftHandDummy notWant, double xMin, double xMax)
+	{
+		if (opT == 0)
+		{
+			PoseF(mo, -300, y, 180);
+			if (want) want.hits = 0;
+			if (notWant) notWant.hits = 0;
+			shot = mo.SpawnPlayerMissile(type, 180, nofreeaim: true, noautoaim: true);
+			shotGone = false;
+			shotLast = shot ? shot.pos : (0, 0, 0);
+		}
+		if (shot && shot.bMissile) shotLast = shot.pos;
+		else shotGone = true;
+		if (opT < 70) return false;
+		bool ok = shotGone && shotLast.x >= xMin && shotLast.x <= xMax;
+		if (want) ok = ok && want.hits > 0;
+		if (notWant) ok = ok && notWant.hits == 0;
+		Check(name, ok, String.Format("%s last flying at %s; the dummy in the copy hit %d%s", type.GetClassName(), PStr(shotLast),
+			want ? want.hits : notWant.hits, want ? "" : " (none wanted)"));
+		if (shot) shot.Destroy();
+		return true;
+	}
+
+	bool Hitscan(Actor mo, string name, double y, LeftHandDummy want, LeftHandDummy notWant)
+	{
+		PoseF(mo, -300, y, 180);
+		if (want) want.hits = 0;
+		if (notWant) notWant.hits = 0;
+		Actor puff;
+		int dmg;
+		[puff, dmg] = mo.LineAttack(180, 4096, 0, 10, 'Hitscan', "BulletPuff", LAF_NORANDOMPUFFZ);
+		bool ok = want ? want.hits == 1 : notWant.hits == 0 && puff && puff.pos.x > GLASS - 1 && !InCopy(puff.pos.xy);
+		Check(name, ok, String.Format("dummy hit %d; puff %s", want ? want.hits : notWant.hits, puff ? PStr(puff.pos) : "none"));
+		return true;
+	}
+
+	// a path of the bath's points (walked in the copy, where each is (CX - x, y + CY))
+	static const double PATHX[] = { -740, -560, -480, -300, -300, -448 };
+	static const double PATHY[] = { 450, 450, 450, 450, 600, 600 };
+
+	void Secret(Actor mo)
+	{
+		testing6 = true;
+		lastPos = mo.pos;
+		AjarDoor blue = Blue(), green = Green();
+		let cb = B(TSBL), sb = B(TSB);
+		if (cb && sb) maxDev = max(maxDev, abs(cb.w - sb.w));
+		if (Op())
+		{
+			Line a = h.FindLine(PANE4), b = h.FindLine(PANE4_FAR);
+			Vector2 p = (0, 0);
+			if (a && b) p = LeftHandTest.Through(a, b, (GLASS, 352));
+			Check("openingIsAShift", a && b && abs(Actor.DeltaAngle(LeftHandTest.Turn(a, b), 0)) < 1e-9 && (p - (GLASS + 32, 352 - 2048)).Length() < 1e-6,
+				a && b ? String.Format("turn %.6f; (-848, 352) goes to (%.3f, %.3f)", LeftHandTest.Turn(a, b), p.x, p.y) : "no lines");
+			let mk = Marker();
+			int hidden = 0;
+			if (mk) for (int i = 0; i < level.lines.Size(); i++)
+				if (mk.Inside(level.lines[i].v1.p) && mk.Inside(level.lines[i].v2.p) && level.lines[i].flags & Line.ML_DONTDRAW) hidden++;
+			Check("copyOffTheMap", mk && mk.args[2] && !mk.revealed && hidden > 50, String.Format("%d lines of the copy not drawn", hidden));
+			Check("copyFollowsTheBath", cb && cb.follow == sb && cb.w == sb.w && cb.floorZ == sb.floorZ,
+				cb ? String.Format("copy %.2f (floor %.1f), bath %.2f (floor %.1f)", cb.w, cb.floorZ, sb.w, sb.floorZ) : "no copy basin");
+			Check("oneSecret", level.total_secrets == 1, String.Format("%d", level.total_secrets));
+			int frames = 0;
+			let fi = ThinkerIterator.Create("AjarFrame");
+			AjarFrame f;
+			while (f = AjarFrame(fi.Next())) if (InCopy(f.pos.xy)) frames++;
+			Check("noFramesInTheCopy", frames == 0 && h.FindFrame(141) && h.FindFrame(142), String.Format("%d", frames));
+			Next();
+		}
+		// BLUE in 142: the bath at 0, the copy with it
+		if (Op() && PoseAt(mo, FRONT + 142)) Next();
+		if (Op() && Hang(mo, "blueIn142", blue, 142)) Next();
+		if (Op() && Rest("SB_blue142", TSB, Measured(E_SB142))) Next();
+		if (Op())
+		{
+			Check("copyAt0", abs(W(TSBL) - W(TSB)) < 1e-6 && abs(W(TSB)) < 0.5, Levels() .. String.Format(" copy %.3f", W(TSBL)));
+			Next();
+		}
+		// the swim from the shallow end to the fourth pane, over its sill and through: into the copy's water
+		if (Op())
+		{
+			if (!Toward(mo, (-780, 352), WALKKEY, BT_JUMP, 16) && opT < 700) return;
+			Check("swumToTheFourthPane", (mo.pos.xy - (-780, 352)).Length() < 24, String.Format("player %s waterlevel %d after %d tics", PStr(mo.pos), mo.waterlevel, opT));
+			Next();
+		}
+		if (Op() && Through(mo, "throughTheOpening", 180)) Next();
+		if (Op())
+		{
+			let mk = Marker();
+			Check("inTheCopysWater", InCopy(mo.pos.xy) && mo.pos.x < CX + 832 && mo.waterlevel >= 1 && abs(W(TSBL) - W(TSB)) < 1e-6,
+				String.Format("player %s waterlevel %d; copy %.2f, bath %.2f", PStr(mo.pos), mo.waterlevel, W(TSBL), W(TSB)));
+			Check("copyOnTheMapOnceEntered", mk && mk.revealed);
+			Next();
+		}
+		// and back: the copy's fourth pane, from its water, into the bath
+		if (Op())
+		{
+			if (!Toward(mo, Copy(-780, 352), WALKKEY, BT_JUMP, 16) && opT < 350) return;
+			Check("swumToTheCopysFourthPane", (mo.pos.xy - Copy(-780, 352)).Length() < 24, PStr(mo.pos));
+			Next();
+		}
+		if (Op() && Through(mo, "backThroughTheOpening", 0)) Next();
+		if (Op())
+		{
+			Check("backInTheBathsWater", !InCopy(mo.pos.xy) && mo.pos.x > GLASS && mo.waterlevel >= 1, String.Format("player %s waterlevel %d", PStr(mo.pos), mo.waterlevel));
+			Next();
+		}
+		// a mirror pane is a wall: swimming at the third goes nowhere
+		if (Op())
+		{
+			if (!Toward(mo, (-780, 256), WALKKEY, BT_JUMP, 16) && opT < 350) return;
+			Next();
+		}
+		if (Op())
+		{
+			mo.angle = 180;
+			Keys(WALKKEY, BT_JUMP);
+			if (opT < 105) return;
+			Keys();
+			Check("mirrorPaneIsAWall", !InCopy(mo.pos.xy) && mo.pos.x > -832 && mo.pos.x < -790, String.Format("player %s after 3 s", PStr(mo.pos)));
+			Next();
+		}
+		// shots: through the opening they fly on into the copy; at a mirror they stop
+		if (Op())
+		{
+			Vector2 p = Copy(-700, 352), q = Copy(-700, 256);
+			dummyIn = LeftHandDummy(Actor.Spawn("LeftHandDummy", (p, 0)));
+			dummyBehind = LeftHandDummy(Actor.Spawn("LeftHandDummy", (q, 0)));
+			Next();
+		}
+		if (Op() && Shoot(mo, "rocketThroughTheOpening", "Rocket", 352, dummyIn, null, CX + 700 - 40, CX + 848)) Next();
+		if (Op() && Shoot(mo, "plasmaThroughTheOpening", "PlasmaBall", 352, dummyIn, null, CX + 700 - 40, CX + 848)) Next();
+		if (Op() && Shoot(mo, "rocketAtAMirrorStops", "Rocket", 256, null, dummyBehind, GLASS - 1, -800)) Next();
+		if (Op() && Hitscan(mo, "hitscanThroughTheOpening", 352, dummyIn, null)) Next();
+		if (Op() && Hitscan(mo, "hitscanAtAMirrorStops", 256, null, dummyBehind)) Next();
+		if (Op())
+		{
+			dummyIn.Destroy();
+			dummyBehind.Destroy();
+			PoseF(mo, -760, 352, 180, -40);
+			Next();
+		}
+		// in again, and the bath's level changed behind the player: BLUE moved to 141 (both at -64), then
+		// GREEN (both dry); he cannot come back through the glass, and the copy's steps take him to its door
+		if (Op() && Through(mo, "inAgain", 180, 20)) Next();
+		if (Op() && Hang(mo, "blueIn141_behindHim", blue, 141)) Next();
+		if (Op())
+		{
+			mo.vel.xy = (0, 0);
+			if (Rest("SB_blue141", TSB, Measured(E_SB141))) Next();
+		}
+		if (Op())
+		{
+			Check("copyAtMinus64", abs(W(TSBL) - W(TSB)) < 1e-6 && abs(W(TSB) + 64) < 0.5, String.Format("copy %.3f, bath %.3f", W(TSBL), W(TSB)));
+			Next();
+		}
+		if (Op())
+		{
+			if (!Toward(mo, Copy(-780, 352), WALKKEY, BT_JUMP, 16) && opT < 350) return;
+			Next();
+		}
+		if (Op())
+		{
+			mo.angle = 0;
+			Keys(WALKKEY, BT_JUMP);
+			if (opT < 140) return;
+			Keys();
+			Check("noWayBackAtMinus64", InCopy(mo.pos.xy), String.Format("player %s (the sill 64 over the water)", PStr(mo.pos)));
+			Next();
+		}
+		if (Op() && Hang(mo, "greenIn141_drains", green, 141)) Next();
+		if (Op())
+		{
+			mo.vel.xy = (0, 0);
+			if (Rest("SB_green141", TSB, -160)) Next();
+		}
+		if (Op())
+		{
+			Check("copyDry", abs(W(TSBL) - W(TSB)) < 1e-6 && !B(TSBL).Wet() && !B(TSB).Wet(), String.Format("copy %.3f, bath %.3f", W(TSBL), W(TSB)));
+			Next();
+		}
+		if (Op())
+		{
+			mo.angle = 0;
+			Keys(WALKKEY, BT_JUMP);
+			if (opT < 105) return;
+			Keys();
+			Check("noWayBackDry", InCopy(mo.pos.xy), String.Format("player %s", PStr(mo.pos)));
+			wp = 0;
+			Next();
+		}
+		if (Op())        // up the copy's steps to its door: the pit's steps, the shallow end, the stair, the poolside
+		{
+			if (wp < 6 && Toward(mo, Copy(PATHX[wp], PATHY[wp]), WALKKEY, 0, 12)) wp++;
+			if (wp < 6 && opT < 1400) return;
+			Keys();
+			Check("toTheCopysDoorDry", wp == 6 && abs(mo.pos.z) < 1, String.Format("player %s after %.1f s, at point %d of 6", PStr(mo.pos), opT / 35., wp));
+			Next();
+		}
+		if (Op())
+		{
+			mo.angle = 90;
+			Line door = null;
+			for (int i = 0; i < level.lines.Size(); i++)
+			{
+				Line l = level.lines[i];
+				if (l.special == 12 && InCopy(l.v1.p) && l.v1.p.y == 648 + CY && l.v2.p.y == 648 + CY) door = l;
+			}
+			bool used = door && door.Activate(mo, 0, SPAC_Use);
+			Check("copysDoorOpens", used, door ? String.Format("(%.0f,%.0f)-(%.0f,%.0f)", door.v1.p.x, door.v1.p.y, door.v2.p.x, door.v2.p.y) : "no door");
+			Next();
+		}
+		if (Op() && Stand(mo, 40)) Next();
+		if (Op())
+		{
+			mo.angle = 90;
+			Keys(WALKKEY);
+			if (opT < 280) return;
+			Check("exitLineNotReached", false, String.Format("still here: %s; secrets %d", PStr(mo.pos), level.found_secrets));
+			Next();
+		}
+	}
+
+	// --- MODE=7: the pane wall seen (tools/smoke_MAP20_7.cfg shoots at 78 + 80 n; tools/highwater_compare.py)
+	// views 0..8: three places on the poolside (straight on from the east, from the north walk, from the south
+	// end) x the bath dry, at -64, at 0, the player hidden; 9..11: the three at 0 with the player drawn;
+	// 12..16: the player before each pane in turn (in line with it), at 0; 17: along the wall, the copy's door in
+	// the fourth pane; 18: from the north walk with BLUE hung in 142; 19..21: the notch (P at 48 at its
+	// pressure door, K at 48 at its door, C at -64 at E2 and the cells); 22: from the copy, back at the opening;
+	// 23..31: views 0..8 again. From view 9 on (but the notch's) the water's surface is a still flat
+	// (AJLBFLOR, the lab's floor with an F in its corner) in both baths, since the engine animates FWATER1 by
+	// the clock and no two runs catch it at the same frame: what differs is then the opening's alone. The
+	// camera is put from st 20 on, the water set at st 1.
+	void Still(bool on)
+	{
+		TextureID t = TexMan.CheckForTexture(on ? "AJLBFLOR" : "FWATER1", TexMan.Type_Any);
+		for (int i = 0; i < wh.basins.Size(); i++)
+		{
+			let b = wh.basins[i];
+			if (b.Tag() == TSB || b.Tag() == TSBL) b.ctl.SetTexture(Sector.ceiling, t);
+		}
+	}
+	void PoseV(Actor mo, int st, double x, double y, double ang, double pitch = 0, double z = -1e9)
+	{
+		if (st >= 20) { PoseF(mo, x, y, ang, z); mo.pitch = pitch; }
+	}
+	static const double VX[] = { -200, -560, -300 };
+	static const double VY[] = { 300, 600, 40 };
+	static const double VA[] = { 180, 218, 150 };
+	void PaneViews(Actor mo)
+	{
+		int i = (tic - 3) / 80, st = (tic - 3) % 80;
+		if (st == 0) Console.Printf("AJARTEST view=%d t=%d", i, tic);
+		if (st == 79) Info(String.Format("view %d: player %s facing %.1f hidden %d; %s copy %.1f", i, PStr(mo.pos), mo.angle, mo.bInvisible, Levels(), W(TSBL)));
+		int j = i >= 23 ? i - 23 : i;
+		if (st == 1)
+		{
+			mo.bInvisible = i < 9 || i == 17 || i == 18 || i >= 23;
+			Still(i >= 9 && i != 19 && i != 20 && i != 21);
+			if (j < 9) Set(TSB, j % 3 == 0 ? -160 : j % 3 == 1 ? -64 : 0);
+			else if (i < 19) Set(TSB, 0);
+			if (i == 18) HangQuiet(mo, Blue(), 142);
+			if (i == 19) { Set(TP, 48); TakeDoor(mo, Blue()); if (h.carried) h.BeltPutBack(h.carried); }    // BLUE back out of 142
+			if (i == 20) Set(TK, 48);
+			if (i == 21) Set(TC, -64);
+			if (i == 22) Set(TSB, 0);
+		}
+		if (i >= 23) { int c = j / 3; PoseV(mo, st, VX[c], VY[c], VA[c], 8); }
+		else if (i < 12) { int c = i < 9 ? i / 3 : i - 9; PoseV(mo, st, VX[c], VY[c], VA[c], 8); }
+		else if (i < 17) PoseV(mo, st, -330, 64 + 96 * (i - 12), 180, 0);
+		else if (i == 17) PoseV(mo, st, -700, 220, 143, 0, 0);
+		else if (i == 18) PoseV(mo, st, VX[1], VY[1], VA[1], 8);
+		else if (i == 19) PoseV(mo, st, 640, 64, 180, 20, 70);
+		else if (i == 20) PoseV(mo, st, 4000, 2010, 270, 20, 80);
+		else if (i == 21) PoseV(mo, st, 3040, 220, 270, 20, -40);
+		else if (i == 22) PoseV(mo, st, CX + 700, 352 + CY, 0, 0, 0);
 	}
 }

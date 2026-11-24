@@ -36,6 +36,7 @@ import os as _os
 
 import ajarmap
 import ajarwater as W
+import lefthand
 import map_institute1 as I1
 import map_clockdept as CD
 from ajarmap import GREEN, BLUE, TEAL, far_id
@@ -112,13 +113,14 @@ def basin(tag, brim, kind=W.NORMAL, depth=0, at=None):
     BASINS[tag] = dict(name=NAMES[tag], floor=None, area=0, brim=brim, kind=kind, depth=depth, at=at)
 
 
-def S(box, floor, lk, *, ceil=None, tag=0, area=None, **k):
+def S(box, floor, lk, *, ceil=None, tag=0, area=None, mm=None, **k):
     """A rectangular sector `box` at `floor` in the look `lk`; `tag` a basin's
-    (its plan area counts, unless `area` False) or any other sector tag."""
+    (its plan area counts, unless `area` False) or any other sector tag.
+    `mm`: into another Map than the level's (the left-handed bath's source)."""
     d = dict(lk)
     c = d.pop("ceil")
     d.update(k)
-    i = m.sector(rect(*box), floor=floor, ceil=c if ceil is None else ceil, id=tag, **d)
+    i = (mm or m).sector(rect(*box), floor=floor, ceil=c if ceil is None else ceil, id=tag, **d)
     if tag in BASINS:
         b = BASINS[tag]
         b["floor"] = floor if b["floor"] is None else min(b["floor"], floor)
@@ -127,10 +129,10 @@ def S(box, floor, lk, *, ceil=None, tag=0, area=None, **k):
     return i
 
 
-def stairs(a, b, out, floor, rise, steps, depth, lk, *, ceil=None, tag=0):
+def stairs(a, b, out, floor, rise, steps, depth, lk, *, ceil=None, tag=0, mm=None):
     d = dict(lk)
     c = d.pop("ceil")
-    ajarmap.stairs(m, a, b, out, floor, rise, steps=steps, depth=depth, ceil=c if ceil is None else ceil, id=tag, **d)
+    ajarmap.stairs(mm or m, a, b, out, floor, rise, steps=steps, depth=depth, ceil=c if ceil is None else ceil, id=tag, **d)
     if tag in BASINS:
         bb = BASINS[tag]
         w = abs(a[0] - b[0]) + abs(a[1] - b[1])
@@ -194,21 +196,94 @@ area("cr0", CR0, 0)
 m.thing(224, 64, 1, angle=90)
 TAKEN.append((224, 64, 64))
 # --- the swimming bath, off it: the pool (the pit at -160, the shallow end at -96, steps up to the poolside)
+# and the secret way out (PLAN.md, "MAP20: the secret way out, as decided"): the fourth of the five panes in
+# the pit's far wall is not a mirror but a fixed line portal onto the left-handed bath, the bath built a
+# second time reflected in the panes' plane (tools/lefthand.py), whose water is kept at this one's (water.zs,
+# a FOLLOW basin) and which has one thing more: a door in the north wall by the shallow end, a passage, a
+# secret sector and the Exit_Secret line. AJAR_SBMIRROR=1 ./build.sh makes the fourth pane a mirror like the
+# others (for the comparison of the two only).
 SBL = look("LA", "FA", "KA", 215, 320, PALE)
-S((-832, 0, -576, 512), -160, SBL, tag=TSB)                                    # the pit
-S((-576, 0, -416, 512), -96, SBL, tag=TSB)                                     # the shallow end
-stairs((-416, 0), (-416, 512), (1, 0), -96, 96, 4, 24, SBL, tag=TSB)          # up to the poolside (the last step is 0)
-S((-320, 0, -32, 640), 0, SBL)                                                 # the poolside
-S((-832, 512, -320, 640), 0, SBL)
+TSBL = 30                       # the left-handed bath's sectors (a FOLLOW basin: TSB's level)
+SB_GLASS = -848                 # the panes' glass, the plane the copy is reflected in
+SB_PANES = (32, 128, 224, 320, 416)
+SB_OPEN = 3                     # the fourth pane (y 320..384) is the opening
+SB_OPENING, SB_FAR = 1440, 1441     # its portal line, and its image in the copy
+SB_SHIFT = (32, -2048)          # the copy is reflected in x = -848, then moved by this: (x, y) -> (-1664 - x, y - 2048)
+SB_MIRROR = bool(_os.environ.get("AJAR_SBMIRROR"))
+SB_BOX = (-896, -64, 0, 640)    # the bath, its panes' stub and its frames' recesses (the build's checks)
+SB_DOOR = (-480, -416)          # the copy's door in the north wall (y 640), by the shallow end
+EXIT_SECRET = 244
+TRIM = dict(wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
+
+
+def empty_recess(mm, a, b, out, sill, tag):
+    """A frame's recess as ajarmap.recess makes it, empty for good: the blank frame on its back line
+    (the look of an empty frame at load, AjarHandler.Link), no portal, no AjarFrame, no number."""
+    q = lambda p, d: (p[0] + out[0] * d, p[1] + out[1] * d)
+    b1, b2 = q(a, ajarmap.DEPTH), q(b, ajarmap.DEPTH)
+    mm.sector([a, b, b2, b1], floor=sill, ceil=sill + ajarmap.DOOR_H, light=176, id=tag, **TRIM)
+    mm.sector([b1, b2, q(b2, ajarmap.STUB), q(b1, ajarmap.STUB)], floor=sill, ceil=sill + ajarmap.DOOR_H, light=96,
+              id=tag, **TRIM)
+    mm.line(b1, b2, mid="AJFRAME", blocking=True, blockeverything=True, blocksound=True)
+
+
+def swimming_bath(mm, tag, copy=False):
+    """The swimming bath into the Map mm, its water's sectors tagged `tag`: the room (mm the level's map),
+    or the source of the left-handed bath (`copy`: its frames empty recesses, its way in a door that does
+    not open, and the one thing more: the door in the north wall and the way out behind it)."""
+    S((-832, 0, -576, 384), -160, SBL, tag=tag, mm=mm)                         # the pit ...
+    S((-832, 384, -672, 512), -160, SBL, tag=tag, mm=mm)
+    stairs((-672, 384), (-672, 512), (1, 0), -160, 64, 4, 24, SBL, tag=tag, mm=mm)     # ... its steps up to the shallow end
+    S((-576, 0, -416, 512), -96, SBL, tag=tag, mm=mm)                          # the shallow end
+    stairs((-416, 0), (-416, 512), (1, 0), -96, 96, 4, 24, SBL, tag=tag, mm=mm)    # up to the poolside (the last step is 0)
+    S((-320, 0, -32, 640), 0, SBL, mm=mm)                                      # the poolside
+    S((-832, 512, -320, 640), 0, SBL, mm=mm)
+    # the way in from the changing room: a door in a trim surround (so that nothing beyond it is seen in the
+    # panes: the copy has no changing room); in the copy it does not open
+    mm.sector(rect(-32, 128, -24, 192), floor=0, ceil=96, light=170, **TRIM)
+    d = mm.sector(rect(-24, 128, -8, 192), floor=0, ceil=0, light=160, wall="AJHDOR", ftex="AJTRIMF", ctex="AJTRIMF")
+    mm.sector(rect(-8, 128, 0, 192), floor=0, ceil=96, light=170, **TRIM)
+    for x in (-24, -8):
+        mm.line((x, 128), (x, 192), back=d, **({} if copy else dict(special=12, args=(0, 16, 150), playeruse=True,
+                                                                         repeatspecial=True)))
+    for y in (128, 192):
+        mm.line((-24, y), (-8, y), mid="AJTRIM", dontpegbottom=True)
+    # five tall panes in the pit's far wall: four mirrors and the opening
+    for k, y in enumerate(SB_PANES):
+        mm.sector(rect(SB_GLASS, y, -832, y + 64), floor=0, ceil=288, light=200, **TRIM)
+        if k == SB_OPEN and not SB_MIRROR:
+            mm.sector(rect(SB_GLASS - 48, y, SB_GLASS, y + 64), floor=0, ceil=288, light=96, **TRIM)   # the stub behind the portal
+            ids = (SB_FAR, SB_OPENING) if copy else (SB_OPENING, SB_FAR)
+            mm.line((SB_GLASS, y), (SB_GLASS, y + 64), id=ids[0], special=156, args=(ids[1], 0, 1, 1))  # Line_SetPortal
+        else:
+            mm.line((SB_GLASS, y), (SB_GLASS, y + 64), special=182)                # Line_Mirror
+            mm.line((-832, y), (-832, y + 64), blocking=True, blockeverything=True)
+    if copy:
+        empty_recess(mm, (-768, 0), (-704, 0), (0, -1), -160, tag)
+        empty_recess(mm, (-528, 0), (-464, 0), (0, -1), -96, tag)
+    else:
+        frame((-768, 0), (-704, 0), (0, -1), 141, -160, tag, "sb")
+        frame((-528, 0), (-464, 0), (0, -1), 142, -96, tag, "sb")
+    W.gauge(mm, (-640, 0), (-576, 0))
+    if copy:
+        # the one thing not as it was: a door in the north wall by the shallow end (an ordinary one, in a trim
+        # surround), a short passage, the secret sector, and the line with Exit_Secret
+        x1, x2 = SB_DOOR
+        mm.sector(rect(x1, 640, x2, 648), floor=0, ceil=96, light=170, **TRIM)
+        mm.line((x1, 640), (x2, 640), upper=SBL.get("wall", "AJWALL"))                           # the bath's own wall over it
+        d = mm.sector(rect(x1, 648, x2, 664), floor=0, ceil=0, light=160, wall="AJHDOR", ftex="AJTRIMF", ctex="AJTRIMF")
+        mm.sector(rect(x1 - 16, 664, x2 + 16, 792), floor=0, ceil=128, light=200, special=1024, **TRIM)   # secret
+        mm.sector(rect(x1 - 16, 792, x2 + 16, 856), floor=0, ceil=128, light=200, **TRIM)
+        for y in (648, 664):
+            mm.line((x1, y), (x2, y), back=d, special=12, args=(0, 16, 150), playeruse=True, repeatspecial=True)
+        for x in (x1, x2):
+            mm.line((x, 648), (x, 664), mid="AJTRIM", dontpegbottom=True)
+        mm.line((x1 - 16, 792), (x2 + 16, 792), special=EXIT_SECRET, playercross=True)
+
+
+swimming_bath(m, TSB)
 area("sb", (-320, 0, -32, 640), 0)
-opening((-32, 128, 0, 192), 0)
-for y in (32, 128, 224, 320, 416):                                             # five tall panes, all mirrors for now
-    m.sector(rect(-848, y, -832, y + 64), floor=0, ceil=288, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
-    m.line((-848, y), (-848, y + 64), special=182)                             # Line_Mirror
-    m.line((-832, y), (-832, y + 64), blocking=True, blockeverything=True)
-frame((-768, 0), (-704, 0), (0, -1), 141, -160, TSB, "sb")
-frame((-528, 0), (-464, 0), (0, -1), 142, -96, TSB, "sb")
-gauge((-640, 0), (-576, 0))
+AVOID.append((-16, 160))
 PANE_SILL = 0
 
 # --- the plunge hall P ---------------------------------------------------------------------------------
@@ -437,6 +512,16 @@ for tag, b in BASINS.items():
     W.basin(m, tag, b["area"], b["brim"], floor=b["floor"], kind=b["kind"], depth=b["depth"], at=b["at"])
 W.rate(m, 224, 192, K_FLOW, FREE, W.FLOAT | W.OVERFLOW, WHEEL_TICS)
 
+# --- the left-handed bath: the swimming bath built again on its own (with its one thing more), reflected in
+# the panes' plane and put far south, an island joined to the level only by the opening; off the automap until
+# the player stands in it. Its water is not a basin of its own: it follows the swimming bath's every tic.
+SB_SRC = Map()
+SB_SRC.align = set(m.align)
+swimming_bath(SB_SRC, TSBL, copy=True)
+SB_COPY_BOX = lefthand.left_handed(m, SB_SRC, "x", SB_GLASS, SB_SHIFT, hide=True)
+W.basin(m, TSBL, BASINS[TSB]["area"], BASINS[TSB]["brim"], floor=BASINS[TSB]["floor"], kind=W.FOLLOW, depth=TSB,
+        at=(-704, 320))                     # (the thing only names it: it stands by the swimming bath's own)
+
 # =================================================================================================
 # THE DOORS
 # =================================================================================================
@@ -540,7 +625,7 @@ item(82, 1968, 160)                                     # the super shotgun: the
 item(2003, 4160, 448)                                   # the rocket launcher: the boiler house's catwalk
 item(2004, 4960, 3008)                                  # the plasma rifle: the upper yard, by the reservoir's glass
 item(2018, 640, 736)                                    # green armour: the changing room's upper floor
-AMMO = [("cr0", 2008, 3), ("cr0", 2011, 2), ("sb", 2008, 2), ("sb", 2012, 1), ("p", 2008, 2), ("cr1", 2007, 3),
+AMMO = [("cr0", 2008, 3), ("cr0", 2011, 2), ("cr0", 2008, 2), ("cr0", 2012, 1),    # (the bath's: nothing in it) ("p", 2008, 2), ("cr1", 2007, 3),
         ("cr1", 2049, 1), ("cr1", 2012, 1), ("pc", 2007, 1), ("pcn", 2011, 1), ("cr1", 2011, 1), ("ph", 2049, 2), ("ph", 2048, 1),
         ("ph", 2012, 2), ("cwalk", 2049, 2), ("cwalk", 2048, 1), ("cwalkw", 2011, 1), ("ph", 2011, 2), ("bh", 2049, 1),
         ("bh", 2046, 1), ("pass", 2012, 1), ("bh", 2046, 2), ("bh", 2049, 2), ("bh", 2048, 1), ("bh", 2012, 2),
@@ -557,8 +642,8 @@ for name, kind, n in AMMO:
 
 # the baths: a few to learn on; cacodemons over the water when P first stands over 200
 put("cr0", ZOMBIE, 2, angle=270)
-put("sb", ZOMBIE, 3, angle=0)
-put("sb", SERGEANT, 1, angle=0)
+put("cr0", ZOMBIE, 3, angle=270)                       # the swimming bath's: nothing may stand in it (the left-handed bath)
+put("cr0", SERGEANT, 1, angle=270)
 put("p", IMP, 3, angle=180)
 put("p", SERGEANT, 2, angle=180)
 put("cr1", IMP, 4, angle=0)
@@ -962,8 +1047,58 @@ def measure():
     return lines, problems
 
 
+def bath_checks():
+    """What "The left-handed room lab" asks of a room with an opening, checked on the swimming bath (the
+    level's own records in SB_BOX) and on the left-handed bath's source: (1) no mirror the opening can see:
+    every mirror is a pane, in the glass's own plane; (2) nothing in the bath moves by itself: no thing in it
+    but the invisible markers, no light effect, no line special but the bath's own (mirrors, the opening,
+    frames, doors, the way out); (3) every wall and flat is the game's own (made by tools/gfx*.py, so that
+    lefthand.flip_all can flip it: it stops the build on any other). The water's surface is the one
+    exception, and it is not in the copy: it is the control sector's (ajarwater.basin), FWATER1 unflipped."""
+    problems = []
+    x1, y1, x2, y2 = SB_BOX
+    inside = lambda p: x1 <= p[0] <= x2 and y1 <= p[1] <= y2
+    mirrors = 0
+    for key, props in list(m.lineprops.items()) + list(SB_SRC.lineprops.items()):
+        a, b = tuple(key)
+        if not (inside(a) and inside(b)):
+            continue
+        sp = props.get("special", 0)
+        if sp == 182:
+            mirrors += 1
+            if not a[0] == b[0] == SB_GLASS:
+                problems.append(f"the swimming bath: a mirror at {a}-{b}, which the opening can see")
+        elif sp not in (0, 156, 130, 12, EXIT_SECRET):
+            problems.append(f"the swimming bath: line special {sp} at {a}-{b} (only mirrors, the opening, frames, doors)")
+    still = {MAPSPOT, W.BASIN_T, ajarmap.FRAME_T}
+    for t in m.things:
+        if inside((t["x"], t["y"])) and t["type"] not in still:
+            problems.append(f"the swimming bath: thing {t['type']} at ({t['x']}, {t['y']}): nothing may stand in it")
+    if SB_SRC.things:
+        problems.append(f"the left-handed bath's source has {len(SB_SRC.things)} things")
+    walls, flats = set(), set()
+    _, _, sides, sectors, _ = SB_SRC.parts()
+    for sd in sides:
+        walls |= {sd[k] for k in ("texturetop", "texturemiddle", "texturebottom") if sd.get(k) not in (None, "-", "")}
+    for d in sectors:
+        flats |= {d["texturefloor"], d["textureceiling"]}
+        if d.get("special", 0) not in (0, 1024) or d.get("lightfloor") or d.get("lightceiling"):
+            problems.append(f"the swimming bath: a sector with a light effect or special: {d}")
+    for name in sorted(walls | flats):
+        if not name.startswith("AJ"):
+            problems.append(f"the swimming bath: {name} is not the game's own and cannot be flipped")
+    line = (f"  the swimming bath's opening (pane {SB_OPEN + 1}{', a mirror: AJAR_SBMIRROR' if SB_MIRROR else ''}): "
+            f"{mirrors} mirror lines in it and its copy, all in the glass's plane x {SB_GLASS}; nothing stands in it; "
+            f"its copy at {SB_COPY_BOX}, {len(sectors)} sectors, {len(walls)} wall textures and {len(flats)} flats, "
+            f"all the game's own (the water's surface, FWATER1, is the control sector's and not flipped)")
+    return line, problems
+
+
 I1.m, CD.m = _theirs, _cd                    # MAP11's and MAP18's helpers draw on their own maps again
 MEASURE, PROBLEMS = measure()
+_line, _problems = bath_checks()
+MEASURE.append(_line)
+PROBLEMS += _problems
 for _n, _name in enumerate(EXPECT):
     m.thing(32 + 32 * _n, 352, MAPSPOT, id=3101 + _n, args=(round(REST[_name] * 100),))
 if NOROOM:

@@ -38,10 +38,16 @@
 // a full basin. MAP20 also has pressure doors (AjarPressureDoor), a float
 // that raises a gate (AjarFloatGate), ambushes brought by water (AjarAmbush
 // causes 60 and 61, WaterDue) and the water's sounds (tools/sfx.py).
+//
+// A FOLLOW basin (kind 3, args[4] the tag of the basin it follows) has no
+// links and no water of its own: its surface is put where the other's is,
+// every tic, after the flows (MAP20's left-handed bath, behind the opening
+// in the swimming bath's panes: PLAN.md, "MAP20: the secret way out").
 
 class AjarBasin : Actor
 {
-	// args: the basins' sector tag, plan area, brim, kind (0 normal, 1 reservoir, 2 outfall), depth
+	// args: the basins' sector tag, plan area, brim, kind (0 normal, 1 reservoir, 2 outfall, 3 follow), depth
+	// (follow: the tag of the basin it follows)
 	const DRY = 32;            // a dry basin's surface is put this far under its floor
 	double w;                  // the water surface, absolute
 	double floorZ;             // the basin's lowest floor
@@ -49,6 +55,7 @@ class AjarBasin : Actor
 	Sector ctl;                // the 3D floor's control sector: its ceiling is the surface
 	double shown;              // where the surface was put last
 	double inflow;             // this tic's net volume in (tests, HUD)
+	AjarBasin follow;          // FOLLOW: the basin whose level it keeps
 
 	Default
 	{
@@ -66,6 +73,7 @@ class AjarBasin : Actor
 	int Tag() { return args[0]; }
 	bool Fixed() { return args[3] != 0 || held; }
 	bool Reservoir() { return args[3] == 1; }
+	bool Follows() { return args[3] == 3; }
 	double Depth() { return max(w - floorZ, 0); }
 	bool Wet() { return w > floorZ + 0.5; }
 	double Volume() { return Depth() * area; }
@@ -334,6 +342,7 @@ class AjarWaterHandler : EventHandler
 			b.area = b.args[1];
 			b.brim = b.args[2];
 			if (b.args[3] == 2) b.w = b.floorZ - AjarBasin.DRY;
+			else if (b.Follows()) b.w = b.floorZ;
 			else b.w = clamp(b.floorZ + b.args[4], b.floorZ, b.brim);
 			b.shown = 1e9;
 			Show(b);
@@ -342,6 +351,9 @@ class AjarWaterHandler : EventHandler
 			while ((l = li.Next()) >= 0) { bulkheads.Push(l); bulkheadTag.Push(b.Tag()); }
 		}
 		any = basins.Size() > 0;
+		for (int i = 0; i < basins.Size(); i++) if (basins[i].Follows()) basins[i].follow = BasinOfTag(basins[i].args[4]);
+		Follow();
+		for (int i = 0; i < basins.Size(); i++) Show(basins[i]);
 		let fi = ThinkerIterator.Create("AjarFrame");
 		AjarFrame f;
 		while (f = AjarFrame(fi.Next())) frames.Push(f);
@@ -425,6 +437,16 @@ class AjarWaterHandler : EventHandler
 	{
 		for (int i = 0; i < linkQ.Size(); i++) Move(linkA[i], linkB[i], linkQ[i]);
 		for (int i = 0; i < weirs.Size(); i++) if (weirs[i].up && weirs[i].low) Move(weirs[i].up, weirs[i].low, weirs[i].flow);
+	}
+
+	// FOLLOW basins: at the level of the basin each follows (after this tic's flows)
+	void Follow()
+	{
+		for (int i = 0; i < basins.Size(); i++)
+		{
+			let b = basins[i];
+			if (b.Follows() && b.follow) b.w = b.follow.w;
+		}
 	}
 
 	void Links()
@@ -594,6 +616,7 @@ class AjarWaterHandler : EventHandler
 		Links();
 		Spills();
 		Apply();
+		Follow();
 		for (int i = 0; i < weirs.Size(); i++) Wheel(weirs[i]);
 		for (int i = 0; i < basins.Size(); i++) Show(basins[i]);
 		Drowning();
