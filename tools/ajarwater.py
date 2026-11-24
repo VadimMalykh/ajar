@@ -121,20 +121,22 @@ def rate(m, x, y, k, free, flags, wheel=0):
     m.thing(x, y, RATE_T, args=(k, free, flags, wheel))
 
 
-def pressure_door(m, a, b, out, sill, tag, sides, lamp, *, thick=32, auto=False, look=None):
+def pressure_door(m, a, b, out, sill, tag, sides, lamp, *, thick=32, auto=False, look=None, strip=None):
     """a-b is its 64-wide mouth on one side, `out` the way through; `tag` the
     door's sector tag, `sides` the basin tags on the two sides (0: dry
     ground), `lamp` the tag of its two lamp strips. Declare the rooms on
-    both sides first."""
+    both sides first. `look`: the leaf's sector textures (wall: its face);
+    `strip`: the lamp strips' wall and floor (the wall over the mouth)."""
     look = look or dict(wall="BIGDOOR2", ftex="FLAT20", ctex="FLAT20")
+    strip = strip or dict(wall="AJTRIM", ftex="AJTRIMF")
     lt = (thick - 16) // 2
     p = lambda q, d: (q[0] + out[0] * d, q[1] + out[1] * d)
     a1, b1, a2, b2, a3, b3 = p(a, lt), p(b, lt), p(a, lt + 16), p(b, lt + 16), p(a, thick), p(b, thick)
     # Each lamp strip on a basin's side carries that basin's tag too (moreids), so that the water's 3D floor
     # is in it as in the rest of the basin: without it the surface stopped short of the door (a notch).
     for side, (s0, s1, t0, t1) in zip(sides, ((a, b, a1, b1), (a2, b2, a3, b3))):
-        m.sector([s0, s1, t1, t0], floor=sill, ceil=sill + 96, light=160, wall="AJTRIM", ftex="AJTRIMF", ctex=LAMP_TEX,
-                 id=lamp, raw=dict(moreids=str(side)) if side else None)
+        m.sector([s0, s1, t1, t0], floor=sill, ceil=sill + 96, light=160, wall=strip["wall"], ftex=strip["ftex"],
+                 ctex=LAMP_TEX, id=lamp, raw=dict(moreids=str(side)) if side else None)
     m.sector([a1, b1, b2, a2], floor=sill, ceil=sill, light=160, id=tag, **look)
     for s, t in ((a1, b1), (a2, b2)):
         m.line(s, t, special=11, args=(0, 16), playeruse=True, repeatspecial=True)

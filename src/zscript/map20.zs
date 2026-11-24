@@ -342,7 +342,7 @@ class HighWaterTest : EventHandler
 	override void WorldUnloaded(WorldEvent e)
 	{
 		if (!testing6) return;
-		// the Exit_Secret line is at y 792 of the bath in the copy; the plain way out is far east (x 6048)
+		// the Exit_Secret line is at y 792 of the bath in the copy; the plain way out is far east (a Doom exit door, x 6048)
 		bool bySecret = InCopy(lastPos.xy) && lastPos.y > 792 + CY - 24;
 		Check("exitBySecretWayOut", bySecret && e.NextMap ~== level.NextSecretMap,
 			String.Format("last seen at %s; next map %s (secretnext %s, next %s)", PStr(lastPos), e.NextMap, level.NextSecretMap, level.NextMap));
@@ -535,10 +535,35 @@ class HighWaterTest : EventHandler
 		}
 		if (Op())
 		{
+			mo.vel.xy = (RUN, 0);
+			if (mo.pos.x >= 5990 || opT >= 120) Next();
+		}
+		if (Op())     // the exit door, a Doom door in the machine hall's east wall: USE it, wait, walk on
+		{
+			if (opT == 0)
+			{
+				mo.vel.xy = (0, 0);
+				Check("exitDoorOpens", UseExitDoor(mo), PStr(mo.pos));
+			}
+			if (opT >= 40) Next();
+		}
+		if (Op())
+		{
 			if (opT == 0) Summary();
 			mo.vel.xy = (RUN, 0);
 			if (opT >= 120) { Check("levelExitedInTime", false, PStr(mo.pos)); Next(); }
 		}
+	}
+	// the machine hall's exit door: the first line with Door_Raise (12) east of x 6040
+	bool UseExitDoor(Actor mo)
+	{
+		for (int i = 0; i < level.lines.Size(); i++)
+		{
+			let ln = level.lines[i];
+			if (ln.special == 12 && ln.v1.p.x > 6040 && ln.v1.p.x < 6100)
+				return ln.Activate(mo, 0, SPAC_Use);
+		}
+		return false;
 	}
 
 	// --- MODE=2: the player in the water ----------------------------------------------------------
@@ -972,6 +997,59 @@ class HighWaterTest : EventHandler
 		case 24:    // the fountain dry again, the wheel stopped
 			if (st == 70) FountainCheck("viewFountainDryOnceTheCircleIsBroken", false);
 			Look(mo, st, 4368, 1232, 31, 15, 40);
+			break;
+		// the look (PLAN.md, "Look: MAP20, Municipal")
+		case 25:    // the changing room's north wall: the rules of the baths, the clock
+			Look(mo, st, 224, 120, 90, 0);
+			break;
+		case 26:    // ... its south wall: the lockers; the plate over the swimming bath's way
+			Look(mo, st, 260, 330, 230, 0);
+			break;
+		case 27:    // P's high water, 224, on the wall by the ledge, P dry
+			if (st == 1) Set(TP, 0);
+			Look(mo, st, 700, 64, 0, -20);
+			break;
+		case 28:    // C's tide line and its plaque at 96, C drained, from the walkway
+			if (st == 1) Set(TC, -128);
+			Look(mo, st, 3040, 680, 270, 5);
+			break;
+		case 29:    // the gangway's Doom switch beside the bolted door, from the boiler house
+			Look(mo, st, 3470, 410, 160, -20);
+			break;
+		case 30:    // the boiler house: the boilers' fronts
+			Look(mo, st, 3968, 380, 270, -12);
+			break;
+		case 31:    // ... the section drawing, WATERWORKS: LEVELS
+			Look(mo, st, 3950, 192, 0, -18);
+			break;
+		case 32:    // the lock dry: its flood marks at 184 and 96
+			if (st == 1) Set(TK, 0);
+			Look(mo, st, 4100, 2150, 270, -14);
+			break;
+		case 33:    // the wheel house dry: L's high water at -4
+			if (st == 1) { Set(TL, -96); Set(TU, 128); }
+			Look(mo, st, 4832, 2040, 270, -15);
+			break;
+		case 34:    // ... the patent office's answer on its north wall
+			Look(mo, st, 4608, 1940, 90, -22);
+			break;
+		case 35:    // the lower yard's east wall: the outfall's culvert; the plate to the machine hall
+			Look(mo, st, 4880, 1500, 15, -8);
+			break;
+		case 36:    // the upper yard's east wall: the water tower's foot, the reservoir's glass
+			Look(mo, st, 4880, 2700, 10, -10);
+			break;
+		case 37:    // the cells: Doom's stone, the demon's face
+			Look(mo, st, 3320, -230, 270, 0);
+			break;
+		case 38:    // the tunnel's seam: END OF INSTITUTE PREMISES, Doom beyond
+			Look(mo, st, 5280, 1280, 25, 0);
+			break;
+		case 39:    // the machine hall: the exit door, the EXIT sign hung before it
+			Look(mo, st, 5760, 1312, 0, -16);
+			break;
+		case 40:    // ... the hall from its east end
+			Look(mo, st, 5990, 1450, 200, 0);
 			break;
 		}
 	}
