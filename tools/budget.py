@@ -19,8 +19,8 @@ HEAL = {2011: 10, 2012: 25, 2014: 1, 2013: 100, 2023: 100}
 ARM = {2015: 1, 2018: 100, 2019: 200}
 WEAP = {2001: "SG", 82: "SSG", 2002: "CG", 2003: "RL", 2004: "PL", 2023: "BERSERK", 8: "BACKPACK"}
 # what counts as the monster it will be (args[1]): an ambusher (ajarmap.ambush), a post of the
-# future seen (ajarthird.post: MAP33's turbine hall)
-STAND_IN = (20030, 20162)
+# future seen (ajarthird.post: MAP33's turbine hall), a fallen thing (ajarthird.fallen: MAP33's gallery)
+STAND_IN = (20030, 20162, 20169)
 
 
 def reckon(things, skills, level):

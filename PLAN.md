@@ -14001,6 +14001,106 @@ every build. A double that walks within 16 of a plate on a stair (the measure
 takes a stair as a slope) signs as before. The shifts of two crossings and
 doors carried while walking are still not in the rule. Not played by hand.
 
+## MAP33: the gallery seen as the second self leaves it (2026-11-24)
+
+**Vadim**, playing go 1, standing in the coal yard and looking through the
+gallery's window at a living zombieman at 0:20: "map33 - this hallway I
+always pass as #2 earlier, so when #1 is seeing it something should have
+happened already. The same about similar next one."
+
+The hallway is the gallery, part 2's corridor (896, 3520)-(3840, 3696). Go 1
+sees it through two windows from the coal yard and through a third from the
+boiler house's floor ("the similar next one"). Its monsters were ordinary
+ones, alive in go 1, although the second self runs through the gallery in the
+first seconds of its clock, before the first self can look in.
+
+**Decided** (on Fable): go 1 sees the gallery as the second self will have
+left it: each of its monsters lies dead where it stood. It is the future seen,
+as the turbine hall's posts are, but without a hall, a win or a paradox.
+**Nothing is enforced**: no watch, no end of the universe, no message. If the
+second self leaves a gallery monster alive (or never kills it), go 1 still
+saw it dead, and nothing follows (Claude's choice, on Fable; easy to change to
+a watch later).
+
+**Built.**
+
+- `src/zscript/third.zs`: a new thing AjarThirdFallen (20169; args[0] the
+  part whose go meets the monster, args[1] its Doom editor number as a
+  post's, the angle its facing). In every go before that part's a body lies
+  at it (the AjarFigure a post gets; nothing for a monster that leaves no
+  body); at the start of that part's go the body goes and the monster stands
+  there alive on the floor, with no target and NOT in ambush (an ordinary
+  monster of a corridor: it may wake at a sound); later goes find what that
+  go left. Its own arrays in AjarTimeHandler (`fallenAt`, `fallenIs`; the name
+  `fallen` was taken in time.zs), filled in ThirdLoaded, handled by
+  `ThirdFallenBegin()` where ThirdPosts is called (ThirdBegin, ThirdNextGo).
+  It is in no hall's win, not in ThirdFuture, HallLives or the watches;
+  `posts` and `postIs` are as they were. The contract in the head says so (a
+  bullet after AjarThirdPost, a paragraph under THE FUTURE SEEN).
+- `src/mapinfo.txt`: 20169 = AjarThirdFallen.
+- `tools/ajarthird.py`: `FALLEN_T = 20169`, `fallen(m, x, y, part, kind,
+  angle=0, **kw)` (kw to Map.thing: `skill=`).
+- `tools/map_station.py`: the gallery's 14 monsters (13 on skill 3, a
+  sergeant `skill=4`) are `ajarthird.fallen(..., 2, kind, angle=180)` at the
+  same places with the same skills (`gallery_mon`); a monster in no part is
+  checked for fallen things too; two lines in the module's docstring. The
+  corridor from box 2 and the way down to the workshop are not seen from part
+  1 and keep ordinary monsters.
+- `tools/udmf.py`: `_skills()` thins a fallen thing as the monster it stands
+  for, in its place in the order, so that every thing of the map keeps its
+  difficulty: compared thing by thing with the map before (661 things, place,
+  kind, angle and lowest skill all the same). Part 2's monsters by skill
+  1..4: 55 / 82 / 111 / 116, as before.
+- `tools/budget.py`: STAND_IN has 20169 (args[1] the kind): part 2's
+  monsters, health and the 1.6 rule reckoned as before. `tools/thingcheck.py`:
+  a fallen thing is checked as its monster, among the others.
+  `tools/mapcheck.py`: its box (radius) and the steps under it as its
+  monster's. `tools/itemcheck.py`: not a pickup.
+
+**The tests** (`src/zscript/map33.zs`, added to the modes; no check weakened):
+
+- Go 1 (MODE=1 and 3; also run in 2 and 4, whose go 1 is the same script), at
+  the start and again once the script is in the coal yard: a body (an
+  AjarFigure within 8) at every fallen thing whose monster leaves one, every
+  one of them does, and no living monster in the gallery's box
+  (`galleryDeadAtTheStart`, `galleryDeadFromTheYard`).
+- Go 2 at its start: no body left at any fallen thing; at each its monster
+  alive, of the right class (the replacement of its kind), within 1 of its
+  place, with no target; the living monsters in the box as many as the fallen
+  things (13 on skill 3) (`galleryAliveGoTwo`).
+- Go 3 at its start: nothing spawned again: every monster in the box, living
+  or dead, existed at go 2's start, and less those that were then outside it
+  they are no more than the fallen things; no body at them
+  (`galleryNotSpawnedAgain`). On the run: 15 dead in the box, 2 of them come in
+  from the corridor from box 2 during go 2, 0 new.
+- MODE=3: two views more in go 1, after the coal yard's fight (from (1500,
+  3740), the yard's east window) and after the boiler house's fight (from
+  (2150, 3740), its window), each looking east-south-east along the gallery
+  (`tools/smoke_MAP33_3.cfg`: 42 screenshots, its waits from a run's log).
+- Route 8 (go 2 through the gallery): a monster standing in the way for 15
+  tics is killed by script and said, as at the lobbies and the crossing. It
+  did not happen on these runs.
+
+Results on the last build: the full `./build.sh`; mapcheck on `map_station`
+0 problems (598 sectors), thingcheck 0, itemcheck 0, budget as before.
+MAP33 MODE=1 250 checks passed, none failed (the level ended); MODE=2 48;
+MODE=3 263 with 42 views (the level ended); MODE=4 137; THIRD MODE=3 53;
+LAST MODE=1 58: none failed. The two new views looked at: through the coal
+yard's window a body in the gallery's middle distance and more beyond it,
+along the glass; through the boiler house's window three bodies and its
+box of bullets in the gallery beside the boiler house's own dead. Go 1 at the foot of
+the gantry: at 1177 in MODE=1, at about 2280 in MODE=3 (it waits there until
+2500; the two views more cost it 140 tics, so 220 are left).
+
+**Known and left.** The relay room seen from the workshop and the duct seen
+from the turbine hall (part 3's places seen by go 2: their monsters alive)
+are as they were: the third self is not always there first.
+
+**Not tested / not played by hand.** Not played by hand. Skills other than 3:
+counted (the skills compared thing by thing), not played. Whether a gallery
+monster woken by a sound in go 2 leaves the gallery before the second self
+comes is not looked at (it is an ordinary monster of part 2 either way).
+
 ## MAP20: buoys, the fountain, a bigger wheel (built 2026-11-24)
 
 Decided by Claude (Fable) with Vadim's "Let's go" to a list of ideas on
@@ -14600,6 +14700,100 @@ a door in, but the way out is the night room's fixed brass doorway.
 machine hall's monsters follow the player through the door into the night
 room (they can: the door is Door_Raise by USE and monsters do not use it,
 but it stands open 150 tics) is not looked at.
+
+## MAP33: the yard in the middle, on three levels, as decided (2026-11-24; nothing built)
+
+**Vadim**, after the last fight's ideas: "Also map itself, it's better now, but
+still during the go, could we have some common places 3 copies go through,
+maybe not alwasy separated by transparent wall, but also maybe some ouside
+area where whey're going on different levels (so it would be again piece of
+common fight maybe, if they all appear there in the same time and we have
+flying monsters that could go between different levels." Claude (on Fable)
+proposed one open yard in the middle; Vadim: "Also yes, let's try open yard in
+the middle", and: "Also they don't need to be on the yard together. Sometimes
+they can, sometimes they won't, not an issue."
+
+**What it is.** One yard open to the sky that all three parts come through,
+each on its own height, with railings that stop players only: shots, sight
+and flying monsters pass between the levels, nobody changes level. Each part
+has its own group of monsters there. An earlier self that is in the yard is
+really there, as at the last hall: its group comes again, it fires again what
+it fired, and what the player meets is that fight going on.
+
+**Where.** Part 2's pump hall and stores (x 3968..4736, y 2112..3136) and the
+free ground north of them up to the stack court's south wall (y 3584). The
+three ways never cross on the map (part 1 north, part 2 middle, part 3
+south), so part 2 goes through the yard and the other two touch it at its
+north-east and south-east corners, each with a ledge along a rim.
+
+- **The floor, part 2** (-128, as the turbine hall's): the yard's box about x
+  3968..4736, y 2240..3456 between the ledges. In from the workshop's corridor
+  (west side, y 2816..2944) down stairs; out on the east side to the
+  mezzanine's corridor (y 2304..2432) up stairs. Pumps (the octagons), pipes
+  and banks (natural(), bank()) as cover, not a square box. It takes the place
+  of the pump hall and the stores; part 2's secret (the clerk's nook) becomes
+  a place of the yard's floor (a pump shed behind a gap of 64).
+- **The north ledge, part 1** (0, 128 over the floor): the passage from the
+  stack court to the gantry (x 4928..5056, y 3264..3584) becomes a terrace at
+  the yard's north-east corner (about x 4752..5040, y 3152..3584), and from it
+  a ledge 128 deep along the north rim (y 3456..3584) west to x 3968, a dead
+  end with part 1's supplies for the gantry and stand 1 at its far end.
+- **The south ledge, part 3** (-64, the passage's height, 64 over the floor):
+  the passage behind the tower's exit (x 4736..4864) goes on north from y
+  1984 to a corner piece (to y 2240), and from it a ledge 128 deep along the
+  south rim (y 2112..2240) west to x 3968, a dead end with supplies. The
+  stairs down into the duct stay where they are.
+- Railings (AJRAIL, `blockplayers` only) along both ledges and the terrace;
+  every way out of the yard is closed to monsters; `ajarthird.ways` and the
+  generator's walk count a `blockplayers` line as closed.
+
+**The rules of a COMMON PLACE** (the engine; new, on last.zs's ways):
+1. A map thing names the place (AjarThirdCommon, 20173: its number, the tag
+   of all its sectors). Sector tag 3390 + k: part k's level in it. A group's
+   monster is a thing (AjarThirdComer, 20174: the place, its Doom editor
+   number, its part k, a mark "seen fallen"), a flyer at its height.
+2. In go k, group k comes (teleport fog, awake, first target the nearest it
+   sees of the player and the selves in the place) the first time the player
+   stands on level k. Part k's way on from its level is a shutter the group's
+   death opens (kept as a hall's win is: open before go k, shut in go k until
+   then, in later goes as it was then). The tic it came and the tic it was
+   dead are kept.
+3. In a later go, group k comes again, really, at the tic self k first stood
+   on its level. From then until it leaves the level, self k can be shot
+   (never harmed) and fires again what the player fired there; in a common
+   place its shot turns to the nearest living monster of the place within 15
+   degrees of where it was aimed, so that it hits what moves. At the tic the
+   group was dead in go k, whatever of it still lives dies: an earlier self's
+   fight takes as long as it took.
+4. In a go before k, group k is not there; a monster marked "seen fallen"
+   lies dead where it will stand (the gallery's rule). Part 2's walkers are
+   marked: the turbine hall's rule has the second self through the yard
+   before the first is on the terrace.
+5. At each go's start the place is as at the start: what earlier goes left
+   of the groups (monsters, bodies, missiles, drops) goes, the counters right.
+6. What the player fires on their level is written in the go's take (as from
+   the alarm at the last hall). Winding on is not refused in the yard.
+7. The timetable: "k is in the yard m:ss to m:ss" for each earlier self.
+8. No paradox of its own. Nothing is asked of the selves' timing: they meet
+   there or they do not.
+
+**The groups** (skill 3; thinned on lower skills as the rooms are now).
+Part 2, on the floor: about what the pump hall and the stores had (37
+monsters): hell knights, demons, imps, sergeants, chaingunners, a mancubus,
+and five cacodemons over it. Part 1: five cacodemons and a pain elemental,
+coming over the floor at the terrace. Part 3: four cacodemons and two pain
+elementals (skill 4: a third), coming at the south ledge. Supplies moved with
+the rooms; each part's 1.6 rule holds with its group counted in it.
+
+**Known.** The second self is in the yard first as a rule (about 2 to 3
+minutes; the first about 6 to 7, the third 5 to 8), so the fight most likely
+shared is the first self's with the third's across the yard, rim to rim. The
+second self's fight on the floor is met by the third only if it is quick.
+
+**Order of building.** (1) The rule and a small lab map (after the last
+fight's four rules are merged: it uses their fire record). (2) MAP33's middle
+rebuilt (after the gallery's change and the last hall's are merged: the same
+files).
 
 ## The last fight lab: four ways the selves help each other (built 2026-11-24)
 

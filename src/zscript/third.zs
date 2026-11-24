@@ -31,6 +31,11 @@
 //    walkways carry it), args[3] a second tag that also counts (0 none).
 //  * AjarThirdPost thing (20162): a monster of hall args[0]'s fight, Doom
 //    editor number args[1], facing the thing's angle: THE FUTURE SEEN.
+//  * AjarThirdFallen thing (20169): an ordinary monster of part args[0],
+//    Doom editor number args[1] (AjarHandler.AmbushClass), facing the thing's
+//    angle, that an earlier go can see before its own go comes there: it is
+//    seen as that go will have left it (MAP33's gallery, part 2's corridor,
+//    seen from part 1 through glass).
 //  * AjarThirdWatch thing (20163): the earlier self of go args[2] must not
 //    come into a sector with tag args[0] while hall args[1]'s fight is not
 //    won (a paradox).
@@ -106,6 +111,12 @@
 //    its gate) is won when no monster lives in it.
 //    A watch whose earlier self comes into its sectors while the hall is not
 //    won ends the universe.
+//    A FALLEN thing (AjarThirdFallen) is the future seen without a hall: in
+//    every go before its part's, a body lies there (as at a post); at the
+//    start of its part's go the body goes and the monster stands there alive,
+//    with no target and not in ambush (it may wake at a sound); in later goes
+//    nothing is done. Nothing is enforced: it is in no hall's win, no watch
+//    and no paradox (if that go leaves it alive, the earlier go saw it dead).
 //  * LOBBIES (AjarThirdLock; MAP33's coal yard, boiler house and workshop, in
 //    place of lines no monster crosses at open doorways): in the hall's go,
 //    at its start, the outer shutter is open and the inner one shut. Once the
@@ -204,6 +215,7 @@ class AjarThirdPost : AjarThirdMark {}
 class AjarThirdWatch : AjarThirdMark {}
 class AjarThirdWin : AjarThirdMark {}
 class AjarThirdLock : AjarThirdMark {}
+class AjarThirdFallen : AjarThirdMark {}
 
 // A plate on a wall: USE winds the clock on (AjarTimeHandler.ThirdWind).
 class AjarThirdWind : AjarWind
@@ -286,6 +298,9 @@ extend class AjarTimeHandler
 	Array<AjarThirdWatch> watches;
 	Array<int> watchTic;        // the tic of this go at which the watched self comes into it (-1: never)
 	Array<AjarThirdWin> winners;
+	// the fallen (AjarThirdFallen): what stands for each now, as postIs (not posts: in no hall's win)
+	Array<AjarThirdFallen> fallenAt;
+	Array<Actor> fallenIs;
 	// the lobbies (AjarThirdLock): the tic of the hall's go its outer shutter began to shut, and its inner one to open (-1: not)
 	Array<AjarThirdLock> locks;
 	Array<int> lockTic, lockOpen;
@@ -337,6 +352,9 @@ extend class AjarTimeHandler
 		let ri = ThinkerIterator.Create("AjarThirdPost");
 		AjarThirdPost ps;
 		while (ps = AjarThirdPost(ri.Next())) { posts.Push(ps); postIs.Push(null); }
+		let fi = ThinkerIterator.Create("AjarThirdFallen");
+		AjarThirdFallen fl;
+		while (fl = AjarThirdFallen(fi.Next())) { fallenAt.Push(fl); fallenIs.Push(null); }
 		let wi = ThinkerIterator.Create("AjarThirdWatch");
 		AjarThirdWatch w;
 		while (w = AjarThirdWatch(wi.Next())) { watches.Push(w); watchTic.Push(-1); }
@@ -434,6 +452,7 @@ extend class AjarTimeHandler
 		slotCls.Clear();
 		ThirdHallsBegin();
 		ThirdPosts();
+		ThirdFallenBegin();
 		ThirdShutters(true);
 		ThirdExitShut();
 		LastBegin(mo);              // last.zs
@@ -460,6 +479,7 @@ extend class AjarTimeHandler
 		ot = 0;
 		ThirdHallsBegin();
 		ThirdPosts();
+		ThirdFallenBegin();
 		ThirdShutters(true);
 		ThirdExitShut();
 		LastBegin(mo);              // last.zs
@@ -789,6 +809,40 @@ extend class AjarTimeHandler
 				postIs[i] = m;
 			}
 			else postIs[i] = null;          // its hall's record shows it now
+		}
+	}
+
+	// A go begins: what lies or stands at each fallen thing (AjarThirdFallen; the head's rules).
+	void ThirdFallenBegin()
+	{
+		for (int i = 0; i < fallenAt.Size(); i++)
+		{
+			AjarThirdFallen p = fallenAt[i];
+			int part = p.args[0];
+			class<Actor> cls = AjarHandler.AmbushClass(p.args[1]);
+			if (tgo < part)
+			{
+				// its body, as that go will leave it
+				if (fallenIs[i] || !LeavesBody(cls)) continue;
+				Actor f = Actor.Spawn("AjarFigure", p.pos);
+				if (!f) continue;
+				f.args[0] = 2; f.args[1] = p.args[1];
+				f.angle = p.angle;
+				fallenIs[i] = f;
+			}
+			else if (tgo == part)
+			{
+				if (fallenIs[i] && fallenIs[i] is "AjarFigure") fallenIs[i].Destroy();
+				fallenIs[i] = null;
+				if (!cls) continue;
+				Vector3 at = (p.pos.xy, level.PointInSector(p.pos.xy).floorplane.ZAtPoint(p.pos.xy));
+				Actor m = Actor.Spawn(cls, at, ALLOW_REPLACE);
+				if (!m) continue;
+				m.angle = p.angle;
+				m.target = null;            // (not in ambush: an ordinary monster of its place, it may wake at a sound)
+				fallenIs[i] = m;
+			}
+			// a later go: what its go left is what is there
 		}
 	}
 

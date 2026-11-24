@@ -66,7 +66,8 @@ for t in m.things:
         bad += 1
         continue
     sec = m.sectors[s[0]]
-    r = RADIUS.get(t["type"], 20 if t["type"] in MONSTERS else 16)
+    ty = t["args"][1] if t["type"] == 20169 else t["type"]     # (a fallen thing, ajarthird.fallen: where its monster will stand)
+    r = RADIUS.get(ty, 20 if ty in MONSTERS else 16)
     if t["type"] in (20001, 20002) or t["type"] in ON_WALL:
         continue
     for dx in (-r, 0, r):
@@ -77,7 +78,7 @@ for t in m.things:
                 bad += 1
                 break
             f = m.sectors[o[0]]["floor"]
-            if abs(f - sec["floor"]) > 24 and t["type"] in MONSTERS:
+            if abs(f - sec["floor"]) > 24 and ty in MONSTERS:
                 print(f"EDGE thing {t['type']} at {x},{y} (radius {r}) hangs over a step of {f - sec['floor']}")
                 break
         else:
