@@ -14312,3 +14312,18 @@ new constants. The tank's float mark keeps its red band and number, on the
 tank's plates.
 
 Not played by hand.
+
+**Joined with "MAP20: buoys, the fountain, a bigger wheel" at the merge**
+(Claude on Fable, 2026-11-24; the two were built side by side). The tour
+(MODE=4) keeps the buoys' views 21..24 after view 20, whose running circle
+they need, and the look's sixteen follow as 25..40: 41 views and the
+automap, 42 shots. Where this section says views 21..36, read 25..40. The
+fountain's bowl, dry at rest, is the look's buff stone (AJVFK; FLAT5_4 in
+the plain level), its curb the look's. Runs on the joined tree, the full
+build: mapcheck the same 10 (300 sectors), itemcheck and thingcheck 0;
+MAP20 MODE=1 88 checks (the buoys' 87 and the exit door), none failed,
+`levelExited`; MODE=2 40, MODE=3 31, MODE=5 25, MODE=6 35 and out by the
+secret way; MODE=4 its 41 views, the fountain's two checks pass (playing:
+FWATER1 and the jet; dry again: AJVFK); MAP=WATER MODE=1 10. MODE=7 was not
+run again on the joined tree: each task ran it alone, and neither's part
+in the bath is touched by the other.
