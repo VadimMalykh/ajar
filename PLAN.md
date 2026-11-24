@@ -14600,3 +14600,97 @@ a door in, but the way out is the night room's fixed brass doorway.
 machine hall's monsters follow the player through the door into the night
 room (they can: the door is Door_Raise by USE and monsters do not use it,
 but it stands open 150 tics) is not looked at.
+
+## MAP33: the yard in the middle, on three levels, as decided (2026-11-24; nothing built)
+
+**Vadim**, after the last fight's ideas: "Also map itself, it's better now, but
+still during the go, could we have some common places 3 copies go through,
+maybe not alwasy separated by transparent wall, but also maybe some ouside
+area where whey're going on different levels (so it would be again piece of
+common fight maybe, if they all appear there in the same time and we have
+flying monsters that could go between different levels." Claude (on Fable)
+proposed one open yard in the middle; Vadim: "Also yes, let's try open yard in
+the middle", and: "Also they don't need to be on the yard together. Sometimes
+they can, sometimes they won't, not an issue."
+
+**What it is.** One yard open to the sky that all three parts come through,
+each on its own height, with railings that stop players only: shots, sight
+and flying monsters pass between the levels, nobody changes level. Each part
+has its own group of monsters there. An earlier self that is in the yard is
+really there, as at the last hall: its group comes again, it fires again what
+it fired, and what the player meets is that fight going on.
+
+**Where.** Part 2's pump hall and stores (x 3968..4736, y 2112..3136) and the
+free ground north of them up to the stack court's south wall (y 3584). The
+three ways never cross on the map (part 1 north, part 2 middle, part 3
+south), so part 2 goes through the yard and the other two touch it at its
+north-east and south-east corners, each with a ledge along a rim.
+
+- **The floor, part 2** (-128, as the turbine hall's): the yard's box about x
+  3968..4736, y 2240..3456 between the ledges. In from the workshop's corridor
+  (west side, y 2816..2944) down stairs; out on the east side to the
+  mezzanine's corridor (y 2304..2432) up stairs. Pumps (the octagons), pipes
+  and banks (natural(), bank()) as cover, not a square box. It takes the place
+  of the pump hall and the stores; part 2's secret (the clerk's nook) becomes
+  a place of the yard's floor (a pump shed behind a gap of 64).
+- **The north ledge, part 1** (0, 128 over the floor): the passage from the
+  stack court to the gantry (x 4928..5056, y 3264..3584) becomes a terrace at
+  the yard's north-east corner (about x 4752..5040, y 3152..3584), and from it
+  a ledge 128 deep along the north rim (y 3456..3584) west to x 3968, a dead
+  end with part 1's supplies for the gantry and stand 1 at its far end.
+- **The south ledge, part 3** (-64, the passage's height, 64 over the floor):
+  the passage behind the tower's exit (x 4736..4864) goes on north from y
+  1984 to a corner piece (to y 2240), and from it a ledge 128 deep along the
+  south rim (y 2112..2240) west to x 3968, a dead end with supplies. The
+  stairs down into the duct stay where they are.
+- Railings (AJRAIL, `blockplayers` only) along both ledges and the terrace;
+  every way out of the yard is closed to monsters; `ajarthird.ways` and the
+  generator's walk count a `blockplayers` line as closed.
+
+**The rules of a COMMON PLACE** (the engine; new, on last.zs's ways):
+1. A map thing names the place (AjarThirdCommon, 20173: its number, the tag
+   of all its sectors). Sector tag 3390 + k: part k's level in it. A group's
+   monster is a thing (AjarThirdComer, 20174: the place, its Doom editor
+   number, its part k, a mark "seen fallen"), a flyer at its height.
+2. In go k, group k comes (teleport fog, awake, first target the nearest it
+   sees of the player and the selves in the place) the first time the player
+   stands on level k. Part k's way on from its level is a shutter the group's
+   death opens (kept as a hall's win is: open before go k, shut in go k until
+   then, in later goes as it was then). The tic it came and the tic it was
+   dead are kept.
+3. In a later go, group k comes again, really, at the tic self k first stood
+   on its level. From then until it leaves the level, self k can be shot
+   (never harmed) and fires again what the player fired there; in a common
+   place its shot turns to the nearest living monster of the place within 15
+   degrees of where it was aimed, so that it hits what moves. At the tic the
+   group was dead in go k, whatever of it still lives dies: an earlier self's
+   fight takes as long as it took.
+4. In a go before k, group k is not there; a monster marked "seen fallen"
+   lies dead where it will stand (the gallery's rule). Part 2's walkers are
+   marked: the turbine hall's rule has the second self through the yard
+   before the first is on the terrace.
+5. At each go's start the place is as at the start: what earlier goes left
+   of the groups (monsters, bodies, missiles, drops) goes, the counters right.
+6. What the player fires on their level is written in the go's take (as from
+   the alarm at the last hall). Winding on is not refused in the yard.
+7. The timetable: "k is in the yard m:ss to m:ss" for each earlier self.
+8. No paradox of its own. Nothing is asked of the selves' timing: they meet
+   there or they do not.
+
+**The groups** (skill 3; thinned on lower skills as the rooms are now).
+Part 2, on the floor: about what the pump hall and the stores had (37
+monsters): hell knights, demons, imps, sergeants, chaingunners, a mancubus,
+and five cacodemons over it. Part 1: five cacodemons and a pain elemental,
+coming over the floor at the terrace. Part 3: four cacodemons and two pain
+elementals (skill 4: a third), coming at the south ledge. Supplies moved with
+the rooms; each part's 1.6 rule holds with its group counted in it.
+
+**Known.** The second self is in the yard first as a rule (about 2 to 3
+minutes; the first about 6 to 7, the third 5 to 8), so the fight most likely
+shared is the first self's with the third's across the yard, rim to rim. The
+second self's fight on the floor is met by the third only if it is quick.
+
+**Order of building.** (1) The rule and a small lab map (after the last
+fight's four rules are merged: it uses their fire record). (2) MAP33's middle
+rebuilt (after the gallery's change and the last hall's are merged: the same
+files).
