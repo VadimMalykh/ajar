@@ -13448,3 +13448,265 @@ on this map already."
 - **The rule.** Nothing a player can walk into is under 48 wide: a gap
   between two pieces of furniture, or between one and a wall, is either
   closed or 48 and more. mapcheck's SLOT says where it is not.
+
+## MAP33: the last fight together, as decided (2026-11-24)
+
+Vadim played MAP33 "Third Person" (2026-11-24): "there's no places when
+they participate in the same battle. I understand that it's technically
+difficult to implement, but maybe we can come-up with some ideas?" Claude
+proposed A, "the last fight together", and Vadim answered: "Let's do A".
+
+**A, as proposed to him.** The three end rooms E1, E2, E3 become three
+STANDS round one hall, with railings instead of glass, so shots pass and
+nobody walks across. Go 1: stepping on plate 1 sets off the alarm and the
+hall fills; it cannot be won alone; you hold the plate about 30 seconds
+under fire, then your time door opens. Go 2: you hold plate 2 in the same
+fight while your first self fires again what it fired. Go 3: the exit door
+is across the hall floor and open only while both plates are held, and ten
+seconds more; you cross through the fight while the two earlier selves
+cover you. So what is shot in go 1 and go 2 decides whether the third self
+gets across.
+
+**The engine's rules** (third.zs and last.zs; all of it only on a map with
+an AjarThirdLast: a map without one plays exactly as before):
+1. The alarm. The hall is empty until plate 1 is first pressed in a go (in
+   go 1 by the player, in a later go by the first self at the tic its record
+   has; a pale, wound-over stretch presses nothing). At that tic, in every
+   go: each guard's monster appears at its thing in a teleport fog, awake;
+   the alarm's shutter opens and stays open; a sound and a line. Each
+   monster's first target is the nearest of the player and the earlier
+   selves it has a line of sight to (the player if none).
+2. Every go fights it anew. Nothing of the last hall is recorded or played
+   by puppets. At the start of every go the hall is as at the start: what an
+   earlier go left there (monsters, bodies, missiles, dropped things) is
+   removed, the kill counters put right, the alarm's shutter shut.
+3. Earlier selves fight in it, really. From the alarm a go's take records
+   what the player fires (bullets, shells, the player's missiles), and in
+   every later go, from the alarm on, the earlier self fires it again
+   really, is shootable and unharmed, so what it shoots turns on it and
+   shots meant for it hit it. Before the alarm it is as before (does not
+   fire, nothing hits it). A pale stretch: as before.
+4. The plates are held. Time door 1 opens in go 1 once the player has stood
+   on plate 1 for 30 seconds in sum since the alarm (stepping off to dodge
+   and back is expected; the sum does not fall). Time door k (1 < k < parts)
+   opens in go k once the player has stood on plate k for 15 seconds in sum
+   while plates 1 .. k-1 are pressed. The HUD shows the sum under the clock
+   while it runs. The exit door as before (open while every plate is
+   pressed, and its seconds more). Too late as before ("the door never
+   opened" in a middle go is judged on the sum).
+5. A save at the stand: the first time in a go the player comes onto their
+   stand, an autosave, so a death in the last fight costs the fight, not
+   the part. (The go's start save stays.)
+6. No winding in the fight: AjarThirdWind works as before until the alarm;
+   once the alarm is on in this go it refuses with a line.
+7. The timetable shows one line per earlier self (its first step on its
+   plate, and the sum it stood), and in the last go the first and last
+   moment the exit door is open.
+8. Paradoxes as before (touching an earlier self; too late). An earlier
+   self cannot die. Nothing in the last hall is a paradox of its own.
+
+The turbine hall stays as it is (the bodies seen from the gantry need the
+second go to win before the first arrives). Next: MAP33's end rooms rebuilt
+as three stands round a switchgear hall, after the lab.
+
+## The last fight lab (built 2026-11-24)
+
+Map LAST (`MAP=LAST ./run.sh`): the rules of "the last fight together"
+above, written out in the engine and tried on a small map. Built by Claude
+on Opus in the task `last-lab`. The engine is `src/zscript/last.zs`, with
+short hooks in `third.zs`; the map `tools/map_last.py`; the tests
+`src/zscript/lasttest.zs` (`MAP=LAST MODE=1..4 tools/smoke.sh`).
+
+**The map.** THIRD's structure without its middle, plain textures, the
+three part colours as THIRD's. Part 1 (yellow): the start room S (a
+shotgun, a chaingun, a rocket launcher, a plasma rifle, two boxes each of
+shells, bullets and rockets, two cell packs, a blue armour), a corridor
+east to stand 1. Part 2 (green): box 2 south of S (glass onto S), the room
+R2 behind it with the same supplies, a corridor to stand 2. Part 3 (red):
+box 3 west of S (glass onto S), R3 with the same supplies, a long corridor
+(about 1900 units: south, then east) to stand 3. The last hall L is 1024 x
+1024, its floor 96 under the stands, its ceiling 416 over its floor. Stand 1
+is on its north side, stand 2 on its west, stand 3 on its south; each 384
+wide and 192 deep, open to L along its whole front behind a railing (the
+gantry's AJRAIL, a two-sided line, blocking and blocking monsters), with a
+64 x 64 pillar. Plates 1 and 2 are 64 behind their railings; time doors 1
+and 2 in the stands' back walls; wind plates on stands 2 and 3. Stand 3's
+gate (a shutter, 128 wide) is in its railing's line, with six steps down
+behind it to L's floor. The exit door is in L's east wall at floor level,
+the way out behind it; from the foot of the steps to it is about 920 units.
+On the floor four blocks 64 high, 128 x 64, on that way. The guards (all
+skills): two mancubi on pedestals 72 high (north-east and south-east), two
+revenants in bays 72 high in the east wall either side of the exit door,
+two cacodemons over the middle, four demons and two hell knights on the
+floor. The generator asserts that the parts are apart on foot
+(`ajarthird.apart`: part 3 reaches L by the gate and the exit; stands 1 and
+2 are not reached from it) and that every line between a stand and L is
+closed to players and monsters (`ajarthird.closed`). `mapcheck.py` and
+`thingcheck.py`: 0 problems.
+
+**The contract** (third.zs's head): `AjarThirdLast` (20166), one: args the
+hall's sector tag, the seconds plate 1 is held (0: 30), the seconds a later
+plate is held (0: 15), the tag of the alarm's shutter (0: none).
+`AjarThirdGuard` (20167): a monster of the hall, Doom editor number args[0],
+at the thing (a flyer at its height) facing its angle. Sector tag 3360 + k:
+stand k. Helpers in `tools/ajarthird.py`: `last`, `guard`, `railing`,
+`stand_tag`, `tiles` (a floor round its islands), `closed`. In LAST: the
+hall's tag 3350 (floor, pedestals, bays, blocks, the steps), the gate 3352,
+the exit door 3353, the room behind it 3354.
+
+**What was changed in the engine.**
+- `last.zs` (new): the alarm (`LastAlarm`: the guards spawned with a
+  teleport fog, `bAmbush` off, the first target set and the See state; the
+  gate keyed open for the go; `brain/sight` at full volume; the line); the
+  hall cleared at each go's start (`LastClear`); what the player fires
+  recorded from the alarm (`LastRecordFire`, time.zs's RecordTake's way)
+  and fired again by the selves (`LastSelvesFight`, `LastFire`, PlayGhosts'
+  way); the sum and the time door (`LastPlates`); the save at the stand
+  (`LastStandSave`); winding refused (`LastNoWind`); the timetable's lines
+  (`LastSchedule`); the HUD's sum (`LastOverlay`). `AjarLastSelf`, an
+  AjarGhost that counts what hits it, is what an earlier self is on a map
+  with a last hall.
+- `third.zs`: the contract and the rules in its head; hooks, one line each:
+  `LastLoaded` (ThirdLoaded), `LastBegin` (ThirdBegin, ThirdNextGo),
+  `LastTick` (ThirdTick, after the selves are placed), `LastNoWind`
+  (ThirdWind), `LastSchedule` (ThirdSchedule; its own span and exit lines
+  are left out on a map with a last hall), `LastOverlay` (ThirdOverlay);
+  ThirdEnd's time door by standing on the plate is not used there (by the
+  sum instead); ThirdSelves spawns `AjarLastSelf` there.
+- `map32.zs`: its `WorldThingDamaged` (the only one of the handler) also
+  calls `LastDamaged` (who last hurt a guard: its killer, for the counters
+  and the tests).
+- `ajar.zs`: the generic test dispatch leaves LAST alone (its mode 2 would
+  have been the tour). `thirdtest.zs`: LAST's tests called from ThirdTests.
+- `budget.py`, `thingcheck.py`: a guard counts as its monster.
+- `build.py`, `src/mapinfo.txt`, `src/zscript.zs`: LAST registered.
+
+**The tests** (on the last full build; each `MAP=LAST MODE=n
+tools/smoke.sh`, god mode; the player's shots are the script's,
+`LineAttack` and `SpawnPlayerMissile`, with the bullet or rocket they spend
+taken, so that the record sees them as it sees a real weapon's):
+- `MODE=1 TIMEOUT=320 EXTRA="+set save_dir /out/saves"`, the whole thing:
+  **58 of 58**. Go 1: the hall empty before the plate (7 looks), the gate
+  shut; the railing passes shots both ways (a hitscan trace each way
+  between the stand and an imp far out on the floor, a rocket each way:
+  `hitscansPassRailing`, `missilesPassRailing`); the save at stand 1; the
+  alarm at the step (tic 571): 12 guards, awake, each with a target, the
+  gate open 20 tics on; the sum does not grow off the plate (100 tics off)
+  and does not fall; time door 1 shut before the sum is full and open at it
+  (1151 tics after the alarm: 1050 + the time off); go 1's take has 170
+  bullets and 12 rockets, none before the alarm (it ran out of bullets).
+  Go 2: the hall empty again, the gate shut, the kill counters 0 / 0 and
+  the player's kills 0; the save at stand 2 before the alarm; the alarm at
+  the first self's tic (571, from its record); with the player not firing
+  for 300 tics, the first self did 537 damage, a guard that it hurt turned
+  on it, it was hit 10 times and its health is whole; the player's sum
+  stood still while the first self was off plate 1; time door 2 at the sum
+  (627 after the alarm). Go 3: the hall empty, the timetable's three lines
+  ("1 steps on plate 1 0:16: the alarm; stands 48 s in all", "2 steps on
+  plate 2 0:15; stands 45 s in all", "the exit door open first at 0:16, the
+  last time until 1:15"); the gate shut before the alarm and open after;
+  both selves firing (151 of 182 and 79 of 132 of their shots fired again
+  600 tics after the alarm); the exit door open and shut as the timetable
+  says (62 samples, 0 wrong); across the floor and through; the level began
+  again.
+- `MODE=2 EXTRA="+set save_dir /out/saves"`, the stand's save: killed on
+  stand 2 at the alarm + 100 in go 2, USE (the cfg at 3000), the save made
+  at stand 2 is loaded: go 2 at tic 129, before the alarm, no guard, the
+  hall empty; the alarm rings again at 571, time door 2 at the sum, go 3
+  begins: **46 of 46** (on the full build with this one test
+  patched in: `shotsInTake` asked for more than 3 rockets in go 1's take; a
+  run where the monsters died fast had 2, so it asks for 1 now).
+- `MODE=3 TIMEOUT=320`, winding and too late: go 2 winds on from stand 2
+  at tic 192 to 501 (70 before the alarm at 571) and is refused 10 tics
+  after the alarm; go 3 winds on from stand 3 to 70 tics before the second
+  self's step onto plate 2, and is refused after the alarm; go 3 stays on
+  stand 3: the paradox once the exit door has shut for the last time
+  (`lateInGoThree`): **51 of 51**.
+- `MODE=4 TIMEOUT=320`, the views (smoke_LAST_4.cfg, seven screenshots:
+  each stand before the alarm and in the fight, and the crossing), and the
+  checks of mode 1: **55 of 55**.
+- Not broken: `MAP=THIRD MODE=3` 51 of 51, `MAP=THIRD MODE=7` 58 of 58,
+  `MAP=MAP33 MODE=1 TIMEOUT=500 EXTRA="+set save_dir /out/saves"` 81 of 81.
+
+**Measurements** (MODE=1):
+- A tic of the fight in go 3, two selves firing, from the alarm to the
+  second self's leaving (1700 tics): last.zs's own work 0.018 ms a tic on
+  average, 1.4 ms at worst; the wall clock between tics 28.6 ms on average
+  (35 a second: the engine runs no faster than real time), 58 ms at worst.
+  No slowing was seen.
+- The save at stand 3 (go 3, two earlier goes of about 2400 tics each, the
+  hall empty before the alarm): 212617 bytes; go 3's start save 122181.
+- What the two earlier selves kill alone (go 3, the player standing on
+  stand 3 not firing, until the crossing at the alarm + 1600), against what
+  the player killed in their own goes:
+
+  | | go 1, the player | go 2, the player | go 2, the first self | go 3, the first self | go 3, the second self | go 3, other |
+  |---|---|---|---|---|---|---|
+  | mancubus (2, standing) | 1 | 1 | 1 | 0 | 1 | 1 |
+  | revenant (2, standing) | 0 | 0 | 1 | 1 | 0 | 0 |
+  | cacodemon (2, flying) | 2 | 2 | 0 | 0 | 0 | 0 |
+  | demon (4, walking) | 1 | 3 | 1 | 0 | 2 | 0 |
+  | hell knight (2, walking) | 1 | 1 | 0 | 0 | 0 | 0 |
+
+  ("other": killed by another monster.) In this run the selves alone
+  killed 4 (and infighting 1) of the 12, against 5 and 7 killed by the
+  player in goes 1 and 2. Standing ones were killed about as before (2 of
+  the 2 standing kills of goes 1 and 2, plus 1 by infighting); walking and
+  flying ones mostly were not (2 of 10: two demons that ran into the
+  second self's fire again; neither cacodemon, neither knight). An earlier
+  run of the same script gave the selves 8 of 12 (both mancubi, a
+  revenant, both cacodemons, three demons): the fight is not the same twice
+  (the monsters' choices are random), so these are a sign, not a measure.
+  For MAP33's cast: what stands where it was is what the earlier selves
+  can be counted on to kill again; what walks or flies the third self must
+  expect to meet.
+
+**Not tested / not played by hand**:
+- Nobody has played LAST. Not known: whether 30 seconds on plate 1 under
+  that fire is fair without god mode, whether the crossing can be made
+  with what the selves leave, how the HUD and the timetable read at speed.
+- Real weapons fired by a person: the record is time.zs's (a bullet for
+  each Clip spent, a shotgun's shot for each Shell, the player's missiles
+  as they fly), tested here with the script's chaingun bullets and
+  rockets. The shotgun, the super shotgun and the plasma rifle fired again
+  are not exercised.
+- A self's stray bullets or rockets can hit the player on another stand
+  (nothing prevents it); not seen, not looked for.
+- Paradoxes other than too late in go 3 (go 2 too late is THIRD's, judged
+  on the sum here, not run); the paradox of touching a self cannot happen
+  (no stand is shared).
+- A manual save in the fight; a death in go 1 or go 3 at the stand.
+- Skills other than 3 (the cast is the same on all).
+
+**My choices** (Claude's, small; each easy to change):
+- Thing numbers 20166, 20167; the stands' tag 3360 + k.
+- A self's replayed hitscan aims as the player's autoaim does: at a
+  monster along its recorded angle if there is one (AimLineAttack), else at
+  its recorded pitch. Without it a replayed bullet fired with autoaim from
+  a level view would go over the floor's monsters. A replayed bullet sounds
+  as the chaingun.
+- The alarm's sound is `brain/sight` at full volume everywhere. The lines:
+  go 1 "The alarm. Hold the plate: 30 seconds in all."; a middle go "The
+  alarm. Hold plate k while your earlier selves hold theirs: 15 seconds in
+  all."; the last "The alarm. The exit door is open while every plate is
+  held: get across to it."
+- The HUD's sum "plate k: n of m" in the big font, in the part's colour,
+  under the timetable, from the alarm until the time door opens.
+- The timetable: "k steps on plate k m:ss[: the alarm]; stands n s in all"
+  (the seconds it stood there while the earlier plates were held), and "the
+  exit door open first at a, the last time until b".
+- Winding is also refused when the clock would wind into the fight (the
+  next step is after the alarm).
+- The sum counts the tics the plate says the player is on it (its `mine`,
+  as THIRD's time door), while the earlier plates are pressed.
+- The kill counters: a guard alive at a go's start leaves the total; one
+  dead leaves the total and the killed, and the player's kill count too in
+  single play (the engine gives the player every monster's death in single
+  play, whoever killed it: found in the test).
+- What is cleared at a go's start: the guards' monsters wherever they went
+  (demons climb the steps into part 3 once the gate is open, in any go),
+  every monster, body, missile and dropped thing in the hall's and the
+  stands' sectors, and the missiles of the guards and the selves anywhere.
+- The player's missiles already in flight at the alarm are not recorded.
+- The gate opens at the alarm in every go, not only in go 3 (as the rule
+  says), so part 3 can be visited by demons in goes 1 and 2.

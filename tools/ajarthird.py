@@ -12,6 +12,8 @@ POST_T = 20162      # AjarThirdPost: a monster of the future seen
 WATCH_T = 20163     # AjarThirdWatch: where an earlier self must not come before a hall is won
 WIN_T = 20164       # AjarThirdWin: a shutter a hall's win opens
 WIND_T = 20165      # AjarThirdWind: a plate on a wall that winds the clock on
+LAST_T = 20166      # AjarThirdLast: the last hall, where every go fights the same fight (one to a map)
+GUARD_T = 20167     # AjarThirdGuard: a monster of the last hall, there from the alarm
 FIGHT = 9           # the fight number of the AjarZone over the whole map (the paradox's room)
 
 
@@ -94,6 +96,85 @@ def wind(m, x, y, angle, z=30):
     clock on to two seconds before an earlier self next steps on its plate.
     Stand it 2 off the wall."""
     m.thing(x, y, WIND_T, angle=angle, height=float(z))
+
+
+def stand_tag(k):
+    """The sector tag of stand k: where go k stands at the last hall."""
+    return 3360 + k
+
+
+def last(m, x, y, hall_tag, *, first=30, later=15, gate=0):
+    """The last hall (third.zs, AjarThirdLast): every sector with `hall_tag`
+    (its floor, pedestals, bays). Empty until plate 1 is first pressed in a
+    go: the alarm, and its guards come. Time door 1 opens once plate 1 has
+    been stood on `first` seconds in all since the alarm; time door k > 1
+    once plate k has been stood on `later` seconds in all while the earlier
+    plates are pressed. `gate`: the tag of an AjarShutter (ajartime.shutter)
+    that the alarm opens for the rest of the go (the last stand's way down)."""
+    m.thing(x, y, LAST_T, args=(hall_tag, first, later, gate))
+
+
+def guard(m, x, y, kind, angle=0, z=0):
+    """A monster of Doom editor number `kind` in the last hall: it comes at
+    the alarm, here, facing `angle`, awake. `z` over the floor (a flyer)."""
+    m.thing(x, y, GUARD_T, angle=angle, args=(kind,), **({"height": float(z)} if z else {}))
+
+
+def railing(m, a, b):
+    """A stand's front a-b over the last hall: the gantry's railing, a
+    two-sided line nobody walks or flies over; shots and sight pass it."""
+    m.line(a, b, mid="AJRAIL", midboth=True, blocking=True, blockmonsters=True, dontpegbottom=True)
+
+
+def tiles(x1, y1, x2, y2, holes):
+    """The rectangle x1..x2, y1..y2 less the rectangles `holes` (x1, y1, x2,
+    y2), as rectangles: a floor round its islands (pedestals, blocks, a
+    pillar: each declared by itself, or left out for a solid one)."""
+    xs = sorted({x1, x2} | {v for h in holes for v in (h[0], h[2]) if x1 < v < x2})
+    ys = sorted({y1, y2} | {v for h in holes for v in (h[1], h[3]) if y1 < v < y2})
+    def free(ax, ay):
+        return not any(h[0] <= ax < h[2] and h[1] <= ay < h[3] for h in holes)
+    rows = []
+    for ya, yb in zip(ys, ys[1:]):
+        run = None
+        for xa, xb in zip(xs, xs[1:]):
+            if free(xa, ya):
+                run = (run[0], xb) if run else (xa, xb)
+            elif run:
+                rows.append((run[0], ya, run[1], yb)); run = None
+        if run:
+            rows.append((run[0], ya, run[1], yb))
+    # strips of the same width one over the other become one
+    out = []
+    for r in rows:
+        for i, o in enumerate(out):
+            if o[0] == r[0] and o[2] == r[2] and o[3] == r[1]:
+                out[i] = (o[0], o[1], o[2], r[3])
+                break
+        else:
+            out.append(r)
+    return out
+
+
+def closed(m, tag_a, tag_b):
+    """Every line between a sector with `tag_a` and one with `tag_b` blocks
+    players and monsters (a stand's railing over the last hall). Returns how
+    many there are."""
+    text = m.textmap()
+    tags = [int(t.group(1)) if t else 0 for t in
+            (re.search(r"\bid=(-?\d+);", s) for s in re.findall(r"sector\{([^}]*)\}", text))]
+    sides = [int(s) for s in re.findall(r"sidedef\{[^}]*?sector=(\d+);", text)]
+    n = 0
+    for ld in re.findall(r"linedef\{([^}]*)\}", text):
+        if "sideback" not in ld:
+            continue
+        f = tags[sides[int(re.search(r"sidefront=(\d+);", ld).group(1))]]
+        k = tags[sides[int(re.search(r"sideback=(\d+);", ld).group(1))]]
+        if {f, k} != {tag_a, tag_b}:
+            continue
+        assert "blocking=true" in ld and "blockmonsters=true" in ld, f"a line between tags {tag_a} and {tag_b} is open: {ld}"
+        n += 1
+    return n
 
 
 def ways(m):

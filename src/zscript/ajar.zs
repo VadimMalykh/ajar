@@ -1341,6 +1341,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "WATER") return;     // and the water lab (watertest.zs)
 		if (level.mapname ~== "LEFT") return;      // and the left-handed room lab (lefthand.zs)
 		if (level.mapname ~== "MAP33") return;     // and MAP33 (map33.zs, from third.zs's tic)
+		if (level.mapname ~== "LAST") return;      // and the last fight lab (lasttest.zs, from third.zs's tic)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);
