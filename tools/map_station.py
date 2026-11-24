@@ -1076,7 +1076,9 @@ items(2048, (4040, 2700))
 opening((4288, 2560), (4416, 2560), (0, -1), G, G_WAY)
 STORES = (3968, 2112, 4736, 2544)
 SHELVES = [(4128, 2304, 4160, 2496), (4320, 2304, 4352, 2496), (4512, 2304, 4544, 2496)]
-NOOK_WALL = [(3968, 2240, 4112, 2272), (4144, 2112, 4176, 2272)]     # crates round the clerk's nook; a gap 32 wide
+NOOK_WALL = [(3968, 2240, 4080, 2272), (4144, 2112, 4176, 2272)]     # crates round the clerk's nook; a gap 64 wide
+# (it was 32, and right under the first shelf's end: a player is 32 wide and did not get in; Vadim, 2026-11-24)
+assert NOOK_WALL[1][0] - NOOK_WALL[0][2] >= 48 and SHELVES[0][0] - NOOK_WALL[0][2] >= 48
 NOOK = (3968, 2112, 4144, 2240)
 area(STORES, [(s, dict(floor=64, side="AJWOOD", ftex="AJTRIMF")) for s in SHELVES]
      + [(w, dict(floor=64, side="AJWOOD", ftex="AJTRIMF")) for w in NOOK_WALL]
@@ -1503,6 +1505,7 @@ def walk_lengths(step=16):
         todo = [(0.0, src)]
         moves = [(d, step * (1.4142 if dx and dy else 1)) for dx in (-1, 0, 1) for dy in (-1, 0, 1)
                  if dx or dy for d in [dy * W + dx]]
+        ROUND = (1, -1, W, -W, W + 1, W - 1, -W + 1, -W - 1)
         while todo:
             c, k = heapq.heappop(todo)
             if k == dst:
@@ -1517,6 +1520,11 @@ def walk_lengths(step=16):
                 s2 = cell[j]
                 if fl[s2] - fl[s1] > 24 or min(ce[s1], ce[s2]) - max(fl[s1], fl[s2]) < 56:
                     continue
+                # the player's box (the cells round it) is not in a crate, a bench or a bank: nothing round
+                # the cell stands more than a step over it (so a slot 32 wide between furniture is no way)
+                # (what is no higher than where the step comes from does not count: a drop lands at the ledge's foot)
+                if any(fl[cell[j + d2]] - fl[s2] > 24 and fl[cell[j + d2]] - fl[s1] > 24 for d2 in ROUND):
+                    continue
                 if c + w < best.get(j, 1e18):
                     best[j] = c + w
                     heapq.heappush(todo, (c + w, j))
@@ -1526,13 +1534,19 @@ def walk_lengths(step=16):
             2: [((576, 2400), PLATE2)],
             3: [((192, 2400), (1400, 1860)), ((1400, 1860), (2790, 1440)), ((2976, 1888), (4800, 1580)),
                 ((4800, 1580), (8150, 2528))]}
+    # the three secrets are walked into (itemcheck's reckoning passed the nook when its gap was 32)
+    legs["the secrets (cache, nook, hut)"] = [((3650, 3904), (4480, 3904)), ((4400, 2200), (4050, 2170)),
+                                              ((2700, 1000), (2896, 990))]
     return {p: [dist(a, b) for a, b in ls] for p, ls in legs.items()}
 
 
+# every build walks each part and into each secret (about 4 s): a way a player's box does not pass stops it
+WALK = walk_lengths()
+
 if __name__ == "__main__":
     if "--walk" in sys.argv:
-        for p, ls in walk_lengths().items():
-            print(f"part {p}: {round(sum(ls))} units ({' + '.join(str(round(x)) for x in ls)}), "
+        for p, ls in WALK.items():
+            print(f"{p if isinstance(p, str) else 'part ' + str(p)}: {round(sum(ls))} units ({' + '.join(str(round(x)) for x in ls)}), "
                   f"{sum(ls) / RUN:.1f} s at a run")
     else:
         sys.stdout.write(m.textmap())

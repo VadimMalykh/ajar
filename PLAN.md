@@ -13375,3 +13375,20 @@ pain elementals as posts, so this could happen in play.
 - On the last build: `MAP=THIRD MODE=3` four runs, 53 of 53 each;
   `MAP=THIRD MODE=7` two runs, 58 of 58; `MAP=MAP33 MODE=1` two runs, 91 of
   91; `MODE=2` 16 of 16; `MODE=3` 97 of 97.
+
+### MAP33: the stores' secret could not be entered (2026-11-24)
+
+Vadim, in go 2, with a screenshot of the crates round the clerk's nook: "This
+secret looks like it's not reachable?" It was not: the gap between the crates
+was 32 wide, a player is 32 wide, and the first shelf's end stood right over
+it. `itemcheck` had reckoned it reached, and no script walked in.
+
+- The gap is 64 wide (tools/map_station.py, NOOK_WALL), clear of the shelf.
+- `walk_lengths` now keeps the player's box out of furniture: a cell is stood
+  in only if nothing round it is more than a step over it (what is no higher
+  than where the step comes from does not count, so a drop still lands at the
+  ledge's foot). Before, only the cell's own floor was looked at, so a slot of
+  32 between crates was a way. It also walks into the three secrets, and every
+  build runs it (about 4 s). With the old gap it stops the build ("no walk" to
+  the nook); with the new one: part 1 12525 units, part 2 10942, part 3 9759,
+  the secrets 832 + 855 + 215.
