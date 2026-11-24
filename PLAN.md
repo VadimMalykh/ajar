@@ -13175,3 +13175,148 @@ map 19, 18 - map 33". In `src/mapinfo.txt`:
 So Carbon Copy plays on no map now (the lab still has it), and Filing Under
 Fire only on MAP09. Left Luggage, Between Floors and Night Bell (14, 16, 17)
 have no map; Vadim has not said what he thinks of them.
+
+## MAP33: after Vadim's first play (2026-11-24): natural yards, a longer part 3
+
+Vadim, after his first play of the first playable version:
+
+> In general I like it, and general idea is implemented. Couple things:
+> - maybe we could do it less quadratish (if you know what I mean). Not
+>   everywhere maybe, but some outside places could be more natural form. Or
+>   maybe it makes sense to do with decoration?
+> - there's no places when they participate in the same battle. [...]
+> - 3rd patch is too easy and too short. I've finished it too soon and then
+>   just need to wait for my previous copies.
+
+Built by a worker (Claude, Opus) in the worktree `map33-natural`: his first
+and third points. The shared battle (his second point) is not in this task:
+ideas are with Vadim. **Not yet played by hand.**
+
+### Natural places
+
+Every room's box, doorway, window, gate, frame, shutter and the asserts on
+them are as they were; what changed is inside the boxes out of doors. The
+generator has a small engine for it (`natural()` in `tools/map_station.py`):
+a room's outline with free shapes in it (heaps, banks, water, islands), cut
+into faces exactly (fractions), GZDoom's node builder takes the concave
+sectors. Banks (`bank()`) are two or three terraces heaped against a wall
+along a path (40, 88, 136 high by default, each step more than 24, 64 to
+320 deep, the front wandering), kept off doorways, windows, gates and
+plinths. What stands in a natural room is placed by `put()` and
+`items_on()` on free floor of the right height.
+
+- **The coal yard**: six irregular heaps (6 to 8 corners, tiers 32 and 72,
+  two with a third tier at 104) in place of the two-tier boxes; the
+  bunker's wall in four pieces bowed about 96 to the south in the middle,
+  the cacodemons behind it as before; banks of coal and earth along the west
+  wall, round the south-west corner and in the north-east corner. The
+  gallery's windows, the gate and the yard's mouth keep their clear ground.
+- **The stack court**: the chimney a 16-sided round; banks cut the
+  south-east corner and run down the west wall; the imps' ledges are one
+  curved terrace 96 high (with 144 and 192 behind it) round the north-east,
+  at least 72 wide, the imps on it. The foot of the stairs (west wall) and
+  the passage south stay clear.
+- **The switchyard**: the transformers and the imps' gantry stay; gravel
+  banks along the north wall, down the west wall south of the tunnel's
+  mouth and on the east wall between PINK's frame and the relay room's old
+  shutter; the tunnel's mouth, PINK's frame, the hut's opening clear.
+- **The pumps** in the pump room and the pump hall are octagons
+  (`ajarmap.octagon`, corner 40).
+
+The yards keep their plain AJ* textures, tinted (coal, earth, gravel).
+
+### Part 3 as built
+
+The way: box 3, the cable tunnel, the switchyard, PINK, the relay room, the
+cooling pond, the outfall, the cooling tower, the passage, the duct, E3. The
+relay room's east opening, the corridor and its stairs are gone; the relay
+room has a doorway south (x 3424..3552, 128 wide; its cabinets shortened)
+and three steps of 16 down to the pond. Monsters on skills 1 / 2 / 3 / 4.
+
+| Room | Where (x, y) | What is there | Monsters 1/2/3/4 |
+|---|---|---|---|
+| box 3, the cable tunnel | 64..1280, 1984..2544 | as before, two spectres and a hell knight more at the east end | 7/10/13/15 (spectres, imps, a hell knight) |
+| the switchyard | 1280..2816, 896..2112, sky | as above; two mancubi between the transformers, two revenants on the imps' gantry | 15/24/30/33 (imps, cacodemons, sergeants, zombiemen, arachnotrons, mancubi, revenants) |
+| the relay room | 2944..3584, 1792..2160 | two chaingunners more; the doorway south | 3/4/6/6 |
+| the cooling pond | 3040..4416, 320..1728, sky, ground at -24 | banks all round (the south one a ledge 96 over the ground, at 72, with 120 and 168 behind it), water at -44 (FWATER1, 20 deep) in an irregular round, three islands at -4 (about 200 across), a dry path from the steps round the west to the south; the plasma rifle on the dry path | 11/17/24/24: 3 mancubi on the islands, 4 revenants on the south ledge, 5 cacodemons and a pain elemental over the water, 5 spectres in it, 6 imps on the banks' foot |
+| the outfall | 4416..4544, 960..1088, at -8, sky | the soulsphere and a blue armour before the drop of 56 | 1/2/2/2 (hell knights) |
+| the cooling tower, **window hall 5** | a 24-sided round of inner radius about 640 about (5184, 1024), sky, floor -64 | a basin in the middle (radius 176, 16 deep, FWATER1), eight octagonal pillars (64 across) on a ring of radius 384, a ledge round the wall (96 high, about 90 deep) broken at the way in (west) and at the exit alcove (north-north-west); the exit a shutter (tag 3357) the hall's win opens: shut while anything lives in the tower; rockets and cells behind the pillars, medikits | 10/13/19/20: the cyberdemon on the basin (skill 2 and up; two barons in its place on skill 1), 8 imps and 4 revenants on the ledge, 4 hell knights on the floor, 2 barons (skill 3 and up), the arch-vile (skill 4) |
+| the passage, steps down | 4736..4864, 1616..1984 at -64; steps east to -128 into the duct's west end | | 2/4/4/4 (chaingunners, imps) |
+| the duct | 5056..7040, 1856..2032, at -128 | two hell knights more | 4/4/6/6 |
+| E3, out | as before | | 0 |
+
+Totals: skill 1 171, skill 2 255, skill 3 336, skill 4 356 (part 1 63 / 95 /
+121 / 130, part 2 55 / 82 / 111 / 116, part 3 53 / 78 / 104 / 110; part 3
+was 25 / 39 / 50 / 55). The level: 537 sectors (was 427), 594 things (was 496).
+
+### Part 3's supplies (tools/budget.py)
+
+| Part | Skill 3: monsters, hp, ammo as damage | Skill 1 | Health, armour | Weapons |
+|---|---|---|---|---|
+| 3 (was) | 50, 6760, 13440 (x1.99) | 25, 3540, x3.42 | 155, 0 | backpack |
+| 3 (now) | 104, 27600, 45300 (x1.64) | 53, 13000, x3.38 | 430, 200 | backpack, plasma rifle |
+
+Where: the tunnel shells; the switchyard rockets, shells, bullets, cells,
+two medikits; the relay room shells, rockets, a medikit; the pond the plasma
+rifle, a cell pack and four cells, three boxes of shells, two of rockets,
+three medikits; the outfall the soulsphere and the blue armour; the tower six
+cell packs and six boxes of rockets (behind the pillars and on the floor), two
+boxes of shells, four medikits; the passage shells, rockets, a medikit; the
+duct rockets. Skill 2: x2.15, skill 4: x1.58. The ratio asserted stays 1.6
+on skill 3. The tower's cyberdemon is 4000 of part 3's 27600.
+
+### Walk length
+
+`python3 tools/map_station.py --walk`: part 3 9740 units, 16.7 s at a run
+(1603 + 1564 + 2531 + 4042: box 3 to PINK, PINK to its frame, the relay
+room through the pond and the tower to its exit, the tower's exit to the
+way out); was 8751, 15.0 s. Part 1 12493 (21.4 s), part 2 10942 (18.8 s).
+The walk is the least of it: part 3 is now longer for its fights (two big
+rooms, 43 monsters on skill 3 in them, the cyberdemon) more than for its
+way.
+
+### The wind plate told of
+
+`third.zs` (the only engine change): from go 2, the first time in a go the
+player is within 512 of a wind plate and sees it while the next step of an
+earlier self onto a plate that winding on would go to is more than ten
+seconds away, it says once: "Your earlier self is M:SS away. The plate on
+the wall winds the clock on." (`THIRD_WINDHINT` in `src/language.txt`;
+`ThirdWindHint`, `ThirdWindNext`, the latter now also used by ThirdWind).
+MAP33_GO3's first line names the pond and the tower.
+
+### Tests (on the last build, a full `./build.sh`)
+
+- `tools/mapcheck.py map_station` 0 problems, 3 secret sectors;
+  `tools/thingcheck.py` 0, `tools/itemcheck.py` 0, `tools/budget.py
+  map_station`; the generator's asserts (the parts apart, the halls' mouths
+  closed to monsters, the islands and the banks, part 3's 95..110 monsters).
+- `MAP=MAP33 MODE=1 TIMEOUT=500`: **91 of 91**. New in go 3: the tower's
+  exit open before its go and shut at go 3's start, shut every tic while
+  the tower lives, open when it is clear (the tower's fight 379 to 512 of
+  go 3); the pond walked through the water to the outfall (floor -8), the
+  drop into the tower, through its exit, the passage and the steps into the
+  duct at -128; the rest as before. The wind line: not said in go 1; said
+  once in go 2 in E2 (at tic 1454, the first self 0:23 away from plate 1).
+- `MAP=MAP33 MODE=2`: **16 of 16**.
+- `MAP=MAP33 MODE=3`: **95 of 95**, 30 screenshots (new: the coal yard after
+  its fight, the stack court from the south, the switchyard from PINK's
+  frame, the pond from the foot of the steps, the tower from the outfall
+  and from its floor).
+- `MAP=THIRD MODE=3` THIRD3 of THIRD3, `MAP=THIRD MODE=7` THIRD7 of THIRD7.
+
+The script's clock is unchanged (M33_LEAVE1 3000, M33_LEAVE2 2900): the
+scripted go 3 is through the tower by about tic 520 and waits in E3 for its
+earlier selves, as before. A plan picture of the level (floors by height,
+things as dots): `build/map33_plan.png` in the worktree (not committed).
+
+### Not tested / not played by hand
+
+- Nobody has played it. The fights are scripted with god mode and kills by
+  script; whether the pond and the tower are fair on skill 3 (the
+  cyberdemon in a round room with pillars, revenants on a ledge above), and
+  whether part 3 now takes as long as the other two, is not known.
+- The islands, banks and heaps are walked by the generator's `--walk` and
+  `itemcheck`'s reckoning, and seen in the screenshots; no script climbs
+  every bank.
+- Skills other than 3: counted, not played.
