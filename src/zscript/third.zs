@@ -464,6 +464,7 @@ extend class AjarTimeHandler
 	// held still and unseen until then.
 	void ThirdHallsBegin()
 	{
+		hallOwn.Clear(); hallOwnOf.Clear();
 		for (int i = 0; i < halls.Size(); i++)
 		{
 			int part = halls[i].args[1];
@@ -686,7 +687,9 @@ extend class AjarTimeHandler
 				Actor m = postIs[p];
 				if (m && m.bIsMonster && m.health > 0) alive = true;
 			}
-			if ((!any && !HasWinner(i)) || alive || HallLives(i)) continue;
+			if (!any && !HasWinner(i)) continue;
+			bool lives = HallLives(i);              // (every tic: it follows the hall's monsters)
+			if (alive || lives) continue;
 			wonTic[i] = ot;
 			Say(any ? "The hall is won: the shutters it held shut open." : "Nothing lives here any more: the way on opens.");
 		}
@@ -710,12 +713,35 @@ extend class AjarTimeHandler
 		return false;
 	}
 
+	// Does anything of hall h live? Its monsters are followed wherever they go
+	// (hallOwn: a lost soul that flew out of the hall still lives for its win),
+	// and a pain elemental that is dying still counts: its lost souls are to
+	// come (it leaves no body, so it is gone when it is done). Without both a
+	// hall was won and then alive again (THIRD MODE=3, about one run in two
+	// once the tic's random numbers fell otherwise).
+	Array<Actor> hallOwn;
+	Array<int> hallOwnOf;
 	bool HallLives(int h)
 	{
+		bool lives = false;
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
-		while (a = Actor(it.Next())) if (a.bIsMonster && a.health > 0 && HallAt(a.pos.xy) == h) return true;
-		return false;
+		while (a = Actor(it.Next()))
+		{
+			if (!a.bIsMonster || HallAt(a.pos.xy) != h) continue;
+			if (a.health > 0)
+			{
+				lives = true;
+				if (hallOwn.Find(a) == hallOwn.Size()) { hallOwn.Push(a); hallOwnOf.Push(h); }
+			}
+			else if (a is "PainElemental") lives = true;
+		}
+		for (int i = hallOwn.Size() - 1; i >= 0; i--)
+		{
+			if (!hallOwn[i] || hallOwn[i].health <= 0) { hallOwn.Delete(i); hallOwnOf.Delete(i); continue; }
+			if (hallOwnOf[i] == h) lives = true;
+		}
+		return lives;
 	}
 
 	// The shutters a hall's win opens: open before its go, shut in it until

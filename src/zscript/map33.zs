@@ -144,7 +144,7 @@ extend class AjarTimeHandler
 		{
 			m3Aim = LiveIn(mo, h);
 			m3AimAt = o;
-			if (!m3Aim) { mo.pitch = 0; return true; }
+			if (!m3Aim) { mo.pitch = 0; return !HallLives(h); }     // (not while a pain elemental is dying: its lost souls are to come)
 		}
 		Face(mo, m3Aim);
 		mo.vel.xy = (0, 0);

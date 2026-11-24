@@ -13349,3 +13349,29 @@ things as dots): `build/map33_plan.png` in the worktree (not committed).
   `itemcheck`'s reckoning, and seen in the screenshots; no script climbs
   every bank.
 - Skills other than 3: counted, not played.
+
+### A hall won and then alive again (found at the merge, 2026-11-24)
+
+After main was merged in, `MAP=THIRD MODE=3` failed in 2 runs of 4 (rWon,
+rPlayedFromItsStart, rBefore, rRealUnseen), and passed 4 of 4 on main's
+package. The only thing of this task that reaches THIRD is the wind line:
+its sight check runs each tic near a wind plate (Claude's guess: it moves the
+tic's random numbers, so the scripted fight in R ends otherwise).
+
+The weakness under it was in the engine (third.zs, `HallLives`): a hall was
+won the moment nothing alive stood in it. A pain elemental killed last is
+still dying then, and its three lost souls come about a second later, into a
+hall that is won and whose shutters are open. MAP33's turbine hall has four
+pain elementals as posts, so this could happen in play.
+
+- `HallLives`: a dying pain elemental counts as alive (it leaves no body, so
+  it is gone when it is done), and a hall's monsters are followed wherever
+  they go (`hallOwn`: one that left the hall still lives for its win; in
+  MAP33 no monster leaves a window hall, the generator asserts it). It is
+  called every tic for the go's hall, won or not.
+- The scripted fights (thirdtest.zs's in R, map33.zs's `Fight33`) went on
+  when nothing alive was left to aim at, and then waited for a win that did
+  not come; they now wait while the hall lives.
+- On the last build: `MAP=THIRD MODE=3` four runs, 53 of 53 each;
+  `MAP=THIRD MODE=7` two runs, 58 of 58; `MAP=MAP33 MODE=1` two runs, 91 of
+  91; `MODE=2` 16 of 16; `MODE=3` 97 of 97.
