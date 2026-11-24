@@ -78,29 +78,162 @@ NAMES = {TP: "P (the plunge hall)", TC: "C (the cooling hall)", TT: "T (the feed
 SHORT = {TP: "P", TC: "C", TT: "T", TK: "K", TL: "L", TU: "U", TSB: "SB", TR: "R", TO: "O"}
 
 # === the look ======================================================================================
+# "Municipal" (PLAN.md, "Look: MAP20, Municipal"): a town waterworks and public baths of 1900-1930, drawn
+# by tools/gfx_highwater.py (names AJV...). It is what any AJAR_INSTITUTE but 0 builds; AJAR_INSTITUTE=0 is
+# the plain level. A look changes textures and hangs pictures on walls: nothing moves. Walls are laid at
+# absolute heights (see `hook`), so that courses, tide lines and plaques stand where the water can.
 SKY = "F_SKY1"
+# material -> (wall, floor, ceiling)
+MATS = {
+    "CR": ("AJVCR", "AJVFQ", "AJVKP"),          # the changing room: cream tile to 96, an oxblood capping, plaster
+    "CU": ("AJVCU", "AJVFQ", "AJVKP"),          # ... its upper floor
+    "PL": ("AJVPL", "AJVFP", "AJVKG"),          # the plunge hall: white tile, a black course every 64, oxblood at the brim
+    "SB": ("AJVSB", "AJVFB", "AJVKG"),          # the swimming bath: the same family, all the build's own
+    "EC": ("AJVEC", "AJVFC", "AJVKB"),          # the engine house: cream brick over a maroon dado, chequered floor
+    "PH": ("AJVPH", "AJVFC", "AJVKB"),          # ... the pump house: riveted plate under the brick
+    "PA": ("AJVPA", "AJVFC", "AJVKB"),          # ... the passage from E2
+    "CH": ("AJVCH", "AJVFS", "AJVKB"),          # the cooling hall: iron plate, the tide line at 96; silt on its floor
+    "CW": ("AJVCH", "AJVFW", "AJVKB"),          # ... its walkway: chequer plate
+    "BH": ("AJVBH", "AJVFR", "AJVKB"),          # the boiler house: red brick, sooty above; brick paving
+    "BS": ("AJVBH", "AJVFW", "AJVKB"),          # ... its stairs (and the gangway's): iron treads
+    "TK": ("AJVTK", "AJVFT", "AJVKB"),          # the feed tank: riveted plate
+    "CT": ("AJVTK", "AJVFW", "AJVKB"),          # ... its catwalk
+    "LY": ("AJVYD", "AJVFG", SKY),              # the lower yard: brick on a stone plinth; setts
+    "UY": ("AJVYU", "AJVFL", SKY),              # the upper yard: the same at 192; grass
+    "KS": ("AJVKS", "AJVFK", SKY),              # the lock: buff stone, stained to its brim
+    "BU": ("AJVBU", "AJVFK", SKY),              # buff stone, clean: the squeeze stair, the terrace
+    "WL": ("AJVWL", "AJVFK", SKY),              # the wheel house: L, stained to -4
+    "WU": ("AJVWU", "AJVFK", SKY),              # ... U, stained to 184
+    "WT": ("AJVWT", "AJVFD", SKY),              # ... the spillway: timber
+    "OV": ("AJVOV", "AJVFO", "AJVKO"),          # the outfall: a tide-stained brick vault
+    "RS": ("AJVRS", "AJVFT", "AJVKR"),          # the reservoir: riveted plate
+    "TN": ("AJVTN", "AJVFG", "AJVKO"),          # the tunnel, its first half: the yard's brick
+    "TD": ("MARBGRAY", "FLOOR4_8", "TLITE6_1"),  # ... its second half: Doom's (the leak)
+    "CL": ("MARBLE1", "DEM1_6", "FLOOR7_2"),    # the cells off C: Doom's stone
+    "MH": ("MARBGRAY", "FLOOR4_8", "TLITE6_1"),  # the machine hall: a Doom room
+}
 
 
-def look(wall, ftex, ctex, light, ceil, color=None):
-    return dict(ceil=ceil, light=light, color=tint(color), **dress(wall=wall, ftex=ftex, ctex=ctex))
+def look(mat, light, ceil, color=None):
+    d = dict(ceil=ceil, light=light, color=tint(color))
+    if LOOK:
+        d.update(zip(("wall", "ftex", "ctex"), MATS[mat]))
+    return d
 
 
-def sky(wall, ftex, light, ceil):
-    d = look(wall, ftex, "KC", light, ceil)
+def sky(mat, light, ceil):
+    d = look(mat, light, ceil)
     d["ctex"] = SKY
     return d
 
 
 PALE, MINT, PAPER, DIM, RUST, COLD, STEEL = 0xDCE8DC, 0xC8E0C8, 0xF0E4C8, 0xB0B8C8, 0xE8C8B0, 0xA8C0D8, 0xC8D0E0
-CHANGE = look("CK", "FC", "KC", 200, 192, PAPER)
-BATH = look("LA", "FA", "KA", 210, 320, PALE)
-PUMP = look("PU", "FP", "KP", 180, 352, COLD)
-CORR = look("CO", "FC", "KC", 180, 344, MINT)
-HALL = look("PU", "FP", "KP", 170, 400, COLD)
-BOIL = look("EX", "FE", "KE", 176, 448, RUST)
-YARD = sky("PU", "FP", 220, 512)
-UPYARD = dict(sky("LB", "FL", 230, 640), ftex="GRASS1")
-WORKS = look("EX", "FE", "KE", 190, 256, STEEL)
+CHANGE = look("CR", 200, 192, PAPER)
+BATH = look("PL", 210, 320, PALE)
+PUMP = look("PH", 180, 352, COLD)
+CORR = look("EC", 180, 344, MINT)
+HALL = look("CH", 170, 400, COLD)
+BOIL = look("BH", 176, 448, RUST)
+YARD = sky("LY", 220, 512)
+UPYARD = dict(sky("UY", 230, 640), **({} if LOOK else dict(ftex="GRASS1")))
+MH_CEIL = 256
+WORKS = look("MH", 190, MH_CEIL, STEEL)
+# Doom's own elements (PLAN.md: "what looks like Doom behaves like Doom"): names in the player's doom2.wad
+DOOR_FACE = "SPCDOOR1"          # a door opened by USE that stays where it is: the pressure doors and the ledge door
+SURROUND = "SUPPORT2"           # ... the wall over a pressure door's mouth (its lamp strips')
+SWITCH = "SW1BRIK"              # the gangway's bolt, from the boiler house (GZDoom turns it to SW2BRIK)
+EXIT_FACE, EXIT_SIGN = "EXITDOOR", "EXITSIGN"
+
+
+def pdoor_look():
+    """The pressure doors' leaf and surround: Doom's in the look, the placeholder in the plain level."""
+    if LOOK:
+        return dict(look=dict(wall=DOOR_FACE, ftex="FLAT20", ctex="FLAT20"), strip=dict(wall=SURROUND, ftex="FLAT20"))
+    return {}
+
+
+# --- walls at absolute heights ------------------------------------------------------------------
+# A wall texture of the look is H high and its row 0 stands at z0 (the rows go down from there): `hook` sets
+# every side's vertical offset so, whatever the floor and ceiling of the sector it is on and however the line
+# is pegged. Each is drawn by gfx_highwater (its `mat` and the heights given here, from the constants below);
+# the build fails if a wall shows one where it has no rows.
+WALLS = {}              # name -> dict(H, z0, mat, ...): the look's wall textures
+PICS = {}               # name -> dict(H, z0, w, kind, base, shift, ...): pictures and plates (gfx_highwater)
+OPENINGS = set()        # sector indices of open ways: the wall over and under them is the room's own
+LOOK_PROBLEMS = []
+DOOM = set()            # every Doom name the level uses (the report's list; checked against the IWAD by hand)
+
+
+def wall_tex(name, H, z0, mat, **k):
+    WALLS[name] = dict(H=H, z0=z0, mat=mat, **k)
+
+
+def zpeg(name):
+    if name in WALLS:
+        return WALLS[name]["H"], WALLS[name]["z0"]
+    if name in PICS:
+        return PICS[name]["H"], PICS[name]["z0"]
+    return ZDOOM.get(name)
+
+
+ZDOOM = {SWITCH: (128, 240)}    # Doom textures laid at a height: the switch's plate from 168 down to 136
+
+
+def make_hook(mm, openings):
+    """udmf's line hook for the look: the wall over an open way is the room's own; every texture in
+    WALLS, PICS or ZDOOM gets the vertical offset that puts its row 0 at its z0 (Doom's pegging rules:
+    a one-sided wall from its ceiling, or its floor if lower-unpegged; an upper from the lower ceiling,
+    or its own if upper-unpegged; a lower from the higher floor, or its own ceiling if lower-unpegged)."""
+    secs = mm.sectors
+
+    def hook(ld, sides, a, b, si, other, given):
+        both = [(sides[ld["sidefront"]], si, other, a, b)]
+        if other is not None:
+            both.append((sides[ld["sideback"]], other, si, b, a))
+        for sd, f, o, p, q in both:
+            F, B = secs[f], (secs[o] if o is not None else None)
+            if LOOK and B is not None and o in openings and f not in openings:
+                if given["upper"] is None and sd.get("texturetop") == "AJTRIM":
+                    sd["texturetop"] = F["wall"]
+                if given["lower"] is None and sd.get("texturebottom") == "AJTRIM":
+                    sd["texturebottom"] = F["side"]
+            if B is not None and sd.get("texturetop") == DOOR_FACE and F["ceil"] > B["ceil"]:
+                sd["scaley_top"] = round(128 / (F["ceil"] - B["ceil"]), 4)   # the whole Doom door in its mouth
+            sw = SWITCH_AT.get((p, q))
+            if sw is not None:
+                sd["texturemiddle"] = SWITCH
+                sd["offsetx_mid"] = float(sw)
+            for part, key in (("top", "texturetop"), ("mid", "texturemiddle"), ("bottom", "texturebottom")):
+                z = zpeg(sd.get(key))
+                if z is None:
+                    continue
+                H, z0 = z
+                if part == "mid":
+                    if B is not None:
+                        continue
+                    anchor, lo, hi = (F["floor"] + H if ld.get("dontpegbottom") else F["ceil"]), F["floor"], F["ceil"]
+                elif part == "top":
+                    if B is None or F["ceil"] <= B["ceil"] or F["ctex"] == B["ctex"] == SKY:
+                        continue                # (no upper is drawn between two skies)
+                    anchor, lo, hi = (F["ceil"] if ld.get("dontpegtop") else B["ceil"] + H), B["ceil"], F["ceil"]
+                else:
+                    if B is None or F["floor"] >= B["floor"]:
+                        continue
+                    anchor, lo, hi = (F["ceil"] if ld.get("dontpegbottom") else B["floor"]), F["floor"], B["floor"]
+                off = (z0 - anchor) % H
+                if off:
+                    sd["offsety_" + part] = float(off)
+                else:
+                    sd.pop("offsety_" + part, None)
+                if sd[key] not in ZDOOM and (lo < z0 - H or hi > z0):
+                    LOOK_PROBLEMS.append(f"{sd[key]} (rows {z0 - H}..{z0}) shown {lo}..{hi} at {p}-{q}")
+    return hook
+
+
+SWITCH_AT = {}          # (start, end) of a side -> the switch texture's column at its start
+m.line_hook = make_hook(m, OPENINGS)
+if LOOK:
+    m.align |= {w for w, f, c in MATS.values() if w.startswith("AJV")}
 GLASS = dict(mid="AJGLAS", midboth=True, blocking=True, blockhitscan=True, blockprojectiles=True)
 
 BASINS = {}             # tag -> dict(name, floor, area, brim, kind, depth, at)
@@ -172,17 +305,47 @@ def opening(box, floor, lk=None, height=96):
     lk = lk or dict(light=170, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF", ceil=0)
     d = dict(lk)
     d.pop("ceil")
-    m.sector(rect(*box), floor=floor, ceil=floor + height, **d)
+    OPENINGS.add(m.sector(rect(*box), floor=floor, ceil=floor + height, **d))
     AVOID.append(((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
 
 
+def squeeze(a, b, out, floor, *, thick=16):
+    ajarmap.squeeze(m, a, b, out, floor, thick=thick)
+    OPENINGS.add(len(m.sectors) - 1)
+
+
 def pressure(a, b, out, sill, tag, sides, *, thick=32, auto=False):
-    W.pressure_door(m, a, b, out, sill, tag, sides, LAMP0 + tag - 40, thick=thick, auto=auto)
+    W.pressure_door(m, a, b, out, sill, tag, sides, LAMP0 + tag - 40, thick=thick, auto=auto, **pdoor_look())
     PDOORS[tag] = dict(sill=sill, sides=sides, auto=auto)
     AVOID.append(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2))
 
 
 PDOORS = {}
+_PICKEYS = {}
+
+
+def hang(mm, a, b, out, kind, base, *, part="mid", H=None, z0=None, **k):
+    """In the look: the wall piece a-b, seen looking `out`, shows a picture of `kind` (gfx_highwater) on
+    the wall texture `base` (its H and z0 unless given): `part` "mid" on a wall, "upper" over a way,
+    "lower" under one. The same picture asked for twice is one texture."""
+    if not LOOK:
+        return None
+    w = abs(a[0] - b[0]) + abs(a[1] - b[1])
+    spec = dict(kind=kind, w=w, H=H, z0=z0, base=base, shift=I1._shift(a, b, out), **k)     # (H, z0: the base's, at the end)
+    key = repr(sorted(spec.items()))
+    name = _PICKEYS.get(key)
+    if name is None:
+        name = _PICKEYS[key] = f"AJVP{len(_PICKEYS):02d}"
+        PICS[name] = spec
+    mm.cut(a, b)
+    mm.line(a, b, exact=True, **{part: name})
+    return name
+
+
+def named(a, b, out, base, words, head):
+    """A plate over the way a-b (seen looking `out`, through the wall `base`), whose head is at `head`:
+    the words of what is beyond, one line each."""
+    return hang(m, a, b, out, "sign", base, part="upper", words=words, head=head)
 
 # =================================================================================================
 # THE BATHS (stage 1, "see it")
@@ -202,7 +365,9 @@ TAKEN.append((224, 64, 64))
 # a FOLLOW basin) and which has one thing more: a door in the north wall by the shallow end, a passage, a
 # secret sector and the Exit_Secret line. AJAR_SBMIRROR=1 ./build.sh makes the fourth pane a mirror like the
 # others (for the comparison of the two only).
-SBL = look("LA", "FA", "KA", 215, 320, PALE)
+SBL = look("SB", 215, 320, PALE)
+SB_PIT = -160
+wall_tex("AJVSB", SBL["ceil"] - SB_PIT, SBL["ceil"], "bath", rim=0)     # the pit's floor to the roof
 TSBL = 30                       # the left-handed bath's sectors (a FOLLOW basin: TSB's level)
 SB_GLASS = -848                 # the panes' glass, the plane the copy is reflected in
 SB_PANES = (32, 128, 224, 320, 416)
@@ -265,6 +430,9 @@ def swimming_bath(mm, tag, copy=False):
         frame((-768, 0), (-704, 0), (0, -1), 141, -160, tag, "sb")
         frame((-528, 0), (-464, 0), (0, -1), 142, -96, tag, "sb")
     W.gauge(mm, (-640, 0), (-576, 0))
+    # painted on the pool's north wall under its rim: read mirrored in the copy, as in a mirror
+    hang(mm, (-832, 512), (-704, 512), (0, 1), "words", "AJVSB", part="lower", H=160, z0=0, words=("DEEP END",), at=-12)
+    hang(mm, (-576, 512), (-448, 512), (0, 1), "words", "AJVSB", part="lower", H=96, z0=0, words=("SHALLOW END",), at=-12)
     if copy:
         # the one thing not as it was: a door in the north wall by the shallow end (an ordinary one, in a trim
         # surround), a short passage, the secret sector, and the line with Exit_Secret
@@ -311,8 +479,8 @@ frame((736, 0), (800, 0), (0, -1), 101, 0, TP, "p")
 frame((960, 512), (1024, 512), (0, 1), 102, GALLERY, TP, "p_gal")
 gauge((544, 0), (608, 0))
 # the ledge door: opens by USE and stays open (a stage gate)
-m.sector(rect(1120, 192, 1152, 256), floor=LEDGE, ceil=LEDGE, light=160, wall="BIGDOOR2", ftex="FLAT20", ctex="FLAT20",
-         id=LEDGE_TAG)
+m.sector(rect(1120, 192, 1152, 256), floor=LEDGE, ceil=LEDGE, light=160, wall=DOOR_FACE if LOOK else "BIGDOOR2",
+         ftex="FLAT20", ctex="FLAT20", id=LEDGE_TAG)
 for x in (1120, 1152):
     m.line((x, 192), (x, 256), special=11, args=(LEDGE_TAG, 32), playeruse=True, repeatspecial=True)
 for y in (192, 256):
@@ -320,7 +488,7 @@ for y in (192, 256):
 AVOID.append((1136, 224))
 
 # --- the changing room's upper floor (240): from the ledge by the pump corridor ---------------------------------
-UPPER = look("CK", "FC", "KC", 196, 400, PAPER)
+UPPER = look("CU", 196, 400, PAPER)
 S((0, 608, 1056, 864), LANDING, UPPER)
 S((1056, 608, 1120, 864), LANDING, UPPER)
 area("cr1", (0, 608, 1056, 864), LANDING)
@@ -346,9 +514,10 @@ opening((2272, 672, 2304, 736), PH_Z)
 C_FLOOR, C_LAND, WALK, C_BRIM, C_FOUND = -128, 0, 104, 100, 96
 basin(TC, C_BRIM, depth=C_FOUND - C_FLOOR, at=(2816, 384))
 CH = dict(HALL)
-S((2304, 640, 3328, 768), WALK, CH)                                            # the walkway: north ...
-S((2304, 256, 2368, 640), WALK, CH)                                            # ... west ...
-S((3264, 256, 3328, 640), WALK, CH)                                            # ... and east
+CW = look("CW", 170, 400, COLD)
+S((2304, 640, 3328, 768), WALK, CW)                                            # the walkway: north ...
+S((2304, 256, 2368, 640), WALK, CW)                                            # ... west ...
+S((3264, 256, 3328, 640), WALK, CW)                                            # ... and east
 stairs((2304, 256), (2368, 256), (0, -1), WALK, C_LAND - WALK, 5, 32, CH, tag=TC)     # down to the landing
 S((2304, 0, 2496, 96), C_LAND, CH, tag=TC)                                     # the landing
 stairs((2496, 0), (2496, 96), (1, 0), C_LAND, C_FLOOR - C_LAND, 6, 32, CH, tag=TC)    # on down to the floor
@@ -365,13 +534,13 @@ frame((2752, 0), (2816, 0), (0, -1), 113, C_FLOOR, TC, "c")
 gauge((2880, 0), (2944, 0))
 pressure((2944, 0), (3008, 0), (0, -1), C_FLOOR, PD_E2, (TC, 0))               # E2: to the passage and the boiler house
 CELL_A, CELL_B = (3024, -400, 3200, -32), (3216, -400, 3424, -32)
-CELL = look("PU", "FP", "KP", 120, C_FLOOR + 128, RUST)
+CELL = look("CL", 120, C_FLOOR + 128, RUST)
 S(CELL_A, C_FLOOR, CELL)
-S(CELL_B, C_FLOOR, CELL)
+S(CELL_B, C_FLOOR, dict(CELL, **(dict(wall="MARBLE2") if LOOK else {})))
 pressure((3104, 0), (3168, 0), (0, -1), C_FLOOR, PD_CA, (TC, 0), auto=True)    # the cells: open when C is first dry
 pressure((3232, 0), (3296, 0), (0, -1), C_FLOOR, PD_CB, (TC, 0), auto=True)
 # the passage from E2, and its stair up to the boiler house
-PASS = look("PU", "FP", "KP", 150, C_FLOOR + 128, COLD)
+PASS = look("PA", 150, C_FLOOR + 128, COLD)
 S((2944, -480, 3008, -32), C_FLOOR, PASS)
 S((3008, -480, 3712, -416), C_FLOOR, PASS)
 stairs((3648, -416), (3712, -416), (0, 1), C_FLOOR, 0 - C_FLOOR, 8, 48, PASS, ceil=160)
@@ -379,7 +548,16 @@ opening((3648, -32, 3712, 0), 0)
 area("pass", (3008, -480, 3712, -416), C_FLOOR)
 # the gangway: from the east walkway down to the boiler house, bolted on its side
 ajarmap.bolted(m, (3328, 384), (3328, 448), (1, 0), WALK, GW_TAG, thick=32)
-stairs((3360, 384), (3360, 448), (1, 0), WALK, -WALK, 8, 28, CORR, ceil=WALK + 160)
+stairs((3360, 384), (3360, 448), (1, 0), WALK, -WALK, 8, 28, look("BS", 180, 344, MINT), ceil=WALK + 160)
+GANGWAY_STEP = 28
+# the bolt's Doom switch (PLAN.md, "Look: MAP20"): on the gangway's north wall beside the door, the plate's
+# lamp and lever (the columns SW1 and SW2 differ in: 22..40) on the top step's piece of wall, which alone
+# has the special; the switch's texture runs on over the next step's
+SWITCH_X0 = 3344                # the switch texture's column 0 is at this x (its plate's left edge at 3360)
+m.cut((SWITCH_X0 + 64, 448))
+for _x1, _x2 in ((3360, 3360 + GANGWAY_STEP), (3360 + GANGWAY_STEP, SWITCH_X0 + 64)):
+    SWITCH_AT[((_x1, 448), (_x2, 448))] = _x1 - SWITCH_X0
+m.line((3360, 448), (3360 + GANGWAY_STEP, 448), special=11, args=(GW_TAG, 32), playeruse=True)   # as the door's own line
 
 # =================================================================================================
 # THE BOILER HOUSE AND THE FEED TANK (stage 3, "the pipe")
@@ -390,21 +568,22 @@ BH = (3584, 0, 4352, 768)
 S((3584, 0, 4352, 416), 0, BOIL)
 S((3584, 416, 4064, 704), 0, BOIL)
 S((3584, 704, 3712, 768), 0, BOIL)
-stairs((3712, 704), (3712, 768), (1, 0), 0, T_BRIM, 16, 22, BOIL)              # the dry stair up to the rim
-S((4064, 416, 4352, 480), T_BRIM, BOIL)                                        # the catwalk
-S((4064, 480, 4096, 528), T_BRIM, BOIL)                                        # the tank's west wall, its rim at 272 ...
+TANK = look("TK", 176, 448, RUST)
+stairs((3712, 704), (3712, 768), (1, 0), 0, T_BRIM, 16, 22, look("BS", 176, 448, RUST))   # the dry stair up to the rim
+S((4064, 416, 4352, 480), T_BRIM, look("CT", 176, 448, RUST))                  # the catwalk
+S((4064, 480, 4096, 528), T_BRIM, TANK)                                        # the tank's west wall, its rim at 272 ...
 pressure((4064, 528), (4064, 592), (1, 0), 0, PD_T, (0, TT))                    # ... the manhole ...
-S((4064, 592, 4096, 608), T_BRIM, BOIL)
+S((4064, 592, 4096, 608), T_BRIM, TANK)
 m.sector(rect(4064, 608, 4096, 624), floor=8, ceil=T_BRIM - 8, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF",
          id=TT)                                                                # ... the gauge glass (the water stands in it) ...
 for x in (4064, 4096):
     m.line((x, 608), (x, 624), **GLASS)
-S((4064, 624, 4096, 768), T_BRIM, BOIL)
+S((4064, 624, 4096, 768), T_BRIM, TANK)
 m.cut((4064, 624), (4064, 688))
 m.line((4064, 624), (4064, 688), lower="AJFLOATM", dontpegbottom=False)       # ... and the float mark beside it
-S((4096, 480, 4352, 512), T_BRIM, BOIL)                                        # the south wall's rim
-S((4096, 512, 4288, 768), 0, BOIL, tag=TT)                                     # in the tank
-stairs((4288, 768), (4352, 768), (0, -1), 0, T_BRIM, 16, 16, BOIL, tag=TT)     # its stair up to the rim, under water
+S((4096, 480, 4352, 512), T_BRIM, TANK)                                        # the south wall's rim
+S((4096, 512, 4288, 768), 0, TANK, tag=TT)                                     # in the tank
+stairs((4288, 768), (4352, 768), (0, -1), 0, T_BRIM, 16, 16, TANK, tag=TT)     # its stair up to the rim, under water
 area("bh", (3584, 0, 4352, 416), 0)
 area("bhw", (3584, 416, 4064, 704), 0)
 area("catwalk", (4064, 416, 4352, 480), T_BRIM)
@@ -424,7 +603,7 @@ LY = (3584, 864, 5184, 1856)
 UY_Z, K_SILL, K_SHELF, K_BRIM = 192, 192, 88, 200
 L_FLOOR, L_BRIM, U_FLOOR, CREST, U_BRIM = -96, -4, 128, 160, 184
 FOUNTAIN = (4352, 1216, 4864, 1536)
-CD.fit(LY, [(FOUNTAIN, dict(floor=40, **dress(side="TK"))),                    # a fountain's basin: its curb is 40 high
+CD.fit(LY, [(FOUNTAIN, dict(floor=40, **(dict(side="AJVBU", ftex="AJVFK") if LOOK else {}))),   # a fountain's basin: its curb is 40 high
             ((4384, 1248, 4832, 1504), dict(floor=16, ftex="FWATER1")),
             ((5168, 1280, 5184, 1344), dict(ceil=112, ctex="TLITE6_5", light=96, id=WLAMP))],   # the wheel's lamp
        floor=0, **YARD)
@@ -436,15 +615,44 @@ m.sector(rect(5184, 1280, 5216, 1344), floor=0, ceil=0, light=160, wall="AJSHUT"
 for y in (1280, 1344):
     m.line((5184, y), (5216, y), mid="AJTRIM", dontpegbottom=True)
 AVOID.append((5160, 1312))
-S((5216, 1248, 5600, 1376), 0, look("PU", "FP", "KP", 140, 128, COLD))
-area("tunnel", (5216, 1248, 5600, 1376), 0)
-S((5600, 1056, 6048, 1568), 0, WORKS)
-S((6048, 1056, 6112, 1568), 0, WORKS, light=250)
-m.line((6048, 1056), (6048, 1568), special=243, playercross=True)              # Exit_Normal
-area("mh", (5600, 1056, 6048, 1568), 0)
+TUNNEL = (5216, 1248, 5600, 1376)
+SEAM = 5408                     # the tunnel's brick gives way to Doom's here (the look)
+if LOOK:
+    S((TUNNEL[0], TUNNEL[1], SEAM, TUNNEL[3]), 0, look("TN", 140, 128, COLD))
+    S((SEAM, TUNNEL[1], TUNNEL[2], TUNNEL[3]), 0, look("TD", 140, 128, COLD))
+else:
+    S(TUNNEL, 0, look("TN", 140, 128, COLD))
+area("tunnel", TUNNEL, 0)
+# the machine hall, and the way out: a Doom exit door in the middle of its east wall (a strip as high as the
+# door before it, the door 16 thick, Door_Raise by USE), a small room behind it with the Exit_Normal line, and
+# Doom's EXIT sign on a box hung from the hall's ceiling before the door (nothing stands or walks so high)
+MH = (5600, 1056, 6048, 1568)
+EXIT_MOUTH, EXIT_H = (1280, 1344), 72               # EXITDOOR is 72 high
+SIGNBOX = (5992, 1296, 6008, 1328)                  # (EXITSIGN's sign is its left 32)
+CD.fit(MH, [(SIGNBOX, dict(ceil=MH_CEIL - 16, wall=EXIT_SIGN, ctex="CEIL5_1"))], floor=0, **WORKS)
+for _y in (SIGNBOX[1], SIGNBOX[3]):
+    m.line((SIGNBOX[0], _y), (SIGNBOX[2], _y), upper="METAL")
+EX = MH[2]
+m.sector(rect(EX, EXIT_MOUTH[0], EX + 8, EXIT_MOUTH[1]), floor=0, ceil=EXIT_H, light=190,
+         wall=WORKS.get("wall", "AJWALL"), ftex="FLAT20", ctex="FLAT20")
+m.line((EX, EXIT_MOUTH[0]), (EX, EXIT_MOUTH[1]), dontpegtop=True)                # the hall's wall over the door
+_d = m.sector(rect(EX + 8, EXIT_MOUTH[0], EX + 24, EXIT_MOUTH[1]), floor=0, ceil=0, light=190, wall=EXIT_FACE,
+              ftex="FLAT20", ctex="FLAT20")
+for _x in (EX + 8, EX + 24):
+    m.line((_x, EXIT_MOUTH[0]), (_x, EXIT_MOUTH[1]), back=_d, special=12, args=(0, 16, 150), playeruse=True,
+           repeatspecial=True)
+for _y in EXIT_MOUTH:
+    m.line((EX, _y), (EX + 24, _y), mid="DOORTRAK", dontpegbottom=True)
+EXIT_ROOM = (EX + 24, 1248, EX + 120, 1376)
+EXIT_LINE = EX + 72
+for _x1, _x2 in ((EXIT_ROOM[0], EXIT_LINE), (EXIT_LINE, EXIT_ROOM[2])):     # (in two: the line is their edge)
+    m.sector(rect(_x1, EXIT_ROOM[1], _x2, EXIT_ROOM[3]), floor=0, ceil=EXIT_H, light=250, wall="EXITSTON",
+             ftex="FLOOR4_8", ctex="TLITE6_1")
+m.line((EXIT_LINE, EXIT_ROOM[1]), (EXIT_LINE, EXIT_ROOM[3]), special=243, playercross=True)   # Exit_Normal
+area("mh", MH, 0)
 # the outfall (GREEN's far side), seen from the lower yard through glass
 basin(TO, 256, kind=W.OUTFALL, at=(5408, 1664))
-S((5248, 1504, 5568, 1824), 0, look("PU", "FP", "KP", 140, 256, COLD), tag=TO)
+S((5248, 1504, 5568, 1824), 0, look("OV", 140, 256, COLD), tag=TO)
 far((5568, 1632), (5568, 1696), (1, 0), GREEN, 0, TO)
 m.sector(rect(5184, 1600, 5248, 1728), floor=24, ceil=168, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
 for x in (5184, 5248):
@@ -452,7 +660,8 @@ for x in (5184, 5248):
 
 # --- the lock K ------------------------------------------------------------------------------------------
 basin(TK, K_BRIM, at=(4032, 2080))
-KL = sky("PU", "FP", 210, 512)
+KL = sky("KS", 210, 512)
+BU = sky("BU", 210, 512)
 S((3904, 1920, 4160, 2240), 0, KL, tag=TK)
 S((4160, 1920, 4224, 2112), 0, KL, tag=TK)
 S((4160, 2112, 4224, 2240), K_SHELF, KL, tag=TK)                               # the shelf: only a swimmer reaches it
@@ -467,16 +676,16 @@ gauge((3904, 2176), (3904, 2240))
 S((3840, 2080, 3888, 2144), 0, KL, tag=TK)
 stairs((3840, 2144), (3888, 2144), (0, 1), 0, K_SILL, 8, 12, KL, tag=TK)
 S((3840, 2240, 3888, 2304), K_SILL, KL, tag=TK)
-ajarmap.squeeze(m, (3904, 2096), (3904, 2144), (-1, 0), 0, thick=16)
+squeeze((3904, 2096), (3904, 2144), (-1, 0), 0, thick=16)
 area("k", (3904, 1920, 4160, 2240), 0)
 
 # --- the squeeze stair (empty hands, both ways) and the terrace (a drop, any hands) between the yards ------
-ajarmap.squeeze(m, (3648, 1856), (3696, 1856), (0, 1), 0, thick=32)
-S((3632, 1888, 3712, 1936), 0, KL)
-stairs((3632, 1936), (3712, 1936), (0, 1), 0, UY_Z, 10, 32, KL)
-S((3632, 2256, 3712, 2272), UY_Z, KL)
-opening((3632, 2272, 3712, 2304), UY_Z, sky("PU", "FP", 200, UY_Z + 128))
-S((3744, 1856, 3808, 2304), UY_Z, KL)                                          # the terrace: a drop into the lower yard
+squeeze((3648, 1856), (3696, 1856), (0, 1), 0, thick=32)
+S((3632, 1888, 3712, 1936), 0, BU)
+stairs((3632, 1936), (3712, 1936), (0, 1), 0, UY_Z, 10, 32, BU)
+S((3632, 2256, 3712, 2272), UY_Z, BU)
+opening((3632, 2272, 3712, 2304), UY_Z, sky("BU", 200, UY_Z + 128))
+S((3744, 1856, 3808, 2304), UY_Z, BU)                                          # the terrace: a drop into the lower yard
 
 # --- the upper yard --------------------------------------------------------------------------------------
 UY = (3584, 2304, 5184, 3264)
@@ -484,7 +693,7 @@ S(UY, UY_Z, UPYARD)
 area("uy", UY, UY_Z)
 # the reservoir (BLUE's far side) in the water tower, behind glass
 basin(TR, 448, kind=W.RESERVOIR, depth=96, at=(5408, 2784))
-S((5248, 2624, 5568, 2944), UY_Z, look("LB", "FL", "KL", 200, 448, STEEL), tag=TR)
+S((5248, 2624, 5568, 2944), UY_Z, look("RS", 200, 448, STEEL), tag=TR)
 far((5568, 2752), (5568, 2816), (1, 0), BLUE, UY_Z, TR)
 m.sector(rect(5184, 2720, 5248, 2848), floor=UY_Z + 24, ceil=UY_Z + 168, light=200, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF")
 for x in (5184, 5248):
@@ -493,13 +702,13 @@ for x in (5184, 5248):
 # --- the wheel house: L (the lower pool), U (the upper pool), the spillway and its wheel ------------------
 basin(TL, L_BRIM, at=(4700, 2000))
 basin(TU, U_BRIM, at=(4600, 2192))
-WH = sky("PU", "FP", 200, 448)
+WH, WHU, WHT = sky("WL", 200, 448), sky("WU", 200, 448), sky("WT", 200, 448)
 stairs((4480, 1856), (4608, 1856), (0, 1), 0, L_FLOOR, 4, 16, WH, tag=TL)      # down into L from the lower yard
 S((4416, 1920, 5120, 2080), L_FLOOR, WH, tag=TL)
-stairs((4480, 2304), (4608, 2304), (0, -1), UY_Z, U_FLOOR - UY_Z, 4, 16, WH, tag=TU)   # down into U from the upper yard
-S((4416, 2144, 4800, 2240), U_FLOOR, WH, tag=TU)
-S((4800, 2144, 4832, 2240), CREST, WH, tag=TU)                                 # the crest
-stairs((4832, 2240), (4960, 2240), (0, -1), CREST, L_FLOOR - CREST, 8, 20, WH, tag=CHUTE)   # the spillway, down into L
+stairs((4480, 2304), (4608, 2304), (0, -1), UY_Z, U_FLOOR - UY_Z, 4, 16, WHU, tag=TU)   # down into U from the upper yard
+S((4416, 2144, 4800, 2240), U_FLOOR, WHU, tag=TU)
+S((4800, 2144, 4832, 2240), CREST, WHU, tag=TU)                                # the crest
+stairs((4832, 2240), (4960, 2240), (0, -1), CREST, L_FLOOR - CREST, 8, 20, WHT, tag=CHUTE)   # the spillway, down into L
 frame((5120, 1984), (5120, 2048), (1, 0), 107, L_FLOOR, TL, "l")
 frame((4416, 1952), (4416, 2016), (-1, 0), 109, L_FLOOR, TL, "l")
 frame((4416, 2160), (4416, 2224), (-1, 0), 108, U_FLOOR, TU, "u")
@@ -517,6 +726,7 @@ W.rate(m, 224, 192, K_FLOW, FREE, W.FLOAT | W.OVERFLOW, WHEEL_TICS)
 # the player stands in it. Its water is not a basin of its own: it follows the swimming bath's every tic.
 SB_SRC = Map()
 SB_SRC.align = set(m.align)
+SB_SRC.line_hook = make_hook(SB_SRC, set())
 swimming_bath(SB_SRC, TSBL, copy=True)
 SB_COPY_BOX = lefthand.left_handed(m, SB_SRC, "x", SB_GLASS, SB_SHIFT, hide=True)
 W.basin(m, TSBL, BASINS[TSB]["area"], BASINS[TSB]["brim"], floor=BASINS[TSB]["floor"], kind=W.FOLLOW, depth=TSB,
@@ -530,6 +740,108 @@ ajarmap.door(m, GREEN, 2208, 384, angle=180)                                   #
 ajarmap.pair(m, TEAL, (2624, 352, 90), (2944, 288, 90))                        # both TEAL leaves on C's floor
 for x, y in ((672, 160), (2208, 384), (2624, 352), (2944, 288)):
     TAKEN.append((x, y, 40))
+
+
+# =================================================================================================
+# THE LOOK: the walls at their heights, the pictures and the plates (PLAN.md, "Look: MAP20, Municipal")
+# =================================================================================================
+wall_tex("AJVCR", CHANGE["ceil"], CHANGE["ceil"], "tiled", floor=0)
+wall_tex("AJVCU", UPPER["ceil"] - LANDING, UPPER["ceil"], "tiled", floor=LANDING)
+wall_tex("AJVPL", BATH["ceil"], BATH["ceil"], "plunge", brim=BASINS[TP]["brim"], step=64)
+wall_tex("AJVEC", CORR["ceil"] - PH_Z, CORR["ceil"], "engine", dados=(LEDGE, PH_Z))
+wall_tex("AJVPH", 288, PH_Z + 288, "pumps", floor=PH_Z)
+wall_tex("AJVPA", 160 - C_FLOOR, 160, "engine", dados=(C_FLOOR,))
+wall_tex("AJVCH", HALL["ceil"] - C_FLOOR, HALL["ceil"], "hall", tide=C_FOUND)
+wall_tex("AJVBH", BOIL["ceil"], BOIL["ceil"], "boiler")
+wall_tex("AJVTK", BOIL["ceil"], BOIL["ceil"], "tank", rim=T_BRIM)
+wall_tex("AJVYD", YARD["ceil"] - L_FLOOR, YARD["ceil"], "yard", floor=0)              # (down to L's floor: the stair into L)
+wall_tex("AJVYU", UPYARD["ceil"] - U_FLOOR, UPYARD["ceil"], "yard", floor=UY_Z)        # (down to U's floor: the stair into U)
+wall_tex("AJVTW", UPYARD["ceil"] - UY_Z, UPYARD["ceil"], "tower", floor=UY_Z)
+wall_tex("AJVTN", 128, 128, "yard", floor=0)
+wall_tex("AJVOV", 256, 256, "vault", tide=64)
+wall_tex("AJVRS", 448 - UY_Z, 448, "reservoir", water=BASINS[TR]["floor"] + BASINS[TR]["depth"])
+wall_tex("AJVKS", KL["ceil"], KL["ceil"], "stone", stain=K_BRIM)
+wall_tex("AJVBU", KL["ceil"], KL["ceil"], "stone", stain=None)
+wall_tex("AJVWL", WH["ceil"] - L_FLOOR, WH["ceil"], "stone", stain=L_BRIM)
+wall_tex("AJVWU", WH["ceil"] - L_FLOOR, WH["ceil"], "stone", stain=U_BRIM)           # (the crest's side, down the spillway)
+wall_tex("AJVWT", WH["ceil"] - L_FLOOR, WH["ceil"], "timber", top=CREST + 32)
+
+
+def pieces(a, b, spec):
+    """In the look: the wall from a towards b in pieces (length, Doom texture); a texture None is the room's."""
+    if not LOOK:
+        return
+    n = (abs(b[0] - a[0]) + abs(b[1] - a[1]))
+    d = ((b[0] - a[0]) / n, (b[1] - a[1]) / n)
+    p = a
+    for ln, tex in spec:
+        q = (p[0] + round(d[0] * ln), p[1] + round(d[1] * ln))
+        m.cut(p, q)
+        if tex:
+            m.line(p, q, mid=tex)
+            DOOM.add(tex)
+        p = q
+    assert p == b, (a, b, p)
+
+
+# stage 1, the baths: the changing room's lockers, rules and clock; the plates; P's high water at 224
+hang(m, (64, 0), (192, 0), (0, -1), "lockers", "AJVCR", first=1)
+hang(m, (256, 0), (384, 0), (0, -1), "lockers", "AJVCR", first=9)
+hang(m, (128, 384), (320, 384), (0, 1), "rules", "AJVCR")
+hang(m, (320, 384), (384, 384), (0, 1), "clock", "AJVCR")
+named((0, 128), (0, 192), (-1, 0), "AJVCR", ("SWIMMING", "BATH"), 96)
+hang(m, (448, 96), (448, 160), (1, 0), "plate", "AJVCR", words=("PLUNGE",), at=100, arrow=1)
+P_HIGH = "BLUE in 102"          # the measure's run whose level the plaque marks: P at 224 (BLUE's 96 over 102's sill)
+hang(m, (1120, 32), (1120, 96), (1, 0), "plaque", "AJVPL", level=P_HIGH, year=1928)
+named((1120, 608), (1120, 672), (1, 0), "AJVCU", ("PUMPS",), LANDING + 96)
+# stage 2, the engine house
+named((1728, 160), (1728, 288), (1, 0), "AJVEC", ("PUMPS",), PH_Z + 96)
+named((1760, 160), (1760, 288), (-1, 0), "AJVPH", ("PLUNGE",), PH_Z + 96)
+named((2272, 672), (2272, 736), (1, 0), "AJVPH", ("COOLING", "HALL"), PH_Z + 96)
+named((2304, 672), (2304, 736), (-1, 0), "AJVCH", ("PUMPS",), PH_Z + 96)
+C_HIGH = "GREEN in 111"         # C as found: at C_FOUND (96), its tide line
+hang(m, (3008, 0), (3072, 0), (0, -1), "plaque", "AJVCH", level=C_HIGH, year=1936)
+named((3648, -32), (3712, -32), (0, 1), "AJVPA", ("BOILERS",), 96)
+# stage 3, the boiler house: the boilers' fronts, the section drawing (the hint for the pipe), the plates
+named((3648, 0), (3712, 0), (0, -1), "AJVBH", ("COOLING", "HALL"), 96)
+named((3584, 384), (3584, 448), (-1, 0), "AJVBH", ("COOLING", "HALL"), WALK + 160)
+hang(m, (3776, 0), (4160, 0), (0, -1), "boilers", "AJVBH")
+SECTION = (4352, 32), (4352, 352)
+hang(m, *SECTION, (1, 0), "section", "AJVBH")
+# stage 4, the yards and the lock
+named((3648, 1856), (3696, 1856), (0, 1), "AJVYD", ("YARD",), 64)
+named((3632, 2272), (3712, 2272), (0, 1), "AJVBU", ("YARD",), UY_Z + 128)
+hang(m, (4032, 1856), (4096, 1856), (0, 1), "plate", "AJVYD", words=("LOCK",), at=100, arrow=-1)
+K_HIGH = ("then BLUE in 133", "BLUE in 131 (alone)")    # K at 184 and at 96: the flood marks by the sill
+hang(m, (4096, 1920), (4160, 1920), (0, -1), "flood", "AJVKS", levels=K_HIGH, years=(1947, 1911))
+named((4480, 1856), (4608, 1856), (0, 1), "AJVYD", ("WHEEL HOUSE",), 448)
+named((4480, 2304), (4608, 2304), (0, -1), "AJVYU", ("WHEEL HOUSE",), 448)
+hang(m, (5184, 1216), (5184, 1280), (1, 0), "plate", "AJVYD", words=("MACHINE", "HALL"), at=100, arrow=-1)
+# the outfall's glass as a culvert's mouth in the lower yard, the reservoir's in the water tower's foot
+hang(m, (5184, 1600), (5184, 1728), (1, 0), "culvert", "AJVYD", part="upper", words=("OUTFALL",), head=168)
+if LOOK:
+    m.line((5184, 1600), (5184, 1728), lower="AJVYD")
+    m.line((5184, UY[1]), (5184, 2720), mid="AJVTW")
+    m.line((5184, 2848), (5184, UY[3]), mid="AJVTW")
+    m.line((5184, 2720), (5184, 2848), lower="AJVTW")
+hang(m, (5184, 2720), (5184, 2848), (1, 0), "tower", "AJVTW", part="upper", words=("RESERVOIR",), head=UY_Z + 168)
+# stage 5, the wheel house: L's high water at -4, the patent office's answer
+L_HIGH = "BLUE in 109"          # L at its brim, -4
+hang(m, (4800, 1920), (4864, 1920), (0, -1), "plaque", "AJVWL", level=L_HIGH, year=1953)
+hang(m, (4544, 2080), (4672, 2080), (0, 1), "patent", "AJVWL")
+# stage 6: Doom leaks in. The tunnel's brick ends at the seam (a plate says so), then SUPPORT3 ribs and marble;
+# the cells are Doom's stone with a demon's face; the machine hall is a Doom room; the exit is Doom's
+hang(m, (SEAM - 64, TUNNEL[3]), (SEAM, TUNNEL[3]), (0, 1), "seam", "AJVTN")
+for _y in (TUNNEL[1], TUNNEL[3]):
+    pieces((SEAM, _y), (TUNNEL[2], _y), [(32, "SUPPORT3"), (64, None), (32, "SUPPORT3"), (64, None)])
+pieces((CELL_B[0] + 40, CELL_B[1]), (CELL_B[0] + 168, CELL_B[1]), [(128, "MARBFACE")])
+for _y in (MH[1], MH[3]):
+    pieces((MH[0], _y), (MH[2], _y), [(64, "SUPPORT3"), (64, None), (64, None), (64, "SUPPORT3"), (64, None), (64, None),
+                                      (64, "SUPPORT3")])
+for _ya, _yb in ((MH[1], TUNNEL[1]), (MH[3], TUNNEL[3])):
+    pieces((MH[0], _ya), (MH[0], _yb), [(64, None), (64, "SUPPORT3"), (64, None)])
+for _ya, _yb in ((MH[1], EXIT_MOUTH[0]), (MH[3], EXIT_MOUTH[1])):
+    pieces((MH[2], _ya), (MH[2], _yb), [(64, None), (64, "SUPPORT3"), (64, None), (32, "SUPPORT3")])
 
 
 # =================================================================================================
@@ -732,7 +1044,11 @@ VIEWS = {2001: (520, 480, 315), 2002: (2336, 736, 315), 2003: (2976, 200, 270), 
          2009: (4900, 1312, 0), 2010: (-200, 300, 180), 2011: (1088, 224, 0), 2012: (832, 640, 270),
          2013: (5300, 1312, 0), 2014: (4032, 2340, 270), 2015: (4000, 1820, 90), 2016: (2000, 400, 0),
          2017: (3300, -448, 0), 2018: (3296, 416, 0), 2019: (3560, 416, 180), 2020: (416, 64, 0),
-         2021: (2944, 64, 270), 2022: (4064, 704, 0)}
+         2021: (2944, 64, 270), 2022: (4064, 704, 0),
+         # the look's (PLAN.md, "Look: MAP20"): the plaques P, C, K, L; the section drawing; the cells' demon;
+         # the tunnel's seam; the exit door
+         2023: (700, 64, 0), 2024: (3040, 680, 270), 2025: (4100, 2150, 270), 2026: (4832, 2040, 270),
+         2027: (3950, 192, 0), 2028: (3320, -230, 270), 2029: (5280, 1280, 30), 2030: (5850, 1312, 0)}
 for tid, (x, y, a) in VIEWS.items():
     test_spot(tid, x, y, a)
 
@@ -1096,6 +1412,40 @@ def bath_checks():
 
 I1.m, CD.m = _theirs, _cd                    # MAP11's and MAP18's helpers draw on their own maps again
 MEASURE, PROBLEMS = measure()
+
+
+def _level(run):
+    """A level the water can be made to stand at, as the measure has it (the plaques mark these)."""
+    v = REST[run]
+    if abs(v - round(v)) > 0.05:
+        PROBLEMS.append(f"the look: {run} rests at {v:.2f}, not a whole height for a plaque")
+    return round(v)
+
+
+def finish_look():
+    """The pictures' heights from their walls, the plaques' levels from the measure, the section drawing's
+    basins and frames from the generator's own records; then the walls are laid once (the hook's checks)."""
+    for p in PICS.values():
+        base = WALLS[p["base"]]
+        p["H"] = base["H"] if p["H"] is None else p["H"]
+        p["z0"] = base["z0"] if p["z0"] is None else p["z0"]
+        p["basespec"] = base
+        if p["kind"] == "plaque":
+            p["at"] = _level(p["level"])
+        if p["kind"] == "flood":
+            p["ats"] = tuple(_level(r) for r in p["levels"])
+        if p["kind"] == "section":
+            p["basins"] = [(SHORT[t], BASINS[t]["floor"], BASINS[t]["brim"],
+                            sorted((n, f["sill"]) for n, f in FRAMES.items() if f["basin"] == t))
+                           for t in (TP, TC, TT, TK, TL, TU)]
+            p["reservoir"] = BASINS[TR]["floor"] + BASINS[TR]["depth"]
+    del LOOK_PROBLEMS[:]
+    m.parts()
+    PROBLEMS.extend("the look: " + s for s in LOOK_PROBLEMS)
+
+
+if LOOK:
+    finish_look()
 _line, _problems = bath_checks()
 MEASURE.append(_line)
 PROBLEMS += _problems

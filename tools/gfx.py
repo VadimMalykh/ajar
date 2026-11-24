@@ -1352,6 +1352,9 @@ def make_all():
     gfx_lift.make(out)
     import gfx_water                                             # the water lab's gauge and wheel
     gfx_water.make(out)
+    import gfx_highwater                                         # MAP20's look, Municipal (before the flipped copies:
+    import map_highwater                                         # the swimming bath's copy flips its walls)
+    gfx_highwater.make(out, map_highwater)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)

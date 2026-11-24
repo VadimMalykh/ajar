@@ -43,14 +43,18 @@ def gauge():
     return im
 
 
-def float_mark():
-    im = Img(64, 272, (70, 74, 80))
-    im.noise(5, 22)
+def float_mark(base=None):
+    """`base`: a 64 x 272 picture of the tank's side to paint the mark on (MAP20's look); else plain plates."""
     red, ink = (200, 40, 32), (230, 228, 220)
-    for y in range(0, 272, 32):                      # the tank's plates, riveted
-        im.rect(0, y, 64, y + 1, shade((70, 74, 80), 0.6))
-        for x in (6, 58):
-            im.rect(x, y + 4, x + 2, y + 6, shade((70, 74, 80), 1.4))
+    if base is not None:
+        im = base
+    else:
+        im = Img(64, 272, (70, 74, 80))
+        im.noise(5, 22)
+        for y in range(0, 272, 32):                  # the tank's plates, riveted
+            im.rect(0, y, 64, y + 1, shade((70, 74, 80), 0.6))
+            for x in (6, 58):
+                im.rect(x, y + 4, x + 2, y + 6, shade((70, 74, 80), 1.4))
     im.rect(0, 54, 64, 59, red)                      # 216 over the floor: row 272 - 216
     im.rect(28, 60, 36, 80, red)
     im.rect(24, 60, 40, 64, red)
