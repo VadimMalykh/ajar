@@ -16153,3 +16153,35 @@ other twenty-three pieces byte for byte as before; `soundlab=ok` with 25
 tracks; GZDoom with sound on starts both. **Not checked: how they sound**,
 and whether they bring Lauridsen's piece to mind at all.
 
+## Music: Distant Galaxy I removed, two more variations on that sketch (2026-11-25)
+
+**Vadim**: "20 - no / add couple more variations on Distant Galaxy, please",
+and while they were being written: "22 - yes yes yes!!!!!".
+
+**20** was Distant Galaxy I (AJM_GAL1): his eight chords in held sounds, all
+three notes moving together at each change. Removed; it was on no map.
+**22** is Garmonic I: his other sketch bar for bar, where a note is held and
+the others slip one after the other. With "19 is very good" (Everything Else
+Moves) that makes three answers that point the same way, and this is
+Claude's reading of them, not his words: what he likes is one line moving at
+a time under or over a held note; chords moved as a block, he does not.
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_GAL3 | Distant Galaxy III, A, 52, in twelve, 222 s | not held chords: his eight chords, two bars each, as a rocking figure on an electric piano (the third chord bare fifths, as his has no third), over the bass. The second time a tune of eight long notes that only climbs, C, D sharp, E, F, G, G, A, up to the C that is still in his last chord, and falls with it to B. The third time a music box an octave over the figure. The one of the lot that is not ambient: three notes a second, though slow |
+| AJM_GAL4 | Distant Galaxy IV, A, 54, 213 s | his eight chords with no two lines moving at once, made as Garmonic I is (voice, slow strings, warm pad, bass; a vibraphone the second time, a glass voice the third). Where his three notes slip together to G sharp minor, here C goes to B, then A to G sharp, then E to D sharp, half a bar apart, and back the same way; and so through all eight. On the way it passes chords his sketch does not have: A with a B in it, E over G sharp, F with an E on top |
+
+Distant Galaxy III stands where I stood in TRACKS and IV is the last, so
+the numbers Vadim has been using stay: 19 Everything Else Moves, **20
+Distant Galaxy III**, 21 Distant Galaxy II, 22 Garmonic I, 23 Garmonic II,
+24 Mysterium I, 25 Mysterium II, **26 Distant Galaxy IV**. No map plays them.
+
+Checked: read back by a second MIDI reader; the chord at every half bar of
+Distant Galaxy IV printed from the file: his eight are all reached, in his
+order, and no change moves more than one of the three lines (the bass goes
+with the low line); the only semitone that lasts is the E over the bass's F
+on the way into and out of the F chord, two octaves apart; Distant Galaxy
+III has none; the other twenty-four pieces byte for byte as before;
+`soundlab=ok` with 26 tracks; GZDoom with sound on starts both.
+**Not checked: how they sound.**
+

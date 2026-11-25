@@ -103,9 +103,16 @@ idea further.
 - distant_galaxy_theme: eight chords of two bars, A minor, G sharp minor
   (the same chord slipped a semitone down), A with no third, D minor, C over
   E, E minor, F, then E with a C still in it (augmented) becoming E major.
-  Distant Galaxy I is that. Distant Galaxy II is in D and does the slip
+  Distant Galaxy I was that, in held chords as he voiced them; Vadim: "20 -
+  no", and it is removed. Distant Galaxy II is in D and does the slip
   twice, on the first chord and on the fourth, each time coming back to a
   chord with no third, and keeps his ending; slow harp notes, not held chords.
+  He then asked for "couple more variations on Distant Galaxy": III is his
+  eight chords as a rocking figure in twelve with a tune that only climbs
+  (it has I's place in TRACKS, so the numbers of the others in the lab
+  stay); IV, the last of TRACKS, is his eight chords with no two lines
+  moving at once, made as Garmonic I is, of which he said "22 - yes yes
+  yes!!!!!".
 - garmonic: a B flat held on top while the two notes under it slip down a
   semitone one after the other (E flat minor becomes B flat); E flat minor
   to D major with the F sharp kept; D augmented; G minor; and G minor back
@@ -1312,34 +1319,65 @@ def held(steps=16, **notes):
     return {k: " ".join([v] + ["-"] * (steps - 1)) for k, v in notes.items()} | {"T": " ".join("-" * steps)}
 
 
-def distant_galaxy_one():
-    """A, 56 a minute. Ambient. Vadim's sketch as he voiced it, each chord two bars: A minor, G sharp minor, A with
-    no third, D minor, C over E, E minor, F, and E with the C still sounding before it is E major. The second time
-    a vibraphone, which slips a semitone with the second chord as everything does; the third time a glass voice."""
-    p = Piece("Distant Galaxy I", 56)
-    # 48 bars, three times round: his three lines (the bass where he has it); the whole bass and a vibraphone; glass
-    top = "e T f T e T s T e T g T s T e l"                                      # E Eb E F E G F E/G#
-    p.voice("top line", VOICE, 69, held(e="5,", f="b5,", s="b6,", g="b7,", l="7,"), rep(top, 3),
-            vel=64, gate=1.0, volume=86, pan=52, reverb=90)
-    p.voice("middle line", SLOWSTR, 57, held(c="b3", b="2", a="1"), rep("c T b T a T T T c T b T c T T b", 3),
-            vel=64, gate=1.0, volume=88, pan=36, reverb=80)                      # C B A A C B C C/B
-    p.voice("low line", WARMPAD, 57, held(a="1", g="7,", e="5,", f="b6,", n="b7,"),
-            rep("a T g T e T f T n T T T a T g T", 3), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
-    p.voice("bass", CONTRABASS, 45, held(a="1", g="7,", e="5,", d="4,", f="b6,"),
-            rep("_ _ _ _ e T d T e T T T f T e T", 1, "a T g T e T d T e T T T f T e T", 2), vel=80, gate=1.0, volume=100)
-    p.voice("vibraphone", VIBES, 69, {
-        "T1": ". . . . . . . . 5 - - - 1' - - -",
-        "T2": "b3' - - - - - - - - - - - . . . .",
-        "T6": "2' - - - - - - - - - - - . . . .",
-        "T7": ". . . . . . . . 4 - - - b6 - - -",
-        "T8": "1' - - - - - - - - - - - . . . .",
-        "T9": ". . . . . . . . 5 - - - b7 - - -",
-        "T13": ". . . . . . . . b6 - - - 1' - - -",
-        "T15": ". . . . . . . . 5 - - - 7 - - -",
-    }, rep("_", 16, "T1 T2 T1-1 T2-1 T1 T6 T7 T8 T9 T2 T9 T6 T13 T2 T15 T6", 2), vel=76, gate=1.0, volume=94, pan=30,
+def distant_galaxy_three():
+    """A, 52 a minute, in twelve. Not held chords: Vadim's eight chords, two bars each, as a rocking figure on an
+    electric piano (the third chord bare fifths, as his has no third). The second time a tune of eight long notes
+    that only climbs, C, D sharp, E, F, G, G, A, up to the C that is still in his last chord, and falls with it
+    to B. The third time a music box an octave over the figure."""
+    p = Piece("Distant Galaxy III", 52, steps=12, per_beat=3, sig=(12, 8))
+    figure = {
+        "ma": "1 5 1' b3' 1' 5 1 5 1' b3' 1' 5", "mb": "1 5 1' b3' 5' b3' 1' - - 5 - -",        # minor
+        "sa": "1 5 1' 5' 1' 5 1 5 1' 5' 1' 5", "sb": "1 5 1' 5' 1'' 5' 1' - - 5 - -",          # fifths only
+        "ca": "1 b3 b6 1' b6 b3 1 b3 b6 1' b6 b3", "cb": "1 b3 b6 1' b3' 1' b6 - - b3 - -",    # major, its third lowest
+        "Ma": "1 5 1' 3' 1' 5 1 5 1' 3' 1' 5", "Mb": "1 5 1' 3' 5' 3' 1' - - 5 - -",           # major
+        "aa": "1 3 b6 1' b6 3 1 3 b6 1' b6 3",                                                # augmented
+    }
+    # 48 bars, three times round: the figure and the bass; the tune; a music box
+    round_ = "ma mb ma-1 mb-1 sa sb ma-7 mb-7 ca-5 cb-5 ma-5 mb-5 Ma-4 Mb-4 aa-5 Mb-5"
+    p.voice("electric piano", EPIANO, 57, figure, rep(round_, 3), vel=66, gate=1.0, volume=92, pan=44, reverb=80)
+    p.voice("bass", CONTRABASS, 45, held(12, a="1", g="7,", d="4,", e="5,", f="b6,"),
+            rep("a T g T a T d T e T T T f T e T", 3), vel=78, gate=1.0, volume=98)
+    late = lambda note: f". . . {note} - - - - - - - -"            # a breath before each note
+    p.voice("tune", SPACEVOICE, 69, {
+        "c": late("b3"), "s": late("b5"), "e": late("5"), "f": late("b6"), "g": late("b7"), "a": late("1'"),
+        "h": late("b3'"), "b": "2' - - - - - - - - - - -", "T": " ".join("-" * 12),
+    }, rep("_", 16, "c T s T e T f T g T T T a T h b", 2), vel=72, gate=1.0, volume=90, pan=76, reverb=90)
+    p.voice("music box", MUSICBOX, 69, figure, rep("_", 32, round_, 1), vel=52, gate=1.0, volume=70, pan=90,
             reverb=80)
-    p.voice("glass", GLASS, 81, held(e="5,", f="b5,", s="b6,", g="b7,", l="7,"), rep("_", 32, top, 1),
-            vel=56, gate=1.0, volume=72, pan=70, reverb=90)
+    return p
+
+
+def distant_galaxy_four():
+    """A, 54 a minute. Ambient. Vadim's eight chords, but no two lines move at once: where his three notes slip
+    together to G sharp minor, here C goes to B, then A to G sharp, then E to D sharp, half a bar apart, and back
+    the same way; and so through all eight, by a semitone or a tone at a time. Made as Garmonic I is (voice, slow
+    strings, warm pad, a vibraphone the second time, a glass voice the third)."""
+    p = Piece("Distant Galaxy IV", 54)
+    #        Am        to G#m      and back    Dm         C over E    Em          F           E
+    top = "E4 E4       E4/D#4 D#4/E4   E4 E4/F4    F4 F4/E4   E4 E4      E4 E4       E4/F4 F4/E4   E4 E4"
+    middle = "C4 C4/B3 B3 B3       B3/A3 A3    A3 A3      A3/C4 C4   B3 B3/C4    C4 C4         C4/B3 B3/C4"
+    low = "A3 A3       G#3 G#3     A3 A3       A3 A3      G3 G3      G3 G3       A3 A3         G#3 G#3"
+    bass = "A2 A2      G#2 G#2     A2 A2       D2 D2      E2 E2      E2 E2       F2 F2         E2 E2"
+    # 48 bars, three times round: the four lines; a vibraphone; a glass voice
+    three = lambda text, **how: spell(" ".join(text.split() * 3), **how)
+    p.voice("top line", VOICE, 57, *write(three(top, again=2), 57), vel=66, gate=1.0, volume=88, pan=52, reverb=90)
+    p.voice("middle line", SLOWSTR, 57, *write(three(middle), 57), vel=64, gate=1.0, volume=88, pan=36, reverb=80)
+    p.voice("low line", WARMPAD, 57, *write(three(low), 57), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
+    p.voice("bass", CONTRABASS, 45, *write(three(bass, again=2), 45), vel=80, gate=1.0, volume=100)
+    tune = {                                    # two notes up to a long one, each once its chord has arrived
+        "v1": ". . . . . . . . 1 - - - b3 - - -", "v2": "5 - - - - - - - - - - - . . . .",
+        "v3": ". . . . . . . . 7, - - - 2 - - -", "v4": "b5 - - - - - - - . . . . . . . .",
+        "v5": ". . . . . . . . 1 - - - 5 - - -", "v6": "1' - - - - - - - - - - - . . . .",
+        "v7": ". . . . . . . . 4 - - - b6 - - -",
+        "v9": ". . . . . . . . b7, - - - b3 - - -",
+        "v11": ". . . . . . . . 2 - - - 5 - - -", "v12": "b7 - - - - - - - - - - - . . . .",
+        "v14": "b6 - - - - - - - . . . . . . . .",
+        "v16": "7 - - - - - - - - - - - . . . .",
+    }
+    notes = "v1 v2 v3 v4 v5 v6 v7 v6 v9 v2 v11 v12 v1 v14 v11 v16"
+    p.voice("vibraphone", VIBES, 69, tune, rep("_", 16, notes, 1, "_", 16), vel=76, gate=1.0, volume=94, pan=30,
+            reverb=80)
+    p.voice("glass", GLASS, 69, tune, rep("_", 32, notes, 1), vel=66, gate=1.0, volume=84, pan=70, reverb=90)
     return p
 
 
@@ -1567,12 +1605,13 @@ TRACKS = [
     ("AJM_SALT", "children's games, skipping: a nursery tune in major over a bass going down, then the band in minor", salt_mustard),
     ("AJM_WOLF", "children's games, fast: a chug of three, three, seven; a call, the hour struck, a chase", mr_wolf),
     ("AJM_MOVE", "ambient: one note stays through six chords and one other moves at each change; vibes, a clarinet", everything_else_moves),
-    ("AJM_GAL1", "ambient, Vadim's sketch distant_galaxy_theme: his eight chords as he voiced them, a vibraphone", distant_galaxy_one),
+    ("AJM_GAL3", "Vadim's sketch distant_galaxy_theme in twelve: his chords as a rocking figure, a tune that only climbs", distant_galaxy_three),
     ("AJM_GAL2", "ambient, the same sketch turned: its semitone slip done twice, in slow harp notes", distant_galaxy_two),
     ("AJM_GAR1", "ambient, Vadim's sketch garmonic bar for bar: a held B flat, the notes under it slipping in turn", garmonic_one),
     ("AJM_GAR2", "ambient, the same sketch as a chain: every note falls a semitone, the chords climb by fifths", garmonic_two),
     ("AJM_MYS1", "ambient, on Lauridsen's harmony: sixteen chords in one key, a line that stays, one note from outside", mysterium_one),
     ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
+    ("AJM_GAL4", "ambient, the same sketch with no two lines moving at once: each chord reached a note at a time", distant_galaxy_four),
 ]
 
 
