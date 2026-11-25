@@ -15690,3 +15690,134 @@ that the go's record has them; killed six tics after it was taken.
   yard.
 - The script's go 1 waits on the terrace, not at the gantry's foot (both by
   way 1): self 1 is thus in the yard from 0:34 to 1:00 in each later go.
+
+## MAP19: YELLOW's ambush, bigger (built 2026-11-25)
+
+> Vadim, 2026-11-25, playing MAP19: "map19, ambush when yellow door taken could be bigger, couple arch-vhiles and more monsters could be good"
+
+Decided by Claude (Fable) the same day; built by Claude on Opus in the task
+`map19-yellow-ambush`. The sibling of VIOLET's (above). Nothing of the
+level's geometry moved but seven piers in the pond court; no frame, door,
+register or way changed.
+
+**What was decided.** YELLOW stands in the glass kiosk (inside 5136..5360
+square, its steel door, register 7's, in the north side at x 5216..5280) in
+the south-west of the pond court; the player carries it round the pond to
+113 in the east wall. Taking YELLOW the first time (cause 14) used to bring
+two cacodemons at once and three sergeants after 2 s. Now 25:
+
+| when | where | what |
+|---|---|---|
+| at once | the court, by `spot()` | 2 cacodemons |
+| at once | round the kiosk (4928, 4480, 5568, 5568) | 2 hell knights, 4 imps |
+| `after=2` | the court | 3 sergeants, 2 chaingunners |
+| `after=4` | the east bank (6400, 3712, 6848, 5568) | 2 revenants, 1 mancubus |
+| `after=4` | the north bank (4928, 3712, 6848, 4224) | 3 demons |
+| `after=6` | the north bank, (5696, 3904), facing south-west | arch-vile 1 |
+| `after=6` | the court | 2 cacodemons |
+| `after=10` | the east bank's foot, (6624, 5216), facing west | arch-vile 2 |
+| `after=10` | the south bank (5568, 5248, 6848, 5568) | 2 spectres |
+
+25 where there were 5: 20 more, a multiple of four, so every ambusher after
+these (ORANGE's, the registers') keeps the difficulty it had. The arch-viles
+are there from "Short stay" (2) up, the rest thinned as ambushers always are.
+
+*Where the arch-viles stand.* The kiosk's glass lets sight through but no
+shots: an arch-vile within its reach (896) of the kiosk would burn a player
+who cannot answer. Both stand over 1200 from the kiosk's middle (5248, 5248),
+one on each way round the pond: (5696, 3904) 1417 from it, west of the boat
+store; (6624, 5216) 1376 from it, at the south end of the east bank, the way
+to 113. They also raise the dead: the court's 16 placed monsters and
+whatever of the earlier ambushes fell there (the boathouse's, cause 57:
+register 7 is signed before the kiosk opens; and this one's first waves).
+
+*Cover.* The court's only solid cover was the little boat store, so it has
+seven stone piers as the east yard's (64 x 64, 96 high, the same dress):
+the west bank (5312, 4416, 5376, 4480) and (5312, 4800, 5376, 4864); the
+north bank (5440, 3936, 5504, 4000) and (6464, 3936, 6528, 4000); the east
+bank either side of 113's axis (6592, 4288, 6656, 4352) and (6592, 4864,
+6656, 4928); the south bank (5952, 5376, 6016, 5440). Every way between a
+pier and the walls, the railing, the kiosk and the boat store is 128 or more.
+
+*Supplies.* In the kiosk, fixed: along its west inside wall a box of rockets
+(5168, 5184), a cell pack (5168, 5248), a box of shells (5168, 5312); along
+its east one a soul sphere (5328, 5184) and two medikits (5328, 5248),
+(5328, 5312). YELLOW stands at (5248, 5280), 80 from the nearest. In the
+court, scattered: 2 boxes of rockets, 2 cell packs, 2 boxes of shells, a box
+of bullets, 4 medikits (its box of shells, 2 boxes of rockets and 2 medikits
+stay).
+
+**What is built** (`tools/map_paper.py`, `src/zscript/map19.zs`; nothing
+shared):
+- The east yard's pier dress is `STONE_PIER` now (it was `PIER`, a name the
+  stair hall reuses for its pier's box a few lines on); the east yard builds
+  as before. `PC_PIERS` are features of the pond court's `room()`, after the
+  inner square, before the balcony and the boat store's fence; the walk takes
+  them as obstacles, so `spot()` keeps things off them.
+- The kiosk's six things are put with `item()` after the east strongroom's;
+  the two arch-viles' places are held (`hold("pond", ..., 20)`, as
+  `VILE_N_AT`, `VILE_E_AT`) beside `CYBER_AT` and `VILE_AT`, before the
+  level's scattered ammunition. Neither needed moving. The court's scattered
+  supplies follow VIOLET's, after the placed monsters, before the ambushes.
+- As built, cause 14 (from the generated map): the cacodemons (5416, 4208),
+  (5864, 5352); round the kiosk the hell knights (5248, 4864), (5376, 4648),
+  the imps (5056, 4968), (5184, 4752), (5440, 5080), (5024, 5400); the
+  sergeants (6760, 3880), (5000, 4456), (5456, 4072), the chaingunners
+  (6576, 5424), (5112, 3944); on the east bank the revenants (6544, 4928),
+  (6704, 3968), the mancubus (6520, 4544); on the north bank the demons
+  (6336, 3824), (5776, 4088), (6664, 3880); arch-vile 1 (5696, 3904); the
+  second cacodemons (6456, 4144), (5512, 4360); arch-vile 2 (6624, 5216); on
+  the south bank the spectres (6208, 5376), (6496, 5336). On "Just visiting"
+  12 of the 23 thinned ones come, on "Short stay" 18 of them and the two
+  arch-viles, from "Resident" all 25.
+- What moved in the court: the fourth imp of its company stood where the
+  south pier is (5944, 5376) and went to (5160, 4288); from it on, by the
+  places taken, the rest of the company moved but the three other imps and a
+  revenant (5920, 4176): the sergeants are at (5608, 5440), (6504, 3792),
+  (6728, 4568), the cacodemons (5024, 5136), (5472, 4760), (6360, 5328), the
+  hell knights (5248, 3864), (6592, 4056), the other revenant (5128, 4632),
+  the demons (6472, 4824), (6248, 3928). ORANGE's ambush (cause 19) and the
+  boathouse's (cause 57) moved with them. The court's scattered ammunition,
+  the ORANGE leaves (5184, 3840), (6656, 5440), YELLOW, the megasphere, the
+  island and the MapSpots kept their places.
+- The test (MODE=1): beside `company15_all`, `company14_all`: no ambusher of
+  cause 14 left. YELLOW is taken long before (its last wave holds back up to
+  20 + 25 + 35 x 10 tics).
+
+**Departures.** None from the brief's design: no `hold()` asserted, every
+`within` box had room with the default gap, no pier needed moving.
+
+**The budget** (`tools/budget.py map_paper`), before: skill 3 280 monsters,
+hp 40600, x1.95; skill 1 143, x3.75. After:
+- `skill3: 300 monsters, hp 46130; ammo dmg 92350 (x2.00) sh628 bu885 ro105
+  ce1320; heal 1190 armor 300; SG CG SSG RL PL BACKPACK RL`
+- `skill1: 152 monsters, hp 21150; ammo dmg 85300 (x4.03) sh548 bu740 ro105
+  ce1320; heal 1190 armor 300; SG CG SSG RL PL BACKPACK RL`
+
+**The checks** (on the full `./build.sh`, against the same build of main's
+code, `23c4920`):
+- The build: no problem. MAP19's measure as before but for: 922 sectors
+  (895), 404 nodes (376: the piers' corners), and two crossings in a row on a
+  plate's middle register 1 1809 (1812), 3 1975 (1977), 5 1739 (1742), 7 2838
+  (2845), 8 4798 (4807), 9 3205 (3210): places in the court that are pier
+  now. Answers of one crossing, accidental answers, the laps, the stages and
+  the courts the same (the other 178 lines of the measure are identical).
+- mapcheck on `map_paper`: 922 sectors, 538 things, 207 monsters, 2 secret
+  sectors, 0 problems (no SLOT). itemcheck and thingcheck: 0 problems each.
+- `MAP=MAP19 MODE=1`: 90 checks (89 + `company14_all`), none failed,
+  `levelExited`. The smoke run passes no skill (3 or more: the sk 3 ones
+  came); `company14_all` says "25 of 25 came, 0 left", the log has two
+  `ambusher=Archvile cause=14` and one `ambusher=Fatso cause=14`;
+  `company15_all` 21 of 21 as before.
+- `MODE=2`: 60 checks, none failed. `MODE=3`: 52 checks, none failed (both as
+  before). `MODE=4`: the views ran (19 shots, `viewsDone`); view 9, the pond
+  court from the balcony, shows six pale piers standing on the brown
+  paving, square and upright (which is which not worked out; the seventh
+  not in sight); otherwise the same picture as before.
+- The package against main's: only `maps/MAP19.wad` and `zscript/map19.zs`
+  differ (2988 files each).
+
+**Not tested.** The fight itself is not played: the test removes every
+ambusher as it comes, so nothing says how hard the court is, whether the
+piers are cover enough from two arch-viles, or how often they raise the
+court's dead. Not played by hand.

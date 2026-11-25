@@ -868,9 +868,9 @@ EY = (6912, 2752, 7872, 3712)
 # ambush (its cyberdemon's head shows over them; 2026-11-24). Off the axis between the strongroom's door
 # and 112, 192 from every wall; obstacles of the walk, so spot() keeps things off them
 EY_IN_SQ = (7104, 2944, 7680, 3520)
-PIER = dict(up=96, **dress(side="LB", ftex="FP"))
+STONE_PIER = dict(up=96, **dress(side="LB", ftex="FP"))     # (the pond court's piers are the same; `PIER` is the stair hall's)
 EY_PIERS = [(x, y, x + 64, y + 64) for x in (EY_IN_SQ[0], EY_IN_SQ[2] - 64) for y in (EY_IN_SQ[1], EY_IN_SQ[3] - 64)]
-room(EY, G, sky("LB", "FC", 224, 320), [(EY_IN_SQ, dict(ftex=T("FL") if LOOK else "AJFLOOR"))] + [(p, PIER) for p in EY_PIERS],
+room(EY, G, sky("LB", "FC", 224, 320), [(EY_IN_SQ, dict(ftex=T("FL") if LOOK else "AJFLOOR"))] + [(p, STONE_PIER) for p in EY_PIERS],
      name="eastyard")
 steel_door((6912, 3200), (6912, 3264), (-1, 0), G, REG_TAG[5], "eastyard", "strongroom5", thick=64)
 pane_y(3296, 3360, 6848, 6912, sill=32, top=128)
@@ -983,8 +983,13 @@ LSTORE = (5888, 3904, 6080, 4096)            # the little boat store, on the pon
 LS_FENCE = (5904, 3856, 6064, 3904)
 KIOSK = (5120, 5120, 5376, 5376)
 PCL = sky("LB", "FC", 220, 512)
-room(PC, G, PCL, [((4992, 3776, 6784, 5504), dict(ftex=T("FL") if LOOK else "AJFLOOR")),
-                  (BAL, dict(floor=U, **dress(side="GF", ftex="GT"))), (LS_FENCE, dict(id=0))],
+# seven stone piers as the east yard's (64 square, 96 high): cover from YELLOW's ambush and its two arch-viles
+# (2026-11-25), two on the west bank, two on the north, two on the east either side of 113's axis, one on the
+# south; every way between them and the walls, the railing, the kiosk and the boat store 128 or more
+PC_PIERS = [(5312, 4416, 5376, 4480), (5312, 4800, 5376, 4864), (5440, 3936, 5504, 4000), (6464, 3936, 6528, 4000),
+            (6592, 4288, 6656, 4352), (6592, 4864, 6656, 4928), (5952, 5376, 6016, 5440)]
+room(PC, G, PCL, [((4992, 3776, 6784, 5504), dict(ftex=T("FL") if LOOK else "AJFLOOR"))] + [(p, STONE_PIER) for p in PC_PIERS]
+     + [(BAL, dict(floor=U, **dress(side="GF", ftex="GT"))), (LS_FENCE, dict(id=0))],
      holes=[POND, LSTORE, KIOSK], name="pond", obst=[POND, LSTORE, KIOSK, BAL])
 W.area("balcony", BAL, U)
 BAL_EDGE = W.node(5040, 4736, "the balcony's edge", "balcony")
@@ -1335,6 +1340,15 @@ for kind, x, y in ((2046, 6512, 3184), (2003, 6512, 3264), (2046, 6512, 3344), (
 CYBER, VILE = 16, 64
 CYBER_AT = hold("eastyard", 7456, 3232, 40)
 VILE_AT = hold("eastyard", 7744, 3584, 20)
+# the kiosk, against YELLOW's ambush (2026-11-25): along its west inside wall a box of rockets, a cell pack and a box
+# of shells, along its east one a soul sphere and two medikits (YELLOW at 5248, 5280; the door in the north side)
+for kind, x, y in ((2046, 5168, 5184), (17, 5168, 5248), (2049, 5168, 5312), (2013, 5328, 5184), (2012, 5328, 5248),
+                   (2012, 5328, 5312)):
+    item(kind, x, y)
+# YELLOW's ambush's two arch-viles (below), kept from everything else: one on each way round the pond, both over
+# 1200 from the kiosk, whose glass lets their sight through but no shots (an arch-vile's reach is 896)
+VILE_N_AT = hold("pond", 5696, 3904, 20)                                    # the north bank, west of the boat store
+VILE_E_AT = hold("pond", 6624, 5216, 20)                                    # the south-east corner, the east bank's foot
 AMMO = [("passhall", 2011, 2), ("forecourt", 2008, 3), ("forecourt", 2007, 2), ("lobby", 2007, 2),
         ("gallery", 2049, 1), ("gallery", 2048, 1), ("gallery", 2012, 1), ("lobby", 2008, 2), 
         ("canteen", 2049, 1), ("canteen", 2012, 1), ("kitchen", 2048, 1), ("kitchen", 2011, 2), ("officew1", 2049, 1),
@@ -1400,6 +1414,9 @@ for kind, n in ((2046, 1), (17, 1), (2049, 1), (2012, 2)):
     scatter("eastyard", kind, n)
 for kind in (2049, 2048, 2012):
     scatter("lane", kind, 1, within=LANE_EAST)
+# --- supplies for YELLOW's ambush (2026-11-25; the kiosk's are above): scattered in the pond court
+for kind, n in ((2046, 2), (17, 2), (2049, 2), (2048, 1), (2012, 4)):
+    scatter("pond", kind, n)
 
 
 # --- ambushes: on the first take of each door, and when a register is signed (cause 50 + its number) --
@@ -1413,8 +1430,26 @@ ambush(10 + GREEN, IMP, "reading", 2, angle=180, near=900)                  # GR
 ambush(10 + GREEN, DEMON, "canteen", 2, angle=180, after=3)
 ambush(10 + BLUE, KNIGHT, "stores", 2, angle=0)                             # BLUE: the basement
 ambush(10 + BLUE, REVENANT, "boiler", 1, angle=180, after=3)
-ambush(10 + YELLOW, CACO, "pond", 2, angle=270)                             # YELLOW: the pond court
+# YELLOW: the pond court, 25 strong (Vadim, 2026-11-25: "ambush when yellow door taken could be bigger, couple
+# arch-vhiles and more monsters"). A first wave at once in the court and round the kiosk, then the court, the east
+# and north banks, the first arch-vile on the north bank (6 s), the second at the east bank's foot and two spectres
+# on the south bank (10 s). The arch-viles from "Short stay" up, the rest thinned as ambushers are; 25 where there
+# were 5 (20 more, a multiple of four) keeps the thinning of the ambushers after these as it was. The arch-viles
+# raise what fell in the court: its 16 placed monsters and the earlier ambushes'. Cover: the seven piers
+PC_KIOSK_SIDE = (4928, 4480, 5568, 5568)
+PC_EAST_BANK, PC_NORTH_BANK, PC_SOUTH_BANK = (6400, 3712, 6848, 5568), (4928, 3712, 6848, 4224), (5568, 5248, 6848, 5568)
+ambush(10 + YELLOW, CACO, "pond", 2, angle=270)
+ambush(10 + YELLOW, KNIGHT, "pond", 2, within=PC_KIOSK_SIDE, angle=270)
+ambush(10 + YELLOW, IMP, "pond", 4, within=PC_KIOSK_SIDE, angle=270)
 ambush(10 + YELLOW, SERGEANT, "pond", 3, angle=270, after=2)
+ambush(10 + YELLOW, CHAINGUNNER, "pond", 2, angle=270, after=2)
+ambush(10 + YELLOW, REVENANT, "pond", 2, within=PC_EAST_BANK, angle=180, after=4)
+ambush(10 + YELLOW, MANCUBUS, "pond", 1, within=PC_EAST_BANK, angle=180, after=4)
+ambush(10 + YELLOW, DEMON, "pond", 3, within=PC_NORTH_BANK, angle=270, after=4)
+ajarmap.ambush(m, 10 + YELLOW, VILE, VILE_N_AT, angle=225, after=6, skill=2)
+ambush(10 + YELLOW, CACO, "pond", 2, angle=270, after=6)
+ajarmap.ambush(m, 10 + YELLOW, VILE, VILE_E_AT, angle=180, after=10, skill=2)
+ambush(10 + YELLOW, SPECTRE, "pond", 2, within=PC_SOUTH_BANK, angle=180, after=10)
 # VIOLET: the east yard and the lane's east end, 21 strong (Vadim, 2026-11-24: "bigger ambush ... arch-vile and
 # cyberdemon"). The cyberdemon (80 wide: no way out of the yard is) is seen through the strongroom's doorway;
 # it and the arch-vile from "Short stay" up, the rest thinned as ambushers are. 21 in all keeps the thinning of
