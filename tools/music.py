@@ -56,15 +56,35 @@ Under the Door MAP19, Standing Water MAP33; the other three play nowhere yet.
 The children's games, 2026-11-25: Vadim asked for something in the mood of
 the theme of the series Squid Game, "but still our Doom style (as previous
 melodies)", then for several of the sort, from still to active, to choose
-from. They are the last five of TRACKS. Each is built as an older piece is
-(the still one as After Hours, the creeping one as The Far Side, the middle
-one as Off Its Hinges, the skipping one as Service Lift, the fast one as Fire
-Door and Paradox Engine); the mood is in what the riffs and tunes are made
-of: a knock at a door in threes and a seven (the cheering clap: three,
-three, seven), a school recorder with a playground taunt turned minor, a
-second recorder a little flat (`bend`), voices in short "ha"s, a music box,
-and a stop where nobody moves. No note of the series' music is in them. None
-plays on a map until Vadim has heard them in the sound lab.
+from. They are the last five of TRACKS. No note of the series' music is in
+them. None plays on a map until Vadim has chosen.
+
+The first five put the playground INSIDE a Doom piece (a recorder somewhere
+over minor riffs and guitars) and Vadim could not hear the mood in them. What
+that theme is, by its composer's account: instruments of a primary school
+(recorders, castanets), a tune made on the cheering clap everybody knows
+(three, three, seven), played by children not quite in tune and not quite
+together, and nothing under it. It is bright and bare, and uneasy because it
+is innocent. So three were written anew the same day, the other way round
+(Ready or Not, Knock Down Ginger, Salt Mustard Vinegar Pepper): the school
+band first and alone, then the class (`bend` puts a voice out of tune,
+`loose` lets its notes come late; a second row of drums claps not quite
+together), and the Doom band comes in under them as the thing that is wrong.
+
+He also found that all the pieces move through much the same chords. True:
+nearly all are in minor and go between home, the 4th, the flat 6th and the
+flat 7th, which is the rule read out of Doom's own music (see the top), and
+the quiet ones hold two-bar chords with one foreign chord among them. The
+three new ones try other ways: three minor chords a major third apart, round
+and round (Ready or Not); two chords only, minor home and the MAJOR fourth,
+with a chorus walking by fourths to home in major (Knock Down Ginger); a
+tune in major over a bass going down by semitones, then the same in minor
+(Salt, Mustard, Vinegar, Pepper).
+
+Removed on Vadim's word the same day: The Small Hours Twice (AJM_CLOK),
+Service Lift (AJM_LIFT), Filing Under Fire (AJM_FILE), Carbon Copy
+(AJM_COPY). They are in git before 2026-11-25. So "the first six" and "the
+other six" above are four and four now.
 """
 import random
 import re
@@ -81,10 +101,10 @@ DRUMS = 9
 PIANO, EPIANO, HARPSI, VIBES, BELLS, ORGAN, MUTED, OVERDRIVE, DISTORTION = 0, 4, 6, 11, 14, 18, 28, 29, 30
 ACBASS, FINGER, PICKBASS, FRETLESS, SYNBASS1, SYNBASS, CELLO, CONTRABASS, PIZZ, HARP, TIMPANI = 32, 33, 34, 35, 38, 39, 42, 43, 45, 46, 47
 STRINGS, SLOWSTR, CHOIR, SYNBRASS, SQUARE, SAW, POLYSYNTH = 48, 49, 52, 62, 80, 81, 90
-GLOCK, MUSICBOX, MARIMBA, CHURCH, TREMOLO, VOICE, HORN, CLARINET, FLUTE, RECORDER, WARMPAD = 9, 10, 12, 19, 44, 53, 60, 71, 73, 74, 89
+GLOCK, MUSICBOX, MARIMBA, CHURCH, REED, TREMOLO, VOICE, HORN, CLARINET, FLUTE, RECORDER, WARMPAD = 9, 10, 12, 19, 20, 44, 53, 60, 71, 73, 74, 89
 # percussion keys
 KICK, KICK2, SNARE, ESNARE, HAT, OHAT, CRASH, RIDE, RBELL = 36, 35, 38, 40, 42, 46, 49, 51, 53
-TOM1, TOM2, TOM3, TOM4, WOOD_HI, WOOD_LO, STICK, CLAP = 48, 47, 45, 41, 76, 77, 37, 39
+TOM1, TOM2, TOM3, TOM4, WOOD_HI, WOOD_LO, STICK, CLAP, TAMB, CASTANET = 48, 47, 45, 41, 76, 77, 37, 39, 54, 85
 
 
 def parse(pattern, steps):
@@ -128,9 +148,11 @@ class Piece:
             raise ValueError(f"{self.title}: {who} has {len(form)} bars, not {self.bars}")
         return form
 
-    def voice(self, name, program, root, patterns, form, vel=90, gate=0.85, volume=100, pan=64, reverb=40, bend=0):
+    def voice(self, name, program, root, patterns, form, vel=90, gate=0.85, volume=100, pan=64, reverb=40, bend=0,
+              loose=0):
         """A pitched voice. `root` is the MIDI note of the key note in this voice's register; `bend` puts the
-        whole voice that many hundredths of a semitone out of tune (below zero: flat)."""
+        whole voice that many hundredths of a semitone out of tune (below zero: flat); `loose` lets every note
+        come up to that many ticks late or half as many early (a child playing; a step is PPQ / per_beat ticks)."""
         form = self._bars(form, name)
         notes, open_ = [], []              # [start step, length in steps, pitch, loudness]; indices still sounding
         for b, tok in enumerate(form):
@@ -158,13 +180,20 @@ class Piece:
                     notes.append([b * self.steps + s, n, p, v])
                 if s + n == self.steps:
                     open_ = list(range(first, len(notes)))
+        self._loosen(notes, loose)
         used = {v["channel"] for v in self.voices}
         channel = next(c for c in range(16) if c != DRUMS and c not in used)
         self.voices.append(dict(name=name, channel=channel, program=program, volume=volume, pan=pan, reverb=reverb,
                                 gate=gate, notes=notes, bend=bend))
 
-    def drums(self, patterns, form, vel=96, volume=105):
-        """patterns: name -> {key: 'x..X..o.'}: x a hit, X a loud one, o a soft one."""
+    def _loosen(self, notes, loose):
+        late = {}                               # the notes of one chord together
+        for n in notes if loose else ():
+            n.append(late.setdefault(n[0], self.rng.randint(-loose // 2, loose)))
+
+    def drums(self, patterns, form, vel=96, volume=105, loose=0):
+        """patterns: name -> {key: 'x..X..o.'}: x a hit, X a loud one, o a soft one. Can be called again for a
+        second row of hits (hands clapping not quite together: `loose`, as for a voice)."""
         form = self._bars(form, "drums")
         notes = []
         for b, tok in enumerate(form):
@@ -177,6 +206,7 @@ class Piece:
                     if c != ".":
                         v = vel + {"x": 0, "X": 18, "o": -30}[c] + self.rng.randint(-3, 3)
                         notes.append([b * self.steps + s, 1, key, max(1, min(127, v))])
+        self._loosen(notes, loose)
         self.voices.append(dict(name="drums", channel=DRUMS, program=0, volume=volume, pan=64, reverb=30, gate=0.5,
                                 notes=notes))
 
@@ -212,9 +242,19 @@ class Piece:
             if v.get("bend"):                   # the wheel's whole way is two semitones each side
                 w = max(0, min(16383, 8192 + round(v["bend"] * 8192 / 200)))
                 ev.append((0, 0, bytes([0xE0 | c, w & 127, w >> 7])))
-            for s, n, p, vel in v["notes"]:
+            spans, sounding = [], {}            # a loose voice: pitch -> its last note, which is cut short when
+            for s, n, p, vel, *late in v["notes"]:          # the same note comes again before it is over
                 on = s * self.tick
                 off = min(end, on + max(self.tick // 4, int((n - 1 + v["gate"]) * self.tick)))
+                if late:
+                    on, off = max(0, on + late[0]), min(end, max(off + late[0], on + late[0] + 1))
+                    if p in sounding and sounding[p][1] > on:
+                        sounding[p][1] = on
+                    sounding[p] = span = [on, off, p, vel]
+                    spans.append(span)
+                else:
+                    spans.append((on, off, p, vel))
+            for on, off, p, vel in spans:
                 ev.append((on, 2, bytes([0x90 | c, p, vel])))
                 ev.append((off, 1, bytes([0x80 | c, p, 0])))
             ev.append((end, 9, b"\xff\x2f\x00"))
@@ -354,53 +394,6 @@ def seven():
         "a": {KICK: "x.......x.....", ESNARE: "....x......x..", RIDE: "x.x.x.x.x.x.x."},
         "f": {KICK: "x.......x.....", ESNARE: "....x......x.x", TOM4: "............x.", RIDE: "x.x.x.x.x.x..."},
     }, rep("_", 4, "a a a f", 11), vel=88)
-    return p
-
-
-def clock():
-    """A, a slow shuffle. The time piece: a woodblock ticks, a bell strikes; the third round is the blues backwards."""
-    p = Piece("The Small Hours, Twice", 72, steps=12, per_beat=3, sig=(12, 8))
-
-    def round_(a, b=None, c=None, d=None, major=None):
-        """Twelve bars: home x4, the 4th x2, home x2, flat 6th, flat 7th, home x2."""
-        b, c, d, major = b or a, c or a, d or (b or a), major or a
-        return f"{a} {b} {c} {d} {a}+5 {b}+5 {c} {d} {major}-4 {major}-2 {c} {d}".split()
-
-    def back(bars):
-        return [re.sub(r"^(\w+?)([+-]\d+)?$", r"\1<\2", t) for t in reversed(bars)]
-
-    p.voice("bass", FRETLESS, 33, {
-        "R": "1 - . 1 . b3 4 - . b5 4 b3",
-        "RM": "1 - . 1 . 3 5 - . 6 5 3",
-    }, rep("_", 2) + round_("R", major="RM") * 2 + back(round_("R", major="RM")) + round_("R", major="RM") + rep("_", 2), vel=102, gate=0.9, volume=115)
-    p.voice("guitar", MUTED, 57, {
-        "G": ". . 5,q . . 5,q . . 5,q . . .",
-        "H": ". . 5,q . . 5,q . . b7,q . . 5,q",
-    }, rep("_", 2) + round_("G", "H") * 2 + back(round_("G", "H")) + round_("G", "H") + rep("_", 2),
-            vel=74, gate=0.5, volume=88, pan=78)
-    tune = round_("L1", "L2", "L3", "L4", major="LF")
-    p.voice("tune", OVERDRIVE, 69, {
-        "L1": "5 - - - - b7 - - 5 - - 4",
-        "L2": "b3 - - - - 1 - - - . . .",
-        "L3": "5 - - - - b7 - - 1' - - b7",
-        "L4": "5 - - b5 - 4 b3 - - 1 - -",
-        "LF": "5 - - 3 - - 1 - - 3 - -",
-    }, rep("_", 14) + tune + back(tune) + tune + rep("_", 2), vel=90, gate=0.97, volume=94, pan=50, reverb=60)
-    p.voice("bell", BELLS, 57, {
-        "B": "1 - - - - - 5, - - - - -",
-        "O": "1 - - - - - - - - - - -",
-    }, rep("B B", 1, "_", 24, "O _ _ _", 3, "O _ _ _", 3, "B O", 1), vel=80, gate=1.0, volume=90, pan=40, reverb=80)
-    p.drums({
-        "t": {WOOD_HI: "x.....x.....", WOOD_LO: "...x.....x.."},
-        "a": {WOOD_HI: "x.....x.....", WOOD_LO: "...x.....x..", HAT: "x.ox.ox.ox.o", KICK2: "x.....x....x",
-              ESNARE: "...x.....x.."},
-        "f": {WOOD_HI: "x.....x.....", WOOD_LO: "...x.....x..", HAT: "x.ox.ox.o...", KICK2: "x.....x.....",
-              ESNARE: "...x.....xxx"},
-        "b": {WOOD_LO: "x.....x.....", WOOD_HI: "...x.....x..", HAT: "x.ox.ox.ox.o", KICK2: "x.....x....x",
-              ESNARE: "...x.....x.."},
-        "g": {WOOD_LO: "x.....x.....", WOOD_HI: "...x.....x..", HAT: "x.ox.ox.o...", KICK2: "x.....x.....",
-              ESNARE: "...x.....xxx"},
-    }, rep("t", 2, "a a a f", 6, "b b b g", 3, "a a a f", 3, "t", 2), vel=90)
     return p
 
 
@@ -580,118 +573,6 @@ def fire_door():
         "c": {CRASH: "x...............", KICK: "x..x..x...x.....", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
         "r": {KICK: "x..x..x...x.....", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
     }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 2, "c r r f", 2, "a a a f", 3, "c r r f", 2), vel=98)
-    return p
-
-
-def service_lift():
-    """E, a heavy shuffle, 96 a minute. Twelve bars round and round: bass and guitar in the riff, organ, a guitar tune."""
-    p = Piece("Service Lift", 96, steps=12, per_beat=3, sig=(12, 8))
-
-    def round_(a, b, major=None):
-        major = major or a
-        return f"{a} {a} {a} {b} {a}+5 {a}+5 {a} {b} {major}-2 {major}-4 {a} {b}".split()
-
-    p.voice("bass", PICKBASS, 28, {
-        "S1": "1 . 1 1 . 1 b3 . 1 4 . b3",
-        "S2": "1 . 1 1 . 1 b3 . 1 b7, . 7,",
-    }, rep("S1 S1 S1 S2", 1) + round_("S1", "S2") * 4, vel=104, gate=0.8, volume=115)
-    p.voice("guitar", OVERDRIVE, 40, {
-        "S1": "1^! . 1 1^ . 1 b3^ . 1 4^ . b3",
-        "S2": "1^! . 1 1^ . 1 b3^ . 1 b7,^ . 7,",
-    }, rep("_", 4) + round_("S1", "S2") * 4, vel=84, gate=0.75, volume=92, pan=50)
-    p.voice("organ", ORGAN, 64, {
-        "m": ". . 1m . . . . . 1m . . .",
-        "M": ". . 1M . . . . . 1M . . .",
-    }, rep("_", 16) + round_("m", "m", major="M") * 3, vel=64, gate=0.7, volume=78, pan=80)
-    tune = "W1 W2 W3 W4 W5 W6 W1 W8 W9 W10 W11 W12".split()
-    p.voice("lead", DISTORTION, 64, {
-        "W1": "5 - - - - 4 b3 - - 1 - -",
-        "W2": "b3 - - 4 - - 5 - - - - -",
-        "W3": "b7 - - - - 5 b7 - - 1' - -",
-        "W4": "b7 - - 5 - - 4 - - b3 - .",
-        "W5": "1' - - - - b6 4 - - b6 - -",
-        "W6": "1' - - b7 - - b6 - - 4 - -",
-        "W8": "b3 - - 1 - - - - - . . .",
-        "W9": "4 - - 2 - - b7, - - 2 - -",
-        "W10": "b3 - - 1 - - b6, - - 1 - -",
-        "W11": "5 - - b7 - - 1' - - b7 - -",
-        "W12": "1' - - - - - - - - . . .",
-    }, rep("_", 16) + tune + rep("_", 12) + tune, vel=92, gate=0.97, volume=96, reverb=60)
-    p.drums({
-        "h": {HAT: "x.xx.xx.xx.x"},
-        "a": {KICK: "x....xx....x", ESNARE: "...x.....x..", HAT: "X.xX.xX.xX.x"},
-        "f": {KICK: "x....xx.....", ESNARE: "...x.....xxx", HAT: "X.xX.xX.x..."},
-    }, rep("h", 4, "a a a f", 12), vel=96)
-    return p
-
-
-def filing():
-    """C, 132 a minute. The machine: a synth bass in sixteenths, a saw riff, pads, a square-wave tune."""
-    p = Piece("Filing Under Fire", 132)
-    p.voice("bass", SYNBASS1, 36, {
-        "Y1": "1 1 1 1' 1 1 1' 1 1 1 1' 1 1 1' 1 1",
-        "Y2": "1 1 1 1' 1 1 1' 1 1 1 1' 1 b3 b3 b7, b7,",
-        "Y3": "1 1 1 1' 1 1 1' 1 1 1 1' 1 3 3 2 2",
-    }, rep("Y1 Y1 Y1 Y2", 1, "Y1 Y1 Y1 Y2 Y1-4 Y1-4 Y1-2 Y3-2", 7), vel=100, gate=0.6, volume=110)
-    saw = "Z1 Z2 Z1 Z2 ZM-4 ZM-4 ZM-2 ZM-2"
-    p.voice("saw", SAW, 48, {
-        "Z1": "1 . b3 . 4 . b3 . 1 . b7, . 1 . . .",
-        "Z2": "1 . b3 . 4 . b5 . 4 . b3 . 1 . . .",
-        "ZM": "1 . 3 . 5 . 3 . 1 . 5, . 1 . . .",
-    }, rep("_", 4, saw, 3, "_", 8, saw, 3), vel=88, gate=0.8, volume=90, pan=48)
-    p.voice("pad", STRINGS, 60, {
-        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -", "T": " ".join("-" * 16),
-    }, rep("_", 12, "m T m T M-4 T M-2 T", 6), vel=62, gate=1.0, volume=78, pan=78, reverb=70)
-    p.voice("tune", SQUARE, 72, {
-        "U1": "5 - - - - - - - b3 - - - - - - -",
-        "U2": "4 - - - - - - - 5 - - - - - - -",
-        "U3": "b7 - - - - - - - 5 - - - - - - -",
-        "U4": "1' - - - - - - - - - - - . . . .",
-        "U5": "1' - - - - - - - b6 - - - - - - -",
-        "U6": "b3 - - - - - - - 1 - - - b3 - - -",
-        "U7": "2' - - - - - - - b7 - - - - - - -",
-        "U8": "4 - - - - - - - 2 - - - 4 - 5 -",
-    }, rep("_", 20, "U1 U2 U3 U4 U5 U6 U7 U8", 2, "_", 8, "U1 U2 U3 U4 U5 U6 U7 U8", 2), vel=80, gate=0.97, volume=86,
-            reverb=50)
-    p.drums({
-        "h": {HAT: "XoxoXoxoXoxoXoxo"},
-        "a": {KICK: "x...x...x...x...", SNARE: "....x.......x...", HAT: "xo.oxo.oxo.oxo.o", OHAT: "..x...x...x...x."},
-        "f": {KICK: "x...x...x...x...", SNARE: "....x.......x.xx", HAT: "xo.oxo.oxo.o....", OHAT: "..x...x...x....."},
-        "b": {KICK: "x...x...x...x...", HAT: "XoxoXoxoXoxoXoxo"},
-    }, rep("h", 4, "a a a f", 6, "b b b f", 2, "a a a f", 6), vel=96)
-    return p
-
-
-def carbon_copy():
-    """B, 100 a minute. The canon: plucked strings and a woodblock; the tune's copy follows four bars behind, lower."""
-    p = Piece("Carbon Copy", 100)
-    p.voice("pizzicato", PIZZ, 59, {
-        "m": "1 . 5 . b3' . 5 . 1 . 5 . b3' . 5 .",
-        "M": "1 . 5 . 3' . 5 . 1 . 5 . 3' . 5 .",
-    }, rep("m M-4 m M-2", 13), vel=76, gate=0.5, volume=92, pan=48)
-    p.voice("bass", ACBASS, 35, {
-        "B": "1 - - . . . 1 . 5 - - . . . 1 .",
-    }, rep("_", 4, "B B-4 B B-2", 12), vel=98, gate=0.9, volume=112)
-    tune = {
-        "P1": "5 - - - - - - - b3 - - - 4 - - -",
-        "P2": "b3 - - - - - - - 1 - - - - - - -",
-        "P3": "5 - - - - - - - b7 - - - 5 - - -",
-        "P4": "4 - - - - - - - 2 - - - - - - -",
-        "P5": "1' - - - - - - - b7 - - - 5 - - -",
-        "P6": "b6 - - - - - - - b3 - - - - - - -",
-        "P7": "b3 - - - - - 4 - 5 - - - - - - -",
-        "P8": "4 - - - 2 - - - b7, - - - - - - -",
-    }
-    whole, half = "P1 P2 P3 P4 P5 P6 P7 P8", "P1 P2 P3 P4"
-    p.voice("tune", STRINGS, 71, tune, rep("_", 8, whole, 3, "_", 4, whole, 2), vel=84, gate=1.0, volume=94, pan=40,
-            reverb=70)
-    p.voice("copy", CELLO, 59, tune, rep("_", 12, whole, 2, half, 1, "_", 8, whole, 1, half, 1), vel=86, gate=1.0,
-            volume=96, pan=84, reverb=60)
-    p.drums({
-        "t": {WOOD_HI: "x.......x.......", WOOD_LO: "....x.......x..."},
-        "a": {WOOD_HI: "x.......x.......", WOOD_LO: "....x.......x...", KICK2: "x.........x.....", HAT: "..o...o...o...o."},
-        "f": {WOOD_HI: "x.......x.......", WOOD_LO: "....x.......x.xx", KICK2: "x.........x.....", HAT: "..o...o...o....."},
-    }, rep("t", 8, "a a a f", 7, "t", 4, "a a a f", 3), vel=88)
     return p
 
 
@@ -1026,227 +907,237 @@ def grandmothers_footsteps():
 
 
 def ready_or_not():
-    """C, 80 a minute. The creeping one, built as The Far Side: hide and seek. A synth bass, a held organ; the recorder
-    counts, a note more in every bar, and the voices' answers get shorter; then it comes looking."""
-    p = Piece("Ready or Not", 80)
-    intro, verse, chorus = "P P P Q", "P P P Q P+5 P+5 P Q", "V-4 V-2 P Q V-4 V-2 P Q"
-    # 48 bars: the bass 4, verse 8, verse with the count 8, chorus 8, the count on two recorders 8, chorus 8, the bass 4
-    p.voice("bass", SYNBASS, 36, {
-        "P": "1 - - . . . 1 . b3 - - . . . 1 .",
-        "Q": "1 - - . . . 1 . b3 - - . 4 . b5 .",
-        "V": "1 - - . . . 1 . 5 - - . . . 1 .",
-    }, rep(intro, 1, verse, 2, chorus, 1, verse, 1, chorus, 1, intro, 1), vel=104, gate=0.9, volume=112)
-    held, wide = "m m m m m+5 m+5 m m", "M-4 M-2 m m M-4 M-2 m m"
-    p.voice("organ", ORGAN, 48, {
-        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -",
-    }, rep("_", 4, held, 2, wide, 1, held, 1, wide, 1, "_", 4), vel=58, gate=1.0, volume=74, pan=76)
-    count = {
-        "H1": "5 - b6 - 5 - - - . . . . . . . .",          # one
-        "H2": "5 - b6 - 5 - - - b3 - - - . . . .",        # one, two
-        "H3": "5 - b6 - 5 - - - b3 - - - 4 - - -",        # one, two, three
-        "H4": "5 - - - - - - - - - - - . . . .",
-        "H5": "1' - b7 - 1' - - - . . . . . . . .",
-        "H6": "1' - b7 - 1' - - - b6 - - - . . . .",
-        "H7": "1' - b7 - 1' - - - 5 - - - b3 - - -",
-        "H8": "4 - - - - - b3 - 1 - - - . . . .",
-        "R1": "b3 - - - 1 - - - b6, - - - 1 - - -",        # coming: over A flat, B flat, C minor, C minor
-        "R2": "4 - - - 2 - - - b7, - - - 2 - - -",
-        "R3": "5 - - - - - - - b3 - - - 1 - - -",
-        "R4": "b3 - - - - - - - 1 - - - . . . .",
-        "R7": "5 - - - - - - - b7 - - - 5 - - -",
-        "R8": "1' - - - - - - - - - - - . . . .",
+    """C, 92 a minute. The creeping one: hide and seek. Children's voices alone have the riff, a sing-song over a
+    marching snare; a recorder calls (the falling third of every child calling another) and nobody answers. Three
+    minor chords a major third apart, C, A flat, E, four bars each, round and round, so that it never comes home
+    by a step it knows. The band comes in under the voices only in the last round."""
+    p = Piece("Ready or Not", 92)
+
+    def round_(a, b=None, c=None, d=None, down=-8):
+        """Twelve bars: four at home, four a major third lower, four a major third lower again."""
+        bars = [a, b or a, c or a, d or a]
+        return bars + [x if x == "_" else f"{x}-4" for x in bars] + [x if x == "_" else f"{x}{down:+d}" for x in bars]
+
+    # 52 bars: the voices 12 (the first four alone), the calls 12, the tune 12, the band under it 12, the calls alone 4
+    song = {
+        "a": "5 - 5 - 6 - 5 - b3 - - - 5 - - -",
+        "b": "5 - 5 - 6 - 5 - b3 - 4 - b3 - 1 -",
     }
-    counting, coming = "H1 H2 H3 H4 H5 H6 H7 H8", "R1 R2 R3 R4 R1 R2 R7 R8"
-    p.voice("recorder", RECORDER, 72, count, rep("_", 12, counting, 1, coming, 1, counting, 1, coming, 1, "_", 4),
-            vel=96, gate=0.9, volume=108, pan=56, reverb=60)
-    p.voice("flat recorder", RECORDER, 72, count, rep("_", 28, counting, 1, "_", 12),
-            vel=80, gate=0.9, volume=90, pan=84, reverb=60, bend=-16)
-    p.voice("glockenspiel", GLOCK, 84, count, rep("_", 36, coming, 1, "_", 4), vel=72, gate=1.0, volume=82, pan=36,
-            reverb=70)
-    answers = "h3 h2 _ _ h3+5 h2+5 _ _"
-    p.voice("voices", CHOIR, 60, {                      # ha, ha, ha; then ha, ha; then nothing
-        "h3": ". . . . . . . . 1^ . 1^ . 1^ . . .",
-        "h2": ". . . . . . . . . . . . 1^ . 1^ .",
-    }, rep("_", 12, answers, 1, "_", 8, answers, 1, "_", 12), vel=86, gate=0.9, volume=90, pan=74, reverb=70)
-    p.voice("bell", BELLS, 60, {
-        "B": "1 - - - - - - - - - - - - - - -",
-    }, rep("_", 4, "B _ _ _", 2, "_", 8, "B _ _ _", 2, "_", 8, "B _ _ _", 3), vel=78, gate=1.0, volume=88, pan=48,
-            reverb=80)
-    hat = "XoxoXoxoXoxoXoxo"
+    riff = round_("a", "a", "a", "b")
+    p.voice("voices", VOICE, 60, song, riff * 4 + rep("_", 4), vel=88, gate=0.9, volume=104, pan=58, reverb=60, loose=10)
+    p.voice("small voices", VOICE, 72, song, rep("_", 12) + riff * 3 + rep("_", 4), vel=76, gate=0.9, volume=90,
+            pan=78, reverb=60, bend=9, loose=16)
+    p.voice("marimba", MARIMBA, 60, song, rep("_", 12) + riff * 3 + rep("_", 4), vel=60, gate=0.6, volume=70, pan=40)
+    p.voice("bass", SYNBASS, 36, {
+        "B": "1 - - . . . 1 . 1 - - . 5, - 1 .",
+        "U": "1 - - . . . 1 . 1 - - . 5 - 1 .",
+    }, rep("_", 12) + (rep("B", 4) + rep("U-4", 4) + rep("U-8", 4)) * 3 + rep("_", 4), vel=102, gate=0.9, volume=110)
+    p.voice("organ", ORGAN, 48, {
+        "m": "1m - - - - - - - - - - - - - - -",
+    }, rep("_", 24) + round_("m", down=+4) * 2 + rep("_", 4), vel=56, gate=1.0, volume=72, pan=76)
+    calls = {
+        "k1": ". . . . . . . . b3' - - - 1' - - -",        # coo-ee
+        "k2": ". . . . . . . . b7' - - - 5' - - -",
+        "t1": "b3' - - - 1' - - - . . . . b3' - 1' -",
+        "t2": "5' - - - - - - - b3' - - - 1' - - -",
+        "t3": "5' - - - - - - - b7' - - - 5' - - -",
+        "t4": "1'' - - - - - - - b7' - - - 5' - - -",
+    }
+    calling, tune = round_("k1", "_", "k2", "_"), round_("t1", "t2", "t3", "t4")
+    p.voice("recorder", RECORDER, 60, calls, rep("_", 12) + calling + tune * 2 + "k1 _ k1 _".split(),
+            vel=100, gate=0.9, volume=114, pan=50, reverb=60, loose=8)
+    p.voice("flat recorder", RECORDER, 60, calls, rep("_", 36) + tune + rep("_", 4),
+            vel=82, gate=0.9, volume=94, pan=84, reverb=60, bend=-15, loose=22)
+    p.voice("glockenspiel", GLOCK, 72, calls, rep("_", 36) + tune + rep("_", 4), vel=70, gate=1.0, volume=80, pan=36)
+    p.voice("guitar", DISTORTION, 48, {
+        "P": "1^! - - - - - - - 1^ - - - - - - .",
+    }, rep("_", 36) + round_("P") + rep("_", 4), vel=82, gate=0.95, volume=88, pan=44)
+    p.voice("second guitar", OVERDRIVE, 48, song, rep("_", 36) + riff + rep("_", 4), vel=82, gate=0.8, volume=88, pan=70)
+    march = "o...o.ooo...o.oo"
     p.drums({
-        "h": {HAT: hat, WOOD_LO: "x...x...x...x..."},                           # somebody counting
-        "a": {KICK: "x.....x.x.....x.", ESNARE: "....x.......x...", HAT: hat},
-        "c": {CRASH: "x...............", KICK: "x.....x.x.....x.", ESNARE: "....x.......x...", HAT: hat},
-        "f": {KICK: "x.....x.x.......", ESNARE: "....x.......x.x.", HAT: "XoxoXoxoXoxo....", OHAT: "............x...",
-              TOM4: "...............x"},
-    }, rep("h", 4, "a a a f", 4, "c a a f", 2, "a a a f", 2, "c a a f", 2, "h", 4), vel=92)
+        "m": {SNARE: march},
+        "M": {SNARE: march, KICK2: "x.......x......."},
+        "Mf": {SNARE: "o...o.ooo...oxxx", KICK2: "x.......x......."},
+        "K": {SNARE: march, KICK: "x.......x.....x.", ESNARE: "....x.......x...", HAT: "x.x.x.x.x.x.x.x."},
+        "F": {SNARE: "o...o.ooo...o...", KICK: "x.......x.......", ESNARE: "....x.......xx..", HAT: "x.x.x.x.x.x.....",
+              TOM2: "..............x.", TOM4: "...............x"},
+        "n": {WOOD_LO: "x..............."},
+    }, rep("_", 4, "m", 8, "M M M Mf", 6, "K K K F", 3, "n _ n _", 1), vel=92)
     return p
 
 
 def knock_down_ginger():
-    """A, 100 a minute. The middle one, built as Off Its Hinges: the riff knocks at a door, three, three, then seven;
-    a school recorder with a playground taunt in minor, a second one a little flat, voices going ha, ha, ha; and the
-    game stops."""
+    """A, 100 a minute. The middle one. The school band first: one recorder has the tune, which is the cheer itself
+    (three, three, seven), over castanets and nothing else; then the class, ragged and a little flat, with a toy drum;
+    only then the riff comes in under them. Two chords in the verse, A minor and D major (the bright fourth, no sad
+    sixth anywhere); the chorus walks C, G, D to A MAJOR."""
     p = Piece("Knock Down Ginger", 100)
     hold = " ".join("-" * 16)
-    riff = "A1 A2 A1 A3"                                                         # three three, seven, three three, seven
-    verse = rep(riff, 2, "A1+5 A2+5 A1+5 A3+5", 1, riff, 1)                      # 16 bars: home, the 4th, home
-    # 72 bars: knocks 4, the riff 4, verse 16, chorus 8, verse 16, the stop 8, chorus 8, the riff with the taunt 8
-    p.voice("bass", PICKBASS, 33, {
-        "A1": "1 . b3 . 1 . . . 4 . b3 . 1 . . .",
-        "A2": "1 . b7, . 1 . b3 . 4 . b3 . 1 . . .",
-        "A3": "1 . b7, . 1 . b3 . 4 . 5 . b7 . . .",
-        "C": "1 . 1 . 1 . . . 1 . 1 . 1 . . .",
-        "S": "1 . 1 . 1 . 1 . b3 . 4 . 5 . . .",
-    }, rep("_", 4, riff, 1) + verse + rep("C-4 C-2 C S", 2) + verse + rep("_", 8, "C-4 C-2 C S", 2, riff, 2),
-            vel=104, gate=0.8, volume=115)
-    p.voice("guitar", OVERDRIVE, 45, {
-        "A1": "1^! . b3 . 1 . . . 4^! . b3 . 1 . . .",
-        "A2": "1^! . b7, . 1 . b3 . 4^ . b3 . 1 . . .",
-        "A3": "1^! . b7, . 1 . b3 . 4^ . 5^ . b7 . . .",
-        "G": "1*! - - - - - . . 1* - - - - - . .",
-        "GS": "1*! . 1* . 1* . 1* . 1* . 1* . 1* . . .",
-    }, rep("_", 8) + verse + rep("G-4 G-2 G GS", 2) + verse + rep("_", 8, "G-4 G-2 G GS", 2, riff, 2),
-            vel=84, gate=0.75, volume=92, pan=50)
-    tune = {                                            # the taunt (sol mi sol la sol mi) with the la a semitone low
-        "T1": "5 - - - b3 - 5 - b6 - 5 - b3 - - -",
-        "T2": "4 - b3 - 2 - b3 - 1 - - - . . . .",
-        "T4": "4 - b3 - 4 - b6 - 5 - - - . . . .",
-        "T8": "b7 - b6 - 4 - b6 - 1' - - - . . . .",
-        "T9": "4 - b3 - 2 - 7, - 1 - - - . . . .",
-        "K1": "b3' - - - - - - - - - - - 1' - - -",         # the chorus: long notes over F, G, A minor, A minor
-        "K2": "2' - - - - - - - - - - - b7 - - -",
-        "K3": "1' - - - - - - - b7 - - - 5 - - -",
-        "K4": "5 - - - - - - - - - - - . . . .",
-        "K5": "b6 - - - - - - - 1' - - - b3' - - -",
-        "K6": "4' - - - - - - - 2' - - - b7 - - -",
-        "K7": "5' - - - - - - - b3' - - - 1' - - -",
-        "K8": "5 - - - - - - - 1' - - - - - - -",
+    # 60 bars: castanets 4, the recorder alone 8, the class 8, the riff under them 8, chorus 8, the stop 8, all 8, chorus 8
+    cheer = {                                           # five notes and no third: it is neither glad nor sad
+        "a1": "5 - 5 - 6 - - . 5 - 5 - 4 - - .",
+        "a2": "5 - 6 - 5 - 4 - 2 - 4 - 5 - - .",
+        "b1": "1' - 1' - 2' - - . 1' - 1' - 6 - - .",
+        "b2": "1' - 6 - 5 - 4 - 5 - 6 - 5 - - .",
+        "c1": "4 - 4 - 5 - - . 4 - 4 - 2 - - .",
+        "c2": "1 - 2 - 4 - 5 - 4 - 2 - 1 - - .",
     }
-    asked, told = "T1 T2 T1 T4 T1 T2 T1 T9".split(), "T1+5 T2+5 T1+5 T8".split()
-    chorus = "K1 K2 K3 K4 K5 K6 K7 K8".split()
-    p.voice("recorder", RECORDER, 69, tune,
-            rep("_", 8) + asked + told + rep("_", 12) + asked + told + "T1 T2 T1 T9".split() + rep("_", 16) + asked,
-            vel=100, gate=0.85, volume=112, pan=58, reverb=50)
-    p.voice("flat recorder", RECORDER, 69, {            # a third under the tune, and not quite in tune
-        "S1": "b3 - - - 1 - b3 - 4 - b3 - 1 - - -",
-        "S2": "2 - 1 - b7, - 1 - 5, - - - . . . .",
-        "S4": "2 - 1 - 2 - 4 - 1 - - - . . . .",
-        "S8": "5 - 4 - b2 - 4 - b6 - - - . . . .",
-        "S9": "2 - 1 - 5, - 5, - 1 - - - . . . .",
-    }, rep("_", 32, "S1 S2 S1 S4 S1 S2 S1 S9 S1+5 S2+5 S1+5 S8 S1 S2 S1 S9", 1, "_", 16, "S1 S2 S1 S4 S1 S2 S1 S9", 1),
-            vel=84, gate=0.85, volume=94, pan=84, reverb=50, bend=-14)
+    tune = "a1 a2 b1 b2 a1 a2 c1 c2".split()
+    p.voice("recorder", RECORDER, 69, cheer, rep("_", 4) + tune * 3 + rep("_", 16) + tune + rep("_", 8),
+            vel=102, gate=0.8, volume=118, pan=56, reverb=50, loose=8)
+    p.voice("the class", RECORDER, 69, cheer, rep("_", 12) + tune * 2 + rep("_", 16) + tune + rep("_", 8),
+            vel=86, gate=0.8, volume=100, pan=86, reverb=50, bend=-15, loose=24)
+    p.voice("one more", RECORDER, 69, cheer, rep("_", 44) + tune + rep("_", 8),
+            vel=84, gate=0.8, volume=96, pan=30, reverb=50, bend=10, loose=20)
+    p.voice("glockenspiel", GLOCK, 81, cheer, rep("_", 20) + tune + rep("_", 16) + tune + rep("_", 8),
+            vel=72, gate=1.0, volume=84, pan=40)
+    p.voice("melodica", REED, 57, {
+        "n": "1^ - - - - - - - - - - - - - - .", "d": "4,M - - - - - - - - - - - - - - .",
+    }, rep("_", 12, "n n d d n n d n", 1, "_", 24, "n n d d n n d n", 1, "_", 8), vel=64, gate=1.0, volume=80, pan=70)
+    verse, walk = "A1 A2 D1+5 D2+5 A1 A2 D1+5 A2", "C+3 C-2 C+5 S C+3 C-2 C+5 S"
+    p.voice("bass", PICKBASS, 33, {
+        "A1": "1 . 1 . 1 . . . b3 . b3 . b7, . . .",
+        "A2": "1 . 1 . 5, . b7, . 5, . b7, . 1 . . .",
+        "D1": "1 . 1 . 3 . . . 1 . 1 . 6, . . .",
+        "D2": "1 . 1 . 5, . 1 . 5, . 6, . 5, . . .",
+        "C": "1 . 1 . 1 . . . 1 . 1 . 1 . . .",
+        "S": "1 . 1 . 1 . 1 . 1 . 1 . 1 . . .",
+    }, rep("_", 20, verse, 1, walk, 1, "_", 8, verse, 1, walk, 1), vel=104, gate=0.8, volume=115)
+    p.voice("guitar", OVERDRIVE, 45, {
+        "A1": "1^! . 1 . 1 . . . b3^! . b3 . b7, . . .",
+        "A2": "1^! . 1 . 5, . b7, . 5,^ . b7, . 1 . . .",
+        "D1": "1^! . 1 . 3 . . . 1^! . 1 . 6, . . .",
+        "D2": "1^! . 1 . 5, . 1 . 5,^ . 6, . 5, . . .",
+        "C": "1*! - - - - - . . 1* - - - - - . .",
+        "S": "1*! . 1* . 1* . 1* . 1* . 1* . 1* . . .",
+    }, rep("_", 20, verse, 1, walk, 1, "_", 8, verse, 1, walk, 1), vel=84, gate=0.75, volume=92, pan=50)
+    p.voice("organ", ORGAN, 57, {
+        "M": "1M - - - - - - - - - - - - - - -",
+    }, rep("_", 28, "M+3 M-2 M+5 M", 2, "_", 16, "M+3 M-2 M+5 M", 2), vel=60, gate=1.0, volume=76, pan=80)
+    p.voice("lead", DISTORTION, 57, {                   # over C, G, D and A major
+        "K1": "5 - - - - - - - b7 - - - 5 - - -",
+        "K2": "4 - - - - - - - 2 - - - b7, - - -",
+        "K3": "4 - - - - - - - 6 - - - 1' - - -",
+        "K4": "3' - - - - - - - - - - - . . . .",
+        "K5": "b7 - - - - - - - b3' - - - 5' - - -",
+        "K6": "4' - - - - - - - 2' - - - b7 - - -",
+        "K7": "6 - - - - - - - 1' - - - 4' - - -",
+        "K8": "3' - - - - - - - 1' - - - - - - -",
+    }, rep("_", 28, "K1 K2 K3 K4 K5 K6 K7 K8", 1, "_", 16, "K1 K2 K3 K4 K5 K6 K7 K8", 1), vel=92, gate=0.97,
+            volume=96, pan=44, reverb=60)
     p.voice("voices", CHOIR, 57, {                      # ha, ha, ha
-        "h": "1^ . 1^ . 1^ . . . . . . . . . . .",
         "H": "1^ . 1^ . 1^ . . . 1^ . 1^ . 1^ . . .",
         "s": "1^ . 1^ . 1^ . 1^ . 1^ . 1^ . 1^ . . .",
-    }, rep("_", 20, "H H H s", 1, "_", 8, "h _ h _", 2, "h+5 _ h+5 _", 1, "h _ h _", 1, "_", 8, "H-4 H-2 H s", 2,
-           "h _ h _", 2), vel=86, gate=0.9, volume=90, pan=76, reverb=70)
-    p.voice("organ", ORGAN, 57, {
-        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -",
-    }, rep("_", 24, "M-4 M-2 m m", 2, "_", 24, "M-4 M-2 m m", 2, "_", 8), vel=60, gate=1.0, volume=76, pan=80)
-    p.voice("lead", DISTORTION, 57, tune, rep("_", 24) + chorus + rep("_", 24) + chorus + asked,
-            vel=92, gate=0.97, volume=96, pan=44, reverb=60)
-    # the stop: nobody moves; a music box has the taunt at half the speed
-    p.voice("music box", MUSICBOX, 81, {
-        "X1": "5 - - - - - - - b3 - - - 5 - - -",
-        "X2": "b6 - - - 5 - - - b3 - - - - - - -",
-        "X3": "4 - - - b3 - - - 2 - - - b3 - - -",
-        "X4": "1 - - - - - - - . . . . . . . .",
-        "X7": "4 - - - b3 - - - 4 - - - b6 - - -",
-        "X8": "5 - - - - - - - . . . . . . . .",
-    }, rep("_", 48, "X1 X2 X3 X4 X1 X2 X7 X8", 1, "_", 16), vel=82, gate=1.0, volume=98, pan=44, reverb=80)
+    }, rep("_", 28, "H+3 H-2 H+5 s", 2, "_", 16, "H+3 H-2 H+5 s", 2), vel=86, gate=0.9, volume=90, pan=76, reverb=70)
+    # the stop: nobody moves; a music box has the cheer at half the speed
+    p.voice("music box", MUSICBOX, 69, {
+        "x1": "5 - - . 5 - - . 6 - - - - - . .",
+        "x2": "5 - - . 5 - - . 4 - - - - - . .",
+        "x3": "5 - - . 6 - - . 5 - - . 4 - - .",
+        "x4": "2 - - . 4 - - . 5 - - - - - . .",
+        "y1": "4 - - . 4 - - . 5 - - - - - . .",
+        "y2": "4 - - . 4 - - . 2 - - - - - . .",
+        "y3": "1 - - . 2 - - . 4 - - . 5 - - .",
+        "y4": "4 - - . 2 - - . 1 - - - - - . .",
+    }, rep("_", 36, "x1 x2 x3 x4 y1 y2 y3 y4", 1, "_", 16), vel=82, gate=1.0, volume=98, pan=44, reverb=80)
     p.voice("tremolo", TREMOLO, 45, {
         "a": "1^ - - - - - - - - - - - - - - -", "T": hold,
-    }, rep("_", 48, "a T T T T T T T", 1, "_", 16), vel=60, gate=1.0, volume=78, pan=74, reverb=80)
-    p.voice("drone", CONTRABASS, 33, {
-        "D": "1 - - - - - - - - - - - - - - -", "T": hold,
-    }, rep("_", 48, "D T T T T T T T", 1, "_", 16), vel=82, gate=1.0, volume=100)
+    }, rep("_", 36, "a T T T T T T T", 1, "_", 16), vel=58, gate=1.0, volume=76, pan=74, reverb=80)
     three, seven = "X.x.x...X.x.x...", "X.x.x.x.x.x.X..."
-    hat, snare = "X.x.X.x.X.x.X.x.", "....x.......x..."
-    ride = "x.x.x.x.x.x.x.x."
+    hat, snare, ride = "X.x.X.x.X.x.X.x.", "....x.......x...", "x.x.x.x.x.x.x.x."
     fill = {TOM1: ".............x..", TOM2: "..............x.", TOM4: "...............x"}
     p.drums({
-        "w1": {WOOD_HI: three},                                                  # the knocks alone
-        "w2": {WOOD_HI: seven},
-        "p1": {WOOD_HI: three, CLAP: three.lower()},
-        "p2": {WOOD_HI: seven, CLAP: seven.lower(), **fill},
-        "n": {WOOD_LO: "x..............."},                                      # one knock, the stop
-        "a": {KICK: "x.x.....x.x.....", ESNARE: snare, HAT: hat},               # the kick knocks twice, the snare once
-        "b": {KICK: "x.x...x.x.x.....", ESNARE: snare, HAT: hat},
-        "f": {KICK: "x.x...x.x.x.....", ESNARE: snare, HAT: "X.x.X.x.X.x.....", **fill},
+        "k1": {CASTANET: three},
+        "k2": {CASTANET: seven},
+        "t1": {CASTANET: three, TOM3: "x.......o.......", TAMB: "......o.......o."},     # a toy drum, a tambourine
+        "t2": {CASTANET: seven, TOM3: "x.......o.......", TAMB: "..............o."},
+        "a": {CASTANET: three, KICK: "x.x.....x.x.....", ESNARE: snare, HAT: hat},        # the kick twice, the snare once
+        "b": {CASTANET: seven, KICK: "x.x...x.x.x.....", ESNARE: snare, HAT: hat},
+        "f": {CASTANET: seven, KICK: "x.x...x.x.x.....", ESNARE: snare, HAT: "X.x.X.x.X.x.....", **fill},
         "c": {CRASH: "x...............", RIDE: ride, KICK: "x.x.....x.x.....", ESNARE: snare},
         "r": {RIDE: ride, KICK: "x.x.....x.x.....", ESNARE: snare},
         "g": {RIDE: "x.x.x.x.x.x.....", KICK: "x.x...x.x.x.....", ESNARE: snare, **fill},
-        "cc": {CRASH: "x...............", RIDE: ride, KICK: "x.x.....x.x.....", ESNARE: snare, CLAP: three.lower()},
-        "rc": {RIDE: ride, KICK: "x.x.....x.x.....", ESNARE: snare, CLAP: three.lower()},
-        "gc": {RIDE: "x.x.x.x.x.x.....", KICK: "x.x...x.x.x.....", ESNARE: snare, CLAP: seven.lower(), **fill},
-    }, rep("w1 w2 p1 p2", 1, "a b a f", 5, "c r r g", 2, "a b a f", 4, "n _ n _ n _ w1 p2", 1, "cc rc rc gc", 2,
-           "a b a f", 2))
+        "n": {WOOD_LO: "x..............."},
+        "kf": {CASTANET: seven, **fill},
+    }, rep("k1 k2", 6, "t1 t2", 4, "a b a b a b a f", 1, "c r r g", 2, "n _ n _ n _ k1 kf", 1, "a b a b a b a f", 1,
+           "c r r g", 2))
+    p.drums({                                           # the class clapping, not quite together
+        "c1": {CLAP: three.lower()}, "c2": {CLAP: seven.lower()},
+    }, rep("_", 12, "c1 c2", 8, "_", 16, "c1 c2", 4, "c1 c1 c1 c2", 2), vel=88, loose=26)
     return p
 
 
 def salt_mustard():
-    """B, a heavy shuffle, 88 a minute. The skipping one, built as Service Lift: the riff has the rhythm of the rope
-    rhyme (salt, mustard, vinegar, pepper), a recorder skips over it; at "pepper" the hats run."""
-    p = Piece("Salt, Mustard, Vinegar, Pepper", 88, steps=12, per_beat=3, sig=(12, 8))
-    riff, unit = "S1 S1 S1 S2", "S1 S1 S1 S2 S1+5 S1+5 S1 S2"                    # 8 bars: home x4, the 4th x2, home x2
-    # 48 bars: the riff 4, unit 8, unit with the tune 8, chorus 8, "pepper" 8, chorus 8, the riff 4
-    p.voice("bass", PICKBASS, 35, {
-        "S1": "1 . . 1 . b3 4 b3 1 b7, . 1",
-        "S2": "1 . . 1 . b3 4 b5 4 b3 . b7,",
-        "C": "1 . . 1 . 1 1 1 1 1 . 1",
-    }, rep(riff, 1, unit, 2, "C-4 C-2 S1 S2", 2, unit, 1, "C-4 C-2 S1 S2", 2, riff, 1), vel=104, gate=0.8, volume=115)
-    p.voice("guitar", OVERDRIVE, 47, {
-        "S1": "1^! . . 1 . b3 4^ b3 1 b7,^ . 1",
-        "S2": "1^! . . 1 . b3 4^ b5 4 b3^ . b7,",
-        "G": "1*! - . 1* - . 1* - . 1* - .",
-    }, rep("_", 4, unit, 2, "G-4 G-2 S1 S2", 2, unit, 1, "G-4 G-2 S1 S2", 2, riff, 1), vel=84, gate=0.75, volume=92,
-            pan=50)
-    stabs, pads = "s s s s s+5 s+5 s s", "M-4 M-2 m m M-4 M-2 m m"
-    p.voice("organ", ORGAN, 59, {
-        "s": ". . . 1m . . . . . 1m . .",
-        "m": "1m - - - - - - - - - - -", "M": "1M - - - - - - - - - - -",
-    }, rep("_", 12, stabs, 1, pads, 1, stabs, 1, pads, 1, "_", 4), vel=62, gate=0.7, volume=76, pan=80)
+    """G, a 12/8 shuffle, 92 a minute. The skipping one. A rope on the ground and a recorder skipping in G MAJOR,
+    while the bass goes down by semitones under it (G, F sharp, F, E, E flat, D): a nursery tune with one sour bar.
+    Then the band has the same tune and the same way down in G minor. Then the major again, with everybody."""
+    p = Piece("Salt, Mustard, Vinegar, Pepper", 92, steps=12, per_beat=3, sig=(12, 8))
+    # 48 bars: the rope 4, the recorder alone 8, the class 8, the band in minor 8 + 8, the stop 4, all in major 8
     skip = {
-        "J1": "1 - b3 5 - b3 1 - b3 5 - -",
-        "J2": "b6 - 5 4 - b3 4 - b3 1 - -",
-        "J4": "b7 - 5 b7 - 1' 5 - - . . .",
-        "J7": "5 - b7 1' - b7 5 - b3 5 - -",
-        "J8": "4 - b3 1 - - - - - . . .",
+        "M1": "5 - 3 5 - 3 1 - 3 5 - -",                 # G
+        "M2": "5 - 2 5 - 2 7, - 2 5 - -",                # D over F sharp
+        "M4": "6 - 4 6 - 4 1 - 4 6 - -",                 # C over E
+        "M5": "b6 - 4 b6 - 4 1 - 4 b6 - -",              # C minor over E flat: the sour bar
+        "M7": "4 - 2 4 - 2 7, - 2 4 - -",                # D seventh
+        "M8": "3 - - 1 - - - - - . . .",
+        "N1": "5 - b3 5 - b3 1 - b3 5 - -",              # G minor
+        "N4": "b3' - 1' b3' - 1' 5 - 1' b3' - -",        # G minor over E
+        "N5": "1' - b6 1' - b6 b3 - b6 1' - -",          # E flat
+        "N8": "b3 - - 1 - - - - - . . .",
     }
-    rhyme = "J1 J2 J1 J4 J1+5 J2+5 J7 J8"
-    p.voice("recorder", RECORDER, 71, skip, rep("_", 12, rhyme, 1, "_", 8, rhyme, 1, "_", 12),
-            vel=100, gate=0.85, volume=112, pan=58, reverb=50)
-    p.voice("flat recorder", RECORDER, 71, skip, rep("_", 28, rhyme, 1, "_", 12),
-            vel=82, gate=0.85, volume=92, pan=84, reverb=50, bend=-14)
-    p.voice("glockenspiel", GLOCK, 83, skip, rep("_", 28, rhyme, 1, "_", 12), vel=70, gate=1.0, volume=80, pan=36,
+    major, minor = "M1 M2 M1 M4 M5 M1 M7 M8".split(), "N1 M2 N1 N4 N5 N1 M7 N8".split()
+    p.voice("recorder", RECORDER, 67, skip, rep("_", 4) + major * 2 + rep("_", 8) + minor + rep("_", 4) + major,
+            vel=102, gate=0.85, volume=118, pan=56, reverb=50, loose=8)
+    p.voice("the class", RECORDER, 67, skip, rep("_", 12) + major + rep("_", 8) + minor + rep("_", 4) + major,
+            vel=86, gate=0.85, volume=100, pan=86, reverb=50, bend=-15, loose=24)
+    p.voice("glockenspiel", GLOCK, 79, skip, rep("_", 28) + minor + rep("_", 4) + major, vel=72, gate=1.0, volume=84,
+            pan=40)
+    p.voice("lead", DISTORTION, 55, skip, rep("_", 20) + minor * 2 + rep("_", 12), vel=92, gate=0.9, volume=96, pan=44,
             reverb=60)
-    p.voice("voices", CHOIR, 59, {
-        "c": ". . . 1^ . . . . . 1^ . .",
-    }, rep("_", 28, "c c c c c+5 c+5 c c", 1, "_", 12), vel=86, gate=0.9, volume=88, pan=74, reverb=70)
-    p.voice("lead", DISTORTION, 59, {                   # the chorus: over G, A, B minor, B minor
-        "L1": "b3' - - - - 1' b6 - - 1' - -",
-        "L2": "4' - - - - 2' b7 - - 2' - -",
-        "L3": "5' - - - - 4' b3' - - 1' - -",
-        "L4": "1' - - - - - - - - . . .",
-        "L5": "b6 - - 1' - - b3' - - 1' - b3'",
-        "L6": "b7 - - 2' - - 4' - - 2' - 4'",
-        "L7": "5' - - - - b7' 5' - - 4' - b3'",
-        "L8": "1' - - - - - - - - - - -",
-    }, rep("_", 20, "L1 L2 L3 L4 L5 L6 L7 L8", 1, "_", 8, "L1 L2 L3 L4 L5 L6 L7 L8", 1, "_", 4), vel=92, gate=0.97,
-            volume=96, pan=44, reverb=60)
-    kick, snare, hat = "x.....xx...x", "...x.....x..", "X.xX.xX.xX.x"
+    down = "{0} {0}-1 {0}-2 {0}-3 {0}-4 {0}-5 {0}-5 {1}"                         # the way down, a bar a step
+    p.voice("toy bass", ACBASS, 43, {
+        "T": "1 - - . . . 1 - - . . .",
+    }, rep("_", 12, down.format("T", "T"), 1, "_", 28), vel=92, gate=0.9, volume=104)
+    chords = {
+        "G": ". . . 1M . . . . . 1M . .", "D": ". . . 5,M . . . . . 5,M . .",
+        "C": ". . . 4,M . . . . . 4,M . .", "c": ". . . 4,m . . . . . 4,m . .",
+        "g": ". . . 1m . . . . . 1m . .", "E": ". . . b6,M . . . . . b6,M . .",
+    }
+    glad, grim = "G D G C c G D G".split(), "g D g g E g D g".split()
+    p.voice("melodica", REED, 55, chords, rep("_", 12) + glad + rep("_", 28), vel=66, gate=0.9, volume=82, pan=70)
+    line = down.format("C", "S")
+    p.voice("bass", PICKBASS, 31, {                     # the rope rhyme's rhythm: salt, mustard, vinegar, pepper
+        "C": "1 . . 1 . 1 1' 1 1 1' . 1",
+        "S": "1 . . 1 . 1 1' . . 5, . 7,",
+    }, rep("_", 20, line, 2, "_", 4, line, 1), vel=104, gate=0.8, volume=115)
+    p.voice("guitar", OVERDRIVE, 43, {
+        "C": "1! . . 1 . 1 1' 1 1! 1' . 1",
+        "S": "1! . . 1 . 1 1' . . 5,! . 7,",
+    }, rep("_", 20, line, 2, "_", 4, line, 1), vel=86, gate=0.75, volume=92, pan=50)
+    p.voice("organ", ORGAN, 55, chords, rep("_", 20) + grim * 2 + rep("_", 4) + glad, vel=64, gate=0.7, volume=78,
+            pan=80)
+    p.voice("voices", CHOIR, 55, chords, rep("_", 28) + grim + rep("_", 12), vel=86, gate=0.9, volume=88, pan=74,
+            reverb=70)
+    p.voice("music box", MUSICBOX, 79, {                # the stop: the first two bars at half the speed
+        "h1": "5 - - - 3 - 5 - - - 3 -",
+        "h2": "1 - - - 3 - 5 - - - - -",
+        "h3": "5 - - - 2 - 5 - - - 2 -",
+        "h4": "7, - - - 2 - 5 - - - - -",
+    }, rep("_", 36, "h1 h2 h3 h4", 1, "_", 8), vel=82, gate=1.0, volume=98, pan=44, reverb=80)
+    rope, snare = "x..x..x..x..", "...x.....x.."
     p.drums({
-        "h": {WOOD_LO: "x..x..x..x..", CLAP: "...x.....x.."},                    # the rope on the ground
-        "a": {KICK: kick, ESNARE: snare, HAT: hat},
+        "h": {WOOD_LO: rope},                                                    # the rope on the ground
+        "t": {WOOD_LO: rope, TAMB: "..o..o..o..o"},
+        "a": {KICK: "x.....xx...x", ESNARE: snare, HAT: "X.xX.xX.xX.x"},
         "f": {KICK: "x.....xx....", ESNARE: "...x.....xxx", HAT: "X.xX.xX.x..."},
-        "c": {CRASH: "x...........", RIDE: "x.xx.xx.xx.x", KICK: "x.....x.....", ESNARE: snare},
-        "r": {RIDE: "x.xx.xx.xx.x", KICK: "x.....x.....", ESNARE: snare},
-        "g": {RIDE: "x.xx.xx.x...", KICK: "x.....x.....", ESNARE: "...x.....xxx"},
-        "pa": {KICK: kick, ESNARE: snare, HAT: "XxxXxxXxxXxx", CLAP: "...x.....x.."},      # pepper
-        "pf": {KICK: "x.....xx....", ESNARE: "...x.....xxx", HAT: "XxxXxxXxx...", CLAP: "...x........"},
-    }, rep("h", 4, "a a a f", 4, "c r r g", 2, "pa pa pa pf", 2, "c r r g", 2, "a a a f", 1), vel=96)
+        "pa": {KICK: "x.....xx...x", ESNARE: snare, HAT: "XxxXxxXxxXxx"},        # pepper: the hats run
+        "pf": {KICK: "x.....xx....", ESNARE: "...x.....xxx", HAT: "XxxXxxXxx..."},
+        "n": {WOOD_LO: "x..........."},
+        "nf": {WOOD_LO: rope, ESNARE: ".........xxx"},
+    }, rep("h", 12, "t", 8, "a a a f", 2, "pa pa pa pf", 2, "n n n nf", 1, "pa pa pa pf", 2))
+    p.drums({                                           # hands, on two and four, not quite together
+        "c": {CLAP: "...x.....x.."},
+    }, rep("_", 2, "c", 18, "_", 8, "c", 8, "_", 4, "c", 8), vel=88, loose=20)
     return p
 
 
@@ -1332,14 +1223,10 @@ TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_FARS", "the creeping one: synth bass in octaves, held organ, bells, a slow tune", far_side),
     ("AJM_SEVN", "the baroque one, a bar of seven: harpsichord, plucked strings, a cello", seven),
-    ("AJM_CLOK", "the time maps: a slow shuffle, a clock ticks; the third round is the blues backwards", clock),
     ("AJM_AFTR", "the quiet one: strings, a low drone, timpani, a few piano notes", after_hours),
     ("AJM_ENGN", "the heavy one, Sigil's way: a chugging guitar, a brass tune over held fifths", engine),
     ("AJM_PORT", "the groove: a fingered bass riff, muted guitar, electric piano, vibes", porter),
     ("AJM_FIRE", "the fast rocker: a galloping riff, a guitar tune over held fifths", fire_door),
-    ("AJM_LIFT", "the heavy shuffle: twelve bars round and round, organ, a guitar tune", service_lift),
-    ("AJM_FILE", "the machine: synth bass in sixteenths, a saw riff, a square-wave tune", filing),
-    ("AJM_COPY", "the canon: plucked strings, a woodblock; the tune's copy four bars behind", carbon_copy),
     ("AJM_DEAD", "the slow heavy one: a riff on the tritone, timpani, a choir, a bell", dead_letter),
     ("AJM_DSTB", "quiet, the lullaby: a music box over strings that sink a third, a voice a semitone apart", do_not_disturb),
     ("AJM_LUGG", "quiet, the empty hall: a fretless bass riff, electric piano, a vibraphone tune", left_luggage),
@@ -1348,9 +1235,9 @@ TRACKS = [
     ("AJM_BELL", "quiet, a slow minor blues: an organ, a bell tolling, a desk bell nobody answers, a cello", night_bell),
     ("AJM_WATR", "quiet, the flooded floor: every chord a step lower, drips on a marimba, a clarinet", standing_water),
     ("AJM_STEP", "children's games, still: plucked steps that stop dead, a music box, a recorder far off", grandmothers_footsteps),
-    ("AJM_SEEK", "children's games, creeping: a synth bass, a recorder counting a note more each bar, voices", ready_or_not),
-    ("AJM_KNOK", "children's games, the middle one: a riff knocking three, three, seven; a recorder's taunt", knock_down_ginger),
-    ("AJM_SALT", "children's games, skipping: a heavy shuffle in the rhythm of a rope rhyme, recorder, guitar", salt_mustard),
+    ("AJM_SEEK", "children's games, creeping: children's voices have the riff over a marching snare, a recorder calls", ready_or_not),
+    ("AJM_KNOK", "children's games, the middle one: a recorder and castanets alone, the class joins, then the riff", knock_down_ginger),
+    ("AJM_SALT", "children's games, skipping: a nursery tune in major over a bass going down, then the band in minor", salt_mustard),
     ("AJM_WOLF", "children's games, fast: a chug of three, three, seven; a call, the hour struck, a chase", mr_wolf),
 ]
 

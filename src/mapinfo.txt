@@ -141,6 +141,8 @@ skill nightshift
 // thickest. The labs have none (the sound lab plays any of them from its switches).
 // MAP11 (Do Not Disturb), MAP19 (Light Under the Door) and MAP33 (Standing Water) have quiet ones, also by his
 // word (2026-11-24).
+// MAP07, MAP09, MAP12 and MAP32 have a piece drawn by lot "for now" (2026-11-25): Vadim had theirs removed
+// (Service Lift, Filing Under Fire, The Small Hours Twice; Carbon Copy played nowhere).
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -214,7 +216,7 @@ map MAP07 "Small Hours"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_LIFT"
+	music = "AJM_HING"
 }
 
 // Act 1, level 8 (tools/map_hinges8.py)
@@ -236,7 +238,7 @@ map MAP09 "Putting You Through"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_FILE"
+	music = "AJM_PORT"
 }
 
 // Act 1, level 10 (tools/map_hinges10.py). Its secret way out (the loop of
@@ -270,7 +272,7 @@ map MAP12 "Going Up"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_LIFT"
+	music = "AJM_LUGG"
 }
 
 // Act 2, level 3 (tools/map_institute3.py).
@@ -390,7 +392,7 @@ map MAP32 "Double Shift"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_CLOK"
+	music = "AJM_LGHT"
 	sky1 = "AJZSKY", 1             // the look's stars (gfx_works.py), drifting; the plain level has no sky
 }
 
