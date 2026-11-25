@@ -531,6 +531,9 @@ class PaperTest : EventHandler
 			Company("11 12 13 14 15 16 18 19 51 55 56 57", "52 53 54");
 			int left15 = AmbushLeft(15);
 			Check("company15_all", ambushAt[15] > 0 && left15 == 0, String.Format("%d of %d came, %d left", ambushAt[15] - left15, ambushAt[15], left15));
+			// YELLOW's ambush (2026-11-25): its last wave holds back 10 s (20 + 25 + 350 tics), long past by now
+			int left14 = AmbushLeft(14);
+			Check("company14_all", ambushAt[14] > 0 && left14 == 0, String.Format("%d of %d came, %d left", ambushAt[14] - left14, ambushAt[14], left14));
 			Check("allSeven", Reg(1).signed && Reg(2).signed && Reg(3).signed && Reg(4).signed && Reg(5).signed && Reg(6).signed && Reg(7).signed);
 			Summary();
 			Next();
