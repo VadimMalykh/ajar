@@ -143,7 +143,9 @@ skill nightshift
 // word (2026-11-24).
 // MAP07, MAP09, MAP12 and MAP32 have a piece drawn by lot "for now" (2026-11-25): Vadim had theirs removed
 // (Service Lift, Filing Under Fire, The Small Hours Twice; Carbon Copy played nowhere).
-// MAP02 and MAP13 likewise, the same day: The Far Side removed ("delete 2"); drawn: Night Porter and Night Bell.
+// MAP13 likewise, the same day: The Far Side removed ("delete 2"); drawn: Night Bell.
+// By Vadim's word, from the sound lab's numbers (2026-11-25): MAP02 Mysterium II, MAP03 Distant Galaxy IV,
+// MAP04 Distant Galaxy, Fast, MAP32 Garmonic II (so MAP32's is no longer the one drawn by lot).
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -162,7 +164,7 @@ map MAP02 "No Vacancy"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_PORT"
+	music = "AJM_MYS2"
 }
 
 // Act 1, level 3 (tools/map_hinges3.py)
@@ -173,7 +175,7 @@ map MAP03 "Stage Door"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_SEVN"
+	music = "AJM_GAL4"
 }
 
 // Act 1, level 4 (tools/map_hinges4.py)
@@ -184,7 +186,7 @@ map MAP04 "Party Wall"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_PORT"
+	music = "AJM_GALF"
 }
 
 // Act 1, level 5 (tools/map_hinges5.py)
@@ -393,7 +395,7 @@ map MAP32 "Double Shift"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_LGHT"
+	music = "AJM_GAR2"
 	sky1 = "AJZSKY", 1             // the look's stars (gfx_works.py), drifting; the plain level has no sky
 }
 

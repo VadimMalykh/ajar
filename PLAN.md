@@ -16248,3 +16248,23 @@ are in the package (and play on other maps already); the build;
 says "no music playing" on every map, MAP01 too, so it shows nothing), and
 how the maps feel with these pieces.
 
+## Music: four of today's pieces put on maps (2026-11-25)
+
+**Vadim**, by the numbers of the sound lab (26 tracks, the build he was
+playing): "Put 24 to map02", "Sorry on map04", "25 - map02", "26 - map03",
+"23 - map32".
+
+| Map | Now plays | Before |
+|---|---|---|
+| MAP02 No Vacancy | Mysterium II (AJM_MYS2), track 25 | Night Porter, by lot since The Far Side went |
+| MAP03 Stage Door | Distant Galaxy IV (AJM_GAL4), track 26 | Seven (AJM_SEVN) |
+| MAP04 Party Wall | Distant Galaxy, Fast (AJM_GALF), track 24 | Night Porter (AJM_PORT) |
+| MAP32 Double Shift | Garmonic II (AJM_GAR2), track 23 | Light Under the Door, by lot |
+
+They are the first of today's pieces on maps. Three of the four are slow
+and without drums; that is his choice for these levels, not weighed here
+against how much fighting each has.
+
+Checked: the built package's mapinfo names these lumps for the four maps and
+all four are in it; the build; MAP02, MAP03 and MAP04 start in the smoke run.
+**Not checked: heard on the maps.**
