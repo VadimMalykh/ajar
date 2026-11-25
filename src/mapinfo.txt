@@ -143,6 +143,7 @@ skill nightshift
 // word (2026-11-24).
 // MAP07, MAP09, MAP12 and MAP32 have a piece drawn by lot "for now" (2026-11-25): Vadim had theirs removed
 // (Service Lift, Filing Under Fire, The Small Hours Twice; Carbon Copy played nowhere).
+// MAP02 and MAP13 likewise, the same day: The Far Side removed ("delete 2"); drawn: Night Porter and Night Bell.
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -161,7 +162,7 @@ map MAP02 "No Vacancy"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_FARS"
+	music = "AJM_PORT"
 }
 
 // Act 1, level 3 (tools/map_hinges3.py)
@@ -282,7 +283,7 @@ map MAP13 "Sight Unseen"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_FARS"
+	music = "AJM_BELL"
 }
 
 // Act 2, level 4 (tools/map_institute4.py).

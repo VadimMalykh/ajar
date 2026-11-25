@@ -152,6 +152,11 @@ Removed on Vadim's word the same day: The Small Hours Twice (AJM_CLOK),
 Service Lift (AJM_LIFT), Filing Under Fire (AJM_FILE), Carbon Copy
 (AJM_COPY). They are in git before 2026-11-25. So "the first six" and "the
 other six" above are four and four now.
+
+And The Far Side (AJM_FARS, the creeping one, the second of TRACKS), later
+the same day: "delete 2". Garmonic, Fast was moved from the end to its
+place, so that every other piece keeps the number Vadim knows it by in the
+sound lab; that is the only reason it stands among the first ones.
 """
 import random
 import re
@@ -387,41 +392,6 @@ def hinges():
         "c": {CRASH: "x...............", RIDE: "x.x.x.x.x.x.x.x.", KICK: "x.....x.x.x.....", ESNARE: "....x.......x..."},
         "r": {RIDE: "x.x.x.x.x.x.x.x.", KICK: "x.....x.x.x.....", ESNARE: "....x.......x..."},
     }, rep("h", 4, "a a a f", 5, "c r r f", 2, "a a a f", 4, "c r r f", 2))
-    return p
-
-
-def far_side():
-    """F, 76 a minute. The creeping one: a synth bass in octaves, held organ, a lament on bells, a slow tune."""
-    p = Piece("The Far Side", 76)
-    p.voice("bass", SYNBASS, 29, {
-        "P": "1 - . . 1' . . 1 - . . . b7, . 1 .",
-        "Q": "1 - . . 1' . . 1 - . . . b3 . b2 .",
-        "V": "1 - . . 1' . . 1 - . . . 5 . 1 .",
-    }, rep("P P P Q", 1, "P P V-4 V-2 P Q V+5 Q-2", 4, "P P P Q", 1), vel=104, gate=0.9, volume=112)
-    p.voice("organ", ORGAN, 53, {
-        "m": "1m - - - - - - - - - - - - - - -",
-        "M": "1M - - - - - - - - - - - - - - -",
-    }, rep("_", 4, "m m M-4 M-2 m m m+5 M-2", 4, "_", 4), vel=58, gate=1.0, volume=74, pan=76)
-    p.voice("bells", BELLS, 65, {
-        "L1": "1' - - - - - - - b7 - - - - - - -",
-        "L2": "5 - - - - - - - b3 - - - - - - -",
-    }, rep("_", 12, "L1 L2 _ _ L1 L2 _ _", 1, "_", 8, "_ _ _ _ L1 L2 _ _", 1, "L1 L2 _ _", 1), vel=78, gate=1.0,
-            volume=88, pan=48, reverb=70)
-    p.voice("tune", POLYSYNTH, 65, {
-        "M1": "5 - - - - - - - b3 - - - 4 - - -",
-        "M2": "5 - - - - - - - - - - - . . . .",
-        "M3": "b6 - - - - - - - 4 - - - b3 - - -",
-        "M4": "b7 - - - - - - - 4 - - - 2 - - -",
-        "M5": "1' - - - - - - - b7 - - - 5 - - -",
-        "M6": "5 - - - - - - - b3 - - - . . . .",
-        "M7": "4 - - - - - - - b6 - - - 1' - - -",
-        "M8": "b7 - - - 2' - - - b7 - - - 5 - - -",
-    }, rep("_", 20, "M1 M2 M3 M4 M5 M6 M7 M8", 2, "_", 4), vel=86, gate=0.97, volume=92, reverb=60)
-    p.drums({
-        "h": {HAT: "XoxoXoxoXoxoXoxo"},
-        "a": {KICK: "x......x.x......", ESNARE: "....x.......x...", HAT: "XoxoXoxoXoxoXoxo"},
-        "f": {KICK: "x......x.x.....x", ESNARE: "....x.......x.x.", HAT: "XoxoXoxoXoxo....", OHAT: "............x..."},
-    }, rep("h", 4, "a a a f", 8, "h", 4), vel=92)
     return p
 
 
@@ -1670,7 +1640,7 @@ def garmonic_fast():
 
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
-    ("AJM_FARS", "the creeping one: synth bass in octaves, held organ, bells, a slow tune", far_side),
+    ("AJM_GARF", "fast, the Doom way, on Vadim's sketch garmonic: one note held by a muted guitar, the riff slipping under it", garmonic_fast),
     ("AJM_SEVN", "the baroque one, a bar of seven: harpsichord, plucked strings, a cello", seven),
     ("AJM_AFTR", "the quiet one: strings, a low drone, timpani, a few piano notes", after_hours),
     ("AJM_ENGN", "the heavy one, Sigil's way: a chugging guitar, a brass tune over held fifths", engine),
@@ -1695,7 +1665,6 @@ TRACKS = [
     ("AJM_GALF", "fast, the Doom way, on Vadim's sketch distant_galaxy_theme: a riff that slips a semitone and comes back", distant_galaxy_fast),
     ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
     ("AJM_GAL4", "ambient, the same sketch with no two lines moving at once: each chord reached a note at a time", distant_galaxy_four),
-    ("AJM_GARF", "fast, the Doom way, on Vadim's sketch garmonic: one note held by a muted guitar, the riff slipping under it", garmonic_fast),
 ]
 
 
