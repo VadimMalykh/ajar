@@ -146,6 +146,7 @@ skill nightshift
 // MAP13 likewise, the same day: The Far Side removed ("delete 2"); drawn: Night Bell.
 // By Vadim's word, from the sound lab's numbers (2026-11-25): MAP02 Mysterium II, MAP03 Distant Galaxy IV,
 // MAP04 Distant Galaxy, Fast, MAP32 Garmonic II (so MAP32's is no longer the one drawn by lot).
+// Then MAP08 Salt, Mustard, Vinegar, Pepper (track 17) and MAP09 What's the Time, Mr Wolf? (18).
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -230,7 +231,7 @@ map MAP08 "Closing Time"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_ENGN"
+	music = "AJM_SALT"
 }
 
 // Act 1, level 9 (tools/map_hinges9.py)
@@ -241,7 +242,7 @@ map MAP09 "Putting You Through"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_PORT"
+	music = "AJM_WOLF"
 }
 
 // Act 1, level 10 (tools/map_hinges10.py). Its secret way out (the loop of

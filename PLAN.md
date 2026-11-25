@@ -16268,3 +16268,16 @@ against how much fighting each has.
 Checked: the built package's mapinfo names these lumps for the four maps and
 all four are in it; the build; MAP02, MAP03 and MAP04 start in the smoke run.
 **Not checked: heard on the maps.**
+
+## Music: MAP08 and MAP09 get two of the children's games (2026-11-25)
+
+**Vadim**, by the sound lab's numbers: "Map track 17 to map09", then "Sorry
+17 to map08 and 18 to map09".
+
+| Map | Now plays | Before |
+|---|---|---|
+| MAP08 Closing Time | Salt, Mustard, Vinegar, Pepper (AJM_SALT), track 17 | Engine (AJM_ENGN) |
+| MAP09 Putting You Through | What's the Time, Mr Wolf? (AJM_WOLF), track 18 | Night Porter (AJM_PORT), by lot |
+
+Their first maps. MAP10 keeps the quiet one (AJM_AFTR), by his word of
+2026-11-23.
