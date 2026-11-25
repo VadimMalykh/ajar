@@ -16013,3 +16013,38 @@ checked: how they sound**, and that is the whole question here. Least sure:
 whether the voices' sound speaks fast enough to carry a riff in Ready or
 Not (a marimba doubles it quietly from the second round for that), and
 whether the raggedness reads as children or as a mistake.
+
+## Music: Ready or Not removed, two ambient pieces added (2026-11-25)
+
+**Vadim**, after hearing the three new versions: "16 - no. Other, ok, maybe.
+Also add 2 more slow, ambient-like onces with experimental cord
+progressions."
+
+**Removed**: Ready or Not (AJM_SEEK; the children's voices over a march).
+Knock Down Ginger and Salt, Mustard, Vinegar, Pepper stay as "ok, maybe".
+
+**Two ambient pieces**, not children's games: no beat at all, held sounds, a
+few notes, about 0.6 notes a second. In both the chords are not blocks moved
+about, as everywhere else in `tools/music.py`, but three lines, each holding
+its note until it has to move; at a change only the moving note is struck.
+
+| Lump | Piece | The chords | What plays |
+|---|---|---|---|
+| AJM_MOVE | Everything Else Moves, E, 50, 173 s | one note, E, is in all six chords and stays; at every change exactly ONE other note moves, by a step or half a step: A minor, C, E minor, E major, C sharp minor, A major, and A major to A minor is the way round again. Two bars a chord | slow strings and a warm pad for the two lines that move, a voice for the E; first over a held E in the bass, then with the roots; a vibraphone (two notes up to a long one); the third time a clarinet that plays only the note that has just moved, and a harp |
+| AJM_REVO | Revolving Door, C, 48, 160 s | four MAJOR chords a minor third apart, C, E flat, F sharp, A: they cut the octave into four equal parts, so none is home. Each shares one note with the next (G, B flat, C sharp, E) | three lines sinking while the bass climbs; a bowed-glass tune of those four shared notes, each begun in one chord and held through the change into the next, where it is another note of the chord; vibraphone drops whose last note is the key note of the chord just left; low voices the fourth time |
+
+Both go round three or four times, a voice more each time, and start bare
+again. They are tracks 19 and 20 of 20 in the sound lab (15 Grandmother's
+Footsteps, 16 Knock Down Ginger, 17 Salt Mustard, 18 Mr Wolf). No map plays
+them.
+
+Checked: read back by a second MIDI reader; every chord of both spelled out
+from the file (the three lines give A C E, G C E, G B E, G sharp B E, G
+sharp C sharp E, A C sharp E; and C E G, E flat G B flat, F sharp A sharp C
+sharp, A C sharp E); no semitone between two voices anywhere; the other
+eighteen pieces byte for byte as before; `soundlab=ok` with 20 tracks;
+GZDoom with sound on starts both. **Not checked: how they sound**: three
+sounds are new to the game's music (Space Voice, Bowed Glass, and the pads
+holding for four bars, 19 seconds, on one note), and the synth's reverb is
+off in Vadim's settings, so the pads have to carry the room themselves.
+
