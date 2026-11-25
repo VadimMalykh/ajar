@@ -16048,3 +16048,108 @@ sounds are new to the game's music (Space Voice, Bowed Glass, and the pads
 holding for four bars, 19 seconds, on one note), and the synth's reverb is
 off in Vadim's settings, so the pads have to carry the room themselves.
 
+## Music: four ambient pieces from Vadim's two chord sketches (2026-11-25)
+
+**Vadim**: "Also please create by 2 slow ambient versions on harmonic ideas
+from 2 midi files I just put in my Downloads". The files:
+`distant_galaxy_theme.mid` (286 bytes, 29 notes) and `garmonic.mid` (313
+bytes, 31 notes, its track named "Task 1 Bonus 2"): held chords played by
+hand, no tune, no tempo. Read note by note (copies in the session's
+scratchpad, not in the repository).
+
+**What is in them.**
+
+- `distant_galaxy_theme`: eight chords, eight beats each. A minor (A C E);
+  G sharp minor (the same shape a semitone lower); A with no third (E A E);
+  D minor; C over E; E minor; F; then E with the C still held (an augmented
+  chord) for four beats and E major for four.
+- `garmonic`: sixteen bars. A B flat held on top; under it E flat and F
+  sharp (E flat minor); after a bar the F sharp slips to F, half a bar later
+  the E flat to D: it is B flat over D. The same again with a bass (E flat,
+  then D). Then E flat minor over F sharp, the B flat slips to A, the E flat
+  to D: D major, the F sharp kept; the B flat comes back over it (D
+  augmented). G minor; its G slips to F sharp while the bass still has G;
+  then E flat minor again, the B flat kept all the way.
+
+Of each pair the first sets his chords as he voiced them, the second takes
+the idea further. All four as the two ambient ones before: no beat, the
+chords as lines that hold until they have to move, three times round with a
+voice more each time.
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_GAL1 | Distant Galaxy I, A, 56, 206 s | his eight chords, two bars each, in his voicing (voice, slow strings, warm pad; the bass where he has it, the whole bass from the second round); a vibraphone of two notes up to a long one, which slips a semitone with the second chord; a glass voice over the top line the third time |
+| AJM_GAL2 | Distant Galaxy II, D, 60, 192 s | his slip done twice: D minor, C sharp minor, D with no third; G minor, F sharp minor, G with no third; then his ending, B flat, A with the F still in it, A. First only a harp, a note a second up and down each chord, and the bass; then a pad and a glass tune that stays on A through five of the chords; then a celesta over the harp |
+| AJM_GAR1 | Garmonic I, E flat, 54, 213 s | his sixteen bars, bar for bar and beat for beat (a bar of his is a bar here); a vibraphone the second time, a glass voice the third |
+| AJM_GAR2 | Garmonic II, E flat, 54, 187 s | his first move as a chain: a minor chord's two lower notes slip a semitone, one then the other, and it is the major chord a fifth higher; that chord's third drops; again. E flat minor, B flat, B flat minor, F, F minor, C, C minor, G, G minor, and his last move (G minor to E flat minor, the B flat kept) closes the ring: fourteen bars. No note goes any way but down a semitone (one goes up, once a round), the chords climb by fifths, and after three rounds each of the three lines is an octave lower. The bass has the roots from the second round; a vibraphone says each moved note again a beat later |
+
+Garmonic II's lines are worked out by the function itself from the three
+starting notes and the two moves, not written out. `tools/music.py` also
+has an augmented triad among the shapes (`a`) and `held()` for lines.
+
+They are tracks 20 to 23 in the sound lab (Revolving Door went in the same
+merge, see the next section). No map plays them.
+
+Checked: read back by a second MIDI reader; the notes sounding at every
+half bar of the first round printed from the files and compared with the
+sketches (Distant Galaxy I and Garmonic I agree chord for chord; Garmonic
+II's chain is the one above); no semitone between two voices lasts, except
+his own G against F sharp in the bar before E flat minor returns (both
+Garmonics; it is in his file); the other twenty pieces byte for byte as
+before; `soundlab=ok`; GZDoom with sound on starts all four.
+**Not checked: how they sound.**
+
+## Music: Revolving Door removed; two pieces on the harmony of O Magnum Mysterium (2026-11-25)
+
+**Vadim**, while the four above were being made: "19 is very good actually /
+20 - no", and: "Could you also check O Magnum Mysterium theme and create
+couple slow versions on that harmonic ideas?"
+
+**19 and 20** were Everything Else Moves and Revolving Door. Revolving Door
+(AJM_REVO) is removed; it was on no map. Everything Else Moves stays, and
+what it does (one line moves at a time, by a step, the rest hold) is the way
+the two new ones are made.
+
+**Which O Magnum Mysterium.** Taken to be Morten Lauridsen's (1994), the one
+the name means first today; Victoria's of 1572 is the other well-known one
+and is not what these are on. Not asked back; say so if it was the other.
+
+**What was checked and what is from memory.** Looked up: it is in D major,
+and in the whole piece one note is from outside the key, a G sharp in the
+altos on "Virgo"; Lauridsen wrote that he chose a harmonic palette "simpler
+and direct", without the complex chords of his other cycles, and that the
+themes and phrase shapes have their roots in chant (the Wikipedia article on
+the piece; Aleteia, 2023-01-24). The score was not read: no free copy, it is
+in copyright. From Claude's memory of the piece, not confirmed by a source
+this time: many chords with the third in the bass and the bass going by
+step; a second or a sixth added to a chord and left; a note held over a
+change and let down a step afterwards; no chord that pushes to the next (no
+dominant seventh); endings from the fourth chord to home.
+
+**What is not taken**: none of its notes, its tune, the order of its chords
+or its words. The two pieces are new progressions written to those rules.
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_MYS1 | Mysterium I, D, 54, 213 s | sixteen chords, a bar each, all in D major. The bass walks by step (D, F sharp, G, A, B ...), the middle line stays on D but for one C sharp, the other two move one at a time, so most chords have a second or a sixth in them. The second time a clarinet going round A as a chant does; the third time it has the G sharp, once, leaning on the A |
+| AJM_MYS2 | Mysterium II, G, 50, 230 s | chords with the third in the bass walking down the scale (C over E, B minor over D, A minor over C, G over B), and the top line a step late each time: it holds, then follows. Twice, the second time a third higher; each time it ends from C to G. A vibraphone says the top line again from the second round; in the last four bars a clarinet with the one note from outside, C sharp |
+
+`tools/music.py` now also has `spell()` (a line written as note names, a
+bar each), `write()` and `echo()`; Garmonic II's own copy of `write()` went
+into them and its file is byte for byte the same.
+
+The lab has 25 tracks: 19 Everything Else Moves, 20 Distant Galaxy I,
+21 Distant Galaxy II, 22 Garmonic I, 23 Garmonic II, 24 Mysterium I,
+25 Mysterium II. No map plays any of the six new ones.
+
+Checked: read back by a second MIDI reader; the notes of the four lines at
+every half bar printed from the files: every one is in the key, no chord of
+the four lines has a tritone in it (Mysterium II first had two, an F sharp
+under a held C; the middle line now waits there); the only semitones that
+last are the clarinet's raised fourth against the fifth, once in each piece,
+and in both a major seventh over the bass's note (F sharp over G, B over C)
+that is let go after half a bar; the
+other twenty-three pieces byte for byte as before; `soundlab=ok` with 25
+tracks; GZDoom with sound on starts both. **Not checked: how they sound**,
+and whether they bring Lauridsen's piece to mind at all.
+
