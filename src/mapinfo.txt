@@ -136,7 +136,7 @@ skill nightshift
 	Aggressiveness = 0.5
 }
 
-// Music: the pieces are written by tools/music.py (music/AJM_*.mid). MAP01 and MAP10 have the quiet one by
+// Music: the pieces are written by tools/music.py (music/AJM_*.mid). MAP01 and MAP10 had the quiet one by
 // Vadim's word (2026-11-23); the others are given by how much fighting a map has, the heavy ones where it is
 // thickest. The labs have none (the sound lab plays any of them from its switches).
 // MAP11 (Do Not Disturb), MAP19 (Light Under the Door) and MAP33 (Standing Water) have quiet ones, also by his
@@ -147,6 +147,7 @@ skill nightshift
 // By Vadim's word, from the sound lab's numbers (2026-11-25): MAP02 Mysterium II, MAP03 Distant Galaxy IV,
 // MAP04 Distant Galaxy, Fast, MAP32 Garmonic II (so MAP32's is no longer the one drawn by lot).
 // Then MAP08 Salt, Mustard, Vinegar, Pepper (track 17) and MAP09 What's the Time, Mr Wolf? (18).
+// And MAP10 Distant Galaxy II (21), so MAP10 no longer has the quiet one.
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -256,7 +257,7 @@ map MAP10 "All Change"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_AFTR"
+	music = "AJM_GAL2"
 }
 
 // Act 2, level 1 (tools/map_institute1.py).
