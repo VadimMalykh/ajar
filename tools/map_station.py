@@ -1426,6 +1426,9 @@ BOX3 = ajarthird.box(m, 3, rect(*BOX3_BOX), ceil=160, light=210, color=R_ROOM)
 ajartime.glass(m, (96, 2560), (288, 2560), (0, -1), G)
 ajarthird.box_door_at(m, 3, (64, 2432), (64, 2368), (-1, 0), G, color=R_WAY)
 opening((256, 2304), (128, 2304), (0, -1), G, R_WAY)
+# a berserk pack by the east wall, opposite the box's door: go 3 may begin with nothing left of go 2 (Vadim came
+# with 1 of health and his fists, the tunnel's spectres at the opening). Off the tests' way (route 15, x 192).
+items(2023, (272, 2400))
 # --- the cable tunnel: low and dark, trays of cable along its walls ----------------------
 TUN = [(128, 1984, 256, 2288), (256, 1984, 1280, 2112)]
 area(TUN[0], [((128, 1984, 152, 2288), dict(ceil=72)), ((232, 1984, 256, 2288), dict(ceil=72))],
