@@ -306,6 +306,8 @@ def opening(box, floor, lk=None, height=96):
     lk = lk or dict(light=170, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF", ceil=0)
     d = dict(lk)
     d.pop("ceil")
+    if d.get("ctex") == SKY:            # a way through a wall has a head: under a sky of its own the wall over it
+        d["ctex"] = d.get("ftex", "AJTRIMF")    # is not drawn between two skies (the squeeze stair's top, 2026-11-25)
     OPENINGS.add(m.sector(rect(*box), floor=floor, ceil=floor + height, **d))
     AVOID.append(((box[0] + box[2]) / 2, (box[1] + box[3]) / 2))
 
@@ -699,6 +701,8 @@ S((3632, 1888, 3712, 1936), 0, BU)
 stairs((3632, 1936), (3712, 1936), (0, 1), 0, UY_Z, 10, 32, BU)
 S((3632, 2256, 3712, 2272), UY_Z, BU)
 opening((3632, 2272, 3712, 2304), UY_Z, sky("BU", 200, UY_Z + 128))
+if LOOK:
+    m.line((3632, 2304), (3712, 2304), upper=UPYARD["wall"])                    # the yard's own wall over the way
 S((3744, 1856, 3808, 2304), UY_Z, BU)                                          # the terrace: a drop into the lower yard
 
 # --- the upper yard --------------------------------------------------------------------------------------

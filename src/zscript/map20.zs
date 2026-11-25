@@ -1106,6 +1106,10 @@ class HighWaterTest : EventHandler
 			if (st == 70) Info(String.Format("view 44: the exit door's opening %.1f", ExitDoorOpening()));
 			Look(mo, st, 6248, 1312, 180, 0);
 			break;
+		case 45:    // the upper yard's south-west corner: the wall over the squeeze stair's doorway (2026-11-25: the
+			        // doorway had a sky of its own, so nothing was drawn over it and the sky showed in a stripe)
+			Look(mo, st, 3900, 2560, 222, -12);
+			break;
 		}
 	}
 

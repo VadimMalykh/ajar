@@ -15821,3 +15821,27 @@ code, `23c4920`):
 ambusher as it comes, so nothing says how hard the court is, whether the
 piers are cover enough from two arch-viles, or how often they raise the
 court's dead. Not played by hand.
+
+## MAP20: the wall over the squeeze stair's doorway (fixed 2026-11-25)
+
+> Vadim, 2026-11-25, playing MAP20, with a shot of the upper yard's south-west corner: "this transparent stripe in the corner, is this planned?"
+
+Not planned. The doorway at the top of the squeeze stair (3632..3712,
+2272..2304, 96 high) was the one `opening()` given a `sky()` look, for its
+buff stone; so its ceiling was F_SKY1, and between two skies no upper wall is
+drawn: over the doorway the yard's wall was missing from 288 to 640 and the
+sky showed through, with the stair well's west wall in it. Found and fixed by
+Claude (Fable) in the task `map20-stair-lintel`.
+
+- `opening()` never keeps a sky ceiling: a look whose ceiling is the sky gets
+  its floor's flat instead (AJVFK here; the four other openings have the
+  trim's and are as they were).
+- The wall over the doorway on the yard's side is the yard's own (`AJVYU`,
+  given on the line): the opening's AJVBU has rows 0..512 only, and the
+  build's look check said so once the wall was drawn (shown 288..640).
+- MODE=4 has a view more, 45: the corner from (3900, 2560), looking
+  south-west; `tools/smoke_MAP20_4.cfg` shoots once more. In it the brick and
+  its band run on over the doorway.
+- Runs: the build clean; MAP20 MODE=4 46 views and the map; MODE=1
+  (-nomonsters, 450) 90 checks, none failed, `levelExited`. Of the package
+  only `maps/MAP20.wad` and `zscript/map20.zs` differ from main's.
