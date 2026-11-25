@@ -126,8 +126,27 @@ idea further.
 
 Two on the harmony of Morten Lauridsen's O Magnum Mysterium, the same day
 ("check O Magnum Mysterium theme and create couple slow versions on that
-harmonic ideas"): Mysterium I and II, the last two of TRACKS. What is taken
-and what is not stands above the two functions.
+harmonic ideas"): Mysterium I and II. What is taken and what is not stands
+above the function. Vadim: "24 - no": Mysterium I (sixteen chords in D, a
+line that stayed on D, a clarinet) is removed; II stays.
+
+Two fast ones on his two sketches, the same day ("23 is also pretty good.
+Could you as an experiment try 2 faster versions based on Distant Galaxy and
+Garmony, in Doom style?"): Distant Galaxy, Fast and Garmonic, Fast, one of
+each. The Doom rules above (a one-bar riff in fours, the guitar an octave
+over the bass, blocks of four and eight, the drums on the grid), and the
+sketch's harmony as what the riff does:
+- Distant Galaxy, Fast: each of his first four chords is a group of four
+  bars of one riff: on A, the same riff a semitone lower (in metal a riff
+  moved whole is the usual thing, so here his slip is at home), on A with
+  no third, on D. Over it one held note to a group, E, D sharp, E, F: his
+  top line. His other four chords are the chorus: held fifths, C over an E
+  bass, E minor, F, and E with the tune's C over it falling to B.
+- Garmonic, Fast: his held B flat is a muted guitar on one note, all
+  through. Under it the riff has three notes, and from bar to bar one of
+  them slips: E flat, G flat, B flat; E flat, F, B flat; D, F, B flat. The
+  second half is his other chords the same way, the kept note now F sharp:
+  E flat minor over F sharp, D, D augmented, G minor, E flat minor.
 
 Removed on Vadim's word the same day: The Small Hours Twice (AJM_CLOK),
 Service Lift (AJM_LIFT), Filing Under Fire (AJM_FILE), Carbon Copy
@@ -1518,46 +1537,6 @@ def garmonic_two():
 # sixth added and left there, a note held over a change and let down a step afterwards, endings from the fourth
 # chord to home, and ONE note in the whole piece from outside the key: the raised fourth, leaning on the fifth.
 
-def mysterium_one():
-    """D, 54 a minute. Ambient. Sixteen chords, a bar each, all in D major: the bass walks by step, the middle
-    line stays on D but for one C sharp, the other two move one at a time. A clarinet the second time, going round
-    one note as a chant does; the third time it brings the one note from outside, a G sharp, once."""
-    p = Piece("Mysterium I", 54)
-    bass = "D2 F#2 G2 A2 B2 G2 E2 A2 F#2 G2 A2 B2 G2 A2 D2 D2"
-    low = "A3 A3 B3 A3 A3 B3 B3 A3 A3 B3 A3 B3 B3 A3 B3 A3"
-    middle = "D4 D4 D4 D4/C#4 D4 D4 D4 D4 D4 D4 D4 D4 D4 D4 D4 D4"
-    top = "F#4 E4 E4 E4 E4/F#4 F#4/G4 G4 G4/E4 F#4 G4 F#4 F#4 G4 E4 E4 F#4"
-    # 48 bars, three times round: the four lines; a clarinet; the clarinet's G sharp and a vibraphone after the top line
-    three = lambda text, **how: spell(" ".join([text] * 3), **how)
-    p.voice("top line", SLOWSTR, 62, *write(three(top), 62), vel=64, gate=1.0, volume=88, pan=40, reverb=80)
-    p.voice("the one that stays", VOICE, 62, *write(three(middle, again=2), 62), vel=62, gate=1.0, volume=84, pan=64,
-            reverb=90)
-    p.voice("low line", WARMPAD, 62, *write(three(low), 62), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
-    p.voice("bass", CONTRABASS, 38, *write(three(bass, again=1), 38), vel=80, gate=1.0, volume=100)
-    chant = {
-        "c1": ". . . . . . . . 5 - - - - - - -",
-        "c2": "6 - - - - - - - - - - - 5 - - -",
-        "c3": "5 - - - - - - - 6 - - - - - - -",
-        "c4": "5 - - - - - - - - - - - . . . .",
-        "c5": ". . . . . . . . 5 - - - 6 - - -",
-        "c6": "1' - - - - - - - - - - - 6 - - -",
-        "c7": "6 - - - - - - - 5 - - - 4 - - -",
-        "c9": ". . . . . . . . 3 - - - 5 - - -",
-        "c10": "6 - - - - - - - 1' - - - - - - -",
-        "c11": "5 - - - - - - - - - - - - - - -",
-        "cX": "b5 - - - - - - - 5 - - - - - - -",          # the G sharp
-        "c12": "3 - - - - - - - - - - - . . . .",
-        "c14": "5 - - - - - - - 2 - - - - - - -",
-        "c15": "2 - - - - - - - - - - - - - - -",
-        "c16": "1 - - - - - - - - - - - . . . .",
-    }
-    sung = "c1 c2 c3 c4 c5 c6 c7 c4 c9 c10 {} c12 c5 c14 c15 c16"
-    p.voice("clarinet", CLARINET, 62, chant, rep("_", 16, sung.format("c11"), 1, sung.format("cX"), 1),
-            vel=74, gate=0.97, volume=90, pan=56, reverb=80)
-    p.voice("vibraphone", VIBES, 62, *echo(three(top), 62, start=32), vel=66, gate=1.0, volume=84, pan=28, reverb=80)
-    return p
-
-
 def mysterium_two():
     """G, 50 a minute. Ambient. Chords with the third in the bass walking down the scale, and the top line always
     late: it holds while the others step down, then follows (a chain of sevenths let down to sixths; where that
@@ -1585,6 +1564,110 @@ def mysterium_two():
     return p
 
 
+# Fast, the Doom way, on Vadim's two sketches, 2026-11-25 (see the top): an experiment he asked for.
+
+FAST_DRUMS = {
+    "h": {HAT: "x.x.x.x.x.x.x.x."},
+    "a": {KICK: "x.x...x.x.x...x.", SNARE: "....x.......x...", HAT: "X.x.X.x.X.x.X.x."},
+    "f": {KICK: "x.x...x.x.......", SNARE: "....x.....x.xx..", TOM2: "..............x.", TOM4: "...............x",
+          HAT: "X.x.X.x.X......."},
+    "c": {CRASH: "x...............", KICK: "x..x..x...x.....", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
+    "r": {KICK: "x..x..x...x.....", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
+}
+
+
+def distant_galaxy_fast():
+    """A, 132 a minute. The Doom way. Vadim's first four chords are the verse, four bars of one riff each: on A,
+    a semitone lower, on A with no third, on D; from the second verse a square wave holds his top line over it, E,
+    D sharp, E, F. His other four are the chorus, two bars each, twice: held fifths on C over an E bass, E minor,
+    F, E, and a guitar tune whose C stays over the last E before it falls to B."""
+    p = Piece("Distant Galaxy, Fast", 132)
+    riffs = {
+        "R": "1! . 1 1 b3 . 1 1 5 . 1 1 b7 . 5 .", "Rb": "1! . 1 1 b3 . 1 1 5 . 1 1 b7 . 1' b7",
+        "S": "1! . 1 1 5 . 1 1 1' . 1 1 5 . 4 .", "Sb": "1! . 1 1 5 . 1 1 1' . 1 1 5 . 4 5",       # no third
+    }
+    intro = rep("R R R Rb", 1)
+    verse = rep("R R R Rb", 1, "R-1 R-1 R-1 Rb-1", 1, "S S S Sb", 1, "R+5 R+5 R+5 Rb+5", 1)
+    quiet = lambda bars: rep("_", bars)
+    # 104 bars: 4 in; verse 16, chorus 16; verse, chorus; 4 of the bass alone; verse, chorus
+    p.voice("guitar", DISTORTION, 45, riffs | {
+        "C": "1^! - - 1^ - - 1^ - - - 1^ - 1^ - - -", "U": "1! - - 1 - - 1 - - - 1 - 1 - - -",
+    }, intro + (verse + rep("C+3 C+3 C-5 C-5 C-4 C-4 U-5 C-5", 2)) * 2 + quiet(4) + verse
+            + rep("C+3 C+3 C-5 C-5 C-4 C-4 U-5 C-5", 2), vel=86, gate=0.8, volume=94, pan=50)
+    low = rep("c-5 c-5 c-5 c-5 c-4 c-4 c-5 c-5", 2)                       # E under C and E minor, F, E
+    p.voice("bass", PICKBASS, 33, riffs | {"c": "1 . . 1 . . 1 . . . 1 . 1 . . ."},
+            quiet(4) + (verse + low) * 2 + intro + verse + low, vel=106, gate=0.8, volume=115)
+    pads = rep("M+3 M+3 m-5 m-5 M-4 M-4 a-5 M-5", 2)
+    p.voice("strings", STRINGS, 57, {k: f"1{k} - - - - - - - - - - - - - - -" for k in "mMa"},
+            quiet(20) + pads + quiet(16) + pads + quiet(20) + pads, vel=64, gate=1.0, volume=78, pan=40, reverb=60)
+    tune = rep("K1 K2 K3 K4 K5 K6 K7 K8", 2)
+    p.voice("lead", OVERDRIVE, 69, {
+        "K1": "5 - - - - - - - b7 - - - b3' - - -",
+        "K2": "b7 - - - - - - - - - - - 5 - - -",
+        "K3": "2' - - - - - - - b7 - - - 5 - - -",
+        "K4": "b7 - - - - - - - - - - - 2 - b7 -",
+        "K5": "1' - - - - - - - b6 - - - 1' - - -",
+        "K6": "b3' - - - - - - - - - - - 1' - - -",
+        "K7": "b3' - - - - - - - 7 - - - 5 - - -",
+        "K8": "2' - - - - - - - - - - - - - - -",
+    }, quiet(20) + tune + quiet(16) + tune + quiet(20) + tune, vel=92, gate=0.97, volume=96, reverb=60)
+    slip = rep("e T T T s T T T e T T T f T T T", 1)
+    p.voice("square", SQUARE, 69, held(e="5", s="b5", f="b6"),
+            quiet(36) + slip + quiet(20) + slip + quiet(16), vel=74, gate=1.0, volume=80, pan=74, reverb=50)
+    stabs = rep("s", 4, "s-1", 4, "o", 4, "s+5", 4)
+    p.voice("organ", ORGAN, 57, {
+        "s": ". . 1m . . . 1m . . . 1m . . . 1m .", "o": ". . 1^ . . . 1^ . . . 1^ . . . 1^ .",
+    }, quiet(72) + stabs + quiet(16), vel=62, gate=0.7, volume=76, pan=80)
+    p.drums(FAST_DRUMS, rep("h", 4, "a a a f", 4, "c r r f", 4, "a a a f", 4, "c r r f", 4, "h", 4, "a a a f", 4,
+                            "c r r f", 4), vel=98)
+    return p
+
+
+def garmonic_fast():
+    """E flat, 128 a minute. The Doom way. Vadim's held B flat is a muted guitar on that one note, alone for four
+    bars and then all through. Under it a riff of three notes, of which one slips from bar to bar as in his sketch:
+    E flat, G flat, B flat; E flat, F, B flat; D, F, B flat. The second half is his other chords, the muted guitar
+    now on the F sharp they keep: E flat minor over F sharp, D, D with the B flat back, G minor, home. A brass tune
+    the second time round, strings the third."""
+    p = Piece("Garmonic, Fast", 128)
+    riffs = {
+        "X": "1! . 1 1 b3 . 1 1 5 . 1 1 b3 . 5 .", "Xb": "1! . 1 1 b3 . 1 1 5 . 1 1 b3 . 5 b3",    # minor
+        "W": "1! . 1 1 2 . 1 1 5 . 1 1 2 . 5 .",                                                  # its third slipped
+        "Y": "1! . 1 1 b3 . 1 1 b6 . 1 1 b3 . b6 .", "Yb": "1! . 1 1 b3 . 1 1 b6 . 1 1 b3 . b6 b3",  # and its root
+        "P": "1! . 1 1 3 . 1 1 6 . 1 1 3 . 6 .",                                                  # the third lowest
+        "Q": "1! . 1 1 3 . 1 1 5 . 1 1 3 . 5 .", "Qa": "1! . 1 1 3 . 1 1 b6 . 1 1 3 . b6 .",      # major, augmented
+    }
+    first = rep("X W Y-1 Yb-1", 4)                                       # 16 bars
+    second = rep("P+3 P+3 Q-1 Qa-1 X+4 X+4 X Xb", 2)                     # 16 bars
+    quiet = lambda bars: rep("_", bars)
+    # 104 bars: 4 of the one note; both halves three times, the bass alone for 4 before the third
+    p.voice("guitar", DISTORTION, 39, riffs, quiet(4) + (first + second) * 2 + quiet(4) + first + second,
+            vel=86, gate=0.8, volume=94, pan=50)
+    p.voice("bass", PICKBASS, 27, riffs, quiet(4) + (first + second) * 2 + rep("X W Y-1 Yb-1", 1) + first + second,
+            vel=106, gate=0.8, volume=115)
+    kept = rep("b", 16, "g", 4, "b", 4, "g", 4, "b", 4)                  # B flat; F sharp, B flat, twice
+    p.voice("the one note", MUTED, 51, {
+        "b": "5! - - 5 - - 5 - 5 - - 5 - - 5 -", "g": "b3! - - b3 - - b3 - b3 - - b3 - - b3 -",
+    }, rep("b", 4) + kept * 2 + rep("b", 4) + kept, vel=84, gate=0.7, volume=92, pan=84)
+    tune = {
+        "b1": ". . . . . . . . 1 - - - b3 - - -", "b2": "5 - - - - - - - - - - - . . . .",
+        "b3": ". . . . . . . . 2 - - - 5 - - -", "b4": "7 - - - - - - - - - - - . . . .",
+        "b8": "2' - - - - - - - - - - - . . . .",
+        "p1": ". . . . . . . . b3 - - - 5 - - -", "p2": "1' - - - - - - - - - - - . . . .",
+        "q1": ". . . . . . . . b3 - - - b5 - - -", "q2": "7 - - - - - - - - - - - . . . .",
+        "g1": "7 - - - - - - - 5 - - - 3 - - -", "g2": "5 - - - - - - - 7 - - - - - - -",
+        "x2": "5 - - - - - - - - - - - - - - -",
+    }
+    sung = rep("b1 b2 b3 b4 b1 b2 b3 b8", 2, "p1 p2 q1 q2 g1 g2 b1 x2", 2)
+    p.voice("brass", SYNBRASS, 63, tune, quiet(36) + sung + quiet(4) + sung, vel=90, gate=0.97, volume=96, pan=40,
+            reverb=50)
+    p.voice("strings", STRINGS, 51, {k: f"1{k} - - - - - - - - - - - - - - -" for k in "mMa"},
+            quiet(88) + rep("m m M-1 a-1 m+4 m+4 m m", 2), vel=64, gate=1.0, volume=78, pan=64, reverb=60)
+    p.drums(FAST_DRUMS, rep("h", 4, "a a a f", 4, "c r r f", 4, "a a a f", 4, "c r r f", 4, "h", 4, "a a a f", 4,
+                            "c r r f", 4), vel=98)
+    return p
+
+
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_FARS", "the creeping one: synth bass in octaves, held organ, bells, a slow tune", far_side),
@@ -1609,9 +1692,10 @@ TRACKS = [
     ("AJM_GAL2", "ambient, the same sketch turned: its semitone slip done twice, in slow harp notes", distant_galaxy_two),
     ("AJM_GAR1", "ambient, Vadim's sketch garmonic bar for bar: a held B flat, the notes under it slipping in turn", garmonic_one),
     ("AJM_GAR2", "ambient, the same sketch as a chain: every note falls a semitone, the chords climb by fifths", garmonic_two),
-    ("AJM_MYS1", "ambient, on Lauridsen's harmony: sixteen chords in one key, a line that stays, one note from outside", mysterium_one),
+    ("AJM_GALF", "fast, the Doom way, on Vadim's sketch distant_galaxy_theme: a riff that slips a semitone and comes back", distant_galaxy_fast),
     ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
     ("AJM_GAL4", "ambient, the same sketch with no two lines moving at once: each chord reached a note at a time", distant_galaxy_four),
+    ("AJM_GARF", "fast, the Doom way, on Vadim's sketch garmonic: one note held by a muted guitar, the riff slipping under it", garmonic_fast),
 ]
 
 

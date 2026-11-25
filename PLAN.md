@@ -16185,3 +16185,39 @@ III has none; the other twenty-four pieces byte for byte as before;
 `soundlab=ok` with 26 tracks; GZDoom with sound on starts both.
 **Not checked: how they sound.**
 
+## Music: two fast ones on Vadim's sketches, the Doom way; Mysterium I removed (2026-11-25)
+
+**Vadim**: "23 is also prutty good. Could you as an experiment try 2 faster
+versions based on Distant Galaxy and Garmony, in Doom style?", and then:
+"24 - no".
+
+**23** is Garmonic II (the chain; he was playing the build with 25 tracks).
+**24** in that build is Mysterium I (AJM_MYS1): removed; on no map.
+Mysterium II stays.
+
+**"2 faster versions"** is taken as one of each sketch, two in all.
+
+The Doom rules as before (a one-bar riff in fours, the guitar an octave over
+the bass, blocks of four and eight, the drums on the grid, about 130 a
+minute); the sketch's harmony is what the riff does.
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_GALF | Distant Galaxy, Fast, A, 132, 189 s | Verse, 16 bars: his first four chords, four bars of one riff each: on A, the same riff a semitone lower, on A with no third, on D. A riff moved whole is what metal does anyway, so his slip is at home here. From the second verse a square wave holds one note to a group, E, D sharp, E, F: his top line; the third verse has organ stabs too. Chorus, 16 bars: his other four chords, two bars each, twice: held fifths on C over an E bass, E minor, F, E; strings; an overdriven guitar tune whose C stays over the last E (his augmented chord) and falls to B |
+| AJM_GARF | Garmonic, Fast, E flat, 128, 195 s | His held B flat is a muted guitar on that one note, alone for four bars, then all through. Under it a riff of three notes, of which one slips from bar to bar: E flat, G flat, B flat; E flat, F, B flat; D, F, B flat (twice). Second half, his other chords the same way, the muted guitar on the F sharp they keep and then back on B flat: E flat minor over F sharp, D, D augmented, G minor, E flat minor. A brass tune the second time round (two notes up to a long one, as the vibraphone in Garmonic I), strings in the second half the third time |
+
+Both: 4 bars in, the two halves three times, 4 bars of the bass alone before
+the third; the drums of Fire Door (now `FAST_DRUMS`, shared by the two).
+
+The numbers in the lab stay as Vadim has them, the fast Distant Galaxy
+taking Mysterium I's place: 19 Everything Else Moves, 20 Distant Galaxy III,
+21 Distant Galaxy II, 22 Garmonic I, 23 Garmonic II, **24 Distant Galaxy,
+Fast**, 25 Mysterium II, 26 Distant Galaxy IV, **27 Garmonic, Fast**. No map
+plays them.
+
+Checked: read back by a second MIDI reader: no semitone between two voices
+at all in either; 20 and 23 notes a second, the drums 40 and 34 % of them;
+the other twenty-five pieces byte for byte as before; `soundlab=ok` with 27
+tracks; GZDoom with sound on starts both. **Not checked: how they sound**,
+and whether his chords are still to be heard at this speed.
+
