@@ -79,7 +79,20 @@ three new ones try other ways: three minor chords a major third apart, round
 and round (Ready or Not); two chords only, minor home and the MAJOR fourth,
 with a chorus walking by fourths to home in major (Knock Down Ginger); a
 tune in major over a bass going down by semitones, then the same in minor
-(Salt, Mustard, Vinegar, Pepper).
+(Salt, Mustard, Vinegar, Pepper). Ready or Not he did not take ("16 - no") and
+it is removed.
+
+Two ambient ones, the same day: he asked for "2 more slow, ambient-like
+ones with experimental chord progressions". They are the last two of TRACKS
+and are not children's games: no beat, held sounds, a few notes. In both the
+chords are not written as blocks moved about but as three lines, each
+holding its note until it has to move (a bar of dashes ties over), so what
+is heard at a change is the one or two notes that move. Everything Else
+Moves: one note, E, stays through six chords and exactly one other note
+moves at each change (A minor, C, E minor, E, C sharp minor, A, and round).
+Revolving Door: four major chords a minor third apart (C, E flat, F sharp,
+A), which divide the octave evenly, so none of them is home; one note of
+each is also in the next, and a tune of those four notes is handed on.
 
 Removed on Vadim's word the same day: The Small Hours Twice (AJM_CLOK),
 Service Lift (AJM_LIFT), Filing Under Fire (AJM_FILE), Carbon Copy
@@ -101,7 +114,7 @@ DRUMS = 9
 PIANO, EPIANO, HARPSI, VIBES, BELLS, ORGAN, MUTED, OVERDRIVE, DISTORTION = 0, 4, 6, 11, 14, 18, 28, 29, 30
 ACBASS, FINGER, PICKBASS, FRETLESS, SYNBASS1, SYNBASS, CELLO, CONTRABASS, PIZZ, HARP, TIMPANI = 32, 33, 34, 35, 38, 39, 42, 43, 45, 46, 47
 STRINGS, SLOWSTR, CHOIR, SYNBRASS, SQUARE, SAW, POLYSYNTH = 48, 49, 52, 62, 80, 81, 90
-GLOCK, MUSICBOX, MARIMBA, CHURCH, REED, TREMOLO, VOICE, HORN, CLARINET, FLUTE, RECORDER, WARMPAD = 9, 10, 12, 19, 20, 44, 53, 60, 71, 73, 74, 89
+GLOCK, MUSICBOX, MARIMBA, CHURCH, REED, TREMOLO, SPACEVOICE, GLASS, VOICE, HORN, CLARINET, FLUTE, RECORDER, WARMPAD = 9, 10, 12, 19, 20, 44, 91, 92, 53, 60, 71, 73, 74, 89
 # percussion keys
 KICK, KICK2, SNARE, ESNARE, HAT, OHAT, CRASH, RIDE, RBELL = 36, 35, 38, 40, 42, 46, 49, 51, 53
 TOM1, TOM2, TOM3, TOM4, WOOD_HI, WOOD_LO, STICK, CLAP, TAMB, CASTANET = 48, 47, 45, 41, 76, 77, 37, 39, 54, 85
@@ -906,66 +919,6 @@ def grandmothers_footsteps():
     return p
 
 
-def ready_or_not():
-    """C, 92 a minute. The creeping one: hide and seek. Children's voices alone have the riff, a sing-song over a
-    marching snare; a recorder calls (the falling third of every child calling another) and nobody answers. Three
-    minor chords a major third apart, C, A flat, E, four bars each, round and round, so that it never comes home
-    by a step it knows. The band comes in under the voices only in the last round."""
-    p = Piece("Ready or Not", 92)
-
-    def round_(a, b=None, c=None, d=None, down=-8):
-        """Twelve bars: four at home, four a major third lower, four a major third lower again."""
-        bars = [a, b or a, c or a, d or a]
-        return bars + [x if x == "_" else f"{x}-4" for x in bars] + [x if x == "_" else f"{x}{down:+d}" for x in bars]
-
-    # 52 bars: the voices 12 (the first four alone), the calls 12, the tune 12, the band under it 12, the calls alone 4
-    song = {
-        "a": "5 - 5 - 6 - 5 - b3 - - - 5 - - -",
-        "b": "5 - 5 - 6 - 5 - b3 - 4 - b3 - 1 -",
-    }
-    riff = round_("a", "a", "a", "b")
-    p.voice("voices", VOICE, 60, song, riff * 4 + rep("_", 4), vel=88, gate=0.9, volume=104, pan=58, reverb=60, loose=10)
-    p.voice("small voices", VOICE, 72, song, rep("_", 12) + riff * 3 + rep("_", 4), vel=76, gate=0.9, volume=90,
-            pan=78, reverb=60, bend=9, loose=16)
-    p.voice("marimba", MARIMBA, 60, song, rep("_", 12) + riff * 3 + rep("_", 4), vel=60, gate=0.6, volume=70, pan=40)
-    p.voice("bass", SYNBASS, 36, {
-        "B": "1 - - . . . 1 . 1 - - . 5, - 1 .",
-        "U": "1 - - . . . 1 . 1 - - . 5 - 1 .",
-    }, rep("_", 12) + (rep("B", 4) + rep("U-4", 4) + rep("U-8", 4)) * 3 + rep("_", 4), vel=102, gate=0.9, volume=110)
-    p.voice("organ", ORGAN, 48, {
-        "m": "1m - - - - - - - - - - - - - - -",
-    }, rep("_", 24) + round_("m", down=+4) * 2 + rep("_", 4), vel=56, gate=1.0, volume=72, pan=76)
-    calls = {
-        "k1": ". . . . . . . . b3' - - - 1' - - -",        # coo-ee
-        "k2": ". . . . . . . . b7' - - - 5' - - -",
-        "t1": "b3' - - - 1' - - - . . . . b3' - 1' -",
-        "t2": "5' - - - - - - - b3' - - - 1' - - -",
-        "t3": "5' - - - - - - - b7' - - - 5' - - -",
-        "t4": "1'' - - - - - - - b7' - - - 5' - - -",
-    }
-    calling, tune = round_("k1", "_", "k2", "_"), round_("t1", "t2", "t3", "t4")
-    p.voice("recorder", RECORDER, 60, calls, rep("_", 12) + calling + tune * 2 + "k1 _ k1 _".split(),
-            vel=100, gate=0.9, volume=114, pan=50, reverb=60, loose=8)
-    p.voice("flat recorder", RECORDER, 60, calls, rep("_", 36) + tune + rep("_", 4),
-            vel=82, gate=0.9, volume=94, pan=84, reverb=60, bend=-15, loose=22)
-    p.voice("glockenspiel", GLOCK, 72, calls, rep("_", 36) + tune + rep("_", 4), vel=70, gate=1.0, volume=80, pan=36)
-    p.voice("guitar", DISTORTION, 48, {
-        "P": "1^! - - - - - - - 1^ - - - - - - .",
-    }, rep("_", 36) + round_("P") + rep("_", 4), vel=82, gate=0.95, volume=88, pan=44)
-    p.voice("second guitar", OVERDRIVE, 48, song, rep("_", 36) + riff + rep("_", 4), vel=82, gate=0.8, volume=88, pan=70)
-    march = "o...o.ooo...o.oo"
-    p.drums({
-        "m": {SNARE: march},
-        "M": {SNARE: march, KICK2: "x.......x......."},
-        "Mf": {SNARE: "o...o.ooo...oxxx", KICK2: "x.......x......."},
-        "K": {SNARE: march, KICK: "x.......x.....x.", ESNARE: "....x.......x...", HAT: "x.x.x.x.x.x.x.x."},
-        "F": {SNARE: "o...o.ooo...o...", KICK: "x.......x.......", ESNARE: "....x.......xx..", HAT: "x.x.x.x.x.x.....",
-              TOM2: "..............x.", TOM4: "...............x"},
-        "n": {WOOD_LO: "x..............."},
-    }, rep("_", 4, "m", 8, "M M M Mf", 6, "K K K F", 3, "n _ n _", 1), vel=92)
-    return p
-
-
 def knock_down_ginger():
     """A, 100 a minute. The middle one. The school band first: one recorder has the tune, which is the cheer itself
     (three, three, seven), over castanets and nothing else; then the class, ragged and a little flat, with a toy drum;
@@ -1219,6 +1172,85 @@ def mr_wolf():
     return p
 
 
+# Ambient, 2026-11-25 (see the top): no beat, and the chords are three lines that move one at a time.
+
+def everything_else_moves():
+    """E, 50 a minute. Ambient. One note stays, the E, through six chords two bars long, and at every change exactly
+    one other note moves, by a step or half a step: A minor, C, E minor, E major, C sharp minor, A major, and the
+    seventh change (C sharp to C) is the way back in. A vibraphone, then a clarinet that plays only the note that
+    has just moved."""
+    p = Piece("Everything Else Moves", 50)
+    hold = " ".join("-" * 16)
+
+    def line(**notes):
+        return {k: f"{v} - - - - - - - - - - - - - - -" for k, v in notes.items()} | {"T": hold}
+
+    # 36 bars, three times round: the chords over a held E; the vibraphone and the roots in the bass; clarinet and harp
+    p.voice("line one", SLOWSTR, 52, line(a="4", g="b3", s="3"), rep("a T g T T T s T T T a T", 3),       # A G G G# G# A
+            vel=64, gate=1.0, volume=88, pan=44, reverb=80)
+    p.voice("line two", WARMPAD, 52, line(c="b6", b="5", x="6"), rep("c T T T b T T T x T T T", 3),      # C C B B C# C#
+            vel=66, gate=1.0, volume=88, pan=84, reverb=80)
+    p.voice("the one that stays", VOICE, 52, line(e="1'"), rep("e T", 18), vel=62, gate=1.0, volume=84, pan=64,
+            reverb=90)
+    p.voice("bass", CONTRABASS, 40, line(e="1", a="4,", c="b6,", x="6,"),
+            rep("e T T T", 3, "a T c T e T e T x T a T", 2), vel=80, gate=1.0, volume=100)
+    p.voice("vibraphone", VIBES, 64, {                  # two notes up to a long one; the long ones are line one's
+        "V1": ". . . . . . . . 4 - - - b6 - - -",
+        "V2": "1' - - - - - - - - - - - . . . .",
+        "V3": ". . . . . . . . b6 - - - 1' - - -",
+        "V4": "b3' - - - - - - - - - - - . . . .",
+        "V5": ". . . . . . . . 5 - - - 1' - - -",
+        "V6": "b3' - - - - - - - 5 - - - . . . .",
+        "V8": "3' - - - - - - - - - - - . . . .",         # the same two notes up, and the top one half a step higher
+        "V9": ". . . . . . . . 6 - - - 1' - - -",
+        "V12": "4' - - - - - - - - - - - . . . .",
+    }, rep("_", 12, "V1 V2 V3 V4 V5 V6 V5 V8 V9 V8 V9 V12", 1, "_", 12), vel=76, gate=1.0, volume=94, pan=36,
+            reverb=80)
+    p.voice("clarinet", CLARINET, 64, line(c="b6", g="b3", b="5", s="3", x="6", a="4"),    # C, G, B, G#, C#, A
+            rep("_", 24, "c T g T b T s T x T a T", 1), vel=72, gate=0.97, volume=88, pan=58, reverb=80)
+    p.voice("harp", HARP, 64, {
+        "Ha": "4, - - - 1 - - - 4 - - - b6 - - -",
+        "Hc": "b6, - - - 1 - - - b3 - - - b6 - - -",
+        "He": "1, - - - 5, - - - 1 - - - b3 - - -",
+        "HE": "1, - - - 5, - - - 1 - - - 3 - - -",
+        "Hx": "6, - - - 1 - - - 3 - - - 6 - - -",
+        "HA": "4, - - - 1 - - - 4 - - - 6 - - -",
+    }, rep("_", 24, "Ha _ Hc _ He _ HE _ Hx _ HA _", 1), vel=62, gate=1.0, volume=82, pan=76, reverb=80)
+    return p
+
+
+def revolving_door():
+    """C, 48 a minute. Ambient. Four major chords a minor third apart, C, E flat, F sharp, A, two bars each: they cut
+    the octave into four equal parts, so none is home and the fifth change is the first again. Each chord shares one
+    note with the next (G, B flat, C sharp, E); those four are the tune, each held through the door into the chord
+    where it means something else. The lines sink, the bass climbs."""
+    p = Piece("Revolving Door", 48)
+    hold = " ".join("-" * 16)
+
+    def line(**notes):
+        return {k: f"{v} - - - - - - - - - - - - - - -" for k, v in notes.items()} | {"T": hold}
+
+    # 32 bars, four times round: the chords; the tune handed on; drops of the chord just left; voices
+    p.voice("high line", SPACEVOICE, 60, line(e="3", f="b3", d="b2"), rep("e T f T d T T T", 4),          # E Eb C# C#
+            vel=62, gate=1.0, volume=84, pan=40, reverb=90)
+    p.voice("middle line", SLOWSTR, 60, line(c="1", b="b7,", a="6,"), rep("c T b T T T a T", 4),          # C Bb Bb A
+            vel=64, gate=1.0, volume=88, pan=64, reverb=80)
+    p.voice("low line", WARMPAD, 48, line(g="5", s="b5", m="3"), rep("g T T T s T m T", 4),               # G G F# E
+            vel=66, gate=1.0, volume=88, pan=88, reverb=80)
+    p.voice("bass", CONTRABASS, 36, line(a="1", b="b3", c="b5", d="6"), rep("a T b T c T d T", 4), vel=80, gate=1.0,
+            volume=100)
+    p.voice("handed on", GLASS, 60, line(g="5", b="b7", c="b2'", e="3'"),          # each from the bar before a change
+            rep("_", 8, "_ g T b T c T e", 1, "T g T b T c T e", 2), vel=74, gate=1.0, volume=92, pan=56, reverb=90)
+    p.voice("drops", VIBES, 60, {                       # the last one is the key note of the chord just left
+        "m1": ". . . . 5 - - - - - 3' - - - - -",
+        "m2": ". . . . . . . . 6' - - - - - - -",
+    }, rep("_", 16, "m1 m2 m1+3 m2+3 m1+6 m2+6 m1+9 m2+9", 2), vel=72, gate=1.0, volume=90, pan=30, reverb=80)
+    p.voice("voices", CHOIR, 48, {
+        "v": "1^ - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 24, "v T v+3 T v+6 T v+9 T", 1), vel=56, gate=1.0, volume=74, pan=76, reverb=90)
+    return p
+
+
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_FARS", "the creeping one: synth bass in octaves, held organ, bells, a slow tune", far_side),
@@ -1235,10 +1267,11 @@ TRACKS = [
     ("AJM_BELL", "quiet, a slow minor blues: an organ, a bell tolling, a desk bell nobody answers, a cello", night_bell),
     ("AJM_WATR", "quiet, the flooded floor: every chord a step lower, drips on a marimba, a clarinet", standing_water),
     ("AJM_STEP", "children's games, still: plucked steps that stop dead, a music box, a recorder far off", grandmothers_footsteps),
-    ("AJM_SEEK", "children's games, creeping: children's voices have the riff over a marching snare, a recorder calls", ready_or_not),
     ("AJM_KNOK", "children's games, the middle one: a recorder and castanets alone, the class joins, then the riff", knock_down_ginger),
     ("AJM_SALT", "children's games, skipping: a nursery tune in major over a bass going down, then the band in minor", salt_mustard),
     ("AJM_WOLF", "children's games, fast: a chug of three, three, seven; a call, the hour struck, a chase", mr_wolf),
+    ("AJM_MOVE", "ambient: one note stays through six chords and one other moves at each change; vibes, a clarinet", everything_else_moves),
+    ("AJM_REVO", "ambient: four major chords a minor third apart, round and round; a tune of the notes they share", revolving_door),
 ]
 
 
