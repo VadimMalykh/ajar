@@ -16221,3 +16221,30 @@ the other twenty-five pieces byte for byte as before; `soundlab=ok` with 27
 tracks; GZDoom with sound on starts both. **Not checked: how they sound**,
 and whether his chords are still to be heard at this speed.
 
+## Music: The Far Side removed (2026-11-25)
+
+**Vadim**: "delete 2". Track 2 of the sound lab is The Far Side (AJM_FARS,
+"the creeping one", one of the first six of 2026-11-23): removed.
+
+It played on MAP02 (No Vacancy) and MAP13 (Sight Unseen). As with the four
+removed earlier today ("if used by any maps, replace randomly for now"),
+each got a piece drawn by lot from the thirteen older ones: **MAP02 Night
+Porter (AJM_PORT), MAP13 Night Bell (AJM_BELL)**. Nothing was weighed: a
+groove on the second level and a quiet blues on MAP13 are what the lot gave,
+and both are "for now".
+
+So that the other numbers in the lab stay as Vadim knows them, Garmonic,
+Fast was moved from the end (27) to the empty second place. The lab has 26
+tracks: 1 Hinges, **2 Garmonic, Fast**, 3 to 26 as before (19 Everything
+Else Moves, 20 Distant Galaxy III, 21 Distant Galaxy II, 22 Garmonic I,
+23 Garmonic II, 24 Distant Galaxy, Fast, 25 Mysterium II, 26 Distant
+Galaxy IV).
+
+Checked: the other twenty-six pieces byte for byte as before; no map names
+AJM_FARS, in the source or in the built package's mapinfo; both drawn lumps
+are in the package (and play on other maps already); the build;
+`soundlab=ok` with 26 tracks; MAP02 and MAP13 start without an error.
+**Not checked: that the two maps are heard playing them** (the headless run
+says "no music playing" on every map, MAP01 too, so it shows nothing), and
+how the maps feel with these pieces.
+
