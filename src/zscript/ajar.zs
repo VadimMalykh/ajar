@@ -2772,7 +2772,9 @@ class AjarHandler : EventHandler
 			-700, 2200, 0, 180, 0,         // the hill's west edge
 			100, 2760, 0, 0, 0,            // the knoll's east edge
 			600, 2500, -128, 45, -20,      // the ravine's far corner
-			-700, 1640, 160, 60, 0         // the hill from the roof
+			-700, 1640, 160, 60, 0,        // the hill from the roof
+			-700, 2330, 0, 143, -12,       // the wood's end west of the hill (no wall of firs alone in the sky)
+			-300, 2330, 0, 127, -12        // the wood's end west of the knoll, across the ravine
 		};
 		for (int k = 0; k < v.Size(); k++) tourViews.Push(v[k]);
 	}

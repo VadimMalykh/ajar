@@ -518,20 +518,46 @@ ajarmap.stray_place(m, 1, (-896, 2704), (-896, 2768), (-1, 0), PIT, color=ROSE)
 # tops of the trees over it, and beyond them the country under the stars.
 def horizon(path, first, last, **ends):
     """`path` as ajarmap.beyond's. `first` and `last` are the walls the bank and
-    the wood end against."""
+    the wood end against (the building's). None: nothing stands there, the end
+    is open. A wall there would rise to the sky's 512 with nothing beside it (a
+    slab of firs 608 high alone among the stars, seen from the hill: Vadim,
+    2026-11-25). So over the last 32 of an open end the sky comes down as it
+    does along the wood's far side: to 48 over the bank (the ravine's SHELF), to
+    32 over the wood, and what closes the end is 16 of rock and the country."""
     sky = dict(ceil=512, ctex="F_SKY1", light=NIGHT, wall="AJ7XN")
-    caps, lines = ajarmap.beyond(m, path, [
+    steps = [
         (16, dict(sky, floor=32, ftex="AJ7XR", side="AJ7XR")),
         (112, dict(sky, floor=-96, ftex="AJ7XK")),
         (144, dict(sky, floor=-96, ceil=32, ftex="AJ7XK", wall="AJ7XH")),
-    ], **ends)
+    ]
+    low = [(16, dict(steps[0][1], ceil=48, wall="AJ7XR")), (112, steps[2][1]), (144, steps[2][1])]
+
+    def toward(p, q, d):
+        return (p[0] + d * ((q[0] > p[0]) - (q[0] < p[0])), p[1] + d * ((q[1] > p[1]) - (q[1] < p[1])))
+
+    # an open end: the strips stop 32 short (cut as the end is, square or mitred), and the last 32 is theirs, low
+    mid = list(path)
+    if first is None:
+        mid[0] = toward(path[0], path[1], 32)
+    if last is None:
+        mid[-1] = toward(path[-1], path[-2], 32)
+    caps, lines = ajarmap.beyond(m, mid, steps, **ends)
+    edge = list(lines[0])
+    for cap, at, to, tex in ((caps[0], mid[0], path[0], first), (caps[1], mid[-1], path[-1], last)):
+        if tex is None:
+            v = (to[0] - at[0], to[1] - at[1])
+            for (a, b), (_, props) in zip(cap, low):
+                a2, b2 = (a[0] + v[0], a[1] + v[1]), (b[0] + v[0], b[1] + v[1])
+                m.sector([a, a2, b2, b], **props)
+            edge.append((cap[0][1], (cap[0][1][0] + v[0], cap[0][1][1] + v[1])))
     for a, b in zip(path, path[1:]):
         m.line(a, b, blocking=True)                                          # nothing walks or flies off the hill
-    for a, b in lines[0]:
+    for a, b in edge:
         m.line(a, b, mid="AJ7XT", midboth=True, dontpegbottom=True)
-    for end, tex in zip(caps, (first, last)):
-        for a, b in end[:2]:
-            m.line(a, b, mid=tex)
+    for cap, tex in zip(caps, (first, last)):
+        for a, b in cap[:2]:
+            if tex:
+                m.line(a, b, mid=tex)
 
 
 BACK = FRONT or "AJBRICK"
@@ -539,9 +565,9 @@ horizon([(800, 2000), (800, 2592), (416, 2592), (416, 2944)], BACK, BACK)    # e
 # West of the hill the strips stop 16 short of the building's line: the lane
 # is behind it there, and strips ending on the lane's own end left that end
 # open (a slit of sky by the shed, and a way through the wall into the wood).
-horizon([(-992, 2592), (-992, 2016)], "AJ7XN", BACK)                         # west of the hill
+horizon([(-992, 2592), (-992, 2016)], None, BACK)                            # west of the hill
 m.line((-992, 2000), (-992, 2016), mid=BACK)
-horizon([(-480, 2944), (-480, 2592)], BACK, "AJ7XN", end=(-1, 0))            # west of the knoll
+horizon([(-480, 2944), (-480, 2592)], BACK, None, end=(-1, 0))               # west of the knoll
 # the knoll: VIOLET's far side looks back across the ravine at the frame
 fit((-480, 2592, 416, 2944), [
     ((128, 2880, 256, 2944), low()),
