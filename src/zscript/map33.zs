@@ -33,6 +33,17 @@
 //     (smoke_MAP33_4.cfg), the save made at the stand is loaded (before the
 //     alarm), the go plays on to its time door and go 3 begins.
 // The parts are told apart by the sectors' user_part (map_station.py).
+// The yard in the middle (common.zs; PLAN.md, "MAP33: the yard in the middle, built"), in modes 1, 3 and 4
+// (until its load), with yardtest.zs's checks: go 1 comes from the stack court onto the terrace (group 1),
+// fights it, waits by the gantry's west mouth (way 1) until M33_GANTRY; go 2 comes down the west stairs onto
+// the floor (group 2), fights it and goes out by the east stairs (way 2); go 3 comes onto the corner piece and
+// the south ledge (group 3), fights it and goes back to the duct stairs (way 3). The script's fight there:
+// the nearest of its group faced, a bullet each 3 tics and a rocket (at what is 192 or more off), spending the
+// ammunition (so that the record sees them), killed after six tics. Checked: the bodies in go 1, nothing of a
+// group before its step, each group at its step awake, each way shut until its group is dead and open after,
+// the earlier groups again at their tics with their selves firing and over at their ends, the place empty and
+// the kill counters right at each go's start, the timetable's yard lines, and that no self fires its yard
+// shots at the alarm or its hall shots in the yard.
 // The last hall's four rules (PLAN.md, "MAP33: the last hall with the four rules"), in modes 1, 3 and 4,
 // with lasttest.zs's checks: the waves (wave 1 alone at the alarm, wave 2 at the player's first step on
 // plate 2 in go 2 and at the second self's in go 3, wave 3 when the third self first stands on the
@@ -50,12 +61,14 @@ extend class AjarTimeHandler
 	const M33_GANTRY_TAG = 3346;
 	const M33_TSHUT = 3357;     // the cooling tower's exit (window hall 5's win opens it)
 	const M33_TF = -64;         // the tower's floor
+	const M33_RF = -128;        // the turbine hall's floor, the yard's
 	// the script's clock: go 1 waits at the foot of the gantry until M33_GANTRY
 	// (go 2 has won R by then); in the last hall go 1 holds plate 1 until the
 	// alarm + M33_HOLD1, go 2 plate 2 until the alarm + M33_HOLD2 (go 3 is
 	// through the exit door by then); go 2 does not fire until the alarm +
 	// M33_QUIET; go 3 crosses from the alarm + M33_CROSS
 	const M33_GANTRY = 2100;
+	const M33_GANTRY3 = 400;    // ... and so much more in mode 3
 	const M33_HOLD1 = 1800;
 	const M33_HOLD2 = 1700;
 	const M33_QUIET = 300;
@@ -112,7 +125,7 @@ extend class AjarTimeHandler
 		/* 2 to BLUE */                            2110, 4000,  3000, 3900,  3330, 3880,  -1, -1,
 		/* 3 to frame 101 */                       3000, 4100,  2288, 4120,  2288, 4170,  -1, -1,
 		/* 4 the catwalk, the pump room, the stack court, the foot of the gantry */
-		                                          2272, 4930,  3560, 4900,  3650, 4896,  3650, 4672,  4600, 4672,  4880, 4672,  5000, 4600,  5230, 4450,  5240, 4000,  5200, 3800,  4992, 3700,  4992, 3450,  -1, -1,
+		                                          2272, 4930,  3560, 4900,  3650, 4896,  3650, 4672,  4600, 4672,  4880, 4672,  5000, 4600,  5230, 4450,  5240, 4000,  5200, 3800,  4976, 3680,  4976, 3500,  -1, -1,
 		/* 5 onto the gantry */                    4992, 3330,  5100, 3330,  6000, 3330,  -1, -1,
 		/* 6 along it, north and east to stand 1, plate 1 */
 		                                          7000, 3330,  7240, 3330,  7360, 3330,  7360, 3520,  8150, 3520,  8240, 3552,  8448, 3552,  8448, 3456,  -1, -1,
@@ -122,8 +135,8 @@ extend class AjarTimeHandler
 		/* 9 to VIOLET */                          3700, 3000,  3700, 2280,  -1, -1,
 		/* 10 to frame 102 */                      3700, 2920,  2750, 2920,  2750, 2784,  -1, -1,
 		/* 11 the armoury: the plasma rifle */     2560, 2368,  2420, 2368,  -1, -1,
-		/* 12 the pump hall, the stores, the mezzanine, down into R */
-		                                          2760, 2880,  3800, 2880,  3870, 2880,  4000, 2880,  4352, 2880,  4352, 2600,  4352, 2520,  4700, 2520,  4700, 2368,  4800, 2368,  4960, 2368,  5150, 2400,  -1, -1,
+		/* 12 the corridor, down the yard's west stairs onto its floor */
+		                                          2760, 2880,  3800, 2880,  3870, 2880,  3990, 2880,  4260, 2880,  -1, -1,
 		/* 13 the steel door, the passage, stand 2 beside plate 2 (stepped on after the alarm: wave 2) */
 		                                          5150, 2848,  6900, 2848,  7000, 2880,  7100, 2880,  7350, 2880,  7600, 2880,  7660, 2870,  -1, -1,
 		/* 14 through time door 2 */               7700, 3008,  7560, 3008,  -1, -1,
@@ -133,13 +146,18 @@ extend class AjarTimeHandler
 		                                          3100, 1920,  3488, 1920,  3488, 1810,  3488, 1740,  3488, 1680,  -1, -1,
 		/* 18 through the water to the outfall */  3700, 1520,  4000, 1400,  4300, 1040,  4400, 1024,  4470, 1024,  -1, -1,
 		/* 19 the drop into the tower */           4560, 1024,  4640, 1024,  -1, -1,
-		/* 20 the tower's exit, the passage, the steps down, the duct */
-		                                          4700, 1150,  4850, 1300,  4830, 1480,  4800, 1580,  4800, 1700,  4800, 1920,  4950, 1920,  5070, 1920,  5700, 1950,  -1, -1,
+		/* 20 the tower's exit, the passage, on to the yard's corner piece, west onto the south ledge's east end */
+		                                          4700, 1150,  4850, 1300,  4830, 1480,  4800, 1580,  4800, 1700,  4800, 2080,  4760, 2176,  4680, 2176,  -1, -1,
 		/* 21 along the duct, up, the corridor to stand 3 */
 		                                          7000, 1950,  7550, 1920,  7550, 2288,  8150, 2288,  8384, 2300,  -1, -1,
 		/* 22 the crossing (map_station.py's CROSSING): the gate, the steps, the floor, the exit door */
 		                                          8384, 2330,  8384, 2500,  8400, 2560,  8400, 2688,  8600, 2688,  8640, 2730,  8640, 2916,  8930, 2916,  8990, 2880,  9140, 2880,  -1, -1,
-		/* 23 into the boiler house, to its fight */  2110, 4416,  2110, 4100,  -1, -1
+		/* 23 into the boiler house, to its fight */  2110, 4416,  2110, 4100,  -1, -1,
+		/* 24 from the terrace's entry onto its level (group 1 comes) */  4930, 3420,  4880, 3330,  -1, -1,
+		/* 25 the yard's floor round the pumps, up the east stairs, way 2, the mezzanine, down into R */
+		                                          4320, 2640,  4420, 2580,  4420, 2368,  4500, 2368,  4720, 2368,  4800, 2368,  4960, 2368,  5150, 2400,  -1, -1,
+		/* 26 back from the south ledge, way 3, the steps down, the duct */
+		                                          4800, 2100,  4800, 1920,  4950, 1920,  5070, 1920,  5700, 1950,  -1, -1
 	};
 
 	int RouteBase(int n)
@@ -185,6 +203,7 @@ extend class AjarTimeHandler
 		{
 			if (!a.bIsMonster || a.health <= 0 || a.bInvisible || HallAt(a.pos.xy) >= 0 || PartAt(a.pos.xy) != tgo) continue;
 			if (guardIs.Find(a) < guardIs.Size() || (lastMark && InLast(a.pos.xy))) continue;
+			if (cmMon.Find(a) < cmMon.Size()) continue;          // (the yard's groups: YardFight33)
 			double d = a.Distance2D(mo);
 			if (d < bd && (d < 320 || mo.CheckSight(a))) { bd = d; best = a; }
 		}
@@ -617,6 +636,267 @@ extend class AjarTimeHandler
 		mo.GiveInventory("RocketAmmo", 50);
 	}
 
+	// --- the yard (common.zs; yardtest.zs's checks) ------------------------------------------------
+	int m3YGo;                  // the go the yard's checks are in
+	int m3YFired[2], m3YIn[2], m3YHall[2], m3YOut[2];   // by self: its fired count last tic; fired in the yard, from the alarm, neither
+	int m3YMet[3];              // tics this go's player is on its level with self 1 / self 2 in the yard (go 3: the shared fight)
+	int m3YTgt[2];              // ... monster-tics of group 1 then on the player, on the first self
+	bool m3YOverlap;            // a self in the yard while the alarm is on
+	int m3YFightFrom;
+
+	// The script's fight in the yard: the nearest living monster of group k faced, a bullet each 3 tics and a
+	// rocket at what is 192 or more off (the ammunition spent, so that the record sees them; topped up between
+	// shots), killed six tics after it was taken. True once the group is all dead (its way opens).
+	bool YardFight33(PlayerPawn mo, int k)
+	{
+		if (cmDone[k] >= 0) { mo.pitch = 0; return true; }
+		int o = ot;
+		mo.vel.xy = (0, 0);
+		if (!m3Aim || m3Aim.health <= 0 || cmMon.Find(m3Aim) == cmMon.Size())
+		{
+			m3Aim = null;
+			double bd = 1e12;
+			for (int i = 0; i < cmMon.Size(); i++)
+			{
+				Actor a = cmMon[i];
+				if (!a || cmPart[i] != k || a.health <= 0) continue;
+				double d = a.Distance3D(mo);
+				if (d < bd) { bd = d; m3Aim = a; }
+			}
+			m3AimAt = o;
+			if (!m3Aim) return false;               // (a pain elemental dying: its lost souls are to come)
+		}
+		Face(mo, m3Aim);
+		int dt = o - m3AimAt;
+		if (dt % 3 == 0 && mo.CountInv("Clip") > 0)
+		{
+			mo.TakeInventory("Clip", 1);
+			mo.LineAttack(mo.angle, 4096, mo.pitch, 10, 'Hitscan', "BulletPuff");
+			mo.A_StartSound("weapons/chngun", CHAN_WEAPON);
+		}
+		if (dt == 1 && mo.CountInv("RocketAmmo") > 0 && m3Aim.Distance3D(mo) > 192 && !(m3Aim is "LostSoul"))
+		{
+			mo.TakeInventory("RocketAmmo", 1);
+			mo.SpawnPlayerMissile("Rocket");
+		}
+		if (dt == 2 && (mo.CountInv("Clip") < 40 || mo.CountInv("RocketAmmo") < 5))
+		{
+			mo.GiveInventory("Clip", 100);
+			mo.GiveInventory("RocketAmmo", 10);
+		}
+		if (dt >= 6) { m3Aim.DamageMobj(mo, mo, 10000, 'None'); m3Killed++; m3Aim = null; }
+		return false;
+	}
+
+	// Of self i's record, the shots of the fight in the last hall (from the alarm) gone by: fired or dropped
+	// (its yard's shots before are not counted).
+	int HallShotsGone(int i)
+	{
+		AjarTake t = takes[i];
+		int n = 0;
+		for (int e = 0; e < t.next; e++) if (alarmAt >= 0 && t.evTic[e] >= alarmAt) n++;
+		return n;
+	}
+	int HallShots(int i)
+	{
+		AjarTake t = takes[i];
+		int n = 0;
+		for (int e = 0; e < t.evTic.Size(); e++) if (alarmAt >= 0 && t.evTic[e] >= alarmAt) n++;
+		return n;
+	}
+
+	// How many monsters live that count as kills (the counters: total less killed is these).
+	int LivingCounted33()
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.bCountKill && a.health > 0) n++;
+		return n;
+	}
+
+	// The seen fallen comers that leave a body, before go k (those of the parts after it); and the bodies lying.
+	int YardBodiesWant(int k)
+	{
+		int n = 0;
+		for (int i = 0; i < comers.Size(); i++)
+			if (comers[i].args[2] && comers[i].args[1] > k && LeavesBody(AjarHandler.AmbushClass(comers[i].args[0]))) n++;
+		return n;
+	}
+	int YardBodiesThere()
+	{
+		int n = 0;
+		for (int i = 0; i < comerBody.Size(); i++)
+			if (comerBody[i] && (comerBody[i].pos.xy - comers[i].pos.xy).Length() < 1 && comerBody[i].args[1] == comers[i].args[0]) n++;
+		return n;
+	}
+
+	// A go's end (or the level's): what each earlier self fired where, its yard window against the record.
+	void YardFireReport33(int go)
+	{
+		for (int i = 0; i < go - 1 && i < 2 && i < takes.Size() - 1; i++)
+		{
+			int k = i + 1;
+			AjarTake t = takes[i];
+			int want = cmCome[k] >= 0 ? EventsIn(t, cmCome[k], cmLeave[k]) : 0;
+			int hall = alarmAt >= 0 ? EventsIn(t, alarmAt, 0x7FFFFFFF) : 0;
+			Console.Printf("AJARTEST info go %d: self %d fired %d in the yard (%d to %d: its record has %d there), %d from the alarm (%d; its record %d from the alarm), %d elsewhere",
+				go, k, m3YIn[i], cmCome[k], cmLeave[k], want, m3YHall[i], alarmAt, hall, m3YOut[i]);
+			Check(String.Format("selfFiresApart%d_%d", go, k), !m3YOut[i] && !m3YOverlap && m3YIn[i] == want && want > 0
+				&& (alarmAt < 0 || cmLeave[k] <= alarmAt));
+		}
+	}
+
+	// Every tic of modes 1, 3 and 4: the yard's rules (yardtest.zs's GoChecks, as MAP33 has them; AgainChecks shared).
+	void Yard33Checks(PlayerPawn mo)
+	{
+		if (!commonMark || paradox || !tgo || m3YGo > 3) return;          // (m3YGo 4: the level's end, reported)
+		int o = ot, k = tgo;
+		if (m3YGo != k)
+		{
+			if (m3YGo) { PrintKillsY(m3YGo); YardFireReport33(m3YGo); }
+			if (m3YGo == 2)
+				Console.Printf("AJARTEST info the yard in go 2: the player on its level while self 1 is in the yard %d tics; group 1 then on the player %d monster-tics, on the first self %d (the floor's fight %d to %d)",
+					m3YMet[0], m3YTgt[0], m3YTgt[1], cmCome[2], cmDone[2]);
+			m3YGo = k;
+			ytCame = ytDoneSeen = false;
+			ytNoGroupBad = ytNoGroupSeen = ytWayBad = ytWaySeen = ytWayBad2 = 0;
+			ytCounted.Clear();
+			m3YOverlap = false;
+			for (int i = 0; i < 2; i++) { m3YFired[i] = m3YIn[i] = m3YHall[i] = m3YOut[i] = m3YTgt[i] = 0; }
+			for (int i = 0; i < 3; i++) m3YMet[i] = 0;
+		}
+		CountKillsY(mo);
+		if (o == 2)
+		{
+			int bodies = YardBodiesThere(), want = YardBodiesWant(k), loose = YardLoose(), living = LivingCounted33();
+			Console.Printf("AJARTEST info go %d begins (the yard): loose %d, groups' monsters %d, bodies %d of %d; monsters %d killed %d (living and counted %d), the player's kills %d",
+				k, loose, cmMon.Size(), bodies, want, level.total_monsters, level.killed_monsters, living, mo.player.killcount);
+			Check(String.Format("yardAsAtStart%d", k), loose == 0 && !cmMon.Size() && cmCome[k] < 0 && cmDone[k] < 0);
+			Check(String.Format("countersRight%d", k), level.total_monsters - level.killed_monsters == living && mo.player.killcount == level.killed_monsters);
+			// the seen fallen: part 2's walkers lie on the floor in go 1 (each at its place), nothing from go 2 on
+			Check(String.Format("yardBodies%d", k), bodies == want && (k < 2 ? want >= 30 : want == 0));
+			// the ways: open before their go, shut in it, in a later go shut until its group's end then
+			bool ways = true;
+			for (int w = 1; w <= 3; w++)
+			{
+				AjarShutter s = WayOf(w);
+				if (!s || (w > k ? !s.IsOpen() : !s.IsShut())) ways = false;
+			}
+			Check(String.Format("yardWaysAtStart%d", k), ways);
+			bool tt = true;
+			for (int j = 1; j < k; j++) tt = tt && cmLeave[j] > cmCome[j] && HasLine(YardLine(j));
+			int has = 0;
+			for (int i = 0; i < tLine.Size(); i++) if (tLine[i].IndexOf(" is in the yard ") >= 0) has++;
+			for (int j = 1; j < k; j++) Console.Printf("AJARTEST info go %d: self %d is in the yard %d to %d (\"%s\")", k, j, cmCome[j], cmLeave[j], YardLine(j));
+			Check(String.Format("yardTimetable%d", k), tt && has == k - 1);
+		}
+		if (o < 2) return;
+		// before the player's step: nothing of this go's group (nor of the earlier ones before their tics)
+		if (cmCome[k] < 0) { ytNoGroupSeen++; if (GroupIn(k)) ytNoGroupBad++; }
+		for (int j = 1; j < k; j++) if (o < cmCome[j] && GroupIn(j)) ytNoGroupBad++;
+		for (int j = k + 1; j <= 3; j++) if (GroupIn(j)) ytNoGroupBad++;
+		// the player's step: the group comes, awake, each with a target
+		if (!ytCame && cmCome[k] >= 0)
+		{
+			ytCame = true;
+			m3YFightFrom = o;
+			int awake = 0, aimed = 0, onP = 0, onS = 0;
+			for (int i = 0; i < cmMon.Size(); i++)
+			{
+				Actor a = cmMon[i];
+				if (!a || cmPart[i] != k || a.health <= 0) continue;
+				if (!a.bAmbush && (a.target || a.InStateSequence(a.CurState, a.SeeState))) awake++;
+				if (a.target) aimed++;
+				if (a.target == mo) onP++;
+				else if (a.target is "AjarGhost") onS++;
+			}
+			bool selfThere = false;
+			for (int i = 0; i < k - 1; i++) selfThere = selfThere || CommonThere(i);
+			Console.Printf("AJARTEST info go %d: on level %d first at %d (at %d,%d): group %d came, %d of %d, awake %d, with a target %d (the player %d, a self %d); before it %d tics looked at, %d bad; a self in the yard %d",
+				k, k, o, mo.pos.x, mo.pos.y, k, GroupLiving(k), ComersOf(k), awake, aimed, onP, onS, ytNoGroupSeen, ytNoGroupBad, selfThere);
+			Check(String.Format("yardComesAtStep%d", k), cmCome[k] == o && CmAt(mo.pos.xy) == k && GroupLiving(k) == ComersOf(k) && ComersOf(k) > 0
+				&& awake == ComersOf(k) && aimed == ComersOf(k) && (selfThere || onP == ComersOf(k)) && ytNoGroupSeen > 100 && !ytNoGroupBad
+				&& SaidY().IndexOf("They come for you") >= 0);
+		}
+		// this go's way: shut until its group is dead, then open for good
+		AjarShutter way = WayOf(k);
+		if (way && o > 2)
+		{
+			ytWaySeen++;
+			if (cmDone[k] < 0 && (way.keyed || !way.IsShut())) ytWayBad++;
+			if (cmDone[k] >= 0 && o >= cmDone[k] + 70 && !way.IsOpen()) ytWayBad++;
+		}
+		if (!ytDoneSeen && cmDone[k] >= 0)
+		{
+			ytDoneSeen = true;
+			int all = 0, died = 0;
+			for (int i = 0; i < cmMon.Size(); i++) if (cmPart[i] == k) { all++; if (cmDied[i]) died++; }
+			Console.Printf("AJARTEST info go %d: group %d all dead at %d (came at %d: %d tics); members followed %d (lost souls %d), died %d; way %d shut until then: %d tics looked at, %d bad",
+				k, k, o, cmCome[k], o - cmCome[k], all, all - ComersOf(k), died, k, ytWaySeen, ytWayBad);
+			Check(String.Format("yardDoneTic%d", k), cmDone[k] == o && !GroupLiving(k) && !CommonLives(k) && !ytWayBad && way && way.keyed == HELD_OPEN
+				&& SaidY().IndexOf("your way on from the yard is open") >= 0);
+			AjarTake tk = takes[takes.Size() - 1];
+			int bullets = 0, missiles = 0, early = 0, outside = 0;
+			for (int e = 0; e < tk.evTic.Size(); e++)
+			{
+				if (tk.evKind[e] == 1) bullets++;
+				if (tk.evKind[e] == 0) missiles++;
+				if (tk.evTic[e] < cmCome[k]) early++;
+				int j = tk.evTic[e];
+				if (j < tk.x.Size() && CmAt((tk.x[j], tk.y[j])) < 0) outside++;
+			}
+			Console.Printf("AJARTEST info go %d fired in the yard: %d bullets, %d missiles; %d before the coming, %d out of the yard", k, bullets, missiles, early, outside);
+			Check(String.Format("yardShotsInTake%d", k), bullets >= ComersOf(k) && missiles > 0 && !early && !outside);
+		}
+		if (way && cmDone[k] >= 0 && o == cmDone[k] + 70) Check(String.Format("yardWayOpen%d", k), way.IsOpen() && ytWayBad == 0);
+		// the earlier groups, again (yardtest.zs)
+		for (int j = 1; j < k; j++) AgainChecks(mo, j, false);
+		// what each earlier self fires, and where it is then: in the yard (its fight there, from its group's tic to
+		// its leaving) or from the alarm (the last hall), never else; never both at once
+		bool alarm = AlarmOn();
+		for (int i = 0; i < k - 1 && i < 2 && i < ghosts.Size(); i++)
+		{
+			let ls = AjarLastSelf(ghosts[i]);
+			if (!ls) continue;
+			int d = ls.fired - m3YFired[i];
+			m3YFired[i] = ls.fired;
+			bool yard = CommonThere(i);
+			if (yard && alarm) m3YOverlap = true;
+			if (d <= 0) continue;
+			if (yard) m3YIn[i] += d;
+			else if (alarm) m3YHall[i] += d;
+			else m3YOut[i] += d;
+		}
+		// go 3 (and 2): this go's player on its level while an earlier self is in the yard: the fight shared
+		if (CmAt(mo.pos.xy) == k && cmCome[k] >= 0)
+			for (int i = 0; i < k - 1 && i < 2; i++)
+				if (CommonThere(i))
+				{
+					m3YMet[i]++;
+					if (i == 0)
+						for (int m = 0; m < cmMon.Size(); m++)
+						{
+							Actor a = cmMon[m];
+							if (!a || cmPart[m] != 1 || a.health <= 0) continue;
+							if (a.target == mo) m3YTgt[0]++;
+							else if (a.target == ghosts[0]) m3YTgt[1]++;
+						}
+				}
+	}
+
+	// The yard at the level's end (go 3 through the exit door): the shared fights, the selves' fire.
+	void YardEnd33()
+	{
+		if (!commonMark) return;
+		Console.Printf("AJARTEST info the yard in go 3: the player on its level while self 1 is in the yard %d tics, while self 2 is %d; group 1 then on the player %d monster-tics, on the first self %d",
+			m3YMet[0], m3YMet[1], m3YTgt[0], m3YTgt[1]);
+		Console.Printf("AJARTEST info the yard in go 3: the selves' shots aimed again, self 1 %d of %d hit, self 2 %d of %d", cmShotsHit[0], cmShots[0], cmShotsHit[1], cmShots[1]);
+		PrintKillsY(3);
+		YardFireReport33(3);
+		m3YGo = 4;          // (reported)
+	}
+
 	// --- the tic ---------------------------------------------------------------------------
 	void Map33Tests(PlayerPawn mo, int mode)
 	{
@@ -659,6 +939,7 @@ extend class AjarTimeHandler
 		LockChecks33();
 		AlarmChecks(mo);            // lasttest.zs: the last hall at each go's start and at the alarm
 		Extras33(mo);
+		Yard33Checks(mo);
 		Kills33(mo);
 		if (tgo == 1) Checks33One(mo);
 		else if (tgo == 2) Checks33Two(mo);
@@ -812,15 +1093,32 @@ extend class AjarTimeHandler
 		if (m3Step == 8)
 		{
 			Clear33(mo);
-			if (Walk33(mo, 4)) { m3Step = 9; m3Mark = o; }
+			if (Walk33(mo, 4)) { m3Step = 30; m3Mark = o; }
 			if (m3Route == 4 && m3Ix == 3 && Once33(3)) View33(mo, "the pump room", 3660, 4920, 315, 2);
 			if (m3Route == 4 && m3Ix == 7 && Once33(4)) View33(mo, "the stack court: the chimney's foot", 4950, 4650, 315, -6);
 			if (m3Route == 4 && m3Ix == 10 && Once33(11)) View33(mo, "the stack court from the south: the imps' ledge round the north-east", 5300, 3800, 45, -4);
 		}
+		// the yard: from the terrace's entry onto its level (group 1 comes), its fight, then by the gantry's west mouth
+		if (m3Step == 30)
+		{
+			Clear33(mo);
+			if (Walk33(mo, 24)) { m3Step = 31; Console.Printf("AJARTEST info go 1 on the terrace from %d (group 1 came at %d)", m3Mark, cmCome[1]); }
+		}
+		if (m3Step == 31)
+		{
+			if (cmCome[1] >= 0 && o >= cmCome[1] + 30 && m3Shots && Once33(16))
+				View33(mo, "the yard from the terrace (go 1): the bodies on the floor, group 1 over it", 4800, 3290, 222, 12);
+			else if (YardFight33(mo, 1))
+			{
+				m3Step = 9; m3Mark = o;
+				Console.Printf("AJARTEST info go 1: the terrace's fight from %d to %d", cmCome[1], o);
+			}
+		}
 		if (m3Step == 9)
 		{
 			Clear33(mo);
-			int waitTo = M33_GANTRY + (m3Shots ? 400 : 0);     // (mode 3: go 2 is held up by its views)
+			StayAt(mo, (4960, 3330));
+			int waitTo = M33_GANTRY + (m3Shots ? M33_GANTRY3 : 0);     // (mode 3: go 2 is held up by its views)
 			if (o == waitTo - 1) Console.Printf("AJARTEST info go 1 at the foot of the gantry from %d, waiting until %d", m3Mark, waitTo);
 			if (o >= waitTo) m3Step = 10;
 		}
@@ -892,9 +1190,17 @@ extend class AjarTimeHandler
 		if (a == M33_HOLD1 || (m3Quick && tdOpen && o == m3PlateAt + 50))
 		{
 			AjarTake t = takes[0];
-			int bullets = 0, missiles = 0, early = 0;
-			for (int e = 0; e < t.evTic.Size(); e++) { if (t.evKind[e] == 1) bullets++; if (t.evKind[e] == 0) missiles++; if (t.evTic[e] <= alarmTic) early++; }
-			Console.Printf("AJARTEST info go 1 fired: %d bullets, %d missiles, %d before the alarm; leaves plate 1 at %d", bullets, missiles, early, o);
+			int bullets = 0, missiles = 0, early = 0, yard = 0;
+			for (int e = 0; e < t.evTic.Size(); e++)
+			{
+				int j = t.evTic[e];
+				// (what it fired in the yard's fight before is the yard's: Yard33Checks)
+				if (j <= alarmTic && cmCome[1] >= 0 && j >= cmCome[1] && j < t.x.Size() && CmAt((t.x[j], t.y[j])) >= 0) { yard++; continue; }
+				if (t.evKind[e] == 1) bullets++;
+				if (t.evKind[e] == 0) missiles++;
+				if (j <= alarmTic) early++;
+			}
+			Console.Printf("AJARTEST info go 1 fired: %d bullets, %d missiles, %d before the alarm (and %d in the yard before); leaves plate 1 at %d", bullets, missiles, early, yard, o);
 			Check("shotsInTake", bullets > 50 && !early && tdOpen);      // (rockets: only at what is not a demon, 256 or more off: few)
 			m3Step = 13;
 			mo.pitch = 0;
@@ -1001,9 +1307,25 @@ extend class AjarTimeHandler
 		{
 			if (wonTic[work] < 0) return;
 			Clear33(mo);
-			if (m3Route == 12 && m3Ix == 4 && Once33(7)) View33(mo, "the pump hall", 3990, 2880, 0, 0);
-			if (m3Route == 12 && m3Ix == 8 && Once33(8)) View33(mo, "the stores, the clerk's nook in the far corner", 4700, 2200, 182, 0);
-			if (Walk33(mo, 12)) { m3Step = 8; m3RFrom = o; m3From = o; View33(mo, "R from its floor (go 2): every post's monster, idle", 5120, 2380, 40, 6); }
+			if (m3Route == 12 && m3Ix == 3 && Once33(7)) View33(mo, "the yard from the head of its west stairs (go 2): the floor, the terrace, the ledges", 3990, 2880, 0, 6);
+			if (Walk33(mo, 12)) { m3Step = 32; Console.Printf("AJARTEST info go 2 on the yard's floor (group 2 came at %d)", cmCome[2]); }
+		}
+		// the yard: down onto the floor (group 2 comes), its fight, out by the east stairs
+		if (m3Step == 32)
+		{
+			if (cmCome[2] >= 0 && o >= cmCome[2] + 25 && m3Shots && Once33(17))
+				View33(mo, "the yard from its floor (go 2): group 2 coming, the north ledge and the terrace above", 4260, 2880, 20, -8);
+			else if (YardFight33(mo, 2))
+			{
+				m3Step = 33;
+				Console.Printf("AJARTEST info go 2: the floor's fight from %d to %d", cmCome[2], o);
+				if (m3Shots) View33(mo, "the pump shed in the yard's west wall (go 2): the secret, its doorway", 4210, 2512, 180, 2);
+			}
+		}
+		if (m3Step == 33)
+		{
+			Clear33(mo);
+			if (Walk33(mo, 25)) { m3Step = 8; m3RFrom = o; m3From = o; View33(mo, "R from its floor (go 2): every post's monster, idle", 5120, 2380, 40, 6); }
 		}
 		if (m3Step == 8)
 		{
@@ -1056,8 +1378,8 @@ extend class AjarTimeHandler
 			for (int i = 0; i < guardSelfDmg.Size(); i++) dmg += guardSelfDmg[i];
 			let g = AjarLastSelf(ghosts[0]);
 			Console.Printf("AJARTEST info go 2, %d tics after the alarm: the first self did %d damage, was hit %d times, its health %d; it fired %d of %d",
-				a, dmg, g ? g.hits : -1, g ? g.health : -1, takes[0].next, takes[0].evTic.Size());
-			Check("selfFiresAgain", dmg > 0 && takes[0].next > 0);
+				a, dmg, g ? g.hits : -1, g ? g.health : -1, HallShotsGone(0), HallShots(0));
+			Check("selfFiresAgain", dmg > 0 && HallShotsGone(0) > 0);
 			// (wave 1 alone at the alarm: fewer guards, most aimed at the first self from the start, and those it
 			// shoots first die first; if none has turned yet, looked at until go 2 leaves its plate)
 			if (ltTurned) Check("turnsOnSelf", true);
@@ -1111,7 +1433,11 @@ extend class AjarTimeHandler
 			// (the plates and the exit door; with waves a fire line each earlier self; the share's line; a line a lever)
 			int machines = 0;
 			for (int l = 0; l < levers.Size(); l++) if (lvSelf[l] >= 0) machines++;
-			Check("timetableLines", tLine.Size() == 3 + 2 + (shareSelf >= 0) + machines && FireLinesRight() && shareSelf == 0 && machines == 2);
+			// (and the yard: a line each earlier self, when it is there)
+			int yardLines = 0;
+			for (int l = 0; l < tLine.Size(); l++) if (tLine[l].IndexOf(" is in the yard ") >= 0) yardLines++;
+			Check("timetableLines", tLine.Size() == 3 + 2 + (shareSelf >= 0) + machines + yardLines && FireLinesRight() && shareSelf == 0 && machines == 2
+				&& yardLines == 2);
 			// the gallery: nothing spawned again (a monster that came into it from elsewhere in go 2 is told apart)
 			int n = 0, living = 0, came = 0, fresh = 0;
 			let it = ThinkerIterator.Create("Actor");
@@ -1159,8 +1485,8 @@ extend class AjarTimeHandler
 		}
 		if (alarmTic >= 0 && o == alarmTic + M33_QUIET + 100)
 		{
-			Console.Printf("AJARTEST info go 3 at the alarm + 400 (self 2 fires from + 300): self 1 fired %d of %d, self 2 %d of %d", takes[0].next, takes[0].evTic.Size(), takes[1].next, takes[1].evTic.Size());
-			Check("twoSelvesFiring", takes[0].next > 0 && takes[1].next > 0 && Selves3() == 2);
+			Console.Printf("AJARTEST info go 3 at the alarm + 400 (self 2 fires from + 300): self 1 fired %d of %d, self 2 %d of %d", HallShotsGone(0), HallShots(0), HallShotsGone(1), HallShots(1));
+			Check("twoSelvesFiring", HallShotsGone(0) > 0 && HallShotsGone(1) > 0 && Selves3() == 2);
 		}
 		if (alarmTic < 0 && alarmAt > 0 && o == alarmAt - 1) Check("gateShutBeforeAlarm", lastGate && lastGate.IsShut());
 		if (exitOpened && !m3ExitSeen)
@@ -1174,6 +1500,7 @@ extend class AjarTimeHandler
 			m3Through = true;
 			Console.Printf("AJARTEST info through the exit door at %d (the exit door open until %d)", o, exitUntil);
 			Check("throughTheExitDoor", tgo == 3 && !paradox && m3Crossed);
+			if (m3Mode != 2) YardEnd33();
 			Console.Printf("AJARTEST info the exit door: %d samples, %d not as the timetable", m3ExitSeen2, m3ExitBad);
 			Check("exitAsTimetable", m3ExitSeen2 > 20 && !m3ExitBad);
 			// the steam (the first self's valve, by itself at its tic) and wave 3 on its strip; the breaker (the second self's)
@@ -1271,7 +1598,19 @@ extend class AjarTimeHandler
 		if (m3Step == 8)
 		{
 			Clear33(mo);
-			if (Walk33(mo, 20))
+			if (Walk33(mo, 20)) { m3Step = 34; Console.Printf("AJARTEST info go 3 on the south ledge (group 3 came at %d)", cmCome[3]); }
+		}
+		// the yard: onto the corner piece and the south ledge (group 3 comes), its fight, back to the duct stairs
+		if (m3Step == 34)
+		{
+			if (cmCome[3] >= 0 && o >= cmCome[3] + 30 && m3Shots && Once33(18))
+				View33(mo, "the yard from the south ledge (go 3): group 3 over the floor, the terrace and the north ledge across it", 4600, 2180, 105, -2);
+			else if (YardFight33(mo, 3)) { m3Step = 35; Console.Printf("AJARTEST info go 3: the south ledge's fight from %d to %d", cmCome[3], o); }
+		}
+		if (m3Step == 35)
+		{
+			Clear33(mo);
+			if (Walk33(mo, 26))
 			{
 				Check("throughTheTowerIntoTheDuct", PartAt(mo.pos.xy) == 3 && mo.floorz == -128);
 				m3Step = 9;
@@ -1402,7 +1741,7 @@ extend class AjarTimeHandler
 			if (tgo == 3 && m3Go != 3)
 			{
 				m3Go = 3;
-				Check("goThreeAfterLoad", !tdOpen && takes.Size() == 3 && takes[1].x.Size() > alarmAt && takes[1].evTic.Size() > 0);
+				Check("goThreeAfterLoad", !tdOpen && takes.Size() == 3 && takes[1].x.Size() > alarmAt && HallShots(1) > 0);
 			}
 			return;
 		}
@@ -1410,6 +1749,7 @@ extend class AjarTimeHandler
 		LockChecks33();
 		AlarmChecks(mo);
 		Extras33(mo);
+		Yard33Checks(mo);
 		if (tgo == 1) { Checks33One(mo); Go33One(mo); }
 		else if (tgo == 2)
 		{

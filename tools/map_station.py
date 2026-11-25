@@ -3,9 +3,10 @@ way out once MAP20 is built. PLAN.md: "MAP33, the third secret level" (the
 outline), "The three goes lab" (the engine: src/zscript/third.zs, its helpers
 tools/ajarthird.py, the lab map tools/map_third.py), "MAP33 "Third Person": the
 first version, as decided" (this map's design), "... the first playable
-version" (what was built) and "MAP33: the last fight in the level, and doors at
-the fight halls" (the end and the lobbies). The tests: src/zscript/map33.zs,
-MAP=MAP33 MODE=n tools/smoke.sh.
+version" (what was built), "MAP33: the last fight in the level, and doors at
+the fight halls" (the end and the lobbies), "MAP33: the yard in the middle, on
+three levels, as decided" and "... built" (the common place). The tests:
+src/zscript/map33.zs, MAP=MAP33 MODE=n tools/smoke.sh.
 
 A power station, played whole three times: go k plays part k, and the time
 door at the end of part k leads to before, into box k + 1, which looks onto
@@ -15,13 +16,30 @@ a height. North is up (+y), x east; about 9000 x 3000 of rooms in a frame of
 9400 x 5400.
 
 Part 1, yellow, along the north (S, the coal yard, the boiler house, the ash
-tunnel and its cache, the pump room, the stack court, the gantry over the
-turbine hall, the corridor to stand 1). Part 2, green, through the middle
-(box 2, the gallery, the workshop and its armoury, the pump hall, the stores,
-the mezzanine, the turbine hall R, the passage to stand 2). Part 3, red, along
-the south (box 3, the cable tunnel, the switchyard, the relay room, the
-cooling pond, the cooling tower, the duct along R's south wall, the corridor
-to stand 3, the exit door across the hall).
+tunnel and its cache, the pump room, the stack court, the yard's terrace and
+north ledge, the gantry over the turbine hall, the corridor to stand 1). Part
+2, green, through the middle (box 2, the gallery, the workshop and its
+armoury, the yard's floor and its pump shed, the mezzanine, the turbine hall
+R, the passage to stand 2). Part 3, red, along the south (box 3, the cable
+tunnel, the switchyard, the relay room, the cooling pond, the cooling tower,
+the yard's corner piece and south ledge, the duct along R's south wall, the
+corridor to stand 3, the exit door across the hall).
+
+The yard (common.zs, the engine's COMMON PLACE; PLAN.md "MAP33: the yard in
+the middle, built"), where part 2's pump hall and stores were: open to the
+sky, x 3968..4736. Its floor (-128, part 2's level) between the ledges (y
+2240..3456), in down stairs from the workshop's corridor on the west and out
+up stairs into the mezzanine's corridor on the east; four pumps, two pipe
+runs, banks on the west and east walls; the pump shed (part 2's secret) in the
+west wall. The terrace at its north-east corner (where the passage from the
+stack court to the gantry was) and the ledge along its north rim (0, part 1's
+level); the corner piece north of the tower's passage and the ledge along its
+south rim (-64, part 3's level). Rims (players only) between the levels; each
+part's group comes when its go first stands on its level, and its way on (the
+gantry's west mouth, the shutter at the head of the east stairs, the one at
+the duct stairs' mouth) opens when the group is dead; in later goes the group
+comes again with its earlier self there firing. Part 2's walkers lie as
+bodies on the floor in go 1.
 
 The end (the last fight, the engine's last.zs as in the lab LAST,
 tools/map_last.py): the switchgear hall, east of R, sunk to -96, with three
@@ -62,7 +80,7 @@ the pond are natural(): banks heaped against their walls in terraces
 heaps and islands (heap(), blob()), round things (ngon()); what stands there
 is put on free floor (put(), items_on()).
 
-Generator checks: the parts apart; every window hall closed to monsters at its
+Generator checks: the parts apart (the rims closed); every window hall closed to monsters at its
 mouths, and the lobbies' halls with no monster-only line in an open way;
 every post where its monster cannot leave and in sight from the gantry; the
 supplies of each part against its monsters (tools/budget.py), the last hall's
@@ -71,8 +89,12 @@ the crossing with cover from each; wave 1 the standing guards, wave 3 east of
 the crossing's middle and 256 or more from the foot of stand 3's steps, the
 patches clear of the islands and the red ones by the door on the strip, the
 strip's floor all within the steam's reach, the share's copies and the levers
-clear of the plates, time doors, wind plates and cases; each part's length on
-foot (python3 tools/map_station.py --walk).
+clear of the plates, time doors, wind plates and cases; the yard's levels
+tagged and each its part's, the place closed to monsters, every walking comer
+on the floor's level with room and none within 256 of the west stairs' foot,
+every flyer over the floor with room, every body seen from two of the terrace
+and the ledges, the shed's doorway 64, nothing over 24 high before a stairs'
+foot; each part's length on foot (python3 tools/map_station.py --walk).
 """
 import heapq
 import math
@@ -926,10 +948,10 @@ items_on(G, 2046, (5900, 3900))
 items_on(G, 2008, (5150, 4000), (5150, 4060), (5850, 4000), (5850, 4060))
 items_on(G, 2012, (5600, 4500), (5400, 4500))
 
-# --- the way to the gantry, the gantry over R (128 over its floor, behind a railing),
-# its shutter (R's win opens it), E1 ----------------------------------------------------
-m.sector(rect(4928, 3264, 5056, 3584), ceil=160, light=170, color=Y_WAY)
-mon(3001, [(4992, 3520), (4992, 3440)], angle=90)
+# --- the gantry over R (128 over its floor, behind a railing), its shutter (R's win opens it), E1. The way to
+# it from the stack court is the yard's terrace now (below, THE YARD): its west mouth is part 1's way on from
+# the yard (WAY1), with a line no monster crosses behind it, as before --------------------------------------
+put(3001, [(4960, 3700), (5080, 3660)], G, angle=270)          # (the two imps of the passage that was here)
 GANTRY_BOX = (5056, 3264, 7040, 3392)
 m.sector(rect(*GANTRY_BOX), floor=G, ceil=384, light=160, color=Y_WAY, id=GANTRY)
 railing((5056, 3264), (7040, 3264))
@@ -1152,63 +1174,234 @@ items(2012, (3800, 3020), (2760, 2700))
 items(2049, (3100, 2240))
 items(2047, (3400, 2240), (3440, 2240))
 items(2011, (3700, 2600), (3700, 2650))
-# to the pump hall: a shutter the workshop's win opens
+# to the yard: a shutter the workshop's win opens, and a short corridor to the head of the yard's west stairs
 ajartime.shutter(m, (3840, 2944), (3840, 2816), (1, 0), G, PUMPSHUT, nomonsters=True, color=G_WAY)
 MOUTHS.append(((3840, 2944), (3840, 2816)))
 ajarthird.win(m, 3820, 2880, H_WORK, PUMPSHUT)
 m.sector(rect(3856, 2816, 3968, 2944), ceil=128, light=170, color=G_WAY)
 
-# --- the pump hall and the stores: the way round to R's west mezzanine ------------------
-PUMP2 = (3968, 2560, 4736, 3136)
-PUMPS2 = [(4096, 2688, 4224, 2816), (4480, 2688, 4608, 2816), (4096, 2944, 4224, 3072), (4480, 2944, 4608, 3072)]
-area(PUMP2, [(ajarmap.octagon(*p, 40), dict(floor=80, side="AJBOLT", color=STEELC)) for p in PUMPS2],
-     ceil=288, light=176, color=G_ROOM)
-mon(3005, [(4352, 2750), (4352, 3000), (4060, 2620), (4660, 2620)], angle=180)
-mon(69, [(4060, 3080), (4660, 3080), (4352, 2620)], angle=180)
-mon(3001, [(4040, 2880), (4660, 2880), (4290, 3080), (4420, 3080)], angle=180)
-mon(3002, [(4290, 2880), (4420, 2880)], angle=180)
-mon(65, [(4660, 2750), (4660, 3000)], angle=180)
-mon(3005, [(4352, 2880)], angle=180, skill=4)
-mon(58, [(4160, 2880), (4544, 2880)], angle=180)
-mon(3004, [(4160, 2620), (4544, 2620)], angle=180)
-mon(9, [(4224, 3100), (4500, 3100)], angle=180)
-items(2046, (4040, 3000), (4040, 3080))
-items(2047, (4600, 2620), (4600, 2660))
-items(2012, (4290, 2620), (4420, 2620))
-items(2049, (4040, 2620), (4680, 3080))
-items(17, (4352, 3100))
-items(2046, (4680, 2880))
-items(2048, (4040, 2700))
-opening((4288, 2560), (4416, 2560), (0, -1), G, G_WAY)
-STORES = (3968, 2112, 4736, 2544)
-SHELVES = [(4128, 2304, 4160, 2496), (4320, 2304, 4352, 2496), (4512, 2304, 4544, 2496)]
-NOOK_WALL = [(3968, 2240, 4080, 2272), (4144, 2112, 4176, 2304)]     # crates round the clerk's nook; a gap 64 wide
-# (it was 32, and right under the first shelf's end: a player is 32 wide and did not get in; Vadim, 2026-11-24)
-# (and the east crates reach the first shelf's end: the 32 between them was a pocket, mapcheck's SLOT, 2026-11-24)
-assert NOOK_WALL[1][0] - NOOK_WALL[0][2] >= 48 and SHELVES[0][0] - NOOK_WALL[0][2] >= 48
-NOOK = (3968, 2112, 4144, 2240)
-area(STORES, [(s, dict(floor=64, side="AJWOOD", ftex="AJTRIMF")) for s in SHELVES]
-     + [(w, dict(floor=64, side="AJWOOD", ftex="AJTRIMF")) for w in NOOK_WALL]
-     + [(NOOK, dict(special=1024, light=150))],
-     ceil=192, light=170, color=G_ROOM)
-mon(58, [(4220, 2180), (4420, 2180), (4600, 2180), (4220, 2400)], angle=90)
-mon(3001, [(4420, 2400), (4620, 2420), (4040, 2420)], angle=90)
-mon(69, [(4600, 2300), (4240, 2300), (4440, 2300)], angle=180)
-mon(3002, [(4040, 2340)], angle=90)
-mon(58, [(4060, 2500)], angle=90, skill=4)
-mon(3004, [(4320, 2180), (4520, 2180)], angle=90)
-mon(9, [(4680, 2400), (4240, 2470)], angle=90)
-mon(3001, [(4440, 2480)], angle=90)
-items(2013, (4680, 2480))                                # a soulsphere before the drop
-items(2046, (4680, 2170))
-items(17, (4400, 2480))
-items(2049, (4040, 2480), (4240, 2200))
-items(2047, (4600, 2480), (4560, 2480))
-items(2012, (4680, 2260), (4680, 2320))
-items(2046, (4050, 2160), (3990, 2200))                  # the clerk's nook: the secret of part 2
-items(2019, (4100, 2160))
-opening((4736, 2304), (4736, 2432), (1, 0), G, G_WAY)
+# =====================================================================================
+# THE YARD: the common place in the middle (common.zs; PLAN.md "MAP33: the yard in the middle, on three
+# levels, as decided" and "... built"). Open to the sky, where part 2's pump hall and stores were. Part 2 crosses
+# its floor (-128: in from the workshop's corridor down stairs on the west, out up stairs on the east into the
+# mezzanine's corridor); part 1 comes from the stack court onto the terrace at its north-east corner and the
+# ledge along its north rim (0), on to the gantry by its west mouth; part 3 comes from the tower's passage onto
+# the corner piece at its south-east corner and the ledge along its south rim (-64), back to the stairs down
+# into the duct. The three never meet on foot: rims (ajarthird.rim, players only) between the levels; shots,
+# sight and flyers pass. Each part's group comes the first time its go stands on its level (the levels' sectors
+# carry 3390 + k and nothing else: the place's own sectors, YPLACE, are the stairs, the entries, the pumps, the
+# pipes, the banks and the shed); its way on (WAYk, a shutter closed to monsters) opens once the group is dead.
+# Every other way out of the place blocks monsters (asserted, ajarthird.sealed).
+# =====================================================================================
+YPLACE = 3388                                           # the place's own sectors (no part's level)
+L1, L2, L3 = (ajarthird.level_tag(k) for k in (1, 2, 3))     # the north ledge and the terrace; the floor; the south ledge and the corner
+WAY1, WAY2, WAY3 = 3383, 3384, 3385                     # each part's way on from its level
+YX1, YX2, YY1, YY2 = 3968, 4736, 2240, 3456             # the floor's box, between the ledges
+FLOOR2 = RF                                             # the floor: part 2's level, the turbine hall's height
+SOUTH3 = -64                                            # the south ledge: part 3's level, the tower's passage's height (TF)
+YCOL = 0xD4D8CC                                         # the floor
+EARTHY = dict(color=0x9C8C74, ftex="AJPIT", side="AJBRICK")
+PIPE = dict(side="AJBOLT", ftex="AJTRIMF", color=STEELC)
+YSKY = dict(ceil=SKY, ctex="F_SKY1")
+
+# --- the north side, part 1's level (0, 128 over the floor): the terrace at the north-east corner, where the
+# passage from the stack court to the gantry was, entered from the stack court by a doorway; its first 112 are
+# the place's own (the entry), so that the group comes when the player is well onto it. The ledge along the
+# north rim west from it, a dead end with a cache --------------------------------------------------------------
+TERRACE = (4736, 3152, 5040, 3568)
+T_ENTRY = (4736, 3456, 5040, 3568)
+YLEDGE1 = (YX1, YY2, YX2, 3584)
+T_DOOR = (4912, 5040)                                   # the doorway from the stack court (its south wall, y 3584)
+opening((T_DOOR[0], 3584), (T_DOOR[1], 3584), (0, -1), G, Y_WAY)
+m.line((T_DOOR[0], 3568), (T_DOOR[1], 3568), blockmonsters=True)     # (out of the place: no monster crosses)
+TERR_SECS = [m.sector(rect(*T_ENTRY), light=206, color=Y_ROOM, wall="AJBRICK", id=YPLACE, **YSKY),
+             m.sector(rect(TERRACE[0], TERRACE[1], TERRACE[2], T_ENTRY[1]), light=206, color=Y_ROOM, wall="AJBRICK", id=L1, **YSKY)]
+LEDGE1_SEC = m.sector(rect(*YLEDGE1), light=206, color=Y_ROOM, wall="AJBRICK", id=L1, **YSKY)
+# part 1's way on: a shutter at the gantry's west mouth (the line no monster of R crosses stays behind it)
+ajartime.shutter(m, (5040, 3392), (5040, 3264), (1, 0), G, WAY1, nomonsters=True, color=Y_WAY)
+ajarthird.way(m, 5010, 3330, 1, WAY1)
+# the cache at the ledge's west end: 2 boxes of rockets, a box of shells, a medikit
+items(2046, (4000, 3500), (4000, 3550))
+items(2049, (4050, 3525))
+items(2012, (4100, 3525))
+
+# --- the south side, part 3's level (-64, 64 over the floor): the tower's passage goes on north to the corner
+# piece (its first 64 the place's own: the group comes past the duct stairs' shutter), and from it the ledge
+# along the south rim, west to a dead end with a cache --------------------------------------------------------
+CORNER = (4736, 1984, 4864, 2240)
+C_ENTRY = (4736, 1984, 4864, 2048)
+YLEDGE3 = (YX1, 2112, YX2, YY1)
+m.line((4736, 1984), (4864, 1984), blockmonsters=True)               # (out of the place: no monster crosses)
+CORNER_SECS = [m.sector(rect(*C_ENTRY), floor=SOUTH3, light=200, color=R_ROOM, wall="AJBRICK", id=YPLACE, **YSKY),
+               m.sector(rect(CORNER[0], C_ENTRY[3], CORNER[2], CORNER[3]), floor=SOUTH3, light=200, color=R_ROOM,
+                        wall="AJBRICK", id=L3, **YSKY)]
+LEDGE3_SEC = m.sector(rect(*YLEDGE3), floor=SOUTH3, light=200, color=R_ROOM, wall="AJBRICK", id=L3, **YSKY)
+items(17, (4000, 2150), (4000, 2200))
+items(2046, (4050, 2175))
+items(2012, (4100, 2175))
+
+# --- the floor, part 2's level: in by stairs from the workshop's corridor (west), out by stairs to the
+# mezzanine's corridor (east, its way on there); four pumps (80 high) and two pipe runs as cover, banks along
+# the west and the east walls, the pump shed in the west wall (the secret of part 2: the clerk's nook's) ----------
+W_STAIRS = (3968, 2816, 4224, 2944)                     # down from the corridor (G) to the floor, eastwards
+E_STAIRS = (4480, 2304, 4736, 2432)                     # up from the floor to the mezzanine's corridor (G), eastwards
+ajarmap.stairs(m, (3968, 2816), (3968, 2944), (1, 0), G, FLOOR2 - G, steps=8, depth=32, light=200, color=G_WAY,
+               wall="AJBRICK", id=YPLACE, **YSKY)
+m.line((3968, 2816), (3968, 2944), blockmonsters=True)               # (out of the place: no monster crosses)
+ajarmap.stairs(m, (4480, 2304), (4480, 2432), (1, 0), FLOOR2, G - FLOOR2, steps=8, depth=32, light=200, color=G_WAY,
+               wall="AJBRICK", id=YPLACE, **YSKY)
+# part 2's way on: a shutter at the head of the east stairs, where the stores' doorway was
+ajartime.shutter(m, (4736, 2432), (4736, 2304), (1, 0), G, WAY2, nomonsters=True, color=G_WAY)
+ajarthird.way(m, 4700, 2368, 2, WAY2)
+# the pump shed: a room in the west wall, 128 x 176 and 96 high, entered from the floor by a doorway 64 wide
+SHED_NOTCH = (3968, 2400, 4112, 2608)                   # what the shed and its walls take out of the floor
+SHED = (3968, 2416, 4096, 2592)
+SHED_DOOR = (4096, 2480, 4112, 2544)
+SHED_SECS = [m.sector(rect(*SHED), floor=FLOOR2, ceil=FLOOR2 + 96, light=144, color=0xC8C0B0, wall="AJWOOD",
+                      ftex="AJTRIMF", special=1024, id=YPLACE),
+             m.sector(rect(*SHED_DOOR), floor=FLOOR2, ceil=FLOOR2 + 80, light=170, color=G_WAY, wall="AJTRIM",
+                      ftex="AJTRIMF", id=YPLACE)]
+items(2046, (4000, 2450), (4000, 2560))                 # what the clerk's nook had: 2 boxes of rockets, a blue armour
+items(2019, (4050, 2505))
+FLOOR_OUT = [(YX1, YY1), (YX2, YY1), (YX2, E_STAIRS[1]), (E_STAIRS[0], E_STAIRS[1]), (E_STAIRS[0], E_STAIRS[3]),
+             (YX2, E_STAIRS[3]), (YX2, YY2), (YX1, YY2), (YX1, W_STAIRS[3]), (W_STAIRS[2], W_STAIRS[3]),
+             (W_STAIRS[2], W_STAIRS[1]), (YX1, W_STAIRS[1]), (YX1, SHED_NOTCH[3]), (SHED_NOTCH[2], SHED_NOTCH[3]),
+             (SHED_NOTCH[2], SHED_NOTCH[1]), (YX1, SHED_NOTCH[1])]
+PUMPS3 = [(4224, 3136, 4352, 3264), (4416, 2976, 4544, 3104), (4224, 2400, 4352, 2528), (4352, 2688, 4480, 2816)]
+PIPES = [(4416, 3264, 4608, 3296), (4544, 2592, 4576, 2848)]
+PUMP_H, PIPE_H = 80, 48
+yfeat2 = [(ajarmap.octagon(*p, 40), dict(floor=FLOOR2 + PUMP_H, id=YPLACE, **PIPE)) for p in PUMPS3]
+yfeat2 += [(p, dict(floor=FLOOR2 + PIPE_H, id=YPLACE, **PIPE)) for p in PIPES]
+YBANKS2 = [bank(71, [(YX1, YY2 - 64), (YX1, 3024)],                      # the west wall, north of the stairs (64 off the
+                [(0, 0), (60, 110), (160, 150), (260, 120), (320, 90), (368, 0)], ground=FLOOR2, heights=(40, 88),   # ledge's face: a pocket)
+                gaps=((40, 64),)),
+           bank(72, [(YX2, 2512), (YX2, 3072)],                           # the east wall, between the stairs and the terrace
+                [(0, 0), (60, 80), (200, 96), (360, 70), (480, 90), (560, 0)], ground=FLOOR2, heights=(40, 88),
+                gaps=((30, 40),), avoid=PIPES)]
+yfeat2 += [(t, dict(floor=FLOOR2 + h, id=YPLACE, **EARTHY)) for b in YBANKS2 for h, ts in zip((40, 88), b) for t in ts]
+FLOOR_SECS = natural(FLOOR_OUT, yfeat2, floor=FLOOR2, light=206, wall="AJBRICK", color=YCOL, id=L2, **YSKY)
+# the rims: the north ledge's and the terrace's fronts, the south ledge's (the corner piece is walled to the north)
+ajarthird.rim(m, (YX1, YY2), (YX2, YY2))
+ajarthird.rim(m, (YX2, TERRACE[1]), (YX2, YY2))
+ajarthird.rim(m, (YX1, YY1), (YX2, YY1))
+ajarthird.common(m, 4300, 2950, YPLACE)
+
+
+def stands_on(x, y, r, floor, tag):
+    """stands(), and every point looked at in a sector with `tag`."""
+    for dx in (-r, -r / 2, 0, r / 2, r):
+        for dy in (-r, -r / 2, 0, r / 2, r):
+            s = sec_at(x + dx, y + dy)
+            if s is None or m.sectors[s]["floor"] != floor or m.sectors[s]["id"] != tag:
+                return False
+    return True
+
+
+def sees(p, q, step=8):
+    """Is q (x, y, z) seen from p through the sectors (each piece of the line in a sector, between its floor and
+    its ceiling)? Rims and lines that only stop players do not block sight."""
+    n = max(1, int(math.hypot(q[0] - p[0], q[1] - p[1]) // step))
+    for i in range(1, n):
+        t = i / n
+        x, y, z = (p[k] + (q[k] - p[k]) * t for k in range(3))
+        s = sec_at(x, y)
+        if s is None or not m.sectors[s]["floor"] < z < m.sectors[s]["ceil"]:
+            return False
+    return True
+
+
+def foot_dist(p, stairs, west):
+    """How far p is from the foot of a flight (its edge on the floor's side)."""
+    fx = stairs[2] if west else stairs[0]
+    return _dist_seg(p, (fx, stairs[1]), (fx, stairs[3]))
+
+
+# Where the bodies are looked at from: the terrace, the north ledge and the south ledge (a player's eyes, 41 up)
+YEYES = {"the terrace": [(x, y, G + 41) for x in (4760, 4840, 4920) for y in (3180, 3280, 3380)],
+         "the north ledge": [(x, 3476, G + 41) for x in range(4000, 4736, 96)],
+         "the south ledge": [(x, 2220, SOUTH3 + 41) for x in range(4000, 4736, 96)] + [(4720, 2160, SOUTH3 + 41)]}
+
+
+def seen_from(x, y, z):
+    return [k for k, es in YEYES.items() if any(sees(e, (x, y, z)) for e in es)]
+
+
+def fly_spot(x, y, r):
+    """A flyer's place nearest x, y (8 apart): over the floor's level with room round it (as a walker's), clear
+    of every thing put before (Doom's boxes, as spot())."""
+    for d in range(0, 257, 8):
+        ring = [(x, y)] if d == 0 else sorted({(x + i, y + j) for i in range(-d, d + 1, 8) for j in (-d, d)}
+                                              | {(x + i, y + j) for j in range(-d, d + 1, 8) for i in (-d, d)},
+                                              key=lambda p: ((p[0] - x) ** 2 + (p[1] - y) ** 2, p))
+        for px, py in ring:
+            if stands_on(px, py, r + 8, FLOOR2, L2) and all(max(abs(px - qx), abs(py - qy)) >= r + qr + 8 for qx, qy, qr in PLACED):
+                PLACED.append((px, py, r))
+                return px, py
+    raise AssertionError(("no room for a flyer near", x, y))
+
+
+# --- the groups (ajarthird.comer: thinned on the easier skills as their monsters are) ----------------------------
+# Part 2's, on the floor: what the pump hall and the stores had, in the same order (so that the rest of the map is
+# thinned as before), and a fifth cacodemon (skill 3 up): every walker seen fallen in go 1, at places spread over
+# the floor's free ground that are seen from at least two of the terrace and the ledges, none within 256 of the
+# foot of the west stairs (where go 2 comes down) nor 96 of the east stairs' (its way out)
+W_FOOT = ((W_STAIRS[2] + 0.0, W_STAIRS[1] + 0.0), (W_STAIRS[2] + 0.0, W_STAIRS[3] + 0.0))
+cands = []
+for cy in range(YY1 + 48, YY2 - 47, 32):
+    for cx in range(YX1 + 48, YX2 - 47, 32):
+        if foot_dist((cx, cy), W_STAIRS, True) < 256 + 32 or foot_dist((cx, cy), E_STAIRS, False) < 96 + 32:
+            continue
+        if stands_on(cx, cy, 40, FLOOR2, L2) and len(seen_from(cx, cy, FLOOR2 + 8)) >= 2:
+            cands.append((cx, cy))
+SEQ2 = [(3005, None)] * 4 + [(69, None)] * 3 + [(3001, None)] * 4 + [(3002, None)] * 2 + [(65, None)] * 2 + \
+       [(3005, 4)] + [(58, None)] * 2 + [(3004, None)] * 2 + [(9, None)] * 2 + \
+       [(58, None)] * 4 + [(3001, None)] * 3 + [(69, None)] * 3 + [(3002, None)] + [(58, 4)] + [(3004, None)] * 2 + \
+       [(9, None)] * 2 + [(3001, None)] + [(3005, 3)]          # (the old order; the last, the fifth cacodemon, is new)
+WALKERS2 = sum(1 for k, sk in SEQ2 if k != 3005)
+# spread: each next place the candidate farthest from those taken
+chosen = [min(cands, key=lambda p: (abs(p[0] - 4352) + abs(p[1] - 2848), p))]
+while len(chosen) < WALKERS2:
+    chosen.append(max(cands, key=lambda p: (min(math.hypot(p[0] - q[0], p[1] - q[1]) for q in chosen), -p[0], -p[1])))
+PLACED.extend((x, y, 32) for x, y in chosen)
+CACO2 = [(4160, 3000, 160), (4560, 2860, 200), (4300, 2560, 180), (4620, 2520, 240), (4440, 2440, 200), (4180, 2720, 220)]
+# (kind, x, y, angle, z over the floor, part, seen fallen, skill); the walkers face the middle of the floor
+GROUPS = []
+wk, ck = iter(chosen), iter(CACO2)
+for kind, sk in SEQ2:
+    if kind == 3005:
+        x, y, z = next(ck)
+        GROUPS.append((3005, *fly_spot(x, y, 31), 180, z, 2, False, sk))
+    else:
+        x, y = next(wk)
+        GROUPS.append((kind, x, y, round(math.degrees(math.atan2(2848 - y, 4352 - x))) % 360, 0, 2, True, sk))
+# part 1's: 5 cacodemons and a pain elemental over the middle of the floor, 96 to 200 over the terrace's level
+# (skill 1: 3 cacodemons; skill 2: 4 and the pain elemental)
+for x, y, z, sk in ((4400, 3000, 96, 1), (4250, 2900, 150, 1), (4520, 2800, 200, 1), (4180, 3150, 120, 2),
+                    (4600, 3120, 180, 3)):
+    GROUPS.append((3005, *fly_spot(x, y, 31), 0, z - FLOOR2, 1, False, sk))
+GROUPS.append((71, *fly_spot(4380, 2860, 31), 0, 160 - FLOOR2, 1, False, 2))
+# part 3's: 4 cacodemons and 2 pain elementals over the middle of the floor, 96 to 200 over the corner's level
+# (skill 1: 2 cacodemons and one pain elemental; skill 4: a third pain elemental)
+for x, y, z, sk in ((4300, 2650, 96, 1), (4500, 2700, 150, 1), (4220, 2640, 200, 2), (4420, 2500, 120, 3)):
+    GROUPS.append((3005, *fly_spot(x, y, 31), 90, z + SOUTH3 - FLOOR2, 3, False, sk))
+for x, y, z, sk in ((4250, 2750, 160, 1), (4500, 2560, 190, 3), (4350, 2420, 140, 4)):
+    GROUPS.append((71, *fly_spot(x, y, 31), 90, z + SOUTH3 - FLOOR2, 3, False, sk))
+for kind, x, y, a, z, part, f, sk in GROUPS:
+    ajarthird.comer(m, x, y, part, kind, a, z, fallen=f, skill=sk)
+# supplies: what the pump hall and the stores gave, on the floor and in the mezzanine's corridor (the soulsphere
+# before the drop stays before it)
+items_on(FLOOR2, 2046, (4040, 2300), (4100, 2300), (4660, 3360), (4500, 3400))
+items_on(FLOOR2, 2047, (4680, 2280), (4620, 2280), (4060, 2880 + 200))
+items_on(FLOOR2, 2012, (4300, 2340), (4400, 3400), (4680, 2470))
+items_on(FLOOR2, 2049, (4050, 2240 + 40), (4600, 3200), (4300, 3400), (4060, 3000))
+items_on(FLOOR2, 17, (4380, 2620), (4560, 2420))
+items_on(FLOOR2, 2048, (4200, 3380))
+items_on(FLOOR2, 2047, (4660, 2960))
+
+# --- the mezzanine's corridor, the mezzanine: R's west side ---------------------------------------------------
 m.sector(rect(4752, 2304, 4864, 2432), ceil=128, light=170, color=G_WAY)
+items(2013, (4800, 2400))                                # a soulsphere before the drop
+items(2012, (4800, 2330))
 MEZZ = (4864, 2304, 5056, 3136)
 m.sector(rect(*MEZZ), ceil=384, light=168, color=G_WAY)
 no_monsters((5056, 2304), (5056, 3136))                  # the drop into R: no monster of R comes up it (lost souls)
@@ -1434,14 +1627,17 @@ items_on(TF, 2012, tower_at(300, 45), tower_at(300, 225), tower_at(300, 315), to
 items_on(TF, 2049, tower_at(470, 260), tower_at(470, 100))
 items_on(TF, 17, tower_at(452, 250), tower_at(452, 70))
 
-# --- behind the tower's exit: a passage north, steps down into the duct's west end -------------
+# --- behind the tower's exit: a passage north (on to the yard's corner piece, above), steps down into the
+# duct's west end behind part 3's way on from the yard (WAY3, a shutter its group's death opens) -------------
 m.sector(rect(4736, 1616, 4864, 1984), floor=TF, ceil=TF + 128, light=150, color=R_WAY)
 put(65, [(4770, 1700), (4830, 1860)], TF, angle=270)
 put(3001, [(4830, 1760), (4770, 1940)], TF, angle=270)
 items_on(TF, 2049, (4800, 1660))
 items_on(TF, 2046, (4770, 1820))
 items_on(TF, 2012, (4800, 1950))
-ajarmap.stairs(m, (4864, 1856), (4864, 1984), (1, 0), TF, RF - TF, steps=8, depth=24, ceil=TF + 128, color=R_WAY)
+ajartime.shutter(m, (4864, 1984), (4864, 1856), (1, 0), TF, WAY3, nomonsters=True, color=R_WAY)
+ajarthird.way(m, 4830, 1920, 3, WAY3)
+ajarmap.stairs(m, (4880, 1856), (4880, 1984), (1, 0), TF, RF - TF, steps=8, depth=22, ceil=TF + 128, color=R_WAY)
 
 # --- the duct along R's south wall, behind glass -------------------------------------------
 DUCT = (5056, 1856, 7040, 2032)
@@ -1615,7 +1811,7 @@ for x, y in VENTS:
 # (an earlier self hit by 60, summed from the alarm and falling by 1 a tic, holds its fire for three seconds)
 ajarthird.last(m, 9040, 2860, LASTT, gate=ALARM, stagger=60)
 
-ajarthird.third(m, 9040, 2900, EXIT, OUT, (-1264, 0, 9400, 5400))      # (its middle on the pump hall's floor)
+ajarthird.third(m, 9040, 2900, EXIT, OUT, (-1264, 0, 9400, 5400))      # (its middle on the yard's floor)
 
 # =====================================================================================
 # CHECKS
@@ -1713,7 +1909,7 @@ for key, pr in m.lineprops.items():
 SK = m._skills()
 BY_PART = {1: [], 2: [], 3: []}
 for t, s in zip(m.things, SK):
-    p = part_of(t["x"], t["y"])
+    p = t["args"][1] if t["type"] == ajarthird.COMER_T else part_of(t["x"], t["y"])     # (a group's monster: its part's)
     if p and t["type"] != ajarthird.GUARD_T:            # (the last hall's guards are fought anew by every go: below)
         BY_PART[p].append((t, s))
 SUPPLY = {}
@@ -1731,6 +1927,59 @@ for t in m.things:
     if t["type"] in MONSTERS or t["type"] in (ajarthird.POST_T, ajarthird.FALLEN_T):
         assert part_of(t["x"], t["y"]), ("a monster in no part", t)
 
+# --- the yard (the common place): its levels, the place closed, its groups, the shed, the stairs' feet ----------
+TAGS = {i: sec["id"] for i, sec in enumerate(m.sectors)}
+LV = {k: {i for i, t in TAGS.items() if t == ajarthird.level_tag(k)} for k in (1, 2, 3)}
+# each level's sectors tagged (and nothing else of the map): the north ledge and the terrace (behind its entry);
+# the floor round its pumps, pipes and banks; the south ledge and the corner piece (behind its entry). Each is
+# its own part's (part 1's and part 3's apart from part 2's floor, the rims closed: ajarthird.apart above)
+assert LV[1] == {LEDGE1_SEC, TERR_SECS[1]} and LV[3] == {LEDGE3_SEC, CORNER_SECS[1]}, (LV[1], LV[3])
+assert LV[2] == {i for i in FLOOR_SECS if TAGS[i] == L2} and len(LV[2]) >= 4, LV[2]
+assert all(LV[k] <= PARTS[k] for k in (1, 2, 3)), "a level not its part's"
+assert TAGS[TERR_SECS[0]] == TAGS[CORNER_SECS[0]] == YPLACE and all(TAGS[i] == YPLACE for i in SHED_SECS)
+# the place is closed to monsters: every two-sided line out of it blocks them (the rims inside it do not)
+YARD_SEALED = ajarthird.sealed(m, {YPLACE, L1, L2, L3})
+assert YARD_SEALED >= 5, YARD_SEALED
+# the groups: a walker stands on the floor's level with room (its box and 8 more, all on level 2's sectors at
+# the floor's height), none within 256 of the west stairs' foot; a flyer over level 2 with room round it and
+# under the sky; no comer in a wall
+YWALKS = {69, 3001, 3002, 65, 58, 3004, 9}
+for kind, x, y, a, z, part, f, sk in GROUPS:
+    r = ajartime.RADIUS[kind]
+    s0 = sec_at(x, y)
+    assert s0 is not None and TAGS[s0] == L2, ("a comer not over the floor", kind, x, y)
+    if kind in YWALKS:
+        assert z == 0 and f and stands_on(x, y, r + 8, FLOOR2, L2), ("a walker of the yard with no room", kind, x, y)
+        assert foot_dist((x, y), W_STAIRS, True) >= 256, ("a walker by the west stairs' foot", kind, x, y)
+    else:
+        assert not f and 96 <= z and FLOOR2 + z + ajartime.HEIGHT[kind] < SKY - 16, ("a flyer's height", kind, x, y, z)
+        assert stands_on(x, y, r + 8, FLOOR2, L2), ("a flyer over something, or in a wall", kind, x, y)
+# the bodies (the walkers, seen fallen in go 1) each seen from two of the terrace, the north ledge, the south ledge
+BODIES_SEEN = {k: 0 for k in YEYES}
+for kind, x, y, a, z, part, f, sk in GROUPS:
+    if f:
+        by = seen_from(x, y, FLOOR2 + 8)
+        assert len(by) >= 2, ("a body seen from too few places", kind, x, y, by)
+        for k in by:
+            BODIES_SEEN[k] += 1
+# the shed: its own sector, the secret, entered from the floor by a doorway 64 wide or more (walked into below)
+assert SHED_DOOR[3] - SHED_DOOR[1] >= 64 and m.sectors[SHED_SECS[0]]["special"] == 1024
+assert sec_at(SHED_DOOR[0] + 8, (SHED_DOOR[1] + SHED_DOOR[3]) // 2) == SHED_SECS[1]
+# nothing over 24 high on the floor before a stairs' foot (96 deep, 32 more to each side)
+for x1, y1, x2, y2 in ((W_STAIRS[2], W_STAIRS[1] - 32, W_STAIRS[2] + 96, W_STAIRS[3] + 32),
+                       (E_STAIRS[0] - 96, E_STAIRS[1] - 32, E_STAIRS[0], E_STAIRS[3] + 32)):
+    for px in range(x1 + 1, x2, 8):
+        for py in range(y1 + 1, y2, 8):
+            sp = sec_at(px, py)
+            assert sp is not None and m.sectors[sp]["floor"] <= FLOOR2 + 24, ("something high at a stairs' foot", px, py)
+# the counts by skill (the build's row)
+YGROUP = {(k, lv): 0 for k in (1, 2, 3) for lv in (1, 2, 3, 4)}
+for t, sk in zip(m.things, SK):
+    if t["type"] == ajarthird.COMER_T:
+        for lv in (1, 2, 3, 4):
+            if sk <= lv and lv <= t.get("upto", 4):
+                YGROUP[t["args"][1], lv] += 1
+
 # The last hall: in no part's count; its guards by skill, their health against each stand's supplies
 G_THINGS = [(t, s) for t, s in zip(m.things, SK) if t["type"] == ajarthird.GUARD_T]
 LAST_ROW = {lv: budget.reckon([t for t, s in G_THINGS], [s for t, s in G_THINGS], lv) for lv in (1, 2, 3, 4)}
@@ -1738,6 +1987,10 @@ STAND_SUP = {k: budget.reckon([dict(x=x, y=y, type=kind) for kind, x, y in sup],
              for k, sup in ((1, SUPPLY1), (2, SUPPLY2), (3, SUPPLY3))}
 MEASURE = [f"MAP33: {len(m.sectors)} sectors, {len(m.things)} things; monsters on skill 3 "
            f"{MONSTERS3[1]} + {MONSTERS3[2]} + {MONSTERS3[3]}"] + \
+          ["    the yard: groups (skill 1 / 2 / 3 / 4) " + "; ".join(f"part {k} " + " / ".join(str(YGROUP[k, lv]) for lv in (1, 2, 3, 4))
+                                                                 for k in (1, 2, 3))
+           + f"; the bodies seen from " + ", ".join(f"{k} {n}" for k, n in BODIES_SEEN.items())
+           + f" of {sum(1 for g in GROUPS if g[6])}; {YARD_SEALED} ways out closed to monsters"] + \
           ["    " + budget.line(f"part {p}", SUPPLY[p, lv], lv) for p in (1, 2, 3) for lv in (3, 1)] + \
           ["    the last hall: guards on skill " + ", ".join(f"{lv} {sum(LAST_ROW[lv]['monsters'].values())} (hp {LAST_ROW[lv]['hp']})"
                                                          for lv in (1, 2, 3, 4)) + "; "
@@ -1880,7 +2133,7 @@ def walk_lengths(step=16):
     ce = [s["ceil"] if s["ceil"] > s["floor"] else s["floor"] + 96 for s in m.sectors]
     # cells by a line that blocks are not stood in
     for key, pr in m.lineprops.items():
-        if len(key) != 2 or not (pr.get("blocking") or pr.get("blockeverything")):
+        if len(key) != 2 or not (pr.get("blocking") or pr.get("blockeverything") or pr.get("blockplayers")):    # (a rim)
             continue
         (ax, ay), (bx_, by) = tuple(key)
         n = int(max(abs(bx_ - ax), abs(by - ay)) / 4) + 1
@@ -1933,12 +2186,13 @@ def walk_lengths(step=16):
                     heapq.heappush(todo, (c + w, j))
         raise AssertionError(("no walk", a, b))
 
-    legs = {1: [((384, 2640), (3330, 3880)), ((3330, 3880), (FRAME_B[0] + 32, 4200)), ((2272, 4960), PLATE1)],
+    legs = {1: [((384, 2640), (3330, 3880)), ((3330, 3880), (FRAME_B[0] + 32, 4200)), ((2272, 4960), (4880, 3300)), ((4880, 3300), PLATE1)],     # (over the yard's terrace)
             2: [((576, 2400), PLATE2)],
             3: [((192, 2400), (1400, 1860)), ((1400, 1860), (2790, 1440)), ((2976, 1888), (4800, 1580)),
-                ((4800, 1580), (8384, 2300)), ((8384, 2300), (9140, 2880))]}     # (the last: through the gate, across L)
-    # the three secrets are walked into (itemcheck's reckoning passed the nook when its gap was 32)
-    legs["the secrets (cache, nook, hut)"] = [((3650, 3904), (4480, 3904)), ((4400, 2200), (4050, 2170)),
+                ((4800, 1580), (4700, 2176)), ((4700, 2176), (8384, 2300)), ((8384, 2300), (9140, 2880))]}
+    # (part 3: onto the yard's corner piece and its ledge, back to the duct stairs; the last: through the gate, across L)
+    # the three secrets are walked into (itemcheck's reckoning passed the old nook when its gap was 32)
+    legs["the secrets (cache, shed, hut)"] = [((3650, 3904), (4480, 3904)), ((4300, 2512), (4030, 2512)),
                                               ((2700, 1000), (2896, 990))]
     return {p: [dist(a, b) for a, b in ls] for p, ls in legs.items()}
 
