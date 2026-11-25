@@ -16281,3 +16281,16 @@ all four are in it; the build; MAP02, MAP03 and MAP04 start in the smoke run.
 
 Their first maps. MAP10 keeps the quiet one (AJM_AFTR), by his word of
 2026-11-23.
+
+## Music: MAP10 gets Distant Galaxy II; Distant Galaxy III removed (2026-11-25)
+
+**Vadim**, by the sound lab's numbers: "Set map10 to play 21. Also delete 20".
+
+| Map | Now plays | Before |
+|---|---|---|
+| MAP10 All Change | Distant Galaxy II (AJM_GAL2), track 21 | After Hours, the quiet one (AJM_AFTR), by his word of 2026-11-23 |
+
+Distant Galaxy III (AJM_GAL3, track 20) is removed from `tools/music.py`; it
+played on no map. As with "delete 2", the last of TRACKS, Distant Galaxy IV
+(26, on MAP03), was moved into its place, so it is **20 in the lab now** and
+every other piece keeps its number. The lab has 25 tracks.

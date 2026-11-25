@@ -110,8 +110,8 @@ idea further.
   He then asked for "couple more variations on Distant Galaxy": III is his
   eight chords as a rocking figure in twelve with a tune that only climbs
   (it has I's place in TRACKS, so the numbers of the others in the lab
-  stay); IV, the last of TRACKS, is his eight chords with no two lines
-  moving at once, made as Garmonic I is, of which he said "22 - yes yes
+  stay; removed too, "delete 20"); IV, now in III's place, is his eight
+  chords with no two lines moving at once, made as Garmonic I is, of which he said "22 - yes yes
   yes!!!!!".
 - garmonic: a B flat held on top while the two notes under it slip down a
   semitone one after the other (E flat minor becomes B flat); E flat minor
@@ -157,6 +157,10 @@ And The Far Side (AJM_FARS, the creeping one, the second of TRACKS), later
 the same day: "delete 2". Garmonic, Fast was moved from the end to its
 place, so that every other piece keeps the number Vadim knows it by in the
 sound lab; that is the only reason it stands among the first ones.
+
+And Distant Galaxy III (AJM_GAL3, the twentieth), the same evening:
+"delete 20". Distant Galaxy IV was moved from the end to its place, as
+above, so it is 20 in the lab now and the others keep their numbers.
 """
 import random
 import re
@@ -1308,34 +1312,6 @@ def held(steps=16, **notes):
     return {k: " ".join([v] + ["-"] * (steps - 1)) for k, v in notes.items()} | {"T": " ".join("-" * steps)}
 
 
-def distant_galaxy_three():
-    """A, 52 a minute, in twelve. Not held chords: Vadim's eight chords, two bars each, as a rocking figure on an
-    electric piano (the third chord bare fifths, as his has no third). The second time a tune of eight long notes
-    that only climbs, C, D sharp, E, F, G, G, A, up to the C that is still in his last chord, and falls with it
-    to B. The third time a music box an octave over the figure."""
-    p = Piece("Distant Galaxy III", 52, steps=12, per_beat=3, sig=(12, 8))
-    figure = {
-        "ma": "1 5 1' b3' 1' 5 1 5 1' b3' 1' 5", "mb": "1 5 1' b3' 5' b3' 1' - - 5 - -",        # minor
-        "sa": "1 5 1' 5' 1' 5 1 5 1' 5' 1' 5", "sb": "1 5 1' 5' 1'' 5' 1' - - 5 - -",          # fifths only
-        "ca": "1 b3 b6 1' b6 b3 1 b3 b6 1' b6 b3", "cb": "1 b3 b6 1' b3' 1' b6 - - b3 - -",    # major, its third lowest
-        "Ma": "1 5 1' 3' 1' 5 1 5 1' 3' 1' 5", "Mb": "1 5 1' 3' 5' 3' 1' - - 5 - -",           # major
-        "aa": "1 3 b6 1' b6 3 1 3 b6 1' b6 3",                                                # augmented
-    }
-    # 48 bars, three times round: the figure and the bass; the tune; a music box
-    round_ = "ma mb ma-1 mb-1 sa sb ma-7 mb-7 ca-5 cb-5 ma-5 mb-5 Ma-4 Mb-4 aa-5 Mb-5"
-    p.voice("electric piano", EPIANO, 57, figure, rep(round_, 3), vel=66, gate=1.0, volume=92, pan=44, reverb=80)
-    p.voice("bass", CONTRABASS, 45, held(12, a="1", g="7,", d="4,", e="5,", f="b6,"),
-            rep("a T g T a T d T e T T T f T e T", 3), vel=78, gate=1.0, volume=98)
-    late = lambda note: f". . . {note} - - - - - - - -"            # a breath before each note
-    p.voice("tune", SPACEVOICE, 69, {
-        "c": late("b3"), "s": late("b5"), "e": late("5"), "f": late("b6"), "g": late("b7"), "a": late("1'"),
-        "h": late("b3'"), "b": "2' - - - - - - - - - - -", "T": " ".join("-" * 12),
-    }, rep("_", 16, "c T s T e T f T g T T T a T h b", 2), vel=72, gate=1.0, volume=90, pan=76, reverb=90)
-    p.voice("music box", MUSICBOX, 69, figure, rep("_", 32, round_, 1), vel=52, gate=1.0, volume=70, pan=90,
-            reverb=80)
-    return p
-
-
 def distant_galaxy_four():
     """A, 54 a minute. Ambient. Vadim's eight chords, but no two lines move at once: where his three notes slip
     together to G sharp minor, here C goes to B, then A to G sharp, then E to D sharp, half a bar apart, and back
@@ -1658,13 +1634,12 @@ TRACKS = [
     ("AJM_SALT", "children's games, skipping: a nursery tune in major over a bass going down, then the band in minor", salt_mustard),
     ("AJM_WOLF", "children's games, fast: a chug of three, three, seven; a call, the hour struck, a chase", mr_wolf),
     ("AJM_MOVE", "ambient: one note stays through six chords and one other moves at each change; vibes, a clarinet", everything_else_moves),
-    ("AJM_GAL3", "Vadim's sketch distant_galaxy_theme in twelve: his chords as a rocking figure, a tune that only climbs", distant_galaxy_three),
+    ("AJM_GAL4", "ambient, Vadim's sketch distant_galaxy_theme with no two lines moving at once: each chord reached a note at a time", distant_galaxy_four),
     ("AJM_GAL2", "ambient, the same sketch turned: its semitone slip done twice, in slow harp notes", distant_galaxy_two),
     ("AJM_GAR1", "ambient, Vadim's sketch garmonic bar for bar: a held B flat, the notes under it slipping in turn", garmonic_one),
     ("AJM_GAR2", "ambient, the same sketch as a chain: every note falls a semitone, the chords climb by fifths", garmonic_two),
     ("AJM_GALF", "fast, the Doom way, on Vadim's sketch distant_galaxy_theme: a riff that slips a semitone and comes back", distant_galaxy_fast),
     ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
-    ("AJM_GAL4", "ambient, the same sketch with no two lines moving at once: each chord reached a note at a time", distant_galaxy_four),
 ]
 
 
