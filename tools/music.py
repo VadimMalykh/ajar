@@ -26,7 +26,7 @@ bar: a token a step.
 
     1 b2 2 b3 3 4 b5 5 b6 6 b7 7   the note that many steps of the scale above the key note
     ' and ,                        an octave up, an octave down (1' b7,)
-    ^ * q m M                      with its fifth; fifth and octave; fourth; minor triad; major triad
+    ^ * q m M a                    with its fifth; fifth and octave; fourth; minor triad; major triad; augmented
     !                              louder
     -                              the note before goes on
     .                              silence
@@ -83,16 +83,44 @@ tune in major over a bass going down by semitones, then the same in minor
 it is removed.
 
 Two ambient ones, the same day: he asked for "2 more slow, ambient-like
-ones with experimental chord progressions". They are the last two of TRACKS
-and are not children's games: no beat, held sounds, a few notes. In both the
+ones with experimental chord progressions". They came after the children's
+games in TRACKS and are not games: no beat, held sounds, a few notes. In both the
 chords are not written as blocks moved about but as three lines, each
 holding its note until it has to move (a bar of dashes ties over), so what
 is heard at a change is the one or two notes that move. Everything Else
 Moves: one note, E, stays through six chords and exactly one other note
 moves at each change (A minor, C, E minor, E, C sharp minor, A, and round).
-Revolving Door: four major chords a minor third apart (C, E flat, F sharp,
-A), which divide the octave evenly, so none of them is home; one note of
-each is also in the next, and a tune of those four notes is handed on.
+Revolving Door was four major chords a minor third apart; Vadim: "19 is very
+good actually, 20 - no", so Everything Else Moves stays and Revolving Door is
+removed. What he took is the way of the first: one line at a time, by a
+step. The pieces after it are made that way.
+
+Four from Vadim's own chords, the same day: he put two sketches in his
+Downloads, distant_galaxy_theme.mid (29 notes) and garmonic.mid (31), and
+asked for two slow ambient versions "on harmonic ideas" from each. Of each
+pair the first sets his chords as he voiced them and the second takes the
+idea further.
+- distant_galaxy_theme: eight chords of two bars, A minor, G sharp minor
+  (the same chord slipped a semitone down), A with no third, D minor, C over
+  E, E minor, F, then E with a C still in it (augmented) becoming E major.
+  Distant Galaxy I is that. Distant Galaxy II is in D and does the slip
+  twice, on the first chord and on the fourth, each time coming back to a
+  chord with no third, and keeps his ending; slow harp notes, not held chords.
+- garmonic: a B flat held on top while the two notes under it slip down a
+  semitone one after the other (E flat minor becomes B flat); E flat minor
+  to D major with the F sharp kept; D augmented; G minor; and G minor back
+  to E flat minor with the B flat kept. Garmonic I is that, bar for bar.
+  Garmonic II makes a chain of his first move: a minor chord's two lower
+  notes slip and it is the major chord a fifth up; that chord's third
+  drops, and it goes again: E flat minor, B flat, B flat minor, F, F minor,
+  C, C minor, G, G minor, and his last move closes the ring. Every note
+  only ever falls by a semitone, the chords climb by fifths, and after
+  three times round all three lines are an octave lower.
+
+Two on the harmony of Morten Lauridsen's O Magnum Mysterium, the same day
+("check O Magnum Mysterium theme and create couple slow versions on that
+harmonic ideas"): Mysterium I and II, the last two of TRACKS. What is taken
+and what is not stands above the two functions.
 
 Removed on Vadim's word the same day: The Small Hours Twice (AJM_CLOK),
 Service Lift (AJM_LIFT), Filing Under Fire (AJM_FILE), Carbon Copy
@@ -105,13 +133,13 @@ import struct
 
 PPQ = 480
 DEG = {"1": 0, "b2": 1, "2": 2, "b3": 3, "3": 4, "4": 5, "b5": 6, "5": 7, "b6": 8, "6": 9, "b7": 10, "7": 11}
-SHAPE = {"": (0,), "^": (0, 7), "*": (0, 7, 12), "q": (0, 5), "m": (0, 3, 7), "M": (0, 4, 7)}
-TOKEN = re.compile(r"(b?[1-7])([',]*)([\^*qmM]?)(!?)")
+SHAPE = {"": (0,), "^": (0, 7), "*": (0, 7, 12), "q": (0, 5), "m": (0, 3, 7), "M": (0, 4, 7), "a": (0, 4, 8)}
+TOKEN = re.compile(r"(b?[1-7])([',]*)([\^*qmMa]?)(!?)")
 BAR = re.compile(r"([A-Za-z]\w*?)(<?)([+-]\d+)?")
 DRUMS = 9
 
 # General MIDI programs
-PIANO, EPIANO, HARPSI, VIBES, BELLS, ORGAN, MUTED, OVERDRIVE, DISTORTION = 0, 4, 6, 11, 14, 18, 28, 29, 30
+PIANO, EPIANO, HARPSI, CELESTA, VIBES, BELLS, ORGAN, MUTED, OVERDRIVE, DISTORTION = 0, 4, 6, 8, 11, 14, 18, 28, 29, 30
 ACBASS, FINGER, PICKBASS, FRETLESS, SYNBASS1, SYNBASS, CELLO, CONTRABASS, PIZZ, HARP, TIMPANI = 32, 33, 34, 35, 38, 39, 42, 43, 45, 46, 47
 STRINGS, SLOWSTR, CHOIR, SYNBRASS, SQUARE, SAW, POLYSYNTH = 48, 49, 52, 62, 80, 81, 90
 GLOCK, MUSICBOX, MARIMBA, CHURCH, REED, TREMOLO, SPACEVOICE, GLASS, VOICE, HORN, CLARINET, FLUTE, RECORDER, WARMPAD = 9, 10, 12, 19, 20, 44, 91, 92, 53, 60, 71, 73, 74, 89
@@ -1219,35 +1247,303 @@ def everything_else_moves():
     return p
 
 
-def revolving_door():
-    """C, 48 a minute. Ambient. Four major chords a minor third apart, C, E flat, F sharp, A, two bars each: they cut
-    the octave into four equal parts, so none is home and the fifth change is the first again. Each chord shares one
-    note with the next (G, B flat, C sharp, E); those four are the tune, each held through the door into the chord
-    where it means something else. The lines sink, the bass climbs."""
-    p = Piece("Revolving Door", 48)
-    hold = " ".join("-" * 16)
 
-    def line(**notes):
-        return {k: f"{v} - - - - - - - - - - - - - - -" for k, v in notes.items()} | {"T": hold}
+# From Vadim's two sketches, 2026-11-25 (see the top). Of each pair the first is his chords as he voiced them.
 
-    # 32 bars, four times round: the chords; the tune handed on; drops of the chord just left; voices
-    p.voice("high line", SPACEVOICE, 60, line(e="3", f="b3", d="b2"), rep("e T f T d T T T", 4),          # E Eb C# C#
-            vel=62, gate=1.0, volume=84, pan=40, reverb=90)
-    p.voice("middle line", SLOWSTR, 60, line(c="1", b="b7,", a="6,"), rep("c T b T T T a T", 4),          # C Bb Bb A
-            vel=64, gate=1.0, volume=88, pan=64, reverb=80)
-    p.voice("low line", WARMPAD, 48, line(g="5", s="b5", m="3"), rep("g T T T s T m T", 4),               # G G F# E
-            vel=66, gate=1.0, volume=88, pan=88, reverb=80)
-    p.voice("bass", CONTRABASS, 36, line(a="1", b="b3", c="b5", d="6"), rep("a T b T c T d T", 4), vel=80, gate=1.0,
-            volume=100)
-    p.voice("handed on", GLASS, 60, line(g="5", b="b7", c="b2'", e="3'"),          # each from the bar before a change
-            rep("_", 8, "_ g T b T c T e", 1, "T g T b T c T e", 2), vel=74, gate=1.0, volume=92, pan=56, reverb=90)
-    p.voice("drops", VIBES, 60, {                       # the last one is the key note of the chord just left
-        "m1": ". . . . 5 - - - - - 3' - - - - -",
-        "m2": ". . . . . . . . 6' - - - - - - -",
-    }, rep("_", 16, "m1 m2 m1+3 m2+3 m1+6 m2+6 m1+9 m2+9", 2), vel=72, gate=1.0, volume=90, pan=30, reverb=80)
-    p.voice("voices", CHOIR, 48, {
-        "v": "1^ - - - - - - - - - - - - - - -", "T": hold,
-    }, rep("_", 24, "v T v+3 T v+6 T v+9 T", 1), vel=56, gate=1.0, volume=74, pan=76, reverb=90)
+DEGREES = ["1", "b2", "2", "b3", "3", "4", "b5", "5", "b6", "6", "b7", "7"]
+
+
+NOTE = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+
+
+def token(pitch, of):
+    """A MIDI pitch as a pattern's token, counted from the key note `of`."""
+    octave, degree = divmod(pitch - of, 12)
+    return DEGREES[degree] + ("'" * octave if octave > 0 else "," * -octave)
+
+
+def spell(text, again=0):
+    """A line written as a note a bar ('F#4 E4 E4/F#4 ...': with a stroke, the second note comes in the middle of
+    the bar) -> bar -> {step: pitch}, for write(). A note that is the same as the one before is held, not struck
+    again, unless `again` bars have gone by since it was struck."""
+    def pitch(name):
+        return NOTE[name[0]] + name.count("#") - name.count("b") + 12 * (int(name[-1]) + 1)
+    bars, last, since = [], None, 0
+    for b, bar in enumerate(text.split()):
+        notes = {}
+        for step, name in zip((0, 8), bar.split("/")):
+            p = pitch(name)
+            if p != last or (again and step == 0 and since >= again):
+                notes[step], last, since = p, p, 0
+        bars.append(notes)
+        since += 1
+    return bars
+
+
+def write(per_bar, of, steps=16, start=0, rest="-"):
+    """Patterns and form for a line given as bar -> {step: pitch}: held between its notes, silent before `start`."""
+    patterns, form = {}, []
+    for b, notes in enumerate(per_bar):
+        if b < start:
+            form.append("_")
+            continue
+        patterns[f"n{b}"] = " ".join(token(notes[i], of) if i in notes else rest for i in range(steps))
+        form.append(f"n{b}")
+    return patterns, form
+
+
+def echo(per_bar, of, steps=16, start=0, up=12, after=4, length=4):
+    """Patterns and form for a voice that says each note of a line again, `after` steps later and `up` higher."""
+    patterns, form = {}, []
+    for b, notes in enumerate(per_bar):
+        if b < start or not notes:
+            form.append("_")
+            continue
+        row = ["."] * steps
+        for s, pitch in notes.items():
+            row[s + after:s + after + length] = [token(pitch + up, of)] + ["-"] * (length - 1)
+        patterns[f"n{b}"] = " ".join(row[:steps])
+        form.append(f"n{b}")
+    return patterns, form
+
+
+def held(steps=16, **notes):
+    """Patterns for a line of held notes: each name a whole bar on that note, T a bar tied over."""
+    return {k: " ".join([v] + ["-"] * (steps - 1)) for k, v in notes.items()} | {"T": " ".join("-" * steps)}
+
+
+def distant_galaxy_one():
+    """A, 56 a minute. Ambient. Vadim's sketch as he voiced it, each chord two bars: A minor, G sharp minor, A with
+    no third, D minor, C over E, E minor, F, and E with the C still sounding before it is E major. The second time
+    a vibraphone, which slips a semitone with the second chord as everything does; the third time a glass voice."""
+    p = Piece("Distant Galaxy I", 56)
+    # 48 bars, three times round: his three lines (the bass where he has it); the whole bass and a vibraphone; glass
+    top = "e T f T e T s T e T g T s T e l"                                      # E Eb E F E G F E/G#
+    p.voice("top line", VOICE, 69, held(e="5,", f="b5,", s="b6,", g="b7,", l="7,"), rep(top, 3),
+            vel=64, gate=1.0, volume=86, pan=52, reverb=90)
+    p.voice("middle line", SLOWSTR, 57, held(c="b3", b="2", a="1"), rep("c T b T a T T T c T b T c T T b", 3),
+            vel=64, gate=1.0, volume=88, pan=36, reverb=80)                      # C B A A C B C C/B
+    p.voice("low line", WARMPAD, 57, held(a="1", g="7,", e="5,", f="b6,", n="b7,"),
+            rep("a T g T e T f T n T T T a T g T", 3), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
+    p.voice("bass", CONTRABASS, 45, held(a="1", g="7,", e="5,", d="4,", f="b6,"),
+            rep("_ _ _ _ e T d T e T T T f T e T", 1, "a T g T e T d T e T T T f T e T", 2), vel=80, gate=1.0, volume=100)
+    p.voice("vibraphone", VIBES, 69, {
+        "T1": ". . . . . . . . 5 - - - 1' - - -",
+        "T2": "b3' - - - - - - - - - - - . . . .",
+        "T6": "2' - - - - - - - - - - - . . . .",
+        "T7": ". . . . . . . . 4 - - - b6 - - -",
+        "T8": "1' - - - - - - - - - - - . . . .",
+        "T9": ". . . . . . . . 5 - - - b7 - - -",
+        "T13": ". . . . . . . . b6 - - - 1' - - -",
+        "T15": ". . . . . . . . 5 - - - 7 - - -",
+    }, rep("_", 16, "T1 T2 T1-1 T2-1 T1 T6 T7 T8 T9 T2 T9 T6 T13 T2 T15 T6", 2), vel=76, gate=1.0, volume=94, pan=30,
+            reverb=80)
+    p.voice("glass", GLASS, 81, held(e="5,", f="b5,", s="b6,", g="b7,", l="7,"), rep("_", 32, top, 1),
+            vel=56, gate=1.0, volume=72, pan=70, reverb=90)
+    return p
+
+
+def distant_galaxy_two():
+    """D, 60 a minute. Ambient. The sketch's ideas, turned: its slip (a minor chord, the same chord a semitone lower,
+    then home with no third) is done twice, on D and on G, and then his ending, B flat, A with the F still in it, A.
+    No held chords at first: a harp gives each chord a note a second, up and down."""
+    p = Piece("Distant Galaxy II", 60)
+    # 48 bars, three times round: harp and bass; a pad and a glass tune; a celesta an octave over the harp
+    harp = {
+        "pa": "1 - - - 5 - - - 1' - - - b3' - - -", "pb": "5' - - - b3' - - - 1' - - - 5 - - -",      # minor
+        "sa": "1 - - - 5 - - - 1' - - - 2' - - -", "sb": "5' - - - 2' - - - 1' - - - 5 - - -",        # no third
+        "Ma": "1 - - - 5 - - - 1' - - - 3' - - -", "Mb": "5' - - - 3' - - - 1' - - - 5 - - -",        # major
+        "Aa": "1 - - - 3 - - - b6 - - - 1' - - -", "Ab": "3' - - - 1' - - - 5 - - - 3 - - -",         # augmented, major
+    }
+    round_ = "pa pb pa-1 pb-1 sa sb pa-7 pb-7 pa-8 pb-8 sa-7 sb-7 Ma-4 Mb-4 Aa-5 Ab-5"
+    p.voice("harp", HARP, 62, harp, rep(round_, 3), vel=70, gate=1.0, volume=92, pan=40, reverb=80)
+    p.voice("celesta", CELESTA, 74, harp, rep("_", 32, round_, 1), vel=58, gate=1.0, volume=74, pan=80, reverb=80)
+    p.voice("bass", CONTRABASS, 38, held(d="1", c="7,", g="4,", f="3,", b="b6,", a="5,"),
+            rep("d T c T d T g T f T g T b T a T", 3), vel=80, gate=1.0, volume=100)
+    p.voice("pad", WARMPAD, 62, held(m="1m", o="1*", M="1M", A="1a"),
+            rep("_", 16, "m T m-1 T o T m-7 T m-8 T o-7 T M-4 T A-5 M-5", 2), vel=58, gate=1.0, volume=78, pan=64,
+            reverb=80)
+    p.voice("glass", GLASS, 62, held(a="5", s="b5", b="b6", d="1'", f="b3'", e="2'"),     # A G# A Bb A A D F/E
+            rep("_", 16, "a T s T a T b T a T T T d T f e", 2), vel=70, gate=1.0, volume=88, pan=56, reverb=90)
+    return p
+
+
+def garmonic_one():
+    """E flat, 54 a minute. Ambient. Vadim's sketch bar for bar: a B flat held on top; under it F sharp slips to F,
+    then E flat to D (E flat minor has become B flat); again with a bass; E flat minor to D major with the F sharp
+    kept, the B flat coming back over it; G minor; and back with the B flat kept. A vibraphone the second time,
+    a glass voice the third."""
+    p = Piece("Garmonic I", 54)
+    late, last = "- - - - - - - - {} - - - - - - -", "- - - - - - - - - - - - {} - - -"   # in the middle, on the last beat
+    # 48 bars, three times round: his lines (the bass from the fifth bar); the bass from the start and a tune; glass
+    p.voice("top line", VOICE, 63, held(h="5", a="b5") | {"r": "- - - - 5 - - - - - - - - - - -"},
+            rep("h T T T h T T T h a T r T T T T", 3), vel=66, gate=1.0, volume=88, pan=52, reverb=90)
+    p.voice("middle line", SLOWSTR, 63, held(f="b3", n="2", g="3"), rep("f n T T f n T T f T T T g f T T", 3),
+            vel=64, gate=1.0, volume=88, pan=36, reverb=80)
+    p.voice("low line", WARMPAD, 63, held(e="1") | {"s": late.format("7,"), "u": last.format("1")},
+            rep("e s T T e s T T e s T T T u T T", 3), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
+    walk = "e s T T e s T T m s T T g u T T"                                     # E flat, D; F sharp, D; G, E flat
+    p.voice("bass", CONTRABASS, 39, held(e="1", m="b3", g="3") | {"s": late.format("7,"), "u": last.format("1")},
+            rep("_", 4) + walk.split()[4:] + rep(walk, 2), vel=80, gate=1.0, volume=100)
+    p.voice("cello", CELLO, 51, held(e="1", m="b3", g="3") | {"s": late.format("7,"), "u": last.format("b3")},
+            rep("_", 4) + walk.split()[4:] + rep(walk, 2), vel=62, gate=1.0, volume=80, pan=70, reverb=70)
+    tune = {
+        "b1": ". . . . . . . . 1 - - - b3 - - -",
+        "b2": "5 - - - - - - - - - - - . . . .",
+        "b3": ". . . . . . . . 2 - - - 5 - - -",
+        "b4": "7 - - - - - - - - - - - . . . .",
+        "b8": "2' - - - - - - - - - - - . . . .",
+        "b9": ". . . . . . . . b3 - - - 5 - - -",
+        "b10": ". . . . . . . . b3 - - - b5 - - -",
+        "b13": "7 - - - - - - - 5 - - - 3 - - -",
+    }
+    notes = "b1 b2 b3 b4 b1 b2 b3 b8 b9 b10 b4 b9 b13 _ b1 b2"
+    p.voice("vibraphone", VIBES, 75, tune, rep("_", 16, notes, 1, "_", 16), vel=76, gate=1.0, volume=94, pan=30,
+            reverb=80)
+    p.voice("glass", GLASS, 75, tune, rep("_", 32, notes, 1), vel=66, gate=1.0, volume=84, pan=70, reverb=90)
+    return p
+
+
+def garmonic_two():
+    """E flat, 54 a minute. Ambient. The first move of Vadim's sketch made into a chain. A minor chord's two lower
+    notes slip a semitone, one and then the other, and it is the major chord a fifth higher; that chord's third
+    drops and it is minor; again. E flat minor, B flat, B flat minor, F, F minor, C, C minor, G, G minor, and his last
+    move (G minor to E flat minor, the B flat kept) closes the ring. No note ever goes any way but down a semitone,
+    save one a time round; the chords climb by fifths; three times round and every line is an octave lower."""
+    p = Piece("Garmonic II", 54)
+    rounds = 3
+    bars = rounds * 14
+    lines = [63, 66, 70]                                # E flat, G flat, B flat
+    root, third, fifth = 0, 1, 2                        # which line has which note of the chord
+    moves = [[{} for _ in range(bars)] for _ in lines]  # line -> bar -> {step: pitch}
+    roots = [{} for _ in range(bars)]                   # bar -> {step: pitch} for the bass
+    for i, pitch in enumerate(lines):
+        moves[i][0][0] = pitch
+
+    def go(line, by, bar, step):
+        lines[line] += by
+        moves[line][bar][step] = lines[line]
+
+    def low(pitch):                                     # the bass's octave: B flat 1 to A 2
+        return 34 + (pitch - 34) % 12
+
+    bar = 0
+    for r in range(rounds):
+        for chord in range(5):                          # E flat, B flat, F, C, G minor
+            if chord:
+                go(third, -1, bar, 0)                   # major to minor
+            elif r:
+                roots[bar][0] = low(lines[root])        # the bass comes in the second time round
+            if chord < 4:
+                go(third, -1, bar + 1, 0)               # his move: F sharp to F,
+                go(root, -1, bar + 1, 8)                # then E flat to D
+                root, third, fifth = fifth, root, third
+                bar += 3
+            else:
+                go(root, -1, bar + 1, 0)                # his last: G to F sharp,
+                go(fifth, +1, bar + 1, 8)               # then D to E flat
+                root, third, fifth = fifth, root, third
+                bar += 2
+            if r:
+                roots[bar - 2 if chord < 4 else bar - 1][8] = low(lines[root])
+
+    for i, (program, pan, name) in enumerate(((SLOWSTR, 36, "line one"), (WARMPAD, 88, "line two"), (VOICE, 60, "line three"))):
+        p.voice(name, program, 63, *write(moves[i], 63), vel=64, gate=1.0, volume=88, pan=pan, reverb=80)
+    p.voice("bass", CONTRABASS, 39, *write(roots, 39, start=14), vel=80, gate=1.0, volume=100)
+    p.voice("voices", CHOIR, 51, *write([{s: n + 12 for s, n in b.items()} for b in roots], 51, start=28),
+            vel=54, gate=1.0, volume=72, pan=74, reverb=90)
+    # the second and third time a vibraphone says again, a beat later and higher, each note that has just moved
+    said = [{} for _ in range(bars)]
+    for line in moves:
+        for b, notes in enumerate(line):
+            for s, pitch in notes.items():
+                if b >= 14:
+                    said[b][s + 4] = 75 + (pitch - 75) % 12
+    patterns, form = {}, []
+    for b, notes in enumerate(said):
+        if not notes:
+            form.append("_")
+            continue
+        row = ["."] * p.steps
+        for s, pitch in notes.items():
+            row[s:s + 4] = [token(pitch, 75), "-", "-", "-"]
+        patterns[f"n{b}"] = " ".join(row)
+        form.append(f"n{b}")
+    p.voice("vibraphone", VIBES, 75, patterns, form, vel=72, gate=1.0, volume=90, pan=30, reverb=80)
+    return p
+
+
+# On the harmony of Morten Lauridsen's O Magnum Mysterium (1994), 2026-11-25: Vadim asked for "couple slow versions
+# on that harmonic ideas". None of its notes, tune or chord order are here; what is taken is how its harmony is made,
+# as far as it is on record and as Claude remembers it: everything in one major key, plain chords and no chord that
+# pushes (no dominant seventh), many chords with their third in the bass and the bass going by step, a second or a
+# sixth added and left there, a note held over a change and let down a step afterwards, endings from the fourth
+# chord to home, and ONE note in the whole piece from outside the key: the raised fourth, leaning on the fifth.
+
+def mysterium_one():
+    """D, 54 a minute. Ambient. Sixteen chords, a bar each, all in D major: the bass walks by step, the middle
+    line stays on D but for one C sharp, the other two move one at a time. A clarinet the second time, going round
+    one note as a chant does; the third time it brings the one note from outside, a G sharp, once."""
+    p = Piece("Mysterium I", 54)
+    bass = "D2 F#2 G2 A2 B2 G2 E2 A2 F#2 G2 A2 B2 G2 A2 D2 D2"
+    low = "A3 A3 B3 A3 A3 B3 B3 A3 A3 B3 A3 B3 B3 A3 B3 A3"
+    middle = "D4 D4 D4 D4/C#4 D4 D4 D4 D4 D4 D4 D4 D4 D4 D4 D4 D4"
+    top = "F#4 E4 E4 E4 E4/F#4 F#4/G4 G4 G4/E4 F#4 G4 F#4 F#4 G4 E4 E4 F#4"
+    # 48 bars, three times round: the four lines; a clarinet; the clarinet's G sharp and a vibraphone after the top line
+    three = lambda text, **how: spell(" ".join([text] * 3), **how)
+    p.voice("top line", SLOWSTR, 62, *write(three(top), 62), vel=64, gate=1.0, volume=88, pan=40, reverb=80)
+    p.voice("the one that stays", VOICE, 62, *write(three(middle, again=2), 62), vel=62, gate=1.0, volume=84, pan=64,
+            reverb=90)
+    p.voice("low line", WARMPAD, 62, *write(three(low), 62), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
+    p.voice("bass", CONTRABASS, 38, *write(three(bass, again=1), 38), vel=80, gate=1.0, volume=100)
+    chant = {
+        "c1": ". . . . . . . . 5 - - - - - - -",
+        "c2": "6 - - - - - - - - - - - 5 - - -",
+        "c3": "5 - - - - - - - 6 - - - - - - -",
+        "c4": "5 - - - - - - - - - - - . . . .",
+        "c5": ". . . . . . . . 5 - - - 6 - - -",
+        "c6": "1' - - - - - - - - - - - 6 - - -",
+        "c7": "6 - - - - - - - 5 - - - 4 - - -",
+        "c9": ". . . . . . . . 3 - - - 5 - - -",
+        "c10": "6 - - - - - - - 1' - - - - - - -",
+        "c11": "5 - - - - - - - - - - - - - - -",
+        "cX": "b5 - - - - - - - 5 - - - - - - -",          # the G sharp
+        "c12": "3 - - - - - - - - - - - . . . .",
+        "c14": "5 - - - - - - - 2 - - - - - - -",
+        "c15": "2 - - - - - - - - - - - - - - -",
+        "c16": "1 - - - - - - - - - - - . . . .",
+    }
+    sung = "c1 c2 c3 c4 c5 c6 c7 c4 c9 c10 {} c12 c5 c14 c15 c16"
+    p.voice("clarinet", CLARINET, 62, chant, rep("_", 16, sung.format("c11"), 1, sung.format("cX"), 1),
+            vel=74, gate=0.97, volume=90, pan=56, reverb=80)
+    p.voice("vibraphone", VIBES, 62, *echo(three(top), 62, start=32), vel=66, gate=1.0, volume=84, pan=28, reverb=80)
+    return p
+
+
+def mysterium_two():
+    """G, 50 a minute. Ambient. Chords with the third in the bass walking down the scale, and the top line always
+    late: it holds while the others step down, then follows (a chain of sevenths let down to sixths; where that
+    would put an F sharp under its C, which is the chord that pushes, the middle line waits with it); each time it
+    ends from the fourth chord to home. All in G major; at the very end of the third time a clarinet comes in
+    for four bars and has the one note from outside, a C sharp."""
+    p = Piece("Mysterium II", 50)
+    #        down, the top late       settling                  down again, higher         home
+    top = "C5 C5/B4 B4/A4 A4/G4       G4 G4 G4 G4               E5 E5/D5 D5/C5 C5/B4       G4 G4 G4 G4"
+    middle = "G4 G4/F#4 E4 D4         E4 D4 E4 D4               B4 A4 G4 G4/F#4            E4 D4 E4 D4"
+    low = "E4 D4 C4 B3                C4 B3 C4 A3               G4 F#4 E4 D4               C4 B3 C4 B3"
+    bass = "E2 D2 C2 B1               C2 B1 A1 D2               G2 F#2 E2 D2               C2 D2 G2 G2"
+    # 48 bars, three times round: the four lines; a vibraphone after the top line; the clarinet's four bars
+    three = lambda text, **how: spell(" ".join(text.split() * 3), **how)
+    p.voice("top line", VOICE, 67, *write(three(top, again=2), 67), vel=66, gate=1.0, volume=88, pan=56, reverb=90)
+    p.voice("middle line", SLOWSTR, 67, *write(three(middle), 67), vel=62, gate=1.0, volume=86, pan=36, reverb=80)
+    p.voice("low line", WARMPAD, 67, *write(three(low), 67), vel=64, gate=1.0, volume=86, pan=88, reverb=80)
+    p.voice("bass", CONTRABASS, 43, *write(three(bass, again=1), 43), vel=80, gate=1.0, volume=100)
+    p.voice("vibraphone", VIBES, 67, *echo(three(top), 67, start=16), vel=66, gate=1.0, volume=84, pan=28, reverb=80)
+    p.voice("clarinet", CLARINET, 67, {
+        "e": "6 - - - - - - - - - - - - - - -",           # E over the fourth chord
+        "x": "b5 - - - - - - - 5 - - - - - - -",         # C sharp, and it gives way to D
+        "d": "5 - - - - - - - - - - - - - - -",
+    }, rep("_", 44, "e x e d", 1), vel=74, gate=0.97, volume=90, pan=70, reverb=80)
     return p
 
 
@@ -1271,7 +1567,12 @@ TRACKS = [
     ("AJM_SALT", "children's games, skipping: a nursery tune in major over a bass going down, then the band in minor", salt_mustard),
     ("AJM_WOLF", "children's games, fast: a chug of three, three, seven; a call, the hour struck, a chase", mr_wolf),
     ("AJM_MOVE", "ambient: one note stays through six chords and one other moves at each change; vibes, a clarinet", everything_else_moves),
-    ("AJM_REVO", "ambient: four major chords a minor third apart, round and round; a tune of the notes they share", revolving_door),
+    ("AJM_GAL1", "ambient, Vadim's sketch distant_galaxy_theme: his eight chords as he voiced them, a vibraphone", distant_galaxy_one),
+    ("AJM_GAL2", "ambient, the same sketch turned: its semitone slip done twice, in slow harp notes", distant_galaxy_two),
+    ("AJM_GAR1", "ambient, Vadim's sketch garmonic bar for bar: a held B flat, the notes under it slipping in turn", garmonic_one),
+    ("AJM_GAR2", "ambient, the same sketch as a chain: every note falls a semitone, the chords climb by fifths", garmonic_two),
+    ("AJM_MYS1", "ambient, on Lauridsen's harmony: sixteen chords in one key, a line that stays, one note from outside", mysterium_one),
+    ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
 ]
 
 
