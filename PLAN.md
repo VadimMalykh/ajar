@@ -15858,3 +15858,24 @@ weapons; nothing else moved. Done by Claude (Fable) in the task `map33-go3-berse
 
 Runs on the full build: `mapcheck.py map_station` 0 problems, `thingcheck.py` 0, `itemcheck.py` 0; `MAP=MAP33
 MODE=1 TIMEOUT=500` no check failed, `levelExited`; `MODE=2` no check failed. Not played by hand.
+
+## MAP07: no wall of firs alone in the sky (fixed 2026-11-25)
+
+> Vadim, 2026-11-25, with a shot from the hillside looking north-west ("map05 - what is this green thing?"; the
+> place is MAP07's): a dark green slab standing up among the stars behind the bank's corner.
+
+Not planned. Where the hill is open the wood is below it in strips (`horizon()` in `tools/map_hinges7.py`: the
+bank, the wood, the country beyond). Two of the strips' ends have nothing to end against: west of the hill at the
+ravine's north-west corner (y 2592), and west of the knoll at its south-west corner (mitred). Each was closed by a
+wall of the wood's texture (AJ7XN), which as a one-sided wall rose to the sky's 512: 608 high, 112 and 158 wide,
+with the sky on both sides of it. Found and fixed by Claude (Fable) in the task `map07-wood-ends`.
+
+- An end of `horizon()` given as None is open: the strips stop 32 short, cut as the end is (square or mitred), and
+  over the last 32 the sky comes down as it does along the wood's far side: to 48 over the bank (as the ravine's
+  SHELF), to 32 over the wood. What closes the end is 16 of rock and the country (AJ7XH); the tops of the trees
+  (AJ7XT) run on along the bank's edge to the end. The ends against the building are as they were.
+- The tour (MODE=2) has two views more, 78 and 79: each end from the hillside; `tools/smoke_MAP07_2.cfg` shoots
+  twice more. Before: the slab in both. After: sky.
+- Runs: the full build clean, MAP07 solvable in 12 door actions as before; `mapcheck.py map_hinges7` the same 7
+  SLOT notes as main (the bank's strips, where nobody comes), `thingcheck.py` 0, `itemcheck.py` 0; `MAP=MAP07
+  MODE=1` 38 checks, none failed, `levelExited`; MODE=2 (a quick build, -nomonsters) 79 views. Not played by hand.
