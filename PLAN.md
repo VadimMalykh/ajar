@@ -16294,3 +16294,14 @@ Distant Galaxy III (AJM_GAL3, track 20) is removed from `tools/music.py`; it
 played on no map. As with "delete 2", the last of TRACKS, Distant Galaxy IV
 (26, on MAP03), was moved into its place, so it is **20 in the lab now** and
 every other piece keeps its number. The lab has 25 tracks.
+
+## Music: MAP12 gets Paradox Engine (2026-11-25)
+
+**Vadim**, by the sound lab's numbers: "Set map12 to play track 5 also"
+(asked after hearing that MAP08 had played it and MAP18 still does).
+
+| Map | Now plays | Before |
+|---|---|---|
+| MAP12 Going Up | Paradox Engine (AJM_ENGN), track 5 | Left Luggage (AJM_LUGG), by lot |
+
+Paradox Engine is on MAP12 and MAP18 now. Left Luggage plays on no map.

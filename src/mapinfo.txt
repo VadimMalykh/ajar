@@ -148,6 +148,7 @@ skill nightshift
 // MAP04 Distant Galaxy, Fast, MAP32 Garmonic II (so MAP32's is no longer the one drawn by lot).
 // Then MAP08 Salt, Mustard, Vinegar, Pepper (track 17) and MAP09 What's the Time, Mr Wolf? (18).
 // And MAP10 Distant Galaxy II (21), so MAP10 no longer has the quiet one.
+// And MAP12 Paradox Engine (5), as MAP18 has, in place of the one drawn by lot.
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -277,7 +278,7 @@ map MAP12 "Going Up"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_LUGG"
+	music = "AJM_ENGN"
 }
 
 // Act 2, level 3 (tools/map_institute3.py).
