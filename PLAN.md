@@ -15934,3 +15934,82 @@ Least sure: whether the recorder carries over the guitars in the middle and
 the fast piece, whether the choir's short notes speak in time (its sound
 starts slowly on some synths), and whether 14 hundredths flat is charming
 or only sour.
+
+## Music: three children's games written anew, four pieces removed (2026-11-25)
+
+**Vadim**, after hearing the five: "Please regenerate (create other
+versions) for the following: 20, 21, 22. Delete 4, 9, 10, 11 (if used by any
+maps, replace randomly for now). Also as it seems they all use more or less
+the same cord progression, is this correct? Could you also experiment with
+that? Also I'm not sure if I can hear anything in the mood of Squid games
+theme."
+
+**Removed** (their numbers in the lab then): 4 The Small Hours, Twice
+(AJM_CLOK), 9 Service Lift (AJM_LIFT), 10 Filing Under Fire (AJM_FILE), 11
+Carbon Copy (AJM_COPY). Three were on maps; each map drew another of the
+fourteen older pieces by lot, "for now":
+
+| Map | Had | Has now |
+|---|---|---|
+| MAP07 | Service Lift | Off Its Hinges |
+| MAP09 | Filing Under Fire | Night Porter |
+| MAP12 "Going Up" | Service Lift | Left Luggage |
+| MAP32 | The Small Hours, Twice | Light Under the Door |
+
+**The chords: yes, they were much the same.** Nearly every piece is in
+minor and goes between home, the 4th, the flat 6th and the flat 7th: that
+is the rule read out of Doom's own music on 2026-11-23, and every rocker
+here follows it. The quiet ones hold two-bar chords, home and one foreign
+chord. The first five children's games did the same again.
+
+**The mood: why it was not there.** The first five put the playground
+inside a Doom piece: a recorder somewhere over minor riffs, guitars and
+drums. The theme of the series is the other way round. By its composer's
+account (interviews in Sound On Sound and others): instruments of a primary
+school, recorders and castanets; a tune he made on the cheering clap every
+Korean knows, three, three, seven; children playing it not quite in tune
+and not quite together, on purpose; and nothing under it. It is bright and
+bare, and it is uneasy because it is innocent, not because it is dark. A
+second piece of that soundtrack is children's voices alone in a sing-song
+over a march.
+
+**So 20, 21 and 22 are written anew** (same names and lumps; the first
+versions are in git, commit f85a734). In each the school band comes first
+and alone, the class joins ragged, and the Doom band comes in under them as
+the thing that is wrong; and each tries another way with the chords:
+
+| Lump | Piece | The mood up front | The chords |
+|---|---|---|---|
+| AJM_SEEK | Ready or Not, C, 92 | children's voices alone have the riff, a sing-song (sol sol la sol mi) over a marching snare; a recorder calls with the falling third of a child calling another, and at the end calls alone | three MINOR chords a major third apart, C, A flat, E, four bars each, round and round: no 4th, no cadence, it never comes home by a step it knows |
+| AJM_KNOK | Knock Down Ginger, A, 100 | one recorder and castanets, 12 bars with nothing else; the tune IS the cheer (three, three, seven) on five notes without a third; then the class (two more recorders, 15 hundredths flat and 10 sharp, late by up to a twentieth of a beat), ragged claps, a toy drum, a melodica | two chords in the verse, A minor and D MAJOR (the bright fourth); the chorus walks by fourths, C, G, D, to A MAJOR |
+| AJM_SALT | Salt, Mustard, Vinegar, Pepper, G, 12/8, 92 | a rope on the ground, claps on two and four, a recorder skipping in G MAJOR; the class and a melodica | the bass goes down a semitone a bar (G, F sharp, F, E, E flat, D) under a nursery tune, one bar of it sour (C minor); then the band has the same tune and the same way down in G minor; then the major again with everybody |
+
+The stop is kept in Knock Down Ginger (a music box has the cheer at half
+speed) and Salt (four bars). Grandmother's Footsteps and What's the Time, Mr
+Wolf? are as they were: Vadim did not name them. If the new three are nearer
+the mark, those two are the next to be redone the same way.
+
+`tools/music.py`: `Piece.voice(..., loose=)` lets every note of a voice come
+up to that many ticks late (half as many early); `Piece.drums` can be called
+a second time for a row of hits of its own (the claps, loose); castanets,
+tambourine and reed organ (the melodica) by name. The game's synth has them
+all: `soundfonts/gzdoom.sf2` was read, its drum kit goes up to key 87. The
+fourteen older pieces and the two games not touched come out byte for byte
+as before.
+
+**The sound lab now has 19 tracks**: 1 Off Its Hinges, 2 The Far Side, 3 One
+Door Short, 4 After Hours, 5 Paradox Engine, 6 Night Porter, 7 Fire Door, 8
+Dead Letter Office, 9 to 14 the quiet six, 15 Grandmother's Footsteps, 16
+Ready or Not, 17 Knock Down Ginger, 18 Salt Mustard Vinegar Pepper, 19 Mr
+Wolf.
+
+Checked: the three files read back by a second MIDI reader (136, 144 and
+125 s; no note left open or struck twice); no semitone between two voices
+lasts a quarter of a second in any of the three; every map's piece is in
+the package (12 pieces asked for, 19 there, the four removed ones gone);
+the lab's walkthrough `soundlab=ok` with 19 tracks (125 checks); GZDoom with
+sound on and a null device starts all 19 (`S_ChangeMusic` 1). **Not
+checked: how they sound**, and that is the whole question here. Least sure:
+whether the voices' sound speaks fast enough to carry a riff in Ready or
+Not (a marimba doubles it quietly from the second round for that), and
+whether the raggedness reads as children or as a mistake.
