@@ -15845,3 +15845,16 @@ Claude (Fable) in the task `map20-stair-lintel`.
 - Runs: the build clean; MAP20 MODE=4 46 views and the map; MODE=1
   (-nomonsters, 450) 90 checks, none failed, `levelExited`. Of the package
   only `maps/MAP20.wad` and `zscript/map20.zs` differ from main's.
+
+## MAP33: a berserk pack where go 3 begins (2026-11-25)
+
+> Vadim, 2026-11-25, playing MAP33 on skill 2, with a shot of box 3 at 0:16 of go 3 (1 of health, fists, an imp
+> and the spectres at the tunnel's opening): "could you give me at least berserk pack for the 3rd go?"
+
+A berserk pack (2023) in box 3 at (272, 2400): by the east wall, opposite the box's door, in sight from where go 3
+begins. It is 80 off the tests' way through the box (route 15 and view 9, both at x 192), so the scripted go 3 does
+not take it and keeps its weapon. Part 3's reckoning (`tools/budget.py`): health 580 to 680, the berserk among its
+weapons; nothing else moved. Done by Claude (Fable) in the task `map33-go3-berserk`.
+
+Runs on the full build: `mapcheck.py map_station` 0 problems, `thingcheck.py` 0, `itemcheck.py` 0; `MAP=MAP33
+MODE=1 TIMEOUT=500` no check failed, `levelExited`; `MODE=2` no check failed. Not played by hand.
