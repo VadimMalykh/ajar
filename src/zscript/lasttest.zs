@@ -484,8 +484,10 @@ extend class AjarTimeHandler
 		for (int i = 0; i < takes.Size() - 1; i++)
 		{
 			AjarTake t = takes[i];
-			int n = t.evTic.Size();
-			string want = String.Format("%d fires from %s to %s (%d shots)", i + 1, ThirdClock(t.evTic[0]), ThirdClock(t.evTic[n - 1]), n);
+			int n = t.evTic.Size(), e0 = 0;
+			while (e0 < n && alarmAt >= 0 && t.evTic[e0] < alarmAt) e0++;        // (a common place's shots: not the hall's)
+			if (e0 >= n) { found++; continue; }                                    // (none from the alarm: no line)
+			string want = String.Format("%d fires from %s to %s (%d shots)", i + 1, ThirdClock(t.evTic[e0]), ThirdClock(t.evTic[n - 1]), n - e0);
 			for (int l = 0; l < tLine.Size(); l++) if (tLine[l] == want) found++;
 		}
 		return found == takes.Size() - 1;

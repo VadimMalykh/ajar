@@ -911,12 +911,14 @@ extend class AjarTimeHandler
 			tLine.Push(String.Format("%d steps on plate %d  %s%s; stands %d s in all", i + 1, i + 1, ThirdClock(first),
 				i == 0 ? ": the alarm" : "", sum / 35));
 			tColor.Push(colours[min(i, 2)]);
-			// (a map with waves: when it fires, the fight being another in each go)
+			// (a map with waves: when it fires, the fight being another in each go; from the alarm: what it fired in a
+			// common place before it is that place's, common.zs's own line)
 			AjarTake t = takes[i];
-			int ne = t.evTic.Size();
-			if (waves > 1 && ne)
+			int ne = t.evTic.Size(), e0 = 0;
+			while (e0 < ne && alarmAt >= 0 && t.evTic[e0] < alarmAt) e0++;
+			if (waves > 1 && ne > e0)
 			{
-				tLine.Push(String.Format("%d fires from %s to %s (%d shots)", i + 1, ThirdClock(t.evTic[0]), ThirdClock(t.evTic[ne - 1]), ne));
+				tLine.Push(String.Format("%d fires from %s to %s (%d shots)", i + 1, ThirdClock(t.evTic[e0]), ThirdClock(t.evTic[ne - 1]), ne - e0));
 				tColor.Push(colours[min(i, 2)]);
 			}
 			if (shareSelf == i)

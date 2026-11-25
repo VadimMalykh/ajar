@@ -15492,3 +15492,201 @@ changed; the rest of the map is as it was.
 - Go 2 waits on the share's copy, not on its plate, until the alarm + 10, so
   that wave 2 comes at a step of its own (the lab did the same with its
   plate).
+
+## MAP33: the yard in the middle, built (2026-11-25)
+
+> Vadim, 2026-11-24: "could we have some common places 3 copies go through, maybe not alwasy separated by transparent wall, but also maybe some ouside area where whey're going on different levels (so it would be again piece of common fight maybe, if they all appear there in the same time and we have flying monsters that could go between different levels." And: "Also yes, let's try open yard in the middle", "Also they don't need to be on the yard together. Sometimes they can, sometimes they won't, not an issue."
+
+The yard of "MAP33: the yard in the middle, on three levels, as decided", on
+the engine's rule of "The yard lab" (common.zs, unchanged), is now MAP33's
+middle; built by Claude on Opus in the task `map33-yard`. **Nobody has
+played it.** Changed: the middle of `tools/map_station.py` (the pump hall and
+the stores went; the passage from the stack court to the gantry went; the
+tower's passage goes on north), its checks, `src/zscript/map33.zs`, and two
+lines of the last hall's fire lines (below). The texts (`src/language.txt`)
+are not changed: none of them names the pump hall or the stores.
+
+**The pieces** (part 1 yellow, part 2 green, part 3 red; all open to the sky)
+
+| Piece | Where (x, y) | Height | Tag | What is there |
+|---|---|---|---|---|
+| the floor, part 2 | 3968..4736, 2240..3456 | -128 | 3392 (level 2) | four pumps (octagons, 80 high): (4224..4352, 3136..3264), (4416..4544, 2976..3104), (4224..4352, 2400..2528), (4352..4480, 2688..2816); two pipe runs (48 high): 4416..4608 x 3264..3296, 4544..4576 x 2592..2848; banks (40 and 88) on the west wall north of the stairs and on the east wall between the stairs and the terrace (`bank()`) |
+| the west stairs | 3968..4224, 2816..2944 | 0 down to -128, 8 steps of 32 | the place's (3388) | in from the workshop's corridor (its shutter, the workshop's win, as before) |
+| the east stairs | 4480..4736, 2304..2432 | -128 up to 0 | 3388 | out to the mezzanine's corridor; **way 2** (a shutter, no monsters) at their head, x 4736 |
+| the pump shed (**secret 2**) | 3968..4096, 2416..2592, doorway 4096..4112 x 2480..2544 (64) | -128, 96 high (doorway 80) | 3388, special 1024 | in the west wall; what the clerk's nook had: 2 boxes of rockets, a blue armour |
+| the terrace, part 1 | 4736..5040, 3152..3568 (its entry strip y 3456..3568) | 0 | 3391 (level 1); the entry 3388 | where the passage to the gantry was; in from the stack court by a doorway (x 4912..5040, 96 high); **way 1** at the gantry's west mouth (x 5040, y 3264..3392), the old "no monster of R" line behind it at 5056 |
+| the north ledge, part 1 | 3968..4736, 3456..3584 | 0 | 3391 | a dead end; its cache at the west end: 2 boxes of rockets, a box of shells, a medikit |
+| the corner piece, part 3 | 4736..4864, 1984..2240 (its entry y 1984..2048) | -64 | 3393 (level 3); the entry 3388 | the tower's passage on north; walled to the north (no rim) |
+| the south ledge, part 3 | 3968..4736, 2112..2240 | -64 | 3393 | a dead end; its cache at the west end: 2 cell packs, a box of rockets, a medikit |
+| way 3 | x 4864..4880, y 1856..1984 | -64 | | a shutter (no monsters) at the mouth of the stairs down into the duct; the stairs now 8 steps of 22 from x 4880 |
+
+Rims (AJRAIL, players only) along the north ledge's and the terrace's fronts
+and the south ledge's. The place is closed to monsters: an invisible
+`blockmonsters` line where each way leaves it (the terrace's doorway, the
+corner's south end, the west stairs' top) and the three ways' shutters
+(no monsters); 5 lines out, the generator counts them.
+
+**The groups** (skill 1 / 2 / 3 / 4; on skill 3 a part's group is counted in
+its 1.6 budget):
+- Part 2 (on the floor): 19 / 28 / 38 / 40. What the pump hall and the stores
+  had, kind by kind in their order (so that the rest of the map is thinned as
+  before), and a fifth cacodemon from skill 3: on skill 3 33 walkers (hell
+  knights, imps, demons, chaingunners, spectres, zombiemen, sergeants, as
+  the rooms had them) and 5 cacodemons (160 to 240 over the floor); on skill
+  4 a sixth cacodemon and a spectre more. Every walker is
+  marked "seen fallen" (lies dead in go 1), faces the floor's middle, spread
+  over the floor (each next place the farthest from those taken), seen from
+  two or more of the terrace and the two ledges (23, 31, 29 of the 34), none
+  within 256 of the west stairs' foot nor 96 of the east stairs'.
+- Part 1 (over the floor, 96 to 200 over the terrace's level): 3 cacodemons
+  / 4 and the pain elemental / 5 and the pain elemental / the same.
+- Part 3 (over the floor, 96 to 200 over the corner's level): 2 cacodemons
+  and a pain elemental / 3 and one / 4 and two / 4 and three.
+- Every flyer over plain floor with room round it, all of them apart.
+
+**What went**: the pump hall and the stores (their crates and shelves), the
+clerk's nook (its items are in the shed, which is walked into by a 64 gap as
+the nook was since "the stores' secret could not be entered"), the passage
+from the stack court to the gantry (its two imps stand in the stack court,
+(4960, 3700) and (5080, 3660)).
+
+**Supplies**: what the pump hall and the stores gave, all on the yard's floor
+(4 boxes of rockets, 4 cells, 4 boxes of shells, 2 cell packs, a box of
+bullets, 3 medikits), and in the mezzanine's corridor the soulsphere
+before the drop and a medikit; the two caches on the ledges are new. The
+budgets (skill 3, ammunition's damage against the monsters' health):
+
+| | before | after |
+|---|---|---|
+| part 1 skill 3 | x2.25 (35050 / 15560) | x2.09 (37450 / 17960) |
+| part 2 skill 3 | x2.04 (42140 / 20650) | x2.00 (42140 / 21050) |
+| part 3 skill 3 | x1.84 (50700 / 27600) | x1.85 (55600 / 30000) |
+| part 1 / 2 / 3 skill 1 | x4.01 / x4.44 / x3.79 | x3.75 / x4.44 / x3.82 |
+
+**Walk lengths** (`python3 tools/map_station.py --walk`; a rim counts as a
+wall): part 1 13535 (was 13231: over the terrace, round by its doorway);
+part 2 10859 (was 10878: through the yard); part 3 11503 (was 10915: onto
+the corner piece and back to the duct stairs); the secrets 1332 (was 1902;
+the shed is nearer the way than the nook was).
+
+**The generator's new checks**: each level's sectors carry 3390 + k and are
+part k's (level 1 the terrace and the north ledge, level 3 the corner and the
+south ledge, level 2 the floor's pieces), the stairs, entries, pumps, pipes,
+banks and shed the place's tag; the place sealed (`ajarthird.sealed`, 5 lines
+out); every walking comer on the floor's level with room round it, 256 from
+the west stairs' foot; every flyer not "seen fallen", 96 or more up, under
+the sky, over the floor; every body seen from two of the three; the shed's
+doorway 64 wide, special 1024; nothing over 24 high in the 96 before either
+stairs' foot. The parts apart, the window halls closed, the lobbies, the
+gantry's posts, as before. The build's MEASURE has a line for the yard.
+
+**The tests** (`src/zscript/map33.zs`, `Yard33Checks`; yardtest.zs's helpers
+and its `AgainChecks` shared). The script's fight in the yard
+(`YardFight33`): the nearest living monster of the group faced, a bullet each
+3 tics and a rocket at what is 192 or more away, spending the ammunition so
+that the go's record has them; killed six tics after it was taken.
+- Go 1 comes from the stack court through the doorway onto the terrace
+  (route 24), group 1 comes, the fight; then it waits on the terrace by way 1
+  until `M33_GANTRY` (2100; + `M33_GANTRY3` 400 in MODE=3, as before), so
+  self 1 is in the yard all that time.
+- Go 2 comes down the west stairs onto the floor (route 12), group 2 comes,
+  the fight; out by the east stairs, way 2, the mezzanine, down into R (route
+  25).
+- Go 3 comes from the tower's passage onto the corner piece and the south
+  ledge's east end (route 20), group 3 comes, the fight from (4680, 2176);
+  back past way 3 down into the duct (route 26).
+- Checked each go (MODE=1, 3 and 4 until its load): at the start the place
+  empty (no monster, body, missile or drop, no group), the kill counters
+  right (`countersRight`: the monsters left are those living that count,
+  the player's kills are the level's), the bodies (33 of 33 in go 1, none
+  after), the ways (open before their go, shut in it), the timetable's "k is
+  in the yard" lines; before the step no group; at the step the group all
+  there, awake, each with a target; the way shut until the group is dead and
+  open after; what the player fired there in the record, none before the
+  coming nor out of the yard; in later goes each earlier group again at its
+  self's tic, the self firing all its record's shots there, the group over at
+  its kept tic, its way as it was, the self leaving (`AgainChecks`); and that
+  each earlier self fires its yard shots only while it is in the yard and its
+  hall shots only from the alarm, never in both at once (`selfFiresApart`).
+- Brought up to date: the last hall's fire lines (last.zs's timetable line "k
+  fires from" and lasttest.zs's `FireLinesRight`) count from the alarm, as
+  the yard's shots before it are the yard's line; `shotsInTake`,
+  `selfFiresAgain`, `twoSelvesFiring` and `goThreeAfterLoad` count the hall's
+  shots from the alarm. `timetableLines` (go 3) takes the two yard lines.
+- MODE=3: 51 views (were 48): the yard from the terrace in go 1 (the bodies,
+  group 1 over the floor), from the head of the west stairs and from the
+  floor in go 2 (group 2 coming), the pump shed's doorway, the yard from the
+  south ledge in go 3 (group 3); "the pump hall" and "the stores" went.
+  `tools/smoke_MAP33_3.cfg` rebuilt from a run's log.
+
+**Results** (the full build of 2026-11-25, in the worktree):
+- `./build.sh`: built; MAP33's MEASURE: 617 sectors, 701 things, monsters on
+  skill 3 127 + 112 + 110; the yard's groups and bodies as above.
+  `mapcheck`: 617 sectors, 701 things, 288 monsters, 3 secret sectors, 0
+  problems; `thingcheck`, `itemcheck`: 0 problems; `budget`: skill 3 374
+  monsters x1.75, skill 1 186 x3.64.
+- MAP33 MODE=1 (twice, with saves): 338 passed, 0 failed, both; MODE=2: 49 passed, 0
+  failed (as before); MODE=3: 354 passed, 0 failed, 51 views; MODE=4: 183
+  passed, 0 failed. The level ended in MODE=1 and 3. YARD MODE=1: 47 of 47. LAST
+  MODE=1: 108 passed, 0 failed (as before). (MODE=2, 3 and 4 ran on a quick build of the same sources.)
+
+**Measured** (skill 3, the script's play; ot of each go, 35 a second):
+- Go 1 on the terrace at about 1193 to 1210 (0:34), group 1 dead about 96
+  tics later; it waits there until 2100 (1:00), so self 1 "is in the yard
+  0:34 to 1:00". MODE=3: on the terrace at 2268 to 2280 (views before it), the
+  fight to about 2430, the wait until 2500.
+- Go 2 on the floor at about 1007 to 1013 (0:28), group 2 (38) dead 181 to
+  199 tics later; out by way 2; self 2 "is in the yard 0:28 to 0:35 or 0:36".
+  R won at 1471 to 1483 (the first self on the gantry at 2106: 620 to spare);
+  MODE=3: R won at 2108 and 2137 against 2506 (370 to spare), so M33_GANTRY
+  is unchanged.
+- Go 3 on the corner piece at 624 (0:17), group 3 dead about 101 tics later,
+  then down into the duct: it is gone before group 2 comes again (1007) and
+  group 1 (1193), so in the script's go 3 no fight is shared in the yard.
+- Self 1 comes into the yard in go 2 just as the player finishes the
+  floor's fight: in both runs of the full build the two were there together
+  (55 and 36 tics: the fight ended at 1206 and 1200, self 1 came at 1193 and
+  1206; group 1 then aimed at the player 238 and 171 monster-tics, at the self
+  87 and 45); in an earlier run the fight ended at 1194, 16 tics before self 1
+  came, and they did not meet. A few tics decide it.
+- What the selves kill there: little. Self 1 fires its 23 shots again (21 or
+  22 hit), kills 0 to 2 of group 1; self 2 fires its 103 to 116 (90 % hit)
+  and kills 13 to 20 of group 2; the rest falls at the group's end. (The
+  script kills by a blow after 6 tics, so its record's shots are few: a
+  player who fights with the weapons leaves a self that kills more.)
+- No self fired a yard shot at the alarm or a hall shot in the yard (each
+  self's yard shots equal its record's in its window; 0 elsewhere).
+
+**Not tested / not played by hand**:
+- Nobody has played it. Not known: whether the yard reads as one place from
+  each level in play (the screenshots: from the terrace the bodies on the
+  floor and group 1's cacodemons over it; from the west stairs the floor, the
+  north ledge and the terrace; from the south ledge the terrace across);
+  whether 38 on the floor is too much for go 2 coming down the stairs (the
+  script is in god mode); whether players walk to the ledges' dead ends for
+  the caches; whether the pain elementals' lost souls get stuck on the
+  ledges' rims.
+- Skills other than 3 (the groups by skill are counted by the build, not
+  run). A real player's go 3 (slower than the script's) meeting the second
+  or first self's fight in the yard: the script's go 3 does not.
+- A save loaded in the yard.
+
+**My choices** (Claude's on Opus; each easy to change):
+- The terrace begins at x 4736 (not 4752), so that its rim is the floor's
+  edge; its doorway from the stack court is x 4912..5040 (96 high), and its
+  first 112 (y 3456..3568) and the corner's first 64 are the place's own
+  ground, so that a group comes when its player is well on its level, not in
+  the doorway.
+- Way 1 at x 5040, the gantry's west mouth; the old line at 5056 (no monster
+  of R) stays behind it. Way 3 at x 4864..4880, the duct stairs now begin at
+  4880 (8 steps of 22, were 32).
+- The shed is a room in the west wall (not a hut on the floor), 128 x 176,
+  96 high, with a 64 doorway: a roofed hut under the sky drew badly.
+- Group 2 on skill 3 is 38, not 37: the old rooms had 4 cacodemons on skill
+  3 (5 on 4); the fifth is added from skill 3 as the brief kept five over the
+  floor.
+- Go 3 fights from the south ledge's east end (4680, 2176), not from the
+  corner piece, which sees little of the floor past the walls east of the
+  yard.
+- The script's go 1 waits on the terrace, not at the gantry's foot (both by
+  way 1): self 1 is thus in the yard from 0:34 to 1:00 in each later go.
