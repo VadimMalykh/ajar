@@ -15879,3 +15879,58 @@ with the sky on both sides of it. Found and fixed by Claude (Fable) in the task 
 - Runs: the full build clean, MAP07 solvable in 12 door actions as before; `mapcheck.py map_hinges7` the same 7
   SLOT notes as main (the bank's strips, where nobody comes), `thingcheck.py` 0, `itemcheck.py` 0; `MAP=MAP07
   MODE=1` 38 checks, none failed, `levelExited`; MODE=2 (a quick build, -nomonsters) 79 views. Not played by hand.
+
+## Music: five children's games, from still to fast (written 2026-11-25, no map plays them yet)
+
+**Vadim** (2026-11-25): "Could you compose something in a mood of 'Squid
+games' series theme?", then "but still our Doom style (as previous
+melodies)", then "could you make several of a sort (more still, more active,
+etc) to choose from?"
+
+What that mood is made of, as taken here: a children's game with something
+wrong under it. A plain tune a child could play on a school recorder, toy
+and classroom instruments, a clapped cheer in three, three and seven, short
+voices, and a stop. What is NOT taken: any note of the series' music. The
+three-three-seven is the cheering clap, older than the series; the tunes
+and riffs are written here. Each piece is named after a children's game
+(two of them are games at a door or with the time, which is this game's
+business) and is built exactly as one of the older pieces is, so the manner
+is the one Vadim took on 2026-11-23:
+
+| Lump | Piece | Built as | What it is |
+|---|---|---|---|
+| AJM_STEP | Grandmother's Footsteps | After Hours | D, 56, still: held chords two bars long (D minor, E flat, D minor, A), plucked steps that come on and stop dead, a music box, a recorder far off, a voice, three knocks before every round; 137 s |
+| AJM_SEEK | Ready or Not | The Far Side | C, 80, creeping: a synth bass riff, a held organ; the recorder counts, a note more in every bar, and the voices' answers get a "ha" shorter; a chorus on the flat 6th and 7th with a glockenspiel; 144 s |
+| AJM_KNOK | Knock Down Ginger | Off Its Hinges | A, 100, the middle one: the bass and guitar riff knocks three-three in one bar and seven in the next; the recorder's taunt, the second time with a second recorder a third under it and a little flat; a guitar chorus; a stop of eight bars (a music box has the taunt at half speed); 173 s |
+| AJM_SALT | Salt, Mustard, Vinegar, Pepper | Service Lift | B, a 12/8 shuffle, 88: the riff has the rhythm of the rope rhyme, a recorder skips over it, a guitar chorus; at "pepper" the hats run and two recorders and a glockenspiel have the tune; 131 s |
+| AJM_WOLF | What's the Time, Mr Wolf? | Fire Door, Paradox Engine | G, 136, fast: the guitar chugs three-three-seven in every bar; a recorder asks, timpani and voices strike the hour (three, then three and seven); a chase on the lead guitar over held fifths; a stop of four bars; 120 s |
+
+The taunt is the one every playground has (sol mi sol la sol mi), in minor
+and with the "la" a semitone low, so it leans on the fifth and falls back:
+that semitone is the one clash meant in the still, the creeping and the
+middle piece.
+
+`tools/music.py`: five functions and five lines in `TRACKS`; two
+instruments new to it (recorder, hand clap); `Piece.voice(..., bend=)` puts
+a whole voice some hundredths of a semitone out of tune (the flat recorder;
+a pitch wheel message at the start of its track, nothing for the other
+voices). The eighteen older pieces come out byte for byte as before.
+
+**No map plays them**: `src/mapinfo.txt` is as it was. They are pieces 19 to
+23 in the sound lab (`MAP=SOUND ./run.sh`, MUSIC + and MUSIC -), in the
+order of the table. Which stay, and on which maps, is Vadim's to say once
+heard; the ones not taken are removed again.
+
+Checked: each file read back by a second MIDI reader (every track ends
+together, no note left sounding twice or open); no semitone between two
+voices lasts a quarter of a second except the taunt's own (and the music
+box's over the held fifth in the stop of Knock Down Ginger); the bass on
+the key note 29 to 44 % of its notes; 10.8 to 24.6 notes a second in the
+four with drums, the drums 32 to 39 % of them (66 % in Ready or Not, whose
+sixteenth hats are The Far Side's, 69 % there); the lab's walkthrough
+`soundlab=ok` with 23 tracks (133 checks); GZDoom with sound on and a null
+device starts all five (`S_ChangeMusic` 1). **Not checked: how they sound.**
+Least sure: whether the recorder carries over the guitars in the middle and
+the fast piece, whether the choir's short notes speak in time (its sound
+starts slowly on some synths), and whether 14 hundredths flat is charming
+or only sour.
