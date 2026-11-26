@@ -18695,6 +18695,10 @@ a map.
 
 ## Look: the clocked door and its frame's trim (board made 2026-11-26, not chosen yet)
 
+**Chosen: look 3, Ivory, done properly** (Vadim, 2026-11-26: "Clocked door: look 3 (Ivory, done properly).").
+It is the game's: gfx.py `CLOCKDOOR` defaults to 3; `AJAR_CLOCKDOOR=0` still builds the old art (PLAN.md, "Doors:
+the open leaf keeps clear of walls; USE at a lever works the lever; the clocked door is look 3 (2026-11-26)").
+
 The board: https://claude.ai/artifact/JQjGDNej1YBrzd4413ciS7 (published 2026-11-26 from `build/boardclock/`,
 shot again after the pocket was rebuilt; the page is `design/clockdoor-board.html`). Merged with the switch at 0:
 the game keeps the door as it was until Vadim chooses.
@@ -18748,6 +18752,7 @@ way; nothing must be seen whole.
 `clocked_door()` and by gfx_then.py `make_longrun` for the trim). 0, the
 default, is today's art byte for byte: the game keeps today's door until
 Vadim chooses. To take a look: set `CLOCKDOOR`'s default in gfx.py.
+(Chosen the same day: look 3 is the default since; see "Chosen" above.)
 
 **The board.** `tools/clockdoor_shots.sh` builds each look quick
 (`AJAR_CLOCKDOOR=n AJAR_QUICK=1 AJAR_OUT=build/clock<n>.pk3`) and shoots
@@ -19159,3 +19164,137 @@ gatehouse's walls, not tiles (one slot for both). The outdoor places are as
 square as they were: a look that moves no wall draws piers, it does not
 build them (Vadim, 2026-11-24: "less quadratish ... Or maybe it makes sense
 to do with decoration?"); real shapes are a task of its own, not started.
+
+## Doors: the open leaf keeps clear of walls; USE at a lever works the lever; the clocked door is look 3 (2026-11-26)
+
+Vadim, 2026-11-26, with a screenshot of MAP21's machine (the clocked door's leaf going into the machine's left
+wing): "as you see it's not went well into near wall, can we fix that too?"; "Also some switches near doors
+fifficult to switch, I take door instead, could you look into them too?"; "Clocked door: look 3 (Ivory, done
+properly)."
+
+**The leaf, as it was.** A door hung in a frame stood open at a jamb: hinged 16 out from the frame line (the mouth
+of the recess), at the jamb of the frame line's first end, swung open 115 degrees, 64 long (a wall sprite, not
+solid), whatever stood beside the frame. In the machine (a wing 16 from each jamb) it went 11 into the wing.
+
+**The leaf, now** (src/zscript/leaf.zs, `AjarLeafRoom`; `AjarHandler.PoseLeaf`, called by Hang). When a door is
+hung, its leaf is checked against the walls round the frame: one-sided lines, and two-sided lines whose opening is
+lower than the leaf (96) or whose floor is higher than its foot; and it must stand on open floor all along (17
+points along it inside the map, floor no higher, ceiling no lower; this is what catches a leaf over a belt's curb or
+into the void). Things (furniture) are not walls. It must keep 2 off every wall (a wall that meets the hinge counts
+only by its far end and the leaf's). Then:
+- as it always stood, if that is clear (every frame where it was right is posed to the bit as before);
+- else hinged on the other jamb (mirrored), at 115, if that is clear;
+- else opened less: the widest angle below 115 at which the whole leaf is clear by 2, at either jamb (whole
+  degrees down, then twelve halvings; the first jamb's on a tie);
+- else (nothing clear at either jamb) as it always stood.
+
+**And the leaf never stands before a switch** (asked by the coordinating session after the first report, the same
+day: at all three of MAP21's levers the leaf, swung 115 to the lever's side, leaned back over the lever, so the
+lever was half behind the door: the real cause of Vadim's complaint). A switch is what UseGoesOn calls one (below):
+a line with a use special, not a frame's own mouth. A pose stands before it when the leaf (hinge to far end),
+dropped square onto the switch's line, overlaps the line's length by more than 2, and the leaf (its middle) is on
+the side the switch is used from, within use range (64) of it. The steps are then:
+- a. as it always stood, if clear of the walls and before no switch (the same bits as before);
+- b. else the other jamb at 115, if clear of the walls and before no switch;
+- c. else the widest angle at either jamb that is clear of the walls and before no switch;
+- d. else the rule for walls alone, the four steps above.
+A dead lever (no special, as MAP21's NOW) is scenery and does not count.
+The clocked door and its shadow, hung in the same frame at both times, are posed alike by the tighter of the two
+frames (a wall or a switch at either time's frame counts for both). The door's Used box (radius 20 at the leaf's middle) and everything about how it plays are as they were;
+only where the leaf stands changes.
+
+Frames posed differently (tools/leafcheck.py over the built maps, and the poses printed by the game, main against
+this branch, 219 frames in MAP01-21 and MAP31-33):
+- MAP21 101 and 121 (the machine, both times): the first jamb, opened 102.64; far end (466.0, 257.5), 2 off the
+  wing's face at 464.
+- MAP04 103 (a raised block 16 from one jamb only): hinged on the other jamb.
+- MAP07 103 (a frame in a corner; the old leaf stood in the void): hinged on the other jamb.
+- MAP17 101-105 and the BELT lab's 101-104, THEN's 124: opened 88.21. These hang over a belt between two curbs 16
+  high, 96 apart; at 115 the leaf stood across the curb, at either jamb. At 88 it stands along the lane by the
+  curb, nearly square to the frame, so from the side it hides more of the opening than before (shot below).
+  Look at this when playing MAP17.
+- MAP20 108: opened 102.64.
+- MAP33 101: nothing is clear (the recess floor is 16 below the floor in front), so as before.
+- By the switch rule: MAP21 125 (the valve, line 1857), 126 (the beam, 2483), 128 (the belt, 2145): hinged on the
+  other jamb at 115 (the clocked door in 105, 106, 108 NOW likewise, with its shadow). No other frame: LIFT 110,
+  MAP12 110, MAP07 105 and LEFT 102 have a switch near, but the leaf, at 115 on its first jamb, does not stand
+  before it (it swings away from it, or is more than 64 off).
+Every other frame keeps its pose exactly (the printed positions and angles alike to four places).
+
+**USE.** The engine's use trace meets a door's box (radius 20, standing out in front of the frame) before the
+wall beside the frame and calls the door's Used; if Used returns false, the trace goes on to the next line along
+it (tested: a lever behind the box then moves). So now `AjarDoor.Used` asks `AjarHandler.UseGoesOn` first, for a
+hung door and a leaning one alike: along the user's aim (flat, from where they stand, as the engine's trace), the
+lines up to the door's leaf (as posed; a leaning door's face), nearest first. The frame's own line or mouth first:
+the door's. A line with a use special usable from this side first (a lever, a switch, a desk's panel): Used returns
+false and the press goes to it. A wall first, or nothing before the leaf: the door's, as before: a press whose aim
+meets a plain wall first but passes through the door's box (a press a little off the leaf) still takes the door.
+That is the rule (agreed with the coordinating session, 2026-11-26), not the stricter "only aimed at the leaf or
+the opening". Only when the aim passes through the door's box within
+use range does any of this happen; scripted calls of Used (the tests' Take) are as before.
+
+The switches within 96 of a frame or a far side (tools/leafcheck.py, NEAR): ENG 79 (80 from far side 312); LEFT
+254, 297 (64, 66 from frame 102); LIFT 18 (18 from frame 110), 53 (64 from 103); MAP05 593 (33 from far side
+275); MAP06 1101 (93 from far side 270); MAP07 212 (64 from frame 105); MAP12 141 (48 from frame 110), 528 and 530
+(66, 91 from frame 106); MAP14 341 (48 from far side 201); MAP18 1857, 1869 (64 from far side 201); MAP21 1857 (16
+from frame 125: the valve), 2145 (0 from 128: the belt), 2465 (96 from 126), 2483 (0 from 126: the beam). MAP21's
+desk panel (lines 195/590) is 144 from frame 101. No door stands at a far side, so those are not concerned.
+
+What a player sees at MAP21's levers: the door beside each (125, 126, 128 THEN; with the clocked door, 105, 106,
+108 NOW as well) hangs on the jamb away from the lever, so the lever stands free. From in front of the lever, from
+in front of its end by the frame, and from in front of the frame turned to it, aimed at it, the lever moves and the
+door stays (on main the door was taken at the belt and the beam from in front of the lever, and at all three from
+the frame). Aimed at the leaf from anywhere it is taken; aimed at the empty opening the carried door is hung. From
+40 out in front of the frame the lever's middle is 89 away, past the use range: there a press reaches nothing,
+door or no door (before, the leaf lay across that aim and took it). NOW the levers are dead (no special): plain
+wall to the rule, and the door in reach is taken when aimed at them from the frame and from in front of the belt
+and beam levers (from in front of the valve the door's box is not on the aim). Left so (decided: a dead lever is
+scenery).
+
+**Clocked door: look 3.** gfx.py `CLOCKDOOR` defaults to 3; `AJAR_CLOCKDOOR=0` still builds the old art
+(tools/clockdoor_shots.sh's texture export passes 0 for its "before"). Every map wad is byte for byte main's.
+
+**Tests.**
+- MAP21 MODE=9 (new; src/zscript/map21.zs `Doors`, tools/smoke_MAP21_9.cfg), real USE presses (`CheckUse` with
+  BT_USE): the machine's leaf clear of the wings and alike at both times (3 checks); at each of the three levers,
+  with the RED door, the clocked door THEN and its shadow NOW: from in front of the lever, from in front of the
+  lever's end nearer the frame, from in front of the frame (24 out from the mouth's middle, aimed 8 in from the
+  lever's end by the frame) (each: the leaf is not between, the lever moves and the door stays), aimed at the leaf
+  (taken), at the empty
+  opening with a door in hand (hung) (45 checks); the desk panel by frame 101 THEN and NOW with the clocked door
+  hung beside it (2 checks). 50 checks, none failed.
+- The probe (src/zscript/doorprobe.zs, cvar `ajar_doorprobe`; tools/doorprobe.cfg; does nothing unless set):
+  `CFG=doorprobe.cfg MAP=MAP01 MODE=0 EXTRA="+set ajar_doorprobe 7" TIMEOUT=1200 tools/smoke.sh <dir>` goes
+  through MAP01-21 and MAP31-33, prints every frame's leaf pose, and at each switch within 96 of a frame's mouth
+  (MAP07 212, MAP12 141, 528, 530, MAP21 1857, 2145, 2465, 2483) presses: from in front of the switch, from in
+  front of the frame turned to it, at the leaf, at the empty frame, with the door leaning by the switch at the
+  switch, and at the leaning door. This branch: 45 checks, none failed. Main with the probe added: 37 checks, 10
+  failed (from in front of the belt and the beam levers, and every switch with the door leaning by it).
+  `ajar_doorprobe 8` with tools/doorprobe_views.cfg shoots the changed frames.
+- `tools/leafcheck.py` (docker, reads the built package): LEAF and NEAR lines as above.
+- Before and after, shot by the probe (`ajar_doorprobe 8`) from main's build and this branch's, one shot a view
+  (in the worktree's build/shots/, not kept): MAP21 101 from the alcove and from the side, THEN and NOW (main:
+  the leaf cut off by the wing; now: whole, standing just off it); MAP04 103 (a wall near one jamb: main's leaf
+  in the wall, now on the other jamb); MAP07 103 (main: no leaf to be seen; now one on the other jamb); MAP17 101
+  (88 degrees, along the lane); MAP33 101 (as before).
+- After the switch rule and the merge of main (map21-machine, map10-walls), against main's build of then: the
+  poses (219) alike but for the frames listed above; the probe as above (this branch 45 checks, none failed; from
+  in front of the frame at MAP21's three levers the switch is reached now, the door was taken on main); MAP04 (27),
+  MAP07 (54), MAP17 (118), MAP20 (124) MODE=1, THEN MODE=1 (45 checks), MAP21 MODE=1 (85 checks, levelExited), 2
+  (14), 4 (20): every figure as main's; MAP21 MODE=9 50 checks, none failed; `./build.sh` exit 0, solver lines as
+  main's, the 48 map wads byte for byte main's. Shots of the three levers THEN with a door hung beside each, from
+  100 out (build/shots/MAP21_lever_{valve125,belt128,beam126}_{main,mine}.png): on main the leaf covers half the
+  lever; now the lever stands whole and the leaf opens the other way. No frame in another map changed by it.
+- Main moved on once more (look33, MAP33's look) and was merged again: `./build.sh` exit 0, the solver lines as
+  before but for main's new MAP33 look line, the 48 map wads byte for byte main's (main's quick build);
+  leafcheck as before (MAP33 101's wall now line 332); MAP21 MODE=9 50 checks, none failed; MAP21 MODE=1 (85,
+  levelExited) and MAP33 MODE=1 as main's.
+- Before the switch rule, as main, every figure alike: MAP TEST MODE=1 (7) and 2 (3); LAB (16); MAP01 (13), MAP05 (41), MAP08 (63),
+  MAP09 (62), MAP11 (38), MAP17 (118), MAP20 (124; 90 high-water checks) MODE=1 (passing lines); THEN MODE=1-5
+  (45, 12, 17, 15, 16 checks, none failed) and 6 (views); MAP21 MODE=1 (85 checks, levelExited), 2 (14 checks),
+  4 (20 checks), 5 and 8 (views), 7 (views, -nomonsters); MAP21 MODE=9: 50 checks, none failed.
+- `./build.sh`: exit 0, every solver line as main's; every map wad byte for byte main's (48, THEN.wad among them).
+
+**Not tested:** the levers of LEFT, LIFT, ENG and the far-side switches (no door can stand at a far side; LEFT's
+and LIFT's are lab maps the probe does not visit); a press by a real player at the keyboard (the presses are
+the engine's own CheckUse with BT_USE, from set places and angles).

@@ -5,7 +5,8 @@
 # build/boardclock/<n>/view_NN.jpg, 819 wide with the test's text lines cut off the top. The leaf, the wall trim
 # and the flat of each look go to build/boardclock/tex/ (leaf<n>.png, wall<n>.png, flat<n>.png). The page is
 # copied to build/boardclock/index.html: that folder is the whole board (and nothing else). The raw shots and a
-# contact sheet per look go to build/boardclock_work/.
+# contact sheet per look go to build/boardclock_work/. Look 3 is the game's since 2026-11-26 (Vadim's choice; the
+# build's default, gfx.CLOCKDOOR); 0 is the old art, built here with AJAR_CLOCKDOOR=0.
 #   tools/clockdoor_shots.sh          all four
 #   tools/clockdoor_shots.sh 2        look 2 again
 set -e -o pipefail
@@ -14,7 +15,7 @@ B="$PWD/build/boardclock"
 W="$PWD/build/boardclock_work"
 mkdir -p "$B/tex" "$W"
 U="$(id -u):$(id -g)"
-docker run --rm -u "$U" -e PYTHONDONTWRITEBYTECODE=1 -v "$PWD":/work -w /work/tools ajar-tools python3 -c '
+docker run --rm -u "$U" -e PYTHONDONTWRITEBYTECODE=1 -e AJAR_CLOCKDOOR=0 -v "$PWD":/work -w /work/tools ajar-tools python3 -c '
 import gfx, gfx_then, gfx_clockdoor as C
 o = "/work/build/boardclock/tex/"
 for n in range(4):
