@@ -18692,3 +18692,75 @@ places, the last first, as in the earlier removals:
 Checked: the 38 remaining pieces come out byte for byte as before;
 `./build.sh`; the sound lab test with 38 tracks. None of the seven plays on
 a map.
+
+## Look: the clocked door and its frame's trim (board made 2026-11-26, not chosen yet)
+
+The board: https://claude.ai/artifact/JQjGDNej1YBrzd4413ciS7 (published 2026-11-26 from `build/boardclock/`,
+shot again after the pocket was rebuilt; the page is `design/clockdoor-board.html`). Merged with the switch at 0:
+the game keeps the door as it was until Vadim chooses.
+
+**Vadim's words**, playing MAP21, of the clocked door hung in the machine's
+frame THEN, its leaf swung open (and again of it in the pocket's frame 123):
+"So this door decor (and door itself) doesn't look good".
+
+**What was wrong.** The leaf (gfx.py `clocked_door`): ivory with thin brass
+lines and a small dial. In THEN's bright light, with the door's own warm glow
+on it, the ivory goes to a flat white slab with thin yellow lines; it has none
+of the weight of the colour doors and is lost against THEN's pale walls. The
+trim of a clock-only frame (gfx_then.py `clock_trim`, AJCKTR and AJCKTF):
+ivory bands with a whole clock face in each 64; the reveal is 16 deep, so
+the faces are cut into slices on its sides, head and floor. Found on the way:
+the HUD drew a carried clocked door as AJDR10, which is the time door's
+texture (gfx_time.py draws it after gfx.py, colour 10 is both): the door in
+hand was the time door's picture. Now the HUD draws the clocked door by its
+sprite AJDTA0 (src/zscript/ajar.zs, the carried door), in every look.
+
+**The three looks** (tools/gfx_clockdoor.py; each a 64x96 leaf, from which
+gfx.py makes AJDR10's place in the loop, the sprites AJDT and AJNT, and a
+trim: AJCKTR wall, AJCKTF flat). Every trim repeats every 16 across, so
+any 16-wide slice of a reveal shows all of it; the flat is a graduated grid
+(a rule on every 16th row and column, marks every 4), whole in a strip either
+way; nothing must be seen whole.
+1. Long-case clock: walnut with a wavy grain and a moulded edge (arris,
+   bead, hollow); the upper panel a sunk dial board with brass spandrels in
+   its corners, a shaded brass bezel, an ivory dial with a chapter ring and
+   roman-like ticks (one bar, two at the quarters, a serif), blued hands at
+   ten past ten; the lower panel glazed with a brass bead, the pendulum's bob
+   and two weights on cables against dark, a glint on the glass; a brass lock
+   plate. Trim: walnut, a brass inlay line beside the mouth, brass and dark
+   graduations off it.
+2. Station clock: black enamel with a soft sheen and a steel edge, a thin
+   ivory line round it; a white dial 51 across in a steel bezel, bold black
+   hour bars, a mark for each minute, bar hands, a red second hand with its
+   disc; in the sunk lower panel a small second dial, the same face dimmed
+   (the other time); a steel handle. Trim: ivory with the dial's black rim
+   at the mouth, a minute mark every 4, a heavy bar every 16.
+3. Ivory, done properly: deep cream shaded from top to foot (the brightest
+   texel 213, the cream itself at most 194; in THEN's light with the door's
+   glow it reads cream and gold, not white),
+   a heavy four-pixel brass edge lit on the top and left, brass frames round
+   the panels with a shadow line under their top and left, a dial 39 across
+   (twice the old one's area) in a shaded brass bezel 46 across, dark ticks and a
+   minute track, a brass escutcheon with the knob and keyhole. Trim: cream,
+   a brass band at the mouth, dark hour ticks, brass every 32.
+
+**The switch.** `AJAR_CLOCKDOOR=0|1|2|3` (gfx.py `CLOCKDOOR`, read by
+`clocked_door()` and by gfx_then.py `make_longrun` for the trim). 0, the
+default, is today's art byte for byte: the game keeps today's door until
+Vadim chooses. To take a look: set `CLOCKDOOR`'s default in gfx.py.
+
+**The board.** `tools/clockdoor_shots.sh` builds each look quick
+(`AJAR_CLOCKDOOR=n AJAR_QUICK=1 AJAR_OUT=build/clock<n>.pk3`) and shoots
+MAP21 MODE=8 (src/zscript/clockdoorviews.zs, `ClockDoorLookViews`, on MAP21's
+EventHandlers line; tools/smoke_MAP21_8.cfg; does nothing in any other mode):
+8 views, a THEN at the machine's frame with the door hung, as Vadim's
+screenshot; b the machine from further back past the desk; c NOW the same
+frame in the dark hall; e NOW the corridor's frame 103 empty (clock-only
+NOW: its trim); d THEN the pocket's frame 123 with the door hung (it is
+hung in 103 by USE); f THEN the door put down against the pocket's west wall;
+g NOW the same; h THEN the door carried. Shots go to
+`build/boardclock/<n>/view_NN.jpg` (819 wide, the test's text cut off),
+the leaves and trims to `build/boardclock/tex/`, the page
+(`design/clockdoor-board.html`) to `build/boardclock/index.html`: that
+folder is the board. The raw shots and a contact sheet per look go to
+`build/boardclock_work/`.
