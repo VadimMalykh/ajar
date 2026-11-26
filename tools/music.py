@@ -2048,6 +2048,260 @@ MYSTERIUM_CHORUS = "I II I V vi V IV I"
 
 # --- on Distant Galaxy's harmony: the five functions go between this line and the next marker ---
 
+GALAXY_RIFF = {                                 # the Engine's riff, and the same with no third (flat 3rd, 4th a step up)
+    "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1",
+    "X2": "1! 1 b2' 1 1 b3' 1 1 b5' 1 1 4' 1 b3' b2' 1",
+    "N1": "1! 1 b2' 1 1 4' 1 1 b2' 1 1 5' 1 4' 1 1",
+    "N2": "1! 1 b2' 1 1 4' 1 1 b5' 1 1 5' 1 4' b2' 1",
+}
+GALAXY_RIFF_12 = {
+    "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 4' b3'",
+    "X2": "1! 1 b2' 1 1 b3' 1 1 b5' 4' b3' b2'",
+    "N1": "1! 1 b2' 1 1 4' 1 1 b2' 1 5' 4'",
+    "N2": "1! 1 b2' 1 1 4' 1 1 b5' 5' 4' b2'",
+}
+GALAXY_VERSE_RIFF = "X1 X1 X1 X2 X1-1 X1-1 X1-1 X2-1 N1 N1 N1 N2 X1+5 X1+5 X1+5 X2+5"
+GALAXY_CHORUS_12 = {                            # GALAXY_CHORUS cut for twelve as ENGINE_CHORUS_12 is cut
+    "D1": "5' - - - - - b3' - - 5' - -",
+    "D2": "b7' - - - - - 5' - - b7' - -",
+    "D3": "4' - - b3' - - 1' - - - - b7",
+    "D4": "b3' - - - - - 2' - - - - -",
+    "D5": "b3'' - - - - - b7' - - b3'' - -",
+    "D6": "2'' - - - - - b7' - - 2'' - -",
+    "D7": "b3'' - - b2'' - - 1'' - - b2'' - b3''",
+    "D8": "b3'' - - - - - 2'' - - - - -",
+}
+GALAXY_SUNG = "D1 D2 D3 D4 D5 D6 D7 D8"
+
+
+def galaxy_tune(names="Q1 Q2 Q3 Q4", shift=0):
+    """The verse tune's 16 bars: the four bars `names` at each of GALAXY_VERSE_LEVELS in turn, all moved by `shift`."""
+    return [n + (f"{level + shift:+d}" if level + shift else "") for level in GALAXY_VERSE_LEVELS for n in names.split()]
+
+
+def galaxy_engine_band():
+    """A, 132 a minute. The Doom band, made as Distant Galaxy, Fast is: an overdriven guitar and a picked bass play
+    the Engine's riff on Vadim's first four chords, four bars each (home, a semitone lower, home with no third, the
+    4th). From the second verse a square wave holds his top line (E, D sharp, E, F) and synth brass has the first
+    half of the Engine's tune at the four levels; the third time the tune is walked through and a rock organ stabs
+    the chords on two and four. Chorus, his other four chords: guitar and bass on the bass notes (E, E, F, E), held
+    fifths where the chord allows one, strings on the chords, an overdriven lead with the chorus tune."""
+    p = Piece("Galaxy Engine, Band", 132)
+    quiet = lambda bars: rep("_", bars)
+    verse = GALAXY_VERSE_RIFF.split()
+    # 80 bars: 4 in; verse 16, chorus 8; verse 16 (top line, tune), chorus; 4 of the bass alone; verse 16 (top line,
+    # the tune walked through, organ), chorus
+    p.voice("guitar", OVERDRIVE, 45, GALAXY_RIFF | {
+        "C": "1^! - - 1^ - - 1^ - - - 1^ - 1^ - - -",
+        "U": "1! - - 1 - - 1 - - - 1 - 1 - - -",           # the bass note alone: its fifth would rub on the chord
+        "V": "1! - - 1 - - 1 - - - 1^ - 1^ - - -",         # alone under the augmented half, the fifth once major
+    }, rep("X1 X1 X1 X2", 1) + (verse + rep("U+7 C+7 C+8 V+7", 2)) * 2 + quiet(4) + verse
+            + rep("U+7 C+7 C+8 V+7", 2), vel=86, gate=0.8, volume=94, pan=50)
+    low = rep("c+7 c+7 c+8 c+7", 2)
+    p.voice("bass", PICKBASS, 33, GALAXY_RIFF | {"c": "1 . . 1 . . 1 . . . 1 . 1 . . ."},
+            quiet(4) + (verse + low) * 2 + rep("X1 X1 X1 X2", 1) + verse + low, vel=106, gate=0.8, volume=115)
+    pads = rep("M+3 m+7 M+8 A+7", 2)
+    p.voice("strings", STRINGS, 45, {k: f"1{k} - - - - - - - - - - - - - - -" for k in "mM"} | {
+        "A": "1a - - - - - - - 1M - - - - - - -",
+    }, quiet(20) + pads + quiet(16) + pads + quiet(20) + pads, vel=64, gate=1.0, volume=78, pan=40, reverb=60)
+    sung = rep(GALAXY_SUNG, 1)
+    p.voice("lead", OVERDRIVE, 57, GALAXY_CHORUS, quiet(20) + sung + quiet(16) + sung + quiet(20) + sung, vel=94,
+            gate=0.97, volume=98, reverb=60)
+    tunes = ENGINE_OVER_RIFF | {"W" + k[1:]: v for k, v in ENGINE_OVER_RIFF_2.items()}
+    p.voice("brass", SYNBRASS, 69, tunes, quiet(28) + galaxy_tune() + quiet(12) + galaxy_tune("W1 W2 W3 W4")
+            + quiet(8), vel=96, gate=0.97, volume=100, pan=72, reverb=50)
+    slip = rep("e T T T s T T T e T T T f T T T", 1)
+    p.voice("square", SQUARE, 69, held(e="5", s="b5", f="b6"), quiet(28) + slip + quiet(12) + slip + quiet(8),
+            vel=66, gate=1.0, volume=74, pan=56, reverb=50)
+    stabs = rep("s", 4, "s-1", 4, "o", 4, "s+5", 4)                    # on two and four, between the hidden notes
+    p.voice("organ", ORGAN, 57, {
+        "s": ". . . . 1m . . . . . . . 1m . . .", "o": ". . . . 1^ . . . . . . . 1^ . . .",
+    }, quiet(56) + stabs + quiet(8), vel=64, gate=0.7, volume=76, pan=84)
+    p.drums(FAST_DRUMS, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 4, "c r r f", 2, "h", 4, "a a a f", 4,
+                            "c r r f", 2), vel=98)
+    return p
+
+
+def galaxy_engine_machine():
+    """G, 140 a minute. Made as Paradox Engine, Machine is: the riff shared out between a synth bass, which hammers
+    the key note and leaves the gaps, and a square wave two octaves up with only the hidden notes, on Vadim's first
+    four chords (home, a semitone lower, home with no third, the 4th). Four on the floor, a clap, an open hat off the
+    beat. A saw lead has both tunes; a space voice holds the chord in the verse (minor, minor a semitone lower, a bare
+    fifth, minor on the 4th) and his other four chords in the chorus, where the synth bass hammers the bass notes
+    (D, D, E flat, D); from the second chorus a distorted guitar holds them too."""
+    p = Piece("Galaxy Engine, Machine", 140)
+    quiet = lambda bars: rep("_", bars)
+    # 80 bars: 4 of the hammer alone; verse 16, chorus 8; verse 16 (the tune), chorus; 4 of the hidden notes alone;
+    # verse 16 (the tune walked through), chorus
+    verse = rep("b b b bb b-1 b-1 b-1 bb-1 b b b bb b+5 b+5 b+5 bb+5", 1)
+    chorus = rep("b+7 b+7 b+8 b+7", 2)
+    p.voice("synth bass", SYNBASS1, 31, {
+        "b": "1 1 . 1 1 . 1 1 . 1 1 . 1 . 1 1",
+        "bb": "1 1 . 1 1 . 1 1 . 1 1 . 1 . . 1",
+    }, rep("b b b bb", 1) + (verse + chorus) * 2 + quiet(4) + verse + chorus, vel=96, gate=0.7, volume=104)
+    hidden = rep("h1 h1 h1 h2 h1-1 h1-1 h1-1 h2-1 n1 n1 n1 n2 h1+5 h1+5 h1+5 h2+5", 1)
+    p.voice("square", SQUARE, 43, {
+        "h1": ". . b2' . . b3' . . b2' . . 4' . b3' . .",
+        "h2": ". . b2' . . b3' . . b5' . . 4' . b3' b2' .",
+        "n1": ". . b2' . . 4' . . b2' . . 5' . 4' . .",
+        "n2": ". . b2' . . 4' . . b5' . . 5' . 4' b2' .",
+    }, quiet(4) + hidden + quiet(8) + hidden + quiet(8) + rep("h1 h1 h1 h2", 1) + hidden + quiet(8), vel=86,
+            gate=0.9, volume=88, pan=70, reverb=40)
+    tunes = ENGINE_OVER_RIFF | {"R" + k[1:]: v for k, v in ENGINE_OVER_RIFF_2.items()} | GALAXY_CHORUS
+    sung = [d + "-12" for d in GALAXY_SUNG.split()]                     # the chorus tune an octave down from its root
+    p.voice("saw lead", SAW, 67, tunes, quiet(20) + sung + galaxy_tune() + sung + quiet(4) + galaxy_tune("R1 R2 R3 R4")
+            + sung, vel=100, gate=0.95, volume=108, pan=56, reverb=50)
+    pads = held(m="1m", o="1^", M="1M") | {"A": "1a - - - - - - - 1M - - - - - - -"}
+    verse_pad, chorus_pad = rep("m T T T m-1 T T T o T T T m+5 T T T", 1), rep("M+3 m+7 M+8 A+7", 2)
+    p.voice("space voice", SPACEVOICE, 43, pads, quiet(20) + chorus_pad + verse_pad + chorus_pad + quiet(4) + verse_pad
+            + chorus_pad, vel=68, gate=1.0, volume=80, pan=40, reverb=70)
+    p.voice("guitar", DISTORTION, 43, {
+        "H": "1*! - - - - - - - 1* - - - 1* - 1* -",
+        "U": "1! - - - - - - - 1 - - - 1 - 1 -",           # the bass note alone: its fifth would rub on the chord
+        "V": "1! - - - - - - - 1* - - - 1* - 1* -",        # alone under the augmented half
+    }, quiet(44) + rep("U+7 H+7 H+8 V+7", 2) + quiet(20) + rep("U+7 H+7 H+8 V+7", 2), vel=86, gate=0.8, volume=90,
+            pan=30)
+    floor, clap, off = "x...x...x...x...", "....x.......x...", "..x...x...x...x."
+    p.drums({
+        "h": {HAT: "x.x.x.x.x.x.x.x."},
+        "a": {KICK: floor, CLAP: clap, OHAT: off},
+        "f": {KICK: floor, CLAP: clap, OHAT: "..x...x...x.....", SNARE: "..........x.xxxx"},
+        "c": {CRASH: "x...............", KICK: floor, CLAP: clap, SNARE: clap, OHAT: off},
+        "r": {KICK: floor, CLAP: clap, SNARE: clap, OHAT: off},
+        "k": {KICK: floor},
+    }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 4, "c r r f", 2, "k", 4, "a a a f", 4, "c r r f", 2),
+            vel=96)
+    return p
+
+
+def galaxy_engine_shuffle():
+    """D, a 12/8 shuffle, 132 a minute. Made as Paradox Engine, Shuffle is: the riff in triplets on an overdriven
+    guitar, on Vadim's first four chords (home, a semitone lower, home with no third, the 4th); the bass plays the
+    shuffle on each chord's root and joins the guitar's turn in every fourth bar. A rock organ is the main voice
+    and has the verse tune at the four levels, the third time with synth brass. Chorus, his other four chords: the
+    guitar and bass on the bass notes (A, A, B flat, A), the organ on the chords, held the first time and on two and
+    four after; synth brass has the chorus tune, the second time a lead guitar, the third time both."""
+    p = Piece("Galaxy Engine, Shuffle", 132, steps=12, per_beat=3, sig=(12, 8))
+    quiet = lambda bars: rep("_", bars)
+    verse = GALAXY_VERSE_RIFF.split()
+    chorus = rep("U+7 C+7 C+8 V+7", 2)
+    # 80 bars: 4 in; verse 16, chorus 8; verse 16 (the tune), chorus; 4 of the bass alone; verse 16 (the tune, with
+    # the brass), chorus
+    p.voice("guitar", OVERDRIVE, 38, GALAXY_RIFF_12 | {
+        "C": "1*! - 1* 1* - 1* 1* - 1* 1* - 1*",
+        "U": "1! - 1 1 - 1 1 - 1 1 - 1",                   # the bass note alone: its fifth would rub on the chord
+        "V": "1! - 1 1 - 1 1* - 1* 1* - 1*",               # alone under the augmented half
+    }, rep("X1 X1 X1 X2", 1) + (verse + chorus) * 2 + quiet(4) + verse + chorus, vel=86, gate=0.8, volume=94, pan=50)
+    shuffle = rep("p p p q p-1 p-1 p-1 q-1 p p p r p+5 p+5 p+5 q+5", 1)
+    low = rep("p+7 p+7 p+8 p+7", 2)
+    p.voice("bass", PICKBASS, 26, {
+        "p": "1 - 1 1 - 1 1 - 1 1 - 1",
+        "q": "1 - 1 1 - 1 1 - b5 4 - b3",
+        "r": "1 - 1 1 - 1 1 - b5 5 - 4",                   # the turn with no third
+    }, quiet(4) + (shuffle + low) * 2 + rep("p p p q", 1) + shuffle + low, vel=106, gate=0.8, volume=115)
+    chords = {
+        "hM": "1M - - - - - - - - - - -", "hm": "1m - - - - - - - - - - -",          # held
+        "hA": "1a - - - - - 1M - - - - -",
+        "sM": ". . . 1M - . . . . 1M - .", "sm": ". . . 1m - . . . . 1m - .",          # on two and four
+        "sA": ". . . 1a - . . . . 1M - .",
+    }
+    tune = galaxy_tune(shift=24)                                         # the organ's root 50: the tune on 74
+    p.voice("organ", ORGAN, 50, chords | ENGINE_OVER_RIFF_12,
+            quiet(20) + rep("hM-9 hm-5 hM-4 hA-5", 2) + tune + rep("sM-9 sm-5 sM-4 sA-5", 2) + quiet(4) + tune
+            + rep("sM-9 sm-5 sM-4 sA-5", 2), vel=84, gate=0.9, volume=98, pan=74, reverb=50)
+    sung = rep(GALAXY_SUNG, 1)
+    p.voice("brass", SYNBRASS, 50, ENGINE_OVER_RIFF_12 | GALAXY_CHORUS_12, quiet(20) + sung + quiet(28) + tune + sung,
+            vel=88, gate=0.97, volume=96, pan=56, reverb=50)
+    p.voice("lead", OVERDRIVE, 50, GALAXY_CHORUS_12, quiet(44) + sung + quiet(20) + sung, vel=90, gate=0.97,
+            volume=96, pan=40, reverb=60)
+    p.drums({
+        "h": {RIDE: "x.xx.xx.xx.x"},
+        "a": {KICK: "x....xx.....", SNARE: "...x.....x..", HAT: "X.xX.xX.xX.x"},
+        "f": {KICK: "x....x......", SNARE: "...x........", TOM2: "......x.x...", TOM4: ".........x.x",
+              HAT: "X.xX.x......"},
+        "c": {CRASH: "x...........", KICK: "x.....x.....", SNARE: "...x.....x..", RIDE: "x.xx.xx.xx.x"},
+        "r": {KICK: "x.....x.....", SNARE: "...x.....x..", RIDE: "x.xx.xx.xx.x"},
+    }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 4, "c r r f", 2, "a a a f", 5, "c r r f", 2), vel=96)
+    return p
+
+
+def galaxy_engine_piano():
+    """A, 63 a minute. Made as Paradox Engine, Piano is: a piano alone, a cello later. The left hand has the riff
+    at a quarter of its speed, four bars to one of Vadim's first four chords (home, a semitone lower, home with no
+    third, the 4th); the right hand the first half of the Engine's tune at the four levels. In the chorus the left
+    hand breaks his other four chords in eighths over the bass notes (E, E, F, E) and the right hand has the chorus
+    tune. The second time the verse tune is walked through, the cello holds his top line (E, D sharp, E, F) and then
+    the bass notes, and the chorus tune is in octaves."""
+    p = Piece("Galaxy Engine, Piano", 63)
+    verse = rep("a b a d a-1 b-1 a-1 d-1 an bn an dn a+5 b+5 a+5 d+5", 1)
+    broken = rep("c1 c2 c3 c4", 2)
+    # 56 bars: the left hand alone 4, verse 16, chorus 8, the left hand alone 4, verse 16 (the cello in), chorus 8
+    p.voice("left hand", PIANO, 45, {
+        "a": "1 - 5 - b2' - 1 - 5 - b3' - 1 - 5 -",
+        "b": "b2' - 1 - 5 - 4' - 1 - b3' - 1 - 5 -",
+        "d": "b5' - 1 - 5 - 4' - 1 - b3' - b2' - 1 -",
+        "an": "1 - 5 - b2' - 1 - 5 - 4' - 1 - 5 -",                       # with no third
+        "bn": "b2' - 1 - 5 - 5' - 1 - 4' - 1 - 5 -",
+        "dn": "b5' - 1 - 5 - 5' - 1 - 4' - b2' - 1 -",
+        "c1": "5, - b3 - b7 - b3' - 5' - b3' - b7 - b3 -",               # C over E
+        "c2": "5, - 2 - 5 - b7 - 2' - b7 - 5 - 2 -",                     # E minor
+        "c3": "b6, - b3 - b6 - b3' - 1' - b3' - b6 - b3 -",              # F: no A under the tune's B flat
+        "c4": "5, - b3 - 5 - 7 - 2' - 7 - 5 - 2 -",                      # E augmented, E
+    }, rep("a b a d", 1) + verse + broken + rep("a b a d", 1) + verse + broken, vel=70, gate=1.0, volume=90, pan=50,
+            reverb=60)
+    tunes = ENGINE_OVER_RIFF | {"W" + k[1:]: v for k, v in ENGINE_OVER_RIFF_2.items()} | GALAXY_CHORUS
+    sung = [d + "-12" for d in GALAXY_SUNG.split()]                     # the chorus tune on 57, not 69
+    p.voice("right hand", PIANO, 69, tunes, rep("_", 4) + galaxy_tune() + sung + rep("_", 4)
+            + galaxy_tune("W1 W2 W3 W4") + sung, vel=82, gate=0.97, volume=100, pan=70, reverb=60)
+    p.voice("right hand, octave", PIANO, 69, GALAXY_CHORUS, rep("_", 48, GALAXY_SUNG, 1), vel=70, gate=0.97,
+            volume=88, pan=78, reverb=60)
+    p.voice("cello", CELLO, 45, held(e="5", s="b5", f="b6"),
+            rep("_", 32, "e T T T s T T T e T T T f T T T", 1, "e T f e", 2), vel=72, gate=1.0, volume=88, pan=40,
+            reverb=80)
+    return p
+
+
+def galaxy_engine_night_shift():
+    """E, 60 a minute, a 12/8 swing. Made as Paradox Engine, Night Shift is: the riff a fretless bass line four bars
+    long, here four bars to each of Vadim's first four chords (home, a semitone lower, home with no third, the 4th);
+    an electric piano puts the chord softly on two and four (a bare fifth where there is no third); a vibraphone has
+    the verse tune at the four levels. In the chorus, his other four chords, the bass walks on each chord's notes over
+    the bass notes (B, B, C, B) and a muted trumpet has the chorus tune; the second time round they change tunes.
+    A closed hat and a side stick, soft."""
+    muted_trumpet = 59
+    p = Piece("Galaxy Engine, Night Shift", 60, steps=12, per_beat=3, sig=(12, 8))
+    verse = rep("n1 n2 n3 n4 n1-1 n2-1 n3-1 n4-1 m1 m2 m3 m4 n1+5 n2+5 n3+5 n4+5", 1)
+    walk = rep("w1 w2 w3 w4", 2)
+    # 56 bars: the bass alone 4, verse 16, chorus 8, the riff 4, verse 16, chorus 8
+    p.voice("fretless", FRETLESS, 28, {
+        "n1": "1 - . 1 . 1 b2' - . 1 . 1", "n2": "b3' - . 1 . 1 b2' - . 1 . 1",
+        "n3": "4' - . 1 . 1 b3' - . 1 . 1", "n4": "1 - . 1 . 1 b5' - 4' b3' - b2'",
+        "m1": "1 - . 1 . 1 b2' - . 1 . 1", "m2": "4' - . 1 . 1 b2' - . 1 . 1",         # with no third
+        "m3": "5' - . 1 . 1 4' - . 1 . 1", "m4": "1 - . 1 . 1 b5' - 5' 4' - b2'",
+        "w1": "5 - - b7 - - b3' - - b7 - -",                                       # G over B
+        "w2": "5 - - b7 - - 2' - - b7 - -",                                        # B minor
+        "w3": "b6 - - b3' - - 1' - - b3' - -",                                     # C: no E under the tune's F
+        "w4": "5 - - b3' - - 2' - - 7 - -",                                        # B augmented, B
+    }, rep("n1 n2 n3 n4", 1) + verse + walk + rep("n1 n2 n3 n4", 1) + verse + walk, vel=98, gate=0.9, volume=112)
+    chords = rep("E-9 e-5 E-4 A-5", 2)                                   # below the trumpet
+    p.voice("electric piano", EPIANO, 52, {
+        "e": ". . . 1m - . . . . 1m - .", "o": ". . . 1^ - . . . . 1^ - .",
+        "E": ". . . 1M - . . . . 1M - .", "A": ". . . 1a - . . . . 1M - .",
+    }, rep("_", 4, "e e e e e-1 e-1 e-1 e-1 o o o o e+5 e+5 e+5 e+5", 1) + chords
+            + rep("e", 4, "e e e e e-1 e-1 e-1 e-1 o o o o e+5 e+5 e+5 e+5", 1) + chords, vel=58, gate=1.0,
+            volume=78, pan=44, reverb=60)
+    tunes = ENGINE_OVER_RIFF_12 | GALAXY_CHORUS_12
+    sung = rep(GALAXY_SUNG, 1)
+    p.voice("vibraphone", VIBES, 64, tunes, rep("_", 4) + galaxy_tune() + rep("_", 28) + [d + "-12" for d in sung],
+            vel=84, gate=1.0, volume=96, pan=70, reverb=70)
+    p.voice("muted trumpet", muted_trumpet, 52, tunes, rep("_", 20) + sung + rep("_", 4) + galaxy_tune(shift=12)
+            + rep("_", 8), vel=86, gate=0.95, volume=98, pan=56, reverb=70)
+    p.drums({
+        "h": {HAT: "o.oo.oo.oo.o"},
+        "a": {HAT: "o.oo.oo.oo.o", STICK: "...x.....x.."},
+    }, rep("h", 4, "a", 52), vel=74, volume=86)
+    return p
+
 
 # --- on Garmonic's harmony: the five functions go between this line and the next marker ---
 
@@ -2089,6 +2343,11 @@ TRACKS = [
     ("AJM_ENF5", "fast, on Paradox Engine: turned over, the key note on top on a muted guitar, the hidden notes a heavy riff below", engine_upside_down),
     ("AJM_ENS3", "slow, on Paradox Engine: a waltz, the riff as its accompaniment on a celesta, both tunes on a music box", engine_music_box),
     # on Distant Galaxy's harmony (32 to 36 in the lab): their lines go under this one
+    ("AJM_EGA1", "on Distant Galaxy's harmony: fast, the Doom band: the Engine's riff on his four chords, a brass tune, a guitar tune in the chorus", galaxy_engine_band),
+    ("AJM_EGA2", "on Distant Galaxy's harmony: fast, the riff shared by a synth bass and a square wave, four on the floor, a saw lead", galaxy_engine_machine),
+    ("AJM_EGA3", "on Distant Galaxy's harmony: fast, a heavy shuffle in 12/8; a rock organ has the tune, brass and a guitar the chorus", galaxy_engine_shuffle),
+    ("AJM_EGA4", "on Distant Galaxy's harmony: slow, a piano, the riff in the left hand and the tunes in the right, a cello later", galaxy_engine_piano),
+    ("AJM_EGA5", "on Distant Galaxy's harmony: slow, a 12/8 swing after dark, the riff on a fretless bass, vibes, a muted trumpet", galaxy_engine_night_shift),
     # on Garmonic's harmony (37 to 41 in the lab): their lines go under this one
     # on Mysterium's harmony (42 to 46 in the lab): their lines go under this one
 ]
