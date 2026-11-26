@@ -2176,6 +2176,70 @@ def garmonic_engine_groove():
     return p
 
 
+def garmonic_engine_music_box():
+    """F, 92 a minute, in three. Paradox Engine as a slow waltz, in the manner of Music Box, on Garmonic's harmony.
+    The riff is the accompaniment: the key note plucked low on the first beat, two hidden notes a bar on a celesta
+    on the second and third, the flat 2nd and the flat 3rd, then the 4th and the 2nd that the flat 3rd has slipped
+    to; then two bars a semitone lower. Both tunes cut for three beats on a music box, the verse tune slipping with
+    the riff. In the chorus (F minor over A flat, E, E augmented, A minor, F minor) the root on the first beat and the
+    chord on the other two. A glockenspiel strikes Garmonic's held note softly at the top of every bar, C (A flat in
+    the chorus's first four bars). Slow strings from the second verse, three lines moving as the sketch's do; a voice
+    has the last verse tune and sings the last chorus with the music box."""
+    p = Piece("Garmonic Engine, Music Box", 92, steps=12, per_beat=4, sig=(3, 4))
+    waltz = {                                               # engine_music_box()'s w bars, and the slipped one
+        "w1": "1 - - - b2' - - - b3' - - -", "w2": "1 - - - b2' - - - 4' - - -",
+        "w5": "1 - - - b5' - - - 4' - - -", "w6": "1 - - - b3' - - - b2' - - -",
+        "w2s": "1 - - - 4' - - - 2' - - -",                 # the 4th, and the flat 3rd slipped to the 2nd
+    }
+    tunes = {                                               # engine_music_box()'s cuts; Q6g and T1 to T8 cut alike
+        "Q1": "1 - - - b2 - 1 - b7, - - -", "Q2": "1 - - - - - - - 5, - b7, -",
+        "Q3": "1 - - - b2 - b3 - b2 - - -", "Q4": "1 - - - - - - - - - - -",
+        "Q5": "5 - - - b6 - 5 - 4 - - -", "Q6g": "b3 - - - 4 - 2 - 1 - - -",
+        "Q7": "1 - - - b2 - - - b3 - 4 -", "Q8": "1' - - - - - - - - - - -",
+        "T1": "b3' - - - 1' - - - b3' - - -", "T2": "5' - - - b3' - - - 5' - - -",
+        "T3": "b5' - - - b3' - - - b5' - - -", "T4": "5' - - - - - - - - - - -",
+        "T5": "7' - - - 5' - - - 7' - - -", "T6": "3'' - - - 7' - - - 3'' - - -",
+        "T7": "b3'' - 2'' - 1'' - - - 2'' - b3'' -", "T8": "1'' - - - - - - - - - - -",
+    }
+    quiet = lambda bars: rep("_", bars)
+    verse = "w1 w2s w1-1 w2-1 w1 w2s w5-1 w6-1".split()
+    unit = verse[:4]
+    chorus = "c+3 c+3 c-1 c-1 c+4 c+4 c c".split()            # A flat, E, A, F
+    chords = "m m D A n n m m".split()                     # F minor, E, E augmented, A minor, F minor
+    over, sung = GARMONIC_VERSE.split(), GARMONIC_SUNG.split()
+    # 68 bars: the riff 4, verse 8 (the riff alone), verse 8 (the tune), chorus 8; verse, chorus; the waltz 8; verse,
+    # chorus
+    p.voice("plucked bass", ACBASS, 41, {k: " ".join(v.split()[:4] + ["."] * 8) for k, v in waltz.items()} | {
+        "c": "1 - - - . . . . . . . .",
+    }, unit + verse * 2 + chorus + verse + chorus + verse + verse + chorus, vel=82, gate=0.9, volume=98)
+    # the hidden notes over the music box; the second verse under it (an octave down), while the tune goes up
+    p.voice("celesta", CELESTA, 65, {k: " ".join(["."] * 4 + v.split()[4:]) for k, v in waltz.items()} | {
+        "m": ". . . . 1,m - - - 1,m - - -", "D": ". . . . 7,,M - - - 7,,M - - -",
+        "A": ". . . . 7,,a - - - 7,,a - - -", "n": ". . . . 3,m - - - 3,m - - -",
+    }, unit + verse * 2 + chords + garmonic_moved(verse, -12) + chords + verse + verse + chords, vel=64, gate=1.0,
+            volume=84, pan=76, reverb=70)
+    p.voice("music box", MUSICBOX, 65, tunes, quiet(12) + over + garmonic_moved(sung, -12) + garmonic_moved(over, 12)
+            + garmonic_moved(sung, -12) + quiet(16) + garmonic_moved(sung, -12), vel=88, gate=1.0, volume=104, pan=50,
+            reverb=70)
+    p.voice("voice", VOICE, 65, tunes, quiet(52) + over + garmonic_moved(sung, -12), vel=72, gate=1.0, volume=90,
+            pan=62, reverb=90)
+    kept = rep("g", 4, "k", 4)
+    p.voice("glockenspiel", GLOCK, 89, {"k": "5 - - - . . . . . . . .", "g": "b3 - - - . . . . . . . ."},
+            rep("k", 20) + kept + rep("k", 8) + kept + rep("k", 16) + kept, vel=50, gate=1.0, volume=72, pan=40,
+            reverb=80)
+    # strings: three lines, as the sketch's. Verse: F, A flat (to G in the middle of the second bar), C over them,
+    # then E, G, C. Chorus: F, A flat, C; E, G sharp, B; E, G sharp, C; E, A, C; F, A flat, C
+    lines = (("low", held(12, f="1", e="7,"), "f T e T f T e T", "f T e T T T f T", 36),
+             ("middle", held(12, a="b3", n="3") | {"s": "- - - - - - 2 - - - - -"}, "a s T T a s T T",
+              "a T T T n T a T", 50),
+             ("top", held(12, c="5", b="b5"), "c T T T T T T T", "c T b c T T T T", 64))
+    for name, pats, in_verse, in_chorus, pan in lines:
+        v, c = in_verse.split(), in_chorus.split()
+        p.voice(f"strings, {name}", SLOWSTR, 53, pats, quiet(28) + v + c + v + v + c, vel=54, gate=1.0, volume=70,
+                pan=pan, reverb=80)
+    return p
+
+
 def garmonic_engine_pizzicato():
     """E flat, 92 a minute. Paradox Engine for strings alone, on Garmonic's harmony. Plucked strings have the riff
     as it stands, the key note hammered and the hidden notes over it: two bars at home, the second with its last
@@ -2226,15 +2290,16 @@ def garmonic_engine_slow():
     lines moving at once. The top line holds B flat (A for one bar of the chorus); under it the verse slips as the
     sketch does, G flat to F, then E flat to D, and back the same way, twice; the chorus is the sketch's other
     chords, E flat minor over G flat, D, D augmented, G minor, E flat minor, reached a note at a time. The tunes over
-    it from the first bar: the verse tune and the chorus tune on a vibraphone the first time round, a clarinet the
-    second, both the third, the vibraphone an octave higher."""
+    it from the first bar: the verse tune and the chorus tune on a vibraphone the first time round; the second time
+    the verse tune on a clarinet and the chorus tune on a flute; the third time the same, with the vibraphone an
+    octave under them."""
     p = Piece("Garmonic Engine, Slow", 54)
     #        verse: home, slipped, a semitone lower, back; twice          chorus
     top = "Bb4 Bb4 Bb4 Bb4 Bb4 Bb4 Bb4 Bb4            Bb4 Bb4 A4 Bb4 Bb4 Bb4 Bb4 Bb4"
     middle = "Gb4 Gb4/F4 F4 F4/Gb4 Gb4 Gb4/F4 F4 F4/Gb4   Gb4 Gb4 Gb4 Gb4 G4 G4 Gb4 Gb4"
     low = "Eb4 Eb4 D4 D4 Eb4 Eb4 D4 D4                Eb4 Eb4 Eb4/D4 D4 D4 D4 D4/Eb4 Eb4"
     bass = "Eb2 Eb2 D2 D2 Eb2 Eb2 D2 D2                Gb2 Gb2 D2 D2 G2 G2 Eb2 Eb2"
-    # 48 bars, three times round: the four lines; the tunes on a vibraphone, then a clarinet, then both
+    # 48 bars, three times round: the four lines; the tunes on a vibraphone, then a clarinet and a flute, then all three
     three = lambda text, **how: spell(" ".join(text.split() * 3), **how)
     tops, middles, lows = three(top, again=2), three(middle), three(low)
     sounding = None
@@ -2248,10 +2313,12 @@ def garmonic_engine_slow():
     p.voice("low line", WARMPAD, 63, *write(lows, 63), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
     p.voice("bass", CONTRABASS, 39, *write(three(bass, again=2), 39), vel=80, gate=1.0, volume=100)
     tunes = ENGINE_OVER_RIFF | GARMONIC_OVER_RIFF | GARMONIC_CHORUS
-    round_ = garmonic_moved(GARMONIC_VERSE, 12) + GARMONIC_SUNG.split()        # all over the top line's B flat
-    p.voice("vibraphone", VIBES, 63, tunes, round_ + rep("_", 16) + garmonic_moved(round_, 12), vel=84, gate=1.0,
-            volume=100, pan=30, reverb=80)
-    p.voice("clarinet", CLARINET, 63, tunes, rep("_", 16) + round_ * 2, vel=80, gate=0.97, volume=96, pan=70,
+    over, sung = garmonic_moved(GARMONIC_VERSE, 12), GARMONIC_SUNG.split()    # both over the top line's B flat
+    p.voice("vibraphone", VIBES, 63, tunes, over + sung + rep("_", 16) + garmonic_moved(over + sung, -12), vel=84,
+            gate=1.0, volume=100, pan=30, reverb=80)
+    p.voice("clarinet", CLARINET, 63, tunes, rep("_", 16) + (over + rep("_", 8)) * 2, vel=80, gate=0.97, volume=96,
+            pan=70, reverb=80)
+    p.voice("flute", FLUTE, 63, tunes, rep("_", 16) + (rep("_", 8) + sung) * 2, vel=80, gate=0.97, volume=96, pan=60,
             reverb=80)
     return p
 
@@ -2296,6 +2363,7 @@ TRACKS = [
     # on Garmonic's harmony (37 to 41 in the lab): their lines go under this one
     ("AJM_EGR1", "on Garmonic's harmony: fast, turned over: the held note on top on a muted guitar, the hidden notes a heavy riff slipping below it", garmonic_engine_upside_down),
     ("AJM_EGR2", "on Garmonic's harmony: at a walk, the groove: a fingered bass riff with air in it, muted guitar, electric piano, vibes", garmonic_engine_groove),
+    ("AJM_EGR3", "on Garmonic's harmony: slow, a waltz: the riff plucked and on a celesta, the tunes on a music box, a glockenspiel on the held note", garmonic_engine_music_box),
     ("AJM_EGR4", "on Garmonic's harmony: at a walk, strings alone: the riff plucked, one high note held over it, a cello, a clarinet, a flute", garmonic_engine_pizzicato),
     ("AJM_EGR5", "on Garmonic's harmony: slow, ambient: three lines and a bass, no two lines moving at once, the tunes over them from the first bar", garmonic_engine_slow),
     # on Mysterium's harmony (42 to 46 in the lab): their lines go under this one
