@@ -411,8 +411,15 @@ def m_EF(w):
     w.fill(w.z0, w.bot, lumps((86, 72, 58), (128, 116, 102), 28, 6))
 
 
+def gravel(seed):
+    """Grey-white gravel, calm: the stones' shading halved toward the ground's tone."""
+    base = (182, 180, 174)
+    fn = lumps(base, (222, 220, 214), seed, 3)
+    return lambda x, z: mix(fn(x, z), base, 0.5)
+
+
 def m_GF(w):
-    w.fill(w.z0, w.bot, lumps((174, 172, 166), (222, 220, 214), 29, 3))
+    w.fill(w.z0, w.bot, gravel(29))
 
 
 def m_SF(w, F=None, part=0):
@@ -826,8 +833,8 @@ def m_TW(w, F, part):
             g *= 0.96
         return jit(shade(conc, g), x // 3, z // 2, 73, 0.03)
     w.fill(w.z0, w.bot, f)
-    streaks(w, 400, w.bot, (234, 232, 222), 0.14, 0.6, seed=74, width=2)
-    streaks(w, 400, w.bot, (112, 78, 52), 0.08, 0.6, seed=75, width=1)
+    streaks(w, 400, w.bot, (238, 236, 228), 0.2, 0.75, seed=74, width=3)
+    streaks(w, 400, w.bot, (108, 74, 48), 0.1, 0.7, seed=75, width=2)
     w.fill(418, 400, lambda x, z: shade(conc, 1.22 if z == 418 else 0.68 if z == 401 else 1.02))
     band(w, F, part)
 
@@ -836,8 +843,8 @@ def m_TP(w):
     conc = (176, 172, 164)
     w.fill(w.z0, w.bot, lambda x, z: shade(conc, 1.18) if x % 64 < 2 else
            shade(conc, 0.78) if z % 24 == 0 else jit(conc, x // 3, z // 3, 76, 0.03))
-    streaks(w, w.z0, w.bot, (220, 218, 208), 0.1, 0.35, seed=77)
-    streaks(w, w.z0, w.bot, (118, 82, 56), 0.05, 0.4, seed=78, width=1)
+    streaks(w, w.z0, w.bot, (236, 234, 226), 0.14, 0.6, seed=77, width=3)
+    streaks(w, w.z0, w.bot, (108, 74, 48), 0.08, 0.6, seed=78, width=2)
 
 
 def m_TL(w):
@@ -1762,7 +1769,7 @@ FLATS = dict(
     TZ=lambda: f_vinyl(), PK=lambda: f_ceiling_tiles(), TK=lambda: f_laminate(),
     CN=f_tarmac, CL=lambda: f_lumps((36, 35, 34), (140, 138, 134), 146, 6, (204, 202, 196)),
     ER=lambda: f_lumps((86, 72, 58), (124, 112, 98), 147, 5), ST=lambda: f_slabs((166, 162, 154), 64, 103, 0.5),
-    SB=lambda: f_slabs(), CD=f_drains, GV=lambda: f_lumps((178, 176, 170), (220, 218, 212), 148, 3),
+    SB=lambda: f_slabs(), CD=f_drains, GV=lambda: flat(gravel(148)),
     BP=f_screed, CQ=lambda: f_chequer(), GR=f_grating, BT=f_boiler_top, AS=lambda: f_concrete((138, 136, 130), 112),
     BV=lambda: f_soffit(), QT=lambda: f_vinyl((170, 168, 162), 32, 115), PT=f_pump_top, LG=f_alu_top,
     TT=lambda: f_studded(), RG=f_roof, CS=f_casing_top, SP=lambda: f_steel_plate(), WB=f_sealed_concrete,
