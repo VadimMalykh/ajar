@@ -17162,3 +17162,205 @@ a player who sets the beam to B or C before taking BLUE and comes back
 stopped again with the player on the heap (the lab's MODE=3 tries a
 rising heap only); a saved game across the times; the automap (both copies
 side by side, as the design leaves it).
+
+## The joined maps lab (built 2026-11-26)
+
+Vadim: "I thought there could be several doom maps on one our map, connected
+and intertwined by our door mechanics." `MAP=CLASSIC ./run.sh` ("Ajar: Doom
+II joined": Entryway and Dead Simple) and `MAP=CLASSIC4 ./run.sh` (also
+Nirvana and The Catacombs, far out); `MAP=CLASSIC MODE=1..5` and
+`MAP=CLASSIC4 MODE=5..8 tools/smoke.sh`. An engine and tooling test: **yes,
+with limits. Doom II's maps, read from the player's own doom2.wad at build
+time, go into one UDMF level beside Ajar's own room. Each piece works as
+itself: doors, lifts, switches, monsters, items, music, and Dead Simple's
+666/667. Tags do not cross between pieces. Carried doors hung in frames cut
+into id's walls (and in one of id's own doors) join the pieces both ways,
+for walking, looking, shooting and monsters following.** Run headless only
+(docker, software GL), on GZDoom 4.12.2: **not played by hand**.
+
+**The hard rule, and how it is kept.** Nothing of id's is in git or in
+`ajar.pk3`. `tools/classic.py` reads the map lumps from the IWAD when
+`./build.sh` runs and writes `build/ajar-classic.pk3`, which holds the two
+levels only (`maps/CLASSIC.wad` 130 KB, `maps/CLASSIC4.wad` 303 KB; the
+package is 43 KB; it takes 0.1 s). That package is never committed (`build/`
+is ignored) and is loaded after `ajar.pk3` by `run.sh` and `tools/smoke.sh`
+when it is there. The repo holds code and small numbers only: line, sector
+and thing indices, offsets, and each map's checksum, which guards the indices.
+`ajar.pk3` holds the levels' MAPINFO entries and `zscript/classic.zs`, and no
+map called CLASSIC. Without doom2.wad (or without `/opt/gzdoom/gzdoom.pk3`,
+where GZDoom's translation table is read from), `./build.sh` prints one line
+("... build/ajar-classic.pk3, Doom II's maps joined (MAP=CLASSIC), not
+built") and goes on. Reading the IWAD's own directory also gets round the
+hidden names (see the Doom door lab): the MAP01 and MAP07 used are id's, as
+their checksums show (3C9902E3..., 291F2441...), whatever Ajar calls its own.
+
+**How it is made** (`tools/classic.py`):
+
+- `Piece(wad, xlat, "MAP07", n, dx, dy, keep=(666, 667))`: one of id's maps,
+  shifted by (dx, dy). Line types are translated by GZDoom's own table
+  (`xlat/doom.txt` and its includes, read from gzdoom.pk3 by `Xlat`): the
+  special and its arguments, and the activation, repeat, monster and
+  first-side bits. Sector types (the bit mask and the table, secrets
+  included), line flags and thing flags (skills, ambush, single, coop,
+  deathmatch, friend) are carried over the same way. These rules of GZDoom's
+  Doom-format loading are copied too: a line's tag is its id, a tagged line
+  with no special keeps the tag as arg0, a gunshot line also has
+  missilecross, no monster uses a secret line, and SECF_FLOORDROP is set on
+  every sector (by `AjarClassic.WorldLoaded`, through `user_doom`, since UDMF
+  cannot say it). Piece n's tags become 10000 n + tag, except the ones it
+  keeps (Dead Simple's 666 and 667, for `map07special`). Exits are taken off
+  and listed. Player starts 2 to 4 and deathmatch starts are dropped, and of
+  the player 1 starts only the level's own (Entryway's) is kept.
+  `user_piece` and `user_music` are put on every sector.
+- **The check against GZDoom itself** (`classic.py check` / `compare`): all
+  32 of Doom II's maps, each loaded as GZDoom loads it and as the converted
+  UDMF, every line, side, sector and thing dumped by a ZScript handler and
+  compared. **Everything matches except GZDoom's fixes keyed to a map's
+  checksum** (level_compatibility), 129 values over the 32 maps, which a
+  joined level cannot get: in the maps used, MAP07 line 168 (BRONZE3 below,
+  and its peg), MAP21 sectors 50 and 54 (ceiling 200, not 256; cut away
+  here anyway), MAP22 line 120 (Boom's passuse bit cleared).
+- `Piece.cut(line, at, id, target, far_colour=None)`: a frame (or a door's
+  far side) cut into one of id's one-sided walls. The wall is split, and
+  ajarmap's recess and stub are sewn in behind it. It refuses a wall that is
+  two-sided, slanted, too short or lower than 96, or has anything but void
+  behind it (no line touching the recess's box except the walls at the
+  mouth's ends, and no sector there). No sidedef may be left unused: GZDoom's
+  UDMF loader then gives the last lines no sides ("Line 603 has no front
+  sector"), and the level does not load.
+- `Piece.gate(line, id, target)`: one of id's doors made a frame by the Doom
+  door lab's method, at build time (Line_SetPortal on its face, the special
+  kept in an AjarDoomNote that `doomlab.zs` puts back; the lab's code now
+  also runs on CLASSIC levels). Entryway's exit door, line 166, is gate 4001.
+- The levels: Entryway at (0, 0) with frame 101 (the first room's north
+  wall, line 16), frame 102 (the big room's north wall by the exit, line 128)
+  and gate 4001. Dead Simple at (6144, 0) with RED's far side 201 (the
+  yard's east wall, facing the start, line 62) and frame 103 (the yard's
+  north wall, line 61). The Ajar room at (-256..256, 3200..3584) with BLUE's
+  far side 202 and frame 104. RED and BLUE (and GREEN in CLASSIC4) lean in
+  Entryway's first room. CLASSIC4 adds Nirvana (MAP21) at (16384, 0) with
+  frame 105 in its start room (line 30), and The Catacombs (MAP22) at
+  (24576, 16384) with GREEN's far side 203 (line 582).
+- Music: `AjarClassic.WorldTick` plays the `user_music` of the player's
+  sector (D_RUNNIN, D_SHAWN, D_SHAWN, D_THE_DA), 9 lines.
+
+**What the runs showed** (`classicDone=1`, all passed):
+
+- Doors (`MAP=CLASSIC MODE=1`, 29 checks, real USE presses and walking).
+  RED hung in frame 101 is walked into Dead Simple's yard (arriving facing
+  west) and back (`walkedIntoDeadSimple`, `walkedBackToEntryway`), and the
+  music changes with the piece (`musicDeadSimple`, `musicEntrywayAgain`).
+  BLUE in Dead Simple's frame 103 leads to the Ajar room and back, and so
+  does BLUE by Entryway's exit (frame 102). RED in Entryway's exit door
+  (gate 4001): the door is held open (40 to 108) and leads to Dead Simple and
+  back (`exitDoorToDeadSimple`, `deadSimpleBackThroughTheExitDoor`).
+  **USE straight at the hung gate does nothing**: the trace goes through the
+  portal (`useStraightAtTheHungGateDoesNothing`). USE at the leaf beside it
+  takes the door down. The Doom door then shuts, opens by USE as Doom's door
+  again, and leads into the exit room (`exitDoorShutAgain`,
+  `exitDoorOpensByUse`, `intoTheExitRoom`).
+- Pieces as themselves (`MODE=2`, 12 checks). Entryway's door by USE, its
+  lift, its tag-3 switch (6 of its sectors move, none of Dead Simple's), Dead
+  Simple's tag-3 switch (its own sector only) and its start switch. An item
+  picked up in each. Monsters woken by noise in Entryway move (several of 19
+  each run), and Dead Simple's 12 hear nothing (sound targets set in 16 of
+  Entryway's sectors, 0 of Dead Simple's). Woken in Dead Simple, 8 to 11 of
+  12 move.
+- 666/667 (`MODE=5`): the mancubi killed by script, the tag-666 walls go
+  down (4 of 5; the fifth is at its lowest already, as in Doom); the
+  arachnotrons killed, the stair rises. **`map07special` counts the whole
+  level**: in CLASSIC4, with one mancubus put in Nirvana, Dead Simple's own
+  dead leave the walls up (`deadSimpleWallsWaitForAMancubusElsewhere`).
+- Views (`MODE=3`, 9 screenshots looked at): through RED both ways (the yard
+  under its sky from Entryway's dark room, and back), BLUE into the white
+  Ajar room and back, RED in the exit door (the yard through the doorway
+  under EXIT), and frame 101 empty.
+- Shots (`MODE=4`, 5 checks): hitscan and rocket from Entryway through RED
+  into Dead Simple, hitscan back. An imp in Entryway follows the player
+  through RED and comes out 74 tics later (`impFollowsThroughRed`).
+- Far out (`MAP=CLASSIC4 MODE=6`, 24 checks). GREEN in frame 101 leads to
+  The Catacombs at (24024, 15984) and back. Walking 20 tics there covers
+  97.3586, the same as in Dead Simple to 4 places. Hitscan from Entryway
+  through GREEN, and hitscan and rocket inside The Catacombs, hit. An imp
+  there walks. RED in Nirvana's frame 105 leads to Dead Simple and back.
+  Views and the automap (`MODE=8`): drawn right there. Load (`MODE=7`, map
+  to map): CLASSIC (608 lines) 48 to 70 ms, CLASSIC4 (1335 lines, 4 pieces)
+  68 to 96 ms.
+- **The limit of coordinates is ±32768, and it is hard.** With The
+  Catacombs at x 40960 (`AJAR_CLASSIC_FAR22=40960,16384`), GZDoom refuses
+  the level: "Value 40768.000000 out of range for a coordinate 'X'. Valid
+  range is [-32768 .. 32768]" for each vertex, then "Map has out of range
+  coordinates". **And the level's width counts too, at about 35000.** With
+  The Catacombs at the top right corner (30320..32640, 30768..32656), the
+  level spans 33944 by 33872: all 24 checks pass, and the view and the
+  automap are drawn right there. With it to the west of everything, the
+  level's x span decides. At 35000 (from -14008 to Nirvana's 20992) all 24
+  pass. At 36000, 40000, 45000 and 53648 (the bottom left corner) Nirvana
+  is lost: a point in it is found in The Catacombs' sector 236, so the
+  player put there stands in The Catacombs (7 or 8 of the 24 fail, all of
+  them Nirvana's). Measured, not read in the engine (the node builder, by
+  the look of it). So a joined level has to fit in about 32768 across, each
+  way.
+- Changing a piece in code (Vadim: the maps are raw material, "modified in
+  different ways anyway"; on Nirvana, `nirvana()`, 24 checks with the
+  above). Edits by index, in the map's own numbers: `set_sector` (sector 17
+  light 208 and floor FLOOR1_6; sector 20 floor 40, not 16, and a tag),
+  `set_side` (line 29 MARBFACE), `set_line` (line 29 Light_ChangeToValue on
+  that tag, by USE: the square goes to 64), and `remove_thing` (70, the
+  super shotgun), `move_thing` (50, a medikit) and `add_thing` (a blue
+  armour). All were seen in the game (`edit...`). `trim(box=...)` keeps the
+  sectors wholly in a box (TRIM21: 13 of 61). Each two-sided line on the cut
+  becomes a one-sided wall facing the kept side, textured from that side's
+  upper or lower (or a given texture, or one of the sector's own walls), with
+  a manual door special on it taken off. The rest goes: 273 lines, 147
+  things (Nirvana's three mancubi with them). Here 1 line was made a wall
+  (line 144, WOOD10), and it stops the player (`trimWallStops`). Nothing is
+  left outside the box. Nothing is renumbered until the level is written
+  (what goes is None), so edits, trim and cuts all use id's indices. Each
+  took well under the couple of hours: about 60 and 80 lines.
+
+**What does not carry over**, by name: GZDoom's per-map compatibility fixes
+(above); the sky (one per level, SKY1, so Nirvana and The Catacombs lose
+Doom II's SKY3); the exits (taken off: Entryway line 162, Dead Simple 149
+to 152 and 174, Nirvana 319 and 320, The Catacombs 458); the intermission,
+par time and level name (one each); the counts are the level's sums
+(CLASSIC: secrets 6 = 5 + 1, monsters 31, items 15 on skill 3);
+`map07special` and any boss special act on the whole level by class; the
+things' class bits (not settable in UDMF, and no use in Doom II). Sound does
+not cross between pieces (they do not touch). Skill flags carry (the
+check).
+
+**Shared files touched**, additively: `mapinfo.txt` (two entries),
+`zscript.zs` (an include), `ajar.zs` (one line: the handler stands down on
+CLASSIC levels, as on THEN), `doomlab.zs` (gates and the note also on
+CLASSIC levels), `build.sh`, `run.sh`, `tools/smoke.sh`.
+
+**What a real level would need.** Frames chosen in each map by hand (the
+cut refuses walls with no void behind, and many of id's walls back onto
+other rooms). Monsters' fights and counts planned across pieces. The exits
+replaced by Ajar's. A sky per piece (a sky texture swapped in the sector,
+or skyboxes). The pieces packed into about 32768 square: Entryway and Dead
+Simple are about 3400 and 2400 across, so a level holds perhaps eight to
+twenty such pieces, fewer of the big ones. For a player other than
+Vadim: their own doom2.wad, where `./build.sh` looks
+(`$HOME/.config/gzdoom/doom2.wad`, or `IWAD=...`), with the same checksums
+(other versions are refused by the checksum guard), and the joined package
+built on their machine. A released Ajar would have to run `classic.py` at
+the player's end, or ship it as a tool, since the package cannot be
+shipped.
+
+**Runs** (2026-11-26, on `AJAR_QUICK=1 ./build.sh`, which succeeded and
+built both packages): `MAP=CLASSIC MODE=1` 29, `MODE=2` 12, `MODE=4` 5,
+`MODE=5` 2; `MAP=CLASSIC4 MODE=5` 3, `MODE=6` 24 (and with The Catacombs
+moved, `AJAR_CLASSIC_FAR22`, as above); `MODE=3` and `MODE=8` screenshots looked at; `MODE=7` load
+times. Regressions: `MAP=LAB` 16 of 16, `MAP=TEST MODE=1` 7 of 7,
+`MAP=MAP11` 24 of 24, `MAP=THEN MODE=1` 30 of 30.
+
+**Not tested / not played by hand.** The game by hand (`MAP=CLASSIC
+./run.sh` in the worktree); the look on the real machine (GLES); savegames;
+keyed doors, teleporters across pieces, crushers; monsters through the frames
+other than the imp; hitscan monsters across a frame; the skies of the far
+pieces seen; other skills than 3 in play; doom2.wad versions other than
+Vadim's; any of id's maps but these four in a level (the conversion check
+loads all 32, one at a time); MAP=CLASSIC without the classic package
+(GZDoom would not find the map).

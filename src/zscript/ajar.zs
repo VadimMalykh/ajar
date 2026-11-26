@@ -1396,6 +1396,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "LAST") return;      // and the last fight lab (lasttest.zs, from third.zs's tic)
 		if (level.mapname ~== "YARD") return;      // and the yard lab (yardtest.zs, from third.zs's tic)
 		if (level.mapname ~== "THEN") return;      // and the then and now lab (thentest.zs)
+		if (level.mapname.Left(7) ~== "CLASSIC") return;     // and the joined maps lab (classic.zs)
 		if (level.mapname ~== "MAP21") return;     // and MAP21 (map21.zs, LongRunTest)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
