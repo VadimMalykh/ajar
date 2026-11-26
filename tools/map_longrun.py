@@ -344,6 +344,29 @@ frame((1504, 448), (1504, 512), (1, 0), 103, CO, LOW, clock=(NOW,))
 # =================================================================================================
 # 4. THE CELLAR (the valve: undo a cause)
 # =================================================================================================
+# --- THE CAUSES MADE READABLE (PLAN.md, "MAP21: the causes made readable"), sections 4 to 6: THEN the
+# device does the thing, small; NOW its wreck is at the same spot and the result where it was putting
+# it; the frame faces the spot that changes, the lever is on the frame's own wall beside it, the
+# target(s) at the device opposite. Over each lever, at both times, a name plate. The pictures asked
+# for here are drawn by tools/gfx_then.py (make_longrun); the things are map21.zs's.
+GOODS_T, WRECK_T, STREAM_T, RUMBLE_T = 20188, 20189, 20191, 20192
+PICTURES = {}       # (kind, look, part, shift, words): texture name, for gfx_then.make_longrun
+
+
+def picture(c, kind, part, a, b, out, words=""):
+    """A picture of `kind` (gfx_then.make_longrun: L a live lever THEN, D a dead one NOW, F the shut
+    goods-in flap, P the pipe, B the plan board, S a wall's letter over where the beam strikes it) on the
+    copy's wall `part` for the wall piece a-b seen looking `out`, its wall laid as the wall around it is."""
+    key = (kind, c.look, part, I1._shift(c.P(a), c.P(b), out), words)
+    return PICTURES.setdefault(key, f"AJ21{kind}{len(PICTURES):02d}")
+
+
+def lever_plate(a, b, out, cause, words, part):
+    """The cause's lever on the wall piece a-b (seen looking `out`), with a plate `words` over it."""
+    t.lever(a, b, cause, tex={NOW: picture(t.now, "D", part, a, b, out, words),
+                              THEN: picture(t.then, "L", part, a, b, out, words)})
+
+
 PIT, WATER, LEDGE = -200, -72, -56
 STEPS = [(1056 - 32 * (i + 1), LOW + (PIT - LOW) * (i + 1) // 7) for i in range(7)]       # x of each step's west edge, its floor
 CELLAR = look(LA, FA, KA, LOW)
@@ -368,9 +391,17 @@ ajarmap.key(m, 2, 672, 1712)
 W.basin(m, BASIN, 480 * 512, LOW, floor=PIT, at=(800, 1350))
 W.rate(m, 900, 1350, 0, 0, W.FLOAT)                                             # the player floats up when idle in it
 t.cause(1144, 1500, VALVE, 2, basin=BASIN, depth=WATER - PIT, start=1)           # 0 shut (dry), 1 open (full): found open
-t.lever((1120, 1600), (1184, 1600), VALVE)                                      # on the landing
+lever_plate((1232, 1328), (1232, 1392), (1, 0), VALVE, "VALVE", LA)             # on the landing's east wall, beside 105
 t.target(588, 1376, VALVE, z=44)                                                # on the ledge, across the pit: 105 sees it
 hang(t.then, (576, 1312), (576, 1440), "GA")                                    # the valve's gauges, over the target
+# the pipe on the pit's west wall, just south of the ledge, at both times: its mouth at MOUTH, over NOW's
+# water. Open, a thin stream falls from it: THEN to the pit's floor (a wet patch there), NOW onto the water;
+# shut, the pipe is dry (AjarStream, map21.zs, shown by the valve's setting at once)
+MOUTH, PIPE = -16, ((576, 1216), (576, 1280))
+for c in t.copies:
+    c.cut(*PIPE)
+    c.line(*PIPE, mid=picture(c, "P", LA, *PIPE, (-1, 0)), exact=True)
+    c.thing(582, 1248, STREAM_T, args=(VALVE, 1, MOUTH - PIT, BASIN if c.now else 0))
 for c in t.copies:
     hang(c, (1088, 1088), (1216, 1088), "NB")                                   # the clock on the landing
 
@@ -381,24 +412,61 @@ BAY = look(AR, FR, KA, LOW)
 UP_ = 56                                                                         # the gallery
 RACKS = [(1616, 1376, 1696, 1440), (1760, 1376, 1840, 1440)]
 HEAP_STEPS = [(1840, -64, -16), (1904, -88, 8), (1968, -112, 32)]               # x, floor standing (0), running (1)
+# The belt, at both times: out of the goods-in flap in the west wall, east along the south side to the hatch
+# (the heap's footprint). THEN it runs and crates ride it into the hatch, an open hole, railed (players may
+# not cross its rail, monsters not its north side; crates drop through), dark inside; new ones come out of the flap
+# (AjarGoodsIn, map21.zs). NOW the same belt, rusted and still; the flap shut; the crates that stood on it
+# THEN stand on it in dust while it never ran; the hatch is the stair down or under the heap.
+FLAP, BELT_END, HATCH = 1520, 1840, (1840, 1088, 2032, 1216)        # the goods-in alcove THEN is FLAP..1568
+HATCH_FLOOR = LOW - 128
+BELT_SPEED = 2          # units a tic: a crate takes about 4 s from the flap to the hatch (MODE=4 measures it)
 for c in t.copies:
     feats = [((2032, 1088, 2160, 1536), dict(floor=UP_, side=Part("B6"), ftex=Part("FA")))]
+    feats += [((1568, 1120, BELT_END, 1216), None)]                                 # the belt's band
     if c.now:
         feats += [((x, 1088, x + 64, 1216), dict(floor=f0, side="AJDSTOR", id=HEAP,
                                                  raw=heights(floors=(f0, f1), raised="AJDSTOF")))
                   for x, f0, f1 in HEAP_STEPS]
         feats += [(r, dict(ftex="AJIFR2")) for r in RACKS]                       # where the racks stood
     else:
-        feats += [((1600, 1120, 2032, 1216), None)]                                # the belt's band
+        feats += [(HATCH, None)]
         feats += [(r, box(96, "BT", "B9", LOW)) for r in RACKS]
     fit(c, (1568, 1088, 2160, 1536), feats, **BAY)
+    first = len(m.sectors)
+    ajarmap.belt(m, c.P((1568, 1168)), c.P((BELT_END, 1168)), BELT_TAG if c.then else 0, floor=LOW, scroll=False,
+                 light=c.light)
+    for sec in m.sectors[first:]:                                               # under the room's own ceiling
+        sec.update(ceil=LOW + H, ctex=c.tex(KA), wall=c.tex(AR))
+        bed = sec["ftex"] == "FLAT20"
+        if c.now:                                                               # rusted and still
+            sec.update(ftex="AJ21BT3" if bed else "AJ21CT3", side="AJ21CS3")
+        elif bed:
+            sec.update(side="SUPPORT2")
     if c.then:
+        # the goods-in alcove behind the flap: low and dark, where the crates come from out of sight
         first = len(m.sectors)
-        ajarmap.belt(m, c.P((1600, 1168)), c.P((2032, 1168)), BELT_TAG, floor=LOW, scroll=False, light=c.light)
-        for sec in m.sectors[first:]:                                               # under the room's own ceiling
-            sec.update(ceil=LOW + H, ctex=c.tex(KA))
+        ajarmap.belt(m, c.P((FLAP, 1168)), c.P((1568, 1168)), BELT_TAG, floor=LOW, scroll=False, light=48)
+        for sec in m.sectors[first:]:
+            sec.update(ceil=LOW + 40, ctex="FLAT20", wall=c.tex(AR), side="SUPPORT2" if sec["ftex"] == "FLAT20" else "METAL")
+        for y1, y2 in ((1120, 1136), (1136, 1200), (1200, 1216)):
+            c.line((1568, y1), (1568, y2), dontpegtop=True, **(dict(mid="AJ21FLP") if y1 == 1136 else {}))
+        # the hatch: a rim of 8 at the floor along the walls, and the hole, dark (its ceiling lit as the room's)
+        x1, y1, x2, y2 = HATCH
+        for r in ((x1, y1, x2, y1 + 8), (x2 - 8, y1 + 8, x2, y2)):
+            c.room(r, floor=LOW, ceil=LOW + H, wall=AR, side="SUPPORT2", ftex=FR, ctex=KA)
+        c.room((x1, y1 + 8, x2 - 8, y2), floor=HATCH_FLOOR, ceil=LOW + H, wall=AR, ftex="CEIL5_1", ctex=KA, light=40,
+               raw=dict(lightceiling=c.light, lightceilingabsolute=True))
+        c.line((x1, y2), (x2, y2), mid="AJ21RAL", blockplayers=True, blockmonsters=True)     # its rail, posts and a bar
+        # over the belt's end the bar only, and players only: a monster-blocking line stops every thing that
+        # is not a player, crates too (THEN has no monsters but those come through a door)
+        c.line((x1, y1), (x1, y2), mid="AJ21RAW", blockplayers=True)
+    else:
+        c.cut((1568, 1136), (1568, 1200))                                           # the flap, shut
+        c.line((1568, 1136), (1568, 1200), mid=picture(c, "F", AR, (1568, 1136), (1568, 1200), (-1, 0)),
+               dontpegbottom=True)
 room_door((1504, 1280), (1504, 1344), (1, 0), LOW, CO, AR, "GOODS")
-frame((1680, 1536), (1744, 1536), (0, 1), 108, AR, LOW)
+frame((1904, 1536), (1968, 1536), (0, 1), 108, AR, LOW)                       # looking straight at the hatch
+lever_plate((1840, 1536), (1904, 1536), (0, 1), BELT, "BELT", AR)               # beside it
 # the bay cellar (NOW): the hatch stair's foot, south of the last step; and a secret beside it
 t.now.room((1968, 1024, 2032, 1088), floor=-112, ceil=-40, wall="SUPPORT2", ftex="FLAT20", ctex="FLAT20", light=110)
 t.now.room((1904, 880, 2096, 1024), floor=-112, ceil=16, wall=PU, ftex=FP, ctex=KP, light=110)
@@ -406,16 +474,17 @@ t.now.room((2096, 912, 2112, 976), floor=-112, ceil=-16, wall="AJTRIM", ftex="AJ
 t.now.room((2112, 880, 2240, 1008), floor=-112, ceil=16, wall=PU, ftex=FP, ctex=KP, light=90, special=1024)
 t.now.thing(2000, 940, 82)                                                      # the super shotgun
 t.cause(1700, 1300, BELT, 2, tag=HEAP)                                          # 0 standing (found), 1 running
-t.belt_run(1700, 1340, BELT, BELT_TAG, (8, 0))
-t.lever((1632, 1088), (1696, 1088), BELT)
-t.target(1760, 1100, BELT)
+t.belt_run(1700, 1340, BELT, BELT_TAG, (BELT_SPEED, 0))
+t.then.thing(1544, 1168, GOODS_T, args=(BELT, 4, 68, 1568 - 1544))             # the goods-in: 4 crates on it, 68 apart
+t.target(1936, 1100, BELT, z=LOW + 46 - HATCH_FLOOR)                            # over the hatch, clear of its rail
+t.now.thing(1936, 1152, RUMBLE_T, args=(BELT,))                                 # NOW: the heap's rumble while it moves
 ajarmap.door(m, RED, 2096, 1480, angle=270)                                     # on the gallery
 
 # =================================================================================================
 # 6. OPTICS (the beam: choose a cause)
 # =================================================================================================
 OPT = look(LA, FA, KA, LOW)
-OPT_BENCHES = [(1216, 2400, 1312, 2448), (1568, 2688, 1648, 2736)]       # clear of the shots from 126 to the targets
+OPT_BENCHES = [(1216, 2400, 1312, 2448), (1216, 2688, 1296, 2736)]       # clear of the lines from 126 to the targets and of the beams
 for c in t.copies:
     feats = [((1344, 2512, 1472, 2640), dict(ftex=Part("FN")))]                     # an inlay under the emitter, both times
     feats += [(r, box(48, "BT", "B4", LOW) if c.then else dict(ftex="AJIFA2")) for r in OPT_BENCHES]
@@ -423,6 +492,16 @@ for c in t.copies:
     hang(c, (1664, 2672), (1664, 2800), "NB")
 room_door((1376, 2256), (1440, 2256), (0, 1), LOW, CO, LA, "OPTICS")
 frame((1536, 2320), (1600, 2320), (0, -1), 106, LA, LOW)
+lever_plate((1600, 2320), (1664, 2320), (0, -1), BEAM, "BEAM", LA)              # beside 106
+# opposite 106 on the north wall, at both times (NOW faded): the plan board, the room as one faces it, the
+# emitter in the middle (OFF), A the west wall on the left, B the north wall at the top, C the east wall on
+# the right. THEN its four targets sit on it at those places (B and OFF 24 apart across, so that a shot,
+# autoaimed or not, takes the one aimed at)
+BOARD = ((1472, 2832), (1664, 2832))
+for c in t.copies:
+    c.cut(*BOARD)
+    c.line(*BOARD, mid=picture(c, "B", LA, *BOARD, (0, 1)), exact=True)
+BOARD_TARGETS = ((1556, 0, 72), (1504, 1, 72), (1580, 2, 136), (1632, 3, 72))     # x, setting, the middle's height
 OPEN = LOW + 96
 HOLE_AT = {1: ((1136, 2544, 1152, 2608), (1008, 2512, 1136, 2640), (1152, 1136)),       # A, west: hole, closet, faces
            2: ((1376, 2832, 1440, 2848), (1344, 2848, 1472, 2976), (2832, 2848)),       # B, north
@@ -434,14 +513,20 @@ for n, (hole, closet, faces) in HOLE_AT.items():
     t.now.room(closet, floor=LOW, ceil=LOW + 128, wall=LA, ftex=FA, ctex=KA, light=100,
                **(dict(special=1024) if n == 2 else {}))
     x1, y1, x2, y2 = hole
+    look_at = {1: (-1, 0), 2: (0, 1), 3: (1, 0)}[n]
     for f in faces:                                                                 # shut, the wall goes on over it
         a, b = ((f, y1), (f, y2)) if n != 2 else ((x1, f), (x2, f))
-        t.now.line(a, b, upper=LA, dontpegtop=True)
+        if f == faces[0]:                   # the room's side: its letter over it, at both times (THEN where the beam strikes)
+            t.now.line(a, b, upper=picture(t.now, "S", LA, a, b, look_at, "ABC"[n - 1]), dontpegtop=True)
+            t.then.cut(a, b)
+            t.then.line(a, b, mid=picture(t.then, "S", LA, a, b, look_at, "ABC"[n - 1]), exact=True)
+        else:
+            t.now.line(a, b, upper=LA, dontpegtop=True)
 t.cause(1408, 2700, BEAM, 4, tag=HOLES, start=3)                                # 0 off, 1 A, 2 B, 3 C: found at C
 t.beam(1408, 2576, BEAM, (180, 90, 0))
-t.lever((1216, 2320), (1280, 2320), BEAM)
-for x, setting in ((1216, 0), (1280, 1), (1504, 2), (1568, 3)):                 # off, A, B, C: on the north wall
-    t.target(x, 2820, BEAM, setting)
+t.now.thing(1408, 2576, WRECK_T)                                                # NOW: the emitter's wreck, on the inlay
+for x, setting, z in BOARD_TARGETS:                                             # off, A, B, C: on the plan board
+    t.target(x, 2820, BEAM, setting, z=z - 10 - LOW)
 ajarmap.door(m, BLUE, 1056, 2576, angle=0)                                      # behind A
 t.now.thing(1416, 2920, 2013)                                                   # behind B, the secret: a soul sphere
 t.now.thing(1376, 2900, 2046)                                                   # ... rockets
@@ -495,9 +580,9 @@ AREAS = {   # name: the box things stand in (NOW's coordinates unless THEN), its
     "lobbyT": ((LX + 320, 40, LX + 992, 150), THEN), "lobbyE": ((LX + 850, 180, LX + 1000, 600), THEN),
 }
 AVOID = [(512, 300), (512, 64), (512, 160), (512, 230), (1040, 384), (1168, 240), (1490, 480), (1296, 304), (1248, 1280), (1300, 1472),
-         (1520, 1312), (1712, 1520), (1408, 2272), (1568, 2336), (1408, 2576), (LX + 1008, 320), (LX + 16, 320),
-         (2096, 1480), (1056, 2576), (1144, 1500), (1700, 1300), (1700, 1340), (LX + 512, 470),
-         (1000, 1136), (1150, 1590), (672, 1616), (1408, 2700), (720, 1560)]
+         (1520, 1312), (1936, 1520), (1408, 2272), (1568, 2336), (1408, 2576), (LX + 1008, 320), (LX + 16, 320),
+         (2096, 1480), (1056, 2576), (1144, 1500), (LX + 512, 470),
+         (1000, 1136), (1200, 1360), (672, 1616), (1408, 2700), (720, 1560), (1632, 2352)]
 TAKEN = []
 R = {CACO: 31, MANCUBUS: 48, ARACH: 64, BARON: 24, KNIGHT: 24, DEMON: 30, SPECTRE: 30}
 PART_OF = []            # (thing index, part) for every monster and pickup: the budget by part

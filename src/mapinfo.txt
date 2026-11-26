@@ -64,6 +64,10 @@ DoomEdNums
 	20185 = AjarThenMusic             // ... the lever that turns the music by time off
 	20186 = AjarThenLocked            // ... a door then, locked for the night (MAP21)
 	20187 = AjarLongRunDesk           // MAP21's desk (map21.zs): keys 1 and 2 turned then start the machine
+	20188 = AjarGoodsIn               // ... MAP21's goods-in THEN (map21.zs): crates on the belt, into the hatch; in dust NOW
+	20189 = AjarEmitterWreck          // ... the emitter's wreck NOW
+	20191 = AjarStream                // ... a stream from the cellar's pipe while the valve is open (both times)
+	20192 = AjarRumble                // ... the heap's rumble NOW while it moves
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker

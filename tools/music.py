@@ -161,6 +161,25 @@ sound lab; that is the only reason it stands among the first ones.
 And Distant Galaxy III (AJM_GAL3, the twentieth), the same evening:
 "delete 20". Distant Galaxy IV was moved from the end to its place, as
 above, so it is 20 in the lab now and the others keep their numbers.
+
+On Paradox Engine, 2026-11-26. Vadim: "Could you make 2 new variations of
+theme 5? One fast, but different arragement, and another one slow? Using
+same melodic idea?" (5 in the lab is Paradox Engine). Two were written with
+its riff and both its tunes note for note: a Toccata (a harpsichord had the
+riff, a church organ and a guitar the tunes) and a Slow one (the riff
+ticking on a muted guitar at a quarter of its speed, a clarinet and a horn).
+"Both - no", and they are removed. Then: "Could you maybe generate 5 fast
+and 5 slow? So I have something to choose from? Main melodic idea should be
+the same, with some variations, also different instruments, rhytms, etc".
+
+What Paradox Engine is made of, which is what "the main melodic idea" is
+taken to be: the riff (a low key note hammered in sixteenths, out of which
+the flat 2nd, flat 3rd, flat 2nd, 4th, flat 3rd stand: E flat, F, E flat, G,
+F in D; a flat 5th in every fourth bar); the tune that goes over the riff
+(the square wave's); the tune of the chorus over the flat 6th, the flat 7th
+and home (the brass's). The two tunes stand below as patterns
+(ENGINE_OVER_RIFF, ENGINE_CHORUS), with a second way of playing each (the
+long notes walked through) and both cut for a bar of twelve.
 """
 import random
 import re
@@ -1614,6 +1633,80 @@ def garmonic_fast():
     return p
 
 
+# On Paradox Engine, 2026-11-26 (see the top): Vadim asked for five fast and five slow variations to choose from,
+# "main melodic idea should be the same, with some variations, also different instruments, rhytms, etc". Its two
+# tunes as patterns, for the pieces below. engine() has its own copy and is not touched.
+
+ENGINE_OVER_RIFF = {                            # the tune over the riff (the square wave's in Paradox Engine)
+    "Q1": "1 - - - - - b2 - 1 - - - b7, - - -",
+    "Q2": "1 - - - - - - - . . . . 5, - b7, -",
+    "Q3": "1 - - - - - b2 - b3 - - - b2 - - -",
+    "Q4": "1 - - - - - - - - - - - . . . .",
+    "Q5": "5 - - - - - b6 - 5 - - - 4 - - -",
+    "Q6": "b3 - - - - - 4 - b3 - - - b2 - - -",
+    "Q7": "1 - - - b2 - - - b3 - - - 4 - - -",
+    "Q8": "1' - - - - - - - - - - - - - - -",
+}
+ENGINE_CHORUS = {                               # the tune of the chorus, over the flat 6th, flat 7th, home, home
+    "S1": "1' - - - - - - - b6 - - - 1' - - -",
+    "S2": "2' - - - - - - - b7 - - - 2' - - -",
+    "S3": "4' - - - b3' - - - 1' - - - - - b7 -",
+    "S4": "1' - - - - - - - - - - - . . . .",
+    "S5": "4' - - - - - - - 1' - - - 4' - - -",
+    "S6": "5' - - - - - - - 2' - - - 5' - - -",
+    "S7": "5' - - - 4' - - - b3' - - - 4' - 5' -",
+    "S8": "1'' - - - - - - - - - - - - - - -",
+}
+# The second way of playing each: the same bars, the same first note in each, the long notes walked through.
+ENGINE_OVER_RIFF_2 = {
+    "Q1": "1 - - - - - b2 - 1 - b7, - 5, - b7, -",
+    "Q2": "1 - - - - - - - b3 - - - b2 - 1 -",
+    "Q3": "1 - b2 - b3 - - - 4 - - - b3 - b2 -",
+    "Q4": "1 - - - - - - - - - - - 5 - b6 -",
+    "Q5": "5 - - - - - b6 - 5 - 4 - b3 - 4 -",
+    "Q6": "b3 - - - - - 4 - b3 - b2 - 1 - b2 -",
+    "Q7": "1 - b2 - b3 - 4 - 5 - - - b7 - - -",
+    "Q8": "1' - - - - - - - - - - - - - - -",
+}
+ENGINE_CHORUS_2 = {
+    "S1": "1' - - - - - b7 - b6 - - - 1' - - -",
+    "S2": "2' - - - - - 1' - b7 - - - 2' - - -",
+    "S3": "4' - - - b3' - 2' - 1' - - - - - b7 -",
+    "S4": "1' - - - - - - - 5 - - - 1' - - -",
+    "S5": "4' - - - - - b3' - 1' - - - 4' - - -",
+    "S6": "5' - - - - - 4' - 2' - - - 5' - - -",
+    "S7": "5' - 4' - b3' - 4' - 5' - - - b7' - - -",
+    "S8": "1'' - - - - - - - - - - - - - - -",
+}
+# Both tunes cut for a bar of twelve (12/8: four beats of three), the same notes in the same order.
+ENGINE_OVER_RIFF_12 = {
+    "Q1": "1 - - - - b2 1 - - b7, - -",
+    "Q2": "1 - - - - - . . . 5, - b7,",
+    "Q3": "1 - - - - b2 b3 - - b2 - -",
+    "Q4": "1 - - - - - - - - . . .",
+    "Q5": "5 - - - - b6 5 - - 4 - -",
+    "Q6": "b3 - - - - 4 b3 - - b2 - -",
+    "Q7": "1 - - b2 - - b3 - - 4 - -",
+    "Q8": "1' - - - - - - - - - - -",
+}
+ENGINE_CHORUS_12 = {
+    "S1": "1' - - - - - b6 - - 1' - -",
+    "S2": "2' - - - - - b7 - - 2' - -",
+    "S3": "4' - - b3' - - 1' - - - - b7",
+    "S4": "1' - - - - - - - - . . .",
+    "S5": "4' - - - - - 1' - - 4' - -",
+    "S6": "5' - - - - - 2' - - 5' - -",
+    "S7": "5' - - 4' - - b3' - - 4' - 5'",
+    "S8": "1'' - - - - - - - - - - -",
+}
+
+
+# --- the five fast ones on Paradox Engine: their functions go between this line and the next marker ---
+
+
+# --- the five slow ones on Paradox Engine: their functions go between this line and TRACKS ---
+
+
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_GARF", "fast, the Doom way, on Vadim's sketch garmonic: one note held by a muted guitar, the riff slipping under it", garmonic_fast),
@@ -1640,6 +1733,8 @@ TRACKS = [
     ("AJM_GAR2", "ambient, the same sketch as a chain: every note falls a semitone, the chords climb by fifths", garmonic_two),
     ("AJM_GALF", "fast, the Doom way, on Vadim's sketch distant_galaxy_theme: a riff that slips a semitone and comes back", distant_galaxy_fast),
     ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
+    # the five fast ones on Paradox Engine (26 to 30 in the lab): their lines go under this one
+    # the five slow ones on Paradox Engine (31 to 35 in the lab): their lines go under this one
 ]
 
 

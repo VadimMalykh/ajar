@@ -101,6 +101,237 @@ class AjarLongRun : EventHandler
 	}
 }
 
+// === The causes made readable (PLAN.md, "MAP21: the causes made readable") ==========================
+// THEN the device does the thing, small; NOW its wreck is at the same spot and the result where it was
+// putting it. Things placed by tools/map_longrun.py (sections 4 to 6).
+
+// A crate of the goods-in (AjarGoodsIn): THEN, on the belt.
+class AjarGoodsCrate : AjarCrate
+{
+	AjarOldCrate twin;         // NOW: the same crate in dust, while the belt never ran
+	int cameOut;               // the tic it came out of the flap into the bay (0: it stood there at the start)
+	int fell;                  // the tic it went over the hatch's edge
+}
+
+// NOW: a crate that stood on the belt forty years ago and still does, grey-brown with dust. Solid, 32 high.
+class AjarOldCrate : Actor
+{
+	Default { Radius 16; Height 32; Mass 1000; +SOLID +NOBLOOD +DONTTHRUST +NOTAUTOAIMED }
+	States { Spawn: AJB0 A -1; Stop; }
+	override void PostBeginPlay() { Super.PostBeginPlay(); A_SetTranslation('AjarDustCrate'); }
+}
+
+// The goods-in (thing 20188, THEN, in the dark alcove behind the bay's flap; args: the belt's cause, the
+// crates standing on the belt at the start, their spacing along it, how far the flap's wall is east of it).
+// THEN the crates stand on the belt as found; while it runs they ride east and drop into the hatch, where
+// each is gone with a thud, and a new one comes out of the flap each time the last is `spacing` clear of
+// it; the belt hums. NOW, while the belt stands (it never ran), each crate standing on it in the bay THEN
+// stands on it NOW at the same spot, in dust (AjarOldCrate; it waits while something stands there NOW);
+// while it runs there are none (they are in the heap).
+class AjarGoodsIn : Actor
+{
+	const DROP = 24;           // a crate this far under the belt has gone over the hatch's edge
+	const MOST = 8;
+	AjarThenCause cause;
+	AjarThen when;
+	Array<AjarGoodsCrate> crates;
+	AjarGoodsCrate last;
+	int made, gone;            // (the tests) crates come out of the flap, crates gone into the hatch
+	Array<int> rides;          // (the tests) tics from the flap to the hatch's edge, a crate each
+	bool hum;
+
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+
+	double FlapX() { return pos.x + args[3]; }
+	static AjarGoodsIn Get() { return AjarGoodsIn(ThinkerIterator.Create("AjarGoodsIn").Next()); }
+
+	AjarGoodsCrate Make(double x)
+	{
+		let c = AjarGoodsCrate(Spawn("AjarGoodsCrate", (x, pos.y, pos.z)));
+		if (c) { crates.Push(c); last = c; }
+		return c;
+	}
+
+	// Is the crate's place NOW free of anything solid?
+	bool Clear(Vector3 p)
+	{
+		let it = BlockThingsIterator.CreateFromPos(p.x, p.y, p.z, 32, 16, false);
+		while (it.Next())
+		{
+			let a = it.thing;
+			if (!a.bSolid || a is "AjarOldCrate") continue;
+			if (abs(a.pos.x - p.x) < a.radius + 16 && abs(a.pos.y - p.y) < a.radius + 16 && a.pos.z < p.z + 32 && a.pos.z + a.height > p.z) return false;
+		}
+		return true;
+	}
+
+	override void Tick()
+	{
+		Super.Tick();
+		if (!cause)
+		{
+			let th = AjarThenHandler.Get();
+			if (!th || !th.ready) return;
+			cause = th.FindCause(args[0]);
+			when = th.when;
+			if (!cause || !when) { cause = null; return; }
+			for (int k = 1; k <= args[1]; k++) Make(pos.x + args[2] * k);
+		}
+		bool running = cause.setting == 1;
+		if (running != hum)
+		{
+			hum = running;
+			if (hum) A_StartSound("plats/pt1_mid", CHAN_BODY, CHANF_LOOPING, 0.45, ATTN_NORM, 0.6);
+			else A_StopSound(CHAN_BODY);
+		}
+		if (running && crates.Size() < MOST && (!last || last.bDestroyed || last.pos.x - pos.x >= args[2]))
+		{
+			let c = Make(pos.x);
+			if (c) { c.cameOut = -1; made++; }
+		}
+		bool autotest = CVar.GetCVar("ajar_autotest").GetInt() != 0;
+		for (int i = crates.Size() - 1; i >= 0; i--)
+		{
+			let c = crates[i];
+			if (!c || c.bDestroyed) { crates.Delete(i); continue; }
+			if (c.cameOut == -1 && c.pos.x >= FlapX()) c.cameOut = max(level.maptime, 1);
+			bool over = c.pos.z < pos.z - DROP;
+			if (over && !c.fell)
+			{
+				c.fell = level.maptime;
+				if (c.cameOut > 0) rides.Push(c.fell - c.cameOut);
+				if (autotest) Console.Printf("AJARTEST info a crate over the hatch's edge at t=%d (%d tics from the flap)", level.maptime, c.cameOut > 0 ? c.fell - c.cameOut : -1);
+			}
+			if (over && c.pos.z <= c.floorz + 0.5)
+			{
+				c.A_StartSound("plats/pt1_stop", CHAN_AUTO, 0, 1, ATTN_NORM, 0.7);       // a thud, and it is gone
+				if (c.twin) c.twin.Destroy();
+				c.Destroy();
+				crates.Delete(i);
+				gone++;
+				continue;
+			}
+			// NOW: on the belt in the bay, while it stands
+			bool want = cause.setting == 0 && !over && c.pos.x - c.radius >= FlapX() && abs(c.pos.z - pos.z) < 1;
+			if (want)
+			{
+				Vector3 p = (when.Now(c.pos.xy), c.pos.z);
+				if (!c.twin) { if (Clear(p)) c.twin = AjarOldCrate(Spawn("AjarOldCrate", p)); }
+				else if ((c.twin.pos.xy - p.xy).Length() > 0.01) c.twin.SetOrigin(p, true);
+			}
+			else if (c.twin) { c.twin.Destroy(); c.twin = null; }
+		}
+	}
+
+	// (the tests) the crates THEN standing on the belt in the bay; and NOW's
+	int OnBelt()
+	{
+		int n = 0;
+		for (int i = 0; i < crates.Size(); i++)
+			if (crates[i] && !crates[i].bDestroyed && crates[i].pos.x - 16 >= FlapX() && abs(crates[i].pos.z - pos.z) < 1) n++;
+		return n;
+	}
+}
+
+// NOW: the heap's rumble while the cause's sectors move (thing 20192; args: the cause).
+class AjarRumble : Actor
+{
+	AjarThenCause cause;
+	bool on;
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+	override void Tick()
+	{
+		Super.Tick();
+		if (!cause)
+		{
+			let th = AjarThenHandler.Get();
+			if (!th || !th.ready) return;
+			cause = th.FindCause(args[0]);
+			if (!cause) return;
+		}
+		bool moving = !cause.arrived;
+		if (moving == on) return;
+		on = moving;
+		if (on) A_StartSound("plats/pt1_mid", CHAN_BODY, CHANF_LOOPING, 1, ATTN_NORM, 0.5);
+		else { A_StopSound(CHAN_BODY); A_StartSound("plats/pt1_stop", CHAN_AUTO, 0, 1, ATTN_NORM, 0.6); }
+	}
+}
+
+// A thin stream of water from a pipe's mouth (thing 20191, at both times; args: the cause, the setting it
+// falls in, the mouth's height over the floor here, and NOW the tag of the basin whose water it falls onto,
+// THEN 0: it falls to the floor and leaves a wet patch, a step out from the wall the thing faces away from).
+// Shown and hidden by the cause's setting at once; it trickles while shown.
+class AjarStream : Actor
+{
+	AjarThenCause cause;
+	AjarBasin basin;
+	Actor patch;
+	double floorAt;
+	bool flowing;
+	Default { +NOBLOCKMAP +NOGRAVITY +DONTSPLASH RenderStyle "Translucent"; Alpha 0.9; XScale 2; }
+	States { Spawn: AJXS ABCD 3 Bright; Loop; }
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		floorAt = pos.z;
+		bInvisible = true;
+	}
+	double Mouth() { return floorAt + args[2]; }
+	double Bottom() { return basin && basin.w > floorAt ? basin.w : floorAt; }
+	bool Shown() { return flowing; }
+
+	override void Tick()
+	{
+		Super.Tick();
+		if (!cause)
+		{
+			let th = AjarThenHandler.Get();
+			if (!th || !th.ready) return;
+			cause = th.FindCause(args[0]);
+			if (!cause) return;
+			if (args[3])
+			{
+				let wh = AjarWaterHandler.Get();
+				if (wh) basin = wh.BasinOfTag(args[3]);
+			}
+			else
+			{
+				patch = Spawn("AjarStreamPatch", (pos.xy + (cos(angle), sin(angle)) * 12, floorAt + 0.3));
+				if (patch) patch.bInvisible = true;
+			}
+		}
+		bool on = cause.setting == args[1];
+		if (on)
+		{
+			double b = Bottom();
+			if (abs(pos.z - b) > 0.01) SetZ(b);
+			scale.y = max(Mouth() - b, 1) / 64.;
+		}
+		bInvisible = !on;
+		if (patch) patch.bInvisible = !on;
+		if (on == flowing) return;
+		flowing = on;
+		if (on) A_StartSound("ajar/water", CHAN_BODY, CHANF_LOOPING, 0.3, ATTN_NORM);
+		else A_StopSound(CHAN_BODY);
+	}
+}
+
+class AjarStreamPatch : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +FLATSPRITE +NOINTERACTION RenderStyle "Translucent"; Alpha 0.85; }
+	States { Spawn: AJXP A -1; Stop; }
+}
+
+// NOW: the emitter's wreck on its inlay (thing 20189), where THEN's stands. Not solid, as THEN's is not.
+class AjarEmitterWreck : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY }
+	States { Spawn: AJXW A -1; Stop; }
+}
+
 // The checks: MAP=MAP21 MODE=n tools/smoke.sh.
 //   1 the way through, walked: every stage on foot, through the doors, by USE
 //     (nothing posed, nothing ridden by script), with the checks on the way
@@ -283,6 +514,7 @@ class LongRunTest : EventHandler
 		if (mode == 1) Walk(mo);
 		else if (mode == 2) Shots(mo);
 		else if (mode == 3) Views(mo);
+		else if (mode == 4) Causes(mo);
 		Drive(mo);
 		if (tic % 70 == 0 && mode != 3) Info(String.Format("t=%d step %d %s carried %s", tic, step, Where(mo), h.carried ? h.carried.Label() : "-"));
 	}
@@ -363,8 +595,8 @@ class LongRunTest : EventHandler
 		if (S()) { Check("hungIn105", F(105).door == clocked && F(125).door == shadow, h.said); Next(); }
 		if (S()) Through(mo, 0);
 		if (S()) { Check("inCellarThen", InThen(mo) && mo.pos.x < 1232 && mo.pos.x > 1056, Where(mo)); Next(); }
-		if (S()) Go(mo, 1152, OFF + 1570);
-		if (S()) Use(mo, 90);
+		if (S()) Go(mo, 1200, OFF + 1360);                                         // the lever, beside 125
+		if (S()) Use(mo, 0);
 		if (S()) Wait(3);
 		if (S())
 		{
@@ -406,14 +638,13 @@ class LongRunTest : EventHandler
 		if (S()) Use(mo, 0);
 		if (S()) Wait(40);
 		if (S()) Go(mo, 1600, 1312);
-		if (S()) Go(mo, 1712, 1500);
+		if (S()) Go(mo, 1936, 1500);
 		if (S()) Use(mo, 90);
 		if (S()) { Check("hungIn108", F(108).door == clocked && F(128).door == shadow, h.said); Next(); }
 		if (S()) Through(mo, 90);
 		if (S()) { Check("inBayThen", InThen(mo) && mo.pos.x > 1568, Where(mo)); Next(); }
-		if (S()) Go(mo, 1728, OFF + 1300);
-		if (S()) Go(mo, 1664, OFF + 1128);
-		if (S()) Use(mo, 270);
+		if (S()) Go(mo, 1872, OFF + 1500);                                         // the lever, beside 128
+		if (S()) Use(mo, 90);
 		if (S()) Wait(3);
 		if (S())
 		{
@@ -421,8 +652,7 @@ class LongRunTest : EventHandler
 			Check("beltLine", h.said == "The belt has run for forty years.", h.said);
 			Next();
 		}
-		if (S()) Go(mo, 1728, OFF + 1300);
-		if (S()) Go(mo, 1712, OFF + 1500);
+		if (S()) Go(mo, 1936, OFF + 1500);
 		if (S()) Through(mo, 90);
 		if (S()) Wait(80);
 		if (S()) { Check("heapUp", abs(FZ(1872, 1150) + 16) < 1 && abs(FZ(1936, 1150) - 8) < 1 && abs(FZ(2000, 1150) - 32) < 1 && !InThen(mo), Where(mo)); Next(); }
@@ -479,7 +709,7 @@ class LongRunTest : EventHandler
 		if (S()) Use(mo, 0);
 		if (S()) Wait(40);
 		if (S()) Go(mo, 1600, 1312);
-		if (S()) Go(mo, 1712, 1500);
+		if (S()) Go(mo, 1936, 1500);
 		if (S()) Use(mo, 90);
 		if (S()) { Check("tookClockedFrom108", h.carried == clocked, h.said); Next(); }
 		if (S()) Go(mo, 1600, 1312);
@@ -495,7 +725,7 @@ class LongRunTest : EventHandler
 		if (S()) { Check("hungIn106", F(106).door == clocked && F(126).door == shadow, h.said); Next(); }
 		if (S()) Through(mo, 270);
 		if (S()) { Check("inOpticsThen", InThen(mo) && mo.pos.y > OFF + 2320, Where(mo)); Next(); }
-		if (S()) Go(mo, 1248, OFF + 2350);
+		if (S()) Go(mo, 1632, OFF + 2352);                                         // the lever, beside 126
 		if (S()) Use(mo, 270);
 		if (S()) Wait(3);
 		if (S()) { Check("beamLine", h.said == "The beam was never switched on.", h.said); Next(); }
@@ -524,7 +754,7 @@ class LongRunTest : EventHandler
 		if (S()) Use(mo, 0);
 		if (S()) Wait(40);
 		if (S()) Go(mo, 1600, 1312);
-		if (S()) Go(mo, 1712, 1500);
+		if (S()) Go(mo, 1936, 1500);
 		if (S()) Use(mo, 90);
 		if (S()) { Check("blueHungIn108", F(108).door == blue, h.said); Next(); }
 		if (S()) Through(mo, 90);
@@ -617,14 +847,27 @@ class LongRunTest : EventHandler
 		Vector2 img = AjarSight.ImageThrough(h.FindLine(src), h.FindLine(dst), p);
 		return VectorAngle(img.x - mo.pos.x, img.y - mo.pos.y);
 	}
-	void Shoot(Actor mo, double ang)
+	void Shoot(Actor mo, double ang, double pitch = 0)
 	{
-		mo.angle = ang; mo.pitch = 0;
+		mo.angle = ang; mo.pitch = pitch;
 		FTranslatedLineTarget t;
-		let puff = mo.LineAttack(ang, 4096, 0, 10, 'Hitscan', "BulletPuff", LAF_NORANDOMPUFFZ, t);
-		Info(String.Format("shot at %.1f: puff %s, hit %s", ang, puff ? String.Format("(%.0f,%.0f,%.0f)", puff.pos.x, puff.pos.y, puff.pos.z) : "none",
-			t.linetarget ? t.linetarget.GetClassName() : 'none'));
+		let puff = mo.LineAttack(ang, 4096, pitch, 10, 'Hitscan', "BulletPuff", LAF_NORANDOMPUFFZ, t);
+		Info(String.Format("shot from (%.0f,%.0f) at %.1f pitch %.1f: puff %s, hit %s", mo.pos.x, mo.pos.y, ang, pitch,
+			puff ? String.Format("(%.0f,%.0f,%.0f)", puff.pos.x, puff.pos.y, puff.pos.z) : "none", t.linetarget ? t.linetarget.GetClassName() : 'none'));
 	}
+	// A shot through the hung door src (its far side dst) at the point p (THEN), z its height: aimed as a player
+	// aims, angle and pitch, from where the player stands.
+	void ShootAt(Actor mo, int src, int dst, Vector3 p)
+	{
+		Vector2 img = AjarSight.ImageThrough(h.FindLine(src), h.FindLine(dst), p.xy);
+		double dist = (img - mo.pos.xy).Length();
+		double sz = mo.pos.z + mo.height * 0.5 - mo.floorclip + PlayerPawn(mo).AttackZOffset * mo.player.crouchfactor;
+		Shoot(mo, VectorAngle(img.x - mo.pos.x, img.y - mo.pos.y), -atan2(p.z - sz, dist));
+	}
+	string Holes() { return String.Format("A %.0f B %.0f C %.0f", CZ(1144, 2576), CZ(1408, 2840), CZ(1672, 2576)); }
+	bool HoleOpen(int n) { return n == 1 ? CZ(1144, 2576) > 50 : n == 2 ? CZ(1408, 2840) > 50 : CZ(1672, 2576) > 50; }
+	bool HoleShut(int n) { return n == 1 ? CZ(1144, 2576) < -39 : n == 2 ? CZ(1408, 2840) < -39 : CZ(1672, 2576) < -39; }
+	bool OnlyHole(int n) { for (int k = 1; k <= 3; k++) if (k == n ? !HoleOpen(k) : !HoleShut(k)) return false; return true; }
 
 	void Shots(Actor mo)
 	{
@@ -632,47 +875,52 @@ class LongRunTest : EventHandler
 		if (S()) { Pose(mo, 512, 280, 90); PressUse(mo); Next(); }
 		if (S()) Wait(20);
 		if (S()) { Check("tookClocked", h.carried == clocked, h.said); Next(); }
-		// the valve, from the landing through 105
+		// the valve, from the landing through 105: the target on the ledge, across the pit
 		if (S()) { Pose(mo, 1200, 1280, 0); PressUse(mo); Next(); }
 		if (S()) Wait(20);
 		if (S()) { Check("hungIn105", F(105).door == clocked, h.said); Next(); }
-		if (S()) { Shoot(mo, AimThrough(mo, 105, 125, (588, OFF + 1376))); Next(); }
+		if (S()) { ShootAt(mo, 105, 125, (588, OFF + 1376, -2)); Next(); }
 		if (S()) Wait(3);
 		if (S()) { Check("valveShotShut", Cause(VALVE).setting == 0, String.Format("setting %d", Cause(VALVE).setting)); Next(); }
 		if (S()) Wait(80);
 		if (S()) { Check("shotPitDry", Water() <= PIT + 1, String.Format("water %.1f", Water())); Next(); }
 		if (S()) Wait(40);
-		if (S()) { Shoot(mo, AimThrough(mo, 105, 125, (588, OFF + 1376))); Next(); }
+		if (S()) { ShootAt(mo, 105, 125, (588, OFF + 1376, -2)); Next(); }
 		if (S()) Wait(80);
 		if (S()) { Check("valveShotOpenAgain", Cause(VALVE).setting == 1 && abs(Water() + 72) < 1, String.Format("water %.1f", Water())); Next(); }
 		if (S()) Wait(200);
 		if (S()) { Check("fullAgainAmbush", Ambushers(63) == 0, String.Format("%d still to come", Ambushers(63))); Next(); }
 		if (S()) { Pose(mo, 1200, 1280, 0); PressUse(mo); Next(); }
 		if (S()) Wait(20);
-		// the belt, from the bay through 108
-		if (S()) { Pose(mo, 1712, 1500, 90); PressUse(mo); Next(); }
+		// the belt, from the bay through 108, which looks straight at the hatch: the target over it
+		if (S()) { Pose(mo, 1936, 1500, 90); PressUse(mo); Next(); }
 		if (S()) Wait(20);
 		if (S()) { Check("hungIn108", F(108).door == clocked, h.said); Next(); }
-		if (S()) { Shoot(mo, AimThrough(mo, 108, 128, (1760, OFF + 1100))); Next(); }
+		if (S()) { ShootAt(mo, 108, 128, (1936, OFF + 1100, 16)); Next(); }
 		if (S()) Wait(80);
 		if (S()) { Check("beltShotRunning", Cause(BELT).setting == 1 && abs(FZ(2000, 1150) - 32) < 1, String.Format("setting %d step3 %.1f", Cause(BELT).setting, FZ(2000, 1150))); Next(); }
-		if (S()) { Pose(mo, 1712, 1500, 90); PressUse(mo); Next(); }
+		if (S()) { ShootAt(mo, 108, 128, (1936, OFF + 1100, 16)); Next(); }
+		if (S()) Wait(80);
+		if (S()) { Check("beltShotStanding", Cause(BELT).setting == 0 && abs(FZ(2000, 1150) + 112) < 1, String.Format("setting %d step3 %.1f", Cause(BELT).setting, FZ(2000, 1150))); Next(); }
+		if (S()) { Pose(mo, 1936, 1500, 90); PressUse(mo); Next(); }
 		if (S()) Wait(20);
-		// the beam, from optics through 106: A
+		// the beam, from optics through 106, which looks straight at the plan board: each of its four targets from
+		// one place, the middle of 106's mouth, a step out of it
 		if (S()) { Pose(mo, 1568, 2360, 270); PressUse(mo); Next(); }
 		if (S()) Wait(20);
 		if (S()) { Check("hungIn106", F(106).door == clocked, h.said); Next(); }
-		// A lies far to the side: from the middle of the mouth the line grazes 126's jamb; a step west of it
-		if (S()) { Pose(mo, 1527, 2360, 270); Next(); }
-		if (S()) { Shoot(mo, AimThrough(mo, 106, 126, (1280, OFF + 2820))); Next(); }
+		if (S()) { ShootAt(mo, 106, 126, (1504, OFF + 2820, 72)); Next(); }
 		if (S()) Wait(160);
-		if (S()) { Check("beamShotA", Cause(BEAM).setting == 1 && CZ(1144, 2576) > 50 && CZ(1672, 2576) < -39 && CZ(1408, 2840) < -39,
-			String.Format("setting %d A %.0f B %.0f C %.0f", Cause(BEAM).setting, CZ(1144, 2576), CZ(1408, 2840), CZ(1672, 2576))); Next(); }
-		if (S()) Wait(40);
-		if (S()) { Pose(mo, 1568, 2360, 270); Next(); }
-		if (S()) { Shoot(mo, AimThrough(mo, 106, 126, (1504, OFF + 2820))); Next(); }
+		if (S()) { Check("beamShotA", Cause(BEAM).setting == 1 && OnlyHole(1), String.Format("setting %d %s", Cause(BEAM).setting, Holes())); Next(); }
+		if (S()) { ShootAt(mo, 106, 126, (1580, OFF + 2820, 136)); Next(); }
 		if (S()) Wait(160);
-		if (S()) { Check("beamShotB", Cause(BEAM).setting == 2 && CZ(1408, 2840) > 50 && CZ(1144, 2576) < -39, String.Format("setting %d", Cause(BEAM).setting)); Next(); }
+		if (S()) { Check("beamShotB", Cause(BEAM).setting == 2 && OnlyHole(2), String.Format("setting %d %s", Cause(BEAM).setting, Holes())); Next(); }
+		if (S()) { ShootAt(mo, 106, 126, (1556, OFF + 2820, 72)); Next(); }
+		if (S()) Wait(160);
+		if (S()) { Check("beamShotOff", Cause(BEAM).setting == 0 && HoleShut(1) && HoleShut(2) && HoleShut(3), String.Format("setting %d %s", Cause(BEAM).setting, Holes())); Next(); }
+		if (S()) { ShootAt(mo, 106, 126, (1632, OFF + 2820, 72)); Next(); }
+		if (S()) Wait(160);
+		if (S()) { Check("beamShotC", Cause(BEAM).setting == 3 && OnlyHole(3), String.Format("setting %d %s", Cause(BEAM).setting, Holes())); Next(); }
 		if (S()) Done();
 	}
 
@@ -683,6 +931,9 @@ class LongRunTest : EventHandler
 		Info(String.Format("view %d: %s", viewN++, what));
 	}
 	void SetNow(int tid, int s) { let c = Cause(tid); th.SetCause(c, s, null); th.Snap(c); }
+	// the clocked door taken from where it hangs and hung in frame n (the player posed in front of each, NOW),
+	// a step each: then a view; 139 tics in all, as any view
+	void Hang(Actor mo, double x, double y, double ang) { Pose(mo, x, y, ang); PressUse(mo); Next(); }
 	void Views(Actor mo)
 	{
 		if (S()) { mo.bInvisible = true; Wait(15); }
@@ -702,23 +953,59 @@ class LongRunTest : EventHandler
 		if (S()) Wait(139);
 		if (S()) { View(mo, "the pocket THEN: the night grille, NO DOORS BEYOND THIS POINT, frame 123", 1480, OFF + 610, 200); Next(); }
 		if (S()) Wait(139);
-		if (S()) { View(mo, "the cellar NOW, the valve open (found): the pit full", 1220, 1580, 220, 15); Next(); }
+		// --- the cellar: the valve (found open)
+		if (S()) { View(mo, "the cellar NOW, the valve open (found): the pit full, the stream from the pipe onto the water, the dead lever VALVE", 1076, 1540, 212, 16); Next(); }
 		if (S()) Wait(139);
-		if (S()) { View(mo, "the cellar THEN: the pit dry, the tanks, the target on the ledge", 1220, OFF + 1580, 220, 15); Next(); }
+		if (S()) { View(mo, "the cellar THEN, the valve open: the stream from the pipe to the pit's floor, its wet patch, the tanks, the target on the ledge", 1076, OFF + 1540, 212, 16); Next(); }
 		if (S()) Wait(139);
-		if (S()) { SetNow(VALVE, 0); View(mo, "the cellar NOW, the valve shut: the pit dry, the store's pressure door", 1220, 1580, 220, 15); Next(); }
+		if (S()) { SetNow(VALVE, 0); View(mo, "the cellar NOW, the valve shut: the pit dry, the pipe dry, the store's pressure door", 1076, 1540, 212, 16); Next(); }
 		if (S()) Wait(139);
-		if (S()) { View(mo, "the goods bay NOW, the belt standing (found): the hatch stair, the gallery", 1590, 1520, 330); Next(); }
+		if (S()) { View(mo, "the cellar THEN, the valve shut: no stream", 1076, OFF + 1540, 212, 16); Next(); }
 		if (S()) Wait(139);
-		if (S()) { View(mo, "the goods bay THEN: the belt, the racks", 1590, OFF + 1520, 330); Next(); }
+		if (S()) { SetNow(VALVE, 1); Hang(mo, 512, 280, 90); }
+		if (S()) Wait(8);
+		if (S()) Hang(mo, 1200, 1280, 0);
+		if (S()) Wait(8);
+		if (S()) { Info(String.Format("the clocked door in 105: %d", F(105).door == clocked));
+			View(mo, "the cellar THEN by the lever, the valve open: through 125 the cellar NOW, the stream onto the water", 1130, OFF + 1300, 352); Next(); }
+		if (S()) Wait(119);
+		if (S()) { View(mo, "the cellar NOW in front of 105 (where its target is shot from): through it the cellar THEN, the ledge's target, the stream", 1190, 1280, 0); Next(); }
 		if (S()) Wait(139);
-		if (S()) { SetNow(BELT, 1); View(mo, "the goods bay NOW, the belt running: the heap up to the gallery", 1590, 1520, 330); Next(); }
+		// --- the goods bay: the belt (found standing)
+		if (S()) { View(mo, "the goods bay NOW, the belt standing (found): the dead belt, its crates in dust, the hatch stair, the gallery", 1640, 1320, 300, 12); Next(); }
 		if (S()) Wait(139);
-		if (S()) { View(mo, "optics NOW, the beam at C (found): hole C open", 1180, 2340, 40); Next(); }
+		if (S()) { View(mo, "the goods bay THEN, the belt standing: four crates on it, the flap, the railed hatch, the target over it", 1640, OFF + 1320, 300, 12); Next(); }
 		if (S()) Wait(139);
-		if (S()) { View(mo, "optics THEN: the emitter at C, the targets", 1180, OFF + 2340, 40); Next(); }
+		if (S()) { SetNow(BELT, 1); View(mo, "the goods bay THEN, the belt running: crates ride into the hatch, new ones out of the flap", 1640, OFF + 1320, 300, 12); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the goods bay NOW, the belt running: the heap up to the gallery, no crates on the belt", 1640, 1320, 300, 12); Next(); }
+		if (S()) Wait(139);
+		if (S()) Hang(mo, 1200, 1280, 0);
+		if (S()) Wait(8);
+		if (S()) Hang(mo, 1936, 1500, 90);
+		if (S()) Wait(8);
+		if (S()) { Info(String.Format("the clocked door in 108: %d", F(108).door == clocked));
+			View(mo, "the goods bay THEN by the lever, the belt running: through 128 the bay NOW, the heap", 1904, OFF + 1430, 70); Next(); }
+		if (S()) Wait(119);
+		if (S()) { SetNow(BELT, 0); View(mo, "the goods bay NOW in front of 108, the belt standing: through it THEN, the hatch and its target, the crates", 1936, 1440, 90, 4); Next(); }
+		if (S()) Wait(139);
+		// --- optics: the beam (found at C)
+		if (S()) { View(mo, "optics NOW, the beam at C (found): hole C open under its plate, the plates A and B, the emitter's wreck, the board faded", 1180, 2340, 40); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "optics THEN, the beam at C: the emitter, the beam to C under its plate, the plan board and its targets", 1180, OFF + 2340, 40); Next(); }
 		if (S()) Wait(139);
 		if (S()) { SetNow(BEAM, 1); View(mo, "optics NOW, the beam at A: hole A open, C shut", 1640, 2340, 145); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "optics THEN, the beam at A", 1640, OFF + 2340, 145); Next(); }
+		if (S()) Wait(139);
+		if (S()) { SetNow(BEAM, 3); Hang(mo, 1936, 1500, 90); }
+		if (S()) Wait(8);
+		if (S()) Hang(mo, 1568, 2360, 270);
+		if (S()) Wait(8);
+		if (S()) { Info(String.Format("the clocked door in 106: %d", F(106).door == clocked));
+			View(mo, "optics THEN by the lever, the beam at C: through 126 optics NOW, hole C", 1600, OFF + 2420, 240); Next(); }
+		if (S()) Wait(119);
+		if (S()) { View(mo, "optics NOW in front of 106 (where the targets are shot from): through it THEN, the plan board and its four targets", 1568, 2380, 270, -6); Next(); }
 		if (S()) Wait(139);
 		if (S()) { View(mo, "the lobby THEN: RED's far side, the desk, the clock", LX + 990, OFF + 600, 215); Next(); }
 		if (S()) Wait(139);
@@ -728,5 +1015,136 @@ class LongRunTest : EventHandler
 		if (S()) Wait(139);
 		if (S()) { View(mo, "the hall THEN, the machine running: the shutter open, the night room", 512, OFF + 600, 90); Next(); }
 		if (S()) Wait(139);
+	}
+
+	// === MODE=4: the causes shown (posed): the crates, the streams, the levers beside their frames =========
+	int OldCrates()
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("AjarOldCrate");
+		Actor a;
+		while (a = Actor(it.Next())) n++;
+		return n;
+	}
+	// every crate standing on the belt THEN has its dusty twin NOW at the same spot, solid, and there are no others
+	bool TwinsRight(AjarGoodsIn gi, out string info)
+	{
+		int twins = 0;
+		bool ok = true;
+		for (int i = 0; i < gi.crates.Size(); i++)
+		{
+			let c = gi.crates[i];
+			if (!c || c.bDestroyed || c.pos.x - 16 < gi.FlapX() || abs(c.pos.z - gi.pos.z) >= 1) continue;
+			twins++;
+			Vector2 want = (c.pos.x, c.pos.y - OFF);
+			if (!c.twin || (c.twin.pos.xy - want).Length() > 0.5 || !c.twin.bSolid) ok = false;
+			info = info .. String.Format(" (%.0f,%.0f)%s", want.x, want.y, c.twin ? String.Format("=(%.0f,%.0f)", c.twin.pos.x, c.twin.pos.y) : "-");
+		}
+		return ok && twins == OldCrates();
+	}
+	AjarStream Stream(bool then)
+	{
+		let it = ThinkerIterator.Create("AjarStream");
+		AjarStream s;
+		while (s = AjarStream(it.Next())) if (th.when.InThen(s.pos.xy) == then) return s;
+		return null;
+	}
+	Array<double> xs;
+	Array<AjarGoodsCrate> seen;
+	void Remember(AjarGoodsIn gi)
+	{
+		xs.Clear(); seen.Clear();
+		for (int i = 0; i < gi.crates.Size(); i++) if (gi.crates[i]) { seen.Push(gi.crates[i]); xs.Push(gi.crates[i].pos.x); }
+	}
+	// how far the crates remembered have moved since, the least or the most (those gone over the edge left out)
+	double Moved(bool least)
+	{
+		double r = least ? 1e9 : 0;
+		for (int i = 0; i < seen.Size(); i++)
+		{
+			if (!seen[i] || seen[i].bDestroyed || seen[i].fell) continue;
+			double d = abs(seen[i].pos.x - xs[i]);
+			r = least ? min(r, d) : max(r, d);
+		}
+		return r;
+	}
+	// USE on a cause's lever from the spot 32 out from the wall where the lever and its frame meet
+	void UseBeside(Actor mo, double x, double y, Vector2 lever)
+	{
+		Pose(mo, x, y, VectorAngle(lever.x - x, lever.y - y));
+		PressUse(mo);
+	}
+	AjarGoodsIn gi;
+	int was;
+	void Causes(Actor mo)
+	{
+		if (S()) Wait(3);
+		if (S())
+		{
+			gi = AjarGoodsIn.Get();
+			string info = "";
+			Check("fourCratesStandOnTheBelt", gi && gi.crates.Size() == 4 && gi.OnBelt() == 4 && Cause(BELT).setting == 0, gi ? String.Format("%d crates, %d on the belt", gi.crates.Size(), gi.OnBelt()) : "no goods-in");
+			bool twins = gi && TwinsRight(gi, info);
+			Check("dustyCratesNowWhereThenStand", twins && OldCrates() == 4, String.Format("%d old crates:%s", OldCrates(), info));
+			let sn = Stream(false), st = Stream(true);
+			Check("streamsShownValveOpen", sn && st && sn.Shown() && st.Shown() && !sn.bInvisible && !st.bInvisible && st.patch && !st.patch.bInvisible,
+				sn && st ? String.Format("now %d then %d", sn.Shown(), st.Shown()) : "no streams");
+			Check("streamFallsOntoTheWaterNow", sn && abs(sn.pos.z - Water()) < 1 && abs(sn.pos.z + sn.scale.y * 64 - (-16)) < 1, sn ? String.Format("from %.1f to %.1f, water %.1f", sn.pos.z + sn.scale.y * 64, sn.pos.z, Water()) : "");
+			Check("streamFallsToTheFloorThen", st && abs(st.pos.z - PIT) < 1 && abs(st.pos.z + st.scale.y * 64 - (-16)) < 1, st ? String.Format("from %.1f to %.1f", st.pos.z + st.scale.y * 64, st.pos.z) : "");
+			Next();
+		}
+		// the valve's lever, beside 125: shut, and both streams stop at once; open again, both run
+		if (S()) { UseBeside(mo, 1200, OFF + 1320, (1232, OFF + 1360)); Next(); }
+		if (S()) Wait(1);
+		if (S())
+		{
+			Check("valveLeverBesideItsFrame", Cause(VALVE).setting == 0, String.Format("setting %d", Cause(VALVE).setting));
+			Check("streamsStopAtOnce", !Stream(false).Shown() && !Stream(true).Shown() && Stream(false).bInvisible && Stream(true).bInvisible && Stream(true).patch.bInvisible);
+			Next();
+		}
+		if (S()) { UseBeside(mo, 1200, OFF + 1320, (1232, OFF + 1360)); Next(); }
+		if (S()) Wait(1);
+		if (S()) { Check("streamsRunAgain", Cause(VALVE).setting == 1 && Stream(false).Shown() && Stream(true).Shown()); Next(); }
+		// the belt's lever, beside 128: it runs; the crates ride, the dusty ones are gone at once
+		if (S()) { Remember(gi); UseBeside(mo, 1904, OFF + 1504, (1872, OFF + 1536)); Next(); }
+		if (S()) Wait(1);
+		if (S())
+		{
+			Check("beltLeverBesideItsFrame", Cause(BELT).setting == 1, String.Format("setting %d", Cause(BELT).setting));
+			Check("noDustyCratesWhileItRuns", OldCrates() == 0, String.Format("%d", OldCrates()));
+			Next();
+		}
+		if (S()) Wait(35);
+		if (S()) { Check("cratesRide", Moved(true) > 20, String.Format("the least moved %.1f", Moved(true))); Next(); }
+		if (S()) Wait(300);
+		if (S())
+		{
+			string rides = "";
+			bool fair = gi.rides.Size() > 0;
+			for (int i = 0; i < gi.rides.Size(); i++) { rides = rides .. " " .. gi.rides[i]; if (gi.rides[i] < 105 || gi.rides[i] > 175) fair = false; }
+			Check("cratesGoneIntoTheHatch", gi.gone >= 3, String.Format("%d gone", gi.gone));
+			Check("newCratesComeOutOfTheFlap", gi.made >= 3, String.Format("%d made", gi.made));
+			Check("aboutFourOnTheBelt", gi.OnBelt() >= 3 && gi.OnBelt() <= 5, String.Format("%d on the belt", gi.OnBelt()));
+			Check("flapToHatchIn3To5s", fair, "tics:" .. rides);
+			Check("noDustyCratesStill", OldCrates() == 0);
+			Next();
+		}
+		// stopped: they stand where they are, THEN and (in dust) NOW
+		if (S()) { UseBeside(mo, 1904, OFF + 1504, (1872, OFF + 1536)); Next(); }
+		if (S()) Wait(60);                                                          // (what rides slides a little: Doom's friction)
+		if (S()) { Check("beltStopped", Cause(BELT).setting == 0); Remember(gi); was = gi.made; Next(); }
+		if (S()) Wait(70);
+		if (S())
+		{
+			string info = "";
+			Check("cratesStand", Moved(false) < 0.5 && gi.made == was, String.Format("the most moved %.2f, %d made", Moved(false), gi.made - was));
+			Check("dustyCratesNowWhereThenStopped", TwinsRight(gi, info) && OldCrates() == gi.OnBelt() && OldCrates() >= 3, String.Format("%d old, %d on the belt:%s", OldCrates(), gi.OnBelt(), info));
+			Next();
+		}
+		// the beam's lever, beside 126: C to off
+		if (S()) { UseBeside(mo, 1600, OFF + 2352, (1632, OFF + 2320)); Next(); }
+		if (S()) Wait(1);
+		if (S()) { Check("beamLeverBesideItsFrame", Cause(BEAM).setting == 0, String.Format("setting %d", Cause(BEAM).setting)); Next(); }
+		if (S()) Done();
 	}
 }
