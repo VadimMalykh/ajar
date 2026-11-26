@@ -1936,6 +1936,593 @@ def emitter(n, wreck=False, off=False):
     return im
 
 
+# === the machine: MAP21's centrepiece (map_longrun section 1, MACHINE) =====================================
+# Each face is one composition at the face's real width, laid by the map from the face's start whatever pieces
+# the face is cut into (exact="lower"): nothing is cut at a wall piece's end or at a corner. Every face shares
+# the same bands, top to bottom, so that they go on round the corners: an aluminium cap rail, a vent grille
+# (the crown), a cream band, the grey-blue body, an aluminium rail, the black plinth. THEN look 1 (Lamps and
+# Reels) is AJUM<face>1; NOW AJUX<face>1 is the same drawing, dead (every element in the same place, drawn
+# dead: lamps out, glass broken, reels gone, keys missing), then a ruin pass (the colours of NOW's hall:
+# khaki and dark, soot, rust runs, dust) and some panels gone with cable guts behind. Looks 2 and 3 of the
+# apparatus wear look 1's machine (only look 1 is chosen: PLAN.md, "MAP21's look board: Vadim's word").
+#   N 256  the north face: the works; in the middle the port (a door's outline in brass, the same again
+#          inside it, smaller, and again); either side tape reels, a lamp matrix, a scope, keys; the cable
+#          trunk to the ceiling and the plate MACHINE 7 over the port
+#   W 192  the west face (the body's side and the wing's in one plane), the power side: meters, a painted
+#          service door, the cable entry where the floor duct comes in, a breaker, a louvre field; E its mirror
+#   A 80   the west wing's south face, a tower of lamps and keys; B the east wing's, its mirror
+#   I 64   the west wing's inner face (in the alcove before 101), a column of indicator lamps; J its mirror
+#   K 16   the body's south face west of 101's mouth; L east of it
+#   O 64   over 101's mouth, 160 high (the frame's head to the ceiling): a brass plate, the port's motif small
+MACH_FACES = {"N": 256, "W": 192, "E": 192, "A": 80, "B": 80, "I": 64, "J": 64, "K": 16, "L": 16, "O": 64}
+CAP, CROWN, BAND, FOOT, PLINTH = 3, 22, 38, 236, 240        # the rows where each band ends
+PLINTH_C, GLASS_C, SEAM = (40, 42, 46), (34, 40, 50), shade(GB, 0.45)
+VERDI, YELLOW_W = (84, 140, 112), (232, 196, 72)
+
+
+def mach_name(face, now=False):
+    return f"AJU{'X' if now else 'M'}{face}1"
+
+
+def m_shell(w, h, seed, ends):
+    """The bands of every face, w x h; `ends` (left, right): "alu" an outer corner's aluminium edge,
+    "seam" an inner corner's shadow, None the face goes on (into the next piece of the same plane)."""
+    im = Img(w, h)
+    fill(im, 0, 0, w, h, GB, 0.012, seed)
+    cyl_h(im, 0, 0, w, CAP, ALU, 1.25, 0.6)
+    im.rect(0, CAP, w, CROWN, (40, 44, 52))
+    for y in range(CAP + 2, CROWN - 1, 3):                       # the vent's slats
+        im.rect(0, y, w, y + 1, (74, 80, 90))
+        im.rect(0, y + 1, w, y + 2, (26, 28, 34))
+    im.rect(0, CROWN, w, CROWN + 1, ALU)
+    fill(im, 0, CROWN + 1, w, BAND - 1, CREAM, 0.01, seed + 1)
+    im.rect(0, BAND - 1, w, BAND, shade(GB, 0.6))
+    if h > FOOT:
+        cyl_h(im, 0, FOOT, w, PLINTH, ALU, 1.3, 0.6)
+        im.rect(0, PLINTH, w, h, PLINTH_C)
+        im.rect(0, PLINTH, w, PLINTH + 1, shade(PLINTH_C, 0.5))
+    for side, kind in enumerate(ends):
+        x = 0 if side == 0 else w - 2
+        if kind == "alu":
+            cyl_v(im, x, CAP, x + 2, h, ALU, 1.25, 0.65)
+        elif kind == "seam":
+            for k in range(4):
+                for y in range(BAND, min(h, FOOT)):
+                    blend(im, k if side == 0 else w - 1 - k, y, (20, 22, 28), 0.45 * (1 - k / 4))
+    return im
+
+
+def m_panel(im, x1, y1, x2, y2, c=GB, up=True):
+    """A panel of the body: its edges, a screw at each corner."""
+    bevel(im, x1, y1, x2, y2, c, 1, up)
+    for x, y in ((x1 + 2, y1 + 2), (x2 - 4, y1 + 2), (x1 + 2, y2 - 3), (x2 - 4, y2 - 3)):
+        screw(im, x, y, c)
+
+
+def m_bay(im, x1, y1, x2, y2, ground=GLASS_C):
+    """A glazed or sunk bay: an aluminium frame, a dark ground."""
+    im.rect(x1, y1, x2, y2, shade(ALU, 0.75))
+    im.rect(x1, y1, x2, y1 + 1, shade(ALU, 1.2))
+    im.rect(x1 + 2, y1 + 2, x2 - 2, y2 - 2, ground)
+    im.rect(x1 + 2, y1 + 2, x2 - 2, y1 + 3, shade(ground, 0.6))
+
+
+def m_line(im, a, b, c, f=1.0):
+    n = int(max(abs(b[0] - a[0]), abs(b[1] - a[1]))) + 1
+    for i in range(n + 1):
+        blend(im, round(a[0] + (b[0] - a[0]) * i / n), round(a[1] + (b[1] - a[1]) * i / n), c, f)
+
+
+def m_cracks(im, cx, cy, box, rnd, n=7, c=(206, 212, 214), hole=0):
+    """Glass broken from a blow at cx, cy: cracks out to the bay's edge, a hole there."""
+    x1, y1, x2, y2 = box
+    for k in range(n):
+        a = 2 * math.pi * (k + rnd.uniform(-0.3, 0.3)) / n
+        x, y = cx, cy
+        while x1 + 1 < x < x2 - 2 and y1 + 1 < y < y2 - 2:
+            a += rnd.uniform(-0.5, 0.5) if rnd.random() < 0.2 else 0     # straight, with a kink now and then
+            nx, ny = x + 3 * math.cos(a), y + 3 * math.sin(a)
+            m_line(im, (x, y), (nx, ny), c, 0.7)
+            x, y = nx, ny
+    if hole:
+        pts = [(cx + hole * rnd.uniform(0.6, 1.2) * math.cos(t), cy + hole * rnd.uniform(0.6, 1.2) * math.sin(t))
+               for t in [2 * math.pi * i / 9 for i in range(9)]]
+        for y in range(int(cy - hole * 1.3), int(cy + hole * 1.3) + 1):
+            for x in range(int(cx - hole * 1.3), int(cx + hole * 1.3) + 1):
+                if x1 + 2 <= x < x2 - 2 and y1 + 2 <= y < y2 - 2 and _inside(x, y, pts):
+                    im.set(x, y, (8, 8, 10))
+        for (ax, ay), (bx, by) in zip(pts, pts[1:] + pts[:1]):           # the shards' edges, catching the light
+            if x1 + 2 <= ax < x2 - 2 and y1 + 2 <= ay < y2 - 2:
+                m_line(im, (ax, ay), (bx, by), (226, 230, 232), 0.55)
+
+
+def _inside(x, y, pts):
+    c = False
+    for (ax, ay), (bx, by) in zip(pts, pts[1:] + pts[:1]):
+        if (ay > y) != (by > y) and x < ax + (bx - ax) * (y - ay) / (by - ay):
+            c = not c
+    return c
+
+
+def m_guts(im, x1, y1, x2, y2, rnd):
+    """A panel gone: the cavity behind, a rail, cables hanging in loops, cut ends, the screw holes round it."""
+    fill(im, x1, y1, x2, y2, (22, 20, 18), 0.15, rnd.randrange(999))
+    for x in range(x1, x2):                                      # the shadow under the opening's top edge
+        for k in range(4):
+            blend(im, x, y1 + k, (0, 0, 0), 0.6 * (1 - k / 4))
+    for y in (y1 + (y2 - y1) // 3, y1 + 2 * (y2 - y1) // 3):    # rails behind, rusted
+        im.rect(x1 + 1, y, x2 - 1, y + 2, (92, 64, 44))
+    for _ in range(max(3, (x2 - x1) // 6)):
+        a = (rnd.uniform(x1 + 2, x2 - 2), y1 + rnd.uniform(2, 8))
+        b = (rnd.uniform(x1 + 2, x2 - 2), rnd.uniform(y1 + (y2 - y1) * 0.4, y2 - 2))
+        col = rnd.choice(((24, 24, 26), (150, 44, 34), (86, 88, 92), (40, 66, 130), (190, 160, 60)))
+        hose(im, curve(a, b, rnd.uniform(2, 9), 10), col, 1.0)
+        im.disc(b[0], b[1] + 1, 1, COPPER)
+    for x, y in ((x1 - 2, y1 - 2), (x2 + 1, y1 - 2), (x1 - 2, y2 + 1), (x2 + 1, y2 + 1)):
+        im.disc(x, y, 1, (30, 24, 20))
+
+
+def m_reels(im, x1, y1, x2, y2, rnd, dead=0):
+    """A tape drive's bay: two reels behind glass, the tape round the head. Dead: 1 the reels gone, the glass
+    broken; 2 one reel left, the tape hanging."""
+    m_bay(im, x1, y1, x2, y2)
+    w, h = x2 - x1, y2 - y1
+    cy, r = y1 + int(h * 0.4), min(w * 0.21, h * 0.32)
+    cxs = (x1 + w * 0.28, x1 + w * 0.72)
+    hx, hy = (x1 + x2) // 2, y2 - 10
+    if not dead:
+        reel(im, cxs[0], cy, r, ALU, fullness=0.7 + rnd.uniform(-0.1, 0.1))
+        reel(im, cxs[1], cy, r, ALU, fullness=0.35 + rnd.uniform(-0.1, 0.1))
+        tape = (88, 66, 46)
+        m_line(im, (cxs[0] - r * 0.55, cy + r * 0.5), (hx - 6, hy), tape)
+        m_line(im, (cxs[1] + r * 0.4, cy + r * 0.6), (hx + 6, hy), tape)
+    else:
+        for i, cx in enumerate(cxs):
+            if dead == 2 and i == 1:                             # the one left, the tape run off it
+                reel(im, cx, cy + 2, r, shade(ALU, 0.8), fullness=0.15)
+                hose(im, curve((cx - 3, cy + r), (cx - 9, y2 + 18), 5, 14), (80, 60, 44), 0.6)
+            else:                                                # its hub, the spindle, the motor plate's bolts
+                im.disc(cx, cy, r * 0.55, shade(GLASS_C, 0.7))
+                im.disc(cx, cy, 3.4, (96, 98, 104))
+                im.disc(cx, cy, 1.4, INK)
+                for k in range(3):
+                    a = k * 2 * math.pi / 3
+                    im.set(round(cx + 6 * math.cos(a)), round(cy + 6 * math.sin(a)), (120, 120, 124))
+    im.rect(hx - 7, hy - 3, hx + 7, hy + 5, shade(ALU, 0.9))    # the head
+    im.rect(hx - 4, hy - 1, hx + 4, hy + 1, INK)
+    if not dead:
+        glass_glint(im, x1 + 2, y1 + 2, x2 - 2, y2 - 2, 0.2)
+    else:
+        m_cracks(im, rnd.uniform(x1 + 8, x2 - 8), rnd.uniform(y1 + 8, y2 - 14), (x1, y1, x2, y2), rnd, 7,
+                 hole=6 if dead == 1 else 3)
+
+
+def m_lamps(im, x1, y1, x2, y2, cols, rows, rnd, dead=0, lit=None, r=2.2):
+    """A field of small round lamps in a dark panel. `lit`(col, row): a colour or None; dead: the lamps out,
+    some lenses gone."""
+    m_bay(im, x1, y1, x2, y2, (46, 50, 58))
+    dx, dy = (x2 - x1 - 4) / cols, (y2 - y1 - 4) / rows
+    for row in range(rows):
+        for col in range(cols):
+            x, y = x1 + 2 + dx * (col + 0.5), y1 + 2 + dy * (row + 0.5)
+            c = lit(col, row) if lit else (AMBER if rnd.random() < 0.38 else GREEN if rnd.random() < 0.08 else None)
+            if dead:
+                if rnd.random() < 0.22:                          # the lens gone: its socket
+                    im.disc(x, y, r, (12, 12, 14))
+                    im.set(round(x), round(y), (90, 80, 60))
+                else:
+                    lamp(im, x, y, r, shade(AMBER_OFF, rnd.uniform(0.7, 1.0)), False)
+            else:
+                lamp(im, x, y, r, c or AMBER_OFF, c is not None)
+
+
+def m_scope(im, cx, cy, r, rnd, dead=0):
+    """A round green scope in a cream bezel; dead, its screen smashed."""
+    im.disc(cx, cy, r, CREAM)
+    im.disc(cx, cy, r - 1, shade(CREAM, 0.78))
+    im.disc(cx, cy, r - 3, SCOPE if not dead else (30, 36, 34))
+    if not dead:
+        for x in range(int(cx - r), int(cx + r) + 1, 4):         # the graticule
+            for y in range(int(cy - r), int(cy + r) + 1, 2):
+                if (x - cx) ** 2 + (y - cy) ** 2 < (r - 4) ** 2:
+                    blend(im, x, y, (90, 140, 110), 0.5)
+        ph = rnd.uniform(0, 6)
+        for x in range(int(cx - r + 4), int(cx + r - 3)):
+            y = cy + (r - 7) * 0.7 * math.sin((x - cx) * 0.5 + ph)
+            im.disc(x, y, 0.8, TRACE)
+            glow(im, x, y, 2.5, TRACE, 0.15)
+        im.disc(cx - r * 0.35, cy - r * 0.35, 2.2, (255, 255, 255))
+    else:
+        box = (int(cx - r + 3), int(cy - r + 3), int(cx + r - 3), int(cy + r - 3))
+        m_cracks(im, cx + rnd.uniform(-3, 3), cy + rnd.uniform(-3, 3), box, rnd, 8, (170, 186, 176),
+                 hole=(r - 3) * 0.45 if dead == 1 else 0)
+        for y in range(box[1] - 2, box[3] + 3):                  # (nothing past the bezel)
+            for x in range(box[0] - 2, box[2] + 3):
+                if (x - cx) ** 2 + (y - cy) ** 2 > (r - 3) ** 2 and (x - cx) ** 2 + (y - cy) ** 2 <= (r - 1) ** 2:
+                    im.set(x, y, shade(CREAM, 0.78))
+
+
+def m_knob(im, cx, cy, r, a=0.5, dead=False):
+    if dead and a < 0:                                           # gone: its shaft
+        im.disc(cx, cy, r * 0.4, (90, 90, 94))
+        return
+    im.disc(cx, cy, r, INK)
+    im.disc(cx - 0.5, cy - 0.5, r - 1, (64, 64, 70))
+    t = math.pi * (0.75 + 1.5 * a)
+    m_line(im, (cx, cy), (cx + (r - 1) * math.cos(t), cy + (r - 1) * math.sin(t)), KEY)
+
+
+def m_keys(im, x1, y, n, pitch, kw, kh, rnd, dead=0, orange=()):
+    """A row of white keys (some orange); dead, some gone."""
+    for k in range(n):
+        x = x1 + k * pitch
+        if dead and rnd.random() < 0.3:
+            im.rect(x, y, x + kw, y + kh, (16, 16, 18))
+            im.rect(x + kw // 2 - 1, y + kh // 2, x + kw // 2 + 1, y + kh - 1, (90, 90, 94))
+            continue
+        c = ORANGE if k in orange else KEY
+        if dead:
+            c = mix(c, (200, 180, 120), 0.4)
+        im.rect(x, y, x + kw, y + kh, shade(c, 0.66))
+        im.rect(x, y, x + kw, y + kh - 2, c)
+        im.rect(x, y, x + kw, y + 1, shade(c, 1.1))
+
+
+def m_meter(im, cx, cy, r, a, rnd, dead=False):
+    im.disc(cx, cy, r + 2, CREAM)
+    needle_dial(im, cx, cy, r, ALU, FACE, 0.02 if dead else a)
+    if dead:
+        m_cracks(im, cx + rnd.uniform(-3, 3), cy - 2, (cx - r + 2, cy - r + 2, cx + r - 1, cy + r - 1), rnd, 5,
+                 (120, 120, 116))
+    else:
+        im.disc(cx - r * 0.4, cy - r * 0.45, 1.5, (255, 255, 255))
+
+
+def door_motif(im, cx, cy, w, h, levels, c, t=1, ground=None, f=0.62, vy=0.35):
+    """A door's outline, the same again inside it, smaller, and again: `levels` outlines w x h at the largest,
+    each next one f the size, drawn towards a point vy of the way up from the door's foot."""
+    vx, vyy = cx, cy + h / 2 - h * vy
+    for k in range(levels):
+        s = f ** k
+        x1, x2 = round(vx + (cx - w / 2 - vx) * s), round(vx + (cx + w / 2 - vx) * s)
+        y1, y2 = round(vyy + (cy - h / 2 - vyy) * s), round(vyy + (cy + h / 2 - vyy) * s)
+        tk = max(1, round(t * s))
+        cc = c[k] if isinstance(c, list) else c
+        im.frame(x1, y1, x2, y2, cc, tk)
+        if ground:
+            im.rect(x1 + tk, y1 + tk, x2 - tk, y2 - tk, ground[k])
+
+
+# --- the faces --------------------------------------------------------------------------------------------
+def face_N(dead):
+    """The north face, 256: the works. Symmetric about its middle (x 512 in the map)."""
+    W = 256
+    rnd = random.Random(7100 + 13 * dead)
+    im = m_shell(W, 256, 7100, ("alu", "alu"))
+    for x in (78, 176):                                          # the joints of the three bays
+        im.rect(x, BAND, x + 1, FOOT, SEAM)
+        cyl_v(im, x + 1, BAND, x + 2, FOOT, ALU, 1.2, 0.8)
+    # the port: a door's outline in brass, the same again inside it, smaller, and again; dark glass over them
+    px1, py1, px2, py2 = 82, 44, 174, 206
+    im.rect(px1, py1, px2, py2, shade(ALU, 0.7))
+    im.rect(px1, py1, px2, py1 + 1, shade(ALU, 1.25))
+    im.rect(px1 + 3, py1 + 3, px2 - 3, py2 - 3, (14, 16, 24))
+    for y in range(py1 + 3, py2 - 3):                            # the dark inside, a little light far in
+        for x in range(px1 + 3, px2 - 3):
+            d = math.hypot((x - 128) / 46, (y - 150) / 80)
+            blend(im, x, y, (40, 60, 90), 0.5 * max(0, 1 - d))
+    brass = [BRASS, shade(BRASS, 0.86), shade(BRASS, 0.72)]
+    door_motif(im, 128, 126, 76, 140, 3, brass, 4, f=0.6, vy=0.3)
+    if dead:
+        im.disc(128, 165, 2, (60, 50, 40))                       # the light far in, out
+    else:
+        glow(im, 128, 165, 9, (255, 214, 150), 0.6)
+        im.disc(128, 165, 1.5, (255, 236, 200))
+    for x, y in ((px1 + 1, py1 + 1), (px2 - 3, py1 + 1), (px1 + 1, py2 - 3), (px2 - 3, py2 - 3)):
+        screw(im, x, y, ALU)
+    if dead:
+        m_cracks(im, 104, 178, (px1 + 2, py1 + 2, px2 - 2, py2 - 2), rnd, 9, (190, 196, 200), hole=13)
+        m_cracks(im, 150, 70, (px1 + 2, py1 + 2, px2 - 2, py2 - 2), rnd, 5, (150, 156, 160))
+        for y in range(py1 + 3, py2 - 3):                        # the brass gone green in places
+            for x in range(px1 + 3, px2 - 3):
+                p = im.px[y * W + x]
+                if p[0] - p[2] > 70 and rnd.random() < 0.45:
+                    blend(im, x, y, VERDI, 0.55)
+    else:
+        glass_glint(im, px1 + 3, py1 + 3, px2 - 3, py2 - 3, 0.16)
+        glass_glint(im, px1 + 40, py1 + 60, px2 - 3, py2 - 3, 0.08)
+    # either side, the same bays (each its own lamps and its own damage)
+    for side in (0, 1):
+        def X(x, w=0):
+            return x if side == 0 else W - x - w
+        dmg = (1, 2)[side] if dead else 0
+        m_panel(im, X(4, 72), 40, X(4, 72) + 72, 232)
+        m_reels(im, X(8, 66), 44, X(8, 66) + 66, 106, rnd, dmg)
+        if dead and side == 1:                                   # the lamp matrix's panel gone
+            m_bay(im, X(10, 62), 112, X(10, 62) + 62, 158)
+            m_guts(im, X(12, 58), 114, X(12, 58) + 58, 156, rnd)
+        else:
+            m_lamps(im, X(10, 62), 112, X(10, 62) + 62, 158, 7, 5, rnd, dead)
+        m_scope(im, X(28), 182, 17, rnd, (1, 2)[side] if dead else 0)
+        m_knob(im, X(62), 172, 4.5, rnd.random(), dead)
+        m_knob(im, X(62), 192, 4.5, rnd.random() if not (dead and side == 0) else -1, dead)
+        im.rect(X(52, 18), 202, X(52, 18) + 18, 204, ORANGE)
+        m_keys(im, X(10, 63), 208, 7, 9, 7, 12, rnd, dead, orange=(6,) if side == 0 else (0,))
+    m_keys(im, 92, 210, 8, 9, 7, 10, rnd, dead, orange=(3, 4))  # under the port
+    louvres(im, 6, 224, W - 6, 234, GB, 3)
+    # the cable trunk up to the ceiling, the cables along the crown into it
+    for y0, sag, col in ((8, 3, (30, 30, 34)), (13, 2, (52, 54, 60)), (17, 3, ORANGE)):
+        for a, b in (((6, y0), (110, y0 + 1)), ((W - 6, y0), (146, y0 + 1))):
+            if dead and col == ORANGE and a[0] > 128:
+                hose(im, curve(b, (b[0] + 14, y0 + 26), 4, 8), col, 1.2)     # cut, hanging
+                continue
+            hose(im, curve(a, b, sag), col, 1.4)
+    cyl_v(im, 110, 0, 146, CROWN + 2, ALU, 1.3, 0.55)
+    for y in range(1, CROWN + 2, 4):                             # its ribs
+        im.rect(110, y, 146, y + 1, shade(ALU, 0.6))
+    im.rect(108, CROWN, 148, CROWN + 2, shade(ALU, 0.8))
+    # the one plate: the machine's name, as the hall's schematic gives it
+    s = "MACHINE 7"
+    tw = len(s) * 12 - 2
+    im.rect(128 - tw // 2 - 5, 24, 128 + tw // 2 + 6, 37, INK)
+    im.rect(128 - tw // 2 - 5, 24, 128 + tw // 2 + 6, 25, (70, 70, 76))
+    text(im, s, 128 - tw // 2, 26, (236, 236, 228), 2)
+    for x in (128 - tw // 2 - 3, 128 + tw // 2 + 3):
+        if not (dead and x > 128):
+            im.disc(x, 30.5, 1, ALU)
+    return m_finish(im, dead, 7100)
+
+
+def face_W(dead, mirror=False):
+    """The west face, 192 (u 0 at the north end): the power side. Mirrored, the east face (u 0 at its south
+    end): the same elements at the same places along the machine."""
+    W = 192
+    rnd = random.Random(7200 + 13 * dead + 5 * mirror)
+
+    def X(x, w=0):
+        return x if not mirror else W - x - w
+
+    im = m_shell(W, 256, 7200 + mirror, ("alu", "alu"))
+    im.rect(X(128, 1), BAND, X(128, 1) + 1, FOOT, SEAM)          # the wing's cabinet against the body's
+    # meters along the top of the body's side
+    m_panel(im, X(8, 112), 42, X(8, 112) + 112, 86)
+    for k, (x, a) in enumerate(((30, 0.35), (64, 0.62), (98, 0.5))):
+        m_meter(im, X(x), 64, 13, a, rnd, dead and k != 1)
+    # the service door: painted on, flush, its seam, two hinges, a latch, a vent, a warning
+    dx1, dx2, dy1, dy2 = X(42, 58), X(42, 58) + 58, 96, 232
+    im.frame(dx1, dy1, dx2, dy2, SEAM, 1)
+    im.rect(dx1 + 1, dy1 + 1, dx2 - 1, dy1 + 2, shade(GB, 1.25))
+    im.rect(dx1 + 1, dy1 + 1, dx1 + 2, dy2 - 1, shade(GB, 1.2))
+    hinge = dx1 if not mirror else dx2 - 3
+    for y in (dy1 + 18, dy2 - 30):
+        cyl_v(im, hinge, y, hinge + 3, y + 12, ALU, 1.3, 0.6)
+    lx = dx2 - 9 if not mirror else dx1 + 9
+    if dead:                                                     # sprung open a crack on the latch's side
+        gx = dx2 - 3 if not mirror else dx1
+        im.rect(gx, dy1 + 1, gx + 3, dy2 - 1, (12, 12, 14))
+        im.disc(lx, 160, 2, (20, 18, 18))
+    else:
+        im.disc(lx, 160, 4, shade(ALU, 0.8))
+        im.disc(lx, 160, 3, ALU)
+        bx = lx - 12 if not mirror else lx
+        cyl_h(im, bx, 159, bx + 12, 162, ALU, 1.3, 0.6)
+    louvres(im, dx1 + 10, dy2 - 34, dx2 - 10, dy2 - 12, GB, 3)
+    im.tri(X(71), dy1 + 14, 8, YELLOW_W)                          # a warning: lightning
+    for i, (x, y) in enumerate(((1, -3), (0, -1), (-1, 1), (0, 1), (1, 2), (0, 4))):
+        im.set(X(71) + x, dy1 + 14 + y, INK)
+    # the cable entry where the floor's duct comes in (u 0..32, the duct's 32), cables up into it
+    ex1, ex2 = X(4, 28), X(4, 28) + 28
+    im.rect(ex1, 196, ex2, 222, (70, 76, 84))
+    bevel(im, ex1, 196, ex2, 222, (70, 76, 84))
+    im.rect(ex1 + 4, 200, ex2 - 4, 206, INK)
+    text(im, "V", (ex1 + ex2) // 2 - 2, 201, (236, 236, 228), 1)
+    for k, col in enumerate(((30, 30, 34), (160, 40, 30), (30, 30, 34), (90, 92, 98))):
+        x = ex1 + 5 + k * 6
+        if dead and k in (1, 2):                                 # cut off at the gland
+            cyl_v(im, x - 2, 222, x + 2, 226, col, 1.4, 0.6)
+            im.rect(x - 1, 226, x + 1, 228, COPPER)
+            continue
+        cyl_v(im, x - 2, 222, x + 2, 256, col, 1.4, 0.6)
+        im.rect(x - 3, 222, x + 3, 225, shade(ALU, 0.8))         # its gland
+    louvres(im, X(8, 22), 96, X(8, 22) + 22, 186, GB, 3)
+    # the wing's side: lamps, the breaker, a louvre field
+    for k in range(3):
+        lamp(im, X(146 + k * 14), 48, 2.6, (GREEN, AMBER, LRED)[k], not dead and k != 2, INK)
+    bx1, bx2 = X(136, 50), X(136, 50) + 50
+    im.rect(bx1, 56, bx2, 148, shade(GB, 0.7))
+    bevel(im, bx1, 56, bx2, 148, GB)
+    im.rect(bx1 + 6, 62, bx2 - 6, 142, (58, 62, 70))
+    cx = (bx1 + bx2) // 2
+    im.rect(cx - 2, 70, cx + 2, 134, (20, 20, 22))                # the handle's slot
+    legend(im, "ON", cx, 63)
+    legend(im, "OFF", cx, 133 - 1)
+    if dead:                                                     # thrown to OFF, its grip broken off; burnt
+        cyl_v(im, cx - 2, 104, cx + 3, 128, shade(ALU, 0.7), 1.2, 0.6)
+        im.rect(cx - 3, 126, cx + 4, 130, (40, 36, 32))
+        GI.blot(im, cx, 66, 14, (20, 16, 12), 0.6)
+    else:
+        cyl_v(im, cx - 2, 80, cx + 3, 104, ALU, 1.3, 0.6)
+        im.rect(cx - 12, 74, cx + 13, 84, shade(ORANGE, 0.7))
+        im.rect(cx - 12, 74, cx + 13, 82, ORANGE)
+        im.rect(cx - 12, 74, cx + 13, 75, shade(ORANGE, 1.25))
+    im.disc(cx, 104, 5, (40, 40, 44))
+    im.disc(cx, 104, 2, ALU)
+    if dead and not mirror:
+        m_guts(im, bx1 + 2, 156, bx2 - 2, 230, rnd)              # (the west's louvres gone, the east's there)
+    else:
+        m_bay(im, bx1, 154, bx2, 232, GB)
+        louvres(im, bx1 + 3, 157, bx2 - 3, 229, GB, 3)
+    return m_finish(im, dead, 7200 + mirror)
+
+
+def face_A(dead, mirror=False):
+    """The west wing's south face, 80 (u 0 its outer corner, 80 the alcove's); mirrored the east wing's (u 0
+    the alcove's): a tower of lamps and keys, its lamps standing taller towards the alcove and 101."""
+    W = 80
+    rnd = random.Random(7300 + 13 * dead + 5 * mirror)
+
+    def X(x, w=0):
+        return x if not mirror else W - x - w
+
+    im = m_shell(W, 256, 7300 + mirror, ("alu", "alu"))
+    im.rect(X(72, 4), BAND, X(72, 4) + 4, FOOT, ORANGE)          # an orange edge along the alcove
+    im.rect(X(72, 4) + (3 if not mirror else 0), BAND, X(72, 4) + (4 if not mirror else 1), FOOT, shade(ORANGE, 0.6))
+
+    def lit(col, row):                                           # a bar each column, taller towards the alcove
+        c = col if not mirror else 5 - col
+        top = 10 - (3 + round(1.4 * c))
+        if row < top:
+            return None
+        return GREEN if row == top else AMBER if c < 5 else ORANGE
+    if dead and mirror:                                          # the east tower's lamp panel half gone
+        m_lamps(im, X(6, 64), 42, X(6, 64) + 64, 150, 6, 11, rnd, dead, lit, 2.4)
+        m_guts(im, X(8, 60), 44, X(8, 60) + 60, 92, rnd)
+    else:
+        m_lamps(im, X(6, 64), 42, X(6, 64) + 64, 150, 6, 11, rnd, dead, lit, 2.4)
+    m_panel(im, X(6, 64), 156, X(6, 64) + 64, 196)
+    for k, y in enumerate((160, 178)):
+        m_keys(im, X(10, 56), y, 6, 10, 7, 13, rnd, dead, orange=(5,) if not mirror else (0,))
+    if dead and not mirror:
+        m_guts(im, X(8, 60), 202, X(8, 60) + 60, 232, rnd)
+    else:
+        louvres(im, X(8, 60), 202, X(8, 60) + 60, 232, GB, 3)
+    return m_finish(im, dead, 7300 + mirror)
+
+
+def face_I(dead, mirror=False):
+    """The west wing's inner face, 64 (u 0 at the alcove's mouth, 64 at its back by 101); mirrored the east
+    wing's: a column of indicator lamps in aluminium bezels."""
+    W = 64
+    rnd = random.Random(7400 + 13 * dead + 5 * mirror)
+
+    def X(x, w=0):
+        return x if not mirror else W - x - w
+
+    im = m_shell(W, 256, 7400 + mirror, ("alu", "seam") if not mirror else ("seam", "alu"))
+    im.rect(X(14, 36), 42, X(14, 36) + 36, 214, shade(GB, 0.85))
+    bevel(im, X(14, 36), 42, X(14, 36) + 36, 214, GB, 1, False)
+    cols = (AMBER, GREEN, AMBER, AMBER, LRED, AMBER, GREEN, AMBER, AMBER)
+    for k in range(9):
+        y = 52 + k * 19
+        im.disc(32, y, 6, shade(ALU, 0.75))
+        im.disc(32, y, 5.2, ALU)
+        if dead:
+            if k in (2, 6) or (mirror and k == 4):
+                im.disc(32, y, 3.8, (14, 14, 16))
+            else:
+                lamp(im, 32, y, 3.8, shade(cols[k], 0.4), False)
+        else:
+            lamp(im, 32, y, 3.8, cols[k] if k % 4 != 3 else shade(cols[k], 0.45), k % 4 != 3)
+    louvres(im, X(10, 44), 218, X(10, 44) + 44, 232, GB, 3)
+    return m_finish(im, dead, 7400 + mirror)
+
+
+def face_K(dead, mirror=False):
+    """The body's south face beside 101's mouth, 16 (K west of it, u 0 at the alcove's corner; L east): a row
+    of small lamps down it. It goes on into the piece over the mouth: no edge there."""
+    W = 16
+    rnd = random.Random(7500 + 13 * dead + 5 * mirror)
+    im = m_shell(W, 256, 7500 + mirror, ("seam", None) if not mirror else (None, "seam"))
+    x = 9 if not mirror else 7
+    im.rect(x - 3, 44, x + 3, 230, (46, 50, 58))
+    for k in range(12):
+        y = 52 + k * 15
+        on = (k + mirror) % 3 != 0
+        if dead and rnd.random() < 0.25:
+            im.disc(x, y, 1.6, (10, 10, 12))
+        elif dead:
+            lamp(im, x, y, 1.6, AMBER_OFF, False)
+        else:
+            lamp(im, x, y, 1.6, AMBER if on else AMBER_OFF, on)
+    return m_finish(im, dead, 7500 + mirror)
+
+
+def face_O(dead):
+    """Over 101's mouth, 64 x 160 (the frame's head is 96 up; the picture is its height, so it stands the same
+    pegged from the ceiling or from the head): a brass plate with the port's motif small, a row of lamps."""
+    W, H = 64, 160
+    rnd = random.Random(7600 + 13 * dead)
+    im = m_shell(W, H, 7600, (None, None))
+    px1, py1, px2, py2 = 8, 46, 56, 124
+    im.rect(px1 + 1, py1 + 1, px2 + 1, py2 + 1, shade(GB, 0.55))   # its shadow
+    plate = BRASS if not dead else (150, 120, 64)
+    fill(im, px1, py1, px2, py2, plate, 0.03, 7601)
+    bevel(im, px1, py1, px2, py2, plate)
+    im.rect(15, 52, 49, 106, (14, 16, 24))                        # the port in small: a dark inlay,
+    for y in range(52, 106):
+        for x in range(15, 49):
+            blend(im, x, y, (40, 60, 90), 0.5 * max(0, 1 - math.hypot((x - 32) / 17, (y - 90) / 30)))
+    door_motif(im, 32, 79, 28, 50, 3, [plate, shade(plate, 0.86), shade(plate, 0.72)], 2, f=0.6, vy=0.3)
+    if not dead:                                                 # ... the light far in
+        glow(im, 32, 93, 4, (255, 214, 150), 0.6)
+        im.set(32, 93, (255, 236, 200))
+    im.rect(14, 51, 50, 52, shade(plate, 0.5))
+    text(im, "7", 31, 111, shade(plate, 0.4), 1)                 # its number, engraved
+    text(im, "7", 30, 110, shade(plate, 1.2) if not dead else shade(plate, 0.9), 1)
+    for x, y in ((px1 + 3, py1 + 3), (px2 - 4, py1 + 3), (px1 + 3, py2 - 4), (px2 - 4, py2 - 4)):
+        if dead and (x, y) == (px2 - 4, py1 + 3):
+            im.disc(x, y, 1, (30, 24, 20))
+            for k in range(9):
+                blend(im, x, y + 2 + k, RUST, 0.6 * (1 - k / 9))
+            continue
+        im.disc(x, y, 1.3, shade(plate, 0.6))
+        im.set(x, y, shade(plate, 1.3))
+    if dead:
+        for y in range(py1, py2):                                # tarnish, verdigris
+            for x in range(px1, px2):
+                p = im.px[y * W + x]
+                if p[0] - p[2] > 50 and rnd.random() < 0.3:
+                    blend(im, x, y, VERDI, 0.5)
+        m_cracks(im, 25, 70, (14, 51, 50, 107), rnd, 6, (180, 186, 190), hole=5)
+    else:
+        glass_glint(im, 15, 52, 49, 106, 0.14)
+    im.rect(14, 132, 50, 142, (46, 50, 58))
+    for k in range(5):
+        x = 18 + k * 7
+        if dead:
+            lamp(im, x, 137, 1.8, AMBER_OFF, False)
+        else:
+            lamp(im, x, 137, 1.8, GREEN if k == 2 else AMBER, k in (0, 2, 4))
+    return m_finish(im, dead, 7600)
+
+
+def m_finish(im, dead, seed):
+    if dead:
+        ruin(im, seed)
+    im.noise(2, seed + 50 + dead)
+    return im
+
+
+def ruin(im, seed):
+    """NOW: the colours of the hall NOW (khaki and dark), dust, soot from the top, rust runs, dirt up from the
+    floor."""
+    rnd = random.Random(seed + 900)
+    for i, p in enumerate(im.px):
+        r, g, b = p[:3]
+        lum = r * 0.3 + g * 0.59 + b * 0.11
+        q = mix((r, g, b), (lum * 1.03, lum, lum * 0.76), 0.62)
+        q = mix(q, (160, 152, 124), 0.28)                        # a film of dust over all (and the hall NOW is
+        im.px[i] = list(q) + [255]                               # dark: the darks are lifted, so that it reads)
+    w, h = im.w, im.h
+    for _ in range(max(2, w * h // 1400)):
+        GI.blot(im, rnd.randrange(w), rnd.randrange(h), rnd.randrange(5, 15), (66, 56, 40), 0.2)
+    for y in range(min(h, 56)):                                  # soot from the top
+        for x in range(w):
+            blend(im, x, y, (26, 24, 20), 0.26 * (1 - y / 56))
+    GI.drips(im, rnd, max(1, w // 22), (104, 68, 38), CROWN, 130)
+    GI.drips(im, rnd, max(1, w // 40), (40, 36, 30), BAND, 90)
+    if h > FOOT:
+        GI.grime(im, rnd, 30)
+    GI.scuffs(im, rnd, h * 2 // 3, h - 8, w // 6, (40, 36, 32))
+
+
+def machine_face(face, dead):
+    return {"N": lambda: face_N(dead), "W": lambda: face_W(dead), "E": lambda: face_W(dead, True),
+            "A": lambda: face_A(dead), "B": lambda: face_A(dead, True), "I": lambda: face_I(dead),
+            "J": lambda: face_I(dead, True), "K": lambda: face_K(dead), "L": lambda: face_K(dead, True),
+            "O": lambda: face_O(dead)}[face]()
+
+
 SPRITES = (("AJUA", trolley), ("AJUB", tall), ("AJUC", small))
 
 
@@ -1985,6 +2572,9 @@ def make(out):
     put("textures", "AJUCLEX3", calendar("EX", 3))
     put("flats", "AJUDU2", duct(False))
     put("flats", "AJUDU3", duct(True))
+    for face in MACH_FACES:                                      # the machine, THEN and NOW (look 1's in every look)
+        put("textures", mach_name(face), machine_face(face, False))
+        put("textures", mach_name(face, True), machine_face(face, True))
     put("textures", "AJULF2", ledge_face(2))
     put("textures", "AJULF3", ledge_face(3))
     for (kind, look, part, shift), nm in PICS.items():

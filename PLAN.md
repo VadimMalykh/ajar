@@ -18460,3 +18460,92 @@ walking under the shutter as it comes down (the wait is tested only by its
 code, not by a monster in the way). GREEN's ambush in play (in the test
 ambushers are counted and removed). Save and load with the machine stopped
 or running.
+
+## MAP21: the machine's faces (built 2026-11-26)
+
+**Vadim**, playing MAP21, on a screenshot of the machine THEN from the north:
+"This decor also looks wrong (central piece)".
+
+**What was wrong.** Every face of the machine showed MAP11's one machine
+picture `MC` (128 by 256), laid again from its start on every wall piece.
+The hall's cells (`fit`) cut the north face at every feature's edge (pieces
+of 32, 32, 16, 16, 64, 16, 16, 32, 32), so it was a row of slices: gauges
+cut in half, the plate cut to "NO", the black panel cut; the other faces the
+same. And the level's centrepiece was one borrowed panel, repeated.
+
+**What each face shows now** (`tools/gfx_longrun.py`, "the machine"; THEN
+look 1, Lamps and Reels, `AJUM<face>1`; NOW `AJUX<face>1`). Every face is
+one picture at its real width and every face has the same bands, top to
+bottom, so that they go on round the corners: an aluminium cap rail, a vent
+grille (the crown), a cream band, the grey-blue body, an aluminium rail, the
+black plinth. An outer corner has an aluminium edge on both faces (a post),
+an inner corner a shadow.
+- `N` the north face (256, x 384..640): the works, symmetric about x 512.
+  In the middle the port, 92 by 162: a door's outline in brass, the same
+  again inside it, smaller, and again, drawn towards a point low in it, under
+  dark glass, a little light far in. Either side the same bay: a tape drive
+  (two reels behind glass), a lamp matrix, a green scope and two knobs, a row
+  of white keys (an orange one at the port's side); keys under the port; a
+  louvred band along the foot. The cable trunk up into the ceiling over the
+  port, three cables along the crown into it; under it the one plate,
+  MACHINE 7 (the name the hall's schematic gives it).
+- `W` the west face (192: the wing's side and the body's in one plane), the
+  power side; `E` the east face, its mirror (the same element at the same
+  place along the machine): meters along the top of the body's side; a
+  painted service door, flush, no frame (a seam, two hinges, a latch, a vent,
+  a lightning warning); the cable entry at the foot exactly where the floor
+  duct from the cabinet bank comes in (its 32), cables up into a gland box;
+  a narrow louvre column; on the wing's side three lamps, the breaker (a big
+  orange handle at ON) and a louvre field.
+- `A` the west wing's south face (80), `B` the east wing's, mirrors: two
+  towers of lamps and keys. Each tower's lamps stand as bars, taller towards
+  the alcove; an orange edge runs down its alcove side; keys (the orange at
+  the alcove's side), louvres.
+- `I`, `J` the wings' inner faces in the alcove (64), mirrors: a column of
+  nine indicator lamps in aluminium bezels.
+- `K`, `L` the body's south face beside 101's mouth (16 each): a strip of
+  small lamps. They go on into the piece over the mouth with no edge.
+- `O` over 101's mouth (64 by 160, the frame's head to the ceiling): a brass
+  plate with the port in small (a dark inlay, the three brass outlines, the
+  light far in, "7" under it), a row of five lamps under it. It is exactly
+  as high as the piece, so it stands the same whether the upper texture is
+  pegged from the head or from the ceiling (the task map21-pocket unpegs the
+  wall over every frame: either way it is right).
+- 101's two sides (16 deep): the recess runs into the machine's pillars, so
+  its sides showed the pillars' face (MAP11's `MC`), not the frame's trim as
+  in a wall. They show the clock-only trim now (`CLOCK_TRIM`, lower-unpegged:
+  laid from the recess's head as a one-sided trim wall is).
+- NOW (`AJUX..`) is the same drawing, dead: every element in its place,
+  drawn dead (lamps out, some lenses gone, the reels gone but for one on the
+  east with its tape run off, glass broken, scopes smashed, keys missing,
+  meters at nought and cracked, the breaker thrown to OFF with its grip
+  broken off and burnt, the service door sprung open a crack, two cables cut
+  at the gland, the brass gone green, a cable cut off the crown and hanging),
+  then a ruin pass (`ruin`: the colours of NOW's hall, khaki and dark, soot
+  from the top, rust runs, dust, dirt up from the floor) and some panels gone
+  with cable guts behind (the east lamp matrix, the west louvre field, the
+  east tower's lamps half, the west tower's louvres). NOW's hall is lit 120,
+  and Doom's light falls off with distance: from the north or the south at
+  250 the dead machine was a black block (its north and south faces, which
+  Doom draws darker than east and west). So the ruin pass does not darken
+  (it lays a film of dust over all, which lifts the darks), and the faces
+  NOW have their own light, 152 (`MACHINE_LIT`, the sidedefs' light; the
+  hall stays 120). The east face reads well; north and south read, dimly.
+- Looks 2 and 3 of the apparatus wear look 1's machine (only look 1 is
+  chosen; nothing drawn three times).
+
+**How the pictures are laid.** `MACHINE_FACES` in `tools/map_longrun.py`:
+each face a-b (a its left end for one looking at it) gets its picture as the
+lower texture (the machine is a pillar to the ceiling) with `exact="lower"`:
+a new value in `tools/udmf.py`, which lays one picture over every piece the
+face is cut into from the face's start, the lower texture too (`exact=True`
+did it for the middle and upper only). No other map uses it: every other
+map's wad is byte for byte as before. The piece over 101 is the mouth line's
+upper texture, set after `frame()`.
+
+**Views** (MODE=3, after the hall's north-east pair, THEN and NOW from the
+same spot): the machine from the north (as Vadim's screenshot), from the
+north-west (the north and west faces, their corner), from the east, from
+the south at 300 (the front, the towers, the alcove, the frame), and in the
+alcove before the frame looking up at the piece over it.
+`tools/smoke_MAP21_3.cfg` has 20 more shots (102).
