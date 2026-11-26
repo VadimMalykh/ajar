@@ -18063,6 +18063,55 @@ the emitter going dark at OFF (drawn, wired, not photographed: the views
 keep the beam at C); the sprites' size against the player at play speed;
 the light in optics NOW in a fight.
 
+## MAP22 is to be the bus level; from it on the levels mix institute, town and Doom (Vadim, 2026-11-26; not designed)
+
+**Vadim**, on the section "The new bus to part 1's places" and Claude's
+additions to it: "Yes, I like this too. Maybe it's already can be done in
+map22? So in all later maps we can combine institute, city and doom
+places?"
+
+Claude's answer: yes. Taken as the working plan, to be designed when MAP21
+is finished:
+
+- **MAP22 is the bus level**: the town then, by day, the new bus, part 1's
+  places in peace, the turn, the same places as fights. (The outline had it
+  as level 25.)
+- **What it gives the levels after it.** Three kinds of ground, and the
+  ways between them, all in the player's hands by the end of MAP22: the
+  institute (then and now, the clocked door), the town (the bus: a hub whose
+  lines are colour doors), and Doom's places (where the monsters are; the
+  joined maps of `tools/classic.py`). A later level can then be laid across
+  two or three of them: a route that leaves the institute by the bus, crosses
+  a piece of a Doom map and comes back at the other time.
+- **What it asks of MAP22.** It has to make the bus a thing the player
+  keeps (a stop that later levels can have, with the same six doors), and
+  it has to leave then no longer quiet, so that later levels can fight at
+  both times. Both follow if the "something" is the player's own door from
+  now hung on the bus (Claude's first choice among the three candidates;
+  Vadim: "I like this too", said of the additions as a whole, so this
+  choice is not confirmed by itself).
+- **What moves in the outline.** The old 22 ("on loan": what is taken from
+  now is owed to then; part 1's doors and the frames they were cut from)
+  is not lost: hanging part 1's doors is part of the bus level's peace, and
+  the loan (a thing found now that the player has yet to put there then)
+  is a mechanic for 23 or 24. 25 becomes free. The table in "The ten levels,
+  in outline" is to be rewritten when MAP22 is designed.
+
+Open, beside the questions of the section before: is a Doom place already
+in MAP22 (the line to now that the player hangs could open on a piece of a
+Doom map and not on the institute's ruin), or do Doom's places wait for
+later levels as the outline has them (27 to 29)?
+
+## MAP21's look board: Vadim's word (2026-11-26)
+
+The board (https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM) was published
+and the level merged in look 1. Vadim, a few minutes after it was
+published: "Yes, I like #1, let's go". Claude reads this as look 1 ("Lamps
+and Reels") for every group, which is what the `APPARATUS` table has, so
+nothing changes in the level. **The reading is not confirmed**: the message
+could also answer the bus idea (the first candidate for what the
+"something" is). Asked.
+
 ## Music: four of the ten Engine variations removed; fifteen on three harmonies ordered (2026-11-26)
 
 **Vadim**, having heard 26 to 35: "Delete 26, 28, 31, 32", and: "Also can
