@@ -428,13 +428,13 @@ def m_PF(w):
     c = (158, 154, 146)
 
     def f(x, z):
-        kz = (z - 1) // 24
-        off = 16 if kz % 2 else 0
-        if z % 24 == 0 or (x + off) % 32 == 0:
-            return (84, 82, 78)
-        k = h32(((x + off) // 32) % 2, kz, 34)
-        g = 0.9 + 0.14 * k
-        if z % 24 == 1 or (x + off) % 32 == 31:
+        kz = (z - 1) // 32
+        off = 32 if kz % 2 else 0
+        if z % 32 == 0 or (x + off) % 64 == 0:
+            return (96, 94, 90)
+        k = h32(0, kz, 34)
+        g = 0.92 + 0.1 * k
+        if z % 32 == 1 or (x + off) % 64 == 63:
             g *= 0.9
         return jit(shade(c, g), x // 2, z // 2, 35, 0.04)
     w.fill(w.z0, w.bot, f)
@@ -522,7 +522,8 @@ def m_AT(w, F, part):
 
 
 def m_PC(w, F):
-    """A pump's casing: pale grey paint, a black and white band, CWP stencilled, a bolted flange at the top."""
+    """A pump's casing: pale grey paint, a black and white band, a bolted flange at the top. (No stencil: the
+    octagon's square faces are laid by world position, so lettering would be cut anywhere.)"""
     top = w.z0
     c = (196, 196, 190)
 
@@ -541,7 +542,6 @@ def m_PC(w, F):
         g = 0.93 + 0.1 * math.sin(math.pi * u / 64)
         return jit(shade(c, g), x // 2, z // 2, 48, 0.015)
     w.fill(w.z0, w.bot, f)
-    stencil_on(w, "CWP", 32 - (3 * 6 * 2 - 2) // 2, F + 48, INK, c, 2)
 
 
 def m_LP(w):
@@ -812,7 +812,7 @@ def m_OC(w, F, part):
 def m_TW(w, F, part):
     """The cooling tower's shell from inside: concrete board-marked in rings (lifts of 24), lime and rust-brown
     streaks running down, a ring beam high up."""
-    conc = (182, 178, 170)
+    conc = (170, 166, 158)
 
     def f(x, z):
         m = z % 24
@@ -826,8 +826,8 @@ def m_TW(w, F, part):
             g *= 0.96
         return jit(shade(conc, g), x // 3, z // 2, 73, 0.03)
     w.fill(w.z0, w.bot, f)
-    streaks(w, 400, w.bot, (226, 224, 214), 0.12, 0.45, seed=74, width=2)
-    streaks(w, 400, w.bot, (118, 82, 56), 0.07, 0.5, seed=75, width=1)
+    streaks(w, 400, w.bot, (234, 232, 222), 0.14, 0.6, seed=74, width=2)
+    streaks(w, 400, w.bot, (112, 78, 52), 0.08, 0.6, seed=75, width=1)
     w.fill(418, 400, lambda x, z: shade(conc, 1.22 if z == 418 else 0.68 if z == 401 else 1.02))
     band(w, F, part)
 
@@ -870,8 +870,8 @@ def m_LH(w, F, part):
             return shade(pale, 0.72)
         if z % 128 == 127:
             return shade(pale, 1.05)
-        if x % 4 == 2 and z % 4 == 2:
-            return shade(pale, 0.9)
+        if x % 3 == 1 and z % 3 == 1:
+            return shade(pale, 0.955)
         return jit(pale, x // 4, z // 4, 77, 0.008)
     w.fill(w.z0, w.bot, acoustic)
 
@@ -1527,7 +1527,7 @@ def f_grating():
     def f(x, y):
         if x % 8 in (0, 1) or y % 4 == 0:
             return shade(GALV, 0.8 if x % 8 == 0 or y % 4 == 0 else 1.08)
-        return (22, 22, 22)
+        return (58, 58, 56)
     return flat(f)
 
 
