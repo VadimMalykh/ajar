@@ -18529,7 +18529,7 @@ an inner corner a shadow.
   250 the dead machine was a black block (its north and south faces, which
   Doom draws darker than east and west). So the ruin pass does not darken
   (it lays a film of dust over all, which lifts the darks), and the faces
-  NOW have their own light, 152 (`MACHINE_LIT`, the sidedefs' light; the
+  NOW have their own light, 140 (`MACHINE_LIT`, the sidedefs' light; the
   hall stays 120). The east face reads well; north and south read, dimly.
 - Looks 2 and 3 of the apparatus wear look 1's machine (only look 1 is
   chosen; nothing drawn three times).

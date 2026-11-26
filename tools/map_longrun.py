@@ -294,7 +294,7 @@ MACHINE_FACES = [((640, 448), (384, 448), "N"), ((384, 448), (384, 256), "W"), (
                  ((384, 256), (464, 256), "A"), ((560, 256), (640, 256), "B"),
                  ((464, 256), (464, 320), "I"), ((560, 320), (560, 256), "J"),
                  ((464, 320), (480, 320), "K"), ((544, 320), (560, 320), "L")]
-MACHINE_LIT = 152       # NOW the faces' own light (the hall is 120): the dead machine is to read across the hall
+MACHINE_LIT = 140       # NOW the faces' own light (the hall is 120): the dead machine is to read across the hall
 for c in t.copies:
     lit = dict(lit=MACHINE_LIT) if c.now else {}
     for a, b, face in MACHINE_FACES:
