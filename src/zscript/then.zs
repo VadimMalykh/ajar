@@ -47,8 +47,14 @@
 // shown NOW as that corpse, where it stood when the last link came down; when
 // a link is made again the corpse goes.
 //
-// Music by time: THEN_MUSIC while the player is THEN, the level's own NOW;
-// the lever (AjarThenMusic, 20185) turns the switching off and on again.
+// Music by time: the level's piece for THEN while the player is THEN (THEN_MUSIC,
+// MAP21's, unless the level names its own: SetThenMusic, MAP22's map22.zs), the
+// level's own (mapinfo) NOW; the lever (AjarThenMusic, 20185) turns the switching
+// off and on again.
+//
+// The times joined: `joinedAt` is the level's tic at which some door first
+// joined the two times (Linked: the clocked door hung), -1 until then. MAP22's
+// turn (map22.zs; AjarAmbush cause 64, ajar.zs: JoinedDue).
 
 class AjarThen : Actor
 {
@@ -251,7 +257,9 @@ class AjarThenHandler : EventHandler
 	bool musicOff;
 	int musicThen;
 	string nowMusic;
+	string thenPiece;          // the level's piece for THEN ("": THEN_MUSIC)
 	int musicChanges;          // (the tests)
+	int joinedAt;              // the tic the two times were first joined; -1: not yet
 
 	static AjarThenHandler Get() { return AjarThenHandler(EventHandler.Find("AjarThenHandler")); }
 
@@ -269,6 +277,7 @@ class AjarThenHandler : EventHandler
 		wh = AjarWaterHandler.Get();
 		nowMusic = level.Music;
 		musicThen = -1;
+		joinedAt = -1;
 		wasLinked = true;          // as if a link had just come down: whatever lives THEN at the start shows NOW
 		let ci = ThinkerIterator.Create("AjarThenCause");
 		AjarThenCause c;
@@ -521,6 +530,7 @@ class AjarThenHandler : EventHandler
 	void Company()
 	{
 		bool linked = Linked();
+		if (linked && joinedAt < 0) joinedAt = level.maptime;
 		if (linked == wasLinked) return;
 		wasLinked = linked;
 		if (linked)
@@ -548,8 +558,25 @@ class AjarThenHandler : EventHandler
 		int th = !musicOff && when.InThen(mo.pos.xy);
 		if (th == musicThen) return;
 		musicThen = th;
-		S_ChangeMusic(th ? THEN_MUSIC : nowMusic);
+		S_ChangeMusic(th ? ThenMusic() : nowMusic);
 		musicChanges++;
+	}
+
+	string ThenMusic() { return thenPiece != "" ? thenPiece : THEN_MUSIC; }
+
+	// A level names its own piece for THEN (MAP22: map22.zs, in peace and after the turn); played at once if
+	// the player is THEN.
+	void SetThenMusic(string piece)
+	{
+		thenPiece = piece;
+		if (musicThen == 1) musicThen = -1;
+	}
+
+	// AjarAmbush cause 64 (ajar.zs): the two times have been joined
+	static bool JoinedDue()
+	{
+		let th = Get();
+		return th && th.ready && th.joinedAt >= 0;
 	}
 
 	override void WorldTick()

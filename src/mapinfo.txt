@@ -405,12 +405,27 @@ map MAP20 "High Water"
 // AjarThenHandler plays AJM_AFTR then, this level's own now. Ajar's MAP21 hides Doom II's map of that name.
 map MAP21 "In the Long Run"
 {
-	next = "MAP21"
+	next = "MAP22"
 	nointermission
 	nojump
 	nocrouch
 	music = "AJM_LUGG"
 	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "AjarLongRun", "LongRunTest", "LongRunLookViews", "ClockDoorLookViews"
+}
+
+// Act 3, level 2 (tools/map_dayreturn.py, src/zscript/map22.zs): MAP10's square then, by day, and now. The music
+// follows the time: AjarThenHandler plays the level's own piece then (AJM_EMY4 in peace, AJM_EMY5 after the turn:
+// map22.zs names them), this one now. The sky: SKY1 now (MAP10's), AJ22SKY then (a sky transfer in the map).
+// Ajar's MAP22 hides Doom II's map of that name (the Doom door lab, doomlab.zs, ran on it).
+map MAP22 "Day Return"
+{
+	next = "MAP22"
+	sky1 = "SKY1", 0
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_ENS4"
+	EventHandlers = "AjarThenHandler", "AjarDayReturn", "DayReturnTest"
 }
 
 // MAP21's apparatus (tools/gfx_longrun.py, src/zscript/apparatus.zs): things THEN, args[0] the look

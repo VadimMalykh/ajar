@@ -465,7 +465,8 @@ class AjarHandler : EventHandler
 	// 51..59, MAP19's register with that number (less 50) signed (pass.zs);
 	// 60 and 61, MAP20's basin first at or over, at or under a height (args[4]: water.zs).
 	// 62, MAP21's bolted sector tag args[4] first open; 63, a long cause (tid args[4] / 16) first set to the
-	// setting args[4] % 16 (then.zs).
+	// setting args[4] % 16 (then.zs). 64, MAP22's turn: the two times first joined (then.zs, JoinedDue); one
+	// with args[4] 1..4 carries that room key (map22.zs, AjarKeyBearer). 65, keys 1 and 2 both in hand.
 	// args[3], if set: it holds back until the player is
 	// within that distance of it and in sight of it. args[1]
 	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
@@ -534,6 +535,14 @@ class AjarHandler : EventHandler
 				{
 					if (!AjarThenHandler.CauseDue(a.args[4])) continue;
 				}
+				else if (g == 64)                               // MAP22: the turn, the two times first joined (then.zs)
+				{
+					if (!AjarThenHandler.JoinedDue()) continue;
+				}
+				else if (g == 65)                               // MAP22: keys 1 and 2 both in hand
+				{
+					if (!Has(mo, 1) || !Has(mo, 2)) continue;
+				}
 				else if (g == 50)                               // MAP18: the first lap a pulse has made (clock.zs)
 				{
 					if (!delayFirstLap) continue;
@@ -567,7 +576,14 @@ class AjarHandler : EventHandler
 			Actor.Spawn("TeleportFog", a.pos, ALLOW_REPLACE);
 			bool hid = UnseenJoin(m);                           // come into a room only the glass shows
 			if (g >= 0 && g < 50) { if (hid) ambushHid[g]++; else ambushShown[g]++; }
-			if (CVar.GetCVar("ajar_autotest").GetInt())
+			bool bears = g == 64 && a.args[4] >= 1 && a.args[4] <= 4;      // MAP22: it carries a room key (map22.zs)
+			if (bears) AjarKeyBearer.Bear(m, a.args[4]);
+			if (CVar.GetCVar("ajar_autotest").GetInt() && bears)
+			{
+				// the tests kill it themselves, to see the key given
+				Console.Printf("AJARTEST ambusher=%s cause=%d unseen=%d bears=%d", m.GetClassName(), g, hid, a.args[4]);
+			}
+			else if (CVar.GetCVar("ajar_autotest").GetInt())
 			{
 				// a scripted walkthrough: it came, which is all the test wants
 				// to know, and it must not stand in the walker's way
@@ -1243,7 +1259,7 @@ class AjarHandler : EventHandler
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
 		// MAP17's, MAP18's and MAP19's tests end with the level: the next map must not take the test up
-		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20" || level.mapname ~== "MAP21") CVar.FindCVar("ajar_autotest").SetInt(0);
+		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20" || level.mapname ~== "MAP21" || level.mapname ~== "MAP22") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1399,6 +1415,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "THEN") return;      // and the then and now lab (thentest.zs)
 		if (level.mapname.Left(7) ~== "CLASSIC") return;     // and the joined maps lab (classic.zs)
 		if (level.mapname ~== "MAP21") return;     // and MAP21 (map21.zs, LongRunTest)
+		if (level.mapname ~== "MAP22") return;     // and MAP22 (map22.zs, DayReturnTest)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);

@@ -5,7 +5,9 @@
 // and only when the map is id's (its checksum) and `+set ajar_doomlab 1` asks
 // for it; without both, every class here does nothing.
 //   MAP=MAP22 EXTRA="+set ajar_doomlab 1" ./run.sh        (by hand: the carried doors)
-//   MAP=MAP22 MODE=n EXTRA="+set ajar_doomlab 1" tools/smoke.sh
+//   MAP=MAP22 MODE=n EXTRA="+set ajar_doomlab 1" CFG=smoke_DOOMLAB_n.cfg tools/smoke.sh
+// (2026-11-27: Ajar's own MAP22 "Day Return" now hides id's, so the lab does not switch on until it is moved to
+// id's map by another way; its cfgs, smoke_MAP22_n.cfg before, are now smoke_DOOMLAB_1..3.cfg.)
 // MODE 1 walking, the doors' own motion, heights, widths, a monster; 2 views
 // (screenshots); 3 shots; 4 a link moved and cut; 5 carried doors in Doom
 // doorways, and a Doom door taken off its hinges; 6 views of 5.
