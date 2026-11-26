@@ -17776,3 +17776,146 @@ crates' fall reads at speed; the look on the real machine (GLES); the
 stream and the plates beyond the MODE=3 views; a player standing on the
 belt THEN while it runs (not tried: the rail should hold him); the
 bay's monsters at their new spots in a real fight.
+
+## Music: ten variations on Paradox Engine, five fast and five slow (2026-11-26, no map plays them yet)
+
+**Vadim**: "Could you maybe generate 5 fast and 5 slow? So I have something
+to choose from? Main melodic idea should be the same, with some variations,
+also different instruments, rhytms, etc" (after "Both - no" to the Toccata
+and the Slow one, see the section "the Toccata and the Slow one removed").
+
+"The main melodic idea" is taken to be the three things Paradox Engine
+(track 5) is made of: the riff (the key note hammered low in sixteenths,
+five higher notes standing out of it: flat 2nd, flat 3rd, flat 2nd, 4th,
+flat 3rd, and a flat 5th in every fourth bar; here "the hidden notes"), the
+tune over the riff, and the tune of the chorus over the flat 6th, the flat
+7th and home. In all ten those notes are there in their order. What
+changes: the rhythm and the metre, the key, the instruments and who has
+what, and the second time a tune comes (its long notes walked through, or
+an octave away, or on another instrument). The two rejected ones changed
+only the instruments and the speed.
+
+Designed by the session (Fable), written out by two workers (Opus), five
+each. They are the last ten of TRACKS: **26 to 30 the fast ones, 31 to 35
+the slow ones** (`MAP=SOUND ./run.sh`, MUSIC + and MUSIC -); every other
+piece keeps its number; the lab has 35 tracks.
+
+| Lab | Lump | Piece | What it is |
+|---|---|---|---|
+| 26 | AJM_ENF1 | Paradox Engine, Gallop. E, 150, 109 s | The riff stretched over two bars as a gallop (an eighth and two sixteenths on the low E), the hidden notes as bare fifths a beat apart. All guitars: distorted guitar and bass in one riff, an overdriven lead with both tunes, a second lead an octave under it in the later choruses; a rock organ holds the chords there |
+| 27 | AJM_ENF2 | Paradox Engine, Shuffle. D, 12/8 at 132, 116 s | The riff in triplets, where it falls into four beats of three by itself; the bass plays the shuffle, long and short. A rock organ is the main voice and has the verse tune (later an octave up); synth brass, then a lead guitar, then both have the chorus tune. Ride and hat in the shuffle |
+| 28 | AJM_ENF3 | Paradox Engine, in Seven. D, 7/8 at 138, 103 s | The riff with its last two notes cut off, a bar of seven eighths, both tunes cut to fit. Distorted guitar as in the first piece; a rock organ and an overdriven lead change tunes from one time round to the next; strings in the chorus |
+| 29 | AJM_ENF4 | Paradox Engine, Machine. C, 140, 110 s | The riff shared out: a synth bass hammers the key note and leaves the gaps, a square wave two octaves up plays only the hidden notes into them. Kick on every beat, a clap on two and four, an open hat off the beat. A saw lead has both tunes over a space-voice pad; from the second chorus a distorted guitar holds the fifths |
+| 30 | AJM_ENF5 | Paradox Engine, Upside Down. A, 138, 111 s | Turned over: the hammered note is on top, a muted guitar on that one A through the whole piece; the hidden notes are below it as a heavy riff, bass and distorted guitar in fifths, each held until the next, the kick on them. Synth brass has the verse tune, an overdriven lead with strings the chorus tune |
+| 31 | AJM_ENS1 | Paradox Engine, Heavy. B, 66, 175 s | The slow heavy one, in Dead Letter Office's manner. The riff at half speed in eighths, the hidden notes as fifths left ringing; kick, one snare a bar, timpani. The verse tune on an overdriven lead in long notes; the chorus tune on a choir with a horn under it, a bell on the key note |
+| 32 | AJM_ENS2 | Paradox Engine, Still. D, 54, 213 s | Ambient, no drums, made as Distant Galaxy IV is: three lines and a bass, no two lines moving at once, a round of 16 bars three times. The top line is the hidden notes, one to a bar, over a D that does not move, the middle line stepping aside for them; then B flat, C and D minor are reached a note at a time, each line climbing by a step, and all come down to bare D. From the second round a harp echoes the top line and has the chorus tune's first half in long notes; a celesta with it the third time |
+| 33 | AJM_ENS3 | Paradox Engine, Music Box. G, 3/4 at 92, 141 s | A slow waltz, the engine as a toy. The riff is the accompaniment: the key note plucked low on the first beat, the hidden notes on a celesta on the second and third. Both tunes cut for three beats on a music box; slow strings from the second verse; a voice with the music box in the last chorus. No drums |
+| 34 | AJM_ENS4 | Paradox Engine, Night Shift. E, 12/8 at 60, 176 s | Slow and swung, in the manner of Left Luggage and Night Bell. The riff is a fretless bass line four bars long, the hidden notes one or two to a bar; an electric piano on two and four; a vibraphone has the verse tune and a muted trumpet the chorus tune, and the second time they change over. A soft hat and a side stick |
+| 35 | AJM_ENS5 | Paradox Engine, Piano. D, 63, 137 s | A piano alone, a cello later, no drums. The left hand is the riff at a quarter of its speed, the hammered note opened into key note and fifth; the right hand has the tunes, the second time walked through and higher. The cello comes in with the second verse on the hidden notes as one long line, then holds the roots |
+
+Also changed: `tools/smoke_SOUND_1.cfg` waits 1600 tics instead of 1000. The
+sound lab's walkthrough steps through every track and back, and with more
+than 27 tracks the run quit before the lab's last line.
+
+Checked, by the workers and read by the session: the 25 older pieces byte
+for byte as before; in every piece the hidden notes read back from the
+voice that has them are the sequence designed, and every statement of a
+tune has the notes, order and lengths of its pattern; in Still no two of
+the three lines start a note at the same step (but for the very first);
+the build; `soundlab=ok` with 35 tracks. Where two voices are a semitone
+apart at once it is nearly always the first piece's own rub (the flat 2nd
+against the key note, the flat 5th beside the 4th; Paradox Engine itself
+has 124 such steps). The others, left in: a tune's 5th against the fifth
+on top of a flat-2nd chord for a sixteenth or two (Gallop, Upside Down,
+Heavy); a walked-through tune's passing note against the chord under it
+for an eighth (Gallop, Machine, Upside Down, Piano, Music Box); and in
+Still, E in one line against F in another for half a bar while the chords
+climb. **Not checked: how any of them sounds.** Nobody has heard them.
+
+## The new bus to part 1's places, in peace, and then the monsters come (Vadim's idea, 2026-11-26; to discuss, nothing designed)
+
+**Vadim**: "Another idea for the future (actually maybe for the next map
+or 23). We discussed that at some point we also reintroduce some of our
+places from the part 1 (01-10). What if we use our teleport bus from map10
+for it? But it's completely new bus (not old as it was in map10), and it
+initially just lead you to the normal piesful places. But then something
+happened and all the monsters go there?"
+
+### What is there already
+
+- The outline of the ten levels has this in part, as level 25: "the town
+  then, by day: the player hangs part 1's doors; the bus when it was new",
+  place "the square, the hotel, the station". Vadim's idea names the bus as
+  the way round, sets the places in peace first, adds the turn, and moves it
+  forward (22 or 23).
+- MAP10's bus is "the film's bus forty years on": red gone chalky, six
+  numbered doors, lodgers in its empty frames, `ajarmap.bus`,
+  `tools/gfx_bus.py` with liveries. The new bus is the same bus then: fresh
+  red, as in the film.
+- MAP21 has what builds a place twice (`ajarthen.Times`), the clocked door,
+  and the rule that a colour door joins places and never times.
+
+### Claude's reading and additions (to discuss)
+
+**The level in two halves, on the same ground.**
+1. *In peace.* The square by day, then. The bus stands new at its stop and
+   its lines go to a few of part 1's places as they were: lit, whole, in
+   use the day before, nobody about. No monsters. What the player does
+   there is the bus's own puzzle (which door on which frame makes which
+   line) and looking: each place is known from part 1 and is the cause of
+   what part 1 found there (the door that MAP01 finds leaning is hung here,
+   by the player; the outline's "the player hangs part 1's doors").
+2. *The turn.* Something happens, and the monsters come to every place the
+   bus serves, because the bus's lines are doors and doors are how they
+   come.
+3. *After the turn.* The same places again, each a fight, and the lines the
+   player made in peace are now the ground of the fights: a line left open
+   is a way for the monsters and a way to flank them. This is the part's
+   own theme (long causes) at the size of a level: what is left as it is in
+   peace is what is found in the fight.
+
+**What the "something" is. Three candidates.**
+- *The player does it* (Claude's first choice for a level at 22 or 23). A
+  door brought from now and hung on the bus then is a line to now, and now
+  is where the monsters are. The cause is in the player's hands and in
+  view, which is what MAP21's causes were rebuilt for. It also agrees with
+  the end of MAP30 (the player is the one who hangs the first door). After
+  this level then is no longer quiet, so the levels that follow can have
+  fights at both times.
+- *The experiment* (the notice in MAP21: "EXPERIMENT 1 TOMORROW AT A QUARTER
+  TO"). Then the level belongs next to the outline's 26 and not at 22 or 23:
+  the town in the morning, a quarter to, the turn.
+- *The bus itself*: one of its doors, a seventh, was never on the timetable.
+  Nearest to the film; says least about the player.
+
+**What makes the peace worth playing.** A Doom level with no monsters is
+short of things to do, so the peaceful half is short and every act in it
+counts later: where a door is left, which shutter is opened, where the
+player's own supplies are put down (nothing lies about in a town at peace;
+what is found in the fight is what was placed in the peace). The player
+should feel the turn coming: MAP21's notice and calendar are in the town
+too.
+
+**Then and now.** The old bus of MAP10 and the new bus are one bus at two
+times. If the level has both (a clocked door on the bus), the places are
+seen three ways: at peace then, overrun then, and as part 1 left them now.
+Probably too much for one level; the simple version is then only.
+
+**Which places.** Three or four, one known set piece of each and not the
+whole level: MAP10's square is the hub; candidates are MAP01's hall and
+cell (the end of MAP30 wants it known), MAP02's hotel, MAP03's stage, the
+station. To choose with Vadim.
+
+**How it could be built.** Each place's generator code called again for
+its set piece (as `tools/classic.py` does for Doom II's maps), in the look
+of then; the bus by `ajarmap.bus(livery=...)` with a new livery.
+
+### Open questions
+
+1. Which level: 22, 23, or the outline's 25 moved forward? And what becomes
+   of the outline's 22 ("on loan") if this takes its place?
+2. What the "something" is (the three candidates above).
+3. Is then quiet again in later levels, or do the monsters stay?
+4. Which places, and how much of each.
+5. Does the old bus of MAP10 appear (now), or only the new one?
+6. Is there anybody in the peaceful town? (Ajar has had no people so far.)
