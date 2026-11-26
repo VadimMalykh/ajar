@@ -223,6 +223,7 @@ class AjarDoor : Actor
 		if (IsShadow() && !frame) return false;
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (!h) return false;
+		if (h.UseGoesOn(self, user)) return false;     // aimed past it at a switch: the press goes on to that (leaf.zs)
 		if (frame) h.UseFrame(frame, user);
 		else h.TakeLeaning(self, user);
 		return true;
@@ -837,17 +838,8 @@ class AjarHandler : EventHandler
 		f.door = d;
 		if (tw && tw.frame) tw.Show();
 
-		// stand the leaf open at the hinge side of the frame
-		Line l = FindLine(f.args[0]);
-		if (l)
-		{
-			Vector2 dir = l.delta.Unit();
-			Vector2 n = (dir.y, -dir.x);                  // into the room
-			Vector2 u = n * cos(25) - dir * sin(25);       // leaf swung open 115 degrees
-			Vector2 hinge = l.v1.p + n * 16;
-			d.SetOrigin((hinge + u * 32, f.pos.z), false);
-			d.angle = VectorAngle(u.x, u.y) + 90;
-		}
+		// stand the leaf open at a jamb of the frame, clear of the walls round it (leaf.zs)
+		PoseLeaf(d, f);
 		d.Show();
 		ChainUpdate();
 		Spring(f);          // a sprung frame's door is shut unless its plate is pressed (plate.zs)

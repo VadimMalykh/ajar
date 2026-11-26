@@ -407,6 +407,13 @@ class AjarEmitterWreck : Actor
 //   2 the three causes set by shots from NOW through the clocked door (posed)
 //   3 views (tools/smoke_MAP21_3.cfg shoots every 70 tics)
 //   5 the wall over every frame and far side, THEN and NOW (tools/smoke_MAP21_5.cfg shoots every 35 tics)
+//   9 doors beside walls and levers (leaf.zs): the clocked door's leaf in the machine keeps off its wings, at both
+//     times alike; real USE presses at each cause's lever with a door hung beside it (RED, the clocked door hung
+//     THEN, the clocked door hung NOW and its shadow THEN) from in front of the lever, of its end nearer the frame
+//     and of the frame: the lever moves and the door stays, or, where the open leaf lies between, the door comes
+//     down and the lever stays; aimed at the leaf the door comes down, aimed at the empty frame it is hung; NOW
+//     the same levers are dead (said what a press does);
+//     the desk's panel at both times with the clocked door in the machine (posed; tools/smoke_MAP21_9.cfg)
 class LongRunTest : EventHandler
 {
 	const OFF = 8192;
@@ -587,6 +594,7 @@ class LongRunTest : EventHandler
 		else if (mode == 3) Views(mo);
 		else if (mode == 4) Causes(mo);
 		else if (mode == 5) FrameViews(mo);
+		else if (mode == 9) Doors(mo);
 		Drive(mo);
 		if (tic % 70 == 0 && mode != 3) Info(String.Format("t=%d step %d %s carried %s", tic, step, Where(mo), h.carried ? h.carried.Label() : "-"));
 	}
@@ -1411,5 +1419,146 @@ class LongRunTest : EventHandler
 		if (S()) Wait(1);
 		if (S()) { Check("beamLeverBesideItsFrame", Cause(BEAM).setting == 0, String.Format("setting %d", Cause(BEAM).setting)); Next(); }
 		if (S()) Done();
+	}
+
+	// === MODE=9: doors beside walls and levers =========================================================
+	// The three causes' levers THEN (NOW the same pictures are dead: no special), each beside its frame: the
+	// lever's middle, which way it faces, its frame THEN, the cause.
+	static const double LEVER_X[] = { 1232, 1872, 1632 };
+	static const double LEVER_Y[] = { 9552, 9728, 10512 };
+	static const double LEVER_OX[] = { -1, 0, 0 };
+	static const double LEVER_OY[] = { 0, -1, 1 };
+	static const int LEVER_FRAME[] = { 125, 128, 126 };
+	static const int LEVER_CAUSE[] = { 11, 12, 13 };
+	static const string LEVER_NAME[] = { "valve", "belt", "beam" };
+	int leverWas;
+
+	// the frame's mouth (its line 16 into the room): the middle, and which way the room is
+	Vector2 MouthN(AjarFrame f) { Vector2 dir = h.FindLine(f.args[0]).delta.Unit(); return (dir.y, -dir.x); }
+	Vector2 MouthMid(AjarFrame f) { Line l = h.FindLine(f.args[0]); return l.v1.p + l.delta / 2 + MouthN(f) * 16; }
+	Vector2 FrontOf(AjarFrame f) { return MouthMid(f) + MouthN(f) * 40; }
+	void Aim(Actor mo, Vector2 p, Vector2 at) { Pose(mo, p.x, p.y, VectorAngle(at.x - p.x, at.y - p.y)); }
+	// the door d hung in f (by script), both of a lever's frames emptied first
+	void HangIn(AjarDoor d, AjarFrame f)
+	{
+		AjarFrame tf = h.TwinFrame(f);
+		if (d.frame) h.Unhang(d.frame);
+		if (f.door) h.Unhang(f);
+		if (tf && tf.door) h.Unhang(tf);
+		h.carried = null;
+		h.Hang(d, f);
+	}
+	// the two ends of a hung leaf
+	Vector2 End(AjarDoor d, int sign) { return d.pos.xy + Actor.AngleToVector(d.angle - 90) * 32 * sign; }
+	string LeafAt(AjarDoor d) { Vector2 a = End(d, -1), b = End(d, 1); return String.Format("leaf (%.1f,%.1f)-(%.1f,%.1f) angle %.2f", a.x, a.y, b.x, b.y, d.angle); }
+
+	void Doors(Actor mo)
+	{
+		if (tic < 3 || tic % 3) return;
+		int i = tic / 3 - 1;
+		if (i == 0) { MachineLeaf(); return; }
+		i--;
+		if (i < 54) { LeverStep(mo, i / 18, (i / 6) % 3, i % 6); return; }
+		i -= 54;
+		if (i < 9) { DeadLever(mo, i / 3, i % 3); return; }
+		i -= 9;
+		if (i < 3) { DeskPanel(mo, i); return; }
+		if (i == 3) Done();
+	}
+
+	// the clocked door as found, in the machine (101) and its shadow THEN (121): between the wings, whose faces are
+	// x 464 and 560 (from the frame's wall at y 320 down to 256), by 2 at least; both leaves alike
+	void MachineLeaf()
+	{
+		Vector2 a = End(clocked, -1), b = End(clocked, 1), c = End(shadow, -1), d = End(shadow, 1);
+		Check("clockedLeafKeepsOffTheWings", clocked.frame == F(101) && min(a.x, b.x) >= 466 - 0.001 && max(a.x, b.x) <= 558 + 0.001, LeafAt(clocked));
+		Check("shadowLeafKeepsOffTheWings", shadow.frame == F(121) && min(c.x, d.x) >= 466 - 0.001 && max(c.x, d.x) <= 558 + 0.001, LeafAt(shadow));
+		Check("bothLeavesAlike", (shadow.pos - clocked.pos - (0, OFF, 0)).Length() < 0.001 && abs(Actor.DeltaAngle(shadow.angle, clocked.angle)) < 0.001,
+			LeafAt(clocked) .. "; " .. LeafAt(shadow));
+		// how far open: from shut (along the frame line, from the hinge to the other jamb) to the leaf
+		Vector2 hinge = abs(a.y - 320) < abs(b.y - 320) ? a : b, far = hinge == a ? b : a;
+		double shut = hinge.x < 512 ? 0 : 180;
+		Info(String.Format("the machine's leaf: hinge (%.2f,%.2f), far end (%.2f,%.2f), open %.2f degrees", hinge.x, hinge.y, far.x, far.y,
+			abs(Actor.DeltaAngle(shut, VectorAngle(far.x - hinge.x, far.y - hinge.y)))));
+	}
+
+	// lever L; which: 0 RED hung THEN, 1 the clocked door hung THEN, 2 the clocked door hung NOW (its shadow THEN).
+	// Steps: 0 hang it; 1 fromLever, 40 out from the lever's middle, facing it; 2 fromLeverEnd, 40 out from the
+	// lever's end by the frame, turned to its middle; 3 fromFrame, 40 out from the frame's middle, turned to the
+	// lever's middle; 4 atLeaf, from there aimed at the leaf's middle; 5 atFrame, aimed at the empty frame's middle.
+	// Where the aim to the lever passes through the leaf as it stands (the leaf swings out over the lever's side of
+	// the frame), the door is in front of the lever and the press is the door's; else it is the lever's and the
+	// door stays.
+	bool LeafBetween(AjarDoor d, Vector2 p, Vector2 q) { return AjarLeafRoom.Crosses(p, q, End(d, -1), End(d, 1)); }
+	void LeverStep(Actor mo, int L, int which, int step)
+	{
+		AjarFrame ft = F(LEVER_FRAME[L]), fn = F(LEVER_FRAME[L] - 20);
+		AjarDoor hand = which == 0 ? red : clocked;              // the door taken down and hung
+		AjarDoor seen = which == 2 ? shadow : hand;              // the door in the frame THEN
+		Vector2 lever = (LEVER_X[L], LEVER_Y[L]), o = (LEVER_OX[L], LEVER_OY[L]);
+		string what = String.Format("%s_%s", LEVER_NAME[L], which == 0 ? "red" : which == 1 ? "clockedThen" : "clockedNow");
+		let c = Cause(LEVER_CAUSE[L]);
+		if (step == 0 || ft.door != seen) HangIn(hand, which == 2 ? fn : ft);
+		if (step == 0)
+		{
+			Info(String.Format("%s: %s hung, %s", what, hand.Label(), LeafAt(seen)));
+			return;
+		}
+		if (step <= 3)
+		{
+			// the lever's end by the frame: the one nearer the frame's mouth
+			Vector2 along = (o.y, -o.x), e1 = lever + along * 32, e2 = lever - along * 32;
+			Vector2 near = (e1 - MouthMid(ft)).Length() < (e2 - MouthMid(ft)).Length() ? e1 : e2;
+			Vector2 p = step == 1 ? lever + o * 40 : step == 2 ? near + o * 40 : FrontOf(ft);
+			Aim(mo, p, lever);
+			bool behind = LeafBetween(seen, p, lever);
+			leverWas = c.setting;
+			PressUse(mo);
+			bool moved = c.setting == (leverWas + 1) % c.Settings(), stays = ft.door == seen && !h.carried;
+			Check(String.Format("%s_%s", step == 1 ? "fromLever" : step == 2 ? "fromLeverEnd" : "fromFrame", what),
+				behind ? !moved && h.carried == hand : moved && stays,
+				String.Format("%s: the leaf %s; setting %d to %d; frame THEN %s; hands %s; %s", Where(mo),
+				behind ? "between, the door expected" : "not between, the lever expected", leverWas, c.setting,
+				ft.door ? ft.door.Label() .. (ft.door.IsShadow() ? "(shadow)" : "") : "empty", h.carried ? h.carried.Label() : "-", h.said));
+			return;
+		}
+		if (step == 4)
+		{
+			Aim(mo, FrontOf(ft), seen.pos.xy);
+			PressUse(mo);
+			Check("atLeaf_" .. what, h.carried == hand && !ft.door && !fn.door, String.Format("%s: %s", Where(mo), h.said));
+			return;
+		}
+		if (h.carried != hand) { if (ft.door) h.Unhang(ft); h.carried = hand; }
+		Aim(mo, FrontOf(ft), MouthMid(ft));
+		PressUse(mo);
+		Check("atFrame_" .. what, ft.door == hand && !h.carried, String.Format("%s: %s", Where(mo), h.said));
+	}
+
+	// NOW: RED hung in the lever's frame NOW, beside the dead lever (the same picture, no special)
+	void DeadLever(Actor mo, int L, int step)
+	{
+		AjarFrame fn = F(LEVER_FRAME[L] - 20);
+		Vector2 lever = (LEVER_X[L], LEVER_Y[L] - OFF), o = (LEVER_OX[L], LEVER_OY[L]);
+		if (step == 0) { HangIn(red, fn); return; }
+		if (step == 1) Aim(mo, FrontOf(fn), lever);
+		else Aim(mo, lever + o * 40, lever);
+		h.said = "";
+		PressUse(mo);
+		Info(String.Format("dead lever NOW, %s, %s: %s", LEVER_NAME[L], step == 1 ? "from the frame" : "from the lever",
+			fn.door == red ? "RED stays hung" : h.carried == red ? "RED taken down" : "?"));
+		if (h.carried == red) { h.carried = null; h.Hang(red, fn); }
+	}
+
+	// the desk's panel (y 176, facing the machine), the clocked door back in the machine
+	void DeskPanel(Actor mo, int step)
+	{
+		if (step == 0) { HangIn(clocked, F(101)); return; }
+		bool then = step == 1;
+		Aim(mo, (512, (then ? OFF : 0) + 224), (512, (then ? OFF : 0) + 176));
+		h.said = "";
+		PressUse(mo);
+		Check(then ? "deskPanelThen" : "deskPanelNow", (then ? h.said.IndexOf("key") >= 0 || h.said.IndexOf("Key") >= 0 : h.said.IndexOf("smashed") >= 0)
+			&& F(101).door == clocked && F(121).door == shadow && !h.carried, String.Format("%s: %s", Where(mo), h.said));
 	}
 }
