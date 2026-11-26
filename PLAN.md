@@ -17516,3 +17516,72 @@ and the questions below are still for the discussion.
 5. After the last view: the end, or MAP01 again?
 6. Does the player still carry the clocked door in MAP30? (In MAP21 it is
    left in the machine.)
+
+## Music: two variations on Paradox Engine, a toccata and a slow one (2026-11-26, no map plays them yet)
+
+**Vadim**: "Could you make 2 new variations of theme 5? One fast, but
+different arragement, and another one slow? Using same melodic idea?" Track
+5 of the sound lab is Paradox Engine (AJM_ENGN; MAP12 and MAP18).
+
+What that piece is made of, and both variations keep note for note, in D:
+the riff (a low D hammered in sixteenths, out of which E flat, F, E flat, G,
+F stand, an A flat in every fourth bar); the tune that goes over the riff
+(the square wave's); the tune of the chorus over B flat, C, D minor (the
+brass's). The two tunes now stand once in `tools/music.py`
+(`ENGINE_OVER_RIFF`, `ENGINE_CHORUS`) for the two new pieces; `engine()`
+itself is not touched.
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_ENGT | Paradox Engine, Toccata, D, 144, 107 s | The instruments change places. The riff is a harpsichord's, a toccata over a bass in octaves and a kick on every eighth; plucked strings pick out the notes that stand out of it. The chorus tune is a church organ's over a choir (from the second chorus in octaves), with the harpsichord in broken chords. The verse tune is an overdriven guitar's. A break of four bars: the organ alone plays the riff's hidden notes eight times slower over a held D. After it the first piece's distorted guitar comes in under the harpsichord, the same riff an octave lower, and holds its fifths in the last chorus, where the lead guitar has the tune with the organ. The form is the first piece's (4 in, verse, verse on the 4th and home, chorus, verse, chorus, break, verse, chorus) |
+| AJM_ENGS | Paradox Engine, Slow, D, 69, 153 s | Half the speed. The riff at a quarter of its speed is a muted guitar ticking on the low D, the engine turning over, the same notes standing out; a low D held; slow strings on D minor with E flat for one bar in four. The verse tune at half speed is a clarinet's; the second time its first half and the ticking are on the 4th, as the first piece's riff goes there. The ticking stops for the chorus: the brass tune at half speed on one horn, timpani far off; the second time a voice an octave over the horn and a harp. A slow heart on the drum under the clarinet, no other drums. It begins and comes round to four bars of the ticking alone |
+
+They are the last two of TRACKS: **26 Paradox Engine, Toccata, 27 Paradox
+Engine, Slow** in the lab (`MAP=SOUND ./run.sh`, MUSIC + and MUSIC -); every
+other piece keeps its number. No map plays them.
+
+Checked: both tunes and the riff compared note by note with `engine()`'s
+(the same lengths and steps; the slow riff the same notes at twice the
+steps); the other twenty-five pieces byte for byte as before; the build;
+`soundlab=ok` with 27 tracks (141 checks); GZDoom with sound on and a null
+device starts both (`S_ChangeMusic` 1). Where two voices are a semitone
+apart it is the first piece's own E flat against D (and, in the slow one,
+the E flat chord over the held D). **Not checked: how they sound**, above
+all whether the harpsichord carries the riff in GZDoom's synth and whether
+the muted guitar's ticking is too much over two and a half minutes.
+
+Which map plays which piece on this day (from `src/mapinfo.txt`; the labs
+have none):
+
+| Map | Piece | Lab number |
+|---|---|---|
+| MAP01 Borrowed Rooms | After Hours (AJM_AFTR) | 4 |
+| MAP02 No Vacancy | Mysterium II (AJM_MYS2) | 25 |
+| MAP03 Stage Door | Distant Galaxy IV (AJM_GAL4) | 20 |
+| MAP04 Party Wall | Distant Galaxy, Fast (AJM_GALF) | 24 |
+| MAP05 Lost Property | Off Its Hinges (AJM_HING) | 1 |
+| MAP06 After Hours | Fire Door (AJM_FIRE) | 7 |
+| MAP07 Small Hours | Off Its Hinges (AJM_HING) | 1 |
+| MAP08 Closing Time | Salt, Mustard, Vinegar, Pepper (AJM_SALT) | 17 |
+| MAP09 Putting You Through | What's the Time, Mr Wolf? (AJM_WOLF) | 18 |
+| MAP10 All Change | Distant Galaxy II (AJM_GAL2) | 21 |
+| MAP11 By Appointment | Do Not Disturb (AJM_DSTB) | 9 |
+| MAP12 Going Up | Paradox Engine (AJM_ENGN) | 5 |
+| MAP13 Sight Unseen | Night Bell (AJM_BELL) | 13 |
+| MAP14 On the Level | Dead Letter Office (AJM_DEAD) | 8 |
+| MAP15 On Reflection | Off Its Hinges (AJM_HING) | 1 |
+| MAP16 Watch Your Step | Fire Door (AJM_FIRE) | 7 |
+| MAP17 Made to Order | Night Porter (AJM_PORT) | 6 |
+| MAP18 Time and Motion | Paradox Engine (AJM_ENGN) | 5 |
+| MAP19 On Paper | Light Under the Door (AJM_LGHT) | 11 |
+| MAP20 High Water | After Hours (AJM_AFTR) | 4 |
+| MAP21 In the Long Run | Left Luggage (AJM_LUGG) now, After Hours then | 10, 4 |
+| MAP31 This Is Where We Came In | One Door Short (AJM_SEVN) | 3 |
+| MAP32 Double Shift | Garmonic II (AJM_GAR2) | 23 |
+| MAP33 Third Person | Standing Water (AJM_WATR) | 14 |
+
+On no map: Garmonic, Fast (2), Between Floors (12), Grandmother's Footsteps
+(15), Knock Down Ginger (16), Everything Else Moves (19), Garmonic I (22),
+and the two new ones (26, 27). On more than one: Off Its Hinges three maps;
+After Hours, Paradox Engine and Fire Door two each. The lab THEN plays Dead
+Letter Office.
