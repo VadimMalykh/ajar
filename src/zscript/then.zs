@@ -67,10 +67,12 @@ class AjarThenCause : Actor
 	int setting;
 	int changedAt;
 	bool arrived;              // its sectors and basin stand where the setting puts them
+	int timesSet;              // changes made to it (MAP21: its first change is said on the screen)
+	int reached;               // the settings a change has set it to, a bit each (AjarAmbush cause 63)
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
 
-	int Settings() { return clamp(args[0], 2, 3); }
+	int Settings() { return clamp(args[0], 2, 4); }      // (4: MAP21's beam, off and three walls)
 	override void Activate(Actor activator)
 	{
 		let th = AjarThenHandler.Get();
@@ -131,7 +133,7 @@ class AjarThenEmitter : Actor
 	{
 		for (int i = 0; i < dots.Size(); i++) if (dots[i]) dots[i].Destroy();
 		dots.Clear();
-		if (s < 1 || s > 2) return;
+		if (s < 1 || s > 3) return;
 		angle = args[s];
 		FLineTraceData d;
 		LineTrace(angle, 4096, 0, TRF_THRUACTORS, 40, 0, 0, d);
@@ -178,6 +180,20 @@ class AjarThenMusic : Actor
 		th.musicOff = !th.musicOff;
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (h) h.Say(th.musicOff ? "The music no longer follows the time." : "The music follows the time again.");
+	}
+}
+
+// A door then that is locked for the night (MAP21's room doors, then: Thing_Activate on its tid from the
+// door's face). Says so.
+class AjarThenLocked : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+	override void Activate(Actor activator)
+	{
+		let h = AjarHandler(EventHandler.Find("AjarHandler"));
+		if (h) h.Say("Locked for the night.");
+		A_StartSound("*usefail", CHAN_AUTO);
 	}
 }
 
@@ -291,8 +307,8 @@ class AjarThenHandler : EventHandler
 	}
 
 	// --- a sector's heights by setting ------------------------------------------------------------
-	static int UserF(Sector s, int n) { return n == 0 ? s.GetUDMFInt('user_f0') : n == 1 ? s.GetUDMFInt('user_f1') : s.GetUDMFInt('user_f2'); }
-	static int UserC(Sector s, int n) { return n == 0 ? s.GetUDMFInt('user_c0') : n == 1 ? s.GetUDMFInt('user_c1') : s.GetUDMFInt('user_c2'); }
+	static int UserF(Sector s, int n) { return n == 0 ? s.GetUDMFInt('user_f0') : n == 1 ? s.GetUDMFInt('user_f1') : n == 2 ? s.GetUDMFInt('user_f2') : s.GetUDMFInt('user_f3'); }
+	static int UserC(Sector s, int n) { return n == 0 ? s.GetUDMFInt('user_c0') : n == 1 ? s.GetUDMFInt('user_c1') : n == 2 ? s.GetUDMFInt('user_c2') : s.GetUDMFInt('user_c3'); }
 	static double FloorZ(Sector s) { return s.floorplane.ZAtPoint(s.centerspot); }
 	static double CeilZ(Sector s) { return s.ceilingplane.ZAtPoint(s.centerspot); }
 
@@ -307,6 +323,8 @@ class AjarThenHandler : EventHandler
 		c.setting = n;
 		c.changedAt = level.maptime;
 		c.arrived = false;
+		c.timesSet++;
+		c.reached |= 1 << n;
 		changes++;
 		for (int i = 0; i < secIdx.Size(); i++)
 		{
@@ -441,6 +459,18 @@ class AjarThenHandler : EventHandler
 		}
 	}
 
+	// AjarAmbush cause 63 (ajarthen.ambush): arg is a cause's tid * 16 + a setting. Due once a change has set
+	// that cause to that setting and NOW stands where the setting puts it (MAP21: the cellar when it first
+	// stands full again).
+	static bool CauseDue(int arg)
+	{
+		let th = Get();
+		if (!th || !th.ready) return false;
+		let c = th.FindCause(arg / 16);
+		int s = arg % 16;
+		return c && (c.reached & (1 << s)) && c.setting == s && c.arrived;
+	}
+
 	// --- company -------------------------------------------------------------------------------------
 	// Is some door hung that joins the two times?
 	bool Linked()
@@ -558,9 +588,15 @@ extend class AjarHandler
 		return door;
 	}
 
-	// UseFrame: what the clocked door does not do.
+	// UseFrame: what the clocked door does not do; and a frame that takes it only (args[4] 6: MAP21's
+	// machine frame, at both times, and its corridor's first frame, now) takes no other door.
 	bool ClockedRefuses(AjarFrame f)
 	{
+		if (carried && !carried.IsClocked() && f.args[4] == 6)
+		{
+			Say("This frame takes only the clocked door.");
+			return true;
+		}
 		if (carried && carried.IsClocked())
 		{
 			AjarFrame t = TwinFrame(f);

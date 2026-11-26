@@ -16732,3 +16732,433 @@ heard). Monsters following through the clocked door from THEN back to NOW, a
 monster in a hole when it closes (only the player is tested), the lever of the
 beam pressed while standing in a hole (the test sets it by script, which a
 player cannot do), save and load, and the views as art (dark NOW bays).
+
+## MAP21 "In the Long Run": the first version, as decided (2026-11-26)
+
+**Vadim** (2026-11-26), on the concept above: "Yes, sounds great. Let's start
+on map21". Claude (Fable) reads the yes as all four of the concept's
+questions: Doom II is "after" and the classic maps are in the story; the
+clocked door and long causes; nobody is met then; both labs. Settled by
+Claude on Fable after "The then and now lab", "The Doom door lab" and two
+rounds of the solver (`tools/puzzle21.py`); Vadim has seen the outline and a
+short telling of what follows, not this text.
+
+**What the labs and the solver changed in the outline.**
+- *Then, every room is locked for the night.* With the rooms then open to
+  each other, one hanging gave the valve, the belt and the beam on foot (9
+  door actions, the mechanic skipped). So then is not one building but six
+  sealed rooms, each entered only by a door: the hall with its corridor
+  pocket, the cellar, the goods bay, optics, the lobby. A cause is set from
+  inside its own room then, or by a shot from the same room now through the
+  clocked door hung there.
+- *The first corridor frame takes only the clocked door, now* (then it takes
+  any door). A plain door hung in it now while the clocked door was in the
+  pocket then was 2,656 stuck states; with this, none.
+- *No doors into the hall then* (the story's own rule: NO DOORS BEYOND THIS
+  POINT), so the clocked door comes back to the machine by way of now.
+- The outline's "corridor under its own ceiling" and "turnstile shut for the
+  night" stay, as the pocket. Its lift car, the pass desk and the bones as a
+  rule of play are not in this version (the old corpses are, as the lab has
+  them).
+- Sector moves take 64 tics (the lab: any other count lets heights drift).
+
+**Doors and keys.** The clocked door, RED, BLUE. Keys 1 and 2. No Pair, no
+Stray door, no thief, nailer or repainter, no lift.
+
+**The places** (plan sizes are the generator's; every way the player takes
+is 48 wide or more). Each is built twice with `ajarthen.Times` unless said.
+
+1. **The machine hall** (the start, now). About 1024 x 768, high. The
+   machine stands free in the middle, its frame **101** in its south face:
+   it takes only the clocked door, which hangs in it at the start. North of
+   the machine the desk it is run from, on a dais: now smashed and dead;
+   then a panel with two key switches (keys 1 and 2). In the north wall a
+   brass shutter, and behind it the night room and the way out
+   (`ajarmap.way_out`, no far side, as MAP20's): then only; now that wall
+   is Doom's stone. The start is at the mouth of MAP20's sluice in the south
+   wall, shut behind the player. Now the hall is sealed: its only other way
+   is the vestibule, bolted from the vestibule's side.
+2. **The vestibule**, east of the hall, between it and the corridor.
+   - *Then* it is the security post: a turnstile (a squeeze, empty hands,
+     both ways) and beside it a goods edge, a step of 40 down towards the
+     corridor: out with a door, never in. A plate on the corridor's side:
+     NO DOORS BEYOND THIS POINT.
+   - *Now* it is a closed room, both its doors bolted on the inside
+     (`ajarmap.bolted`): BLUE's far side is in it. Arriving draws both
+     bolts for good, and from then on the hall, the vestibule and the
+     corridor are one piece now, for doors too (the turnstile's bars are
+     gone and the step is a ramp or a stair).
+3. **The corridor.** Now one piece, the spine: from the vestibule's door
+   north past the cellar's stair (west), the goods bay (east) and optics
+   (north end). Then only its first stretch exists as a place, the pocket,
+   between the vestibule and a night grille of steel; the rest of the
+   corridor then is not built. Frame **103** in the first stretch: now it
+   takes only the clocked door (its trim says so), then any door.
+4. **The cellar** (undo a cause). A landing with frame **105**, a pit below
+   it, a ledge across the pit with no stair, and in the pit's floor a store
+   behind a pressure door (MAP20's: it opens only when the pit is dry).
+   The valve is then, on the far wall, with its lever on the landing and its
+   target where frame 105 sees it. **Found open**: now the pit stands full
+   to within 24 of the ledge and well under 105's sill (no frame is ever
+   under water). Open: the ledge is swum to (blue armour, cells or a
+   plasma rifle). Shut: it never flooded; the pit is walked, the store
+   opens: key 2. Then the pit is always dry, with tanks in it.
+5. **The goods bay** (make a cause). Frame **108** on its floor. Along its
+   east wall a gallery at 96 with no stair now, and on the gallery a cage
+   where RED leans; no frame up there. The belt is then, with its lever
+   and its target. **Found standing**: now the floor is bare and a hatch
+   with a stair down to a small cellar is open (the super shotgun).
+   Running: now a heap of crates stands over the hatch and climbs, in steps
+   of 24, to the gallery. From the gallery one can always drop.
+6. **Optics** (choose a cause). Frame **106**. Three walls marked A, B, C,
+   a closet behind each. The emitter is then, with a lever that steps
+   through off, A, B, C and a target for each. **Found at C**: the armoury
+   (a rocket launcher), open. A: BLUE leans there. B: a secret (a soul
+   sphere and more). One hole at a time; the holes' edges are burnt.
+7. **The lobby**: MAP11's own lobby, the same plan. Sealed in both times
+   (now by Doom's stone, then by the pass office's shutter). **RED's far
+   side is in the lobby then**: the mosaic, the board of honour with every
+   photograph up, the clock going, the street doors shut with evening light
+   in their glass. Key 1 hangs on the porter's key board; a backpack in the
+   cloakroom. Frame **110**. The lobby now (the clocked door carried in by
+   RED and hung in 110) is a secret: a megasphere, and the dust of MAP11's
+   fight.
+
+**Causes** (as the solver has them):
+| Cause | Settings | Found | Set from |
+|---|---|---|---|
+| valve | open, shut | open | the cellar then; or the cellar now through 105 |
+| belt | stop, run | stop | the goods bay then; or the bay now through 108 |
+| beam | off, A, B, C | C | optics then; or optics now through 106 |
+The first time each is changed, one line on the screen says it the long
+way: "The valve was never opened." / "The belt has run for forty years." /
+"The beam has been on wall A for forty years."
+
+**The way through** (the solver's shortest is 12 door actions; this is the
+way a player is led):
+1. Through the clocked door into the hall then; take it; out over the goods
+   edge into the pocket; hang it in 103, through to the corridor now; take
+   it.
+2. The cellar: hang it in 105, shut the valve (walk in, or shoot), key 2.
+3. The goods bay: hang it in 108, start the belt, up the heap, RED.
+4. RED hung anywhere: the lobby then, key 1.
+5. Optics: the clocked door in 106, the beam to A, BLUE.
+6. BLUE hung anywhere: the vestibule now; the bolts; the hall now; the
+   clocked door into 101; through; both keys at the desk; the machine
+   starts on the door that was found in it; the brass shutter opens; out.
+Stages 2 to 5 can be done in several orders. Each cause, and the vestibule,
+is needed: frozen or removed, the solver finds no way out.
+
+**Nothing can be lost.** `tools/puzzle21.py` with this version's frames
+(101, 103, 105, 106, 108, 110; the solver's spare frames 102, 104, 107 and
+111 are not built): no stuck state and nothing lost, checked by the solver
+in the build as for 11 to 17. Rules the generator keeps: no frame under any
+water line; no frame on the gallery, in the closets, in the store, in the
+bay's cellar or in the vestibule; each closing hole waits until it is
+clear; a rising heap lifts what stands on it.
+
+**Fights** (Doom's monsters, MAP19's and MAP20's mix and order of weapons;
+a first guess of 110 to 140 on "Resident", `tools/budget.py` by part):
+- the hall now: nothing at the start. **When the bolts are drawn the hall
+  wakes**: the level's biggest fight, out of the Doom stone of its north
+  wall (mancubi, knights, revenants, cacodemons, a baron), before the step
+  through the machine into the quiet hall then;
+- the corridor now: the first fight on stepping out of 103 (zombies,
+  sergeants, imps; a chaingun), chaingunners at its far end, demons from
+  the side rooms;
+- the cellar: spectres and demons in the dry pit, a knight by the store;
+  cacodemons and lost souls over the water when it first stands full again;
+- the goods bay: sergeants and imps among the crates and on the gallery,
+  revenants; an ambush when RED is taken;
+- optics: knights and an arachnotron; an ambush through the holes when
+  BLUE is taken;
+- then is quiet. One ambush then: key 1 taken in the lobby, and the ruin's
+  monsters come in at the frame and the street doors (imps, sergeants, a
+  knight; cacodemons after 3 s). Whatever follows the player through a hung
+  door fights then too, and what dies then lies now as an old corpse.
+
+**Doom's elements** (the rule since MAP20, more than there): whatever shuts
+a way now and was not there then is Doom's stone grown through the building
+(the hall's north wall, the plug between hall and corridor before the
+bolts, the lobby's seal), and the room doors now are Doom's, opened by USE;
+then the same doorways have the institute's own doors, locked for the night
+("Locked for the night."). Doom's lamps, torches and barrels now; none
+then.
+
+**Look**: the first version wears MAP11's looks, now 3 (Post Box) and then
+2 (Thaw), with plain furniture then (benches, racks, tanks as boxes in the
+look's textures) so that then reads as full and now as emptied. The
+apparatus proper is a look board after Vadim has played it.
+
+**Music**: by time, as the lab has it (then a quiet piece, AJM_AFTR; now
+AJM_LUGG, which plays on no other map), to be judged by ear; each crossing
+starts the other piece from its beginning.
+
+**mapinfo**: MAP21 "In the Long Run"; MAP20's and MAP33's `next` lead here;
+its own starts it again until there is a MAP22. Ajar's MAP21 hides Doom
+II's map of that name, as 1 to 20 do ("The Doom door lab": the renaming is
+a decision for the classic levels, not taken here).
+
+**Left out of the first version**: the automap (both copies are on it, side
+by side); a plain door left hanging then and found now; water through a
+hung door between the times; Ajar's own company; the apparatus; fights
+tuned by play.
+
+## MAP21 "In the Long Run": the first playable version (built 2026-11-26)
+
+Built as decided in "MAP21 'In the Long Run': the first version, as decided"
+above, on branch `map21` (an Opus worker; the design is Fable's).
+`MAP=MAP21 ./run.sh` in the worktree plays it; MAP20's and MAP33's way out
+now lead to it, and its own way out starts it again until there is a MAP22.
+The tests: `MAP=MAP21 MODE=n tools/smoke.sh "$PWD/build/smoke21_n"`
+(MODE=1 needs `TIMEOUT=700`, MODE=2 and 3 `TIMEOUT=200`).
+
+**Files.**
+- `tools/map_longrun.py`: the level and its budget, in `tools/build.py` as
+  MAP21 (imported last, after THEN, so that the signs and door faces it
+  adds to `map_institute1`'s lists do not renumber any other map's).
+  `python3 map_longrun.py budget` prints the budget by part.
+- `src/zscript/map21.zs`: `AjarLongRunDesk` (thing 20187), `AjarLongRun`
+  (the first-change lines) and `LongRunTest` (MODE=1..3);
+  `tools/smoke_MAP21_1..3.cfg`.
+- `tools/puzzle21.py`: then-ids are now + 20 (`ajarthen.THEN_ID`, 121 to
+  131); `BUILT` is the puzzle as built (frames 102, 104, 107 and 111
+  removed, no c2T, the lobby reached through 110), and is the level's
+  `PUZZLE`.
+- `tools/gfx_then.py`: `make_longrun`: the clock-only frame's trim
+  (`AJCKTR`, `AJCKTF`: brass with a clock face) and the desk's panel, live
+  then (`AJTHK2`: two key switches, lamps) and smashed now (`AJTHK3`).
+
+**The level as built** (NOW's coordinates, x east, y north; THEN is the
+same 8192 north; 854 sectors, 231 things).
+1. *The machine hall* (0..1024 x 0..768, floor 0), the start, at the mouth
+   of MAP20's sluice (shut). The machine stands free in the middle
+   (384..640 x 256..448, to the ceiling), frame 101 in a recess of its south
+   face between two wings; the desk (464..560 x 144..176) on a dais at 8
+   south of it, so that from the start the view through 101 has the other
+   time's machine and desk in it. The desk's panel faces the machine.
+   NOW: sealed; the north wall Doom's stone; Doom's floor lamps; the
+   benches' footprints. THEN: benches along the walls, the controls and a
+   warning on the north wall, the brass shutter (480..544) and behind it the
+   night room (`ajarmap.way_out`, no far side), the whole hall tagged so
+   that it brightens when the machine runs.
+2. *The vestibule* (1040..1296 x 224..544). NOW: bolted on its side at both
+   ends (`ajarmap.bolted`, tag 2100), BLUE's far side in its south wall
+   (1136..1200), arriving through it draws both bolts; a stair of two steps
+   down to the corridor's -40; the porter's desk's footprint. THEN: open to
+   the hall; the porter's desk; the goods edge (1296..1312 x 272..368, a
+   drop of 40 into the pocket, never back) and the turnstile (a squeeze at
+   1296, 448..496, floor -20; a step down to -16 before it on the
+   vestibule's side, see below). Over the pocket's side of the goods edge:
+   NO DOORS BEYOND THIS POINT.
+3. *The corridor* (1312..1504 x 160..2256, floor -40). THEN only the pocket
+   (y 160..640) and a dark stub behind the night grille at 640. Frame 103
+   in its east wall (1504, 448..512): NOW the clocked door's alone (the
+   trim), THEN (123) any door's.
+4. *The cellar*: the landing (1056..1232 x 1088..1600, -40) with frame 105
+   (1232, 1248..1312); the pit (576..1056, floor -200) with a stair of seven
+   steps down its south side; the ledge (576..704 x 1280..1472, -56) with
+   the plasma rifle and blue armour; NOW the store (608..736 x 1632..1760)
+   behind a pressure door in the pit's north wall (`ajarwater`, opens dry):
+   key 2. The pit is a basin (`ajarwater.basin`, FLOAT); the valve fills it
+   to -72 (16 under the ledge, 32 under 105's sill). THEN the pit is dry
+   with three tanks in it; NOW their footprints.
+5. *The goods bay* (1568..2160 x 1088..1536, -40), frame 108 in its north
+   wall (1680..1744); the gallery (2032..2160, floor 56: 96 over the bay)
+   along its east wall, RED on it. THEN: the belt along the south side and
+   two racks. NOW: the racks' footprints; three heap steps (64 wide, over
+   the hatch): standing, -64, -88, -112 (a stair down to the bay cellar at
+   -112, the super shotgun, and a secret annex); running, -16, 8, 32, and
+   the gallery is climbed in steps of 24.
+6. *Optics* (1152..1664 x 2320..2832, -40), frame 106 in its south wall
+   (1536..1600). THEN: two benches, the emitter in the middle over a floor
+   inlay (the inlay is there NOW too), its lever by the door and four
+   targets on the north wall (off, A, B, C). NOW: three holes with burnt
+   edges (ASHWALL2), one open at a time: A west (BLUE behind it), B north
+   (the secret: a soul sphere, rockets), C east (the rocket launcher).
+7. *The lobby*: MAP11's (2560..3584 x 0..640) with its cloakroom, desk and
+   four pillars; sealed at both times (north way: the pass office's shutter
+   THEN, Doom's stone NOW). THEN: RED's far side in the west wall
+   (288..352), key 1 behind the desk, a backpack in the cloakroom. Frame 110
+   in the east wall. NOW: the secret by 110 (blue armour), a megasphere in
+   the dust, MAP11's dead.
+Room doors: NOW Doom's (BIGDOOR2, USE, with DOORTRAK jambs and the room's
+name on the corridor's side); THEN the same doorways are the institute's
+doors drawn on the room's wall, and USE says "Locked for the night."
+
+**Frames and doors.** 101 (both times: the clocked door's alone, its trim
+both times), 103 (NOW the clocked door's alone; 123 THEN any door's), 105,
+106, 108, 110; then-ids now + 20. The clocked door hangs in 101 at the
+start. RED leans on the gallery; BLUE behind hole A. Keys 1 (the lobby
+THEN) and 2 (the store NOW).
+
+**Causes** (then.zs, as the lab's, with a fourth setting):
+| Cause | tid | Settings | Found | Lever and targets THEN | Shot from NOW through |
+|---|---|---|---|---|---|
+| valve | 11 | shut, open | open | lever on the landing, target on the ledge | 105 |
+| belt | 12 | standing, running | standing | lever on the south wall, target by it | 108 |
+| beam | 13 | off, A, B, C | C | lever by the door, four targets on the north wall | 106 |
+The first change of each says one line: "The valve was never opened." /
+"The valve has stood open for forty years.", "The belt has run for forty
+years." / "The belt has never run.", "The beam was never switched on." /
+"The beam has been on wall A (B, C) for forty years."
+
+**The desk** (USE on its panel): NOW "The desk is smashed. Nothing on it
+works now."; THEN without keys "Two keys turn here: 1 and 2." (or the one
+missing); both keys and no clocked door in 101 (at either time): "You turn
+the keys. The frame is empty."; both keys and the clocked door in 101:
+"You turn the keys. The machine starts on the door it was found with.":
+the hall THEN brightens, a sound, the brass shutter opens for good, and the
+night room is the way out.
+
+**Supplies and fights** (skill 3, "Resident": 116 monsters, 60 on skill 1,
+91 on 2, 116 on 4 (no night shift); hit points 19150; ammunition worth
+51340 (x2.68); health 370, armour 601). Imps 37, sergeants 18, knights 10,
+cacodemons 10, demons 10, lost souls 7, zombies 6, chaingunners 6,
+revenants 5, spectres 3, mancubi 2, a baron, an arachnotron. By part (skill
+3, `tools/budget.py`):
+| Part | Monsters | Hit points | Ammunition | x | Weapon |
+|---|---|---|---|---|---|
+| hall | 15 | 5740 | 12060 | 2.10 | shotgun |
+| corridor | 31 | 1840 | 10180 | 5.53 | chaingun |
+| cellar | 20 | 3270 | 6760 | 2.07 | plasma rifle |
+| goods bay | 23 | 2580 | 7640 | 2.96 | super shotgun (bay cellar) |
+| optics | 17 | 4090 | 6880 | 1.68 | rocket launcher (closet C) |
+| lobby | 10 | 1630 | 4640 | 2.85 | |
+- The hall wakes when the bolts are drawn (cause 62, a new ambush cause: a
+  sector tag first open): 2 mancubi, 3 knights, 2 revenants, 3
+  cacodemons, a baron, 4 imps.
+- The corridor: zombies, sergeants and imps at its south end, imps,
+  demons and sergeants in the middle, chaingunners and imps at the north
+  end.
+- The cellar: imps and sergeants on the landing; 3 spectres, 3 demons and
+  a knight by the store when the pit is first dry (cause 61); 3 cacodemons
+  and 4 lost souls when the valve is first set open again (cause 63, a new
+  ambush cause: a long cause's setting).
+- The goods bay: sergeants, imps and revenants, imps and sergeants on the
+  gallery, imps in the bay cellar; RED taken: 3 imps, 2 knights, 2
+  chaingunners.
+- Optics: 3 knights, an arachnotron, 4 imps; BLUE taken: 2 cacodemons, 3
+  lost souls, a revenant, 3 demons.
+- The lobby THEN, key 1 taken (THEN's only fight): 4 imps and 3 sergeants
+  at the street doors, a knight and (after 3 s) 2 cacodemons by frame 110.
+Secrets (3): optics' closet B; the lobby NOW by frame 110; the bay
+cellar's annex (a 64-wide opening east of the hatch stair's foot: berserk,
+green armour, rockets).
+
+**The same place in two times** (Vadim on the THEN lab: "Not quite clear
+that it's same place in two different times"; built in this version where
+it was cheap): the machine and the desk in the hall, seen through 101 from
+the start; the same names over the same doorways (the room doors' plate
+"CORRIDOR" on the room's side, THEN the door face, NOW the sign); a wall
+clock at the same spot in the hall, the pocket, the landing, optics and the
+lobby (look art NB, as MAP11's); the floor inlay under the emitter and the
+lobby's pillars in both times; THEN's furniture (benches, the porter's
+desk, tanks, racks, optics' benches) is a footprint NOW, a patch of the
+look-2 floor in the look-3 floor; every floor is the same part of the look
+in both times (look 2 THEN, its worn twin look 3 NOW). Left for the look
+board: unfaded rectangles on the walls, cable stubs, a clock going THEN and
+stopped NOW (the NB art is the same in both looks), the apparatus.
+
+**mapinfo**: MAP21 "In the Long Run", music AJM_LUGG (THEN AJM_AFTR, by the
+AjarThen thing), next MAP21, no intermission; MAP20's and MAP33's next are
+MAP21; things 20186 (AjarThenLocked) and 20187 (AjarLongRunDesk).
+
+**Engine and tool changes** (additive; the lab's tests pass).
+- `src/zscript/then.zs`: a cause takes 2 to 4 settings (`user_f3`/`user_c3`,
+  the beam shown at 1 to 3); a cause counts its changes and the settings it
+  has had; `CauseDue` (for ambush cause 63); `AjarThenLocked`; a frame
+  whose `args[4]` is 6 takes only the clocked door ("This frame takes only
+  the clocked door.").
+- `src/zscript/ajar.zs`: ambush causes 62 (a sector tag first open: ceiling
+  over floor + 56) and 63 (a long cause first at a setting: arg = tid * 16
+  + setting); AjarHandler's WorldTick leaves MAP21 to its own test; the
+  autotest stops at MAP21's end.
+- `tools/ajarthen.py`: `Times.clock_frame`, `Times.locked`, `ambush`,
+  `CLOCK_ONLY`, `CLOCK_TRIM`, `LOCKED_T`, `AMBUSH_BOLTS`, `AMBUSH_CAUSE`.
+- `src/zscript/doomlab.zs`: the check `map21IsIds` is now
+  `map21IsAjarsNotIds` (Ajar's MAP21 hides Doom II's, as the plan says).
+- `tools/gfx.py` calls `gfx_then.make_longrun`.
+
+**Choices of my own.**
+- *The turnstile's step*: THEN the vestibule has a step at -16 (1256..1296 x
+  440..504) before the squeeze. The squeeze's ceiling is its floor + 64 (44)
+  and over the vestibule's floor 0 that left 44, under the player's 56: the
+  turnstile was shut both ways. Found by MODE=1.
+- *The gallery* stands at 56, which is 96 over the bay's floor (-40).
+- *The desk* is south of the machine (the design: north), so that the view
+  through 101 from the start has both.
+- *Shots at A through 106*: from the middle of 106's mouth the line to A's
+  target grazes 126's jamb (MODE=2 found the puff on it); a step west of
+  the middle (x 1527) hits it. The other shots go from the middle.
+- *The hall's and optics' ambushes* appear at free spots in the room (the
+  Halton spots), not out of the stone or through the holes.
+- *Skill 4* has no extras ("night shift"): the same 116 as skill 3.
+- *Doom's elements NOW*: the hall's and the lobby's stone, Doom's doors,
+  floor lamps in the hall; no torches or barrels.
+
+**Runs** (on the full build):
+- `./build.sh` (full): MAP21 "solvable in 12 door actions, 226893 states,
+  0 stuck; can be lost for good: nothing" (`puzzle21.BUILT`); every other
+  level's solver lines as before. `tools/mapcheck.py map_longrun`: no way
+  under 48; its 7 notes are the six targets (radius 16 by mapcheck, 10 in
+  the game, 12 from their wall, as in the THEN lab) and the one SLOT,
+  water.zs's control sector in the void. `tools/thingcheck.py`: 0
+  problems. `tools/itemcheck.py`: 2 notes, both meant: the valve's target on
+  the ledge (shot, not picked up) and rockets on the gallery (reached by the
+  heap).
+- MODE=1, the whole level walked (no posing, no teleport; the shots are
+  replaced by the levers THEN; the ambushers spawned, counted and removed):
+  60 checks, all pass, and out by the night room (`outByTheWayOut`,
+  `levelExited`); game time 264 s. Found: the clocked door in 101, the
+  valve open (water -72), the belt standing, the beam at C, the NOW music.
+  The hall sealed NOW; the desk smashed NOW; through 101 into the hall
+  THEN, its music; the desk wants keys; the clocked door taken THEN;
+  refused at the turnstile while carried; down the goods edge, not back up;
+  hung in 123, out of 103 NOW, taken. Hung in 105; the valve shut THEN by
+  its lever ("The valve was never opened."); the pit dry NOW (-200, its 7
+  come); down
+  the pit stair, the store's door opens, key 2, back up. Hung in 108; the
+  belt run THEN ("The belt has run for forty years."); up the heap NOW to
+  the gallery on foot (56); RED taken (its ambush, 7); RED refused at 103
+  ("This frame takes only the clocked door."), hung in 105; the lobby THEN,
+  key 1 (its ambush, 10, all come); back through RED. The clocked door
+  from 108 into 106; optics THEN; the beam set to A by its lever ("The beam
+  was never switched on."); hole A alone open (A 56, B and C -40); BLUE
+  taken (its ambush, 9), hung in 108; through BLUE into the vestibule NOW, both bolts
+  drawn, the hall wakes (15, all come). The clocked door from 106 into 103,
+  the pocket THEN, up the turnstile empty handed, the desk with both keys
+  and no door in 101 ("The frame is empty."); back down the goods edge,
+  through 123 to the corridor NOW, the clocked door taken; into the hall
+  NOW by the vestibule, the clocked door into 101, through, the desk: the
+  machine starts, the shutter open (172); out.
+- MODE=2, the causes set by shots from NOW through the clocked door
+  (posed, real hitscans): 11 checks, all pass. Through 105 the valve shut
+  (the pit dry) and open again (water -72) and the cacodemons and lost
+  souls come when it is first full again (cause 63); through 108 the belt
+  running (the top step at 32); through 106 the beam to A (from x 1527)
+  and then to B (from the middle).
+- MODE=3: 21 views, two screenshots each, the later one kept.
+- The THEN lab, MODE=1..5: 30, 12, 17, 15 and 14 checks, all pass.
+  `MAP=LAB MODE=1`: 16 checks, all pass (it ends at its cfg's quit, as on
+  main). `MAP=TEST MODE=1`: 7, all pass. `MAP=MAP11 MODE=1`: 24 checks,
+  all pass, with `levelExited`. `MAP=MAP20 MODE=1`: 90 checks, all pass, `levelExited`.
+  `MAP=MAP22 MODE=1` with `+set ajar_doomlab 1`: 30, all pass, among them
+  `map21IsAjarsNotIds`.
+- Every other map's wad is byte for byte main's (47 maps, against a build
+  of main at 75f68f0).
+- MODE=3's timing (140 tics a view) was changed after the full build; the
+  test file was put into that build again and MODE=3 run on it. Nothing
+  else changed after the build.
+
+**Not tested / not played by hand.** The fights' balance and where the
+Halton spots put things (MODE=1 runs with the monsters removed; the
+ambushers are spawned, counted and removed); the sounds (the runs are
+`-nosound`), the machine's sound and the music by ear; the look on the real
+machine (GLES), the clock trim and the desk panels on screen beyond the
+MODE=3 views; how the turnstile's step and the goods edge read in play;
+a player who sets the beam to B or C before taking BLUE and comes back
+(the solver says nothing is lost; MODE=1 walks one order); the belt
+stopped again with the player on the heap (the lab's MODE=3 tries a
+rising heap only); a saved game across the times; the automap (both copies
+side by side, as the design leaves it).

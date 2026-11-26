@@ -183,7 +183,7 @@ class Times:
     def cause(self, x, y, tid, settings=2, *, tag=0, basin=0, depth=0, start=0):
         """A fixture THEN at x, y (an invisible thing; its look is the
         caller's): `tid` is its number (its lever and targets name it),
-        `settings` 2 or 3. In each setting n the NOW sectors tagged `tag`
+        `settings` 2, 3 or 4 (MAP21's beam). In each setting n the NOW sectors tagged `tag`
         go to their heights() for n, and the basin `basin` (ajarwater)
         stands `depth` over its floor in setting 1 and over, dry in 0.
         Starts in `start`."""
@@ -205,7 +205,7 @@ class Times:
         self.then.thing(x, y, TARGET_T, height=z, args=(cause, 0 if setting is None else setting + 1))
 
     def beam(self, x, y, cause, angles):
-        """THEN's emitter at x, y: in setting n (1, 2) it shines along
+        """THEN's emitter at x, y: in setting n (1, 2, 3) it shines along
         angles[n - 1] to the first wall."""
         self.then.thing(x, y, EMITTER_T, args=(cause,) + tuple(angles))
 
@@ -227,3 +227,38 @@ class Times:
         c.line(a, b, special=130, args=(tid,), playeruse=True, repeatspecial=True, mid=LIVE[when], exact=True,
                dontpegbottom=True)
         c.thing(at[0], at[1], MUSIC_T, id=tid)
+
+    # --- added for MAP21 (tools/map_longrun.py) ------------------------------------------------------
+    def clock_frame(self, a, b, out, n, floor=0, *, when=(NOW, THEN), **k):
+        """Frame n (n + THEN_ID THEN), which takes the clocked door only in
+        the copies `when` (its trim says so, CLOCK_TRIM; then.zs refuses any
+        other door there: "This frame takes only the clocked door.") and any
+        door in the others. In a PUZZLE graph: only={n: the clocked door}, and
+        for a twin that takes any door its own only={n + THEN_ID: every door}."""
+        for c in self.copies:
+            extra = dict(only=CLOCK_ONLY, trim=CLOCK_TRIM) if c.when in when else {}
+            c.frame(a, b, out, n, floor, **dict(k, **extra))
+
+    def locked(self, x, y, tid):
+        """The thing that says "Locked for the night." for every line that
+        does Thing_Activate(tid) (then's doors: locked_door())."""
+        self.then.thing(x, y, LOCKED_T, id=tid)
+
+
+CLOCK_ONLY = 6                          # AjarFrame args[4]: it takes the clocked door only (then.zs, ClockedRefuses)
+CLOCK_TRIM = ("AJCKTR", "AJCKTF")       # ... and its trim (tools/gfx_then.py)
+LOCKED_T = 20186                        # AjarThenLocked (then.zs)
+AMBUSH_BOLTS, AMBUSH_CAUSE = 62, 63     # AjarAmbush causes (ajar.zs): a sector tag first open; a cause first set to a setting
+
+
+def ambush(m, cause, arg, kind, *spots, angle=0, after=0, near=0):
+    """As ajarmap.ambush (thinned the same way, counted with it), for the
+    causes that need a number of their own (args[4]): AMBUSH_BOLTS, `arg` a
+    sector tag, the monsters come when a sector with that tag first stands
+    open (a bolted door's bolts drawn: ajarmap.bolted); AMBUSH_CAUSE, `arg`
+    a cause's tid * 16 + a setting, they come when that cause is first set
+    to that setting by a change (not at the start) and NOW has followed."""
+    for x, y in spots:
+        i = m.ambushers = getattr(m, "ambushers", -1) + 1
+        m.thing(x, y, ajarmap.AMBUSH_T, angle=angle, args=(cause, kind, after, near, arg),
+                skill=1 if i % 2 == 0 else 3 if i % 4 == 3 else 2)
