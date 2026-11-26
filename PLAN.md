@@ -17919,3 +17919,776 @@ of then; the bus by `ajarmap.bus(livery=...)` with a new livery.
 4. Which places, and how much of each.
 5. Does the old bus of MAP10 appear (now), or only the new one?
 6. Is there anybody in the peaceful town? (Ajar has had no people so far.)
+
+## Look: MAP21, the apparatus (board made 2026-11-26; Vadim chose look 1 for every group the same day)
+
+The board: https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM (published 2026-11-26 from
+`build/board21/`; the page is `design/map21-board.html`). Merged with the level in look 1; Vadim has not chosen.
+
+THEN is the institute forty years before NOW, on its last evening: lit,
+humming, full of apparatus, nobody there; NOW the same rooms show where it
+all stood. Walls, floors and ceilings stay MAP11's (THEN look 2 "Thaw", NOW
+look 3 "Post Box"); what has three looks is the apparatus THEN. Board:
+`design/map21-board.html` (built into `build/board21/` by
+`tools/board21_shots.sh`). **Nothing is chosen: the level wears look 1
+until Vadim chooses.**
+
+**The three looks.**
+1. **Lamps and Reels**: a computing centre of the 1960s. Pale grey-blue and
+   cream enamel edged in aluminium, small round lamps, tape reels, white
+   keys, green scopes, orange accents, black legend plates.
+2. **Copper and Porcelain**: a high-voltage hall. Dark green hammered
+   enamel, black bakelite meters with white faces, knife switches, copper
+   windings and bus bars, porcelain insulators, red lamps, brass plates.
+3. **Glass and Mercury**: a vacuum and optics laboratory. Glass bulbs, tubes
+   and bell jars glowing violet or blue, nickel, white ceramic, red hoses,
+   mercury columns, small dials.
+
+**The switch.** `APPARATUS` in `tools/map_longrun.py` (just after
+`t = Times(...)`): a look (1, 2, 3) for each group, `cabinets`, `racks`,
+`benches`, `tanks`, `pumps`, `belt`, `consoles`, `pictures`, `things`,
+`emitter`; all 1 now. `AJAR_APPARATUS=1|2|3` sets every group (the board's
+builds). Vadim's picks are written into the table.
+
+**The parts** (`tools/gfx_longrun.py`, called from `gfx.make_all`; names
+`AJU<part><look>`; furniture sides 64 wide and laid by where they are unless
+marked):
+- Cabinets: fronts `AJUCB<n>A..D` (64x128, four that take turns along a
+  bank), the bank's end `CS`, its top `CT` (flat).
+- Racks: `RK` 128x96 (the board's swatch), `RF` 64x96 (the goods bay's, seamless,
+  laid), the end `RS` 64x96 (from its line's end), the top `RT`.
+- Benches: side `OB`, tops `OTA`, `OTB` (flats: a rail with lenses, a lamp, a
+  prism, a slit).
+- Tanks: `TK` 64x256 in one piece, top `TT` (flat).
+- Pumps: side `PM`, top `PT`; the valve's gauge board `GB` (a picture,
+  128 wide, in the pumps' look).
+- Belt: band `BB` (flat, ribbed across, so that it is seen to run), side
+  frames `BC` (flat), their face `BS` 64x128; the motor `BM` (64x48, from
+  its line's end) and its top `BT`.
+- Consoles: side `CN`, top `CK`.
+- Pictures, each drawn on look 2 of its own room's wall: `SC` the machine's
+  schematic (hall, 128), `PB` the pass and key board (vestibule, 128), `WN`
+  a wall newspaper (corridor, 128: IMPULSE, CURRENT, VACUUM), `PP` a pipe
+  run (lab wall, 64x256). Anywhere else, or at another offset, a copy
+  `AJUP<nn>` is drawn for that wall (`picture_name`).
+- One of a kind in every look: the notice `AJUNT<wall>2` (EXPERIMENT (1)
+  TOMORROW, a clock at a quarter to, LEAVE EVERY ROOM AS IT IS, LOCK UP) and
+  the calendar at the 14th `AJUCLEX2`, yellowed NOW `AJUCLEX3`.
+- Sprites (`src/zscript/apparatus.zs`, DoomEdNums 20195 to 20198, args
+  (look, solid)): `AJUA` a trolley 40x56, `AJUB` a tall piece 40x96, `AJUC`
+  a small thing on a desk (a radio, a telephone, a glass of tea), `AJUE`
+  the beam's emitter 40x72: A..C lit, G..I dark (the beam set to OFF), D..F
+  its wreck. Frame by look.
+- The hall's ducts `AJUDU2` (chequer plate THEN), `AJUDU3` (covers gone
+  NOW). The cellar's ledge face `AJULF2`, `AJULF3` (see below).
+
+**Where each group stands** (NOW's coordinates; THEN is y + 8192):
+- Hall: cabinet banks (0..64 and 960..1024, 448..704, 128 high) in place of
+  the benches; consoles (64..128 and 896..960, 128..256, 48); ducts from the
+  machine to the banks and from the dais; the schematic on the north wall
+  (576..704); the notice (east wall, 256..320) and the calendar
+  (416..448) by the doorway; tall pieces at (288, 736) and (736, 736), a
+  trolley at (168, 584), the radio on the desk (548, 158).
+- Vestibule: the pass and key board on the north wall (1088..1216); the
+  notice by the turnstile (east wall, 376..440); a thing on the porter's
+  desk (1176, 476). The south strip is the pass office's (another task).
+- Pocket: the wall newspaper (east wall, 256..384); a trolley (1468, 194).
+- Cellar: tanks (672..736 x 1104..1168, 864..928 and 736..800 x
+  1520..1584), 256 high from the pit's floor; the pump (576..672 x
+  1104..1168, 48) west of its tank, by the valve's pipe; the valve's gauge
+  board over the ledge's target (west wall, 1312..1440: in place of
+  MAP11's `GA`); on the landing a console (1136..1232 x 1552..1600) and a
+  pipe run (north wall, 1072..1136).
+- Goods bay: the two racks (`RACKS`, 96 high: `RS` sides, `RF` on the long
+  faces); the belt's motor (1568..1632 x 1216..1264, 48) north of the belt
+  at the flap; a console (1760..1840 x 1488..1536) west of the lever
+  BELT; THEN's belt in the belt's look (band, side frames; the alcove's too).
+- Optics: the benches (`OPT_BENCHES`, 48); the emitter on the inlay (20198
+  on then.zs's AjarThenEmitter, whose own sprite it hides; lit or dark by
+  the beam's setting); tall pieces at (1184, 2352) and (1184, 2800); a pipe
+  run on the west wall (2400..2464).
+
+**NOW: the ghosts' rule.** Where a thing hung on or stood against a wall
+THEN, the wall NOW (look 3) shows `AJUG<nn>` (`gfx_longrun.ghost`): inside
+the thing's outline the paint as it was painted, unworn and unfaded (on the
+pale whitewash also whiter), a hard edge and a rim of soot round it, bolt
+holes with rust runs, a cut cable or two. Things that stood free leave a
+footprint in the floor (MAP11's look-2 floor, `AJIF..2`), sprites nothing;
+the tanks and the pump stand in the pit, whose walls repeat the wall's
+picture below -40, so they leave only footprints. The hall's north wall is
+Doom's stone NOW, with no ghost. The emitter's wreck (`AjarEmitterWreck`,
+20189, map21.zs) shows the apparatus's `AJUE` D..F in the emitter's look
+(args[0]). THEN's belt is new in the belt's look; NOW's stays gfx_then's
+rusted one in every look.
+
+**Mended in the THEN rooms** (Vadim's screenshot): the cellar's tanks were
+MAP11's `TK`, 64 high, repeated up a pillar from the pit's floor to the
+ceiling: now 256 high in one piece with a top; the gauges were MAP11's `GA`,
+drawn on the pump room's wall (192 high) and hung on the lab's: now `GB`,
+drawn on the lab's wall; the ledge's face was `B4` (a 48 high cabinet)
+repeated three times: now `AJULF2`/`AJULF3`, the lab's wall from 16 rows
+down, so that it goes on as the pit's walls beside it do. Optics NOW was too
+dark to read the plan board and the plates: a strip along the north wall at
+light 184 and the walls A and C at 168 (the rest 120, a ruin).
+
+**The board.** `tools/board21_shots.sh` builds each look quick
+(`AJAR_APPARATUS=v`, `AJAR_OUT=build/look<v>.pk3`), runs `MAP=MAP21 MODE=7`
+(`LongRunLookViews`, apparatus.zs; `tools/smoke_MAP21_7.cfg`, 74 shots: 18
+places, each THEN then NOW from the same spot, the later of two shots kept),
+crops the test's text lines (40 px) off the top and writes 819x472 JPEGs to
+`build/board21/<look>/view_NN.jpg` (view 2k THEN, 2k+1 NOW), swatches to
+`build/board21/tex/`, and copies the page to `build/board21/index.html`. The
+page has one row per group, the three looks side by side for the camera
+chosen, NOW under THEN where the group leaves ghosts or a wreck, a pick
+per group and a line of picks to paste.
+
+**Checks** (2026-11-26, on the branch `look21` with main at e03da2d merged).
+- `./build.sh` (full, the default look 1): exit 0; MAP21 "solvable in 12
+  door actions, 226893 states, 0 stuck", as main's. Every other map's wad
+  is byte for byte main's (47 of 48; only MAP21.wad differs).
+- `tools/mapcheck.py map_longrun` in looks 1, 2 and 3: the same 7 notes as
+  main (the six targets near their walls, the SLOT of the water's control
+  sector in the void); no way under 48, no new SLOT.
+  `tools/thingcheck.py`: 0 problems (the apparatus's emitter, 20198, may
+  stand on then.zs's: it is listed with the things that may share a spot).
+  `tools/itemcheck.py`: main's 2 notes (the valve's target, the gallery's
+  rockets); the apparatus's sprites are not pickups (listed in `SKIP`).
+- MAP21 MODE=1 (TIMEOUT=700): 60 checks, all pass, `outByTheWayOut`,
+  `levelExited`. MODE=2: 14 checks, all pass (every target still shot
+  from its frame). MODE=3: its 30 views. MODE=4: 20 checks, all pass.
+  MODE=7 in looks 1, 2 and 3: `lookViewsDone=1`, 36 views each.
+
+**Not tested / not played by hand.** The look on the real machine (GLES);
+the emitter going dark at OFF (drawn, wired, not photographed: the views
+keep the beam at C); the sprites' size against the player at play speed;
+the light in optics NOW in a fight.
+
+## MAP22 is to be the bus level; from it on the levels mix institute, town and Doom (Vadim, 2026-11-26; not designed)
+
+**Vadim**, on the section "The new bus to part 1's places" and Claude's
+additions to it: "Yes, I like this too. Maybe it's already can be done in
+map22? So in all later maps we can combine institute, city and doom
+places?"
+
+Claude's answer: yes. Taken as the working plan, to be designed when MAP21
+is finished:
+
+- **MAP22 is the bus level**: the town then, by day, the new bus, part 1's
+  places in peace, the turn, the same places as fights. (The outline had it
+  as level 25.)
+- **What it gives the levels after it.** Three kinds of ground, and the
+  ways between them, all in the player's hands by the end of MAP22: the
+  institute (then and now, the clocked door), the town (the bus: a hub whose
+  lines are colour doors), and Doom's places (where the monsters are; the
+  joined maps of `tools/classic.py`). A later level can then be laid across
+  two or three of them: a route that leaves the institute by the bus, crosses
+  a piece of a Doom map and comes back at the other time.
+- **What it asks of MAP22.** It has to make the bus a thing the player
+  keeps (a stop that later levels can have, with the same six doors), and
+  it has to leave then no longer quiet, so that later levels can fight at
+  both times. Both follow if the "something" is the player's own door from
+  now hung on the bus (Claude's first choice among the three candidates;
+  Vadim: "I like this too", said of the additions as a whole, so this
+  choice is not confirmed by itself).
+- **What moves in the outline.** The old 22 ("on loan": what is taken from
+  now is owed to then; part 1's doors and the frames they were cut from)
+  is not lost: hanging part 1's doors is part of the bus level's peace, and
+  the loan (a thing found now that the player has yet to put there then)
+  is a mechanic for 23 or 24. 25 becomes free. The table in "The ten levels,
+  in outline" is to be rewritten when MAP22 is designed.
+
+Open, beside the questions of the section before: is a Doom place already
+in MAP22 (the line to now that the player hangs could open on a piece of a
+Doom map and not on the institute's ruin), or do Doom's places wait for
+later levels as the outline has them (27 to 29)?
+
+## MAP21's look board: Vadim's word (2026-11-26)
+
+The board (https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM) was published
+and the level merged in look 1. Vadim, a few minutes after it was
+published: "Yes, I like #1, let's go". Claude reads this as look 1 ("Lamps
+and Reels") for every group, which is what the `APPARATUS` table has, so
+nothing changes in the level. Asked, since the message could also have
+answered the bus idea. **Vadim: "Yes, I means 1 for that map21 look."** So
+look 1 is chosen for every group; the `APPARATUS` table stays all 1, and
+looks 2 and 3 stay in `tools/gfx_longrun.py` unused. The bus idea's first
+candidate (the player's own door lets the monsters in) is therefore still
+not confirmed by itself.
+
+## Music: four of the ten Engine variations removed; fifteen on three harmonies ordered (2026-11-26)
+
+**Vadim**, having heard 26 to 35: "Delete 26, 28, 31, 32", and: "Also can
+you create by 5 versions combining melodic ideas from Paradox Engine with
+harmonic ideas from Distang Galaxy, Garmony and Mysterium?"
+
+Removed from `tools/music.py`: Paradox Engine, Gallop (26, AJM_ENF1), in
+Seven (28, AJM_ENF3), Heavy (31, AJM_ENS1), Still (32, AJM_ENS2). None
+played on a map. Three of them are the ones nearest to Paradox Engine's own
+sound (a distorted guitar on the riff); Still was the ambient one with the
+tunes least to be heard. That is a reading, he gave no reason.
+
+As with "delete 2" and "delete 20", the last pieces were moved into the
+empty places so that the ones he did not name keep their numbers. The lab
+has 31 tracks:
+
+| Lab | Piece | Was |
+|---|---|---|
+| 26 | Paradox Engine, Piano (AJM_ENS5) | 35 |
+| 27 | Paradox Engine, Shuffle (AJM_ENF2) | 27 |
+| 28 | Paradox Engine, Night Shift (AJM_ENS4) | 34 |
+| 29 | Paradox Engine, Machine (AJM_ENF4) | 29 |
+| 30 | Paradox Engine, Upside Down (AJM_ENF5) | 30 |
+| 31 | Paradox Engine, Music Box (AJM_ENS3) | 33 |
+
+The fifteen to come, five on each harmony, are written in three tasks
+(`engine-galaxy` 32 to 36, `engine-garmonic` 37 to 41, `engine-mysterium`
+42 to 46). How the Engine's riff and tunes are laid on each harmony is
+decided and stands in `tools/music.py` above the three marked places; in
+short:
+
+- **Distant Galaxy.** Verse: the Engine's riff on his first four chords,
+  four bars each: at home, the whole riff a semitone lower (his slip), with
+  no third in it, on the 4th; the first half of the Engine's tune over it
+  at those four levels. Chorus: his other four chords, the bass nearly
+  still on the 5th; the Engine's chorus tune, its rhythm and shape kept,
+  moved onto them; his held note falling as the augmented chord turns major.
+- **Garmonic.** His held note on top is the Engine's hammered note (as in
+  Upside Down). Verse: two bars of the riff at home, two a semitone lower,
+  the tune slipping with it. Chorus: his other chords, the chorus tune's
+  shape on them.
+- **Mysterium.** The Engine's tunes unchanged by a note, heard in major:
+  its key note as the third of a major key, where its Phrygian scale is
+  that key's own, and the flat 2nd that grinds in the Engine is the fourth
+  leaning on the third. One bass under both tunes, walking down the scale
+  from third to third; plain chords, endings from the fourth chord to home.
+
+## Colour doors join places, never times (decided 2026-11-26)
+
+**Vadim** (2026-11-26): "Colour doors should move me spatially, not
+temporally. If I'm coming from NOW, it should move me to RED door exit now,
+but if I go with this door through temporal door to THEN, it now should move
+me to the same place THEN."
+
+**The rule.** A colour door (RED to PINK) joins places, never times. Only
+the clocked door joins the times.
+- A colour door's far side is a spot in space. On a map with two times it is
+  built in both copies: now, and then at the same spot plus the offset.
+- Hung in a frame now, the door opens on its far side now; hung in a frame
+  then, on the same far side then. The far side at the other time stays
+  shut, as the far side of a door that hangs nowhere is.
+- Everything else follows from where the frame is: what is seen through it,
+  who walks and shoots through it, monsters following, the door taken down
+  from either time.
+- A frame with no twin (the lab's 131, then only) is a frame at its own
+  time: a colour door hung there opens on its far side at that time.
+- The clocked door is unchanged: the frame it hangs in, at the other time.
+- Company: only the clocked door hung joins the times. A colour door never
+  does, so with only colour doors hung a monster alive then shows now as its
+  old corpse.
+- Maps with no AjarThen thing (every level but THEN and MAP21) behave as
+  before, and their wads do not change.
+
+**What it replaces.** In "The clocked door" above: "every plain door keeps
+working: its far side is a place in one of the two times, and carried across
+it makes a second link between the times". A plain door carried across no
+longer links the times. And the lab's RED, whose far side was in the
+corridor now only, so that RED carried into then and hung in 131 led back to
+now ("The then and now lab", the hall): it now leads to the corridor then.
+
+**How the engine tells the copies apart.** By a second line id. The far side
+of colour c is line 200 + c now (as on every map) and 200 + c + 20 then
+(`AjarThen.THEN_ID`, the same 20 as a then frame's id over its twin's: RED
+201 and 221). In `Hang` a colour door's `args[0]`, its far side, is set to
+the copy at the time of its frame (`AjarHandler.FarAt` in then.zs; a frame
+is then by `AjarThen.InThen`); `Unhang` gives back its own (`AjarDoor.ownFar`,
+the copy now). As with a Pair's leaf, whatever asks where a hung door leads
+reads `args[0]` and is told the truth: the portal links, sight and shots
+through doors, `AjarSense` (monsters following), the watchers of optics.zs
+(a watch names the copy its room is in), the frame that takes one door only
+(it asks `FarAt` of the door in hand). At load the copy then is shut
+like the copy now (`ThenFar`). On a map with one time there is no AjarThen,
+`FarAt` returns `args[0]` as it is and `ThenFar` 0, so nothing changes: a
+second id touches less than resolving one id by time would, since GZDoom's
+Line_SetPortalTarget acts on every line with an id and always targets the
+first. `Linked()` (company) passes over colour doors. A far side built in
+one copy only (`Copy.far`, MAP21 until it follows) still works as before:
+with no copy then, the door leads to the one there is.
+
+**The generator.** `Times.far(a, b, out, colour, floor=0, target=None,
+now=, then=)` builds the far side in both copies (line ids by
+`Copy.far_line`; the dummy portal target is the other copy). `Copy.far`
+stays for MAP21 until it follows, and its docstring says it is against the
+rule.
+
+**The lab now.** RED's far side is in the corridor's south wall at both
+times (201 now, 221 then); the corridor is built at both times already, so
+nothing else was needed. The rest of the lab is as it was. Hung in 101 now
+RED opens on the corridor now; carried through the clocked door and hung in
+131 (or any frame then), on the corridor then.
+
+**MAP21.** Its puzzle under this rule is `puzzle21.spatial()` (13 door
+actions, 150165 states, 0 stuck, nothing lost; solved 2026-11-26). The map
+follows.
+
+**Tests** (`MAP=THEN MODE=n tools/smoke.sh`, all pass on the branch's
+build):
+1. the door, now 41 checks (was 30). Changed: RED carried through the
+   clocked door and hung in 131 now leads to the corridor then
+   (`redLeadsThen`, was `redLeadsNow`), and back. New: both copies of RED's
+   far side shut at the start; hung then, 221 open and 201 shut; at the end
+   of the mode RED hung in 101 now: 201 open, 221 shut, and walking through
+   comes out in the corridor now; the clocked door swapped in for it: RED in
+   hand, both copies shut; carried through the clocked door into then and
+   hung in 131: 221 open, 201 shut; the clocked door taken down then while
+   RED hangs then: `Linked()` false (company counts the times as apart);
+   RED taken down then is its own again (201) with both copies shut; hung
+   now again, 201 open and 221 shut, and through it the corridor now.
+2. the drip, 12. 3. the belt, 17. 4. the beam, 15 (all unchanged).
+5. company, now 16 (was 14). New: after the stand-ins go, the clocked door
+   taken down and RED hung in 125 then: RED leads to 221, nothing joins the
+   times, and the monster alive then still shows now as its old corpse (1
+   stand-in for 1 alive then).
+6. 22 views, unchanged.
+
+**Other levels.** Every other map's wad is byte for byte what the branch
+point builds (47 of 48 the same; only THEN.wad differs; MAP21.wad the
+same). Their own tests on the branch's build: `MAP=TEST MODE=1` 7 of 7,
+`MAP=LAB MODE=1` 16 of 16, `MAP=MAP11 MODE=1` 24 of 24 (level exited),
+`MAP=MAP20 MODE=1` 124 checks (its high water part 90 of 90) and the level
+exited, `MAP=MAP09 MODE=1` 57 of 57 and the level exited by its way out.
+The full build (with the solver) passes, every level 0 stuck; its MAP21 line
+(13 door actions, 150165 states) is the graph's, not yet the map's.
+
+**Choices made here.**
+- A second line id for the copy then (+20), not one id resolved by time:
+  Line_SetPortalTarget acts on every line with the id and targets the first,
+  so two lines with one id cannot be told apart by the engine.
+- `args[0]` of a hung colour door is the copy it leads to, as a Pair leaf's
+  is the frame its twin hangs in, so that no reader of `args[0]` had to
+  change; `ownFar` (a new field of AjarDoor) keeps the copy now.
+- A frame is then or now by where its AjarFrame thing stands
+  (`AjarThen.InThen`), the same test the clocked door's twin uses.
+- A far side whose copy then is missing (or not then) leads to the one there
+  is, as before: MAP21 is not broken by the engine before it follows.
+- The frame that takes one door only (`args[4]` 1 or 5) compares the far
+  side the door would open on at that frame (`FarAt`), so that a then frame
+  of that kind names the copy then, as a way out the player builds
+  (`ComeHome`) would, since it compares the hung door's `args[0]`.
+
+**Not tested / not played by hand.** Nothing played by a person. The Stray
+door on a map with two times: its pool lists each colour door's `args[0]`,
+so only the copy a door hangs at (or the copy now) and never both; no map
+with two times has a Stray door. A way out the player builds, a chain of
+brass frames, a watcher, a route board's lamps and a thief on a map with
+two times: none exist; the way-out frames would have to name the copy of
+their time. Monsters following RED through a frame then (only the clocked
+door is tested for that). Save and load (the new field is saved with the
+door, not tried).
+
+## MAP21: colour doors by time, the pass office, and the way out built (built 2026-11-26)
+
+**Vadim** (2026-11-26): "I also don't like that exit is ready again. Let's
+make me build it."
+
+MAP21 under the rule "Colour doors join places, never times" (the section
+above), with a way out the player builds, as MAP05 on. Fable's design,
+proven by the solver first (`tools/puzzle21.py`: `spatial()`,
+`built_exit()`, `BUILT = built_exit(second="any")`, `BUILT["complete"] =
+True`); built by an Opus worker on branch `map21-doors`. The level agrees
+with that graph region by region and frame by frame; `PUZZLE =
+puzzle21.BUILT` in `tools/map_longrun.py`.
+
+**The design** (coordinates NOW's; THEN is 8192 north).
+1. *RED.* Its far side at both times in the lobby's west wall (LX, 288..352),
+   out (-1, 0): hung NOW it opens on the lobby NOW, hung THEN on the lobby
+   THEN (key 1). RED leans on the gallery as before. The lobby NOW is no
+   longer a secret (the special at LX+896..LX+1024 x 256..352 is gone);
+   frame 110 stays (any door); the megasphere moved to the pass office; the
+   blue armour stays there as a plain pickup.
+2. *BLUE.* Its far side at both times at (1136..1200, 224), out (0, -1). NOW
+   as built: arriving draws both bolts (the hall wakes). THEN it stands
+   inside the *pass office*, a booth 1104..1232 x 224..288 against the
+   vestibule's south wall: locked for the night, no door; a counter strip
+   8 wide on three sides, solid to 24, glass (`AJGLAS`, blocking everything,
+   shots too) from 24 to 112, a plate PASSES over it. Inside the megasphere
+   (1168, 256), and the booth's floor is a secret sector. NOW only its
+   footprint on the floor. Region `boothT`: reached only through BLUE hung
+   in a frame THEN, left only back through BLUE.
+3. *GREEN.* Leans in the bay cellar NOW (1928, 952), against its west wall,
+   facing east, clear of the super shotgun and of the slot to the secret
+   (region `bcelN`). Taking it starts an ambush of four in the goods bay
+   above, the bay's own mechanism (cause 10 + colour, as RED's): 2 imps and
+   a knight at once, a chaingunner a second later.
+4. *The night room* (352..672 x 784..1040), at both times.
+   - THEN: `ajarmap.way_home` instead of `way_out`. GREEN's far side (its
+     copy THEN, 223) in the west end (x 352, y 880..944), the brass frame
+     HOME (190) in the east end, GREEN's alone. HOME is a THEN frame with no
+     twin. GREEN hung in HOME opens onto the room it hangs in, and its mouths
+     end the level. `way_home` has a new parameter `far` (the far side's line
+     id, default `far_id(colour)` as before), so that HOME names the copy
+     THEN (`ComeHome` compares the hung door's `args[0]`); every other map's
+     wad is byte for byte as before.
+   - The way in on foot stays the brass shutter (480..544 x 768..784).
+   - NOW: the same room, dead. Night textures, dark (light 70), no
+     candelabra; GREEN's far side (203) in the west end; stone
+     where the frame is THEN; no way in but GREEN; four armour bonuses
+     along the runner. Region `nightN`.
+5. *The shutter* is open only while the machine runs: keys 1 and 2 turned at
+   the desk THEN (they stay turned) and the clocked door in 101 (either
+   time). Take the clocked door out: the machine stops (the hall THEN dims,
+   a sound) and the shutter comes down; hang it back: it runs and the
+   shutter goes up. The shutter is moved by the desk's script
+   (`AjarLongRunDesk.Tick`), 4 units a tic, and never closes on anything
+   standing under it (it waits). The keys can be turned with the frame
+   empty: they stay turned, and the machine starts when the door is hung
+   ("You turn the keys. The frame is empty: the machine waits for the
+   clocked door."). The stop and start are said after the frame's own line
+   ("The machine stops: the brass shutter comes down." / "The machine runs
+   again: the brass shutter goes up."). Graph: hallT <-> nightT, keys "12",
+   `hung: (CLOCK, 101)`.
+6. *A second pocket frame*, 104 (1344..1408, 160) in the corridor's south
+   wall, out (0, -1), twin 124 THEN; any door at both times. 103 unchanged
+   (NOW the clocked door's alone); 123 takes GREEN too.
+7. *The engine: a plain door swapped in for the hung clocked door* (Fable's
+   decision, 2026-11-26). The solver's graph swaps a carried door for the
+   hung clocked door (the solution does it at 128, 108 and 106); the engine
+   refused that ("The clocked door hangs in this frame, now and then. Take
+   it down before you hang another."). Now a carried plain door may be
+   swapped in at either time: both leaves of the clocked door come down, the
+   plain door hangs in the frame the player stands at (that one frame, at
+   that time, leading to its far side at that time), and the player holds
+   the clocked door ("You swap the clocked door for the RED one."). Why:
+   swapping a carried door for a hung one is the game's base move since
+   MAP02 and no door is ever put down, so the refusal left a player with
+   full hands nothing to do at a clocked frame; and the first MAP21's proof
+   (12 actions, 0 stuck) already assumed the swap. What stays refused: a
+   frame that takes the clocked door only (`args[4]` 6: 101/121, 103) takes
+   no other door, swap or not; the clocked door still does not hang or swap
+   into a frame whose twin holds a door or that has no twin; a frame's own
+   `only` rules come first. Without the swap (the solver changed in a
+   scratch copy, for the record): 18 door actions, 2368229 states, 1408
+   stuck.
+
+**The solver** (`python3 tools/puzzle21.py exit2`; the full build runs it
+once and keeps the proof in build/proofs.json): 16 door actions, 2657941
+states, 0 stuck, nothing lost; the valve, the belt, the beam and the
+vestibule are each needed. Without the second pocket frame 1024 states are
+stuck; without the booth 33360; without frame 110 256. The solution:
+the clocked door 121 -> 123; -> 105, the valve shut, key 2; -> 108, the belt
+run, RED from the gallery, the belt stopped; RED swapped in at 128, the
+lobby THEN, key 1, back, the clocked door swapped back; through 108 NOW, RED
+swapped in at 108; the clocked door to 106, the beam to A, BLUE from closet
+A; BLUE swapped in at 106: the vestibule NOW (the bolts); the clocked door
+in 101; GREEN from the bay cellar; through 101 to the hall THEN, the
+shutter, GREEN in 190, out.
+
+**src/zscript/map21.zs.** The desk and the shutter as in 5. MODE=1 walks
+the solution with checks on the way (see the tests). MODE=2, 3, 4
+as before, MODE=3 with the new views. The test finds GREEN as well.
+
+**Tests** (in the worktree's build):
+- `MAP=MAP21 MODE=1 TIMEOUT=700` (smoke_MAP21_1.cfg now waits 14000): the
+  walk of the solution, 85 checks, all pass, and out by GREEN's mouths
+  in HOME (`outByTheWayOut`: the way out built, the machine running, the
+  player THEN; `levelExited`). New checks on the way: the shutter shut at the
+  start; GREEN leaning in the bay cellar; RED swapped in for the clocked door
+  at 128 THEN leads to the lobby THEN; the clocked door swapped back; RED
+  swapped in at 108 NOW leads to the lobby NOW, and back; BLUE swapped in at
+  106 NOW leads to the vestibule NOW (bolts); the clocked door back in 101
+  with the machine standing (keys not turned); BLUE carried through 101, the
+  keys turned: the machine starts, the shutter open (128); BLUE hung in 123
+  THEN leads to the booth (222), the megasphere taken, a secret found; back
+  through BLUE; the clocked door taken out of 121: the machine stops, the
+  shutter shut (0); hung back: runs, open (128); GREEN's ambush (4, all in
+  the bay) comes; GREEN hung in 104 NOW leads to the dead night room, its
+  four armour bonuses taken, and back; GREEN refused at 101 ("This frame
+  takes only the clocked door."); through the shutter with GREEN; GREEN in
+  190 (it leads to 223): the way out built.
+- `MAP=MAP21 MODE=2` 14 of 14, `MODE=4` 20 of 20 (poses unchanged).
+- `MAP=MAP21 MODE=3`: 41 views (smoke_MAP21_3.cfg: 82 screenshots). New: the
+  lobby NOW (no secret), the vestibule NOW (the booth's footprint) and THEN
+  (the pass office), inside the booth twice, frame 104 NOW and 124 THEN,
+  GREEN in the bay cellar, the dead night room NOW from both ends, the night
+  room THEN (HOME), the shutter opening, open, and shut again with the
+  clocked door taken.
+- `MAP=THEN MODE=1` now 45 checks (was 41): `secondDoorRefusedThen/Now` are
+  now `swapInForClockedThen/Now` (the plain door in that one frame, the twin
+  empty, the clocked door in hand, the far side at that time open),
+  `swappedRedThenLeadsThen/NowLeadsNow` (walking through), and
+  `clockedSwappedBackThen/Now`. The clock-only refusal is checked on MAP21
+  (`plainRefusedAt101`); the lab has no clock-only frame. MODE=2..6: 12, 17,
+  15, 16, and the views (MODE=6), unchanged. THEN.wad unchanged by this stage.
+- MAP05 and MAP08 MODE=1 (way_home's other users): the way out built and the
+  level exited.
+- `tools/mapcheck.py map_longrun`: the same 7 notes as before (six WALL for
+  targets on walls, one SLOT in the water control sector), 3 secret sectors;
+  thingcheck 0; itemcheck the same 2 notes.
+- The full `./build.sh`: exit 0; MAP21's line "solvable in 16 door actions,
+  2657941 states, 0 stuck", nothing lost; every other level's line as
+  before. Every map wad but MAP21.wad byte for byte main's (0476851), but
+  THEN.wad, which is the stage before's (the colour door rule, not yet in
+  main) byte for byte.
+
+**Older statements now wrong.**
+- "The then and now lab", the clocked door: "Refusals: ... any other door
+  into either frame of the hung clocked door." A carried plain door is now
+  swapped in for it (7 above); only a clock-only frame refuses it. Its test
+  1 "refusals at both frames" is now the swap at both frames.
+- "MAP21 "In the Long Run": the first version, as decided": the night room
+  and "the way out (`ajarmap.way_out`, no far side)"; "RED hung anywhere: the
+  lobby then"; "BLUE hung anywhere: the vestibule now"; the lobby now "is a
+  secret: a megasphere"; step 6 "the machine starts ... the brass shutter
+  opens; out". Now: RED and BLUE lead to their far side at the frame's time;
+  the way out is GREEN hung in HOME; the shutter is open only while the
+  machine runs.
+- "MAP21 ... the first playable version": the lobby NOW "the secret by 110
+  (blue armour), a megasphere"; "Secrets (3): ... the lobby NOW by frame
+  110" (now the pass office THEN); "The desk": "both keys and no clocked
+  door in 101: You turn the keys. The frame is empty." (the keys now turn and
+  stay turned), "the brass shutter opens for good, and the night room is the
+  way out" (it opens while the machine runs; the way out is built); its
+  MODE=1 description and counts (60 checks).
+- "MAP21: the causes made readable": its MODE=1 count (60 checks) and route.
+- "Colour doors join places, never times": "`Copy.far` stays for MAP21 until
+  it follows" and "its MAP21 line (13 door actions, 150165 states) is the
+  graph's, not yet the map's": MAP21 follows now (`Times.far` for RED and
+  BLUE; `Copy.far` is used by no map), and its line is the map's (16 door
+  actions).
+
+**Not tested / not played by hand.** Nothing played by a person. Monsters
+walking under the shutter as it comes down (the wait is tested only by its
+code, not by a monster in the way). GREEN's ambush in play (in the test
+ambushers are counted and removed). Save and load with the machine stopped
+or running.
+
+## Music: fifteen pieces, Paradox Engine's tunes on three harmonies (2026-11-26)
+
+Vadim: "can you create by 5 versions combining melodic ideas from Paradox
+Engine with harmonic ideas from Distang Galaxy, Garmony and Mysterium?"
+Written by three workers (tasks `engine-galaxy`, `engine-garmonic`,
+`engine-mysterium`), merged as one. The lab (`MAP=SOUND ./run.sh`) has 46
+tracks; none of the fifteen plays on a map. How the riff and the tunes are
+laid on each harmony is in the section before this one and in
+`tools/music.py` above the three sets.
+
+| Lab | Lump | Piece | Key, speed | What it is |
+|---|---|---|---|---|
+| 32 | AJM_EGA1 | Galaxy Engine, Band | A, 132 | the Doom band as in Distant Galaxy, Fast: overdriven guitar and bass on the riff, brass tune, lead guitar in the chorus |
+| 33 | AJM_EGA2 | Galaxy Engine, Machine | G, 140 | as Machine: synth bass hammer, square wave hidden notes, four on the floor, saw lead |
+| 34 | AJM_EGA3 | Galaxy Engine, Shuffle | D, 12/8 at 132 | as Shuffle: the riff in triplets, a rock organ with the tune |
+| 35 | AJM_EGA4 | Galaxy Engine, Piano | A, 63 | as Piano: the riff in the left hand, tunes in the right, a cello later |
+| 36 | AJM_EGA5 | Galaxy Engine, Night Shift | E, 12/8 at 60 | as Night Shift: fretless bass, electric piano, vibraphone, muted trumpet |
+| 37 | AJM_EGR1 | Garmonic Engine, Upside Down | E flat, 132 | as Upside Down: the held note hammered on top by a muted guitar, the heavy riff slipping under it |
+| 38 | AJM_EGR2 | Garmonic Engine, Groove | E, 100 | in the manner of Night Porter: fingered bass, muted guitar, electric piano, vibraphone |
+| 39 | AJM_EGR3 | Garmonic Engine, Music Box | F, 3/4 at 92 | as Music Box: a waltz, a glockenspiel on the held note |
+| 40 | AJM_EGR4 | Garmonic Engine, Pizzicato | E flat, 92 | strings alone: the riff plucked, one high note held, cello, clarinet, flute |
+| 41 | AJM_EGR5 | Garmonic Engine, Slow | E flat, 54 | ambient as Garmonic I, but the tunes over it from the first bar: vibraphone, clarinet, flute |
+| 42 | AJM_EMY1 | Mysterium Engine, Choir | B flat, 52 | as Mysterium II: walking contrabass, three held lines, clarinet and horn |
+| 43 | AJM_EMY2 | Mysterium Engine, Piano | B flat, 66 | broken major chords in the left hand, the tunes in the right, a cello later |
+| 44 | AJM_EMY3 | Mysterium Engine, Music Box | C, 3/4 at 96 | a waltz in major: plucked bass, celesta, music box |
+| 45 | AJM_EMY4 | Mysterium Engine, Stream | G, 12/8 at 76 | a harp in triplets, flute and clarinet, strings |
+| 46 | AJM_EMY5 | Mysterium Engine, Band | B flat, 132 | the one fast one: the riff on a muted guitar, walking bass, organ, brass and lead |
+
+Where the pieces depart from the frames as first written down:
+
+- **Garmonic, Music Box.** The waltz has two hidden notes a bar, so the slip
+  is not "the last flat 3rd": the home pair is flat 2nd and flat 3rd, then
+  the 4th and the 2nd the flat 3rd has slipped to (the riff's second flat
+  2nd is left out).
+- **Garmonic, Slow.** The chorus tune is on a flute, not the clarinet (it
+  goes to G6), and in the last round the vibraphone doubles an octave
+  below, among the held lines.
+- **Mysterium, Band.** Over the fourth chord the hammered note steps up to
+  that chord's root (D under an E flat chord was a minor ninth for a whole
+  bar); in the two chorus bars with E natural the guitar has the hammer
+  alone.
+- **Galaxy, Piano and Night Shift.** No riff-alone verse (the full form
+  would run over five minutes). The 12/8 pieces say the verse tune the
+  same way both times: there is no cut of the walked-through tune for
+  twelve.
+- **Galaxy, verse bars 9 to 12.** The chord has no third, but the
+  walked-through tune touches the flat 3rd for two steps at the end of bar
+  12 (its last two notes moved up a fifth).
+
+Checked: the 31 older pieces come out byte for byte as before; in every
+verse and chorus of the fifteen the riff, the tunes and the bass notes are
+the frame's, bar by bar (each worker's script; for Mysterium, Band before
+the change to the hammer); semitone rubs counted by pair of voices: every
+kind follows from the frames (the Engine's flat 2nd against its key note,
+moved with the chords; a tune's passing note against a chord note; in
+Garmonic the flat 6th against the held 5th); `./build.sh`; the sound lab
+test with 46 tracks. Not checked: how they sound.
+
+## MAP21: the pocket is the corridor (built 2026-11-26)
+
+**Vadim**, playing MAP21, standing in the pocket THEN and looking at frame
+123 with the clocked door hung in it, the corridor NOW through it: "This
+door is strange for 2 reasons. First decor - you see the issue? Also in the
+level all temp doors just goes to the same room in different time, and only
+this one goes to the corridor?"
+
+**What was wrong.**
+- *The wall over the frames.* The wall piece over a frame's mouth is the
+  line's upper texture. Doom lays an upper texture from the way's head up
+  (its foot at the head, 96 over the floor) unless the line is
+  upper-unpegged; the walls beside it are laid from the ceiling down. MAP11's
+  walls are 256 high, so over every frame, far side and opening of MAP21
+  the wall stood 96 out of line: over 123 the pale blue lower band ran up to
+  near the ceiling and the white band was cut. MAP11 never had it
+  (`map_institute1.over()` unpegs every such line); MAP21's own `frame()`,
+  `sign()` and the uppers it gave far sides and openings did not. The same
+  fault, so also out of line: every frame (101/121, 103/123, 104/124,
+  105/125, 106/126, 108/128, 110/130), RED's far side (the lobby, both
+  times), BLUE's (the vestibule, both times), the goods edge and the
+  turnstile THEN on the vestibule's side, the turnstile on the pocket's,
+  the lobby's way to the cloakroom (both sides), and the plates over the
+  room doors (CELLAR, GOODS, OPTICS, CORRIDOR) and NO DOORS BEYOND THIS
+  POINT, which stood 96 higher than drawn (NO DOORS ... over the ceiling,
+  unseen).
+- *The pocket read as a room.* THEN it was the corridor's first stretch
+  shut by a low brass rail with a black 64-deep box behind it (its ceiling
+  seen); NOW the corridor went on with nothing at that line, and the wall
+  opposite 103 was plain where THEN the turnstile is.
+
+**What was built** (`tools/map_longrun.py`; NOW's coordinates, THEN 8192
+north).
+1. *The wall over a way goes on as the wall beside it.* `OVER =
+   dict(dontpegtop=True)` on every upper MAP21 gives over a way: `frame()`
+   (so every frame, at both times, 101/121 included; the upper is still the
+   `wall` the caller gives, only its pegging changed), `sign()`, BLUE's and
+   RED's far sides, the goods edge and the turnstile (both faces), the
+   lobby's cloakroom way, the turnstile's line on the pocket's side. Over
+   the night room's ways (GREEN's far side at both times, HOME THEN)
+   ajarmap's night room shows the doorway's trim from the head to the
+   ceiling, a column; in MAP21 the night wall (`AJXW2`) now goes on over
+   them, laid as the wall beside (in line with the runner strip's lift). THEN
+   the hall's doorway to the vestibule (1024 and 1040, 352..416) showed the
+   opening's brass trim up to the ceiling; now the hall's and the
+   vestibule's walls go on over it. Nothing in `ajarmap.py` changed: every
+   other map's wad is byte for byte as before.
+2. *THEN the corridor goes on beyond the night grille*, in its full length
+   (1312..1504 x 640..2256), the pocket's look at night: light 88, the
+   ceiling's tubes out (`AJ21KN`), and every 256 a night lamp's pool (y 832,
+   1088, ..., 2112: 192 long at 128, the lamp's 64 square at 160, its
+   ceiling `AJ21NL`, a small round lamp lit). The grille (y 640) is now
+   floor to ceiling (`AJGRIL` wrapped; it was one 64-high tile, a rail) and
+   still blocks everything that walks. On the corridor's walls THEN the
+   room doors NOW has, shut, the institute's doors with their name plates
+   (`room_door()`: the same face as on the room's side, `name` over it, the
+   "Locked for the night." special): CELLAR (west, 1440..1504), GOODS (east,
+   1280..1344), OPTICS (north end, 1376..1440). The wall between them and
+   their rooms is solid, as before; nobody gets there (no new walk, no
+   things: `puzzle21.BUILT` unchanged).
+3. *NOW the grille's wreck on the same line* (y 640): `AJ21GRW`, a middle
+   texture 192 by 256 laid from the ceiling, nothing in the way: stubs of the
+   rails in both walls at the rails' four heights, stubs of the bars at the
+   ceiling and at the floor, a piece of the top rail hanging from two bars.
+   Two bars and a piece of rail lie on the floor (flats `AJ21GB1` at
+   1344..1408 x 576..640 and `AJ21GB2` at 1408..1472 x 640..704, the
+   corridor's floor with the bars on it).
+4. *NOW the turnstile's wreck* opposite 103 (1300..1312 x 448..496): the
+   same opening, choked with Doom's stone (TANROCK2 behind, RROCK09 heaped
+   to -24 under a head at 44, the squeeze's), the turnstile's post and bent
+   arms across it (`AJ21TRW`, 48 by 64, from the rubble up), blocking. 12
+   deep, not 16: the vestibule's wall is at 1296, and NOW nothing joins them
+   but the bolted door at 272..336.
+5. *NOW's first stretch is lighter* (160..640: 136, the rest of the
+   corridor 104 as before), so that through 123 THEN the corridor NOW, the
+   turnstile's wreck and the clock's wall opposite 103 are made out. NOW's
+   corridor is cut at 640 (two rooms, the wreck's line between them).
+6. The art: `tools/gfx_then.py`, `pocket()` (called by `make_longrun`).
+
+**Tests.**
+- `MAP=MAP21 MODE=3`: 52 views (104 screenshots; was 41). New: the pocket
+  THEN looking north through the grille, and NOW at the same spot (the
+  wreck); THEN facing west from 123 (the turnstile) and NOW (its wreck);
+  123 THEN and 103 NOW from in front, empty; the clocked door hung in 103:
+  from the pocket THEN through 123 (as Vadim's screenshot), from NOW
+  through 103, and both straight at the door (through it the other time's
+  wall opposite); the clocked door back in 101.
+- `MAP=MAP21 MODE=5` (new, `tools/smoke_MAP21_5.cfg`, `TIMEOUT=200`): the
+  wall over every frame and far side, from in front, THEN and NOW (18
+  places, 36 views; `frameViewsDone=1`): 101 to 110 and their twins, RED,
+  BLUE (and inside the pass office), GREEN, HOME, the bolted door and the
+  goods edge, the three room doors from the corridor, the hall's doorway,
+  the lobby's way to the cloakroom.
+
+**Departures from the brief, and choices of my own** (the worker's).
+- The night grille THEN is now floor to ceiling (it was one 64-high tile,
+  a rail with a black box over it), so that the wreck NOW, with stubs at the
+  ceiling, is its wreck and the corridor behind is seen through bars.
+- The turnstile's opening NOW is 12 deep, not 16 (see 4).
+- NOW's corridor has no closet doors on it: the closets (optics' A, B, C)
+  open off optics. THEN's corridor therefore has three doors, CELLAR, GOODS
+  and OPTICS, where NOW has its three.
+- The night lamps are at y 832 + 256 n (on the 64s, for the lamp drawn on
+  its tile's corner); light 88 between them, 128 in a pool, 160 under the
+  lamp (at 80 the corridor read black through the grille).
+- Over the night room's two ways and the hall's doorway THEN the wall now
+  goes on over them (1, above); those were not misaligned walls but the
+  doorway's trim shown as a column to the ceiling, ajarmap's look on every
+  map with a night room; changed for MAP21 only.
+- New test MODE=5 (`smoke_MAP21_5.cfg`) for the walls over the frames; the
+  views asked for in MODE=3 are there as well.
+
+**Other maps.** No other map lays one of MAP11's walls as an upper over a
+way without unpegging it: MAP11 to MAP16 (`map_institute*.py`) use
+`over()`, the THEN lab (`map_then.py`) unpegs its own. Every map's night
+room (`ajarmap.way_out`, `way_home`) and the THEN lab's frames show the
+doorway's trim from the head to the ceiling, as designed; left as it is.
+
+**Runs** (on the full build).
+- `./build.sh` (full): exit 0; MAP21 "solvable in 16 door actions, 2657941
+  states, 0 stuck", "can be lost for good: nothing"; every level 0 stuck.
+- Every map wad but MAP21.wad byte for byte the same as a build of main
+  (c84fa51, `git archive` into build/, `AJAR_QUICK=1`): 47 of 48.
+- `tools/mapcheck.py map_longrun`: no way under 48; the same 7 notes (six
+  WALL for targets, one SLOT, the water's control sector); 1155 sectors,
+  255 things, 3 secret sectors. `tools/thingcheck.py`: 0 problems.
+  `tools/itemcheck.py`: the same 2 notes. No things added or moved: the
+  monsters' spots (`spot()`, which looks only at things) are where they
+  were; the counts and the budget are unchanged.
+- MODE=1 (`TIMEOUT=700`): 85 checks, 0 failed, `outByTheWayOut`,
+  `levelExited`. MODE=2: 14, 0 failed. MODE=4: 20, 0 failed. MODE=3: 52
+  views, the clocked door in 103, back in 101 and on through the old views
+  as before. MODE=5: 36 views, `frameViewsDone=1`. MODE=7 (`-nomonsters`):
+  `lookViewsDone=1`.
+- Looked at: every MODE=5 view (the wall over each frame and far side in
+  line at both times) and the new MODE=3 views.
+
+**Older statements now wrong.**
+- "MAP21 ... the first playable version", the level as built, 3: "THEN only
+  the pocket (y 160..640) and a dark stub behind the night grille at 640":
+  THEN the corridor goes on beyond the grille, at night, with its doors shut.
+- The same, "Room doors": "THEN the same doorways are the institute's doors
+  drawn on the room's wall": also on the corridor's wall THEN.
+- "MAP21: colour doors by time ...", MODE=3 "41 views": now 52.
+
+**Not tested / not played by hand.** Nothing played by a person. The look
+on the real machine (GLES): the night corridor's light through the grille,
+the lamps, the wreck's stubs at a distance; the turnstile's wreck in the
+dark seen from the corridor's far end. Monsters NOW walking through the
+wreck's line (it has no blocking flags; MODE=1 runs with them removed).
+
+## Music: eight of the fifteen removed (2026-11-26)
+
+Vadim, having heard the fifteen: "No - 32, 33, 34, 35, 36, 38, 39, 40". Removed
+from `tools/music.py`: all five on Distant Galaxy's harmony (Galaxy Engine:
+Band, Machine, Shuffle, Piano, Night Shift) with their frame, and Garmonic
+Engine's Groove, Music Box and Pizzicato. He gave no reasons. The lab has
+38 tracks. 37 keeps its number; the six others were moved into the empty
+places, the last first, as in the earlier removals:
+
+| Lab | Piece | Was |
+|---|---|---|
+| 32 | Mysterium Engine, Band (AJM_EMY5) | 46 |
+| 33 | Mysterium Engine, Stream (AJM_EMY4) | 45 |
+| 34 | Mysterium Engine, Music Box (AJM_EMY3) | 44 |
+| 35 | Mysterium Engine, Piano (AJM_EMY2) | 43 |
+| 36 | Mysterium Engine, Choir (AJM_EMY1) | 42 |
+| 37 | Garmonic Engine, Upside Down (AJM_EGR1) | 37 |
+| 38 | Garmonic Engine, Slow (AJM_EGR5) | 41 |
+
+Checked: the 38 remaining pieces come out byte for byte as before;
+`./build.sh`; the sound lab test with 38 tracks. None of the seven plays on
+a map.
