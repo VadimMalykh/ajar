@@ -2055,7 +2055,7 @@ MYSTERIUM_VERSE = "I V I V IV I IV I"
 MYSTERIUM_CHORUS = "I II I V vi V IV I"
 
 
-# --- on Distant Galaxy's harmony: the five functions go between this line and the next marker ---
+# --- on Distant Galaxy's harmony: five pieces ---
 
 GALAXY_RIFF = {                                 # the Engine's riff, and the same with no third (flat 3rd, 4th a step up)
     "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1",
@@ -2312,7 +2312,7 @@ def galaxy_engine_night_shift():
     return p
 
 
-# --- on Garmonic's harmony: the five functions go between this line and the next marker ---
+# --- on Garmonic's harmony: five pieces ---
 
 def garmonic_moved(bars, by):
     """The bars of a form ('Q3-1 Q4' or a list of them) each moved `by` semitones more; '_' stays as it is."""
@@ -2586,7 +2586,7 @@ def garmonic_engine_slow():
     return p
 
 
-# --- on Mysterium's harmony: the five functions go between this line and TRACKS ---
+# --- on Mysterium's harmony: five pieces ---
 
 # The chords held as three lines that move by step and keep their common notes, in semitones over the major key note
 # (low, middle, top; over B flat 3: I = D4 F4 B flat 4, V = C4 F4 A4, IV = E flat 4 G4 B flat 4, vi = D4 G4 B flat 4,
@@ -2845,19 +2845,19 @@ TRACKS = [
     ("AJM_ENF4", "fast, on Paradox Engine: the riff shared by a synth bass and a square wave, four on the floor, a saw lead", engine_machine),
     ("AJM_ENF5", "fast, on Paradox Engine: turned over, the key note on top on a muted guitar, the hidden notes a heavy riff below", engine_upside_down),
     ("AJM_ENS3", "slow, on Paradox Engine: a waltz, the riff as its accompaniment on a celesta, both tunes on a music box", engine_music_box),
-    # on Distant Galaxy's harmony (32 to 36 in the lab): their lines go under this one
+    # on Distant Galaxy's harmony (32 to 36 in the lab)
     ("AJM_EGA1", "on Distant Galaxy's harmony: fast, the Doom band: the Engine's riff on his four chords, a brass tune, a guitar tune in the chorus", galaxy_engine_band),
     ("AJM_EGA2", "on Distant Galaxy's harmony: fast, the riff shared by a synth bass and a square wave, four on the floor, a saw lead", galaxy_engine_machine),
     ("AJM_EGA3", "on Distant Galaxy's harmony: fast, a heavy shuffle in 12/8; a rock organ has the tune, brass and a guitar the chorus", galaxy_engine_shuffle),
     ("AJM_EGA4", "on Distant Galaxy's harmony: slow, a piano, the riff in the left hand and the tunes in the right, a cello later", galaxy_engine_piano),
     ("AJM_EGA5", "on Distant Galaxy's harmony: slow, a 12/8 swing after dark, the riff on a fretless bass, vibes, a muted trumpet", galaxy_engine_night_shift),
-    # on Garmonic's harmony (37 to 41 in the lab): their lines go under this one
+    # on Garmonic's harmony (37 to 41 in the lab)
     ("AJM_EGR1", "on Garmonic's harmony: fast, turned over: the held note on top on a muted guitar, the hidden notes a heavy riff slipping below it", garmonic_engine_upside_down),
     ("AJM_EGR2", "on Garmonic's harmony: at a walk, the groove: a fingered bass riff with air in it, muted guitar, electric piano, vibes", garmonic_engine_groove),
     ("AJM_EGR3", "on Garmonic's harmony: slow, a waltz: the riff plucked and on a celesta, the tunes on a music box, a glockenspiel on the held note", garmonic_engine_music_box),
     ("AJM_EGR4", "on Garmonic's harmony: at a walk, strings alone: the riff plucked, one high note held over it, a cello, a clarinet, a flute", garmonic_engine_pizzicato),
     ("AJM_EGR5", "on Garmonic's harmony: slow, ambient: three lines and a bass, no two lines moving at once, the tunes over them from the first bar", garmonic_engine_slow),
-    # on Mysterium's harmony (42 to 46 in the lab): their lines go under this one
+    # on Mysterium's harmony (42 to 46 in the lab)
     ("AJM_EMY1", "on Mysterium's harmony: slow, a bass walking down, a choir, strings and a pad holding the chords, the tunes on a clarinet and a horn", mysterium_engine_choir),
     ("AJM_EMY2", "on Mysterium's harmony: slow, a piano breaking the major chords in the left hand, Paradox Engine's tunes in the right, a cello later", mysterium_engine_piano),
     ("AJM_EMY3", "on Mysterium's harmony: slow, a waltz in C major, plucked bass and celesta, Paradox Engine's tunes on a music box, strings later", mysterium_engine_music_box),
