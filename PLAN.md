@@ -18982,3 +18982,180 @@ alcove before the frame looking up at the piece over it.
 **Not tested / not played by hand.** The look on the real machine (GLES);
 the machine NOW in a fight (the hall's ambush); how much the faces' own
 light NOW shows from the night room's side and through the clocked door.
+
+## Look: MAP33, the power station (2026-11-26; chosen part by part from a board of three looks; built)
+
+> Vadim, 2026-11-26: "Let's decorate map33"
+
+Board: https://claude.ai/artifact/WHQtzX3PVzgu57ECMfhkH2 (source
+`design/map33-board.html`; its pictures are `build/board33/look<n>/view_NN.jpg`
+and swatches from `build/board33/tex_<n>/`, made by `tools/board33_shots.sh`).
+Decided by Claude (Fable) but the choice, which is Vadim's; built by Claude
+on Opus (one worker for the mechanism, look 1 and the mix, one each for
+looks 2 and 3). Not played by hand.
+
+**The choice.**
+
+> Vadim, 2026-11-26: "MAP33 look. yards 2 (The Grid); boiler 1 (Temple of
+> Power); machine 1 (Temple of Power); cable 1 (Temple of Power); hall 3
+> (Cold Reserve); pictures 3 (Cold Reserve); doom as shown."
+
+So the level in the game is a mix, one line in `tools/power33.py`:
+`MIX = dict(yards=2, boiler=1, machine=1, cable=1, hall=3, pictures=3)`. A
+later change of mind is a change of that line. A look goes by place, not by
+kind of wall (decided by Claude):
+- **yards, look 2**: the coal yard, the stack court and its chimney (plate
+  1962), the yard in the middle on all its levels with the pumps, pipes and
+  shed, the switchyard with its transformers (their T numbers and DANGER
+  plates are look 2's, being the transformers' own faces), hut and gantry,
+  the pond, the outfall, the cooling tower, every way under the open sky,
+  and the sky itself (`AJP2SKY`, the flat white overcast).
+- **boiler, machine, cable, look 1**: every room and way indoors of parts 1,
+  2 and 3: the gatehouse (with part 1), the boiler house, tunnels, the pump
+  room, the gantry, gallery, workshop, armoury, mezzanine, the turbine hall,
+  the relay room, the duct, and the corridors, lobbies and stairs of each
+  part, those to the three stands among them.
+- **hall, look 3**: the switchgear hall: walls, floor, ceiling, the six
+  cabinets, the steps and the three stands.
+- **pictures, look 3**: the five pictures, the plates over and beside the
+  ways, INSTRUMENT STORE and the three DANGER plates hung on walls. Each is
+  painted over the wall of its own place's look, so a worn look 3 board
+  hangs on clean look 1 tile or look 2 cladding with no seam round it.
+- **Doom's share** as it was.
+Where two looks meet (a doorway from a look 1 corridor into a look 2 yard,
+the hall's mouths) nothing is blended: each side of a doorway is its own
+place. One thing the picks bring with them: look 3's plates are chipped and
+rusty, and some hang out of doors on the clean 1960s walls.
+
+**The switch.** `AJAR_POWER` unset (or `mix`) builds the chosen mix.
+`AJAR_POWER=0` is the plain level as it was before the work: MAP33's TEXTMAP
+and every other map byte for byte (checked against main's package), and
+`power33` is not even imported. 1, 2, 3 build a look whole, as on the board.
+The sky is one line of MAP33's mapinfo block rewritten by the build
+(`MAPINFO` in the map's module, `tools/build.py`): `sky1 = "AJP<n>SKY", 0.2`.
+
+**Three looks, three states of one station** (the art: `tools/gfx_power.py`
+the shared slots, `gfx_power1.py`, `gfx_power2.py`, `gfx_power3.py` one look
+each; names `AJP<look><slot>`, so in the mix the names of three looks stand
+side by side; only what the build uses is painted, about a minute more per
+build; the mix is 97 wall textures, 90 pictures and plates, 49 flats and the
+sky):
+
+1. **Temple of Power** (the 1930s): brown stock brick with tall piers, cream
+   faience under black bands, bronze and brass, teak, terrazzo, marble and
+   walnut in the switchgear hall; a pale afternoon sky.
+2. **The Grid** (the 1960s): board-marked concrete, pale ribbed cladding with
+   a strip of glazing, grey painted steel, painted blockwork, vinyl,
+   laminate and aluminium, stencilled plant numbers, black and white hazard
+   bands; a flat white overcast.
+3. **Cold Reserve** (look 1's station thirty years after its last coal):
+   corrugated iron on a brick foot, rust runs, flaking paint and whitewash,
+   fallen tiles, cold boilers ("NOT TO BE FIRED"), cracked dials; a dusk.
+
+**The rule: nothing moves.** A look changes wall textures and their offsets,
+flats, sector tints, the sky, and hangs pictures on pieces cut out of
+one-sided walls (43 lines cut into 86 more pieces; no sector added). No
+height, light, thing, tag, special or flag changes. `tools/power33_compare.py
+build/plain.pk3 build/look<n>.pk3 [base]` checks it: in each look 702 things
+the same, 617 sectors the same, the 16 lines with specials the same, the
+lines the same once joined (2528 plain, 2614 in a look), the 47 other maps
+byte for byte. Untouched: frames, far sides and the leaves, time doors,
+plates and wind plates, the cases of three, railings, bars, glass, win
+shutters and bolted doors, levers, water, ceiling light panels, and the last
+hall's lit patches and steam strip.
+
+**How it is laid on** (`tools/power33.py`, `tools/power33_faces.py`): a
+post-pass after all of `map_station.py`'s own checks dresses every sector by
+its place, and a line hook lays every wall by world position at absolute
+heights (a texture's height and the height of its top row are found from
+where it is shown, in two passes). `map_station.py` only records its doorway
+sectors (`OPENINGS`) and calls `power33.apply` when `AJAR_POWER` is set.
+
+**The parts' colours in a look.** The ways (corridors, doorways, tunnels)
+keep their yellow, green and red tints. The rooms, and the gantry, the
+mezzanine and the catwalk, lose their pale tints and stand in white light;
+instead every wall of a part's place carries the phase band, one course in
+the part's colour from 72 to 80 over the place's floor: a course of glazed
+tile (look 1), a painted stripe with the part's numeral stencilled along it
+(2), the stripe flaking (3). A way out of doors keeps its tint on its floor
+only. Nothing else in a look is yellow, green, red, blue, violet or pink
+(the doors are BLUE, VIOLET and PINK), but red DANGER plates in part 3's
+places.
+
+**Doom's share** (the same in every look; the rule from MAP20 on): Doom's
+grey stone stands where monsters are posted, the six bays of the turbine
+hall, the eight bays and four pedestals of the switchgear hall (MARBGRAY
+between SUPPORT3, FLOOR4_8, CEIL5_1), and the room behind the exit door is
+Doom's (EXITSTON, FLOOR4_8, TLITE6_1). No Doom door or switch: nothing in
+this level opens by USE.
+
+**Pictures and plates** (Claude's inventions; the same content in every
+look):
+1. The station plan, S's north wall (160..416, 3200): GENERATING STATION,
+   the rooms drawn from the generator's own boxes and the three ways as
+   three lines in the parts' colours.
+2. The safety rules, S's east wall: "1. NO ONE IS TO WORK ALONE. 2. KNOW
+   WHERE YOUR MATES ARE AT ALL TIMES. 3. NEVER CLOSE A SWITCH ANOTHER HAS
+   OPENED. BY ORDER".
+3. A tool shadow board, the workshop's east wall, some tools gone.
+4. The single-line diagram, the relay room's east wall: G1, G2, three
+   busbars in the three colours, feeders TOWN, WORKS, INSTITUTE, the
+   Institute's meter against its stop (the station feeds the machine).
+5. The synchroscope, L's north wall (7904..8096, 3392): the pointer
+   straight up between SLOW and FAST, three small meters 1, 2, 3 with a
+   lamp in each part's colour.
+Plates over nine ways (COAL YARD, STACK, YARD, GALLERY, WORKSHOP, CABLE
+TUNNEL twice, RELAY ROOM, COOLING POND) and beside seven ways whose head is
+a shutter (BOILER HOUSE, ASH TUNNEL, PUMPS, GANTRY, TURBINE HALL, CABLE
+DUCT, SWITCHGEAR), INSTRUMENT STORE over the armoury's bars, boiler numbers,
+T1 to T8, No 1 and No 2 with 30 MW 3000 RPM on the casings, the chimney's
+plate (1933; 1962 in look 2), DANGER 33000 VOLTS in the switchyard. Left
+out: SWITCHYARD and COOLING TOWER (no wall over those ways).
+
+**The tour** (`MAP=MAP33 MODE=5 EXTRA=-nomonsters`, `Tour33` in
+`src/zscript/map33.zs`, `tools/smoke_MAP33_5.cfg`): 35 views from a camera
+actor of its own, one each 80 tics; the player stays at the start and
+nothing of the goes is set off. `tools/board33_shots.sh <n> <pk3>` shoots a
+look and makes its sheets.
+
+**Runs.** Look 1, a full build: mapcheck 617 sectors, 702 things, 288
+monsters, 3 secret sectors, 0 problems; thingcheck and itemcheck 0; MAP33
+MODE=1 337 passed, 0 failed (the plain level the same 337), MODE=2 49,
+MODE=3 355, MODE=4 183, none failed. After its colour fixes (brown brick, no
+red floor, a calm floor in L) only the build and the comparison were run
+again. Looks 2 and 3, quick builds: the comparison the same; MODE=1 none
+failed (337 by one worker's count, 341 by the other's way of counting the
+same log lines). MODE=2 to 4 were not run in looks 2 and 3: they differ
+from look 1 in pictures only.
+
+**Runs, the mix.** Before main was taken in again, a full build (the worker's):
+`AJAR_POWER=0` the whole package byte for byte the plain build's (3207
+lumps); 1, 2 and 3 their look lumps and all 48 maps byte for byte the
+earlier look builds'; the comparison of the mix with the plain level all
+the same (702 things, 617 sectors, 16 lines with specials, 2528 lines
+become 2614, the 47 other maps byte for byte); mapcheck 0 problems,
+thingcheck 0, itemcheck 0; MODE=1, 2 and 4 none failed; MODE=3 once 356
+passed and 1 failed (`groupAgain3_1`: group 1 was there, 6 of 6 aimed, but
+the line read was the wind plate's hint printed in the same tic; go 3
+reached the yard some 25 tics earlier than in other runs), the second run
+357 and none. Taken as the test's timing, not the look: the map differs
+from the plain one in textures only. If it shows again, the test's reading
+of the last line said is the place to mend. After main was taken in (MAP21's
+machine, MAP10's bands, the clocked door board), quick builds of the plain
+level and the mix: the comparison all the same, against main's package too
+(MAP33's plain TEXTMAP byte for byte, 704404 bytes); mapcheck 617 sectors,
+702 things, 288 monsters, 3 secret sectors, 0 problems; thingcheck and
+itemcheck 0; `MAP=MAP33 MODE=1` to 4 with `PK3` the mix: none failed in any
+(49 in MODE=2, 183 in MODE=4; in MODE=1 and 3 the count runs on into MAP21,
+where the exit now leads and whose own test starts, which is why counts of
+these two differ between runs and counters: 335 to 350 and 353 to 357 seen).
+The mix's 35 views were shot from the full build and looked at where looks
+meet (the gallery's windows on the coal yard, the terrace, the switchyard,
+the hall from its stands, each picture on its wall): nothing mended.
+
+**Known and left.** The pumps carry no number in look 2 (lettering is cut on
+an octagon's faces laid by world position). Look 3's pump room has the
+gatehouse's walls, not tiles (one slot for both). The outdoor places are as
+square as they were: a look that moves no wall draws piers, it does not
+build them (Vadim, 2026-11-24: "less quadratish ... Or maybe it makes sense
+to do with decoration?"); real shapes are a task of its own, not started.
