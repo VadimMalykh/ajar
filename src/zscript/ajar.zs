@@ -1022,7 +1022,7 @@ class AjarHandler : EventHandler
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is a secret way out!");
 		else if (d.nailer == d)
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is the way out.");
-		else if (old) Say("You swap the " .. old.Label() .. " door for the " .. d.Label() .. " one.");
+		else if (old) Say("You swap the " .. (old.IsClocked() ? "clocked" : old.Label()) .. " door for the " .. d.Label() .. " one.");
 		else Say("The " .. d.Label() .. " door opens where it always opens.");
 	}
 

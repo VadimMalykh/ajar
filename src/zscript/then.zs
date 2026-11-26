@@ -11,9 +11,9 @@
 // (args[3] 3, never seen leaning). Hung in frame F, its shadow hangs in F's
 // twin (the frame at F's spot plus or minus the shift), and the two frames
 // lead to each other both ways (the Pair's own links). Taken from either
-// frame, both leaves come down and the player holds the door. A frame with no
-// twin, or whose twin holds another door, does not take it; no other door
-// hangs in either of its two frames while it hangs.
+// frame, both leaves come down and the player holds the door; so too when a
+// carried door is swapped in at either frame (it hangs in that one frame).
+// A frame with no twin, or whose twin holds another door, does not take it.
 //
 // Long causes: an AjarThenCause (20181) is a fixture THEN with 2 or 3
 // settings, stepped on by USE on its lever (Thing_Activate on its tid) or set
@@ -647,11 +647,9 @@ extend class AjarHandler
 			}
 			return false;
 		}
-		if (carried && f.door && f.door.IsClocked())
-		{
-			Say("The clocked door hangs in this frame, now and then.\nTake it down before you hang another.");
-			return true;
-		}
+		// (a door carried to a frame the clocked door hangs in is swapped for it, as for any hung door: both its
+		// leaves come down, the carried door hangs in this frame alone, and the clocked door is in hand. Vadim's
+		// game rule since MAP02, 2026-11-26: no door is ever put down, so a refusal here left full hands nothing)
 		return false;
 	}
 }

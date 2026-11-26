@@ -1,25 +1,37 @@
 """Act 3, level 1: "In the Long Run" (MAP21). PLAN.md, "MAP21 "In the Long
-Run": the first version, as decided" and "... the first playable version".
+Run": the first version, as decided" and "... the first playable version";
+"MAP21: colour doors by time, the pass office, and the way out built".
 
 The institute twice: NOW (MAP11's look 3, Post Box: emptied, Doom's stone grown
 through it, Doom's doors) and THEN, forty years before (look 2, Thaw: full,
 every room locked for the night), THEN 8192 north of NOW (tools/ajarthen.py,
 src/zscript/then.zs). The clocked door joins the two times: hung in a frame it
-hangs in that frame's twin too, and each leads to the other.
+hangs in that frame's twin too, and each leads to the other. A colour door joins
+places, never times: it has a far side at each time, and hung it leads to the
+one at its frame's time.
 
 Places (NOW's coordinates; x east, y north):
   hall      (0, 0, 1024, 768), the start: the machine in the middle with its
             frame 101 (the clocked door's alone, at both times; it hangs there
             at the start); north of it the desk on a dais. THEN the brass
-            shutter in the north wall and the night room behind it. NOW the
-            hall is sealed: its only way is the vestibule's bolted door.
+            shutter in the north wall, open only while the machine runs (keys 1
+            and 2 turned at the desk THEN and the clocked door in 101), and the
+            night room (352..672, 784..1040) behind it: GREEN's far side in its
+            west end, the brass frame HOME (GREEN only) in its east end; GREEN
+            hung there is the way out, built. NOW the same room dead, GREEN's
+            far side its only way in. NOW the hall is sealed: its only way is
+            the vestibule's bolted door.
   vestibule (1040, 224, 1296, 544). THEN the security post: open to the hall,
             the goods edge (a drop of 40 into the pocket, never back) and the
-            turnstile (a squeeze). NOW bolted on both sides; BLUE's far side is
-            in it, and arriving draws both bolts (the hall wakes).
+            turnstile (a squeeze), and the pass office, a glazed booth on the
+            south wall (1104..1232, 224..288), locked: BLUE's far side THEN is
+            in it, with the megasphere (a secret). NOW bolted on both sides,
+            the booth's footprint only; BLUE's far side NOW is in it, and
+            arriving draws both bolts (the hall wakes).
   corridor  (1312, 160, 1504, 2256), floor -40. THEN only its first stretch,
             the pocket (y 160..640), behind a night grille. Frame 103 in its
-            east wall (NOW the clocked door's alone, THEN any door's).
+            east wall (NOW the clocked door's alone, THEN any door's), frame 104
+            in its south wall (any door, both times).
   cellar    west of the corridor: the landing (1056..1232, 1088..1600, -40)
             with frame 105 in its east wall, the pit (576..1056, floor -200)
             with a stair down, the ledge (576..704, 1280..1472, -56), the store
@@ -28,14 +40,14 @@ Places (NOW's coordinates; x east, y north):
   goods bay east of the corridor (1568..2160, 1088..1536, -40), frame 108 in
             its north wall; the gallery (2032..2160, 56) along its east wall,
             RED on it. The belt THEN (standing at the start): NOW the hatch
-            stair down to the bay cellar (the super shotgun) is open; running,
-            a heap of crates climbs to the gallery.
+            stair down to the bay cellar (the super shotgun, GREEN) is open;
+            running, a heap of crates climbs to the gallery.
   optics    north of the corridor (1152..1664, 2320..2832, -40), frame 106 in
             its south wall. The beam THEN (at C at the start): NOW a burnt hole
             in wall A, B or C, a closet behind each (A: BLUE; B: a secret; C:
             the rocket launcher).
   lobby     MAP11's lobby and cloakroom, 2560 east (2560..3584, 0..640),
-            sealed at both times; RED's far side THEN, frame 110 (NOW a secret).
+            sealed at both times; RED's far side at both times, frame 110.
 Room doors NOW are Doom's (BIGDOOR2, USE); THEN the same doorways are the
 institute's doors, locked for the night. The checks: src/zscript/map21.zs.
 """
@@ -47,7 +59,7 @@ import ajarwater as W
 import budget
 import map_institute1 as I1
 import puzzle21
-from ajarmap import RED, BLUE
+from ajarmap import RED, BLUE, GREEN, far_id
 from ajarthen import Times, Part, NOW, THEN, THEN_ID, heights
 from udmf import Map
 
@@ -201,7 +213,17 @@ t.then.sector([(480, 768), (544, 768), (544, 784), (480, 784)], floor=0, ceil=0,
               ctex="AJTRIMF", light=160, id=SHUTTER)
 for x in (480, 544):
     t.then.line((x, 768), (x, 784), mid="AJTRIM", dontpegbottom=True)
-ajarmap.way_out(m, *t.then.P((352, 784)), None)
+# The way out is built by the player (Vadim, 2026-11-26: "I also don't like that exit is ready again. Let's
+# make me build it"). THEN the night room behind the shutter: GREEN's far side (its copy THEN, far_id + THEN_ID)
+# in its west end, the brass frame HOME in its east end, GREEN's alone (the brass inlaid with green; a THEN frame
+# with no twin). NOW the same room on the same spot, dead: dark, no candelabra, GREEN's far side (its own id) in
+# its west end, Doom's stone where the brass frame is THEN; no way in or out but GREEN.
+NIGHT = (352, 784)
+ajarmap.way_home(m, *t.then.P(NIGHT), GREEN, only=True, far=far_id(GREEN) + THEN_ID)
+ajarmap.room(m, [352, 672], [784, 880, 944, 1040], lambda i, j: j == 1, ceil=160, light=70, wall="AJXW2",
+             ftex="AJXG2", rug="AJXR2", ctex="AJXC2", floor=0)
+ajarmap.recess(m, (352, 880), (352, 944), (-1, 0), 0, far_id(GREEN), far_id(GREEN) + THEN_ID, far_colour=GREEN)
+stone(t.now, (672, 880), (672, 944))
 for x0, x1 in ((0, 384), (384, 640), (640, 1024)):
     t.now.line((x0, 768), (x1, 768), mid=STONE)
 t.now.cut((384, 768), (640, 768))
@@ -220,15 +242,33 @@ ajarmap.bolted(m, (1024, 352), (1024, 416), (1, 0), 0, BOLTS)
 # 2. THE VESTIBULE
 # =================================================================================================
 VEST = look(AR, FR, KA)
+BOOTH = (1104, 224, 1232, 288)              # the pass office THEN, against the south wall; NOW its footprint
 fit(t.now, (1040, 224, 1296, 544), [((1232, 272, 1264, 336), dict(floor=-20, side=Part("B4"))),
                                     ((1264, 272, 1296, 336), dict(floor=-40, side=Part("B4"))),
-                                    ((1104, 432, 1200, 496), dict(ftex="AJIFR2"))], **VEST)    # the porter's desk's footprint
+                                    ((1104, 432, 1200, 496), dict(ftex="AJIFR2")),    # the porter's desk's footprint
+                                    (BOOTH, dict(ftex="AJIFR2"))], **VEST)
 fit(t.then, (1040, 224, 1296, 544), [((1104, 432, 1200, 496), box(40, "DT", "DS")),          # the porter's desk
-                                     ((1256, 440, 1296, 504), dict(floor=-16, side=Part("B4")))], **VEST)
+                                     ((1256, 440, 1296, 504), dict(floor=-16, side=Part("B4"))),
+                                     (BOOTH, None)], **VEST)
 # (the turnstile's step: down 16 before the squeeze, whose ceiling (-20 + 64) leaves 60 over it; 56 over the
 # vestibule's floor would not let the player in)
-t.now.far((1136, 224), (1200, 224), (0, -1), BLUE, target=101)                 # BLUE's far side, NOW
-t.now.line((1136, 224), (1200, 224), upper=AR)
+t.far((1136, 224), (1200, 224), (0, -1), BLUE)                                 # BLUE's far side, NOW and THEN
+t.line((1136, 224), (1200, 224), upper=AR)
+# THEN the pass office, around BLUE's far side: locked for the night, solid below and glazed above (nothing
+# passes), PASSES over it; inside, the megasphere, and its floor is a secret (the lobby NOW no longer). Reached only through
+# BLUE hung in a frame THEN, left only back through it (region boothT).
+GLASS = dict(mid="AJGLAS", midboth=True, blocking=True, blockeverything=True, blockhitscan=True,
+             blockprojectiles=True)
+COUNTER = dict(floor=24, ceil=112, wall=AR, ftex=Part("DT"), ctex=KA, side=Part("DS"))
+BOOTH_IN = dict(ceil=H, wall=AR, ftex=FR, ctex=KA, light=200)
+t.then.room((1112, 224, 1224, 280), floor=0, special=1024, **BOOTH_IN)           # where BLUE lets one in: the secret
+for r in ((1104, 280, 1232, 288), (1104, 224, 1112, 280), (1224, 224, 1232, 280)):
+    t.then.room(r, **COUNTER)
+for a, b in (((1104, 288), (1232, 288)), ((1104, 224), (1104, 288)), ((1232, 224), (1232, 288)),
+             ((1112, 280), (1224, 280)), ((1112, 224), (1112, 280)), ((1224, 224), (1224, 280))):
+    t.then.line(a, b, **GLASS)
+sign(t.then, (1232, 288), (1104, 288), (0, -1), AR, "PASSES", 112)
+t.then.thing(1168, 256, 83)                                                     # the megasphere, seen over the counter
 ajarmap.unbolt(m, (1136, 224), (1200, 224), BOLTS)                              # arriving draws both bolts
 ajarmap.bolted(m, (1312, 272), (1312, 336), (-1, 0), LOW, BOLTS)               # to the corridor (NOW)
 # THEN: the goods edge (out with a door, never in) and the turnstile (empty hands, both ways)
@@ -250,6 +290,7 @@ t.then.line((1312, 448), (1312, 496), upper=CO)
 for c in t.copies:
     hang(c, (1312, 512), (1312, 640), "NB")                                     # the clock in the pocket's stretch
 frame((1504, 448), (1504, 512), (1, 0), 103, CO, LOW, clock=(NOW,))
+frame((1344, 160), (1408, 160), (0, -1), 104, CO, LOW)                         # the stretch's south end: any door, both times
 
 # =================================================================================================
 # 4. THE CELLAR (the valve: undo a cause)
@@ -383,6 +424,7 @@ t.now.room((1904, 880, 2096, 1024), floor=-112, ceil=16, wall=PU, ftex=FP, ctex=
 t.now.room((2096, 912, 2112, 976), floor=-112, ceil=-16, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF", light=100)
 t.now.room((2112, 880, 2240, 1008), floor=-112, ceil=16, wall=PU, ftex=FP, ctex=KP, light=90, special=1024)
 t.now.thing(2000, 940, 82)                                                      # the super shotgun
+ajarmap.door(m, GREEN, 1928, 952, angle=0)                                      # GREEN, against the west wall
 t.cause(1700, 1300, BELT, 2, tag=HEAP)                                          # 0 standing (found), 1 running
 t.belt_run(1700, 1340, BELT, BELT_TAG, (BELT_SPEED, 0))
 t.then.thing(1544, 1168, GOODS_T, args=(BELT, 4, 68, 1568 - 1544))             # the goods-in: 4 crates on it, 68 apart
@@ -452,8 +494,6 @@ for c in t.copies:
     feats = [((LX + 384, 352, LX + 640, 416), box(40, "DT", "DS")),
              ((LX + 224, 160, LX + 288, 224), pillar("PI")), ((LX + 736, 160, LX + 800, 224), pillar("PI")),
              ((LX + 224, 416, LX + 288, 480), pillar("PI")), ((LX + 736, 416, LX + 800, 480), pillar("PI"))]
-    if c.now:
-        feats.append(((LX + 896, 256, LX + 1024, 352), dict(special=1024)))         # the lobby now: a secret
     fit(c, (LX, 0, LX + 1024, 640), feats, **LOBBY)
     fit(c, (LX - 336, 64, LX - 16, 256), [((LX - 336, 64, LX - 304, 256), box(48, "UT", "US"))],
         floor=0, ceil=160, wall=CK, ftex=FC, ctex=KC, light=c.light - 40)
@@ -467,12 +507,11 @@ for c in t.copies:
         hang(c, (LX - 336, y), (LX - 336, y + 64), "CT")
     c.cut((LX + 384, 640), (LX + 640, 640))                                         # the way north, sealed
     c.line((LX + 384, 640), (LX + 640, 640), mid="AJSHUT" if c.then else STONE, exact=True)
-t.then.far((LX, 288), (LX, 352), (-1, 0), RED, target=110)                     # RED's far side THEN
-t.then.line((LX, 288), (LX, 352), upper=LB)
+t.far((LX, 288), (LX, 352), (-1, 0), RED)                                      # RED's far side, NOW and THEN
+t.line((LX, 288), (LX, 352), upper=LB)
 frame((LX + 1024, 288), (LX + 1024, 352), (1, 0), 110, LB)
 t.then.thing(LX + 512, 470, ajarmap.KEY_T["1"])                                 # key 1, on the porter's board behind the desk
 t.then.thing(LX - 240, 160, 8)                                                  # a backpack in the cloakroom
-t.now.thing(LX + 512, 520, 83)                                                  # NOW: a megasphere in the dust
 for x, y, k in ((LX + 300, 300, 18), (LX + 700, 120, 19), (LX + 820, 520, 20), (LX + 160, 560, 15), (LX + 600, 200, 10)):
     t.now.thing(x, y, k)                                                        # MAP11's fight, forty years on
 
@@ -492,7 +531,8 @@ AREAS = {   # name: the box things stand in (NOW's coordinates unless THEN), its
 AVOID = [(512, 300), (512, 64), (512, 160), (512, 230), (1040, 384), (1168, 240), (1490, 480), (1296, 304), (1248, 1280), (1300, 1472),
          (1520, 1312), (1936, 1520), (1408, 2272), (1568, 2336), (1408, 2576), (LX + 1008, 320), (LX + 16, 320),
          (2096, 1480), (1056, 2576), (1144, 1500), (LX + 512, 470),
-         (1000, 1136), (1200, 1360), (672, 1616), (1408, 2700), (720, 1560), (1632, 2352)]
+         (1000, 1136), (1200, 1360), (672, 1616), (1408, 2700), (720, 1560), (1632, 2352),
+         (1376, 176), (1928, 952)]                                       # frame 104's mouth, GREEN
 TAKEN = []
 R = {CACO: 31, MANCUBUS: 48, ARACH: 64, BARON: 24, KNIGHT: 24, DEMON: 30, SPECTRE: 30}
 PART_OF = []            # (thing index, part) for every monster and pickup: the budget by part
@@ -610,6 +650,10 @@ put("bay", "baycell", IMP, 2, 90)
 ambush("bay", "bay", 10 + RED, IMP, 3, angle=0, after=1)
 ambush("bay", "bay", 10 + RED, KNIGHT, 2, angle=0, after=2)
 ambush("bay", "bay", 10 + RED, CHAINGUNNER, 2, angle=0, after=3)
+# ... and when GREEN is taken in the bay cellar: four in the bay above, so that the player climbs the stair into it
+ambush("bay", "bay", 10 + GREEN, IMP, 2, angle=270, after=1)
+ambush("bay", "bay", 10 + GREEN, KNIGHT, 1, angle=270, after=1)
+ambush("bay", "bay", 10 + GREEN, CHAINGUNNER, 1, angle=270, after=2)
 # --- optics: knights and an arachnotron; an ambush through the holes when BLUE is taken
 items("optics", (1200, 2360, 2047), (1620, 2360, 2047), (1200, 2780, 17), (1620, 2780, 2046), (1300, 2780, 2048),
       (1500, 2780, 2049), (1408, 2360, 2011), (1300, 2360, 2049))
@@ -620,13 +664,14 @@ ambush("optics", "optics", 10 + BLUE, CACO, 2, angle=270, after=1)
 ambush("optics", "optics", 10 + BLUE, SOUL, 3, angle=270, after=1)
 ambush("optics", "optics", 10 + BLUE, REVENANT, 1, angle=270, after=2)
 ambush("optics", "optics", 10 + BLUE, DEMON, 3, angle=270, after=2)
-# --- the lobby THEN: key 1 taken, the ruin's monsters come in (THEN's only fight); NOW the secret
+# --- the lobby THEN: key 1 taken, the ruin's monsters come in (THEN's only fight)
 items("lobby", (LX + 128, 96, 2049, THEN), (LX + 896, 96, 2048, THEN), (LX + 128, 544, 2046, THEN),
       (LX + 896, 544, 2049, THEN), (LX + 448, 96, 2012, THEN))
 ambush("lobby", "lobbyT", 1, IMP, 4, angle=90, after=0)
 ambush("lobby", "lobbyT", 1, SERGEANT, 3, angle=90, after=1)
 ambush("lobby", "lobbyE", 1, KNIGHT, 1, angle=180, after=1)
 ambush("lobby", "lobbyE", 1, CACO, 2, angle=180, after=3)
+items("night", (416, 912, 2015), (480, 912, 2015), (544, 912, 2015), (608, 912, 2015))   # the dead night room NOW
 items("secrets", (LX + 960, 320, 2019), (2176, 944, 2023), (2200, 920, 2018), (2160, 980, 2046))
 
 # --- the budget, part by part: each part's ammunition does at least 1.6 times its monsters' health (Resident)

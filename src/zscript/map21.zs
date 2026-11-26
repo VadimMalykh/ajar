@@ -2,22 +2,34 @@
 // Run""): the level's own script, and its checks (LongRunTest, below).
 // THEN is NOW + (0, 8192). Frames NOW / THEN: 101/121 the machine (the clocked
 // door's alone at both times), 103/123 the corridor's first stretch (NOW the
-// clocked door's alone), 105/125 the cellar's landing, 108/128 the goods bay,
-// 106/126 optics, 110/130 the lobby. Causes (then.zs): 11 the valve (0 shut,
+// clocked door's alone), 104/124 its south end (any door), 105/125 the cellar's
+// landing, 108/128 the goods bay, 106/126 optics, 110/130 the lobby; 190 the
+// brass frame HOME in the night room THEN (GREEN only, no twin). A colour door
+// hung leads to its far side at the frame's time: RED the lobby (both times),
+// BLUE the vestibule NOW / the pass office THEN, GREEN the night room. Causes (then.zs): 11 the valve (0 shut,
 // 1 open; found open), 12 the belt (0 standing, found; 1 running), 13 the beam
 // (0 off, 1 A, 2 B, 3 C; found at C).
 
 // The desk the machine is run from (thing 20187, one, NOW; its panel's line
 // does Thing_Activate on it at both times). NOW it is smashed. THEN, with keys 1
-// and 2 and the clocked door in the machine's frame (101, or 121: either time),
-// the machine starts: the hall THEN brightens, a sound, and the brass shutter
-// in the north wall opens for good onto the night room.
+// and 2, the keys are turned and stay turned (`started`). The machine runs while
+// the keys are turned and the clocked door hangs in its frame (101, or 121:
+// either time): the hall THEN brightens, a sound, and the brass shutter in the
+// north wall goes up onto the night room. Take the clocked door out of the
+// machine and it stops: the hall dims and the shutter comes down, but never
+// on anything that stands in it (it waits). Hang it back and it runs again
+// (PLAN.md, "MAP21: colour doors by time, the pass office, and the way out
+// built"; the graph's walk hallT <-> nightT, keys 12, the clocked door in 101).
 class AjarLongRunDesk : Actor
 {
 	const SHUTTER = 2101;
 	const LIGHT_TAG = 2102;
-	bool started;
-	int startedAt;
+	const OPEN_H = 128;        // the shutter up: its ceiling over its floor (the night room is 160 high)
+	const SPEED = 4;           // units a tic, either way
+	const DIM = 176; const BRIGHT = 240;
+	bool started;              // the keys are turned (for good)
+	bool running;              // ... and the clocked door is in the machine
+	int startedAt, runs, stops;
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
 
@@ -33,7 +45,7 @@ class AjarLongRunDesk : Actor
 		}
 		if (started)
 		{
-			h.Say("The machine is running.");
+			h.Say(running ? "The machine is running." : "The keys are turned. The machine waits\nfor the clocked door in its frame.");
 			return;
 		}
 		bool k1 = h.Has(activator, 1), k2 = h.Has(activator, 2);
@@ -43,28 +55,83 @@ class AjarLongRunDesk : Actor
 			A_StartSound("*usefail", CHAN_AUTO);
 			return;
 		}
-		AjarFrame f = h.FindFrame(101);
-		if (!(f && f.door && f.door.IsClocked()))
-		{
-			h.Say("You turn the keys.\nThe frame is empty.");
-			A_StartSound("*usefail", CHAN_AUTO);
-			return;
-		}
-		Start(activator);
-	}
-
-	void Start(Actor who)
-	{
-		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		started = true;
 		startedAt = level.maptime;
-		if (h) h.Say("You turn the keys.\nThe machine starts on the door it was found with.");
+		if (InMachine())
+		{
+			Run(true);
+			h.Say("You turn the keys.\nThe machine starts on the door it was found with.");
+		}
+		else
+		{
+			h.Say("You turn the keys. The frame is empty:\nthe machine waits for the clocked door.");
+			A_StartSound("*usefail", CHAN_AUTO);
+		}
+	}
+
+	static bool InMachine()
+	{
+		let h = AjarHandler(EventHandler.Find("AjarHandler"));
+		AjarFrame f = h ? h.FindFrame(101) : null;
+		return f && f.door && f.door.IsClocked();
+	}
+
+	void Run(bool on)
+	{
+		running = on;
+		if (on) runs++; else stops++;
 		let si = level.CreateSectorTagIterator(LIGHT_TAG);
 		int s;
-		while ((s = si.Next()) >= 0) level.sectors[s].SetLightLevel(240);
-		S_StartSound("weapons/bfgf", CHAN_AUTO, CHANF_UI, 1, ATTN_NONE);
-		level.ExecuteSpecial(11, who, null, false, SHUTTER, 16);             // Door_Open: the brass shutter, for good
-		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST info the machine starts at t=%d", level.maptime);
+		while ((s = si.Next()) >= 0) level.sectors[s].SetLightLevel(on ? BRIGHT : DIM);
+		S_StartSound(on ? "weapons/bfgf" : "plats/pt1_stop", CHAN_AUTO, CHANF_UI, 1, ATTN_NONE);
+		S_StartSound(on ? "doors/dr1_open" : "doors/dr1_clos", CHAN_AUTO, CHANF_UI, 0.6, ATTN_NONE);      // the shutter
+		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST info the machine %s at t=%d", on ? "runs" : "stops", level.maptime);
+	}
+
+	// Does anything stand in the shutter's doorway?
+	bool Occupied(Sector s)
+	{
+		double x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+		for (int k = 0; k < s.lines.Size(); k++)
+		{
+			Line l = s.lines[k];
+			x1 = min(x1, min(l.v1.p.x, l.v2.p.x)); y1 = min(y1, min(l.v1.p.y, l.v2.p.y));
+			x2 = max(x2, max(l.v1.p.x, l.v2.p.x)); y2 = max(y2, max(l.v1.p.y, l.v2.p.y));
+		}
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!(a.player || a.bSolid || a.bShootable) || a.bNoBlockmap) continue;
+			if (a.pos.x + a.radius <= x1 || a.pos.x - a.radius >= x2 || a.pos.y + a.radius <= y1 || a.pos.y - a.radius >= y2) continue;
+			return true;
+		}
+		return false;
+	}
+
+	int waited;                // (the tests) tics the shutter has waited for something in its way
+	override void Tick()
+	{
+		Super.Tick();
+		if (!started) return;
+		bool want = InMachine();
+		if (want != running)
+		{
+			Run(want);
+			let h = AjarHandler(EventHandler.Find("AjarHandler"));
+			if (h) h.Say(h.said .. (want ? "\nThe machine runs again: the brass shutter goes up." : "\nThe machine stops: the brass shutter comes down."));
+		}
+		let si = level.CreateSectorTagIterator(SHUTTER);
+		int i;
+		while ((i = si.Next()) >= 0)
+		{
+			Sector s = level.sectors[i];
+			double fz = s.floorplane.ZAtPoint(s.centerspot), cz = s.ceilingplane.ZAtPoint(s.centerspot);
+			double goal = fz + (running ? OPEN_H : 0);
+			if (abs(cz - goal) < 0.01) continue;
+			if (goal < cz && Occupied(s)) { waited++; continue; }
+			s.MoveCeiling(SPEED, s.ceilingplane.PointToDist(s.centerspot, goal), -1, goal > cz ? 1 : -1, false);
+		}
 	}
 
 	static AjarLongRunDesk Get() { return AjarLongRunDesk(ThinkerIterator.Create("AjarLongRunDesk").Next()); }
@@ -350,7 +417,7 @@ class LongRunTest : EventHandler
 	bool entered;
 	AjarHandler h;
 	AjarThenHandler th;
-	AjarDoor clocked, shadow, red, blue;
+	AjarDoor clocked, shadow, red, blue, green;
 	AjarLongRunDesk desk;
 	int viewN;
 
@@ -501,6 +568,7 @@ class LongRunTest : EventHandler
 				else if (d.IsClocked()) clocked = d;
 				else if (d.args[1] == 1) red = d;
 				else if (d.args[1] == 2) blue = d;
+				else if (d.args[1] == 3) green = d;
 			}
 			mo.player.cheats |= CF_GODMODE | CF_NOTARGET;
 			let mi = ThinkerIterator.Create("Actor");          // (mode 1's are gone already: ajar.zs)
@@ -532,6 +600,8 @@ class LongRunTest : EventHandler
 			Check("beltFoundStanding", Cause(BELT).setting == 0 && abs(FZ(2000, 1150) + 112) < 1);
 			Check("beamFoundAtC", Cause(BEAM).setting == 3 && CZ(1672, 2576) > 50 && CZ(1144, 2576) < -39);
 			Check("nowMusicAtStart", th.musicThen == 0);
+			Check("shutterShutAtStart", !desk.started && !desk.running && Shutter() < 1, String.Format("shutter %.0f", Shutter()));
+			Check("greenLeansInBayCellar", green && !green.frame && !green.carried && FZ(green.pos.x, green.pos.y) < -100, green ? String.Format("(%.0f,%.0f)", green.pos.x, green.pos.y) : "no GREEN");
 			Next();
 		}
 		// the hall is sealed NOW: its one door is bolted on the vestibule's side
@@ -665,27 +735,21 @@ class LongRunTest : EventHandler
 		if (S()) Go(mo, 2096, 1440);
 		if (S()) Use(mo, 90);
 		if (S()) { Check("tookRed", h.carried == red, h.said); Next(); }
+		// down off the gallery to 108; through the clocked door with RED; the belt stopped by its lever THEN
 		if (S()) Go(mo, 1990, 1450);
-		if (S()) Go(mo, 1600, 1312);
-		if (S()) Use(mo, 180);
-		if (S()) Wait(40);
-		if (S()) Go(mo, 1408, 1312);
-		// 103 takes the clocked door only, NOW
-		if (S()) Go(mo, 1408, 520);
-		if (S()) Go(mo, 1470, 480);
-		if (S()) Use(mo, 0);
-		if (S()) { Check("plainRefusedAt103", h.carried == red && !F(103).door && h.said == "This frame takes only the clocked door.", h.said); Next(); }
-
-		// --- RED hung in 105: the lobby THEN, key 1 and its ambush -----------------------------------
-		if (S()) Go(mo, 1408, 1472);
-		if (S()) Go(mo, 1340, 1472);
-		if (S()) Use(mo, 180);
-		if (S()) Wait(40);
-		if (S()) Go(mo, 1180, 1472);
-		if (S()) Go(mo, 1200, 1280);
-		if (S()) Use(mo, 0);
-		if (S()) { Check("redHungIn105", F(105).door == red, h.said); Next(); }
-		if (S()) Through(mo, 0);
+		if (S()) Go(mo, 1936, 1500);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("redIntoBayThen", InThen(mo) && h.carried == red, Where(mo)); Next(); }
+		if (S()) Go(mo, 1872, OFF + 1500);
+		if (S()) Use(mo, 90);
+		if (S()) Wait(3);
+		if (S()) { Check("beltStoppedThen", Cause(BELT).setting == 0, String.Format("setting %d", Cause(BELT).setting)); Next(); }
+		// RED swapped in for the clocked door in 128 (THEN): it opens on its far side THEN, the lobby THEN
+		if (S()) Go(mo, 1936, OFF + 1500);
+		if (S()) Use(mo, 90);
+		if (S()) { Check("redSwappedInAt128", h.carried == clocked && F(128).door == red && !F(108).door && red.args[0] == 221
+			&& h.said == "You swap the clocked door for the RED one.", String.Format("RED leads to %d; ", red.args[0]) .. h.said); Next(); }
+		if (S()) Through(mo, 90);
 		if (S()) { Check("intoLobbyThen", InThen(mo) && mo.pos.x > LX && mo.pos.x < LX + 1024, Where(mo)); Next(); }
 		if (S()) Go(mo, LX + 330, OFF + 320);
 		if (S()) Go(mo, LX + 330, OFF + 470);
@@ -697,21 +761,24 @@ class LongRunTest : EventHandler
 		if (S()) Go(mo, LX + 330, OFF + 320);
 		if (S()) Go(mo, LX + 40, OFF + 320);
 		if (S()) Through(mo, 180);
-		if (S()) { Check("backFromLobby", !InThen(mo) && mo.pos.x < 1232 && mo.pos.x > 1056, Where(mo)); Next(); }
-
-		// --- the clocked door from 108 to 106: optics, the beam to A, BLUE ------------------------------
-		if (S()) Go(mo, 1215, 1472);
-		if (S()) Use(mo, 0);
-		if (S()) Wait(40);
-		if (S()) Go(mo, 1408, 1472);
-		if (S()) Go(mo, 1408, 1312);
-		if (S()) Go(mo, 1480, 1312);
-		if (S()) Use(mo, 0);
-		if (S()) Wait(40);
-		if (S()) Go(mo, 1600, 1312);
+		if (S()) { Check("backFromLobbyThen", InThen(mo) && mo.pos.x > 1568 && mo.pos.x < 2160 && mo.pos.y < OFF + 1536, Where(mo)); Next(); }
+		// the clocked door swapped back in for RED: through it NOW, and RED swapped in for it in 108: the lobby NOW
+		if (S()) Go(mo, 1936, OFF + 1500);
+		if (S()) Use(mo, 90);
+		if (S()) { Check("clockedSwappedInAt128", h.carried == red && F(128).door && F(128).door.IsClocked() && F(108).door && F(108).door.IsClocked() && red.args[0] == 201, h.said); Next(); }
+		if (S()) Through(mo, 90);
+		if (S()) Wait(60);
+		if (S()) { Check("heapDown", !InThen(mo) && abs(FZ(2000, 1150) + 112) < 1 && abs(FZ(1872, 1150) + 64) < 1, Where(mo)); Next(); }
 		if (S()) Go(mo, 1936, 1500);
 		if (S()) Use(mo, 90);
-		if (S()) { Check("tookClockedFrom108", h.carried == clocked, h.said); Next(); }
+		if (S()) { Check("redSwappedInAt108", h.carried == clocked && F(108).door == red && !F(128).door && red.args[0] == 201, h.said); Next(); }
+		if (S()) Through(mo, 90);
+		if (S()) { Check("redNowLeadsToLobbyNow", !InThen(mo) && mo.pos.x > LX && mo.pos.x < LX + 1024, Where(mo)); Next(); }
+		if (S()) Go(mo, LX + 40, 320);
+		if (S()) Through(mo, 180);
+		if (S()) { Check("backFromLobbyNow", !InThen(mo) && mo.pos.x > 1568 && mo.pos.x < 2160, Where(mo)); Next(); }
+
+		// --- the clocked door to 106: optics, the beam to A, BLUE --------------------------------------
 		if (S()) Go(mo, 1600, 1312);
 		if (S()) Use(mo, 180);
 		if (S()) Wait(40);
@@ -743,73 +810,18 @@ class LongRunTest : EventHandler
 		if (S()) Use(mo, 180);
 		if (S()) { Check("tookBlue", h.carried == blue, h.said); Next(); }
 
-		// --- BLUE hung in 108: the vestibule NOW; the bolts drawn; the hall wakes -----------------------
+		// --- BLUE swapped in for the clocked door in 106: the vestibule NOW; the bolts drawn; the hall wakes ---
 		if (S()) Go(mo, 1200, 2576);
-		if (S()) Go(mo, 1408, 2345);
-		if (S()) Use(mo, 270);
-		if (S()) Wait(40);
-		if (S()) Go(mo, 1408, 2200);
-		if (S()) Go(mo, 1408, 1312);
-		if (S()) Go(mo, 1480, 1312);
-		if (S()) Use(mo, 0);
-		if (S()) Wait(40);
-		if (S()) Go(mo, 1600, 1312);
-		if (S()) Go(mo, 1936, 1500);
-		if (S()) Use(mo, 90);
-		if (S()) { Check("blueHungIn108", F(108).door == blue, h.said); Next(); }
-		if (S()) Through(mo, 90);
-		if (S()) Go(mo, 1168, 300);
-		if (S()) Wait(40);
-		if (S()) { Check("boltsDrawn", Open(1032, 384) && Open(1304, 304) && mo.pos.x > 1040 && mo.pos.x < 1296, Where(mo)); Next(); }
-		if (S()) Wait(300);
-		if (S()) { Check("hallWakes", Ambushers(62) == 0, String.Format("%d still to come", Ambushers(62))); Next(); }
-		// the clocked door from 106
-		if (S()) Go(mo, 1250, 304);
-		if (S()) Go(mo, 1340, 304);
-		if (S()) Go(mo, 1408, 400);
-		if (S()) Go(mo, 1408, 2228);
-		if (S()) Use(mo, 90);
-		if (S()) Wait(40);
-		if (S()) Go(mo, 1408, 2380);
 		if (S()) Go(mo, 1568, 2360);
 		if (S()) Use(mo, 270);
-		if (S()) { Check("tookClockedFrom106", h.carried == clocked, h.said); Next(); }
-
-		// --- the desk with both keys and no door in the machine: into the pocket by 103, up the turnstile --
-		if (S()) Go(mo, 1408, 2345);
-		if (S()) Use(mo, 270);
+		if (S()) { Check("blueSwappedInAt106", h.carried == clocked && F(106).door == blue && !F(126).door && blue.args[0] == 202, h.said); Next(); }
+		if (S()) Through(mo, 270);
+		if (S()) Go(mo, 1168, 300);
 		if (S()) Wait(40);
-		if (S()) Go(mo, 1408, 2200);
-		if (S()) Go(mo, 1408, 520);
-		if (S()) Go(mo, 1470, 480);
-		if (S()) Use(mo, 0);
-		if (S()) { Check("clockedIn103", F(103).door == clocked, h.said); Next(); }
-		if (S()) Through(mo, 0);
-		if (S()) { Check("inPocketThen", InThen(mo) && mo.pos.x > 1312, Where(mo)); Next(); }
-		if (S()) Go(mo, 1340, OFF + 472);
-		if (S()) Push(mo, 180, 30);
-		if (S()) { Check("upTheTurnstile", mo.pos.x < 1296 && InThen(mo), Where(mo)); Next(); }
-		if (S()) Go(mo, 1250, OFF + 384);
-		if (S()) Go(mo, 1060, OFF + 384);
-		if (S()) Go(mo, 700, OFF + 384);
-		if (S()) Go(mo, 700, OFF + 232);
-		if (S()) Go(mo, 512, OFF + 222);
-		if (S()) Use(mo, 270);
-		if (S()) { Check("deskRefusesWithoutDoor", Said("The frame is empty.") && !desk.started, h.said); Next(); }
-		if (S()) Go(mo, 700, OFF + 232);
-		if (S()) Go(mo, 700, OFF + 384);
-		if (S()) Go(mo, 1060, OFF + 384);
-		if (S()) Go(mo, 1250, OFF + 320);
-		if (S()) Push(mo, 0, 30);
-		if (S()) Go(mo, 1470, OFF + 480);
-		if (S()) Through(mo, 0);
-		if (S()) Go(mo, 1470, 480);
-		if (S()) Use(mo, 0);
-		if (S()) { Check("tookClockedLast", h.carried == clocked, h.said); Next(); }
-
-		// --- into the hall NOW by the vestibule; the clocked door into 101; the desk; out ---------------------
-		if (S()) Go(mo, 1408, 304);
-		if (S()) Go(mo, 1250, 304);
+		if (S()) { Check("boltsDrawn", Open(1032, 384) && Open(1304, 304) && mo.pos.x > 1040 && mo.pos.x < 1296 && !InThen(mo), Where(mo)); Next(); }
+		if (S()) Wait(300);
+		if (S()) { Check("hallWakes", Ambushers(62) == 0, String.Format("%d still to come", Ambushers(62))); Next(); }
+		// the clocked door back into the machine (the keys not turned yet: it stands)
 		if (S()) Go(mo, 1100, 384);
 		if (S()) Go(mo, 960, 384);
 		if (S()) { Check("hallNowFromVestibule", mo.pos.x < 1024 && !InThen(mo), Where(mo)); Next(); }
@@ -817,28 +829,178 @@ class LongRunTest : EventHandler
 		if (S()) Go(mo, 512, 232);                                                  // between the machine's wings
 		if (S()) Go(mo, 512, 280);
 		if (S()) Use(mo, 90);
-		if (S()) { Check("clockedBackIn101", F(101).door == clocked && F(121).door == shadow, h.said); Next(); }
+		if (S()) { Check("clockedBackIn101", F(101).door == clocked && F(121).door == shadow && !desk.running && Shutter() < 1, h.said); Next(); }
+
+		// --- BLUE hung THEN leads to the pass office THEN (the booth; the secret); the keys turned; the shutter --
+		if (S()) Go(mo, 512, 232);
+		if (S()) Go(mo, 700, 232);
+		if (S()) Go(mo, 960, 384);
+		if (S()) Go(mo, 1100, 384);
+		if (S()) Go(mo, 1250, 304);
+		if (S()) Go(mo, 1408, 304);
+		if (S()) Go(mo, 1408, 2228);
+		if (S()) Use(mo, 90);
+		if (S()) Wait(40);
+		if (S()) Go(mo, 1408, 2380);
+		if (S()) Go(mo, 1568, 2360);
+		if (S()) Use(mo, 270);
+		if (S()) { Check("tookBlueFrom106", h.carried == blue && blue.args[0] == 202, h.said); Next(); }
+		if (S()) Go(mo, 1408, 2345);
+		if (S()) Use(mo, 270);
+		if (S()) Wait(40);
+		if (S()) Go(mo, 1408, 2200);
+		if (S()) Go(mo, 1408, 304);
+		if (S()) Go(mo, 1250, 304);
+		if (S()) Go(mo, 1100, 384);
+		if (S()) Go(mo, 960, 384);
+		if (S()) Go(mo, 700, 232);
+		if (S()) Go(mo, 512, 232);
+		if (S()) Go(mo, 512, 280);
 		if (S()) Through(mo, 90);
+		if (S()) { Check("blueIntoHallThen", InThen(mo) && h.carried == blue, Where(mo)); Next(); }
 		if (S()) Go(mo, 512, OFF + 222);
 		if (S()) Use(mo, 270);
 		if (S()) Wait(5);
-		if (S()) { Check("machineStarts", desk.started, h.said); Next(); }
-		if (S()) Wait(100);
-		if (S()) { Check("shutterOpen", Open(512, OFF + 776), String.Format("shutter %.0f", CZ(512, OFF + 776))); Next(); }
-		if (S()) Done();
-		// out: round the machine, through the shutter, into the night room's east doorway (WorldUnloaded says it)
+		if (S()) { Check("machineStarts", desk.started && desk.running, h.said); Next(); }
+		if (S()) Wait(60);
+		if (S()) { Check("shutterOpen", Shutter() > 100 && Open(512, OFF + 776), String.Format("shutter %.0f", Shutter())); Next(); }
+		if (S()) Go(mo, 700, OFF + 232);
+		if (S()) Go(mo, 700, OFF + 384);
+		if (S()) Go(mo, 1250, OFF + 384);
+		if (S()) Go(mo, 1250, OFF + 320);
+		if (S()) Push(mo, 0, 30);
+		if (S()) Go(mo, 1470, OFF + 480);
+		if (S()) Use(mo, 0);
+		if (S()) { Check("blueHungIn123", F(123).door == blue && blue.args[0] == 222 && !F(103).door, String.Format("BLUE leads to %d; ", blue.args[0]) .. h.said); Next(); }
+		if (S()) { secretsWere = level.found_secrets; Next(); }
+		if (S()) Through(mo, 0);
+		if (S()) Wait(10);
+		if (S())
+		{
+			Check("blueThenLeadsToTheBooth", InThen(mo) && mo.pos.x > 1112 && mo.pos.x < 1224 && mo.pos.y > OFF + 224 && mo.pos.y < OFF + 280, Where(mo));
+			Check("megasphereIsTheSecret", level.found_secrets == secretsWere + 1 && mo.health >= 200, String.Format("secrets %d -> %d of %d, health %d", secretsWere, level.found_secrets, level.total_secrets, mo.health));
+			Next();
+		}
+		if (S()) Through(mo, 270);
+		if (S()) { Check("backFromTheBooth", InThen(mo) && mo.pos.x > 1312 && mo.pos.x < 1504 && mo.pos.y < OFF + 640, Where(mo)); Next(); }
+		// BLUE stays in 123; up the turnstile, empty-handed
+		if (S()) Go(mo, 1340, OFF + 472);
+		if (S()) Push(mo, 180, 30);
+		if (S()) { Check("upTheTurnstile", mo.pos.x < 1296 && InThen(mo), Where(mo)); Next(); }
+		if (S()) Go(mo, 1250, OFF + 384);
+		if (S()) Go(mo, 700, OFF + 384);
+		if (S()) Go(mo, 700, OFF + 232);
+		if (S()) Go(mo, 512, OFF + 232);
+		if (S()) Go(mo, 512, OFF + 290);
+		// the clocked door out of the machine: it stops, the shutter comes down; back: it runs, the shutter goes up
+		if (S()) Use(mo, 90);
+		if (S()) Wait(60);
+		if (S()) { Check("clockedOutShutterShuts", h.carried == clocked && !desk.running && Shutter() < 1, String.Format("shutter %.0f; ", Shutter()) .. h.said); Next(); }
+		if (S()) Use(mo, 90);
+		if (S()) Wait(60);
+		if (S()) { Check("clockedBackShutterOpens", F(121).door == clocked && desk.running && Shutter() > 100, String.Format("shutter %.0f; ", Shutter()) .. h.said); Next(); }
+
+		// --- GREEN from the bay cellar (the belt standing); its ambush in the bay ----------------------------
+		if (S()) Through(mo, 90);
+		if (S()) { Check("backInHallNow", !InThen(mo), Where(mo)); Next(); }
+		if (S()) Go(mo, 512, 232);
+		if (S()) Go(mo, 700, 232);
+		if (S()) Go(mo, 960, 384);
+		if (S()) Go(mo, 1100, 384);
+		if (S()) Go(mo, 1250, 304);
+		if (S()) Go(mo, 1408, 304);
+		if (S()) Go(mo, 1408, 1312);
+		if (S()) Go(mo, 1480, 1312);
+		if (S()) Use(mo, 0);
+		if (S()) Wait(40);
+		if (S()) Go(mo, 1600, 1312);
+		if (S()) Go(mo, 1872, 1260);
+		if (S()) Go(mo, 1872, 1150);
+		if (S()) Go(mo, 1936, 1150);
+		if (S()) Go(mo, 2000, 1150);
+		if (S()) Go(mo, 2000, 1050);
+		if (S()) { Check("downTheHatchStair", abs(mo.pos.z + 112) < 1, Where(mo)); Next(); }
+		if (S()) { Check("greenAmbushWaitsInBay", Ambushers(13) == 4 && InBay(13) == 4, String.Format("%d to come, %d of them in the bay", Ambushers(13), InBay(13))); Next(); }
+		if (S()) Go(mo, 1975, 952);
+		if (S()) Use(mo, 180);
+		if (S()) { Check("tookGreen", h.carried == green, h.said); Next(); }
+		if (S()) Wait(210);
+		if (S()) { Check("greenAmbushCame", Ambushers(13) == 0, String.Format("%d still to come", Ambushers(13))); Next(); }
+		if (S()) Go(mo, 2000, 1050);
+		if (S()) Go(mo, 2000, 1150);
+		if (S()) Go(mo, 1936, 1150);
+		if (S()) Go(mo, 1872, 1150);
+		if (S()) Go(mo, 1872, 1260);
+		if (S()) { Check("upTheHatchStair", abs(mo.pos.z + 40) < 1, Where(mo)); Next(); }
+		if (S()) Go(mo, 1600, 1312);
+		if (S()) Use(mo, 180);
+		if (S()) Wait(40);
+		if (S()) Go(mo, 1408, 1312);
+		// GREEN hung NOW (in 104, the corridor's south end): the night room NOW, dead; and back
+		if (S()) Go(mo, 1408, 260);
+		if (S()) Go(mo, 1376, 200);
+		if (S()) Use(mo, 270);
+		if (S()) { Check("greenHungIn104", F(104).door == green && green.args[0] == 203 && !F(124).door, h.said); Next(); }
+		if (S()) { Check("deadNightRoomBonuses", Bonuses() == 4, String.Format("%d", Bonuses())); Next(); }
+		if (S()) Through(mo, 270);
+		if (S()) { Check("greenNowLeadsToDeadNightRoom", !InThen(mo) && mo.pos.x > 352 && mo.pos.x < 672 && mo.pos.y > 784 && mo.pos.y < 1040, Where(mo)); Next(); }
+		if (S()) Go(mo, 640, 912);
+		if (S()) { Check("deadNightRoomBonusesTaken", Bonuses() == 0, String.Format("%d left", Bonuses())); Next(); }
+		if (S()) Go(mo, 400, 912);
+		if (S()) Through(mo, 180);
+		if (S()) { Check("backFromDeadNightRoom", !InThen(mo) && mo.pos.x > 1312 && mo.pos.x < 1504 && mo.pos.y < 400, Where(mo)); Next(); }
+		if (S()) Go(mo, 1376, 200);
+		if (S()) Use(mo, 270);
+		if (S()) { Check("tookGreenFrom104", h.carried == green && green.args[0] == 203, h.said); Next(); }
+
+		// --- GREEN to the hall THEN, through the shutter into the night room; GREEN in 190; out ---------------
+		if (S()) Go(mo, 1408, 304);
+		if (S()) Go(mo, 1250, 304);
+		if (S()) Go(mo, 1100, 384);
+		if (S()) Go(mo, 960, 384);
+		if (S()) Go(mo, 700, 232);
+		if (S()) Go(mo, 512, 232);
+		if (S()) Go(mo, 512, 280);
+		if (S()) Use(mo, 90);                                                       // 101 takes only the clocked door
+		if (S()) { Check("plainRefusedAt101", h.carried == green && F(101).door && h.said == "This frame takes only the clocked door.", h.said); Next(); }
+		if (S()) Through(mo, 90);
 		if (S()) Go(mo, 700, OFF + 232);
 		if (S()) Go(mo, 700, OFF + 600);
 		if (S()) Go(mo, 512, OFF + 700);
 		if (S()) Go(mo, 512, OFF + 860);
-		if (S()) Go(mo, 600, OFF + 912);
-		if (S()) Go(mo, 720, OFF + 912);
+		if (S()) { Check("throughTheShutter", InThen(mo) && mo.pos.y > OFF + 784 && h.carried == green, Where(mo)); Next(); }
+		if (S()) Go(mo, 630, OFF + 912);
+		if (S()) Use(mo, 0);
+		if (S()) { Check("greenHungIn190", F(190).door == green && green.args[0] == 223 && h.wayOutBuilt, String.Format("GREEN leads to %d; ", green.args[0]) .. h.said); Next(); }
+		if (S()) Done();
+		// out: into the brass frame's mouth (WorldUnloaded says it)
+		if (S()) Push(mo, 0, 60);
+	}
+	int secretsWere;
+	double Shutter() { return CZ(512, OFF + 776) - FZ(512, OFF + 776); }
+	// the ambush of `cause` still to come that stands in the goods bay (NOW)
+	int InBay(int cause)
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("AjarAmbush");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.args[0] == cause && a.pos.x > 1568 && a.pos.x < 2160 && a.pos.y > 1088 && a.pos.y < 1536) n++;
+		return n;
+	}
+	// the armour bonuses left in the dead night room NOW
+	int Bonuses()
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("ArmorBonus");
+		Actor a;
+		while (a = Actor(it.Next())) if (a.pos.x > 352 && a.pos.x < 672 && a.pos.y > 784 && a.pos.y < 1040) n++;
+		return n;
 	}
 
 	override void WorldUnloaded(WorldEvent e)
 	{
 		if (!Testing() || CVar.GetCVar("ajar_autotest").GetInt() != 1) return;
-		Console.Printf("AJARTEST outByTheWayOut=%d  (step %d, %s)", desk && desk.started && th && players[consoleplayer].mo && th.when.InThen(players[consoleplayer].mo.pos.xy), step, e.NextMap);
+		Console.Printf("AJARTEST outByTheWayOut=%d  (step %d, %s)", h && h.wayOutBuilt && desk && desk.running && th && players[consoleplayer].mo && th.when.InThen(players[consoleplayer].mo.pos.xy), step, e.NextMap);
 	}
 
 	// === MODE=2: the causes set by shots from NOW through the clocked door (posed) ===========================
@@ -1009,12 +1171,45 @@ class LongRunTest : EventHandler
 		if (S()) Wait(139);
 		if (S()) { View(mo, "the lobby THEN: RED's far side, the desk, the clock", LX + 990, OFF + 600, 215); Next(); }
 		if (S()) Wait(139);
-		if (S()) { View(mo, "the lobby NOW (the secret): dust, the megasphere", LX + 990, 600, 215); Next(); }
+		if (S()) { View(mo, "the lobby NOW: dust, RED's far side as THEN, the blue armour (no secret now)", LX + 990, 600, 215); Next(); }
 		if (S()) Wait(139);
-		if (S()) { desk.Start(mo); View(mo, "the hall THEN, the machine running: the shutter opening", 760, OFF + 520, 120); Next(); }
+		// --- the pass office: THEN a booth against the vestibule's south wall, BLUE's far side in it; NOW its footprint
+		if (S()) { View(mo, "the vestibule NOW: the booth's footprint, BLUE's far side", 1168, 420, 270, 6); Next(); }
 		if (S()) Wait(139);
+		if (S()) { View(mo, "the vestibule THEN: the pass office, PASSES, the megasphere behind the glass", 1168, OFF + 420, 270, 6); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "inside the booth THEN: out through the glass to the vestibule", 1130, OFF + 236, 60); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "inside the booth THEN: BLUE's far side", 1214, OFF + 246, 200); Next(); }
+		if (S()) Wait(139);
+		// --- the second pocket frame, 104 NOW and 124 THEN, at the corridor's south end
+		if (S()) { View(mo, "the corridor's south end NOW: frame 104", 1376, 320, 270); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the pocket's south end THEN: frame 124", 1376, OFF + 320, 270); Next(); }
+		if (S()) Wait(139);
+		// --- GREEN, and the night room's two times
+		if (S()) { View(mo, "the bay cellar NOW: GREEN leaning on the west wall, the super shotgun", 2080, 990, 190); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the night room NOW, dead: GREEN's far side, the armour bonuses on the runner", 660, 912, 180); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the night room NOW, dead: stone where the brass frame is THEN", 380, 912, 0); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the night room THEN: the brass frame HOME, the candelabra", 380, OFF + 912, 0); Next(); }
+		if (S()) Wait(139);
+		// --- the machine: the clocked door back in 101, the keys turned: it runs, the shutter opens; taken out: shut
+		if (S()) Hang(mo, 1568, 2360, 270);
+		if (S()) Wait(8);
+		if (S()) Hang(mo, 512, 280, 90);
+		if (S()) Wait(8);
+		if (S()) { desk.started = true; Info(String.Format("the clocked door in 101: %d", F(101).door == clocked));
+			View(mo, "the hall THEN, the machine running: the shutter opening", 760, OFF + 520, 120); Next(); }
+		if (S()) Wait(119);
 		if (S()) { View(mo, "the hall THEN, the machine running: the shutter open, the night room", 512, OFF + 600, 90); Next(); }
 		if (S()) Wait(139);
+		if (S()) Hang(mo, 512, 280, 90);
+		if (S()) Wait(8);
+		if (S()) { Info(String.Format("running %d", desk.running)); View(mo, "the hall THEN, the clocked door taken: the machine stopped, the shutter shut", 512, OFF + 600, 90); Next(); }
+		if (S()) Wait(129);
 	}
 
 	// === MODE=4: the causes shown (posed): the crates, the streams, the levers beside their frames =========

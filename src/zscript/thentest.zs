@@ -189,13 +189,23 @@ class ThenTest : EventHandler
 			Check("arrivedFacingIn", Facing(mo, 270), Where(mo));
 			Check("thenMusicThen", th.musicThen == 1, String.Format("changes %d", th.musicChanges));
 		}
-		// a second door is refused at either frame of the hung clocked door
+		// a door carried to either frame of the hung clocked door is swapped for it (2026-11-26): both leaves come
+		// down, the carried door hangs in that one frame, at that time, and the clocked door is in hand
 		if (At()) { Pose(mo, 200, 96, 270); red.Used(mo); }
 		if (At()) { Pose(mo, 128, OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("secondDoorRefusedThen", h.carried == red && F(121).door == shadow && clocked.frame == F(101), h.said);
+		if (At()) Check("swapInForClockedThen", h.carried == clocked && F(121).door == red && !F(101).door && !clocked.frame && !shadow.frame
+			&& red.args[0] == 221 && Open(221) && ShutRed(201) && h.said == "You swap the clocked door for the RED one.", Fars() .. "; " .. h.said);
+		if (At()) { Pose(mo, 128, OFF + 452, 90); Keys(WALKKEY); }
+		if (Seg(24) && tt == 23) { Keys(); Check("swappedRedThenLeadsThen", InCorridor(mo, true), Where(mo)); }
+		if (At()) { Pose(mo, 128, OFF + 470, 90); PressUse(mo); }                    // the clocked door back for RED
+		if (At()) Check("clockedSwappedBackThen", h.carried == red && F(121).door && F(121).door.IsClocked() && F(101).door && F(101).door.IsClocked() && ShutRed(201) && ShutRed(221), h.said);
 		if (At()) { Pose(mo, 128, 470, 90); PressUse(mo); }
-		if (At()) Check("secondDoorRefusedNow", h.carried == red && F(101).door == clocked, h.said);
-		if (At()) { h.DropDoor(red, mo); h.carried = null; Pose(mo, 128, OFF + 470, 90); }
+		if (At()) Check("swapInForClockedNow", h.carried == clocked && F(101).door == red && !F(121).door && red.args[0] == 201 && Open(201) && ShutRed(221), Fars() .. "; " .. h.said);
+		if (At()) { Pose(mo, 128, 452, 90); Keys(WALKKEY); }
+		if (Seg(24) && tt == 23) { Keys(); Check("swappedRedNowLeadsNow", InCorridor(mo, false), Where(mo)); }
+		if (At()) { Pose(mo, 128, 470, 90); PressUse(mo); }                          // the clocked door back in 101
+		if (At()) Check("clockedSwappedBackNow", h.carried == red && clocked.frame && shadow.frame && F(101).door && F(121).door, h.said);
+		if (At()) { h.DropDoor(red, mo); h.carried = null; red.SetOrigin((200, 96, 0), false); red.angle = 90; Pose(mo, 128, OFF + 470, 90); }
 		// take it THEN: both frames empty, the door in hand THEN
 		if (At()) PressUse(mo);
 		if (At())

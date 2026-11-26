@@ -121,8 +121,8 @@ class Copy:
         """A plain door's far side, in this copy only (`target`: any frame's
         line id), line id far_id(colour) whichever copy. Against the rule
         since 2026-11-26 (PLAN.md, "Colour doors join places, never times"):
-        a far side is built at both times, Times.far. Kept for MAP21 until it
-        follows."""
+        a far side is built at both times, Times.far. No map uses it since
+        MAP21 followed (2026-11-26)."""
         ajarmap.recess(self.m, self.P(a), self.P(b), out, floor, ajarmap.far_id(colour), target,
                        far_colour=colour, **k)
 
