@@ -11,8 +11,9 @@ from gfx import Img, digit
 from gfx_power import Wall, flat, h32, jit, mix, shade, text_width
 
 # --- the palette --------------------------------------------------------------------------------------------
-BRICK, MORTAR = (122, 72, 50), (160, 144, 120)
-ENG = (78, 50, 40)                       # engineering brick, dark
+BRICK, MORTAR = (128, 96, 70), (178, 170, 152)     # London stock brown; pale grey-buff mortar
+BUFF_B, DARK_B = (176, 150, 108), (84, 62, 46)      # a stock brick's courses vary toward these
+ENG = (72, 58, 48)                       # engineering brick, dark brown
 CREAM, IVORY, CREAM_PL = (226, 212, 172), (236, 230, 210), (222, 212, 186)
 STONE, GRANITE = (206, 192, 160), (138, 132, 122)
 BLACK, SOOT = (30, 28, 28), (34, 30, 28)
@@ -37,7 +38,7 @@ def tile(c, s=16, grout=0.76, var=0.035, seed=1, sh=None):
     return f
 
 
-def brick(c, mortar=MORTAR, course=8, length=32, var=0.09, seed=2):
+def brick(c, mortar=MORTAR, course=8, length=32, var=0.09, seed=2, stock=True):
     def f(x, z):
         kz = (z - 1) // course
         off = length // 2 if kz % 2 else 0
@@ -47,7 +48,12 @@ def brick(c, mortar=MORTAR, course=8, length=32, var=0.09, seed=2):
         g = 1 + (k - 0.5) * 2 * var
         if z % course == course - 1:
             g *= 0.9
-        return jit(shade(c, g), x, z, seed, 0.04)
+        col = c
+        if stock:                               # a stock brick: some toward buff, some toward dark brown
+            t = h32((x + off) // length, kz, seed + 7)
+            col = mix(c, BUFF_B, 0.45 * (t - 0.62) / 0.38) if t > 0.62 else \
+                mix(c, DARK_B, 0.5 * (0.3 - t) / 0.3) if t < 0.3 else c
+        return jit(shade(col, g), x, z, seed, 0.04)
     return f
 
 
@@ -336,7 +342,7 @@ def m_CH(w):
             g *= 0.85
         return jit(shade((220, 208, 176), g), x // 2, z // 3, 36, 0.02)
     w.fill(w.z0, w.bot, flute)
-    w.fill(48, w.bot, brick(ENG, (90, 80, 72), seed=37))
+    w.fill(48, w.bot, brick(ENG, (104, 98, 90), seed=37, stock=False))
     w.fill(54, 48, lit_band(STONE)(54, 48))
     w.fill(w.z0, w.z0 - 20, lambda x, z: shade(BLACK, 1.2 if z == w.z0 - 19 else 1.0))
     soot(w, w.z0 - 120, w.z0 - 20, 0.5, seed=38)
@@ -356,7 +362,7 @@ def m_BH(w, F, part):
             return jit(shade(IRON, 1.15 if d in (1, 5) else 0.9 if d == 6 else 1.0), x, z, 40, 0.03)
         return br(x, z)
     w.fill(w.z0, w.bot, f)
-    w.fill(F + 24, w.bot, brick(ENG, (90, 80, 72), seed=41))
+    w.fill(F + 24, w.bot, brick(ENG, (104, 98, 90), seed=41, stock=False))
     w.fill(F + 260, F + 250, lambda x, z: shade(IRON, 1.25 if z == F + 260 else 0.95))
     soot(w, F + 140, w.z0, 0.62, seed=42)
     band(w, F, part)
@@ -383,7 +389,7 @@ def m_SE(w):
 
 def m_AT(w, F, part):
     """The ash tunnel: white glazed brick gone grey, ash at its foot."""
-    gb = brick((196, 192, 180), (150, 146, 138), seed=46, var=0.05)
+    gb = brick((196, 192, 180), (150, 146, 138), seed=46, var=0.05, stock=False)
 
     def f(x, z):
         col = gb(x, z)
@@ -493,8 +499,8 @@ def m_CW(w):
 
 def m_WS(w, F, part):
     """The workshop: a brown glazed brick dado, cream painted brick above."""
-    w.fill(w.z0, w.bot, brick((214, 204, 176), (192, 182, 156), seed=56, var=0.03))
-    w.fill(F + 104, F, brick((110, 66, 40), (78, 50, 34), seed=57, var=0.07))
+    w.fill(w.z0, w.bot, brick((214, 204, 176), (192, 182, 156), seed=56, var=0.03, stock=False))
+    w.fill(F + 104, F, brick((104, 76, 54), (78, 62, 48), seed=57, var=0.07, stock=False))
     w.fill(F + 108, F + 104, lit_band((86, 54, 34))(F + 108, F + 104))
     w.fill(w.z0, w.z0 - 8, lambda x, z: shade(IRON, 1.0))
     skirting(w, F, 6)
@@ -732,7 +738,7 @@ def m_SN(w):
 
 
 def m_SH(w):
-    w.fill(w.z0, w.bot, brick((132, 84, 62), (150, 136, 116), seed=82))
+    w.fill(w.z0, w.bot, brick(shade(BRICK, 1.04), seed=82))
 
 
 WALLS = dict(TD=m_TD, CO=m_CO, GP=m_GP, CT=m_CT, SK=m_SK, RI=m_RI, YD=m_YD, SL=m_SL, CF=m_CF, EF=m_EF, GF=m_GF,
@@ -1271,8 +1277,8 @@ def f_brick_paving():
         k = y // 8
         off = 8 if k % 2 else 0
         if y % 8 == 0 or (x + off) % 16 == 0:
-            return (104, 92, 80)
-        return jit(shade((128, 70, 50), 0.9 + 0.2 * h32((x + off) // 16, k, 107)), x, y, 108, 0.04)
+            return (120, 112, 100)
+        return jit(shade((134, 112, 86), 0.88 + 0.22 * h32((x + off) // 16, k, 107)), x, y, 108, 0.04)
     return flat(f)
 
 
@@ -1317,16 +1323,16 @@ def f_vault():
         k = y // 8
         off = 16 if k % 2 else 0
         if y % 8 == 0 or (x + off) % 32 == 0:
-            return (84, 72, 62)
-        return jit(shade((112, 62, 44), 0.85 + 0.2 * h32((x + off) // 32, k, 113)), x, y, 114, 0.04)
+            return (112, 106, 96)
+        return jit(shade((116, 90, 66), 0.85 + 0.2 * h32((x + off) // 32, k, 113)), x, y, 114, 0.04)
     return flat(f)
 
 
 def f_quarry():
     def f(x, y):
         if x % 16 == 0 or y % 16 == 0:
-            return (110, 96, 84)
-        return jit(shade((150, 74, 52), 0.9 + 0.2 * h32(x // 16, y // 16, 115)), x, y, 116, 0.03)
+            return (100, 92, 82)
+        return jit(shade((122, 92, 68), 0.9 + 0.16 * h32(x // 16, y // 16, 115)), x, y, 116, 0.03)
     return flat(f)
 
 
@@ -1387,7 +1393,7 @@ def f_wood_block():
         if y % 8 == 0 or (x + (8 if by % 2 else 0)) % 16 == 0:
             return (70, 46, 28)
         k = h32((x + (8 if by % 2 else 0)) // 16, by, 124)
-        return jit(shade((130, 88, 52), 0.85 + 0.25 * k), x, y, 125, 0.05)
+        return jit(shade((124, 90, 60), 0.85 + 0.25 * k), x, y, 125, 0.05)
     return flat(f)
 
 
@@ -1467,24 +1473,27 @@ def f_lino():
     def f(x, y):
         if x % 32 == 0 or y % 32 == 0:
             return (82, 56, 38)
-        return jit((112, 74, 48), x // 2, y // 2, 137, 0.04)
+        return jit((106, 80, 58), x // 2, y // 2, 137, 0.04)
     return flat(f)
 
 
 def f_marble_chequer():
+    """L's floor: ivory marble squares of 64 on the grid, a small black square where four meet (a cabochon
+    floor), soft grey veins."""
     def f(x, y):
-        black = (x // 64 + y // 64) % 2
-        v = math.sin(x * 0.12 + y * 0.05 + 3 * math.sin(y * 0.03 + x * 0.02))
-        if black:
-            col = jit((30, 30, 32), x // 4, y // 4, 138, 0.05)
-            if abs(v) < 0.06:
-                col = (90, 88, 86)
-        else:
-            col = jit((226, 222, 208), x // 4, y // 4, 139, 0.03)
-            if abs(v) < 0.06:
-                col = (160, 156, 148)
-        if x % 64 == 0 or y % 64 == 0:
-            col = shade(col, 0.75)
+        u, v = x % 64, y % 64
+        du, dv = min(u, 64 - u), min(v, 64 - v)
+        if du <= 5 and dv <= 5:                     # the cabochon, 10 square, centred on the corner
+            if du == 5 or dv == 5:
+                return (96, 92, 88)
+            return jit((46, 44, 44), x // 3, y // 3, 138, 0.04)
+        vv = math.sin(x * 0.09 + y * 0.04 + 2.2 * math.sin(y * 0.035 + x * 0.015))
+        col = jit((224, 218, 202), x // 4, y // 4, 139, 0.02)
+        col = shade(col, 0.97 + 0.05 * h32(x // 64, y // 64, 140))
+        if abs(vv) < 0.05:
+            col = mix(col, (176, 172, 164), 0.5)
+        if u == 0 or v == 0:
+            col = shade(col, 0.86)
         return col
     return flat(f, 128)
 
