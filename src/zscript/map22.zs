@@ -504,7 +504,8 @@ class DayReturnTest : EventHandler
 		if (S()) Put(mo, 200, OFF + 960, 0);
 		if (S()) Use(mo, 0);
 		if (S()) { Check("tookClocked", h.carried == clocked, h.said); Next(); }
-		if (S()) Put(mo, 64, OFF - 28, 90);
+		if (S()) Put(mo, 64, OFF - 120, 90);
+		if (S()) Go(mo, 64, OFF - 28);
 		if (S()) Use(mo, 90);
 		if (S()) Wait(3);
 		if (S())
@@ -521,14 +522,16 @@ class DayReturnTest : EventHandler
 		if (S()) Wait(35 * 26);
 		if (S()) { Check("theStopsSecondWave", Wave(30) == 0, String.Format("%d of it to come", Wave(30))); Check("theDistrictsWait", Left(64, 1) > 0, String.Format("%d near", Left(64, 1))); Next(); }
 		// taken down and hung again elsewhere: no second turn
-		if (S()) Put(mo, 64, OFF - 28, 90);
+		if (S()) Put(mo, 64, OFF - 120, 90);
+		if (S()) Go(mo, 64, OFF - 28);
 		if (S()) Use(mo, 90);
 		if (S()) { Check("clockedTakenDown", h.carried == clocked && !F(124).door && !F(104).door, h.said); Next(); }
 		if (S()) { h.said = ""; Next(); }
-		if (S()) Put(mo, 192, OFF + 200, 270);
+		if (S()) Put(mo, 192, OFF + 300, 270);
+		if (S()) Go(mo, 192, OFF + 200);
 		if (S()) Use(mo, 270);
 		if (S()) Wait(5);
-		if (S()) { Check("noSecondTurn", F(122).door == clocked && !Said("forty years on") && DR().turnedAt < tic - 100, h.said); Next(); }
+		if (S()) { Check("noSecondTurn", F(122).door == clocked && !Said("forty years on") && DR().turnedAt < level.maptime - 100, h.said); Next(); }
 		if (S()) Done();
 	}
 	int Standing()

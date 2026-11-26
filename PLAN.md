@@ -19465,3 +19465,164 @@ the turn; the hotel and the station now; the museum; fights tuned by play.
 
 **What moves in the outline** ("The ten levels, in outline"): 22 is this;
 the old 22 ("on loan") is 23's or 24's mechanic; 25 is free.
+
+## MAP22 "Day Return": the first playable version (built 2026-11-27)
+
+Built as decided in "MAP22 "Day Return": the first version, as decided"
+above, on branch `map22` (an Opus worker; the design is Fable's).
+`MAP=MAP22 ./run.sh` in the worktree plays it; MAP21's way out now leads
+to it, and its own way out starts it again until there is a MAP23.
+The tests: `MAP=MAP22 MODE=n tools/smoke.sh "$PWD/build/smoke22_n"`
+(MODE=1 `TIMEOUT=500`, MODE=2 `TIMEOUT=300`, MODE=3 `TIMEOUT=400`).
+
+**Files.**
+- `tools/map_dayreturn.py`: the level, its fights and its budget, in
+  `tools/build.py` as MAP22 (imported after MAP21, so that no earlier map's
+  numbering moves). `python3 map_dayreturn.py budget` prints the budget by
+  part. `PUZZLE` is `puzzle22.PUZZLE22`, proven in the build (8 door
+  actions, 12437 states, 0 stuck).
+- `tools/gfx_dayreturn.py` (from `gfx.make_all`): the new bus's livery E
+  (`AJEUS*`, the old one's drawing, clean) and its plates `AJEN0..9` (1
+  ГОСТИНИЦА, 2 ТЕАТР, 5 ВОКЗАЛ, 7 ДЕПО, 4 blank); the day sky `AJ22SKY`;
+  the shelter's brass door `AJ22D12` (keys 1 and 2, LINE 6); the shelter's
+  timetable `AJ22TT`; the depot's brick with the plate LINE 4 / FROM
+  TOMORROW (`AJ22P4`).
+- `src/zscript/map22.zs`: `AjarDayReturn` (the turn), `AjarKeyBearer` (a key
+  over a monster's head, the player's when it dies), `DayReturnTest`
+  (MODE=1..3); `tools/smoke_MAP22_1..3.cfg`.
+- `src/zscript/then.zs`: a level names its own piece for THEN
+  (`thenPiece`, `SetThenMusic`; `THEN_MUSIC` when it names none, as MAP21);
+  `joinedAt`, the tic the clocked door first joined the two times
+  (`JoinedDue`).
+- `src/zscript/ajar.zs`: ambush causes 64 (the turn: the times first
+  joined; one with args[4] 1..4 carries that room key, and in the tests it
+  stays to be killed) and 65 (keys 1 and 2 both in hand); MAP22's tests end
+  with the level.
+- **The Doom door lab** (`doomlab.zs`) ran on Doom II's own MAP22, which
+  Ajar's MAP22 now hides: the lab checks id's checksum and so stays off. Its
+  cfgs, which were `smoke_MAP22_1..3.cfg`, are now `smoke_DOOMLAB_1..3.cfg`
+  (`CFG=`). It needs another way in (another map name, or loading id's map
+  by another lump name) if it is wanted again.
+
+**The level as built** (NOW's coordinates; THEN is NOW + (0, 12288); the
+AjarThen thing at (0, -200); 1006 sectors, 337 things).
+1. *The square*, at both times, MAP10's own (the fitted square, the
+   museum side, the shelter, the lanes, the kiosk NOW). THEN: light 224,
+   the new bus (livery E, its plates), the shelter's timetable, the day
+   sky (every THEN sector open to the sky is tagged 2200, and a sky
+   transfer line, `Static_Init(2200, 255)` with `AJ22SKY` as its upper,
+   gives them the day). NOW: MAP10's night, the old bus, Doom's stone
+   (TANROCK2) in doors 1 and 5, door 6's brass frame with stone in it, door
+   4's plate lost (AJBN0); the kiosk behind its bars (a secret, a soul
+   sphere).
+2. *The bus*: doors 1 hotel (doorway 1, THEN), 2 frames 121/101 (RED in
+   121 at the start), 3 GREEN's far side, shut, both times, 4 frames
+   124/104 (the clocked door's alone, its trim), 5 station (doorway 2,
+   THEN), 6 frame 123 (THEN, brass, any door, no twin), 7 frames 122/102, 8
+   doorways 4 (THEN) and 3 (NOW) from the pit under the stage door.
+3. *The shelter THEN*: the brass door (`roomdoor`, keys 1 and 2, line 310)
+   in its back wall (288..352, -208); behind it a stair of four steps up to
+   64 and the night room (`way_home(..., BLUE, only=True, far=222)`:
+   BLUE's far side in its west end, HOME in its east end). NOW the same
+   room (BLUE's far side 202), stone where HOME is, the hole.
+4. *The depot* (-512..512 x 544..992, floor 48), both times, YELLOW's far
+   side in its south wall: the buses in the livery of the time, the gate
+   down to the lane (one way). THEN the fitters' bench along the north wall,
+   the clocked door leaning at (256, 966) under the plate LINE 4 FROM
+   TOMORROW, a lamp. NOW the cache in the far corner (-496..-400 x
+   992..1056, a secret: blue armour).
+5. *The theatre* (MAP03's excerpt, as MAP10 has it), both times; RED's far
+   side in the foyer; the stage door's ledge and the pit; door 8 of the bus
+   from the pit. NOW MAP03's monsters and pick-ups; BLUE leaning in the
+   rooms behind the foyer (600, -3030). THEN at peace: no monsters, no
+   pick-ups, no gore, light +40.
+6. *The hotel* (MAP02, line 1) and *the station* (MAP05, line 5), THEN only,
+   as MAP10 lifts them out, at peace; YELLOW on the station's far platform.
+
+**The turn** (`map22.zs`): the first time the clocked door hangs in a
+twinned frame (`joinedAt`). Once: "The line runs to the same stop, forty
+years on. / Something is coming the other way."; the THEN music from
+AJM_EMY4 to AJM_EMY5 (NOW AJM_ENS4, the mapinfo's); the square's company
+NOW (tid 2201, deaf until then) woken and set on the player. Every place
+THEN gets its company by ambush (cause 64) when the player next comes near
+it and sees it (`near` 640, the theatre's stage and the station 900); the
+stop in two waves, 3 and 30 seconds on. Taking the clocked door down undoes
+nothing.
+
+**Keys.** None before the turn. Key 1: the hotel lobby's baron (at
+HX + 360, 300); key 2: a baron in the theatre's orchestra pit (1104,
+-3960), where MAP10 has key 1. Both there on every difficulty. A bearer
+shows its key over its head (`AjarKeyBearer`); when it dies, or is gone,
+the key is in the player's inventory at once: "It carried key N."
+
+**Fights** (148 on "Resident", 114 on "Short stay", 76 on "Just
+visiting"; `budget` by part): the square NOW 22 standing (imps, sergeants,
+chaingunners, knights, revenants, cacodemons); the stop THEN 19 in two
+waves; the hotel THEN 15 with the baron; the theatre THEN 16 with the
+baron; the station THEN 16 and a megasphere, not needed; the depot THEN 10;
+the last fight (cause 65, both keys) 9 at the stop THEN; the theatre NOW
+MAP03's 21 and an ambush of 6 when BLUE is taken; the depot NOW 14.
+Supplies NOW only (the square, the theatre, the depot), as decided: the
+square's pay for the fights then (square and then together: 107 monsters,
+16350 hp, ammunition 29250, x1.79); the theatre NOW x5.29; the depot NOW
+x6.47. Health is thin for the fights then (155 in the square, 160 in the
+theatre, the secrets' 100 and 200 armour): to be tuned by play.
+
+**Bent from the design, or left out.**
+- Key 2's bearer is a baron in the orchestra pit, not the theatre's
+  biggest standing "by the stage": the pit is 96 wide (no mancubus fits),
+  and from the house the stage's lip hides whatever stands on the stage,
+  so that an ambusher there holds back (`near` asks for sight) until the
+  player is up on it. The stage's own company (three imps, a revenant)
+  does wait for that.
+- The lodgers and MAP10's STRAY door are not in the level (the solver does
+  not model them; the design leaves lodgers out).
+- A monster killed then leaves its corpse now (then.zs's company, as in
+  MAP21), also where there is no place now (the hotel): such a corpse lies
+  outside the map, unseen.
+- The timetable's long word (ГОСТИНИЦА) runs over the paper's edge at
+  64 pixels; the letters are the 5 by 5 ones of the old bus.
+- `mapcheck`: 16 notes, all MAP10's own and in the same places shifted
+  (lamps and a candle that touch a wall in the theatre and the hotel; the
+  32-wide gaps MAP10 has in the theatre's and the hotel's excerpts).
+  `thingcheck` and `itemcheck`: 0 problems.
+
+**Checks** (the full build; the tests on it or on a quick build of the same
+sources):
+- The build: `MAP22: solvable in 8 door actions, 12437 states, 0 stuck`;
+  every other proof line as on main.
+- MODE=1, the solver's way: 41 checks, all pass, `levelExited`. The peace
+  (no monster alive then, no keys, AJM_EMY4); the brass door locked; line 5
+  to the station, YELLOW; YELLOW in 122, the depot then, the clocked door;
+  the gate one way; the clocked door swapped into 122: the turn (the line,
+  AJM_EMY5), through it now and back; RED where it hangs to the theatre
+  then, key 2's baron comes into the pit and, killed, gives key 2 ("It
+  carried key 2."); RED down, YELLOW up in 121, RED carried now, hung in
+  101: the theatre now; BLUE; back, through the clocked door then; line 1:
+  key 1's baron, key 1; the brass door opens with both keys; the stair;
+  BLUE in HOME, out. The ambushers come and are counted and removed
+  (42 in the run); the bearers stay to be killed.
+- MODE=2, the turn by itself (with the monsters): 14 checks, all pass.
+  The square's 22 stand deaf; the clocked door into 124: the line, the
+  music, all 22 woken and set on the player; the stop's first wave in by
+  8 seconds while the second (9) waits, in by 34; the places' 57 wait for
+  the player; the door taken down and hung in 122: no second turn.
+- MODE=3: 32 views, two screenshots each, the earlier one kept (the later
+  one is taken as the next view is posed).
+- MAP21 MODE=1: 85 checks, all pass, out to MAP22. The THEN lab MODE=1: all
+  pass.
+- Every other map's wad is byte for byte as before (48 maps, against a
+  build of main at 3ffb84b); the package only gains files (MAP22.wad,
+  map22.zs, AJ22*, AJEN*, AJEUS*).
+
+**Not tested / not played by hand.** The fights' balance and where the
+Halton spots put things (MODE=1 runs with the monsters removed; the
+ambushers are spawned, counted and removed); whether the square's company
+finds its way to the player through the hung frames; whether the
+`near`/sight rule brings each place's company at a good moment (the hotel
+lobby's and the pit's did in MODE=1); the health for the fights then; the
+music by ear (the runs are `-nosound`); the day sky, the livery and the
+plates on the real machine (GLES) beyond the MODE=3 views; a player who
+goes now with YELLOW (the depot now, the cache) or hangs the clocked door in
+101 or 104 first; a saved game across the times; the automap (both copies
+side by side).
