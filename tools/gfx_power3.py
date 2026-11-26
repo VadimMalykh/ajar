@@ -13,7 +13,12 @@ import math
 
 import gfx_power as G
 from gfx import Img, digit, text as gtext
-from gfx_power import Wall, flat, h32, jit, mix, shade, text_width
+from gfx_power import Wall, flat, h32, jit, shade, text_width
+
+
+def mix(a, b, t):
+    """gfx_power.mix, quicker (this look's weathering calls it millions of times)."""
+    return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
 
 # --- the palette --------------------------------------------------------------------------------------------
 BRICK, MORTAR = (112, 76, 58), (124, 112, 96)     # dull brown brick, dirty mortar
@@ -23,7 +28,7 @@ WASH_GREY = (150, 144, 130)                      # whitewash gone grey (the boil
 PLASTER = (146, 130, 104)                        # bare plaster where the wash has come away
 PAINT = (98, 72, 52)                             # brown oil paint (dadoes)
 BONE = (192, 182, 154)
-FAIENCE = (182, 172, 146)                        # ivory faience, crazed and dirty
+FAIENCE = (172, 162, 136)                        # ivory faience, crazed and dirty
 CREAM = (176, 164, 132)
 STONE = (164, 150, 124)
 GRANITE = (124, 118, 108)
@@ -416,6 +421,7 @@ def m_CO(w, F, part, top):
 def m_GP(w, F, part):
     """The gatehouse's pillars: faience all the way, crazed and dirty, a few tiles gone; a stained capital."""
     w.fill(w.z0, w.bot, crazed(FAIENCE, 16, seed=3, gone=0.12, P=w.period))
+    stains(w, w.z0, F, GRIME, 0.35, 513, cell=32, cut=0.4)
     w.fill(w.z0, w.z0 - 16, moulding((160, 150, 124), w.z0, w.z0 - 16))
     w.fill(F + 120, F + 114, lit_band(DARK)(F + 120, F + 114))
     gradient(w, F + 48, F, GRIME, 0.3, 511)
@@ -479,12 +485,16 @@ def m_YD(w, F, part, damp=0):
     br = brick(BRICK, seed=531)
     sky = G.SKY_TOP
 
+    corr = [0.82 + 0.26 * math.sin(2 * math.pi * (u + 0.5) / 8) for u in range(8)]
+    kinds, fixes = {}, {}
+
     def iron(x, z):
         zr = z - foot - 4
         sx, sz = x // 32, (zr - 1) // 96
-        u = x % 8
-        g = 0.82 + 0.26 * math.sin(2 * math.pi * (u + 0.5) / 8)
-        k = h32(sx, sz, 532)
+        g = corr[x % 8]
+        k = kinds.get((sx, sz))
+        if k is None:
+            k = kinds[sx, sz] = h32(sx, sz, 532)
         base = CORR
         if k < 0.1:
             base = (130, 124, 112)                          # a newer sheet, galvanised
@@ -509,8 +519,10 @@ def m_YD(w, F, part, damp=0):
         if d < 2 and xb in (4, 5):
             return (128, 92, 64)
         if xb in (3, 4, 5, 6):
-            k2 = h32(x // 16, fi, 536)
-            L = 10 + 46 * h32(x // 16, fi, 537)
+            fk = fixes.get((x // 16, fi))
+            if fk is None:
+                fk = fixes[x // 16, fi] = (h32(x // 16, fi, 536), 10 + 46 * h32(x // 16, fi, 537))
+            k2, L = fk
             if k2 < 0.62 and d < L:
                 t = (0.62 if xb in (4, 5) else 0.28) * (1 - d / L) ** 0.8
                 col = mix(col, RUST_D, t)
@@ -762,7 +774,7 @@ def m_PC(w, F):
 
     def f(x, z):
         if z > top - 3:
-            return shade(BRASS, 1.2 if z == top else 0.85)
+            return shade(mix(BRASS, (86, 76, 58), 0.4), 1.15 if z == top else 0.85)
         if F + 56 < z <= F + 64:
             if x % 8 == 4 and z in (F + 60, F + 61):
                 return RUST_L
@@ -2067,7 +2079,7 @@ def f_quarry():
     def f(x, y):
         if x % 16 == 0 or y % 16 == 0:
             return (100, 88, 74)
-        col = jit(shade((122, 84, 62), 0.9 + 0.2 * h32(x // 16, y // 16, 115)), x, y, 116, 0.04)
+        col = jit(shade((112, 88, 70), 0.9 + 0.2 * h32(x // 16, y // 16, 115)), x, y, 116, 0.04)
         return mix(col, (140, 126, 104), 0.4 * fn2(x, y, 32, 1181))
     return flat(f)
 
