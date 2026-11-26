@@ -43,6 +43,11 @@
 //    the frame the door hangs in: the same frame at the other time. Hung, the
 //    two frames lead to each other; taken from either, both are empty and the
 //    one door is in the player's hands.
+//  * A colour door on a map with two times (then.zs, FarAt): its far side is
+//    built at both times, line id args[0] NOW and args[0] + 20 THEN, and it
+//    opens on the copy at the time of the frame it hangs in; while it hangs,
+//    args[0] is that copy's line (ownFar keeps NOW's). It joins places,
+//    never times.
 //  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
 //    (ajarmap.route_board; BoardTick).
 
@@ -111,6 +116,7 @@ class AjarDoor : Actor
 	int hungAt;        // a Pair's leaf: the level's tic it was last hung (goes.zs, two keys at once)
 	int joinEnds;      // joined for a time only (goes.zs): the level's tic it shuts again (0: for good)
 	int joinTics;      // and how long that time is
+	int ownFar;        // a colour door on a map with two times: its own far side's line id (NOW's copy); args[0] is the copy at its frame's time while it hangs (then.zs, FarAt)
 
 	Default
 	{
@@ -801,6 +807,7 @@ class AjarHandler : EventHandler
 		if (d.IsStray()) { d.args[0] = DrawStray(); d.strayTics = StrayTics(); }
 		else
 		{
+			d.args[0] = FarAt(d, f);       // a colour door on a map with two times: its far side at f's time (then.zs)
 			// a Stray door open onto this door's far side gives way to it
 			let si = ThinkerIterator.Create("AjarDoor");
 			AjarDoor o;
@@ -856,6 +863,7 @@ class AjarHandler : EventHandler
 		d.frame = null;
 		d.carried = true;
 		d.Hide();
+		if (d.ownFar) d.args[0] = d.ownFar;        // carried, a colour door is its own far side again (then.zs, FarAt)
 		if (d.IsPair())
 		{
 			AjarDoor tw = d.Twin();
@@ -1014,7 +1022,7 @@ class AjarHandler : EventHandler
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is a secret way out!");
 		else if (d.nailer == d)
 			Say("The " .. d.Label() .. " door opens onto the room it hangs in.\nThat is the way out.");
-		else if (old) Say("You swap the " .. old.Label() .. " door for the " .. d.Label() .. " one.");
+		else if (old) Say("You swap the " .. (old.IsClocked() ? "clocked" : old.Label()) .. " door for the " .. d.Label() .. " one.");
 		else Say("The " .. d.Label() .. " door opens where it always opens.");
 	}
 
@@ -1062,7 +1070,7 @@ class AjarHandler : EventHandler
 			else Say("This frame is barred to the " .. carried.Label() .. " door.\nAny other will hang in it.");
 			return;
 		}
-		if (carried && (f.args[4] == 1 || f.args[4] == 5) && carried.args[0] != f.args[1])
+		if (carried && (f.args[4] == 1 || f.args[4] == 5) && FarAt(carried, f) != f.args[1])     // (its far side at f's time: then.zs)
 		{
 			if (PlateFor(f) || f.args[4] == 5 || f.args[3])
 			{
@@ -1170,6 +1178,7 @@ class AjarHandler : EventHandler
 			// the clocked door's other leaf: hung with it (Hang), never by itself
 			if (d.IsShadow()) { if (!d.frame) { d.carried = true; d.Hide(); } continue; }
 			Link(d.args[0], 0, d.BackTex());
+			Link(ThenFar(d), 0, d.BackTex());      // its far side's copy THEN, on a map with two times (then.zs)
 			f = null;
 			if (d.args[2]) f = FindFrame(d.args[2]);
 			if (f && d.args[3]) d.nailer = d;

@@ -258,7 +258,7 @@ SQUEEZE = 500       # line id of every squeeze (AjarHandler.Squeeze): see squeez
 
 
 def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, mouth=HOME_MOUTH, rose=False,
-              barred=False):
+              barred=False, far=None):
     """A way out the player has to build (MAP05 on). The same night room as
     way_out(), 320 by 256 with its south-west corner at x, y on floor 0, but
     its two ends are not joined yet: the far side of the door `colour` is in
@@ -298,8 +298,14 @@ def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, 
     brass) takes any door but `colour` (recess only=4), and hanging a door
     there never makes the way out by itself. What does is the caller's
     (MAP17's ring round the line, map17.zs). In a PUZZLE graph `only={frame:
-    every other door}`, and the goal is the caller's."""
+    every other door}`, and the goal is the caller's.
+
+    `far`: the line id of the door's far side here, where it is not
+    far_id(colour): on a map with two times the copy then is far_id + 20
+    (ajarthen.Times.far, then.zs FarAt; MAP21's night room then), and the
+    frame names that copy as the one that makes it the way out."""
     tinted = dict(color=ROSE) if rose else {}
+    far = far or far_id(colour)
     room(m, [x, x + 160, x + 320] if grille else [x, x + 320], [y, y + 96, y + 160, y + 256],
          lambda i, j: j == 1, ceil=floor + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2",
          floor=floor, **tinted, **(dict(strip=dict(special=1024)) if rose else {}))
@@ -311,11 +317,11 @@ def way_home(m, x, y, colour, *, grille=False, only=False, floor=0, frame=HOME, 
     brass = ("AJXA", "AJXAF")
     # the far side keeps the surround of its colour, so that whoever gets here
     # by another way (a Stray door) can tell which door belongs in the frame
-    recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far_id(colour), frame, far_colour=colour, **tinted)
+    recess(m, (x, y + 96), (x, y + 160), (-1, 0), floor, far, frame, far_colour=colour, **tinted)
     # ... and a frame that takes that door only says so: its brass is inlaid
     # with the door's colour
-    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, frame, far_id(colour),
-           trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=colour if barred else far_id(colour),
+    recess(m, (x + 320, y + 96), (x + 320, y + 160), (1, 0), floor, frame, far,
+           trim=(f"AJXA{colour}", f"AJXF{colour}") if only else brass, home=colour if barred else far,
            only=4 if barred else only, **tinted)
     for xx in (x, x + 320):
         m.line((xx, y + 96), (xx, y + 160), id=mouth)
