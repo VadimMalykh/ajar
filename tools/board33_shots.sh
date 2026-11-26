@@ -4,11 +4,14 @@
 # a contact sheet build/board33/sheet_look<n>.jpg (each view's number on it).
 #   AJAR_QUICK=1 AJAR_OUT=build/look1.pk3 AJAR_POWER=1 ./build.sh
 #   tools/board33_shots.sh 1 build/look1.pk3        (look 1; 0 and the plain level's package for the plain level)
+#   tools/board33_shots.sh 4 build/mix.pk3          (4 or mix: the game's own look, AJAR_POWER unset; look4/)
 # The look's textures and flats, one sheet: build/board33/tex_look<n>.jpg (from the package).
 set -e -o pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
 n="$1"; pk3="$2"
+[ "$n" = mix ] && n=4
+P="$n"; [ "$n" = 4 ] && P="[123]"     # (the mix's textures are of all three looks)
 B="$PWD/build/board33"
 out="$B/raw_$n"
 rm -rf "$out" "$B/look$n"; mkdir -p "$out" "$B/look$n"
@@ -25,9 +28,9 @@ docker run --rm -u "$U" -v "$B":/w -w /w --entrypoint sh dpokidov/imagemagick -c
     -pointsize 16 sheet_look$n.jpg"
 if [ "$n" != 0 ]; then
   rm -rf "$B/tex_$n"; mkdir -p "$B/tex_$n"
-  (cd "$B/tex_$n" && unzip -q -j "$ROOT/$pk3" "textures/AJP$n*" "flats/AJP$n*")
+  (cd "$B/tex_$n" && unzip -q -j "$ROOT/$pk3" "textures/AJP$P*" "flats/AJP$P*")
   docker run --rm -u "$U" -v "$B":/w -w /w/tex_$n --entrypoint sh dpokidov/imagemagick -c "
-    montage -label '%t' \$(ls AJP${n}[A-Z][A-Z][0-9]*.png) \$(ls AJP${n}??.png) AJP${n}SKY.png -tile 14x -geometry '128x128>+3+3' \
+    montage -label '%t' \$(ls AJP${P}[A-Z][A-Z][0-9]*.png) \$(ls AJP${P}??.png) \$(ls AJP${P}SKY.png) -tile 14x -geometry '128x128>+3+3' \
       -background '#222' -fill white -pointsize 11 ../tex_look$n.jpg"
 fi
 echo "look $n: $i shots"

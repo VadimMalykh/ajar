@@ -298,10 +298,12 @@ def wall_image(look, spec, w=None, H=None, z0=None, shift=0):
     return out
 
 
-def picture(look, spec):
+def picture(look, spec, base_look=None):
+    """A picture painted by `look` over its wall (spec["basespec"]) painted by `base_look` (the look of the
+    place it hangs on; by default `look`)."""
     if spec.get("basespec"):
         b = dict(spec["basespec"])
-        w = wall_image(look, b, spec["w"], spec["H"], spec["z0"], spec["shift"])
+        w = wall_image(base_look or look, b, spec["w"], spec["H"], spec["z0"], spec["shift"])
     else:
         w = Wall(spec["w"], spec["H"], spec["z0"])
     look.PICTURES[spec["pic"]](w, spec)
@@ -309,12 +311,18 @@ def picture(look, spec):
 
 
 def make(out, S):
-    """The textures, pictures, flats and sky MAP33's map (tools/map_station.py, `S`) asks for in its look."""
+    """The textures, pictures, flats and sky MAP33's map (tools/map_station.py, `S`) asks for in its look or
+    its mix (each texture in the look named in it: tools/power33.py, Look)."""
     n = getattr(S, "POWER", 0)
     if not n:
         return
-    look = module(n)
     L = S.LOOKSPEC
+    mods = {}
+
+    def mod(k):
+        if k not in mods:
+            mods[k] = module(k)
+        return mods[k]
 
     def put(kind, nm, im):
         key = f"{kind}/{nm}.png"
@@ -322,9 +330,11 @@ def make(out, S):
         out[key] = im.png()
     for nm, spec in L.tex.items():
         if spec["kind"] == "wall":
-            put("textures", nm, wall_image(look, spec).im)
+            put("textures", nm, wall_image(mod(spec["look"]), spec).im)
         else:
-            put("textures", nm, picture(look, dict(spec, **spec["params"])).im)
-    for slot in sorted(L.flats):
-        put("flats", f"AJP{n}{slot}", look.FLATS[slot]())
-    put("textures", f"AJP{n}SKY", look.sky())
+            b = spec.get("basespec")
+            put("textures", nm, picture(mod(spec["look"]), dict(spec, **spec["params"]),
+                                        mod(b["look"]) if b else None).im)
+    for lk, slot in sorted(L.flats):
+        put("flats", f"AJP{lk}{slot}", mod(lk).FLATS[slot]())
+    put("textures", f"AJP{L.sky}SKY", mod(L.sky).sky())

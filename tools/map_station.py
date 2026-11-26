@@ -2208,10 +2208,12 @@ def walk_lengths(step=16):
 WALK = walk_lengths()
 
 # =====================================================================================
-# THE LOOK (AJAR_POWER=1, 2, 3; unset or 0 the plain level): textures, tints and pictures laid over the
-# finished map, after every check (tools/power33.py; the art tools/gfx_power*.py). Nothing moves.
+# THE LOOK: textures, tints and pictures laid over the finished map, after every check (tools/power33.py;
+# the art tools/gfx_power*.py). Nothing moves. AJAR_POWER unset (or "mix"): the game's look, the mix Vadim
+# chose from the look board (power33.MIX); 1, 2, 3 one look whole; 0 the plain level.
 # =====================================================================================
-POWER = int(os.environ.get("AJAR_POWER") or "0")
+POWER = os.environ.get("AJAR_POWER") or "mix"
+POWER = POWER if POWER == "mix" else int(POWER)
 MAPINFO = {}         # what the build changes in src/mapinfo.txt for this map (the look's sky)
 if POWER:
     import power33

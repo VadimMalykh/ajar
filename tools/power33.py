@@ -1,5 +1,5 @@
-"""MAP33's looks, the map's side (AJAR_POWER=1, 2, 3; tools/map_station.py calls apply() once the map is
-built and checked). The three looks are three states of one power station (1 "Temple of Power", 2 "The
+"""MAP33's looks, the map's side (tools/map_station.py calls apply() once the map is built and checked:
+AJAR_POWER unset or "mix", the game's own look, MIX below; 1, 2, 3 one look whole; 0 the plain level). The three looks are three states of one power station (1 "Temple of Power", 2 "The
 Grid", 3 "Cold Reserve"); the art is tools/gfx_power.py (the slots, shared) and tools/gfx_power<k>.py (each
 look's painters). This file says which slot each surface of the map wears; it is the same for every look.
 
@@ -21,6 +21,13 @@ Rules (the session's brief, 2026-11-26):
 The slots are named in gfx_power.SLOTS (walls) and gfx_power.FLATS (flats); pictures by gfx_power.PICTURES.
 A wall texture is f"AJP{look}{slot}{nn}": a slot with its parameters (the floor its band is over, the part),
 H and z0 from the heights it is shown at (found by laying the map once). A picture is f"AJP{look}Q{nn}".
+
+The mix: each place belongs to a group (GROUPS) and wears its group's look; the names carry the look they
+are painted in, so that AJP1..., AJP2... and AJP3... stand side by side in one build. A picture (the five, the
+plates over and beside the ways, INSTRUMENT STORE, DANGER plates on walls: PICTURE_KINDS) is painted by the
+"pictures" look over the wall of the place it hangs on, in that place's look; an object's own face (a
+boiler's front, a casing's side, a transformer's end, a cabinet's, the chimney's plate, windows and
+pilasters drawn on a wall) goes with its place.
 """
 import math
 import os
@@ -35,46 +42,69 @@ R_BAYS = [(5376, 2048, 5472, 2144), (6016, 2048, 6112, 2144), (6624, 2048, 6720,
           (6944, 2304, 7040, 2400), (6944, 2560, 7040, 2656), (6944, 3072, 7040, 3168)]
 DOOM_TEX = {"MARBGRAY", "SUPPORT3", "EXITSTON"}
 
+# MAP33's look as chosen by Vadim from the look board (2026-11-26): group -> look (1 "Temple of Power",
+# 2 "The Grid", 3 "Cold Reserve"). AJAR_POWER unset (or "mix") builds this; Doom's share is as it is.
+MIX = dict(yards=2, boiler=1, machine=1, cable=1, hall=3, pictures=3)
+GROUPS = ("yards", "boiler", "machine", "cable", "hall", "pictures")
+# yards: everything out of doors (the coal yard, the stack court and the chimney, the yard in the middle on its
+#        three levels and the pump shed, the switchyard and its hut, the pond, the outfall, the cooling tower)
+#        and the sky; boiler, machine, cable: part 1's, 2's and 3's rooms and ways indoors (the gatehouse
+#        with part 1; box 2 with part 2, box 3 with part 3); hall: the switchgear hall L and its three stands;
+#        pictures: the kinds below.
+PICTURE_KINDS = {"plan", "rules", "shadow", "single", "synchro", "plate", "plateside", "store", "danger"}
+PART_GROUP = {1: "boiler", 2: "machine", 3: "cable"}
+
 
 def _b36(n):
     return B36[n // 36] + B36[n % 36]
 
 
 class Look:
-    """The textures a look asks for: walls (a slot and its parameters), pictures, flats; and the faces of the
-    map that wear a picture or an object's own art."""
+    """The textures a look (or the mix) asks for: walls (a slot and its parameters, in a look), pictures,
+    flats; and the faces of the map that wear a picture or an object's own art. `looks` maps each group to
+    its look; use(group) says which group's places are being dressed."""
 
     def __init__(self, n):
-        self.n = n
-        self.tex = {}                 # name -> spec: kind "wall" or "pic", slot/kind, W, params, lo, hi
+        self.n = n                    # 1, 2, 3 or "mix"
+        self.looks = dict(MIX) if n == "mix" else {g: n for g in GROUPS}
+        self.cur = None
+        self.tex = {}                 # name -> spec: kind "wall" or "pic", look, slot/kind, W, params, lo, hi
         self.keys = {}
         self.count = {}
-        self.flats = set()
+        self.flats = set()            # (look, slot)
         self.faces = []               # dict(P0, P1, part, name, w, scale, offx): power33_faces
         self.problems = []
         self.collect = False
+        self.sky = self.looks["yards"]
 
-    def wall(self, slot, **params):
-        key = ("wall", slot, tuple(sorted(params.items())))
+    def use(self, group):
+        self.cur = self.looks[group]
+
+    def wall(self, slot, look=None, **params):
+        lk = look or self.cur
+        key = ("wall", lk, slot, tuple(sorted(params.items())))
         if key not in self.keys:
             assert slot in gfx_power.SLOTS, slot
-            i = self.count[slot] = self.count.get(slot, -1) + 1
-            name = f"AJP{self.n}{slot}{_b36(i)}"
+            i = self.count[(lk, slot)] = self.count.get((lk, slot), -1) + 1
+            name = f"AJP{lk}{slot}{_b36(i)}"
             self.keys[key] = name
-            self.tex[name] = dict(kind="wall", slot=slot, W=gfx_power.SLOTS[slot]["w"], params=params,
+            self.tex[name] = dict(kind="wall", look=lk, slot=slot, W=gfx_power.SLOTS[slot]["w"], params=params,
                                   lo=1e9, hi=-1e9)
         return self.keys[key]
 
-    def flat(self, slot):
+    def flat(self, slot, look=None):
         assert slot in gfx_power.FLATS, slot
-        self.flats.add(slot)
-        return f"AJP{self.n}{slot}"
+        lk = look or self.cur
+        self.flats.add((lk, slot))
+        return f"AJP{lk}{slot}"
 
     def pic(self, kind, w, base=None, **params):
         assert kind in gfx_power.PICTURES, kind
-        i = self.count["Q"] = self.count.get("Q", -1) + 1
-        name = f"AJP{self.n}Q{_b36(i)}"
-        self.tex[name] = dict(kind="pic", pic=kind, w=w, base=base, params=params, lo=1e9, hi=-1e9, shift=0)
+        lk = self.looks["pictures"] if kind in PICTURE_KINDS else self.cur
+        i = self.count[(lk, "Q")] = self.count.get((lk, "Q"), -1) + 1
+        name = f"AJP{lk}Q{_b36(i)}"
+        self.tex[name] = dict(kind="pic", look=lk, pic=kind, w=w, base=base, params=params, lo=1e9, hi=-1e9,
+                              shift=0)
         return name
 
 
@@ -90,7 +120,7 @@ def _dot(p, d):
 
 
 def apply(S, n):
-    """Dress the map of tools/map_station.py (the module S) in look n."""
+    """Dress the map of tools/map_station.py (the module S) in look n (1, 2, 3, or "mix": MIX)."""
     m = S.m
     L = Look(n)
     S.LOOKSPEC = L
@@ -128,6 +158,7 @@ def apply(S, n):
     WAYS = set()             # corridors, stairs, lobbies: the room's own wall goes on over them
     BAYS = set()             # Doom's bays: the room's own wall over their mouths
     ROLE = {}
+    LOOKOF = {}              # sector -> the look it is dressed in (the hook's own walls: pits, trays)
 
     def dress(i, wall=None, side=None, ftex=None, ctex=None, tint="room", way=False, role=None):
         s = secs[i]
@@ -147,6 +178,7 @@ def apply(S, n):
         if way:
             WAYS.add(i)
         ROLE[i] = role or ROLE.get(i)
+        LOOKOF[i] = L.cur
 
     W, F_ = L.wall, L.flat
     SKY = "F_SKY1"
@@ -157,6 +189,7 @@ def apply(S, n):
 
     # the last hall's patches and strip: their floors exactly as built (AJLITE, its tint and light in raw),
     # the ceiling the hall's, no tint over it
+    L.use("hall")
     for i, s in enumerate(secs):
         if s["ftex"] == "AJLITE":
             s["color"] = None
@@ -174,6 +207,7 @@ def apply(S, n):
         fl = s["floor"]
         col = s["color"]
         # S, the gatehouse
+        L.use("yards" if within(i, S.YARD_BOX) or (within(i, S.STACK) and s["ctex"] == SKY) else "boiler")
         if within(i, S.S_BOX):
             if fl == 40:
                 dress(i, wall=W("TD", F=0, part=1, top=192), side=W("CT"), ftex=F_("TK"), ctex=F_("PK"), role="S")
@@ -226,6 +260,7 @@ def apply(S, n):
             dress(i, wall=W("TH", F=0, part=1), side=W("GG"), ftex=F_("CQ"), ctex=F_("RG"), role="gantry")
 
     # --- R, the turbine hall; the mezzanine ---------------------------------------------------------
+    L.use("machine")
     for i, s in enumerate(secs):
         if i in KEEP or i in ROLE or s["id"] != S.RT or not within(i, S.R_BOX):
             continue
@@ -254,8 +289,10 @@ def apply(S, n):
         if i in KEEP or i in ROLE:
             continue
         fl = s["floor"]
+        L.use("machine")
         if s["id"] == S.ajarthird.box_tag(2) or s["id"] == S.ajarthird.box_tag(3):
             k = 2 if s["id"] == S.ajarthird.box_tag(2) else 3
+            L.use(PART_GROUP[k])
             dress(i, wall=W("TD", F=0, part=k, top=160), side=riser(i), ftex=F_("TZ"), ctex=F_("PK"), role="box")
         elif within(i, S.GALLERY):
             dress(i, wall=W("TD", F=0, part=2, top=160), side=riser(i), ftex=F_("TZ"), ctex=F_("PK"), role="gallery")
@@ -272,6 +309,7 @@ def apply(S, n):
 
     # --- the yard in the middle ---------------------------------------------------------------------
     L1, L2, L3, YP = S.L1, S.L2, S.L3, S.YPLACE
+    L.use("yards")
     for i in [S.LEDGE1_SEC] + S.TERR_SECS:
         dress(i, wall=W("YD", F=0, part=1), side=W("SF", F=S.FLOOR2, part=2), ftex=F_("SB"), role="ledge1")
     for i in [S.LEDGE3_SEC] + S.CORNER_SECS:
@@ -302,6 +340,7 @@ def apply(S, n):
             continue
         fl = s["floor"]
         col = s["color"]
+        L.use("cable" if any(within(i, t) for t in S.TUN) or within(i, S.RELAY) or within(i, S.DUCT) else "yards")
         if any(within(i, t) for t in S.TUN):
             low = s["ceil"] == 72
             dress(i, wall=W("TU", F=0, part=3), side=W("TU", F=0, part=3), ftex=F_("CF"),
@@ -348,6 +387,7 @@ def apply(S, n):
         if i in KEEP or i in ROLE:
             continue
         fl = s["floor"]
+        L.use("hall")
         if s["id"] == S.LASTT:
             if any(within(i, p) for p in S.PEDESTALS) and fl == S.FL + 72:
                 dress(i, wall="MARBGRAY", side="MARBGRAY", ftex="FLOOR4_8", ctex=F_("KF"), role="pedestal")
@@ -376,6 +416,7 @@ def apply(S, n):
         col = s["color"]
         p = part(i)
         if col in part_colours and p:
+            L.use("yards" if s["ctex"] == SKY else PART_GROUP[p])
             dress(i, wall=W("CO", F=s["floor"], part=p, top=s["ceil"]), side=riser(i),
                   ftex=F_("TZ"), ctex=SKY if s["ctex"] == SKY else F_("PK"), tint=None, way=True, role="way")
     LEFT = [i for i, s in enumerate(secs) if i not in KEEP and i not in ROLE]
@@ -386,7 +427,7 @@ def apply(S, n):
     power33_faces.hang(S, L, ROLE)
 
     # --- the hook: every side's last texture and offsets; laid once to find each texture's heights ----
-    m.line_hook = make_hook(S, L, OPEN, GLASS, WAYS, BAYS, ROLE)
+    m.line_hook = make_hook(S, L, OPEN, GLASS, WAYS, BAYS, ROLE, LOOKOF)
     L.collect = True
     m.parts()
     L.collect = False
@@ -397,14 +438,16 @@ def apply(S, n):
     for name, t in L.tex.items():           # a picture is painted on its wall's texture: that texture's heights
         if t["kind"] == "pic" and t["base"]:
             b = L.tex[t["base"]]
-            t["basespec"] = dict(slot=b["slot"], W=b["W"], params=b["params"])
-    S.MAPINFO = {'sky1 = "SKY2", 0': f'sky1 = "AJP{n}SKY", 0.2'}
-    S.MEASURE.append(f"    the look {n} ({gfx_power.NAMES.get(n, '?')}): {sum(1 for t in L.tex.values() if t['kind'] == 'wall')} "
+            t["basespec"] = dict(slot=b["slot"], W=b["W"], params=b["params"], look=b["look"])
+    S.MAPINFO = {'sky1 = "SKY2", 0': f'sky1 = "AJP{L.sky}SKY", 0.2'}
+    what = (f"the mix ({', '.join(f'{g} {k}' for g, k in L.looks.items())})" if n == "mix"
+            else f"the look {n} ({gfx_power.NAMES.get(n, '?')})")
+    S.MEASURE.append(f"    {what}: {sum(1 for t in L.tex.values() if t['kind'] == 'wall')} "
                      f"wall textures, {sum(1 for t in L.tex.values() if t['kind'] == 'pic')} pictures and plates, "
                      f"{len(L.flats)} flats; {len(L.faces)} faces")
 
 
-def make_hook(S, L, OPEN, GLASS, WAYS, BAYS, ROLE):
+def make_hook(S, L, OPEN, GLASS, WAYS, BAYS, ROLE, LOOKOF):
     """udmf's line hook: the room's own wall over its ways; the faces; every look texture laid by world
     position along the wall and pegged so that its row 0 stands at its z0 (Doom's pegging rules: a one-sided
     wall from its ceiling, or its floor if lower-unpegged; an upper from the lower ceiling, or its own if
@@ -449,9 +492,9 @@ def make_hook(S, L, OPEN, GLASS, WAYS, BAYS, ROLE):
             if B is not None and F["floor"] < B["floor"] and given["lower"] is None:
                 r = ROLE.get(f)
                 if r in ("spiderpit", "condpit"):         # a pit's own walls
-                    sd["texturebottom"] = L.wall("SW" if r == "spiderpit" else "CW")
+                    sd["texturebottom"] = L.wall("SW" if r == "spiderpit" else "CW", look=LOOKOF[f])
             if B is not None and F["ceil"] > B["ceil"] and ROLE.get(f) == "tunnel" and ROLE.get(o) == "tunnel":
-                sd["texturetop"] = L.wall("TR")                 # a cable tray's edge
+                sd["texturetop"] = L.wall("TR", look=LOOKOF[f])  # a cable tray's edge
             for part, key in (("top", "texturetop"), ("mid", "texturemiddle"), ("bottom", "texturebottom")):
                 name = sd.get(key)
                 if name is None or given[{"top": "upper", "mid": "mid", "bottom": "lower"}[part]] is not None:

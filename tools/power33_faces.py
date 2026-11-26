@@ -84,6 +84,7 @@ def hang(S, L, ROLE):
         add(Q1, P1, "mid", "SUPPORT3", 64, offx=40 if edge < 32 else 32, cut=True)     # or the middle of one)
 
     # === part 1 ==============================================================================================
+    L.use("boiler")       # (each place's own art in its group's look: power33.MIX; pictures: their own)
     # S: the station plan on the north wall (what the player faces at the start), the rules on the east wall
     wallpic((160, 3200), (416, 3200), (0, 1), "plan", "picture 1, the station plan (S, north wall)", plan=station_plan(S))
     wallpic((768, 2880), (768, 3072), (1, 0), "rules", "picture 2, the safety rules (S, east wall)")
@@ -93,12 +94,14 @@ def hang(S, L, ROLE):
                           ((x1, y2), (x1, y1), (1, 0))):
             wallface(a, b, out, gp)
     plate((448, 3200), (576, 3200), (0, 1), ("COAL YARD",), 96, 1)
+    L.use("yards")
     # the coal yard: tall windows high in the walls it shares with buildings (the gallery's, the boiler house's)
     for k, x in enumerate((640, 768, 1376)):
         wallpic((x, 3712), (x + 64, 3712), (0, -1), "window", f"coal yard window", lit=k % 2)
     for k, y in enumerate((3840, 4032, 4224)):
         wallpic((1920, y), (1920, y + 64), (1, 0), "window", f"coal yard window", lit=(k + 1) % 2)
     beside((1920, 4288), (1920, 4352), (1, 0), ("BOILER", "HOUSE"), 96, -1, 1)
+    L.use("boiler")
     # the boiler house: the boilers' fronts (BLUE's frame in the first one's, its columns kept clear), windows
     for k, b in enumerate(S.BOILERS):
         gap = (S.FRAME_B[0] - b[0], S.FRAME_B[1] - b[0]) if k == 0 else None
@@ -113,6 +116,7 @@ def hang(S, L, ROLE):
     beside((3520, 4992), (3584, 4992), (0, 1), ("PUMPS",), S.CAT + 96, 1, 1)
     # the pump room: over the stairs down to the stack court
     plate((4608, 4608), (4608, 4736), (1, 0), ("STACK",), S.CAT + 128, 1)
+    L.use("yards")
     # the stack court: the chimney's sixteen faces and its plate, the plate over the way to the yard's terrace
     ch = L.wall("CH")
     C = S.CHIMNEY
@@ -134,6 +138,7 @@ def hang(S, L, ROLE):
     beside((5040, 3392), (5040, 3456), (1, 0), ("GANTRY",), 96, 1, 1)
 
     # === part 2 ==============================================================================================
+    L.use("machine")
     plate((896, 3504), (1024, 3504), (0, 1), ("GALLERY",), 96, 2)
     plate((3712, 3520), (3840, 3520), (0, -1), ("WORKSHOP",), 96, 2)
     wallpic((3840, 2464), (3840, 2656), (1, 0), "shadow", "picture 3, the shadow board (the workshop, east wall)")
@@ -162,12 +167,14 @@ def hang(S, L, ROLE):
             doom_edges((7040, y1), (7040, y2), (1, 0), 16)
 
     # === part 3 ==============================================================================================
+    L.use("cable")
     plate((128, 2304), (256, 2304), (0, -1), ("CABLE", "TUNNEL"), 96, 3)
     plate((1280, 1984), (1280, 2112), (-1, 0), ("CABLE", "TUNNEL"), 96, 3)
     plate((2816, 1984), (2816, 2112), (1, 0), ("RELAY", "ROOM"), 128, 3)
     plate((3424, 1792), (3552, 1792), (0, -1), ("COOLING", "POND"), 96, 3)
     beside((4864, 1792), (4864, 1856), (1, 0), ("CABLE", "DUCT"), S.TF + 96, -1, 3)
     wallpic((3584, 1856), (3584, 2112), (1, 0), "single", "picture 4, the single-line diagram (the relay room, east wall)")
+    L.use("yards")
     # the switchyard: the transformers' ends, numbered T1 to T8 in the generator's order; DANGER plates
     for k, t in enumerate(S.TRANS):
         for a, b, out, danger in (((t[0], t[1]), (t[2], t[1]), (0, 1), k % 2 == 0), ((t[0], t[3]), (t[2], t[3]), (0, -1), k % 2 == 1)):
@@ -186,6 +193,7 @@ def hang(S, L, ROLE):
             wallface(a, b, (cx - (a[0] + b[0]) / 2, cy - (a[1] + b[1]) / 2), tp, fit=True)
 
     # === the last hall ======================================================================================
+    L.use("hall")
     wallpic((7904, 3392), (8096, 3392), (0, 1), "synchro", "picture 5, the synchroscope (L, north wall)")
     for k, c in enumerate(S.SWITCHGEAR):
         for j, (a, b, out) in enumerate((((c[0], c[1]), (c[2], c[1]), (0, 1)), ((c[0], c[3]), (c[2], c[3]), (0, -1)))):

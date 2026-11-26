@@ -1393,7 +1393,7 @@ def make_all():
     import gfx_highwater                                         # MAP20's look, Municipal (before the flipped copies:
     import map_highwater                                         # the swimming bath's copy flips its walls)
     gfx_highwater.make(out, map_highwater)
-    import gfx_power                                             # MAP33's look (AJAR_POWER; none: nothing)
+    import gfx_power                                             # MAP33's look (AJAR_POWER=0: nothing)
     import map_station
     gfx_power.make(out, map_station)
     import ajarmap
