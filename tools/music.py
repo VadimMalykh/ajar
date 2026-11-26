@@ -181,29 +181,33 @@ and home (the brass's). The two tunes stand below as patterns
 (ENGINE_OVER_RIFF, ENGINE_CHORUS), with a second way of playing each (the
 long notes walked through) and both cut for a bar of twelve.
 
-The ten are the last of TRACKS, 26 to 30 the fast ones and 31 to 35 the
-slow ones. In each the riff's notes and both tunes are there in their
-order; what changes is the rhythm, the metre, the key, who plays what, and
-a tune's second time. None plays on a map until Vadim has chosen.
-- Gallop (E, 150): the riff stretched over two bars as a gallop, the hidden
-  notes as fifths a beat apart; all guitars.
-- Shuffle (D, 12/8): the riff in triplets; a rock organ has the verse tune.
-- in Seven (D, 7/8): the riff with its last two notes cut off.
-- Machine (C, 140): the riff shared between a synth bass (the hammered note)
-  and a square wave (the hidden notes), four on the floor; a guitar joins
-  in the second chorus.
-- Upside Down (A, 138): the hammered note on top, a muted guitar on one
+Ten were written, five fast and five slow, each with the riff's notes and
+both tunes in their order and the rhythm, the metre, the key and the
+instruments changed. Vadim: "Delete 26, 28, 31, 32": the Gallop, in Seven,
+Heavy (the three nearest to Paradox Engine's own distorted guitar) and
+Still (ambient, three lines moving one at a time) are removed. Six stay,
+and none plays on a map until he says so. So that the three he did not
+name keep their numbers (27, 29, 30), the last three were moved into the
+empty places, as before:
+- 26 Piano (D, 63): the riff in the left hand at a quarter speed, the tunes
+  in the right; a cello later. (It was 35.)
+- 27 Shuffle (D, 12/8): the riff in triplets; a rock organ has the verse
+  tune.
+- 28 Night Shift (E, 12/8 at 60): the riff a fretless bass line four bars
+  long; vibraphone, a muted trumpet. (It was 34.)
+- 29 Machine (C, 140): the riff shared between a synth bass (the hammered
+  note) and a square wave (the hidden notes), four on the floor; a guitar
+  joins in the second chorus.
+- 30 Upside Down (A, 138): the hammered note on top, a muted guitar on one
   note all through; the hidden notes a heavy riff under it.
-- Heavy (B, 66): the riff at half speed, its fifths left ringing; slow
-  drums, a choir, a bell.
-- Still (D, 54): no beat; three lines of which no two move at once, as
-  Distant Galaxy IV is made: the top line is the hidden notes, a bar each,
-  then the chorus's chords reached a note at a time.
-- Music Box (G, 3/4): a slow waltz with the riff as its accompaniment.
-- Night Shift (E, 12/8 at 60): the riff a fretless bass line four bars
-  long; vibraphone, a muted trumpet.
-- Piano (D, 63): the riff in the left hand at a quarter speed, the tunes
-  in the right; a cello later.
+- 31 Music Box (G, 3/4): a slow waltz with the riff as its accompaniment.
+  (It was 33.)
+
+With that he asked: "Also can you create by 5 versions combining melodic
+ideas from Paradox Engine with harmonic ideas from Distang Galaxy, Garmony
+and Mysterium?" Fifteen, five on each harmony, after the six in TRACKS (32
+to 46). How the Engine's riff and tunes are laid on each harmony stands
+above each set, further down.
 """
 import random
 import re
@@ -1725,56 +1729,7 @@ ENGINE_CHORUS_12 = {
 }
 
 
-# --- the five fast ones on Paradox Engine: their functions go between this line and the next marker ---
-
-def engine_gallop():
-    """E, 150 a minute. Paradox Engine as a gallop. Its riff is stretched over two bars of an eighth and two
-    sixteenths on the low E, the hidden notes as bare fifths a beat apart (F, G, F; then A, G), a flat 5th and a turn
-    in the last two bars of eight; a picked bass doubles it an octave down without the fifths. All guitars: an
-    overdriven lead has the tune over the riff and the chorus tune, a second lead an octave under it in the second
-    and third chorus; held fifths and a rock organ's triads in the chorus."""
-    p = Piece("Paradox Engine, Gallop", 150)
-    gallop = {
-        "G1": "1! . 1 1 b2'^ . 1 1 b3'^ . 1 1 b2'^ . 1 1",
-        "G2": "4'^! . 1 1 b3'^ . 1 1 1 . 1 1 1 . 1 1",
-        "G1b": "1! . 1 1 b2'^ . 1 1 b3'^ . 1 1 b5'^ . 1 1",
-        "G2b": "4'^! . 1 1 b3'^ . 1 1 b2'^ . 1 1 1 . 5 b7",
-    }
-    four = rep("G1 G2 G1b G2b", 1)
-    group = rep("G1 G2 G1 G2 G1 G2 G1b G2b", 1)
-    up = rep("G1+5 G2+5 G1b+5 G2b+5", 1) + four                         # the 4th for four bars, then home
-    chorus = rep("C+8 C+10 C C", 2)                                      # flat 6th, flat 7th, home, home
-    quiet = lambda bars: rep("_", bars)
-    # 68 bars: 4 in; verse 8, the 4th and home 8; chorus; verse; chorus; 4 of the bass alone, 4 with the guitar
-    # back; verse; chorus
-    p.voice("guitar", DISTORTION, 40, gallop | {"C": "1*! - - 1* - - 1* - - - 1* - 1* - - -"},
-            four + group + up + chorus + group + chorus + quiet(4) + four + group + chorus,
-            vel=86, gate=0.8, volume=94, pan=50)
-    p.voice("bass", PICKBASS, 28, {k: v.replace("^", "").replace("!", "") for k, v in gallop.items()} | {
-        "C": "1 . . 1 . . 1 . . . 1 . 1 . . .",
-    }, quiet(4) + group + up + chorus + group + chorus + four + four + group + chorus, vel=106, gate=0.8, volume=115)
-    pads = rep("M-4 M-2 m m", 2)
-    p.voice("organ", ORGAN, 52, {k: f"1{k} - - - - - - - - - - - - - - -" for k in "mM"},
-            quiet(20) + pads + quiet(8) + pads + quiet(16) + pads, vel=62, gate=1.0, volume=74, pan=80, reverb=50)
-    tunes = ENGINE_CHORUS | {"R" + k[1:]: v for k, v in ENGINE_OVER_RIFF_2.items()} | {
-        "T" + k[1:]: v for k, v in ENGINE_CHORUS_2.items()} | ENGINE_OVER_RIFF
-    sung, sung2 = "S1 S2 S3 S4 S5 S6 S7 S8", "T1 T2 T3 T4 T5 T6 T7 T8"
-    p.voice("lead", OVERDRIVE, 64, tunes,                                # the tune over the riff an octave up
-            rep("_", 20, sung, 1, "Q1+12 Q2+12 Q3+12 Q4+12 Q5+12 Q6+12 Q7+12 Q8+12", 1, sung2, 1, "_", 8,
-                "R1+12 R2+12 R3+12 R4+12 R5+12 R6+12 R7+12 R8+12", 1, sung, 1), vel=94, gate=0.97, volume=102,
-            pan=60, reverb=60)
-    p.voice("second lead", OVERDRIVE, 52, tunes, rep("_", 36, sung2, 1, "_", 16, sung, 1), vel=82, gate=0.97,
-            volume=84, pan=84, reverb=60)
-    p.drums({
-        "h": {HAT: "x.x.x.x.x.x.x.x."},
-        "a": {KICK: "x.xx....x.xx....", SNARE: "....x.......x...", HAT: "X.x.X.x.X.x.X.x."},
-        "f": {KICK: "x.xx....x.......", SNARE: "....x.....x.xx..", TOM2: "..............x.", TOM4: "...............x",
-              HAT: "X.x.X.x.X......."},
-        "c": {CRASH: "x...............", KICK: "x..x..x...x.x...", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
-        "r": {KICK: "x..x..x...x.x...", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
-    }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 2, "c r r f", 2, "a a a f", 4, "c r r f", 2), vel=98)
-    return p
-
+# --- the fast ones on Paradox Engine (three kept of five) ---
 
 def engine_shuffle():
     """D, a 12/8 shuffle, 132 a minute. Paradox Engine in triplets: its riff falls into four beats of three by
@@ -1820,71 +1775,6 @@ def engine_shuffle():
         "c": {CRASH: "x...........", KICK: "x.....x.....", SNARE: "...x.....x..", RIDE: "x.xx.xx.xx.x"},
         "r": {KICK: "x.....x.....", SNARE: "...x.....x..", RIDE: "x.xx.xx.xx.x"},
     }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 2, "c r r f", 2, "a a a f", 3, "c r r f", 2), vel=96)
-    return p
-
-
-def engine_seven():
-    """D, in seven, 138 a minute. Paradox Engine with the last two notes of its riff cut off: a bar of seven eighths
-    (3 + 2 + 2), so the hidden notes come round a sixteenth sooner each bar than the ear expects. The distorted
-    guitar has the riff as in Paradox Engine, the bass seven eighths on D with a turn; both tunes cut to fourteen
-    steps. A rock organ has the tune over the riff, an overdriven lead the chorus tune over held fifths and strings;
-    the second time round they change over, the third time both have the chorus."""
-    p = Piece("Paradox Engine, in Seven", 138, steps=14, sig=(7, 8))
-    riff = "X1 X1 X1 X2"
-    chorus = rep("H+8 H+10 H H", 2)
-    quiet = lambda bars: rep("_", bars)
-    # 68 bars: 4 in; verse 8, the 4th and home 8; chorus; verse; chorus; 4 of the bass alone, 4 with the guitar
-    # back; verse; chorus
-    p.voice("guitar", DISTORTION, 38, {
-        "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3'",
-        "X2": "1! 1 b2' 1 1 b3' 1 1 b5' 1 1 4' b3' b2'",
-        "H": "1*! - - - - - 1* - - - 1* - 1* -",
-    }, rep(riff, 3, "X1+5 X1+5 X1+5 X2+5", 1, riff, 1) + chorus + rep(riff, 2) + chorus + quiet(4) + rep(riff, 3)
-            + chorus, vel=86, gate=0.8, volume=94, pan=50)
-    eighths = "p p p q"
-    p.voice("bass", PICKBASS, 26, {
-        "p": "1 . 1 . 1 . 1 . 1 . 1 . 1 .",
-        "q": "1 . 1 . 1 . 1 . 1 . 1 . b3 b2",
-        "c": "1 . . 1 . . 1 . . . 1 . 1 .",
-    }, rep("_", 4, eighths, 2, "p+5 p+5 p+5 q+5", 1, eighths, 1, "c+8 c+10 c c", 2, eighths, 2, "c+8 c+10 c c", 2,
-           eighths, 4, "c+8 c+10 c c", 2), vel=106, gate=0.8, volume=115)
-    over = {
-        "Q1": "1 - - - - - b2 - 1 - - b7, - -",
-        "Q2": "1 - - - - - - - . . 5, - b7, -",
-        "Q3": "1 - - - - - b2 - b3 - - b2 - -",
-        "Q4": "1 - - - - - - - - - - . . .",
-        "Q5": "5 - - - - - b6 - 5 - - 4 - -",
-        "Q6": "b3 - - - - - 4 - b3 - - b2 - -",
-        "Q7": "1 - - b2 - - b3 - - - 4 - - -",
-        "Q8": "1' - - - - - - - - - - - - -",
-    }
-    sung = {
-        "S1": "1' - - - - - b6 - - - 1' - - -",
-        "S2": "2' - - - - - b7 - - - 2' - - -",
-        "S3": "4' - - b3' - - 1' - - - - - b7 -",
-        "S4": "1' - - - - - - - - - - . . .",
-        "S5": "4' - - - - - 1' - - - 4' - - -",
-        "S6": "5' - - - - - 2' - - - 5' - - -",
-        "S7": "5' - - 4' - - b3' - - - 4' - 5' -",
-        "S8": "1'' - - - - - - - - - - - - -",
-    }
-    q, s = "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8".split(), "S1 S2 S3 S4 S5 S6 S7 S8".split()
-    p.voice("organ", ORGAN, 74, over | sung,                              # the chorus tune an octave down from its root
-            quiet(28) + q + [f"{x}-12" for x in s] + quiet(16) + [f"{x}-12" for x in s], vel=82, gate=0.97,
-            volume=92, pan=76, reverb=50)
-    p.voice("lead", OVERDRIVE, 62, over | sung,                           # the tune over the riff an octave up
-            quiet(20) + s + quiet(24) + [f"{x}+12" for x in q] + s, vel=92, gate=0.97, volume=100, pan=56, reverb=60)
-    pads = rep("M+8 M+10 m m", 2)
-    p.voice("strings", STRINGS, 50, {k: f"1{k} - - - - - - - - - - - - -" for k in "mM"},
-            quiet(20) + pads + quiet(8) + pads + quiet(16) + pads, vel=64, gate=1.0, volume=78, pan=40, reverb=60)
-    p.drums({
-        "h": {HAT: "x.x.x.x.x.x.x."},
-        "a": {KICK: "x..x....x.x...", SNARE: "....x......x..", HAT: "X.x.X.x.X.x.X."},
-        "f": {KICK: "x..x....x.....", SNARE: "....x.....x...", TOM2: "...........x..", TOM3: "............x.",
-              TOM4: ".............x", HAT: "X.x.X.x.X....."},
-        "c": {CRASH: "x.............", KICK: "x.....x...x.x.", SNARE: "....x......x..", RIDE: "x.x.x.x.x.x.x."},
-        "r": {KICK: "x.....x...x.x.", SNARE: "....x......x..", RIDE: "x.x.x.x.x.x.x."},
-    }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 2, "c r r f", 2, "a a a f", 4, "c r r f", 2), vel=98)
     return p
 
 
@@ -1983,92 +1873,7 @@ def engine_upside_down():
     return p
 
 
-# --- the five slow ones on Paradox Engine: their functions go between this line and TRACKS ---
-
-def engine_heavy():
-    """B, 66 a minute. Paradox Engine slow and heavy, in the manner of Dead Letter Office. The riff at half its
-    speed, in eighths, two bars to one of the original: the key note on the low string, the hidden notes as fifths
-    left ringing, the bass an octave under without the fifths. The tune over the riff on an overdriven lead in long
-    notes; the chorus tune on a choir with a horn an octave under it, a tubular bell on the key note; kick, one
-    snare a bar, timpani."""
-    p = Piece("Paradox Engine, Heavy", 66)
-    riff = {
-        "a": "1! . 1 . b2'^ - 1 . 1 . b3'^ - 1 . 1 .",
-        "b": "b2'^ - 1 . 1 . 4'^ - 1 . b3'^ - 1 . 1 .",
-        "d": "b5'^ - 1 . 1 . 4'^ - 1 . b3'^ - b2'^ - 1 .",
-    }
-    group, chorus = rep("a b a b a b a d", 1), rep("H+8 H+10 H H", 2)                # chorus: flat 6th, flat 7th, home
-    # 48 bars: the riff 8 (the guitar alone for 4), verse 8, chorus 8, verse 8, chorus 8, the riff 8
-    p.voice("guitar", DISTORTION, 35, riff | {"H": "1*! - - - - - - - 1* - - - - - - -"},
-            group * 2 + chorus + group + chorus + group, vel=88, gate=0.95, volume=92, pan=50)
-    p.voice("bass", PICKBASS, 23, {k: v.replace("^", "") for k, v in riff.items()} | {
-        "H": "1^! - - - - - - - 1^ - - - - - - -",
-    }, rep("_", 4, "a b a d", 1) + group + chorus + group + chorus + group, vel=102, gate=0.9, volume=110)
-    p.voice("timpani", TIMPANI, 47, {
-        "t": "1 . . . . . . . . . . . . . 1 1",
-    }, rep("_", 4, "t _", 6, "t+8 t+10 t _", 2, "t _", 4, "t+8 t+10 t _", 2, "t _", 2, "_", 4), vel=84, gate=0.9,
-            volume=96, pan=74, reverb=70)
-    walked = {k.replace("Q", "W"): v for k, v in ENGINE_OVER_RIFF_2.items()}
-    p.voice("lead", OVERDRIVE, 71, ENGINE_OVER_RIFF | walked,
-            rep("_", 8, "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1, "_", 8, "W1 W2 W3 W4 W5 W6 W7 W8", 1, "_", 16),
-            vel=96, gate=0.97, volume=102, reverb=70)
-    sung = ENGINE_CHORUS | {k.replace("S", "T"): v for k, v in ENGINE_CHORUS_2.items()}
-    first, second = "S1 S2 S3 S4 S5 S6 S7 S8", "T1 T2 T3 T4 T5 T6 T7 T8"
-    p.voice("choir", CHOIR, 59, sung, rep("_", 16, first, 1, "_", 8, second, 1, "_", 8), vel=86, gate=1.0,
-            volume=98, pan=72, reverb=90)
-    p.voice("horn", HORN, 47, sung, rep("_", 16, first, 1, "_", 8, second, 1, "_", 8), vel=70, gate=0.97,
-            volume=80, pan=40, reverb=80)
-    p.voice("bell", BELLS, 59, {
-        "B": "1' - - - - - - - - - - - - - - -",
-    }, rep("_", 16, "B _ B _", 2, "_", 8, "B _ B _", 2, "_", 8), vel=78, gate=1.0, volume=88, pan=30, reverb=90)
-    p.drums({
-        "a": {KICK: "x...............", SNARE: "........x.......", RIDE: "x...x...x...x..."},
-        "c": {CRASH: "x...............", KICK: "x...............", SNARE: "........x.......", RIDE: "x...x...x...x..."},
-        "f": {KICK: "x...............", SNARE: "........x.......", RIDE: "x...x...x.......", TOM1: "............x...",
-              TOM2: ".............x..", TOM3: "..............x.", TOM4: "...............x"},
-    }, rep("_", 4, "c a a f", 10, "_", 4), vel=96)
-    return p
-
-
-def engine_still():
-    """D, 54 a minute. Ambient, made as Distant Galaxy IV is: three lines and a bass, no two lines moving at once,
-    a round of 16 bars played three times. The top line is the riff's hidden notes, one to a bar (E flat, F, E flat,
-    G, F, E flat), over a D that does not move, the middle line stepping aside to make room for them; then the
-    chorus's three chords (B flat, C, D minor) are reached a note at a time, each line climbing by a step, and all
-    three come down to bare D. From the second time a harp says the top line again an octave higher, then has the
-    first half of the chorus tune in long notes; the third time a celesta with it, an octave over."""
-    p = Piece("Paradox Engine, Still", 54)
-    top = "D4 Eb4 F4 Eb4 G4 F4 Eb4 D4           D4 D4 D4/E4 E4 E4/F4 F4/E4 E4/D4 D4"
-    middle = "A3 A3 A3 A3/Bb3 Bb3 Bb3/A3 A3 A3  Bb3 Bb3 C4 C4 D4 D4 D4 D4/A3"
-    low = "D3 D3 D3 D3 D3 D3 D3 D3              D3 D3 D3 E3 E3 F3 E3 D3"
-    bass = "D2 D2 D2 D2 D2 D2 D2 D2             Bb1 Bb1 C2 C2 D2 D2 D2 D2"
-    # 48 bars, three times round: the four lines; the harp the second and third time; the celesta the third
-    three = lambda text, **how: spell(" ".join(text.split() * 3), **how)
-    tops, middles, lows = three(top, again=2), three(middle), three(low)
-    sounding = None
-    for b, notes in enumerate(tops):
-        for s in sorted(notes):
-            if notes[s] == sounding and (s in middles[b] or s in lows[b]):
-                del notes[s]                    # struck again, but another line moves there: it only holds
-            sounding = notes.get(s, sounding)
-    p.voice("top line", VOICE, 62, *write(tops, 62), vel=66, gate=1.0, volume=88, pan=52, reverb=90)
-    p.voice("middle line", SLOWSTR, 62, *write(middles, 62), vel=64, gate=1.0, volume=88, pan=36, reverb=80)
-    p.voice("low line", WARMPAD, 62, *write(lows, 62), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
-    p.voice("bass", CONTRABASS, 38, *write(three(bass, again=2), 38), vel=80, gate=1.0, volume=100)
-    said, _ = echo(spell(top), 62)              # bars 1 to 8: the top line again, a beat later, an octave up
-    tune = {                                    # bars 9 to 15: the chorus tune's first half in long notes
-        "c9": ". . . . . . . . 1' - - - b6 - - -", "c10": "1' - - - - - - - - - - - . . . .",
-        "c11": ". . . . . . . . 2' - - - b7 - - -", "c12": "2' - - - - - - - - - - - . . . .",
-        "c13": ". . . . . . . . 4' - - - b3' - - -", "c14": "1' - - - - - - - b7 - - - - - - -",
-        "c15": "1' - - - - - - - - - - - . . . .",
-    }
-    round_ = [f"n{b}" for b in range(8)] + [f"c{b}" for b in range(9, 16)] + ["_"]
-    p.voice("harp", HARP, 62, said | tune, rep("_", 16) + round_ * 2, vel=74, gate=1.0, volume=94, pan=30,
-            reverb=80)
-    p.voice("celesta", CELESTA, 74, said | tune, rep("_", 32) + round_, vel=58, gate=1.0, volume=80, pan=76,
-            reverb=80)
-    return p
-
+# --- the slow ones on Paradox Engine (three kept of five) ---
 
 def engine_music_box():
     """G, 92 a minute, in three. Paradox Engine as a toy: a slow waltz whose accompaniment is the riff, the key note
@@ -2178,6 +1983,78 @@ def engine_piano():
     return p
 
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Paradox Engine's riff and tunes on the harmony of three other pieces, 2026-11-26 (see the top): five of each.
+#
+# 1. On Vadim's sketch distant_galaxy_theme (its chords: home minor; the same chord a semitone lower; home with no
+#    third; the 4th minor; then the flat 3rd over a bass on the 5th, the 5th minor, the flat 6th, and the 5th
+#    augmented becoming major). VERSE, 16 bars, his first four chords four bars each: the Engine's riff on the key
+#    note, the whole riff a semitone lower, the riff with no third in it (its flat 3rd and 4th a step higher) on the
+#    key note, the riff on the 4th. The tune over it is the first half of the Engine's (Q1 to Q4) four times, at
+#    those levels: at home, a semitone lower, a fifth higher (where it has no third in it either), on the 4th.
+#    CHORUS, 8 bars, his other four chords a bar each, twice, the bass on the 5th, 5th, flat 6th, 5th: the Engine's
+#    chorus tune with its rhythm and shape kept and its notes moved onto these chords (GALAXY_CHORUS); in the last
+#    bar of four the flat 3rd stays over the augmented chord and falls to the 2nd as it becomes major, as in his
+#    sketch.
+
+GALAXY_VERSE_LEVELS = (0, -1, 7, 5)             # Q1 to Q4 at each, four bars each
+GALAXY_CHORUS = {
+    "D1": "5' - - - - - - - b3' - - - 5' - - -",             # over the flat 3rd chord, the 5th in the bass
+    "D2": "b7' - - - - - - - 5' - - - b7' - - -",            # over the 5th minor
+    "D3": "4' - - - b3' - - - 1' - - - - - b7 -",            # over the flat 6th (the Engine's own third bar)
+    "D4": "b3' - - - - - - - 2' - - - - - - -",              # over the 5th augmented, then major
+    "D5": "b3'' - - - - - - - b7' - - - b3'' - - -",
+    "D6": "2'' - - - - - - - b7' - - - 2'' - - -",
+    "D7": "b3'' - - - b2'' - - - 1'' - - - b2'' - b3'' -",
+    "D8": "b3'' - - - - - - - 2'' - - - - - - -",
+}
+
+# 2. On Vadim's sketch garmonic (a note held on top, the 5th, while the two notes under it slip down a semitone one
+#    after the other, so home minor becomes the major chord on the 5th; then home minor over its flat 3rd, the major
+#    chord on the major 7th with that flat 3rd kept, the same augmented as the 5th comes back, the minor chord on
+#    the major 3rd, and home with the 5th kept). VERSE, 8 bars, his first move twice: two bars of the Engine's riff
+#    at home, in the second of them its last flat 3rd slipped to the 2nd; then two bars of the whole riff a semitone
+#    lower. The Engine's tune slips with it (GARMONIC_VERSE). CHORUS, 8 bars, his other chords: bass on the flat
+#    3rd, flat 3rd, 7th, 7th, 3rd, 3rd, home, home; the Engine's chorus tune, rhythm and shape kept, on these
+#    chords (GARMONIC_CHORUS). The Engine's hammered note is his held note: the 5th, on TOP, through the verse; the
+#    flat 3rd for the chorus's first four bars (the note those chords keep), the 5th again for its last four.
+
+GARMONIC_VERSE = "Q1 Q2 Q3-1 Q4-1 Q5 Q6g Q7-1 Q8-1"         # with ENGINE_OVER_RIFF | GARMONIC_OVER_RIFF
+GARMONIC_OVER_RIFF = {"Q6g": "b3 - - - - - 4 - 2 - - - 1 - - -"}       # Q6, its second half slipped
+GARMONIC_CHORUS = {
+    "T1": "b3' - - - - - - - 1' - - - b3' - - -",            # home minor over the flat 3rd
+    "T2": "5' - - - - - - - b3' - - - 5' - - -",
+    "T3": "b5' - - - - - - - b3' - - - b5' - - -",           # the major chord on the 7th
+    "T4": "5' - - - - - - - - - - - . . . .",                # the same augmented: the 5th comes back
+    "T5": "7' - - - - - - - 5' - - - 7' - - -",              # the minor chord on the major 3rd
+    "T6": "3'' - - - - - - - 7' - - - 3'' - - -",
+    "T7": "b3'' - - - 2'' - - - 1'' - - - 2'' - b3'' -",     # home
+    "T8": "1'' - - - - - - - - - - - - - - -",
+}
+
+# 3. On the harmony of O Magnum Mysterium as Mysterium II has it (one major key, plain chords, the third in the bass
+#    and the bass walking down by step, seconds and sixths added and left, endings from the fourth chord to home).
+#    The Engine's tunes are not changed by a note. Its key note is heard as the THIRD of a major key a major third
+#    lower (D as the third of B flat), where its Phrygian scale is that key's major scale: the flat 2nd that grinds
+#    against the key note in the Engine is here the fourth leaning on the third. Under both tunes the same bass, a
+#    bar a note, walking down the major scale from its third to its third (degrees 3 2 1 7 6 5 4 3). Chords, verse:
+#    I, V, I, V, IV, I, IV, I. Chorus: I, II major (the one chord from outside the key, for the tune's raised fourth),
+#    I, V, vi, V, IV, I. A voice with a tune has its root a major third above the key's.
+
+MYSTERIUM_BASS = "3 2 1 7, 6, 5, 4, 3,"                     # a bar each, degrees of the major key
+MYSTERIUM_VERSE = "I V I V IV I IV I"
+MYSTERIUM_CHORUS = "I II I V vi V IV I"
+
+
+# --- on Distant Galaxy's harmony: the five functions go between this line and the next marker ---
+
+
+# --- on Garmonic's harmony: the five functions go between this line and the next marker ---
+
+
+# --- on Mysterium's harmony: the five functions go between this line and TRACKS ---
+
+
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_GARF", "fast, the Doom way, on Vadim's sketch garmonic: one note held by a muted guitar, the riff slipping under it", garmonic_fast),
@@ -2204,18 +2081,16 @@ TRACKS = [
     ("AJM_GAR2", "ambient, the same sketch as a chain: every note falls a semitone, the chords climb by fifths", garmonic_two),
     ("AJM_GALF", "fast, the Doom way, on Vadim's sketch distant_galaxy_theme: a riff that slips a semitone and comes back", distant_galaxy_fast),
     ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
-    # the five fast ones on Paradox Engine (26 to 30 in the lab): their lines go under this one
-    ("AJM_ENF1", "fast, on Paradox Engine: its riff as a gallop over two bars, the hidden notes as fifths; all guitars and an organ", engine_gallop),
+    # on Paradox Engine, the six kept of ten (26 to 31 in the lab)
+    ("AJM_ENS5", "slow, on Paradox Engine: a piano, the riff in the left hand and the tunes in the right, a cello later", engine_piano),
     ("AJM_ENF2", "fast, on Paradox Engine: a heavy shuffle in 12/8; a rock organ has the tune, brass and a guitar the chorus", engine_shuffle),
-    ("AJM_ENF3", "fast, on Paradox Engine: its riff cut to a bar of seven; an organ and a lead guitar change tunes", engine_seven),
+    ("AJM_ENS4", "slow, on Paradox Engine: a 12/8 swing after dark, the riff on a fretless bass, vibes, a muted trumpet", engine_night_shift),
     ("AJM_ENF4", "fast, on Paradox Engine: the riff shared by a synth bass and a square wave, four on the floor, a saw lead", engine_machine),
     ("AJM_ENF5", "fast, on Paradox Engine: turned over, the key note on top on a muted guitar, the hidden notes a heavy riff below", engine_upside_down),
-    # the five slow ones on Paradox Engine (31 to 35 in the lab): their lines go under this one
-    ("AJM_ENS1", "slow, on Paradox Engine: heavy, the riff at half speed with its fifths left ringing, a lead, a choir, a bell", engine_heavy),
-    ("AJM_ENS2", "slow, on Paradox Engine: ambient, three lines over a held D, the top one the riff's hidden notes, a harp", engine_still),
     ("AJM_ENS3", "slow, on Paradox Engine: a waltz, the riff as its accompaniment on a celesta, both tunes on a music box", engine_music_box),
-    ("AJM_ENS4", "slow, on Paradox Engine: a 12/8 swing after dark, the riff on a fretless bass, vibes, a muted trumpet", engine_night_shift),
-    ("AJM_ENS5", "slow, on Paradox Engine: a piano, the riff in the left hand and the tunes in the right, a cello later", engine_piano),
+    # on Distant Galaxy's harmony (32 to 36 in the lab): their lines go under this one
+    # on Garmonic's harmony (37 to 41 in the lab): their lines go under this one
+    # on Mysterium's harmony (42 to 46 in the lab): their lines go under this one
 ]
 
 

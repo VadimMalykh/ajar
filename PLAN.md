@@ -18062,3 +18062,50 @@ per group and a line of picks to paste.
 the emitter going dark at OFF (drawn, wired, not photographed: the views
 keep the beam at C); the sprites' size against the player at play speed;
 the light in optics NOW in a fight.
+
+## Music: four of the ten Engine variations removed; fifteen on three harmonies ordered (2026-11-26)
+
+**Vadim**, having heard 26 to 35: "Delete 26, 28, 31, 32", and: "Also can
+you create by 5 versions combining melodic ideas from Paradox Engine with
+harmonic ideas from Distang Galaxy, Garmony and Mysterium?"
+
+Removed from `tools/music.py`: Paradox Engine, Gallop (26, AJM_ENF1), in
+Seven (28, AJM_ENF3), Heavy (31, AJM_ENS1), Still (32, AJM_ENS2). None
+played on a map. Three of them are the ones nearest to Paradox Engine's own
+sound (a distorted guitar on the riff); Still was the ambient one with the
+tunes least to be heard. That is a reading, he gave no reason.
+
+As with "delete 2" and "delete 20", the last pieces were moved into the
+empty places so that the ones he did not name keep their numbers. The lab
+has 31 tracks:
+
+| Lab | Piece | Was |
+|---|---|---|
+| 26 | Paradox Engine, Piano (AJM_ENS5) | 35 |
+| 27 | Paradox Engine, Shuffle (AJM_ENF2) | 27 |
+| 28 | Paradox Engine, Night Shift (AJM_ENS4) | 34 |
+| 29 | Paradox Engine, Machine (AJM_ENF4) | 29 |
+| 30 | Paradox Engine, Upside Down (AJM_ENF5) | 30 |
+| 31 | Paradox Engine, Music Box (AJM_ENS3) | 33 |
+
+The fifteen to come, five on each harmony, are written in three tasks
+(`engine-galaxy` 32 to 36, `engine-garmonic` 37 to 41, `engine-mysterium`
+42 to 46). How the Engine's riff and tunes are laid on each harmony is
+decided and stands in `tools/music.py` above the three marked places; in
+short:
+
+- **Distant Galaxy.** Verse: the Engine's riff on his first four chords,
+  four bars each: at home, the whole riff a semitone lower (his slip), with
+  no third in it, on the 4th; the first half of the Engine's tune over it
+  at those four levels. Chorus: his other four chords, the bass nearly
+  still on the 5th; the Engine's chorus tune, its rhythm and shape kept,
+  moved onto them; his held note falling as the augmented chord turns major.
+- **Garmonic.** His held note on top is the Engine's hammered note (as in
+  Upside Down). Verse: two bars of the riff at home, two a semitone lower,
+  the tune slipping with it. Chorus: his other chords, the chorus tune's
+  shape on them.
+- **Mysterium.** The Engine's tunes unchanged by a note, heard in major:
+  its key note as the third of a major key, where its Phrygian scale is
+  that key's own, and the flat 2nd that grinds in the Engine is the fourth
+  leaning on the third. One bass under both tunes, walking down the scale
+  from third to third; plain chords, endings from the fourth chord to home.
