@@ -17920,7 +17920,7 @@ of then; the bus by `ajarmap.bus(livery=...)` with a new livery.
 5. Does the old bus of MAP10 appear (now), or only the new one?
 6. Is there anybody in the peaceful town? (Ajar has had no people so far.)
 
-## Look: MAP21, the apparatus (board made 2026-11-26, not chosen yet)
+## Look: MAP21, the apparatus (board made 2026-11-26; Vadim chose look 1 for every group the same day)
 
 The board: https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM (published 2026-11-26 from
 `build/board21/`; the page is `design/map21-board.html`). Merged with the level in look 1; Vadim has not chosen.
@@ -18108,9 +18108,12 @@ The board (https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM) was published
 and the level merged in look 1. Vadim, a few minutes after it was
 published: "Yes, I like #1, let's go". Claude reads this as look 1 ("Lamps
 and Reels") for every group, which is what the `APPARATUS` table has, so
-nothing changes in the level. **The reading is not confirmed**: the message
-could also answer the bus idea (the first candidate for what the
-"something" is). Asked.
+nothing changes in the level. Asked, since the message could also have
+answered the bus idea. **Vadim: "Yes, I means 1 for that map21 look."** So
+look 1 is chosen for every group; the `APPARATUS` table stays all 1, and
+looks 2 and 3 stay in `tools/gfx_longrun.py` unused. The bus idea's first
+candidate (the player's own door lets the monsters in) is therefore still
+not confirmed by itself.
 
 ## Music: four of the ten Engine variations removed; fifteen on three harmonies ordered (2026-11-26)
 
