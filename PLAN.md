@@ -17920,7 +17920,7 @@ of then; the bus by `ajarmap.bus(livery=...)` with a new livery.
 5. Does the old bus of MAP10 appear (now), or only the new one?
 6. Is there anybody in the peaceful town? (Ajar has had no people so far.)
 
-## Look: MAP21, the apparatus (board made 2026-11-26, not chosen yet)
+## Look: MAP21, the apparatus (board made 2026-11-26; Vadim chose look 1 for every group the same day)
 
 The board: https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM (published 2026-11-26 from
 `build/board21/`; the page is `design/map21-board.html`). Merged with the level in look 1; Vadim has not chosen.
@@ -18108,9 +18108,12 @@ The board (https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM) was published
 and the level merged in look 1. Vadim, a few minutes after it was
 published: "Yes, I like #1, let's go". Claude reads this as look 1 ("Lamps
 and Reels") for every group, which is what the `APPARATUS` table has, so
-nothing changes in the level. **The reading is not confirmed**: the message
-could also answer the bus idea (the first candidate for what the
-"something" is). Asked.
+nothing changes in the level. Asked, since the message could also have
+answered the bus idea. **Vadim: "Yes, I means 1 for that map21 look."** So
+look 1 is chosen for every group; the `APPARATUS` table stays all 1, and
+looks 2 and 3 stay in `tools/gfx_longrun.py` unused. The bus idea's first
+candidate (the player's own door lets the monsters in) is therefore still
+not confirmed by itself.
 
 ## Music: four of the ten Engine variations removed; fifteen on three harmonies ordered (2026-11-26)
 
@@ -18158,3 +18161,302 @@ short:
   that key's own, and the flat 2nd that grinds in the Engine is the fourth
   leaning on the third. One bass under both tunes, walking down the scale
   from third to third; plain chords, endings from the fourth chord to home.
+
+## Colour doors join places, never times (decided 2026-11-26)
+
+**Vadim** (2026-11-26): "Colour doors should move me spatially, not
+temporally. If I'm coming from NOW, it should move me to RED door exit now,
+but if I go with this door through temporal door to THEN, it now should move
+me to the same place THEN."
+
+**The rule.** A colour door (RED to PINK) joins places, never times. Only
+the clocked door joins the times.
+- A colour door's far side is a spot in space. On a map with two times it is
+  built in both copies: now, and then at the same spot plus the offset.
+- Hung in a frame now, the door opens on its far side now; hung in a frame
+  then, on the same far side then. The far side at the other time stays
+  shut, as the far side of a door that hangs nowhere is.
+- Everything else follows from where the frame is: what is seen through it,
+  who walks and shoots through it, monsters following, the door taken down
+  from either time.
+- A frame with no twin (the lab's 131, then only) is a frame at its own
+  time: a colour door hung there opens on its far side at that time.
+- The clocked door is unchanged: the frame it hangs in, at the other time.
+- Company: only the clocked door hung joins the times. A colour door never
+  does, so with only colour doors hung a monster alive then shows now as its
+  old corpse.
+- Maps with no AjarThen thing (every level but THEN and MAP21) behave as
+  before, and their wads do not change.
+
+**What it replaces.** In "The clocked door" above: "every plain door keeps
+working: its far side is a place in one of the two times, and carried across
+it makes a second link between the times". A plain door carried across no
+longer links the times. And the lab's RED, whose far side was in the
+corridor now only, so that RED carried into then and hung in 131 led back to
+now ("The then and now lab", the hall): it now leads to the corridor then.
+
+**How the engine tells the copies apart.** By a second line id. The far side
+of colour c is line 200 + c now (as on every map) and 200 + c + 20 then
+(`AjarThen.THEN_ID`, the same 20 as a then frame's id over its twin's: RED
+201 and 221). In `Hang` a colour door's `args[0]`, its far side, is set to
+the copy at the time of its frame (`AjarHandler.FarAt` in then.zs; a frame
+is then by `AjarThen.InThen`); `Unhang` gives back its own (`AjarDoor.ownFar`,
+the copy now). As with a Pair's leaf, whatever asks where a hung door leads
+reads `args[0]` and is told the truth: the portal links, sight and shots
+through doors, `AjarSense` (monsters following), the watchers of optics.zs
+(a watch names the copy its room is in), the frame that takes one door only
+(it asks `FarAt` of the door in hand). At load the copy then is shut
+like the copy now (`ThenFar`). On a map with one time there is no AjarThen,
+`FarAt` returns `args[0]` as it is and `ThenFar` 0, so nothing changes: a
+second id touches less than resolving one id by time would, since GZDoom's
+Line_SetPortalTarget acts on every line with an id and always targets the
+first. `Linked()` (company) passes over colour doors. A far side built in
+one copy only (`Copy.far`, MAP21 until it follows) still works as before:
+with no copy then, the door leads to the one there is.
+
+**The generator.** `Times.far(a, b, out, colour, floor=0, target=None,
+now=, then=)` builds the far side in both copies (line ids by
+`Copy.far_line`; the dummy portal target is the other copy). `Copy.far`
+stays for MAP21 until it follows, and its docstring says it is against the
+rule.
+
+**The lab now.** RED's far side is in the corridor's south wall at both
+times (201 now, 221 then); the corridor is built at both times already, so
+nothing else was needed. The rest of the lab is as it was. Hung in 101 now
+RED opens on the corridor now; carried through the clocked door and hung in
+131 (or any frame then), on the corridor then.
+
+**MAP21.** Its puzzle under this rule is `puzzle21.spatial()` (13 door
+actions, 150165 states, 0 stuck, nothing lost; solved 2026-11-26). The map
+follows.
+
+**Tests** (`MAP=THEN MODE=n tools/smoke.sh`, all pass on the branch's
+build):
+1. the door, now 41 checks (was 30). Changed: RED carried through the
+   clocked door and hung in 131 now leads to the corridor then
+   (`redLeadsThen`, was `redLeadsNow`), and back. New: both copies of RED's
+   far side shut at the start; hung then, 221 open and 201 shut; at the end
+   of the mode RED hung in 101 now: 201 open, 221 shut, and walking through
+   comes out in the corridor now; the clocked door swapped in for it: RED in
+   hand, both copies shut; carried through the clocked door into then and
+   hung in 131: 221 open, 201 shut; the clocked door taken down then while
+   RED hangs then: `Linked()` false (company counts the times as apart);
+   RED taken down then is its own again (201) with both copies shut; hung
+   now again, 201 open and 221 shut, and through it the corridor now.
+2. the drip, 12. 3. the belt, 17. 4. the beam, 15 (all unchanged).
+5. company, now 16 (was 14). New: after the stand-ins go, the clocked door
+   taken down and RED hung in 125 then: RED leads to 221, nothing joins the
+   times, and the monster alive then still shows now as its old corpse (1
+   stand-in for 1 alive then).
+6. 22 views, unchanged.
+
+**Other levels.** Every other map's wad is byte for byte what the branch
+point builds (47 of 48 the same; only THEN.wad differs; MAP21.wad the
+same). Their own tests on the branch's build: `MAP=TEST MODE=1` 7 of 7,
+`MAP=LAB MODE=1` 16 of 16, `MAP=MAP11 MODE=1` 24 of 24 (level exited),
+`MAP=MAP20 MODE=1` 124 checks (its high water part 90 of 90) and the level
+exited, `MAP=MAP09 MODE=1` 57 of 57 and the level exited by its way out.
+The full build (with the solver) passes, every level 0 stuck; its MAP21 line
+(13 door actions, 150165 states) is the graph's, not yet the map's.
+
+**Choices made here.**
+- A second line id for the copy then (+20), not one id resolved by time:
+  Line_SetPortalTarget acts on every line with the id and targets the first,
+  so two lines with one id cannot be told apart by the engine.
+- `args[0]` of a hung colour door is the copy it leads to, as a Pair leaf's
+  is the frame its twin hangs in, so that no reader of `args[0]` had to
+  change; `ownFar` (a new field of AjarDoor) keeps the copy now.
+- A frame is then or now by where its AjarFrame thing stands
+  (`AjarThen.InThen`), the same test the clocked door's twin uses.
+- A far side whose copy then is missing (or not then) leads to the one there
+  is, as before: MAP21 is not broken by the engine before it follows.
+- The frame that takes one door only (`args[4]` 1 or 5) compares the far
+  side the door would open on at that frame (`FarAt`), so that a then frame
+  of that kind names the copy then, as a way out the player builds
+  (`ComeHome`) would, since it compares the hung door's `args[0]`.
+
+**Not tested / not played by hand.** Nothing played by a person. The Stray
+door on a map with two times: its pool lists each colour door's `args[0]`,
+so only the copy a door hangs at (or the copy now) and never both; no map
+with two times has a Stray door. A way out the player builds, a chain of
+brass frames, a watcher, a route board's lamps and a thief on a map with
+two times: none exist; the way-out frames would have to name the copy of
+their time. Monsters following RED through a frame then (only the clocked
+door is tested for that). Save and load (the new field is saved with the
+door, not tried).
+
+## MAP21: colour doors by time, the pass office, and the way out built (built 2026-11-26)
+
+**Vadim** (2026-11-26): "I also don't like that exit is ready again. Let's
+make me build it."
+
+MAP21 under the rule "Colour doors join places, never times" (the section
+above), with a way out the player builds, as MAP05 on. Fable's design,
+proven by the solver first (`tools/puzzle21.py`: `spatial()`,
+`built_exit()`, `BUILT = built_exit(second="any")`, `BUILT["complete"] =
+True`); built by an Opus worker on branch `map21-doors`. The level agrees
+with that graph region by region and frame by frame; `PUZZLE =
+puzzle21.BUILT` in `tools/map_longrun.py`.
+
+**The design** (coordinates NOW's; THEN is 8192 north).
+1. *RED.* Its far side at both times in the lobby's west wall (LX, 288..352),
+   out (-1, 0): hung NOW it opens on the lobby NOW, hung THEN on the lobby
+   THEN (key 1). RED leans on the gallery as before. The lobby NOW is no
+   longer a secret (the special at LX+896..LX+1024 x 256..352 is gone);
+   frame 110 stays (any door); the megasphere moved to the pass office; the
+   blue armour stays there as a plain pickup.
+2. *BLUE.* Its far side at both times at (1136..1200, 224), out (0, -1). NOW
+   as built: arriving draws both bolts (the hall wakes). THEN it stands
+   inside the *pass office*, a booth 1104..1232 x 224..288 against the
+   vestibule's south wall: locked for the night, no door; a counter strip
+   8 wide on three sides, solid to 24, glass (`AJGLAS`, blocking everything,
+   shots too) from 24 to 112, a plate PASSES over it. Inside the megasphere
+   (1168, 256), and the booth's floor is a secret sector. NOW only its
+   footprint on the floor. Region `boothT`: reached only through BLUE hung
+   in a frame THEN, left only back through BLUE.
+3. *GREEN.* Leans in the bay cellar NOW (1928, 952), against its west wall,
+   facing east, clear of the super shotgun and of the slot to the secret
+   (region `bcelN`). Taking it starts an ambush of four in the goods bay
+   above, the bay's own mechanism (cause 10 + colour, as RED's): 2 imps and
+   a knight at once, a chaingunner a second later.
+4. *The night room* (352..672 x 784..1040), at both times.
+   - THEN: `ajarmap.way_home` instead of `way_out`. GREEN's far side (its
+     copy THEN, 223) in the west end (x 352, y 880..944), the brass frame
+     HOME (190) in the east end, GREEN's alone. HOME is a THEN frame with no
+     twin. GREEN hung in HOME opens onto the room it hangs in, and its mouths
+     end the level. `way_home` has a new parameter `far` (the far side's line
+     id, default `far_id(colour)` as before), so that HOME names the copy
+     THEN (`ComeHome` compares the hung door's `args[0]`); every other map's
+     wad is byte for byte as before.
+   - The way in on foot stays the brass shutter (480..544 x 768..784).
+   - NOW: the same room, dead. Night textures, dark (light 70), no
+     candelabra; GREEN's far side (203) in the west end; stone
+     where the frame is THEN; no way in but GREEN; four armour bonuses
+     along the runner. Region `nightN`.
+5. *The shutter* is open only while the machine runs: keys 1 and 2 turned at
+   the desk THEN (they stay turned) and the clocked door in 101 (either
+   time). Take the clocked door out: the machine stops (the hall THEN dims,
+   a sound) and the shutter comes down; hang it back: it runs and the
+   shutter goes up. The shutter is moved by the desk's script
+   (`AjarLongRunDesk.Tick`), 4 units a tic, and never closes on anything
+   standing under it (it waits). The keys can be turned with the frame
+   empty: they stay turned, and the machine starts when the door is hung
+   ("You turn the keys. The frame is empty: the machine waits for the
+   clocked door."). The stop and start are said after the frame's own line
+   ("The machine stops: the brass shutter comes down." / "The machine runs
+   again: the brass shutter goes up."). Graph: hallT <-> nightT, keys "12",
+   `hung: (CLOCK, 101)`.
+6. *A second pocket frame*, 104 (1344..1408, 160) in the corridor's south
+   wall, out (0, -1), twin 124 THEN; any door at both times. 103 unchanged
+   (NOW the clocked door's alone); 123 takes GREEN too.
+7. *The engine: a plain door swapped in for the hung clocked door* (Fable's
+   decision, 2026-11-26). The solver's graph swaps a carried door for the
+   hung clocked door (the solution does it at 128, 108 and 106); the engine
+   refused that ("The clocked door hangs in this frame, now and then. Take
+   it down before you hang another."). Now a carried plain door may be
+   swapped in at either time: both leaves of the clocked door come down, the
+   plain door hangs in the frame the player stands at (that one frame, at
+   that time, leading to its far side at that time), and the player holds
+   the clocked door ("You swap the clocked door for the RED one."). Why:
+   swapping a carried door for a hung one is the game's base move since
+   MAP02 and no door is ever put down, so the refusal left a player with
+   full hands nothing to do at a clocked frame; and the first MAP21's proof
+   (12 actions, 0 stuck) already assumed the swap. What stays refused: a
+   frame that takes the clocked door only (`args[4]` 6: 101/121, 103) takes
+   no other door, swap or not; the clocked door still does not hang or swap
+   into a frame whose twin holds a door or that has no twin; a frame's own
+   `only` rules come first. Without the swap (the solver changed in a
+   scratch copy, for the record): 18 door actions, 2368229 states, 1408
+   stuck.
+
+**The solver** (`python3 tools/puzzle21.py exit2`; the full build runs it
+once and keeps the proof in build/proofs.json): 16 door actions, 2657941
+states, 0 stuck, nothing lost; the valve, the belt, the beam and the
+vestibule are each needed. Without the second pocket frame 1024 states are
+stuck; without the booth 33360; without frame 110 256. The solution:
+the clocked door 121 -> 123; -> 105, the valve shut, key 2; -> 108, the belt
+run, RED from the gallery, the belt stopped; RED swapped in at 128, the
+lobby THEN, key 1, back, the clocked door swapped back; through 108 NOW, RED
+swapped in at 108; the clocked door to 106, the beam to A, BLUE from closet
+A; BLUE swapped in at 106: the vestibule NOW (the bolts); the clocked door
+in 101; GREEN from the bay cellar; through 101 to the hall THEN, the
+shutter, GREEN in 190, out.
+
+**src/zscript/map21.zs.** The desk and the shutter as in 5. MODE=1 walks
+the solution with checks on the way (see the tests). MODE=2, 3, 4
+as before, MODE=3 with the new views. The test finds GREEN as well.
+
+**Tests** (in the worktree's build):
+- `MAP=MAP21 MODE=1 TIMEOUT=700` (smoke_MAP21_1.cfg now waits 14000): the
+  walk of the solution, 85 checks, all pass, and out by GREEN's mouths
+  in HOME (`outByTheWayOut`: the way out built, the machine running, the
+  player THEN; `levelExited`). New checks on the way: the shutter shut at the
+  start; GREEN leaning in the bay cellar; RED swapped in for the clocked door
+  at 128 THEN leads to the lobby THEN; the clocked door swapped back; RED
+  swapped in at 108 NOW leads to the lobby NOW, and back; BLUE swapped in at
+  106 NOW leads to the vestibule NOW (bolts); the clocked door back in 101
+  with the machine standing (keys not turned); BLUE carried through 101, the
+  keys turned: the machine starts, the shutter open (128); BLUE hung in 123
+  THEN leads to the booth (222), the megasphere taken, a secret found; back
+  through BLUE; the clocked door taken out of 121: the machine stops, the
+  shutter shut (0); hung back: runs, open (128); GREEN's ambush (4, all in
+  the bay) comes; GREEN hung in 104 NOW leads to the dead night room, its
+  four armour bonuses taken, and back; GREEN refused at 101 ("This frame
+  takes only the clocked door."); through the shutter with GREEN; GREEN in
+  190 (it leads to 223): the way out built.
+- `MAP=MAP21 MODE=2` 14 of 14, `MODE=4` 20 of 20 (poses unchanged).
+- `MAP=MAP21 MODE=3`: 41 views (smoke_MAP21_3.cfg: 82 screenshots). New: the
+  lobby NOW (no secret), the vestibule NOW (the booth's footprint) and THEN
+  (the pass office), inside the booth twice, frame 104 NOW and 124 THEN,
+  GREEN in the bay cellar, the dead night room NOW from both ends, the night
+  room THEN (HOME), the shutter opening, open, and shut again with the
+  clocked door taken.
+- `MAP=THEN MODE=1` now 45 checks (was 41): `secondDoorRefusedThen/Now` are
+  now `swapInForClockedThen/Now` (the plain door in that one frame, the twin
+  empty, the clocked door in hand, the far side at that time open),
+  `swappedRedThenLeadsThen/NowLeadsNow` (walking through), and
+  `clockedSwappedBackThen/Now`. The clock-only refusal is checked on MAP21
+  (`plainRefusedAt101`); the lab has no clock-only frame. MODE=2..6: 12, 17,
+  15, 16, and the views (MODE=6), unchanged. THEN.wad unchanged by this stage.
+- MAP05 and MAP08 MODE=1 (way_home's other users): the way out built and the
+  level exited.
+- `tools/mapcheck.py map_longrun`: the same 7 notes as before (six WALL for
+  targets on walls, one SLOT in the water control sector), 3 secret sectors;
+  thingcheck 0; itemcheck the same 2 notes.
+- The full `./build.sh`: exit 0; MAP21's line "solvable in 16 door actions,
+  2657941 states, 0 stuck", nothing lost; every other level's line as
+  before. Every map wad but MAP21.wad byte for byte main's (0476851), but
+  THEN.wad, which is the stage before's (the colour door rule, not yet in
+  main) byte for byte.
+
+**Older statements now wrong.**
+- "The then and now lab", the clocked door: "Refusals: ... any other door
+  into either frame of the hung clocked door." A carried plain door is now
+  swapped in for it (7 above); only a clock-only frame refuses it. Its test
+  1 "refusals at both frames" is now the swap at both frames.
+- "MAP21 "In the Long Run": the first version, as decided": the night room
+  and "the way out (`ajarmap.way_out`, no far side)"; "RED hung anywhere: the
+  lobby then"; "BLUE hung anywhere: the vestibule now"; the lobby now "is a
+  secret: a megasphere"; step 6 "the machine starts ... the brass shutter
+  opens; out". Now: RED and BLUE lead to their far side at the frame's time;
+  the way out is GREEN hung in HOME; the shutter is open only while the
+  machine runs.
+- "MAP21 ... the first playable version": the lobby NOW "the secret by 110
+  (blue armour), a megasphere"; "Secrets (3): ... the lobby NOW by frame
+  110" (now the pass office THEN); "The desk": "both keys and no clocked
+  door in 101: You turn the keys. The frame is empty." (the keys now turn and
+  stay turned), "the brass shutter opens for good, and the night room is the
+  way out" (it opens while the machine runs; the way out is built); its
+  MODE=1 description and counts (60 checks).
+- "MAP21: the causes made readable": its MODE=1 count (60 checks) and route.
+- "Colour doors join places, never times": "`Copy.far` stays for MAP21 until
+  it follows" and "its MAP21 line (13 door actions, 150165 states) is the
+  graph's, not yet the map's": MAP21 follows now (`Times.far` for RED and
+  BLUE; `Copy.far` is used by no map), and its line is the map's (16 door
+  actions).
+
+**Not tested / not played by hand.** Nothing played by a person. Monsters
+walking under the shutter as it comes down (the wait is tested only by its
+code, not by a monster in the way). GREEN's ambush in play (in the test
+ambushers are counted and removed). Save and load with the machine stopped
+or running.

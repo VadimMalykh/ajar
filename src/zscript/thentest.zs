@@ -3,8 +3,9 @@
 // THEN is NOW + (0, 4096). Frames (NOW / THEN): hall W 101/121, M 102/122,
 // E 103/123 (north walls), belt 104/124, company 105/125, drip 106/126 (west
 // walls), beam 107/127 (north wall); 131 THEN only (W's west wall). RED's far
-// side 201 NOW (corridor, south wall). Causes: 11 the belt, 12 the drip, 13
-// the beam. Bays: hall x 0, belt 896, drip 1536, beam 2176, company 2880.
+// side 201 NOW, 221 THEN (the corridor's south wall: a colour door joins
+// places, never times). Causes: 11 the belt, 12 the drip, 13 the beam. Bays:
+// hall x 0, belt 896, drip 1536, beam 2176, company 2880.
 //   1 the door and the way round; 2 the drip; 3 the belt; 4 the beam;
 //   5 company; 6 views (tools/smoke_THEN_6.cfg shoots at about 50 + 70 n).
 
@@ -67,6 +68,11 @@ class ThenTest : EventHandler
 		return r;
 	}
 	bool Near(double a, double b) { return abs(a - b) < 0.05; }
+	// a portal line open (it leads somewhere), or shut and showing RED's shut door
+	bool Open(int id) { Line l = h.FindLine(id); return l && !(l.flags & Line.ML_BLOCKING); }
+	bool ShutRed(int id) { Line l = h.FindLine(id); return l && (l.flags & Line.ML_BLOCKING) && TexMan.GetName(l.sidedef[0].GetTexture(Side.mid)) ~== "AJDR1"; }
+	string Fars() { return String.Format("red args[0] %d ownFar %d; 201 %s, 221 %s", red.args[0], red.ownFar, Open(201) ? "open" : ShutRed(201) ? "shut" : "?", Open(221) ? "open" : ShutRed(221) ? "shut" : "?"); }
+	bool InCorridor(Actor mo, bool then) { double y = mo.pos.y - (then ? OFF : 0); return InThen(mo) == then && y > -176 && y < -60 && abs(mo.pos.x - 192) < 6 && Facing(mo, 90); }
 	string Steps()
 	{
 		string s = "steps";
@@ -183,13 +189,23 @@ class ThenTest : EventHandler
 			Check("arrivedFacingIn", Facing(mo, 270), Where(mo));
 			Check("thenMusicThen", th.musicThen == 1, String.Format("changes %d", th.musicChanges));
 		}
-		// a second door is refused at either frame of the hung clocked door
+		// a door carried to either frame of the hung clocked door is swapped for it (2026-11-26): both leaves come
+		// down, the carried door hangs in that one frame, at that time, and the clocked door is in hand
 		if (At()) { Pose(mo, 200, 96, 270); red.Used(mo); }
 		if (At()) { Pose(mo, 128, OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("secondDoorRefusedThen", h.carried == red && F(121).door == shadow && clocked.frame == F(101), h.said);
+		if (At()) Check("swapInForClockedThen", h.carried == clocked && F(121).door == red && !F(101).door && !clocked.frame && !shadow.frame
+			&& red.args[0] == 221 && Open(221) && ShutRed(201) && h.said == "You swap the clocked door for the RED one.", Fars() .. "; " .. h.said);
+		if (At()) { Pose(mo, 128, OFF + 452, 90); Keys(WALKKEY); }
+		if (Seg(24) && tt == 23) { Keys(); Check("swappedRedThenLeadsThen", InCorridor(mo, true), Where(mo)); }
+		if (At()) { Pose(mo, 128, OFF + 470, 90); PressUse(mo); }                    // the clocked door back for RED
+		if (At()) Check("clockedSwappedBackThen", h.carried == red && F(121).door && F(121).door.IsClocked() && F(101).door && F(101).door.IsClocked() && ShutRed(201) && ShutRed(221), h.said);
 		if (At()) { Pose(mo, 128, 470, 90); PressUse(mo); }
-		if (At()) Check("secondDoorRefusedNow", h.carried == red && F(101).door == clocked, h.said);
-		if (At()) { h.DropDoor(red, mo); h.carried = null; Pose(mo, 128, OFF + 470, 90); }
+		if (At()) Check("swapInForClockedNow", h.carried == clocked && F(101).door == red && !F(121).door && red.args[0] == 201 && Open(201) && ShutRed(221), Fars() .. "; " .. h.said);
+		if (At()) { Pose(mo, 128, 452, 90); Keys(WALKKEY); }
+		if (Seg(24) && tt == 23) { Keys(); Check("swappedRedNowLeadsNow", InCorridor(mo, false), Where(mo)); }
+		if (At()) { Pose(mo, 128, 470, 90); PressUse(mo); }                          // the clocked door back in 101
+		if (At()) Check("clockedSwappedBackNow", h.carried == red && clocked.frame && shadow.frame && F(101).door && F(121).door, h.said);
+		if (At()) { h.DropDoor(red, mo); h.carried = null; red.SetOrigin((200, 96, 0), false); red.angle = 90; Pose(mo, 128, OFF + 470, 90); }
 		// take it THEN: both frames empty, the door in hand THEN
 		if (At()) PressUse(mo);
 		if (At())
@@ -222,19 +238,21 @@ class ThenTest : EventHandler
 		if (At()) WalkTo(640, 256);
 		if (Seg(60) && tt == 59) Check("reachedFarEnd", !InThen(mo) && mo.pos.x > 560, Where(mo) .. String.Format(" health %d", mo.health));
 
-		// RED, carried through the clocked door and hung THEN, opens onto its far side NOW
-		if (At()) { Pose(mo, 200, 96, 270); red.Used(mo); }
+		// RED, carried through the clocked door and hung THEN, opens onto its far side THEN (2026-11-26: a
+		// colour door joins places, never times)
+		if (At()) { Check("redFarSidesShutAtStart", red.args[0] == 201 && ShutRed(201) && ShutRed(221), Fars()); Pose(mo, 200, 96, 270); red.Used(mo); }
 		if (At()) Pose(mo, 400, 440, 90);
 		if (At()) Keys(WALKKEY);
 		if (Seg(24) && tt == 23) { Keys(); Check("carriedRedIntoThen", InThen(mo) && h.carried == red, Where(mo)); }
 		if (At()) WalkTo(60, OFF + 256);
 		if (Seg(100) && tt == 99) { Info("walked to " .. Where(mo)); Pose(mo, 60, OFF + 256, 180); PressUse(mo); }
 		if (At()) Check("redHungThen", red.frame == F(131), h.said);
+		if (At()) Check("redThenOpensThenNowShut", red.args[0] == 221 && Open(221) && ShutRed(201), Fars());
 		if (At()) Keys(WALKKEY);
 		if (Seg(24) && tt == 23)
 		{
 			Keys();
-			Check("redLeadsNow", !InThen(mo) && mo.pos.y > -176 && mo.pos.y < -60 && abs(mo.pos.x - 192) < 6 && Facing(mo, 90), Where(mo));
+			Check("redLeadsThen", InCorridor(mo, true), Where(mo));
 		}
 		if (At()) { mo.angle = 270; Keys(WALKKEY); }
 		if (Seg(30) && tt == 29)
@@ -255,6 +273,31 @@ class ThenTest : EventHandler
 		if (At()) { Pose(mo, 30, 416, 180); PressUse(mo); }
 		if (At()) { Check("musicLeverOn", !th.musicOff, h.said); Pose(mo, 128, OFF + 256, 0); }
 		if (Seg(3) && tt == 2) Check("onFollowsAgain", th.musicThen == 1, String.Format("changes %d", th.musicChanges));
+
+		// --- a colour door joins places, never times (2026-11-26). RED hangs in 101 NOW, the clocked door
+		// is in hand. RED NOW: its far side NOW open, THEN shut; through it into the corridor NOW
+		if (At()) Check("redNowOpensNowThenShut", red.frame == F(101) && red.args[0] == 201 && Open(201) && ShutRed(221), Fars());
+		if (At()) { Pose(mo, 128, 452, 90); Keys(WALKKEY); }
+		if (Seg(24) && tt == 23) { Keys(); Check("redNowLeadsNow", InCorridor(mo, false), Where(mo)); }
+		// the clocked door swapped in for RED in 101: RED in hand, both its far sides shut
+		if (At()) { Pose(mo, 128, 470, 90); PressUse(mo); }
+		if (At()) Check("redDownBothShut", h.carried == red && clocked.frame == F(101) && shadow.frame == F(121) && red.args[0] == 201 && ShutRed(201) && ShutRed(221), Fars() .. "; " .. h.said);
+		// carried through the clocked door into THEN and hung in 131 (no twin: a frame at its own time)
+		if (At()) { Pose(mo, 128, 452, 90); Keys(WALKKEY); }
+		if (Seg(24) && tt == 23) { Keys(); Check("redCarriedIntoThenAgain", InThen(mo) && h.carried == red, Where(mo)); }
+		if (At()) { Pose(mo, 60, OFF + 256, 180); PressUse(mo); }
+		if (At()) Check("redInTwinlessFrameOpensThen", red.frame == F(131) && red.args[0] == 221 && Open(221) && ShutRed(201), Fars());
+		// the clocked door taken down THEN: RED hung THEN joins nothing across the times
+		if (At()) { Pose(mo, 128, OFF + 470, 90); PressUse(mo); }
+		if (Seg(3) && tt == 2)
+			Check("redThenIsNoLink", h.carried == clocked && !clocked.frame && red.frame == F(131) && !th.Linked() && !th.wasLinked, Fars());
+		// RED taken down THEN (the clocked door put down first) and hung NOW again: NOW
+		if (At()) { h.DropDoor(clocked, mo); h.carried = null; Pose(mo, 60, OFF + 256, 180); PressUse(mo); }
+		if (At()) Check("redDownThenIsItsOwn", h.carried == red && !red.frame && red.args[0] == 201 && red.ownFar == 201 && ShutRed(201) && ShutRed(221), Fars());
+		if (At()) { Pose(mo, 128, 470, 90); PressUse(mo); }
+		if (At()) Check("redNowAgainOpensNow", red.frame == F(101) && red.args[0] == 201 && Open(201) && ShutRed(221), Fars());
+		if (At()) { Pose(mo, 128, 452, 90); Keys(WALKKEY); }
+		if (Seg(24) && tt == 23) { Keys(); Check("redNowAgainLeadsNow", InCorridor(mo, false), Where(mo)); }
 	}
 
 	// === MODE=2: the drip ============================================================================
@@ -492,6 +535,18 @@ class ThenTest : EventHandler
 			Check("hungAgain", clocked.frame == F(125), h.said);
 			Check("standInsGo", standIns == 0, String.Format("%d left", standIns));
 			Check("deadOneStillStays", FindCorpse(killedAt - (0, OFF), null) != null);
+		}
+		// the clocked door down again, and RED hung THEN in its frame: a colour door joins no times
+		// (2026-11-26), so the living THEN still show NOW as old corpses
+		if (At()) { Pose(mo, PEN_X + 60, OFF + 256, 180); PressUse(mo); }
+		if (At()) { h.DropDoor(clocked, mo); h.carried = null; clocked.SetOrigin((PEN_X + 256, OFF + 100, 0), false); red.Used(mo); Pose(mo, PEN_X + 60, OFF + 256, 180); PressUse(mo); }
+		if (Seg(3) && tt == 2)
+		{
+			int standIns = 0;
+			for (int i = 0; i < th.corpses.Size(); i++) if (th.corpses[i] && th.corpses[i].of) standIns++;
+			Check("redHungThenNoCompany", red.frame == F(125) && red.args[0] == 221 && !clocked.frame && !th.Linked(),
+				String.Format("red in %d, args[0] %d", red.frame ? red.frame.args[0] : 0, red.args[0]));
+			Check("standInsStayWithRedThen", standIns > 0 && standIns == Count(true), String.Format("%d stand-ins, %d alive then", standIns, Count(true)));
 		}
 	}
 	int Count(bool inThen)
