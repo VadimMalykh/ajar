@@ -17407,3 +17407,105 @@ apply to a joined level.
 **Open, for Vadim**: which of Doom II's maps are the material (the lab's
 Entryway and Dead Simple were only the test; he does not care for The
 Catacombs).
+
+## The end of MAP30: back in MAP01's cell (Vadim's idea, 2026-11-26; to discuss, nothing designed)
+
+**Vadim** (2026-11-26): "I have some twist idea for the end. Let's just
+document for now, and discuss later. Somewhere in the end of map30 player
+appears in much older version of the room from map01. That should be
+obviously older, partly ruined maybe, but still recognizable. Game ends when
+user went through red door to that small room, and removes door from the
+frame. Not sure how we force him, there should be something to force him to
+do that. Then player either dies, or left the room through temporal door, or
+something else, not sure. The last view we should see - that exact room,
+with red door and frame, where we started map01. Then we see doom guy taking
+the door, setting it into frame and moving to that start room."
+
+**What MAP01 has** (`tools/map_hinges1.py`), so that the end can close on
+it exactly: the player starts locked in the cell (256 by 256, brick, 128
+high) with RED leaning on its wall and one empty frame (101). RED's far side
+is in the hall's west wall. The first thing ever done in the game is: take
+RED, hang it in the cell's frame, step out into the hall.
+
+**Claude's reading of the idea** (to be corrected):
+- "The room from map01" is the hall, where RED's far side is; "that small
+  room" is the cell.
+- At the end of MAP30 the player stands in MAP01's hall, much older. RED
+  hangs in the cell's frame, so its far side in the hall stands open. The
+  player goes through it into the cell and takes RED down. The cell is now
+  as MAP01 begins: a door, an empty frame, no other way out.
+- The last view is the cell as it was at the start of MAP01, and the Doom
+  guy doing the first thing ever done in the game.
+- So the ending is a loop: the door was in the cell at the beginning because
+  the player took it down there at the end. It fits what the concept of 21
+  to 30 has already: "The loops are the player's", the clocked door that
+  nobody made, MAP25 where the player hangs part 1's doors, and MAP30 as
+  "the first frame, and the choice of what hangs in it".
+
+**Ideas added by Claude** (all to argue over; none decided).
+
+*What forces the player to take the door down.*
+1. Denial, the game's own verb ("take a door away so reinforcements cannot
+   arrive", and core rule 5: whatever is on the far side can come to you).
+   Everything from "after" comes down the old hall towards the door, more
+   than can be fought. The cell is the only place to go and the only way to
+   stop what follows is to unhinge RED. MAP01 teaches hanging a door to get
+   out; the last act of the game is the opposite one, taking a door down to
+   shut everything out. This is Claude's first choice.
+2. Something that flows through a hung door (MAP20's water does): the old
+   hall floods or burns, and it comes into the cell until the door is down.
+3. No force at all: the old hall is a dead end, and the game simply ends
+   when RED comes off the cell's frame, as a level ends when a door goes
+   into a brass frame. Quietest, and the player may not guess it.
+
+*What happens to the player then.*
+1. Nothing happens to him: he is the Doom guy of the last view. With the
+   door down the view leaves his eyes, the cell is new again (the same room
+   built twice and cross-faded, as then and now are), and he, no longer
+   steered, takes RED, hangs it and steps out: the player watches himself
+   begin. MAP31 and MAP33 already show the player from outside as a puppet
+   with Doom's own marine sprites, so the picture exists.
+2. He leaves by the clocked door (Vadim's second thought): he leans RED,
+   hangs the clocked door in the cell's frame and goes back to the cell
+   then. That makes the loop a real one by the game's rules (the same cell,
+   earlier), but one door is carried at a time, so RED has to be carried
+   through after it and the clocked door has to be got rid of. It asks for
+   a clear reason why the clocked door is gone at the start of MAP01.
+3. He dies in the cell (Vadim's first thought). Then MAP01's Doom guy is
+   somebody else, or the next time round. An old corpse in the dust
+   (then.zs has them) in the old hall or the old cell would say that this
+   has happened before.
+4. The cell has no time. It is brick, it has no window, and the only way in
+   or out is a door; nothing in it says when it is ("The cell stays as it
+   is" was the decision for MAP01's look). So no machine is needed: only
+   the hall is seen old, and whoever hangs RED in the cell next comes out at
+   the beginning. This can stand together with 1.
+
+*After the last view.*
+- The game's first screen again, or MAP01 itself started over (the name of
+  MAP31, "This Is Where We Came In", is the cinema's word for this).
+- A second time round could differ in one small thing in the cell, for
+  those who play again.
+- Another end for those who refuse (the concept's "choice of what hangs in
+  it"): leave RED hanging and do something else with the frame, for example
+  swap the clocked door into it. Not thought through.
+
+*How it would be built.* MAP01's hall and cell from the same description as
+MAP01, a second time in an aged look: `ajarthen.Times` does exactly this for
+MAP21 (one plan, two copies, per-copy differences). "Recognizable" asks for
+the things MAP01's hall is known by: the terracotta walls over the navy
+dado, the slate floor and the runner, the pit, the pictures of doors, RED's
+trim. "Much older" is then what has happened to those.
+
+**Open, for the discussion with Vadim**:
+1. Is the old room the hall, and the small room the cell, as read above?
+2. What forces the door down: the flood of monsters, something flowing, or
+   nothing?
+3. Is the Doom guy of the last view the player himself (a loop), or the
+   next one?
+4. Does the old hall lie after MAP01 in time, and if so, how does taking
+   the door down there put it in the cell at the start: the clocked door,
+   the cell outside time, or no explanation?
+5. After the last view: the end, or MAP01 again?
+6. Does the player still carry the clocked door in MAP30? (In MAP21 it is
+   left in the machine.)
