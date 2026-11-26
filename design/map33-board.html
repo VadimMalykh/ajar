@@ -1,0 +1,265 @@
+<title>Third Person Looks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, as MAP11's and MAP21's boards. The three looks on top with swatches and the plan with
+   the tour's cameras, then one band per part of the station: notes and a pick on the left, the same camera in the
+   plain level and in every look on the right. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c; --paper: #f3efe4; --ink: #1a1f27;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; --paper: #d9d4c6; --ink: #1a1f27; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; --paper: #d9d4c6; --ink: #1a1f27; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); margin: 0;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.sws i { display: block; height: 128px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat-x; background-position: bottom left; background-size: 64px auto; background-color: var(--chip); }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; min-width: 640px; max-width: 980px; margin: 0 auto; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 512; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+.opt.plain h4 { color: var(--muted); font-weight: 500; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+  .sws { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+</style>
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP33 "Third Person" · the power station · captured 26 Nov 2026 · GZDoom, monsters off</div>
+    <h1>Third Person: three looks for the power station</h1>
+    <p>The same station in three states: as it was built in the 1930s, as it was rebuilt in the 1960s, and long after its last coal. Each look is built into the level and photographed from the same 35 places. Nothing moves between the looks: only wall and floor textures, the pictures on the walls and the sky change, and the level plays and tests the same.</p>
+    <p>In every look the three parts keep their colours. The corridors keep their yellow, green and red light; the rooms are in white light now and carry a band of their part's colour along the walls instead. Nothing else in a look is yellow, green, red, blue, violet or pink.</p>
+    <p class="muted">Nothing is chosen yet: the level in the game is still the plain one, shown first in every row. The rows below are the parts of the station and can be mixed, for example the yards of one look and the switchgear hall of another. Your picks are collected near the bottom as one line to paste into the chat. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The three looks</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>Plan of the station, with camera numbers</h3>
+    <div class="plan" id="plan"></div>
+    <p class="muted" style="font-size:13px">North is up; the level is about 9000 units wide. Part 1 (yellow) runs along the north, part 2 (green) through the middle, part 3 (red) along the south; all three end at their stands round the switchgear hall in the east. Cameras 31 to 35 are close views of the five pictures.</p>
+  </section>
+
+  <section class="stack" id="parts" style="gap:34px"></section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and the level will be built that way.</p>
+    <output id="picksline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+</div>
+<script>
+const LOOKS = [
+  ["1", "Temple of Power", "The 1930s. Brown brick with tall piers, cream faience tile under black bands, bronze and brass, teak, terrazzo, marble in the switchgear hall. A pale afternoon sky."],
+  ["2", "The Grid", "The 1960s. Board-marked concrete, pale ribbed cladding with strips of glazing, grey painted steel, painted blockwork, vinyl tile, stencilled plant numbers. A flat white overcast."],
+  ["3", "Cold Reserve", "The 1930s station thirty years after its last coal, shut but kept in reserve. Corrugated iron, rust runs, flaking paint, fallen tiles, cold boilers, cracked dials. A dusk sky."]];
+const SW = ["YD00", "TD00", "BH00", "WS00", "TH00", "TU00", "TW00", "LH00"];
+const SWCAP = "A yard wall, the gatehouse, the boiler house, the workshop, the turbine hall, the cable tunnel, the cooling tower, the switchgear hall";
+// the tour's views (src/zscript/map33.zs, TourView33): [x, y, angle, label]
+const PLACES = [[120, 2620, 45, "Gatehouse: the pictures"], [640, 3120, 225, "Gatehouse: the counter"], [512, 3770, 60, "Coal yard: from its mouth"],
+  [760, 4300, 0, "Coal yard: the gate and the bunker"], [2300, 3880, 80, "Boiler house: a boiler's front"], [3400, 4900, 200, "Boiler house: from the catwalk"],
+  [3640, 3904, 0, "Ash tunnel"], [3700, 4450, 30, "Pump room"], [4950, 4650, 322, "Stack court: the chimney"],
+  [4980, 3350, 180, "Middle yard: from the terrace"], [5100, 3330, 340, "Gantry: down into the turbine hall"], [950, 3608, 0, "Gallery"],
+  [2750, 3000, 315, "Workshop"], [2800, 2368, 180, "Armoury: through its bars"], [4350, 2800, 90, "Middle yard: from its floor"],
+  [4900, 2720, 0, "Mezzanine: into the turbine hall"], [5150, 2200, 20, "Turbine hall: a casing and the bays"], [6050, 3200, 270, "Turbine hall: the pits"],
+  [300, 2048, 0, "Cable tunnel"], [1700, 1300, 30, "Switchyard: the transformers"], [2600, 1950, 220, "Switchyard: walls and gantry"],
+  [3000, 2100, 330, "Relay room"], [3100, 1650, 315, "Cooling pond"], [4600, 1024, 0, "Cooling tower: from its floor"],
+  [5184, 1624, 270, "Cooling tower: from its ledge"], [5100, 1944, 0, "Cable duct"], [8384, 3500, 270, "Stand 1 over the hall"],
+  [7900, 2880, 0, "Hall floor: cabinets, a pedestal, bays"], [7700, 2880, 0, "Stand 2 over the hall"], [8990, 2880, 0, "Exit room"],
+  [288, 3060, 90, "The station plan"], [620, 2976, 0, "The safety rules"], [3690, 2560, 0, "The shadow board"],
+  [3420, 1984, 0, "The single-line diagram"], [8000, 3230, 90, "The synchroscope"]];
+const LOOKPICKS = LOOKS.map(l => [l[0], l[1]]);
+const PARTS = [
+  {id: "yards", name: "The yards and the sky", cams: [2, 3, 8, 9, 14, 19, 20, 22, 23, 24],
+   text: "Everything out of doors: the coal yard, the stack court with the chimney, the yard in the middle on its three levels, the switchyard, the cooling pond and the cooling tower, and the sky over them.",
+   asks: ["The heaps, banks, pumps and transformers are where they were; only their faces are drawn.", "Each yard's walls carry its part's band low down; the middle yard has one on each level."]},
+  {id: "boiler", name: "The boiler side", cams: [0, 1, 4, 5, 6, 7],
+   text: "Part 1's rooms: the gatehouse where every go starts, the boiler house with its four boilers and the catwalk, the ash tunnel, the pump room.",
+   asks: ["BLUE's frame in the first boiler's front is untouched; the boiler is drawn round it.", "The tunnels and corridors keep their coloured light, so they look alike in every look."]},
+  {id: "machine", name: "The machine side", cams: [11, 12, 13, 15, 16, 17, 10],
+   text: "Part 2's rooms: the gallery over the coal yard, the workshop, the armoury behind its bars (INSTRUMENT STORE), the mezzanine and the turbine hall with its two casings and pits, and part 1's gantry over it.",
+   asks: ["The bays in the hall's walls are Doom's stone in every look (see Doom's share below)."]},
+  {id: "cable", name: "The cable side", cams: [18, 21, 25],
+   text: "Part 3's rooms: the cable tunnel, the relay room with its cabinets, the cable duct along the turbine hall.",
+   asks: ["Part 3's yards (switchyard, pond, tower) are in the first row."]},
+  {id: "hall", name: "The switchgear hall", cams: [27, 26, 28],
+   text: "The last hall and its three stands: the walls, the floor, the six cabinets, the stands' floors.",
+   asks: ["The lit green and red patches and the steam's pale strip on the floor are as they were, and the floor round them is kept quiet so that they stand out.", "Plates, time doors, cases, levers and railings are untouched."]},
+  {id: "pictures", name: "Pictures and plates", cams: [30, 31, 32, 33, 34, 0],
+   text: "Five pictures, the same in every look and drawn in its manner: the station plan with the three ways in the gatehouse, the safety rules beside it, a tool shadow board in the workshop, the single-line diagram in the relay room, the synchroscope in the switchgear hall. Also name plates over the ways and DANGER plates in the switchyard.",
+   asks: ["All of them are Claude's inventions. Say if one should go or read differently.", "The diagram's three feeders are TOWN, WORKS and INSTITUTE, and the Institute's meter is against its stop."]},
+  {id: "doom", name: "Doom's share", cams: [16, 27, 29], picks: [["as shown", "As shown"], ["less", "Less of it"], ["more", "More of it"]],
+   text: "The same in every look: Doom's grey stone stands where monsters are posted (the bays of the turbine hall and of the switchgear hall, and that hall's four pedestals), and the room behind the exit door is Doom's.",
+   asks: ["No Doom door or switch: nothing in this level opens by USE.", "This row is not a choice of look: say whether Doom's share is right, too much or too little."]}];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l - 1][1];
+const esc = s => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+document.getElementById("looks").innerHTML = LOOKS.map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sws" role="img" aria-label="${name}: ${SWCAP}">${SW.map(t =>
+     `<i style="background-image:url(tex/AJP${n}${t}.png)"></i>`).join("")}</div>
+   <div class="swcap">${SWCAP}</div>
+   <p>${d}</p></div>`).join("");
+let picks = {}, cams = {};
+try { picks = JSON.parse(localStorage.getItem("map33-picks") || "{}"); } catch (e) {}
+PARTS.forEach(p => cams[p.id] = p.cams[0]);
+const picksOf = p => p.picks || LOOKPICKS;
+function drawPart(p) {
+  const cam = cams[p.id], label = PLACES[cam][3];
+  const camBar = `<div class="cams" role="group" aria-label="Camera, ${p.name}">${p.cams.map(v =>
+    `<button type="button" id="cam-${p.id}-${v}" data-part="${p.id}" data-cam="${v}" aria-pressed="${v === cam}">${v + 1}. ${esc(PLACES[v][3])}</button>`).join("")}</div>`;
+  const tile = (l, title, cls) =>
+    `<div class="opt${cls}">
+       <button type="button" class="shot" aria-label="Enlarge: ${title}, ${esc(label)}"><img src="${l}/view_${pad(cam)}.jpg" alt="${title}: ${esc(label)}" loading="lazy"></button>
+       <h4>${l === "0" ? "" : `<span>${l}</span>`}${title}</h4>
+     </div>`;
+  document.getElementById("main-" + p.id).innerHTML = camBar + `<div class="opts">` + tile("0", "The plain level, as it is now", " plain") +
+    ["1", "2", "3"].map(l => tile(l, lookName(l), !p.picks && picks[p.id] === l ? " chosen" : "")).join("") + `</div>`;
+}
+function drawPicks(p) {
+  document.getElementById("picks-" + p.id).innerHTML = picksOf(p).map(([v, n], i) =>
+    `<button type="button" id="pick-${p.id}-${i}" data-part="${p.id}" data-pick="${i}" aria-pressed="${picks[p.id] === v}">${n}</button>`).join("");
+}
+function drawSummary() {
+  const line = PARTS.map(p => {
+    const v = picks[p.id], hit = picksOf(p).find(q => q[0] === v);
+    return `${p.id} ${hit ? (p.picks ? v : v + " (" + hit[1] + ")") : "?"}`;
+  }).join("; ");
+  document.getElementById("picksline").textContent = "MAP33 look. " + line + ".";
+}
+function save() { try { localStorage.setItem("map33-picks", JSON.stringify(picks)); } catch (e) {} }
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<article class="part" id="${p.id}">
+     <div class="side">
+       <h2>${p.name}</h2>
+       <p>${p.text}</p>
+       ${p.asks.length ? `<ul>${p.asks.map(a => `<li>${a}</li>`).join("")}</ul>` : ""}
+       <h3>Your pick</h3><div class="picks" id="picks-${p.id}" role="group" aria-label="Pick for ${p.name}"></div>
+     </div>
+     <div class="main" id="main-${p.id}"></div>
+   </article>`).join("");
+PARTS.forEach(p => { drawPart(p); drawPicks(p); });
+drawSummary();
+document.getElementById("parts").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.classList.contains("shot")) { b.parentElement.classList.toggle("big"); return; }
+  const p = PARTS.find(q => q.id === b.dataset.part);
+  if (!p) return;
+  if (b.dataset.cam !== undefined) {
+    cams[p.id] = +b.dataset.cam;
+    drawPart(p);
+    document.getElementById(`cam-${p.id}-${b.dataset.cam}`).focus();
+  } else if (b.dataset.pick !== undefined) {
+    const v = picksOf(p)[+b.dataset.pick][0];
+    if (picks[p.id] === v) delete picks[p.id]; else picks[p.id] = v;
+    save();
+    drawPart(p); drawPicks(p); drawSummary();
+    document.getElementById(`pick-${p.id}-${b.dataset.pick}`).focus();
+  }
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+// The plan, y flipped. The paper and its inks are the same in both themes (a drawing on its own sheet).
+(function () {
+  const S = 0.1, X0 = -64, X1 = 9280, Y0 = 256, Y1 = 5056, X = x => 12 + (x - X0) * S, Y = y => 12 + (Y1 - y) * S;
+  const C = { 1: "#f1dc8a", 2: "#b9dcae", 3: "#eeb3a8", 0: "#d2d0c8" }, INK = "#1a1f27";
+  const RECTS = [[0, 2560, 768, 3200, 1, "Gatehouse"], [256, 3712, 1920, 4992, 1, "Coal yard"], [1936, 3712, 3584, 4992, 1, "Boiler house"],
+    [3600, 3840, 4352, 3968, 1, ""], [3600, 4352, 4608, 4992, 1, "Pump room"], [4864, 3584, 6144, 4864, 1, "Stack court"],
+    [4736, 3152, 5040, 3568, 1, ""], [5056, 3264, 7040, 3392, 1, "Gantry"],
+    [896, 3520, 3840, 3696, 2, "Gallery"], [2688, 2176, 3840, 3072, 2, "Workshop"], [2368, 2240, 2688, 2496, 2, ""],
+    [3968, 2240, 4736, 3456, 2, "Yard"], [4752, 2304, 5056, 3136, 2, ""], [5056, 2048, 7040, 3264, 2, "Turbine hall"],
+    [128, 1984, 1280, 2288, 3, "Cable tunnel"], [1280, 896, 2816, 2112, 3, "Switchyard"], [2944, 1792, 3584, 2160, 3, "Relay"],
+    [3040, 320, 4416, 1728, 3, "Cooling pond"], [5056, 1856, 7040, 2032, 3, "Cable duct"],
+    [7808, 2368, 8960, 3392, 0, "Switchgear hall"], [8192, 3392, 8576, 3584, 1, ""], [7616, 2688, 7808, 3072, 2, ""],
+    [8192, 2176, 8576, 2368, 3, ""], [8960, 2816, 9120, 2944, 0, ""]];
+  let g = `<rect x="0" y="0" width="${24 + (X1 - X0) * S}" height="${24 + (Y1 - Y0) * S}" fill="var(--paper)"/>`;
+  RECTS.forEach(([x1, y1, x2, y2, part, label]) => {
+    g += `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${C[part]}" stroke="${INK}" stroke-width="1"/>`;
+    if (label) g += `<text x="${(X(x1) + X(x2)) / 2}" y="${(Y(y1) + Y(y2)) / 2 + 4}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${INK}">${label}</text>`;
+  });
+  g += `<circle cx="${X(5184)}" cy="${Y(1024)}" r="${640 * S}" fill="${C[3]}" stroke="${INK}" stroke-width="1"/>` +
+    `<text x="${X(5184)}" y="${Y(1024) + 4}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${INK}">Cooling tower</text>`;
+  PLACES.forEach((v, i) => {
+    const a = v[2] * Math.PI / 180, x = X(v[0]), y = Y(v[1]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 13 * Math.cos(a)}" y2="${y - 13 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="6.5" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 2.8}" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 ${24 + (X1 - X0) * S} ${24 + (Y1 - Y0) * S}" role="img" aria-label="Plan of the station with camera positions">${g}</svg>`;
+})();
+</script>
