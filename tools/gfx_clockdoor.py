@@ -1,7 +1,7 @@
 """The clocked door's leaf and its frame's trim, in three looks to choose from
 (PLAN.md, "Look: the clocked door and its frame's trim"). gfx.CLOCKDOOR (the
 build's AJAR_CLOCKDOOR) picks one; 0 is the art as it was (gfx.clocked_door,
-gfx_then.clock_trim) and is the default until Vadim chooses.
+gfx_then.clock_trim). Vadim chose 3 on 2026-11-26: it is the default, the game's.
 
   1  Long-case clock: walnut with a grain and a moulded edge; a brass bezel and
      an ivory dial with roman-like ticks over brass spandrels; the lower panel

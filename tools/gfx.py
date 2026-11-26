@@ -121,8 +121,9 @@ CLOCKED = 10        # the clocked door (ajarthen, then.zs): ivory, a clock on it
 IVORY = (232, 222, 196)
 # The clocked door's look, leaf and trim (tools/gfx_clockdoor.py; PLAN.md, "Look: the clocked door and its
 # frame's trim"): 0 the art below and gfx_then.clock_trim's, 1 long-case clock, 2 station clock, 3 ivory done
-# properly. AJAR_CLOCKDOOR=n sets it for a build (the look board's: tools/clockdoor_shots.sh).
-CLOCKDOOR = int(os.environ.get("AJAR_CLOCKDOOR") or 0)
+# properly, the game's (Vadim chose it on 2026-11-26). AJAR_CLOCKDOOR=n sets another for a build (0 the old art;
+# the look board's: tools/clockdoor_shots.sh).
+CLOCKDOOR = int(os.environ.get("AJAR_CLOCKDOOR") or 3)
 
 
 def clocked_door():

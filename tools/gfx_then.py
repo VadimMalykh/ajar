@@ -83,7 +83,7 @@ def desk_panel(live):
 
 def make_longrun(out):
     import gfx
-    if gfx.CLOCKDOOR:                                            # a look of the board's (tools/gfx_clockdoor.py)
+    if gfx.CLOCKDOOR:                                            # the look chosen (tools/gfx_clockdoor.py: 3, the game's)
         import gfx_clockdoor
         tr, fl = gfx_clockdoor.trim(gfx.CLOCKDOOR)
     else:
