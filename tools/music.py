@@ -180,6 +180,30 @@ F in D; a flat 5th in every fourth bar); the tune that goes over the riff
 and home (the brass's). The two tunes stand below as patterns
 (ENGINE_OVER_RIFF, ENGINE_CHORUS), with a second way of playing each (the
 long notes walked through) and both cut for a bar of twelve.
+
+The ten are the last of TRACKS, 26 to 30 the fast ones and 31 to 35 the
+slow ones. In each the riff's notes and both tunes are there in their
+order; what changes is the rhythm, the metre, the key, who plays what, and
+a tune's second time. None plays on a map until Vadim has chosen.
+- Gallop (E, 150): the riff stretched over two bars as a gallop, the hidden
+  notes as fifths a beat apart; all guitars.
+- Shuffle (D, 12/8): the riff in triplets; a rock organ has the verse tune.
+- in Seven (D, 7/8): the riff with its last two notes cut off.
+- Machine (C, 140): the riff shared between a synth bass (the hammered note)
+  and a square wave (the hidden notes), four on the floor; a guitar joins
+  in the second chorus.
+- Upside Down (A, 138): the hammered note on top, a muted guitar on one
+  note all through; the hidden notes a heavy riff under it.
+- Heavy (B, 66): the riff at half speed, its fifths left ringing; slow
+  drums, a choir, a bell.
+- Still (D, 54): no beat; three lines of which no two move at once, as
+  Distant Galaxy IV is made: the top line is the hidden notes, a bar each,
+  then the chorus's chords reached a note at a time.
+- Music Box (G, 3/4): a slow waltz with the riff as its accompaniment.
+- Night Shift (E, 12/8 at 60): the riff a fretless bass line four bars
+  long; vibraphone, a muted trumpet.
+- Piano (D, 63): the riff in the left hand at a quarter speed, the tunes
+  in the right; a cello later.
 """
 import random
 import re
