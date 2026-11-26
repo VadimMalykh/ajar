@@ -169,7 +169,7 @@ class Map:
                     raise ValueError(f"line {p1}-{p2} ({', '.join(sorted(val))}) ends inside the wall piece {a}-{b}: cut() it")
 
         lines, sides = [], []
-        def side(si, a=None, b=None, hung=(), drop=0, fit=None, whole=None, **tex):
+        def side(si, a=None, b=None, hung=(), drop=0, fit=None, whole=None, low=False, **tex):
             # a wall texture in self.align starts at its place in the world,
             # so a wall cut into pieces (furniture, openings) shows no seams.
             # Such textures must be 64 wide and symmetric left to right.
@@ -185,6 +185,8 @@ class Map:
                     d["offsetx_mid"] = float(u)
                     if not laid:
                         d["offsetx_top"] = float(u)
+                    if low:                    # exact="lower": the step's face too (a pillar's face, MAP21's machine)
+                        d["offsetx_bottom"] = float(u)
                 if laid and (a[0] == b[0] or a[1] == b[1]):
                     w = (a[0] if b[0] > a[0] else -a[0]) if a[1] == b[1] else (a[1] if b[1] > a[1] else -a[1])
                     if w % 64:
@@ -223,7 +225,7 @@ class Map:
             if want is not None and si == want and edges.get((b, a)) is not None:
                 a, b, si = b, a, edges[(b, a)]
                 done.add((a, b))
-            p.pop("exact", None)
+            low = p.pop("exact", None) == "lower"  # one picture laid on the lower textures of the pieces as well
             fit = p.pop("fit", None)               # see side()
             whole = p.pop("whole", None)
             midraise = p.pop("midraise", 0)        # the middle texture stands this much higher
@@ -252,11 +254,11 @@ class Map:
                 hung = [part for part, flag in (("top", "dontpegtop"), ("bottom", "dontpegbottom")) if p.get(flag)]
                 def drop(view, far):
                     return float(far["floor"] - view["ceil"]) if floorpeg and far["floor"] > view["floor"] else 0
-                ld["sidefront"] = side(si, a, b, hung, drop(s, o), fit=fit, whole=whole, **front)
+                ld["sidefront"] = side(si, a, b, hung, drop(s, o), fit=fit, whole=whole, low=low, **front)
                 back = dict(texturetop=upper or s["wall"], texturebottom=lower or s["side"])
                 if mid and midboth:
                     back["texturemiddle"] = mid
-                ld["sideback"] = side(other, b, a, hung, drop(o, s), fit=fit, whole=whole, **back)
+                ld["sideback"] = side(other, b, a, hung, drop(o, s), fit=fit, whole=whole, low=low, **back)
                 if midraise:
                     for sd in (sides[ld["sidefront"]], sides[ld["sideback"]]):
                         sd["offsety_mid"] = float(midraise)

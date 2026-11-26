@@ -301,6 +301,23 @@ apparatus(736, 736, TALL_T, solid=True)                                         
 apparatus(168, 584, TROLLEY_T)                                                  # a trolley left by the west bank
 apparatus(548, 158, SMALL_T)                                                    # on the desk
 frame((480, 320), (544, 320), (0, 1), 101, Part("MC"), clock=(NOW, THEN))
+# the machine's faces (PLAN.md, "MAP21: the machine's faces"): each one picture at the face's width, laid from the
+# face's start over every piece the hall's cells cut it into (exact="lower"); THEN look 1, NOW the same dead
+# (gfx_longrun, AJUM<face>1 and AJUX<face>1: look 1's machine in every look of the apparatus). The face a-b,
+# a its left end for one looking at it: the north face, the west (the wing's side and the body's in one plane),
+# the east; the wings' south faces, their inner faces in the alcove, the body's south face beside 101's mouth.
+MACHINE_FACES = [((640, 448), (384, 448), "N"), ((384, 448), (384, 256), "W"), ((640, 256), (640, 448), "E"),
+                 ((384, 256), (464, 256), "A"), ((560, 256), (640, 256), "B"),
+                 ((464, 256), (464, 320), "I"), ((560, 320), (560, 256), "J"),
+                 ((464, 320), (480, 320), "K"), ((544, 320), (560, 320), "L")]
+MACHINE_LIT = 140       # NOW the faces' own light (the hall is 120): the dead machine is to read across the hall
+for c in t.copies:
+    lit = dict(lit=MACHINE_LIT) if c.now else {}
+    for a, b, face in MACHINE_FACES:
+        c.line(a, b, lower=GL.mach_name(face, c.now), exact="lower", **lit)
+    c.line((480, 320), (544, 320), upper=GL.mach_name("O", c.now))             # over 101's mouth, to the ceiling
+    for x in (480, 544):    # 101's sides: the recess runs into the machine's pillars, whose face they showed; the
+        c.line((x, 320), (x, 336), lower=ajarthen.CLOCK_TRIM[0], dontpegbottom=True)    # trim, as in a wall
 t.clocked(512, 300, 90, frame=101)                                              # found hung in the machine
 t.line((480, 176), (544, 176), special=130, args=(DESK,), playeruse=True, playeruseback=True, repeatspecial=True,   # its panel faces the machine
        now=dict(lower="AJTHK3"), then=dict(lower="AJTHK2"))

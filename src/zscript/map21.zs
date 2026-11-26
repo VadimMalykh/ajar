@@ -1111,6 +1111,27 @@ class LongRunTest : EventHandler
 		if (S()) Wait(139);
 		if (S()) { View(mo, "hall THEN from the north-east: the brass shutter, the benches", 980, OFF + 740, 215, 8); Next(); }
 		if (S()) Wait(139);
+		// --- the machine's faces (PLAN.md, "MAP21: the machine's faces"), THEN and NOW from the same spot
+		if (S()) { View(mo, "the machine THEN from the north (as Vadim's screenshot): the works, the port, MACHINE 7", 512, OFF + 744, 270, -8); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the machine NOW from the north: the same, dead", 512, 744, 270, -8); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the machine THEN from the north-west: the north and west faces, their corner", 200, OFF + 660, 311, -4); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the machine NOW from the north-west", 200, 660, 311, -4); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the machine THEN from the east: the power side, the wing's corner", 980, OFF + 340, 180, -4); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the machine NOW from the east", 980, 340, 180, -4); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the machine THEN from the south at 300: the front, the towers, the alcove, 121", 512, OFF + 24, 90, -8); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the machine NOW from the south at 300: the front, 101", 512, 24, 90, -8); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "THEN in the alcove before 121, looking up: the piece over the frame, the inner faces", 512, OFF + 240, 90, -45); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "NOW in the alcove before 101, looking up", 512, 240, 90, -45); Next(); }
+		if (S()) Wait(139);
 		if (S()) { View(mo, "vestibule NOW: bolted both ways, BLUE's far side", 1060, 530, 315); Next(); }
 		if (S()) Wait(139);
 		if (S()) { View(mo, "vestibule THEN: the porter's desk, the goods edge, the turnstile", 1060, OFF + 530, 315); Next(); }
