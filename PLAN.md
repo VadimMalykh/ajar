@@ -18695,6 +18695,10 @@ a map.
 
 ## Look: the clocked door and its frame's trim (board made 2026-11-26, not chosen yet)
 
+The board: https://claude.ai/artifact/JQjGDNej1YBrzd4413ciS7 (published 2026-11-26 from `build/boardclock/`,
+shot again after the pocket was rebuilt; the page is `design/clockdoor-board.html`). Merged with the switch at 0:
+the game keeps the door as it was until Vadim chooses.
+
 **Vadim's words**, playing MAP21, of the clocked door hung in the machine's
 frame THEN, its leaf swung open (and again of it in the pocket's frame 123):
 "So this door decor (and door itself) doesn't look good".
