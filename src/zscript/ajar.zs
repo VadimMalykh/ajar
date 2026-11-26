@@ -241,6 +241,9 @@ class AjarHandler : EventHandler
 	{
 		if (!fromLine) return;        // a Pair leaf whose twin hangs nowhere has no far side
 		level.ExecuteSpecial(107 /* Line_SetPortalTarget */, null, null, false, fromLine, toLine);
+		// A Doom door that stays a Doom door with a portal on its face (the Doom door lab, doomlab.zs): only
+		// its portal is switched, and with none it is the plain Doom door.
+		if (AjarDoomLab.Gate(fromLine)) return;
 		// With no target the line is a blank wall again: make it solid.
 		Line l = FindLine(fromLine);
 		if (!l) return;
@@ -1358,6 +1361,7 @@ class AjarHandler : EventHandler
 		if (t % 35 == 0)       // (MAP32's played demonstration, mode 20, is watched: not on the screen)
 			Console.PrintfEx(mode == 20 ? PRINT_HIGH | PRINT_NONOTIFY : PRINT_HIGH, "AJARTEST t=%d pos=(%d,%d,%d) carried=%s", t, mo.pos.x, mo.pos.y, mo.pos.z, carried ? carried.Label() : "-");
 		if (level.mapname ~== "ENG") return;       // the engine tests have their own handler (engtest.zs)
+		if (AjarDoomLab.Lab()) return;             // and the Doom door lab, in Doom II's own MAP22 (doomlab.zs)
 		if (level.mapname ~== "ONESIDE") return;   // so has the one-sided doorway lab (oneside.zs)
 		if (level.mapname ~== "PASS") return;      // and the pass lab (passtest.zs)
 		if (level.mapname ~== "MAP19") return;     // and MAP19 (map19.zs, PaperTest)

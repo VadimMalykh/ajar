@@ -16485,6 +16485,143 @@ version.
 3. Nobody met then, or people seen?
 4. The two labs: go?
 
+## The Doom door lab (built 2026-11-26)
+
+`src/zscript/doomlab.zs`; `MAP=MAP22 EXTRA="+set ajar_doomlab 1" ./run.sh`,
+`MAP=MAP22 MODE=1..6 EXTRA="+set ajar_doomlab 1" tools/smoke.sh`. An engine
+test of one question: can a door in a map loaded from Doom II's own IWAD be
+an Ajar frame, with ZScript alone? **Yes: a Doom door's face can be made a
+line portal while the map loads, its link moved and cut while playing, and
+a carried door hung in it and taken out with the game's own Hang and
+Unhang. One condition the engine sets: whoever walks through needs both
+doors open, the one walked into and the one at the far end.** Run headless
+only (docker, software GL): **not played by hand**, and the look on the
+real machine (the GLES backend) is not checked. All of it is measured on
+GZDoom 4.12.2.
+
+- **The hidden names.** Ajar's pk3 holds its own MAP01 to MAP20 and others
+  by name, and the engine loads the map lump from the last file that has
+  it: `MAP01` is Ajar's (183 lines; checksum 8D5F8A7D..., id's is
+  3C9902E3...), so is `MAP07` (E96B7574..., id's 291F2441...); `MAP21` and
+  `MAP22` are id's (checksums match id's: EBDAC00E..., 4AA9B3CE...). MAPINFO
+  cannot point a map name at another lump. So Doom II's MAP01 to MAP20 (and
+  any other name Ajar uses) cannot be played beside Ajar's as things stand.
+  To have them, Ajar's maps would need names of their own (AJ01...), which
+  touches about 80 `level.mapname ~== "MAPxx"` tests in the ZScript (52 in
+  `ajar.zs`, 15 in `time.zs`) and some 90 other "MAPxx" strings there, 83
+  in `mapinfo.txt` (next, secretnext, the episode), 69 files in `tools/`,
+  92 smoke cfgs, `run.sh`'s defaults and every savegame; and Doom II's own
+  MAPINFO entries for MAP01 to MAP20 (music, clusters, MAP07's special)
+  come back with them. Not done (report only); the lab uses MAP22.
+- **How it is made.** A `LevelPostProcessor` (`AjarDoomLabPost`) acts only
+  on MAP22 when its checksum is id's and `ajar_doomlab` is 1; nothing of
+  the map is in the package, only line numbers. On a door's face it gives
+  the line an id and the special `Line_SetPortal` (156: target, id, type 1,
+  aligned to the floor); the engine makes a real line portal of it at load
+  (seen: `isLinePortal`, its destination, type 1). The line's own special
+  is kept in a hidden thing (`AjarDoomNote`, ednum 20190) and put back in
+  `WorldLoaded`, so USE works the door as before. A face that stays a Doom
+  door with a portal on it (ids 4001 to 4049, a "gate") is switched by
+  `Line_SetPortalTarget` (107) only; `AjarHandler.Link` leaves its special
+  alone. `AjarHandler.WorldTick` stands down while the lab runs. Doors used:
+  A, line 314 (door sector 56, the hall 52, floor 48, Door_Raise); B, line
+  333 (door 120, the start room 109, floor -240, Door_Open); C, line 155
+  (door 8, the big room 2, floor 72; its far face 156 onto the closet 5);
+  W, line 250 (door 58, 128 wide, the hall, floor 48).
+
+**What the runs showed** ("lands right": place, height and facing carried
+by the rule `dst.v2 + R(p - src.v1)` to 0.000, the height by the floors'
+difference, the motion turned and 0.9063 of the speed given):
+
+- Walking (MODE=1, 29 checks). A shut Doom door is a wall, portal or not
+  (`shutDoorBlocks`); USE opens it with its own special (`useOpensTheDoor`).
+  **A open and B shut: no way through** (`farDoorShutBlocksAToB`); B shut is
+  a wall from the start room too (`shutFarDoorIsAWall`). B held open 40 of
+  the player's 56: still blocked (`farDoorOpen40Blocks`); 64: through
+  (`farDoorOpen64Passes`). With both open A to B lands right, 288 down
+  (`walkAToB`, `runAToB`, `slantAToB` at 10 degrees), and B to A, 288 up
+  (`walkBToA`, `runBToA`). A shut again: blocked both ways
+  (`shutAgainBlocks`, `farDoorShutBlocksBToA`). The other face of A's door
+  (line 317) is a plain Doom door (`plainFromBehind`). An imp walked A to B
+  and B to A, landing right (`impWalksAToB`, `impWalksBToA`). A's own
+  motion, logged: USE at t=42, rising to 68 by t=52, Doom's wait of 150
+  tics, falling at t=202, shut at t=211: the portal follows the door, a
+  shut door is a wall at its face again, an open one leads on.
+- Widths (MODE=1). A (64) joined to W (128): W's north half (the end the
+  rule pins to A's far end) lands in A (`wideNorthHalfToA`); W's south half
+  lands beyond A's span, at (-96,-277), south of the hall's wall, outside
+  every room (`wideSouthHalfLandsBeyondA`, `wideSouthHalfInTheVoid`); there
+  it could walk south, east and west but not north. A to W lands in W's
+  south half (`narrowToWideSouthHalf`). So a portal between faces of
+  different widths is wrong for the wider side: pair equal widths.
+- Views (MODE=2, 12 screenshots, looked at). A shut shows the Doom door's
+  texture; A open shows the start room through it, even with B shut (the
+  view goes, the walk does not); from the start room through B the lobby
+  and hall; W joined to A shows the lobby from the hall; A joined to C the
+  big room. A opening slowly (16, 2 a tic): the door's lower edge rises and
+  the far room shows below it, growing with the opening.
+- Shots (MODE=3, 12 checks). Hitscan, rocket and an imp's fireball both
+  ways through A-B, open (`hitscanAToB`, `hitscanBToA`, `rocketAToB`,
+  `rocketBToA`, `impBallAToB`, `impBallBToA`); a rocket fired from right at
+  A's face (`playerRocketCloseToA`); A shut stops the bullet and the rocket
+  at the door (`hitscanAShut`, `rocketAShut`).
+- Retargeting (MODE=4, 10 checks). A-B (`joinedAToB`), then A-C
+  (`movedAToC`, `movedCToA`), then cut: B, A and C plain doorways again
+  (`cutBIsPlain`, `cutAIsPlain`, `cutCIsPlain`), and A-B again
+  (`joinedAgainAToB`). `Line_SetPortalTarget` works only on lines that were
+  portals at load; target 0 makes the line plain.
+- Carried doors (MODE=5, 25 checks; MODE=6, 9 screenshots looked at). Door
+  8 is taken over: an AjarFrame on its face, the YELLOW door hung in it at
+  load. Hung, the door sector stands open and leads into the closet as
+  before (`ownDoorStandsOpen`, `ownDoorLeadsOn`). USE takes the door off its
+  hinges with the game's own Unhang: the frame is empty (AJFRAME drawn on
+  it), the door sector shuts and stays shut, the far face does nothing
+  (`doomDoorTaken`, `emptyFrameBlocks`, `farFaceStaysShut`). YELLOW hung in
+  A (a gate): both door sectors are held open, A leads into the closet
+  (`hungInDoomDoorway`, `intoTheRoomItOpenedOnto`). Back from the closet
+  through door 8's far face: blocked, because door 8 is only 16 deep and
+  its near face, the empty frame, is solid by Ajar's rule
+  (`backOutBlockedByTheEmptyFrame`); with the frame's blocking flags off it
+  works (`backOutWithTheEmptyFrameOpen`) and the open empty frame is then a
+  plain hole into the closet (`theOpenEmptyFrameIsAPlainHole`); solid again
+  (`emptyFrameSolidWhileOpen`). USE on A's other face while YELLOW hangs:
+  held open past Doom's wait (`heldPastDoomsWait`). Taken out of A and back
+  into its own doorway (`takenFromDoomDoorway`, `backInItsOwnDoorway`,
+  `leadsOnAgain`); A without a door is its Doom door again
+  (`emptyDoomFrameIsItsDoor`). RED (its far side B) picked up, hung in A,
+  walked both ways, taken down (`tookRed`, `redHungInA`, `throughRedAToB`,
+  `throughRedBToA`, `redTakenDown`). The hold rule, in `HoldTick`: while a
+  door hangs, the door sectors behind its frame's face and its far face are
+  held open (their thinker removed, the ceiling at the lowest surrounding
+  ceiling less 4); when it goes, they get `Door_Close`.
+- Fallbacks: not needed (the direct way works).
+
+**What it means for the classic levels.** A Doom door can be an Ajar frame
+as it stands, but each one used needs: its far door open whenever the way
+is to be walked (the hold rule above does it); faces of equal width; a door
+sector deep enough, or a frame not solid, for the way back through a far
+face; the line numbers of each door found once from the IWAD (the lab's
+numbers are MAP22's only) and the map's checksum to guard them; and, for
+MAP01 to MAP20, Ajar's maps renamed first.
+
+**Runs** (2026-11-26, on `AJAR_QUICK=1 ./build.sh`, which succeeded):
+`MAP=MAP22 MODE=1` 29 checks, `MODE=3` 12, `MODE=4` 10, `MODE=5` 25, all
+passed, each with its `...Done=1` (and the six load checks: the portals
+made, the specials back, the four checksums); `MODE=2` and `MODE=6`
+screenshots looked at; MAP22 without the cvar: no lab output. `MAP=LAB` 16
+of 16, `MAP=TEST MODE=1` 7 of 7, `MAP=MAP11` 24 of 24.
+
+**Not tested / not played by hand.** The game by hand (`MAP=MAP22
+EXTRA="+set ajar_doomlab 1" ./run.sh` in the worktree); the look on the
+real machine (GLES); savegames (the lab does nothing on a loaded game);
+keyed doors (W was opened by the test, not with its key) and locked
+specials; doors that lower, crushers, lifts; the blocking rule's exact
+cause in the engine (measured, not read); monsters opening a door that is
+a portal, and monsters' sight and sound through one; other monsters than
+the imp, hitscan monsters; portal types other than 1; any IWAD map other
+than MAP22; Ajar's own door code (the thief, lodgers, `OpticsTick`) on
+these doors, since `AjarHandler.WorldTick` stands down in the lab.
+
 ## The then and now lab (built 2026-11-26)
 
 `MAP=THEN ./run.sh` ("Ajar: then and now"; tools/map_then.py, tools/ajarthen.py,
