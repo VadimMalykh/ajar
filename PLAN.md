@@ -17922,6 +17922,9 @@ of then; the bus by `ajarmap.bus(livery=...)` with a new livery.
 
 ## Look: MAP21, the apparatus (board made 2026-11-26, not chosen yet)
 
+The board: https://claude.ai/artifact/CpEeJUTgRBiayWenn1szPM (published 2026-11-26 from
+`build/board21/`; the page is `design/map21-board.html`). Merged with the level in look 1; Vadim has not chosen.
+
 THEN is the institute forty years before NOW, on its last evening: lit,
 humming, full of apparatus, nobody there; NOW the same rooms show where it
 all stood. Walls, floors and ceilings stay MAP11's (THEN look 2 "Thaw", NOW
