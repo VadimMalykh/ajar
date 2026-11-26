@@ -88,11 +88,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 <div class="wrap">
   <header>
-    <div class="stamp"><b>To choose</b> &nbsp;MAP33 "Third Person" · the power station · captured 26 Nov 2026 · GZDoom, monsters off</div>
+    <div class="stamp"><b>Chosen 26 Nov 2026</b> &nbsp;MAP33 "Third Person" · the power station · captured 26 Nov 2026 · GZDoom, monsters off</div>
     <h1>Third Person: three looks for the power station</h1>
     <p>The same station in three states: as it was built in the 1930s, as it was rebuilt in the 1960s, and long after its last coal. Each look is built into the level and photographed from the same 35 places. Nothing moves between the looks: only wall and floor textures, the pictures on the walls and the sky change, and the level plays and tests the same.</p>
     <p>In every look the three parts keep their colours. The corridors keep their yellow, green and red light; the rooms are in white light now and carry a band of their part's colour along the walls instead. Nothing else in a look is yellow, green, red, blue, violet or pink.</p>
-    <p class="muted">Nothing is chosen yet: the level in the game is still the plain one, shown first in every row. The rows below are the parts of the station and can be mixed, for example the yards of one look and the switchgear hall of another. Your picks are collected near the bottom as one line to paste into the chat. Click a picture to enlarge it.</p>
+    <p><b>The choice is made, part by part:</b> the yards and the sky from The Grid, every room indoors from Temple of Power, the switchgear hall and all pictures and plates from Cold Reserve, Doom's share as shown. That mix is the level in the game now, and it is the first picture in every row, photographed from the built level.</p>
+    <p class="muted">The plain level and the three whole looks stay beside it for comparison. A change of mind is still cheap: pick again in any row and paste the line near the bottom into the chat. Click a picture to enlarge it.</p>
   </header>
 
   <section class="stack">
@@ -110,7 +111,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   <section class="sum" id="summary">
     <h2>Your picks</h2>
-    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and the level will be built that way.</p>
+    <p class="muted" style="font-size:13.5px">The level is built as this line reads when nothing is changed above. Picks are kept in this browser only; to change the level, pick again and paste the line into the chat.</p>
     <output id="picksline"></output>
     <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
   </section>
@@ -167,8 +168,10 @@ document.getElementById("looks").innerHTML = LOOKS.map(([n, name, d]) =>
      `<i style="background-image:url(tex/AJP${n}${t}.png)"></i>`).join("")}</div>
    <div class="swcap">${SWCAP}</div>
    <p>${d}</p></div>`).join("");
-let picks = {}, cams = {};
-try { picks = JSON.parse(localStorage.getItem("map33-picks") || "{}"); } catch (e) {}
+// Vadim's choice, 26 Nov 2026; tools/power33.py MIX builds it, and folder 4/ holds its views
+const CHOSEN = {yards: "2", boiler: "1", machine: "1", cable: "1", hall: "3", pictures: "3", doom: "as shown"};
+let picks = {...CHOSEN}, cams = {};
+try { const kept = JSON.parse(localStorage.getItem("map33-picks") || "null"); if (kept && Object.keys(kept).length) picks = kept; } catch (e) {}
 PARTS.forEach(p => cams[p.id] = p.cams[0]);
 const picksOf = p => p.picks || LOOKPICKS;
 function drawPart(p) {
@@ -178,9 +181,10 @@ function drawPart(p) {
   const tile = (l, title, cls) =>
     `<div class="opt${cls}">
        <button type="button" class="shot" aria-label="Enlarge: ${title}, ${esc(label)}"><img src="${l}/view_${pad(cam)}.jpg" alt="${title}: ${esc(label)}" loading="lazy"></button>
-       <h4>${l === "0" ? "" : `<span>${l}</span>`}${title}</h4>
+       <h4>${/^[123]$/.test(l) ? `<span>${l}</span>` : ""}${title}</h4>
      </div>`;
-  document.getElementById("main-" + p.id).innerHTML = camBar + `<div class="opts">` + tile("0", "The plain level, as it is now", " plain") +
+  document.getElementById("main-" + p.id).innerHTML = camBar + `<div class="opts">` + tile("4", "As chosen: the level in the game now", " chosen") +
+    tile("0", "The plain level, as it was", " plain") +
     ["1", "2", "3"].map(l => tile(l, lookName(l), !p.picks && picks[p.id] === l ? " chosen" : "")).join("") + `</div>`;
 }
 function drawPicks(p) {
