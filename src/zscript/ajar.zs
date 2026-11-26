@@ -38,6 +38,11 @@
 //    alone is a shut door: its own face on the frame's line. A frame with an
 //    AjarTogether thing (goes.zs) joins a Pair only if its two leaves were
 //    hung within two seconds of each other.
+//  * The clocked door (colour 10, then.zs; the lab THEN): a Pair whose second
+//    leaf (args[3] 3, a shadow nobody sees leaning) always hangs in the twin of
+//    the frame the door hangs in: the same frame at the other time. Hung, the
+//    two frames lead to each other; taken from either, both are empty and the
+//    one door is in the player's hands.
 //  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
 //    (ajarmap.route_board; BoardTick).
 
@@ -142,6 +147,9 @@ class AjarDoor : Actor
 	Colour9:
 		AJD9 A -1;
 		Stop;
+	Colour10:          // the clocked door (then.zs)
+		AJDT A -1;
+		Stop;
 	Nailed:            // only so that these sprites are loaded
 		AJN1 A -1;
 		AJN2 A -1;
@@ -152,14 +160,19 @@ class AjarDoor : Actor
 		AJN7 A -1;
 		AJN8 A -1;
 		AJN9 A -1;
+		AJNT A -1;
 		Stop;
 	}
 
-	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF, 0x30D0C0, 0xFF8A30 };
-	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK", "STRAY", "TEAL", "ORANGE" };
+	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF, 0x30D0C0, 0xFF8A30, 0xFFF0D0 };
+	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK", "STRAY", "TEAL", "ORANGE", "CLOCKED" };
 	const STRAY = 7;
+	const CLOCKED = 10;
+	const SHADOW = 3;      // args[3] of the clocked door's other leaf
 
-	int Colour() { return clamp(args[1], 1, 9); }
+	int Colour() { return clamp(args[1], 1, 10); }
+	bool IsClocked() { return args[1] == CLOCKED; }
+	bool IsShadow() { return IsClocked() && args[3] == SHADOW; }
 	bool IsStray() { return args[1] == STRAY; }
 	bool IsPair() { return args[4] != 0; }
 	// The other leaf of a Pair.
@@ -180,9 +193,10 @@ class AjarDoor : Actor
 
 	void Show()
 	{
-		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7', 'AJD8', 'AJD9' };
-		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5', 'AJN6', 'AJN7', 'AJN8', 'AJN9' };
+		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7', 'AJD8', 'AJD9', 'AJDT' };
+		static const name nailedSpr[] = { 'AJN1', 'AJN1', 'AJN2', 'AJN3', 'AJN4', 'AJN5', 'AJN6', 'AJN7', 'AJN8', 'AJN9', 'AJNT' };
 		if (nailer == self || Shut()) { Hide(); return; }      // a fixed doorway has no leaf; a shut one is drawn on its line
+		if (IsShadow() && !frame) { Hide(); return; }          // the clocked door's other leaf is only ever seen hung
 		int c = Colour();
 		sprite = GetSpriteIndex(nailer ? nailedSpr[c] : spr[c]);
 		bInvisible = false;
@@ -200,6 +214,7 @@ class AjarDoor : Actor
 	override bool Used(Actor user)
 	{
 		if (carried) return false;
+		if (IsShadow() && !frame) return false;
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (!h) return false;
 		if (frame) h.UseFrame(frame, user);
@@ -759,6 +774,7 @@ class AjarHandler : EventHandler
 
 	void Hang(AjarDoor d, AjarFrame f)
 	{
+		if (d.IsClocked() && !d.IsShadow()) ClockedHang(d, f);     // its other leaf into the same frame at the other time (then.zs)
 		if (d.IsStray()) { d.args[0] = DrawStray(); d.strayTics = StrayTics(); }
 		else
 		{
@@ -825,6 +841,7 @@ class AjarHandler : EventHandler
 			if (tw) { tw.args[0] = 0; tw.joinEnds = tw.joinTics = 0; if (tw.frame) tw.Show(); }
 		}
 		ChainUpdate();
+		if (d.IsClocked()) d = ClockedUnhang(d);       // both leaves come down; the one door is the one taken (then.zs)
 		return d;
 	}
 
@@ -948,7 +965,10 @@ class AjarHandler : EventHandler
 	// What hanging the carried door in f has to say.
 	void SayHung(AjarDoor d, AjarDoor old)
 	{
-		if (d.IsPair() && d.args[0] && pairSaidAt == level.maptime + 1)
+		if (d.IsClocked())
+			Say((old ? "You swap the " .. old.Label() .. " door for the clocked one.\n" : "") ..
+				"The clocked door opens onto this very frame,\nforty years before (or after).");
+		else if (d.IsPair() && d.args[0] && pairSaidAt == level.maptime + 1)
 			return;             // (the first join for a time has said so: goes.zs, JoinFor)
 		else if (d.IsPair() && d.args[0])
 			Say("Both leaves of the " .. d.Label() .. " pair hang:\neach frame opens onto the other.");
@@ -995,6 +1015,7 @@ class AjarHandler : EventHandler
 			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
 			return;
 		}
+		if (ClockedRefuses(f)) return;        // a frame with no other time; one that is the clocked door's at either time (then.zs)
 		Actor line = ChainRoom();
 		if (carried && f.args[4] == 2 && line && carried.args[0] == line.args[3])
 		{
@@ -1036,7 +1057,8 @@ class AjarHandler : EventHandler
 		{
 			carried = Unhang(f);
 			PlayTake(user);
-			if (carried.IsPair()) Say("You unhinge a leaf of the " .. carried.Label() .. " pair.");
+			if (carried.IsClocked()) Say("You take down the clocked door.\nNow and then, the frame is empty.");
+			else if (carried.IsPair()) Say("You unhinge a leaf of the " .. carried.Label() .. " pair.");
 			else Say("You unhinge the " .. carried.Label() .. " door.");
 		}
 		else if (!f.door && carried)
@@ -1073,6 +1095,7 @@ class AjarHandler : EventHandler
 		PlayTake(user);
 		if (d.args[3] == 2) { d.args[3] = 0; Say("Your hands find the " .. d.Label() .. " door\nthat only the glass showed."); }
 		else if (d.IsStray()) Say("A STRAY door: it has forgotten where it belongs.\nHang it and it opens onto somewhere, once, for a few seconds.");
+		else if (d.IsClocked()) Say("The clocked door. Hung in a frame, it opens\nonto the same frame at the other time.");
 		else if (d.IsPair()) Say("A leaf of the " .. d.Label() .. " pair: it opens onto its twin,\nwherever that hangs.");
 		else Say("You pick up the " .. d.Label() .. " door.");
 	}
@@ -1121,6 +1144,8 @@ class AjarHandler : EventHandler
 		AjarDoor d;
 		while (d = AjarDoor(di.Next()))
 		{
+			// the clocked door's other leaf: hung with it (Hang), never by itself
+			if (d.IsShadow()) { if (!d.frame) { d.carried = true; d.Hide(); } continue; }
 			Link(d.args[0], 0, d.BackTex());
 			f = null;
 			if (d.args[2]) f = FindFrame(d.args[2]);
@@ -1347,6 +1372,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "MAP33") return;     // and MAP33 (map33.zs, from third.zs's tic)
 		if (level.mapname ~== "LAST") return;      // and the last fight lab (lasttest.zs, from third.zs's tic)
 		if (level.mapname ~== "YARD") return;      // and the yard lab (yardtest.zs, from third.zs's tic)
+		if (level.mapname ~== "THEN") return;      // and the then and now lab (thentest.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);

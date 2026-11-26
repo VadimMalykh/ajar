@@ -46,7 +46,7 @@ class AjarDoomNote : Actor
 
 class AjarDoomLabPost : LevelPostProcessor
 {
-	const NOTE_T = 20180;
+	const NOTE_T = 20190;
 	const FRAME_T = 20001;
 	const DOOR_T = 20002;
 

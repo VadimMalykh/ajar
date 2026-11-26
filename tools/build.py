@@ -66,6 +66,9 @@ MAPS["LAST"] = map_last
 import map_yard                                 # the yard lab: a common place (third.zs, common.zs)
 MAPS["YARD"] = map_yard
 
+import map_then                                 # the then and now lab: a place built twice (then.zs)
+MAPS["THEN"] = map_then
+
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
 

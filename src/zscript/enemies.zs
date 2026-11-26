@@ -264,7 +264,7 @@ class AjarThief : AjarWorker
 	// faces you, as the lodger's do.
 	void Dress()
 	{
-		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7', 'AJD8', 'AJD9' };
+		static const name spr[] = { 'AJD1', 'AJD1', 'AJD2', 'AJD3', 'AJD4', 'AJD5', 'AJD6', 'AJD7', 'AJD8', 'AJD9', 'AJDT' };
 		if (!pack) pack = Spawn("AjarThiefPack", pos);
 		if (!eyes) { eyes = Spawn("AjarLodgerEyes", pos); eyes.scale = (0.7, 0.7); }
 		let cam = players[consoleplayer].camera;

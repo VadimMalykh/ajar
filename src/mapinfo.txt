@@ -56,6 +56,12 @@ DoomEdNums
 	20173 = AjarThirdCommon           // ... a common place the parts go through on their own levels (common.zs; the lab YARD)
 	20174 = AjarThirdComer            // ... a monster of a part's group there
 	20175 = AjarThirdWay              // ... a part's way on from its level, a shutter its group's death opens
+	20180 = AjarThen                  // the then and now lab (then.zs): the shift from NOW to THEN
+	20181 = AjarThenCause             // ... a fixture THEN whose setting puts NOW in a state (a long cause)
+	20182 = AjarThenTarget            // ... something to shoot that sets it
+	20183 = AjarThenEmitter           // ... THEN's emitter, showing its beam
+	20184 = AjarThenBelt              // ... THEN's belt, running or standing
+	20185 = AjarThenMusic             // ... the lever that turns the music by time off
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -81,7 +87,7 @@ DoomEdNums
 	20064 = AjarCellPackEachGo        // ... and a cell pack, the same
 	20080 = AjarWorksSpot             // MAP32's look (works.zs): a light
 	20081 = AjarWorksRoom             // ... and a rectangle of a room
-	20180 = AjarDoomNote              // the Doom door lab (doomlab.zs): a Doom door line's own special, kept
+	20190 = AjarDoomNote              // the Doom door lab (doomlab.zs): a Doom door line's own special, kept
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
@@ -488,6 +494,17 @@ map WATER "Ajar: the water lab"
 	nocrouch
 	music = ""
 	EventHandlers = "AjarWaterHandler", "WaterTest"
+}
+
+// The then and now lab (tools/map_then.py, src/zscript/then.zs): MAP=THEN ./run.sh
+map THEN "Ajar: then and now"
+{
+	next = "THEN"
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_DEAD"
+	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "ThenTest"
 }
 
 // The left-handed room lab (tools/map_lefthand.py, src/zscript/lefthand.zs): MAP=LEFT ./run.sh
