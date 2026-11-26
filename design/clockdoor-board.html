@@ -1,0 +1,176 @@
+<title>Clocked Door Looks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, as MAP21's apparatus board. The four looks as swatches on top (leaf, wall trim, flat
+   trim at 4x), then one view at a time with the four looks side by side, then the pick and the line to paste. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); margin: 0;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 262px), 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sw { display: flex; flex-direction: column; gap: 6px; width: 258px; max-width: 100%; }
+.sw img { display: block; width: 256px; max-width: 100%; height: auto; image-rendering: pixelated; border: 1px solid var(--line); }
+.sw .trims { display: flex; gap: 0; }
+/* the trims at 4x: a piece 32 wide (two repeats across) and 64 high (one repeat up) of each */
+.sw .trims i { display: block; width: 128px; height: 256px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-size: 256px 256px; background-repeat: repeat; background-position: top left; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.views, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.views button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.views button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 474; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+.viewnote { font-size: 13.5px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+@media (max-width: 820px) { h1 { font-size: 25px; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP21 "In the Long Run" · the clocked door and its frame's trim · captured 26 Nov 2026 · GZDoom, monsters off</div>
+    <h1>The clocked door: three new looks</h1>
+    <p>You said, playing MAP21: "So this door decor (and door itself) doesn't look good". The leaf is ivory with thin brass lines and a small dial. In THEN's bright light it washes out to a flat white slab and is lost against the pale walls. The trim of its frames puts a whole clock face in every 64, and the frame's reveal is only 16 deep, so the faces are cut into slices on its sides, head and floor.</p>
+    <p>Each look below is a new leaf and a new trim. The trims are bands, rules and graduations that can be cut anywhere, with no whole faces. Each look was built into the level and photographed from the same 8 places, THEN and NOW, beside the door as it is today.</p>
+    <p class="muted">Nothing is chosen yet: the game keeps today's door and trim until you choose. Pick one look below; the line to paste into the chat is at the bottom. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The four looks, at 4x: the leaf, the trim on the reveal's sides, its head and floor</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>In the level</h3>
+    <div class="views" id="views" role="group" aria-label="View"></div>
+    <p class="viewnote muted" id="viewnote"></p>
+    <div class="opts" id="opts"></div>
+  </section>
+
+  <section class="sum" id="summary">
+    <h2>Your pick</h2>
+    <div class="picks" id="picks" role="group" aria-label="Pick a look"></div>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and the door will be built that way.</p>
+    <output id="pickline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+</div>
+<script>
+const LOOKS = [
+  ["0", "As it is", "Today's door: ivory, thin brass lines round the panels, a small dial. The trim: ivory bands with a whole clock face in each 64."],
+  ["1", "Long-case clock", "Walnut with a grain and a moulded edge. A brass bezel and an ivory dial with roman-like ticks, brass spandrels in the corners. The lower panel is glazed: the pendulum and two weights behind the glass. A brass lock plate. Trim: walnut, a brass inlay line and graduations."],
+  ["2", "Station clock", "Black enamel with a thin ivory line round it. A large white dial with bold black ticks and hands and a red second hand. In the lower panel a small second dial, the same face dimmed: the other time. Trim: black and ivory, graduated like the edge of a railway clock's dial."],
+  ["3", "Ivory, done properly", "Today's idea with weight: deep cream, shaded, never white. A heavy brass edge, brass frames round the panels with a shadow line, a dial of twice the area in a brass bezel, a brass escutcheon. Trim: cream, brass bands, dark hour ticks."]];
+// the views of src/zscript/clockdoorviews.zs, in order (view_00 .. view_07)
+const VIEWS = [
+  ["a", "Machine, THEN", "THEN, the machine's frame with the door hung in it and swung open, as in your screenshot. The trim is on the reveal."],
+  ["b", "Machine from back, THEN", "THEN, the same frame from 200 further back: the whole machine."],
+  ["c", "Machine, NOW", "NOW, the same frame from the dark hall, the door hung."],
+  ["e", "Corridor frame, NOW", "NOW, the corridor's frame 103, empty: it takes only the clocked door NOW, so it wears the trim."],
+  ["d", "Pocket frame, THEN", "THEN, the pocket's frame 123 with the door hung, as in your second screenshot."],
+  ["f", "Leaning, THEN", "THEN, the door put down against the pocket's pale west wall."],
+  ["g", "Leaning, NOW", "NOW, the door against the same wall in the dark corridor."],
+  ["h", "Carried, THEN", "THEN, the door carried: it is drawn in the corner of the screen."]];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l][1];
+document.getElementById("looks").innerHTML = LOOKS.map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sw"><img src="tex/leaf${n}.png" width="256" height="384" alt="${name}: the leaf">
+     <div class="trims"><i role="img" aria-label="${name}: the trim on the reveal's sides" style="background-image:url(tex/wall${n}.png)"></i><i role="img" aria-label="${name}: the trim on the reveal's head and floor" style="background-image:url(tex/flat${n}.png)"></i></div></div>
+   <div class="swcap">The leaf; under it the trim of the reveal's sides (left) and of its head and floor (right). A reveal is 16 deep: it shows a strip 16 wide of each.</div>
+   <p>${d}</p></div>`).join("");
+let pick, view = 0;
+try { pick = localStorage.getItem("clockdoor-pick") || undefined; } catch (e) {}
+function drawViews() {
+  document.getElementById("views").innerHTML = VIEWS.map(([k, n], i) =>
+    `<button type="button" id="view-${i}" data-view="${i}" aria-pressed="${i === view}">${n}</button>`).join("");
+  document.getElementById("viewnote").textContent = VIEWS[view][2];
+}
+function drawOpts() {
+  document.getElementById("opts").innerHTML = LOOKS.map(([l]) =>
+    `<div class="opt${pick === l ? " chosen" : ""}">
+       <button type="button" class="shot" aria-label="Enlarge: ${lookName(l)}, ${VIEWS[view][1]}"><img src="${l}/view_${pad(view)}.jpg" alt="${lookName(l)}: ${VIEWS[view][2]}"></button>
+       <h4><span>${l}</span>${lookName(l)}</h4>
+     </div>`).join("");
+}
+function drawPicks() {
+  document.getElementById("picks").innerHTML = LOOKS.map(([l, n]) =>
+    `<button type="button" id="pick-${l}" data-look="${l}" aria-pressed="${pick === l}">${l}. ${n}</button>`).join("");
+  document.getElementById("pickline").textContent = pick === undefined ? "Clocked door: nothing picked yet."
+    : `Clocked door: look ${pick} (${lookName(pick)}).`;
+}
+drawViews(); drawOpts(); drawPicks();
+document.getElementById("views").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  view = +b.dataset.view;
+  drawViews(); drawOpts();
+  document.getElementById("view-" + view).focus();
+});
+document.getElementById("opts").addEventListener("click", e => {
+  const b = e.target.closest("button.shot");
+  if (b) b.parentElement.classList.toggle("big");
+});
+document.getElementById("picks").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  pick = pick === b.dataset.look ? undefined : b.dataset.look;
+  try { if (pick === undefined) localStorage.removeItem("clockdoor-pick"); else localStorage.setItem("clockdoor-pick", pick); } catch (e) {}
+  drawOpts(); drawPicks();
+  document.getElementById("pick-" + b.dataset.look).focus();
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("pickline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("pickline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+</script>
