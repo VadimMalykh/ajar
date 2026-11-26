@@ -28,8 +28,10 @@ Places (NOW's coordinates; x east, y north):
             in it, with the megasphere (a secret). NOW bolted on both sides,
             the booth's footprint only; BLUE's far side NOW is in it, and
             arriving draws both bolts (the hall wakes).
-  corridor  (1312, 160, 1504, 2256), floor -40. THEN only its first stretch,
-            the pocket (y 160..640), behind a night grille. Frame 103 in its
+  corridor  (1312, 160, 1504, 2256), floor -40. THEN the player has only its
+            first stretch, the pocket (y 160..640): a night grille at 640, the
+            corridor at night beyond it (scenery); NOW the grille's wreck on
+            that line and the turnstile's opening, choked. Frame 103 in its
             east wall (NOW the clocked door's alone, THEN any door's), frame 104
             in its south wall (any door, both times).
   cellar    west of the corridor: the landing (1056..1232, 1088..1600, -40)
@@ -195,14 +197,21 @@ def stone(c, a, b):
     c.line(a, b, mid=STONE, exact=True)
 
 
+OVER = dict(dontpegtop=True)    # the wall over a way through: laid from the ceiling, as the wall beside it
+# (PLAN.md, "MAP21: the pocket is the corridor": an upper texture is laid from the way's head unless it is
+# upper-unpegged, so MAP11's 256-high walls stood 96 out of line over every frame, far side and opening;
+# map_institute1.over() has always unpegged them)
+
+
 def frame(a, b, out, n, wall, floor=0, clock=None, **k):
-    """A twinned frame; the wall over its mouth is the room's. `clock`: the
-    copies where it takes only the clocked door."""
+    """A twinned frame; the wall over its mouth is the room's, in line with
+    the wall beside it. `clock`: the copies where it takes only the clocked
+    door."""
     if clock:
         t.clock_frame(a, b, out, n, floor, when=clock, **k)
     else:
         t.frame(a, b, out, n, floor, **k)
-    t.line(a, b, upper=wall)
+    t.line(a, b, upper=wall, **OVER)
 
 
 def sign(c, a, b, out, part, words, oh):
@@ -210,15 +219,16 @@ def sign(c, a, b, out, part, words, oh):
     copy's look (map_institute1.SIGNS: gfx_institute draws it)."""
     w = abs(a[0] - b[0]) + abs(a[1] - b[1])
     key = (c.look, part, words, I1._shift(c.P(a), c.P(b), out), w, oh)
-    c.line(a, b, upper=I1.SIGNS.setdefault(key, f"AJIS{c.look}{len(I1.SIGNS):02d}"), exact=True)
+    c.line(a, b, upper=I1.SIGNS.setdefault(key, f"AJIS{c.look}{len(I1.SIGNS):02d}"), exact=True, **OVER)
 
 
 def room_door(a, b, out, floor, wall_near, wall_far, name, *, thick=64):
     """A room door in a wall `thick` deep; a-b its mouth on the corridor's
     side, `out` into the room. NOW Doom's: a door sector between two jamb
-    strips, USE opens it (Door_Raise), monsters too. THEN the corridor
-    beyond is not built: from inside the room the institute's door, shut,
-    "Locked for the night." (AjarThenLocked); declare the rooms first.
+    strips, USE opens it (Door_Raise), monsters too. THEN no way through:
+    from inside the room the institute's door, shut, "Locked for the
+    night." (AjarThenLocked), and the same door on the corridor's wall
+    beyond the night grille, `name` over it; declare the rooms first.
     Over it inside the room, at both times, the same plate: CORRIDOR (THEN
     on the door's face, NOW over Doom's door); NOW `name` over it on the
     corridor's side."""
@@ -239,6 +249,12 @@ def room_door(a, b, out, floor, wall_near, wall_far, name, *, thick=64):
     key = (th.look, wall_far, I1._shift(th.P(a3), th.P(b3), (-out[0], -out[1])), "", "CORRIDOR")
     th.cut(a3, b3)
     th.line(a3, b3, mid=I1.FACES.setdefault(key, f"AJID{th.look}{len(I1.FACES):02d}"), special=130, args=(LOCKED,),
+            playeruse=True, repeatspecial=True, exact=True)
+    # ... and on the corridor's wall, seen through the night grille: the same door shut, `name` over it (nobody
+    # comes here; the wall between is solid, as NOW's walls are where the door is not)
+    key = (th.look, wall_near, I1._shift(th.P(a), th.P(b), out), "", name)
+    th.cut(a, b)
+    th.line(a, b, mid=I1.FACES.setdefault(key, f"AJID{th.look}{len(I1.FACES):02d}"), special=130, args=(LOCKED,),
             playeruse=True, repeatspecial=True, exact=True)
 
 
@@ -307,6 +323,11 @@ ajarmap.room(m, [352, 672], [784, 880, 944, 1040], lambda i, j: j == 1, ceil=160
              ftex="AJXG2", rug="AJXR2", ctex="AJXC2", floor=0)
 ajarmap.recess(m, (352, 880), (352, 944), (-1, 0), 0, far_id(GREEN), far_id(GREEN) + THEN_ID, far_colour=GREEN)
 stone(t.now, (672, 880), (672, 944))
+# over GREEN's far side (both times) and HOME (THEN) the night room's wall goes on, laid as the wall beside it
+# (ajarmap's night room shows the doorway's trim there, from the way's head up: a column to the ceiling)
+for c in t.copies:
+    c.line((352, 880), (352, 944), upper="AJXW2", **OVER)
+t.then.line((672, 880), (672, 944), upper="AJXW2", **OVER)
 for x0, x1 in ((0, 384), (384, 640), (640, 1024)):
     t.now.line((x0, 768), (x1, 768), mid=STONE)
 t.now.cut((384, 768), (640, 768))
@@ -319,6 +340,8 @@ for x, y in ((96, 96), (928, 96), (96, 672), (928, 672)):
     t.now.thing(x, y, 2028)                                                      # floor lamps
 # --- the doorway to the vestibule: THEN open; NOW bolted on the vestibule's side
 t.then.opening((1024, 352), (1024, 416), (1, 0))
+t.then.line((1024, 352), (1024, 416), upper=EX, **OVER)                       # the walls go on over it
+t.then.line((1040, 352), (1040, 416), upper=AR, **OVER)
 ajarmap.bolted(m, (1024, 352), (1024, 416), (1, 0), 0, BOLTS)
 
 # =================================================================================================
@@ -336,7 +359,7 @@ fit(t.then, (1040, 224, 1296, 544), [((1104, 432, 1200, 496), box(40, "DT", "DS"
 # (the turnstile's step: down 16 before the squeeze, whose ceiling (-20 + 64) leaves 60 over it; 56 over the
 # vestibule's floor would not let the player in)
 t.far((1136, 224), (1200, 224), (0, -1), BLUE)                                 # BLUE's far side, NOW and THEN
-t.line((1136, 224), (1200, 224), upper=AR)
+t.line((1136, 224), (1200, 224), upper=AR, **OVER)
 # THEN the pass office, around BLUE's far side: locked for the night, solid below and glazed above (nothing
 # passes), PASSES over it; inside, the megasphere, and its floor is a secret (the lobby NOW no longer). Reached only through
 # BLUE hung in a frame THEN, left only back through it (region boothT).
@@ -356,9 +379,9 @@ ajarmap.unbolt(m, (1136, 224), (1200, 224), BOLTS)                              
 ajarmap.bolted(m, (1312, 272), (1312, 336), (-1, 0), LOW, BOLTS)               # to the corridor (NOW)
 # THEN: the goods edge (out with a door, never in) and the turnstile (empty hands, both ways)
 t.then.room((1296, 272, 1312, 368), floor=0, ceil=128, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF", light=200)
-t.then.line((1296, 272), (1296, 368), upper=AR)
+t.then.line((1296, 272), (1296, 368), upper=AR, **OVER)
 ajarmap.squeeze(m, t.then.P((1296, 448)), t.then.P((1296, 496)), (1, 0), -20)
-t.then.line((1296, 448), (1296, 496), upper=AR)
+t.then.line((1296, 448), (1296, 496), upper=AR, **OVER)
 # THEN the pass and key board behind the porter's desk, the notice by the turnstile, a small thing on the desk;
 # NOW where they hung (the south wall's strip is the pass office's: nothing of the apparatus there)
 picture((1088, 544), (1216, 544), (0, 1), "PB", "AR")
@@ -370,13 +393,33 @@ apparatus(1176, 476, SMALL_T)
 # =================================================================================================
 # 3. THE CORRIDOR (NOW) / THE POCKET (THEN)
 # =================================================================================================
+# The pocket THEN is the corridor's first stretch (PLAN.md, "MAP21: the pocket is the corridor"): THEN the
+# corridor goes on beyond the night grille, at night (scenery: the grille stops everything, and its rooms'
+# doors are shut); NOW the grille's wreck stands on the same line, and the turnstile's opening is there, choked.
 CORR = look(CO, FC, KC, LOW)
-t.now.room((1312, 160, 1504, 2256), **CORR, light=104)
+GRILLE = ((1312, 640), (1504, 640))
+POCKET_NOW = 136                # NOW the first stretch is lighter than the rest (104): through 123 THEN the clock
+                                # and the turnstile's wreck opposite 103 are made out
+FLOOR_BARS = [((1344, 576, 1408, 640), "AJ21GB1"), ((1408, 640, 1472, 704), "AJ21GB2")]   # NOW: bars lying there
+fit(t.now, (1312, 160, 1504, 640), [(r, dict(ftex=f)) for r, f in FLOOR_BARS if r[1] < 640], **CORR, light=POCKET_NOW)
+fit(t.now, (1312, 640, 1504, 2256), [(r, dict(ftex=f)) for r, f in FLOOR_BARS if r[1] >= 640], **CORR, light=104)
+t.now.line(*GRILLE, mid="AJ21GRW", midboth=True)                                # its wreck: stubs, nothing in the way
 t.then.room((1312, 160, 1504, 640), **CORR)
-t.then.room((1312, 640, 1504, 704), **dict(CORR, light=40))                     # beyond the night grille: dark
-t.then.line((1312, 640), (1504, 640), mid="AJGRIL", midboth=True, blocking=True, dontpegbottom=True)
+# beyond the grille THEN: dim, the tubes out, a night lamp's pool every 256 (on the corridor's middle line)
+NIGHT_LAMPS = range(832, 2256, 256)                # (on the 64s: AJ21NL's lamp is at its tile's corner)
+night = []
+for y in NIGHT_LAMPS:
+    night += [((1312, y - 96, 1504, y + 96), dict(light=128)), ((1376, y - 32, 1440, y + 32), dict(light=160, ctex="AJ21NL"))]
+fit(t.then, (1312, 640, 1504, 2256), night, **dict(CORR, ctex="AJ21KN"), light=88)
+t.then.line(*GRILLE, mid="AJGRIL", midboth=True, blocking=True, wrapmidtex=True, dontpegbottom=True)
 sign(t.then, (1312, 272), (1312, 368), (-1, 0), "CO", "NO DOORS BEYOND THIS POINT", 168)
-t.then.line((1312, 448), (1312, 496), upper=CO)
+t.then.line((1312, 448), (1312, 496), upper=CO, **OVER)                         # the turnstile, opposite 123
+# NOW the turnstile's opening: Doom's stone in it, the turnstile's bent bars across it (12 deep, not 16: the
+# vestibule's wall is at 1296, and NOW nothing joins them but the bolted door)
+t.now.room((1300, 448, 1312, 496), floor=-24, ceil=44, wall=STONE, ftex=STONE_FLAT, ctex="AJTRIMF", side=STONE,
+           light=POCKET_NOW)
+t.now.line((1312, 448), (1312, 496), mid="AJ21TRW", blocking=True, blockeverything=True, dontpegbottom=True,
+           upper=CO, **OVER)
 for c in t.copies:
     hang(c, (1312, 512), (1312, 640), "NB")                                     # the clock in the pocket's stretch
 picture((1504, 256), (1504, 384), (1, 0), "WN", "CO")                          # THEN a wall newspaper; NOW its ghost
@@ -620,8 +663,8 @@ for c in t.copies:
     fit(c, (LX - 336, 64, LX - 16, 256), [((LX - 336, 64, LX - 304, 256), box(48, "UT", "US"))],
         floor=0, ceil=160, wall=CK, ftex=FC, ctex=KC, light=c.light - 40)
     c.opening((LX, 128), (LX, 192), (-1, 0))
-    c.line((LX, 128), (LX, 192), upper=LB)
-    c.line((LX - 16, 128), (LX - 16, 192), upper=CK)
+    c.line((LX, 128), (LX, 192), upper=LB, **OVER)
+    c.line((LX - 16, 128), (LX - 16, 192), upper=CK, **OVER)
     hang(c, (LX + 448, 0), (LX + 576, 0), "ST")                                    # the street doors
     hang(c, (LX + 64, 640), (LX + 320, 640), "MO")
     hang(c, (LX + 768, 640), (LX + 896, 640), "NB")
@@ -630,7 +673,7 @@ for c in t.copies:
     c.cut((LX + 384, 640), (LX + 640, 640))                                         # the way north, sealed
     c.line((LX + 384, 640), (LX + 640, 640), mid="AJSHUT" if c.then else STONE, exact=True)
 t.far((LX, 288), (LX, 352), (-1, 0), RED)                                      # RED's far side, NOW and THEN
-t.line((LX, 288), (LX, 352), upper=LB)
+t.line((LX, 288), (LX, 352), upper=LB, **OVER)
 frame((LX + 1024, 288), (LX + 1024, 352), (1, 0), 110, LB)
 t.then.thing(LX + 512, 470, ajarmap.KEY_T["1"])                                 # key 1, on the porter's board behind the desk
 t.then.thing(LX - 240, 160, 8)                                                  # a backpack in the cloakroom

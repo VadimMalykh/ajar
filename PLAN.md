@@ -18460,3 +18460,154 @@ walking under the shutter as it comes down (the wait is tested only by its
 code, not by a monster in the way). GREEN's ambush in play (in the test
 ambushers are counted and removed). Save and load with the machine stopped
 or running.
+
+## MAP21: the pocket is the corridor (built 2026-11-26)
+
+**Vadim**, playing MAP21, standing in the pocket THEN and looking at frame
+123 with the clocked door hung in it, the corridor NOW through it: "This
+door is strange for 2 reasons. First decor - you see the issue? Also in the
+level all temp doors just goes to the same room in different time, and only
+this one goes to the corridor?"
+
+**What was wrong.**
+- *The wall over the frames.* The wall piece over a frame's mouth is the
+  line's upper texture. Doom lays an upper texture from the way's head up
+  (its foot at the head, 96 over the floor) unless the line is
+  upper-unpegged; the walls beside it are laid from the ceiling down. MAP11's
+  walls are 256 high, so over every frame, far side and opening of MAP21
+  the wall stood 96 out of line: over 123 the pale blue lower band ran up to
+  near the ceiling and the white band was cut. MAP11 never had it
+  (`map_institute1.over()` unpegs every such line); MAP21's own `frame()`,
+  `sign()` and the uppers it gave far sides and openings did not. The same
+  fault, so also out of line: every frame (101/121, 103/123, 104/124,
+  105/125, 106/126, 108/128, 110/130), RED's far side (the lobby, both
+  times), BLUE's (the vestibule, both times), the goods edge and the
+  turnstile THEN on the vestibule's side, the turnstile on the pocket's,
+  the lobby's way to the cloakroom (both sides), and the plates over the
+  room doors (CELLAR, GOODS, OPTICS, CORRIDOR) and NO DOORS BEYOND THIS
+  POINT, which stood 96 higher than drawn (NO DOORS ... over the ceiling,
+  unseen).
+- *The pocket read as a room.* THEN it was the corridor's first stretch
+  shut by a low brass rail with a black 64-deep box behind it (its ceiling
+  seen); NOW the corridor went on with nothing at that line, and the wall
+  opposite 103 was plain where THEN the turnstile is.
+
+**What was built** (`tools/map_longrun.py`; NOW's coordinates, THEN 8192
+north).
+1. *The wall over a way goes on as the wall beside it.* `OVER =
+   dict(dontpegtop=True)` on every upper MAP21 gives over a way: `frame()`
+   (so every frame, at both times, 101/121 included; the upper is still the
+   `wall` the caller gives, only its pegging changed), `sign()`, BLUE's and
+   RED's far sides, the goods edge and the turnstile (both faces), the
+   lobby's cloakroom way, the turnstile's line on the pocket's side. Over
+   the night room's ways (GREEN's far side at both times, HOME THEN)
+   ajarmap's night room shows the doorway's trim from the head to the
+   ceiling, a column; in MAP21 the night wall (`AJXW2`) now goes on over
+   them, laid as the wall beside (in line with the runner strip's lift). THEN
+   the hall's doorway to the vestibule (1024 and 1040, 352..416) showed the
+   opening's brass trim up to the ceiling; now the hall's and the
+   vestibule's walls go on over it. Nothing in `ajarmap.py` changed: every
+   other map's wad is byte for byte as before.
+2. *THEN the corridor goes on beyond the night grille*, in its full length
+   (1312..1504 x 640..2256), the pocket's look at night: light 88, the
+   ceiling's tubes out (`AJ21KN`), and every 256 a night lamp's pool (y 832,
+   1088, ..., 2112: 192 long at 128, the lamp's 64 square at 160, its
+   ceiling `AJ21NL`, a small round lamp lit). The grille (y 640) is now
+   floor to ceiling (`AJGRIL` wrapped; it was one 64-high tile, a rail) and
+   still blocks everything that walks. On the corridor's walls THEN the
+   room doors NOW has, shut, the institute's doors with their name plates
+   (`room_door()`: the same face as on the room's side, `name` over it, the
+   "Locked for the night." special): CELLAR (west, 1440..1504), GOODS (east,
+   1280..1344), OPTICS (north end, 1376..1440). The wall between them and
+   their rooms is solid, as before; nobody gets there (no new walk, no
+   things: `puzzle21.BUILT` unchanged).
+3. *NOW the grille's wreck on the same line* (y 640): `AJ21GRW`, a middle
+   texture 192 by 256 laid from the ceiling, nothing in the way: stubs of the
+   rails in both walls at the rails' four heights, stubs of the bars at the
+   ceiling and at the floor, a piece of the top rail hanging from two bars.
+   Two bars and a piece of rail lie on the floor (flats `AJ21GB1` at
+   1344..1408 x 576..640 and `AJ21GB2` at 1408..1472 x 640..704, the
+   corridor's floor with the bars on it).
+4. *NOW the turnstile's wreck* opposite 103 (1300..1312 x 448..496): the
+   same opening, choked with Doom's stone (TANROCK2 behind, RROCK09 heaped
+   to -24 under a head at 44, the squeeze's), the turnstile's post and bent
+   arms across it (`AJ21TRW`, 48 by 64, from the rubble up), blocking. 12
+   deep, not 16: the vestibule's wall is at 1296, and NOW nothing joins them
+   but the bolted door at 272..336.
+5. *NOW's first stretch is lighter* (160..640: 136, the rest of the
+   corridor 104 as before), so that through 123 THEN the corridor NOW, the
+   turnstile's wreck and the clock's wall opposite 103 are made out. NOW's
+   corridor is cut at 640 (two rooms, the wreck's line between them).
+6. The art: `tools/gfx_then.py`, `pocket()` (called by `make_longrun`).
+
+**Tests.**
+- `MAP=MAP21 MODE=3`: 52 views (104 screenshots; was 41). New: the pocket
+  THEN looking north through the grille, and NOW at the same spot (the
+  wreck); THEN facing west from 123 (the turnstile) and NOW (its wreck);
+  123 THEN and 103 NOW from in front, empty; the clocked door hung in 103:
+  from the pocket THEN through 123 (as Vadim's screenshot), from NOW
+  through 103, and both straight at the door (through it the other time's
+  wall opposite); the clocked door back in 101.
+- `MAP=MAP21 MODE=5` (new, `tools/smoke_MAP21_5.cfg`, `TIMEOUT=200`): the
+  wall over every frame and far side, from in front, THEN and NOW (18
+  places, 36 views; `frameViewsDone=1`): 101 to 110 and their twins, RED,
+  BLUE (and inside the pass office), GREEN, HOME, the bolted door and the
+  goods edge, the three room doors from the corridor, the hall's doorway,
+  the lobby's way to the cloakroom.
+
+**Departures from the brief, and choices of my own** (the worker's).
+- The night grille THEN is now floor to ceiling (it was one 64-high tile,
+  a rail with a black box over it), so that the wreck NOW, with stubs at the
+  ceiling, is its wreck and the corridor behind is seen through bars.
+- The turnstile's opening NOW is 12 deep, not 16 (see 4).
+- NOW's corridor has no closet doors on it: the closets (optics' A, B, C)
+  open off optics. THEN's corridor therefore has three doors, CELLAR, GOODS
+  and OPTICS, where NOW has its three.
+- The night lamps are at y 832 + 256 n (on the 64s, for the lamp drawn on
+  its tile's corner); light 88 between them, 128 in a pool, 160 under the
+  lamp (at 80 the corridor read black through the grille).
+- Over the night room's two ways and the hall's doorway THEN the wall now
+  goes on over them (1, above); those were not misaligned walls but the
+  doorway's trim shown as a column to the ceiling, ajarmap's look on every
+  map with a night room; changed for MAP21 only.
+- New test MODE=5 (`smoke_MAP21_5.cfg`) for the walls over the frames; the
+  views asked for in MODE=3 are there as well.
+
+**Other maps.** No other map lays one of MAP11's walls as an upper over a
+way without unpegging it: MAP11 to MAP16 (`map_institute*.py`) use
+`over()`, the THEN lab (`map_then.py`) unpegs its own. Every map's night
+room (`ajarmap.way_out`, `way_home`) and the THEN lab's frames show the
+doorway's trim from the head to the ceiling, as designed; left as it is.
+
+**Runs** (on the full build).
+- `./build.sh` (full): exit 0; MAP21 "solvable in 16 door actions, 2657941
+  states, 0 stuck", "can be lost for good: nothing"; every level 0 stuck.
+- Every map wad but MAP21.wad byte for byte the same as a build of main
+  (c84fa51, `git archive` into build/, `AJAR_QUICK=1`): 47 of 48.
+- `tools/mapcheck.py map_longrun`: no way under 48; the same 7 notes (six
+  WALL for targets, one SLOT, the water's control sector); 1155 sectors,
+  255 things, 3 secret sectors. `tools/thingcheck.py`: 0 problems.
+  `tools/itemcheck.py`: the same 2 notes. No things added or moved: the
+  monsters' spots (`spot()`, which looks only at things) are where they
+  were; the counts and the budget are unchanged.
+- MODE=1 (`TIMEOUT=700`): 85 checks, 0 failed, `outByTheWayOut`,
+  `levelExited`. MODE=2: 14, 0 failed. MODE=4: 20, 0 failed. MODE=3: 52
+  views, the clocked door in 103, back in 101 and on through the old views
+  as before. MODE=5: 36 views, `frameViewsDone=1`. MODE=7 (`-nomonsters`):
+  `lookViewsDone=1`.
+- Looked at: every MODE=5 view (the wall over each frame and far side in
+  line at both times) and the new MODE=3 views.
+
+**Older statements now wrong.**
+- "MAP21 ... the first playable version", the level as built, 3: "THEN only
+  the pocket (y 160..640) and a dark stub behind the night grille at 640":
+  THEN the corridor goes on beyond the grille, at night, with its doors shut.
+- The same, "Room doors": "THEN the same doorways are the institute's doors
+  drawn on the room's wall": also on the corridor's wall THEN.
+- "MAP21: colour doors by time ...", MODE=3 "41 views": now 52.
+
+**Not tested / not played by hand.** Nothing played by a person. The look
+on the real machine (GLES): the night corridor's light through the grille,
+the lamps, the wreck's stubs at a distance; the turnstile's wreck in the
+dark seen from the corridor's far end. Monsters NOW walking through the
+wreck's line (it has no blocking flags; MODE=1 runs with them removed).
