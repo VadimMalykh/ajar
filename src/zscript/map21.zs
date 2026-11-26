@@ -676,7 +676,7 @@ class LongRunTest : EventHandler
 		if (S()) Done();
 	}
 
-	// === MODE=3: views (a screenshot every 70 tics: tools/smoke_MAP21_3.cfg) ===========================
+	// === MODE=3: views, 140 tics each (a screenshot every 70 tics: tools/smoke_MAP21_3.cfg; two a view) ===========
 	void View(Actor mo, string what, double x, double y, double ang, double pitch = 0)
 	{
 		Pose(mo, x, y, ang, pitch);
@@ -687,46 +687,46 @@ class LongRunTest : EventHandler
 	{
 		if (S()) { mo.bInvisible = true; Wait(15); }
 		if (S()) { View(mo, "the start NOW: the machine and its desk; through 101 the hall THEN, its desk and its clock", 512, 40, 90); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the same spot THEN: through 121 the hall NOW", 512, OFF + 40, 90); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "hall NOW from the north-east: the machine, Doom's stone, the benches' footprints", 980, 740, 215, 8); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "hall THEN from the north-east: the brass shutter, the benches", 980, OFF + 740, 215, 8); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "vestibule NOW: bolted both ways, BLUE's far side", 1060, 530, 315); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "vestibule THEN: the porter's desk, the goods edge, the turnstile", 1060, OFF + 530, 315); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the corridor NOW from its south end", 1408, 176, 90); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the pocket THEN: the night grille, NO DOORS BEYOND THIS POINT, frame 123", 1480, OFF + 610, 200); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the cellar NOW, the valve open (found): the pit full", 1220, 1580, 220, 15); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the cellar THEN: the pit dry, the tanks, the target on the ledge", 1220, OFF + 1580, 220, 15); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { SetNow(VALVE, 0); View(mo, "the cellar NOW, the valve shut: the pit dry, the store's pressure door", 1220, 1580, 220, 15); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the goods bay NOW, the belt standing (found): the hatch stair, the gallery", 1590, 1520, 330); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the goods bay THEN: the belt, the racks", 1590, OFF + 1520, 330); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { SetNow(BELT, 1); View(mo, "the goods bay NOW, the belt running: the heap up to the gallery", 1590, 1520, 330); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "optics NOW, the beam at C (found): hole C open", 1180, 2340, 40); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "optics THEN: the emitter at C, the targets", 1180, OFF + 2340, 40); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { SetNow(BEAM, 1); View(mo, "optics NOW, the beam at A: hole A open, C shut", 1640, 2340, 145); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the lobby THEN: RED's far side, the desk, the clock", LX + 990, OFF + 600, 215); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the lobby NOW (the secret): dust, the megasphere", LX + 990, 600, 215); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { desk.Start(mo); View(mo, "the hall THEN, the machine running: the shutter opening", 760, OFF + 520, 120); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 		if (S()) { View(mo, "the hall THEN, the machine running: the shutter open, the night room", 512, OFF + 600, 90); Next(); }
-		if (S()) Wait(69);
+		if (S()) Wait(139);
 	}
 }
