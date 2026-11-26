@@ -193,7 +193,7 @@ def apply(S, n):
             elif fl == 16:
                 dress(i, wall=wall, side=W("SE"), ftex=F_("CQ"), role="boil")
             elif fl == S.CAT:
-                dress(i, wall=wall, side=wall, ftex=F_("GR"), tint=None, role="boil")
+                dress(i, wall=wall, side=wall, ftex=F_("GR"), role="boil")
             else:
                 dress(i, wall=wall, side=wall, ftex=F_("BP"), ctex=F_("KB"), role="boil")
             secs[i]["ctex"] = F_("KB")
@@ -220,7 +220,7 @@ def apply(S, n):
                 dress(i, wall=wall, side=W("SF"), ftex=F_("ER"), role="stack")
         # the gantry over R
         elif s["id"] == S.GANTRY:
-            dress(i, wall=W("TH", F=0, part=1), side=W("GG"), ftex=F_("CQ"), ctex=F_("RG"), tint=None, role="gantry")
+            dress(i, wall=W("TH", F=0, part=1), side=W("GG"), ftex=F_("CQ"), ctex=F_("RG"), role="gantry")
 
     # --- R, the turbine hall; the mezzanine ---------------------------------------------------------
     for i, s in enumerate(secs):
@@ -244,7 +244,7 @@ def apply(S, n):
             continue
         if within(i, S.MEZZ):
             dress(i, wall=W("TH", F=0, part=2), side=W("TH", F=S.RF, part=2), ftex=F_("TT"), ctex=F_("RG"),
-                  tint=None, role="mezz")         # (its edge over R: R's own wall)
+                  role="mezz")         # (its edge over R: R's own wall)
 
     # --- part 2 -------------------------------------------------------------------------------------
     for i, s in enumerate(secs):

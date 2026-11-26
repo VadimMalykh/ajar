@@ -32,6 +32,10 @@
 //  4  the stand's save: killed on stand 2 after the alarm in go 2, USE
 //     (smoke_MAP33_4.cfg), the save made at the stand is loaded (before the
 //     alarm), the go plays on to its time door and go 3 begins.
+//  5  the tour (the look board, tools/power33.py; with EXTRA=-nomonsters): a
+//     camera of its own is put at fixed views (the player stays at the start,
+//     not drawn, and nothing of the goes is set off), one each 80 tics from
+//     t 163, each named in the log; smoke_MAP33_5.cfg shoots each at 238 + 80 n.
 // The parts are told apart by the sectors' user_part (map_station.py).
 // The yard in the middle (common.zs; PLAN.md, "MAP33: the yard in the middle, built"), in modes 1, 3 and 4
 // (until its load), with yardtest.zs's checks: go 1 comes from the stack court onto the terrace (group 1),
@@ -911,6 +915,7 @@ extend class AjarTimeHandler
 		double frame = m3Last > 0 ? now - m3Last : 0;
 		m3Last = now;
 		mo.player.cheats |= CF_GODMODE;
+		if (mode == 5) { Tour33(mo, t); return; }
 		if (paradox) mo.player.cheats &= ~CF_GODMODE;
 		if (mode == 4 && m3Died > 0 && !thirdLoads) mo.player.cheats &= ~CF_GODMODE;
 		if (t % 35 == 0)
@@ -1758,4 +1763,85 @@ extend class AjarTimeHandler
 		}
 		// (USE: smoke_MAP33_4.cfg presses it, +use)
 	}
+
+	// --- the tour (MODE=5) -----------------------------------------------------------------
+	AjarTourCam33 tourCam;
+
+	void Tour33(PlayerPawn mo, int t)
+	{
+		if (t < 163) return;       // (after the level's first words are gone)
+		int i = (t - 163) / 80, st = (t - 163) % 80;
+		if (st != 0) return;
+		double x, y, z, ang, pitch;
+		String name;
+		[x, y, z, ang, pitch, name] = TourView33(i);
+		if (name == "")
+		{
+			if (i == TOUR33_N) Console.PrintfEx(PRINT_HIGH | PRINT_NONOTIFY, "AJARTEST tour over: %d views", i);
+			return;
+		}
+		if (!tourCam)
+		{
+			tourCam = AjarTourCam33(Actor.Spawn("AjarTourCam33", (x, y, 0)));
+			mo.A_SetRenderStyle(1.0, STYLE_None);
+		}
+		Sector sec = level.PointInSector((x, y));
+		if (z <= -1e8) z = sec.floorplane.ZatPoint((x, y)) + 41;
+		tourCam.SetOrigin((x, y, z), false);
+		tourCam.angle = ang;
+		tourCam.pitch = pitch;
+		mo.player.camera = tourCam;
+		Console.PrintfEx(PRINT_HIGH | PRINT_NONOTIFY, "AJARTEST view=%d t=%d %s (%d,%d,%d) %d", i, t, name, x, y, z, ang);
+	}
+
+	const TOUR33_N = 35;
+	double, double, double, double, double, String TourView33(int i)
+	{
+		double F = -1e9;            // (the floor under the view, + 41)
+		switch (i)
+		{
+		case 0: return 120, 2620, F, 45, 0, "S: the gatehouse towards its pictures";
+		case 1: return 640, 3120, F, 225, 5, "S: the counter and the boxes' glass";
+		case 2: return 512, 3770, F, 60, 0, "the coal yard from its mouth";
+		case 3: return 760, 4300, F, 0, 0, "the coal yard to the gate and the bunker";
+		case 4: return 2300, 3880, F, 80, -5, "the boiler house floor to a boiler's front";
+		case 5: return 3400, 4900, F, 200, 15, "the boiler house from the catwalk";
+		case 6: return 3640, 3904, F, 0, 0, "the ash tunnel";
+		case 7: return 3700, 4450, F, 30, 5, "the pump room";
+		case 8: return 4950, 4650, F, 322, -8, "the stack court and the chimney";
+		case 9: return 4980, 3350, F, 180, 15, "the terrace over the middle yard";
+		case 10: return 5100, 3330, F, 340, 18, "the gantry down into R";
+		case 11: return 950, 3608, F, 0, 0, "the gallery along its windows";
+		case 12: return 2750, 3000, F, 315, 5, "the workshop";
+		case 13: return 2800, 2368, F, 180, 0, "the armoury through its bars";
+		case 14: return 4350, 2800, F, 90, -18, "the middle yard's floor up at the ledges";
+		case 15: return 4900, 2720, F, 0, 10, "the mezzanine into R";
+		case 16: return 5150, 2200, F, 20, -5, "R's floor to a casing and the bays";
+		case 17: return 6050, 3200, F, 270, 9, "R to the pits";
+		case 18: return 300, 2048, F, 0, 0, "the cable tunnel";
+		case 19: return 1700, 1300, F, 30, 0, "the switchyard among the transformers";
+		case 20: return 2600, 1950, F, 220, -5, "the switchyard's walls and gantry";
+		case 21: return 3000, 2100, F, 330, 5, "the relay room";
+		case 22: return 3100, 1650, F, 315, 5, "the pond";
+		case 23: return 4600, 1024, F, 0, -18, "the tower from its floor";
+		case 24: return 5184, 1624, F, 270, 18, "the tower from its ledge";
+		case 25: return 5100, 1944, F, 0, 0, "the duct along its windows";
+		case 26: return 8384, 3500, F, 270, 20, "stand 1 over L";
+		case 27: return 7900, 2880, F, 0, -5, "L's floor to the cabinets, a pedestal, the bays";
+		case 28: return 7700, 2880, F, 0, 15, "stand 2 over L";
+		case 29: return 8990, 2880, F, 0, 0, "the exit room";
+		case 30: return 288, 3060, 110, 90, 0, "picture 1, the station plan";
+		case 31: return 620, 2976, 106, 0, 0, "picture 2, the safety rules";
+		case 32: return 3690, 2560, 110, 0, 0, "picture 3, the shadow board";
+		case 33: return 3420, 1984, 108, 0, 0, "picture 4, the single-line diagram";
+		case 34: return 8000, 3230, 138, 90, 0, "picture 5, the synchroscope";
+		}
+		return 0, 0, 0, 0, 0, "";
+	}
+}
+
+class AjarTourCam33 : Actor        // the tour's eye (MODE=5): holds still where it is put
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +NOINTERACTION +INVISIBLE +DONTSPLASH CameraHeight 0; Height 2; Radius 1; }
+	States { Spawn: TNT1 A -1; Stop; }
 }

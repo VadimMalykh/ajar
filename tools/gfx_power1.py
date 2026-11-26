@@ -285,10 +285,10 @@ def lumps(base, hi, seed, size=5, glint=None):
                     best, kb = d, h32(cx + dx, cz + dz, seed + 2)
         g = 0.75 + 0.5 * kb - 0.05 * best
         col = shade(base, max(0.4, g))
-        if glint and best < 1.2 and kb > 0.7:
+        if glint and best < 0.9 and kb > 0.94:
             return glint
-        if best < 1 and kb > 0.5:
-            col = mix(col, hi, 0.4)
+        if best < 1 and kb > 0.75:
+            col = mix(col, hi, 0.25)
         return col
     return f
 
@@ -694,10 +694,11 @@ def m_LH(w, F, part):
         v = math.sin(x * 0.11 + z * 0.045 + 3 * math.sin(z * 0.02 + x * 0.03)) + 0.6 * math.sin(x * 0.05 - z * 0.08)
         g = 0.93 + 0.06 * h32(x // 8, z // 8, 77)
         col = shade((214, 212, 204), g)
-        if abs(v) < 0.08:
-            col = mix(col, (112, 110, 106), 0.7)
-        elif abs(v) < 0.2:
-            col = mix(col, (150, 148, 142), 0.3)
+        v += 0.25 * math.sin(x * 0.37 + z * 0.23) * h32(x // 16, z // 16, 76)
+        if abs(v) < 0.035:
+            col = mix(col, (118, 116, 112), 0.55)
+        elif abs(v) < 0.12:
+            col = mix(col, (160, 158, 152), 0.18)
         u = x % P
         if u < 3:
             return shade(BRONZE, (0.7, 1.3, 1.0)[u])
