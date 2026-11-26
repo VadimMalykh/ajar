@@ -17585,3 +17585,23 @@ On no map: Garmonic, Fast (2), Between Floors (12), Grandmother's Footsteps
 and the two new ones (26, 27). On more than one: Off Its Hinges three maps;
 After Hours, Paradox Engine and Fire Door two each. The lab THEN plays Dead
 Letter Office.
+
+## Music: the Toccata and the Slow one removed; ten variations on Paradox Engine ordered (2026-11-26)
+
+**Vadim**, having heard 26 and 27: "Both - no", then: "Could you maybe
+generate 5 fast and 5 slow? So I have something to choose from? Main melodic
+idea should be the same, with some variations, also different instruments,
+rhytms, etc".
+
+Paradox Engine, Toccata (AJM_ENGT) and Paradox Engine, Slow (AJM_ENGS) are
+removed from `tools/music.py`; they played on no map. The lab has 25 tracks
+again, numbered as before. (In the table of the section above, "the two new
+ones (26, 27)" are these and are gone.)
+
+Both had the riff and the two tunes note for note and changed only who
+plays them and how fast. What he asks for now is wider: the tunes may be
+varied and the rhythm changed. `tools/music.py` now holds the two tunes as
+patterns for the new pieces: as they are, a second way of playing each (the
+long notes walked through), and both cut for a bar of twelve. The ten are
+written in two tasks, `engine-fast` (26 to 30 in the lab) and `engine-slow`
+(31 to 35); what each is stands in the section that follows them.
