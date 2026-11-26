@@ -11,11 +11,19 @@ Each takes a few minutes (PUZZLE21: two million states). The solution printed
 has the solver's number of door actions; its steps are a tidy one of that
 length (the fewest steps too), since setting a cause costs no action.
 
-Found (2026-11-26): solvable in 9; 2656 stuck states, all one way: a plain
-door hung in 103 now while the clocked door is carried down the drop into
-the pocket c1T, where it can hang nowhere (1103's twin is full) and cannot
-go back up the squeeze. variant_pocket_now_clock_only removes them and keeps
-every stage needed.
+First round (2026-11-26), the graph now kept as OPEN_THEN: solvable in 9;
+2656 stuck states, all one way: a plain door hung in 103 now while the
+clocked door is carried down the drop into the pocket c1T, where it can hang
+nowhere (1103's twin is full) and cannot go back up the squeeze.
+pocket_now_clock_only removed them. And spineT was one region with all three
+fixtures in it, so one hanging gave them all on foot.
+
+Second round, PUZZLE21 now: then, each room is locked for the night (spineT
+split in four rooms with no way between them), and the pocket's fix is in.
+Solvable in 12 door actions, 1494528 states, 0 stuck, nothing lost; the
+valve, belt, beam and vestibule each needed. Each of 102, 104 (c2T), 106 or
+107, 110 and 111 is spare: left out alone, or 102, 104, 107, 110 and 111 all
+together (SPARE), the answer is the same 12 actions, 0 stuck, nothing lost.
 
 Regions NOW end in N (and the closets A, B, C), THEN in T; `exit` is the goal.
 """
@@ -28,7 +36,7 @@ from ajarmap import RED, BLUE, NAMES
 CLOCK = 10                                      # the clocked door's key
 NOW = (101, 102, 103, 104, 105, 106, 107, 108, 110, 111)     # the frames' now ids; then = now + 1000
 
-PUZZLE21 = dict(
+OPEN_THEN = dict(                              # the first round's graph, for the record
     start="hallN", goal="exit", names={**NAMES, CLOCK: "the clocked door"},
     frames={101: "hallN", 102: "hallN", 103: "spineN", 104: "spineN", 105: "spineN", 106: "spineN",
             107: "spineN", 108: "spineN", 110: "lobbyN", 111: "lobbyN",
@@ -65,6 +73,23 @@ PUZZLE21 = dict(
 )
 
 
+
+def _second_round():
+    """PUZZLE21: OPEN_THEN with each room then locked for the night, and the
+    pocket's frame 103 the clocked door's alone (1103 takes any door)."""
+    q = copy.deepcopy(OPEN_THEN)
+    rooms = {1104: "c2T", 1105: "vT", 1108: "bT", 1106: "oT", 1107: "oT"}   # spineT, split
+    q["frames"].update(rooms)
+    q["only"] = {101: CLOCK, 103: CLOCK, 1103: tuple(sorted(q["doors"]))}
+    q["causes"]["valve"]["at"] = ["vT"]
+    q["causes"]["belt"]["at"] = ["bT"]
+    q["causes"]["beam"]["at"] = ["oT"]
+    return q
+
+
+PUZZLE21 = _second_round()
+
+
 # -- variants: each the smallest change tried against a family of stuck states
 
 def frozen(name, p=PUZZLE21):
@@ -83,7 +108,8 @@ def without_vestibule(p=PUZZLE21):
     return q
 
 
-VARIANTS = {}
+VARIANTS = {}                                   # tried against PUZZLE21
+RECORD = {}                                     # the first round's, against OPEN_THEN
 
 
 def variant(f):
@@ -91,8 +117,35 @@ def variant(f):
     return f
 
 
+def record(f):
+    RECORD[f.__name__] = f
+    return f
+
+
 @variant
-def variant_pocket_clock_only(p=PUZZLE21):
+def variant_open_then():
+    """The first round's graph (OPEN_THEN), for the record.
+
+    spineT one region, every fixture in it; no pocket fix."""
+    return copy.deepcopy(OPEN_THEN)
+
+
+def without_frame(*fs, p=PUZZLE21):
+    """p without the frames fs (now ids) and their twins: are they needed?"""
+    q = copy.deepcopy(p)
+    for f in fs:
+        t = q["twins"].pop(f)
+        for x in (f, t):
+            q["frames"].pop(x)
+            q["only"].pop(x, None)
+    return q
+
+
+SPARE = (102, 104, 107, 110, 111)               # each left out alone: still 12 actions, 0 stuck
+
+
+@record
+def variant_pocket_clock_only(p=OPEN_THEN):
     """The pocket's frame (103, and so 1103) takes only the clocked door.
 
     Against the one family of stuck states: a plain door hung in 103 now
@@ -103,8 +156,8 @@ def variant_pocket_clock_only(p=PUZZLE21):
     return q
 
 
-@variant
-def variant_pocket_now_clock_only(p=PUZZLE21):
+@record
+def variant_pocket_now_clock_only(p=OPEN_THEN):
     """Only the now side of the pocket's frame (103) is the clocked door's.
 
     103 takes only the clocked door, 1103 (then, in the pocket) any door.
@@ -117,8 +170,8 @@ def variant_pocket_now_clock_only(p=PUZZLE21):
     return q
 
 
-@variant
-def variant_pocket_stair(p=PUZZLE21):
+@record
+def variant_pocket_stair(p=OPEN_THEN):
     """The pocket c1T gets back up to the hall then on foot, door in hand.
 
     The other way to the same end: the squeeze c1T -> hallT made a plain
@@ -130,8 +183,8 @@ def variant_pocket_stair(p=PUZZLE21):
     return q
 
 
-@variant
-def variant_shots_only(p=PUZZLE21):
+@record
+def variant_shots_only(p=OPEN_THEN):
     """Not a fix: the fixtures can be set only by a shot through the door.
 
     The causes lose `at`: in spineT the player can no longer walk up to the
@@ -283,10 +336,13 @@ def report(p, title, examples=10, quiet=False, lose=True):
 
 def main(args):
     """No argument: PUZZLE21. `all`: that, the causes frozen, the vestibule
-    test and every variant. Or name any of: puzzle, frozen, vestibule and
-    the variants."""
-    want = set(args) if args and "all" not in args else (
-        {"puzzle", "frozen", "vestibule", *VARIANTS} if args else {"puzzle"})
+    test, every frame left out in turn and every variant. Or name any of:
+    puzzle, frozen, vestibule, frames, a frame left out (`no104`), the
+    variants, and the first round's (RECORD)."""
+    every = {"puzzle", "frozen", "vestibule", "frames", *VARIANTS}
+    want = set(args) if args and "all" not in args else (every if args else {"puzzle"})
+    if "frames" in want:
+        want |= {f"no{f}" for f in NOW if f not in (101, 103)} | {"spare"}
     if "puzzle" in want:
         report(PUZZLE21, "PUZZLE21 (MAP21 as designed)")
     if "frozen" in want:
@@ -295,7 +351,17 @@ def main(args):
                    examples=2, quiet=True, lose=False)
     if "vestibule" in want:
         report(without_vestibule(), "PUZZLE21 without a way in by the vestibule's bolted doors", examples=2, lose=False)
-    for name, f in VARIANTS.items():
+    for f in NOW:
+        if f"no{f}" in want:
+            report(without_frame(f), f"PUZZLE21 without frame {f}/{f + 1000}", examples=2, quiet=True)
+    if "spare" in want:
+        report(without_frame(*SPARE), f"PUZZLE21 without all of {', '.join(map(str, SPARE))} (and their twins)",
+               examples=3)
+        report(without_vestibule(without_frame(*SPARE)), "  that, without a way in by the vestibule's bolted doors",
+               examples=1, quiet=True, lose=False)
+        for c in ("valve", "belt", "beam"):
+            report(frozen(c, without_frame(*SPARE)), f"  that, the {c} frozen", examples=1, quiet=True, lose=False)
+    for name, f in {**VARIANTS, **RECORD}.items():
         if name not in want:
             continue
         print()
