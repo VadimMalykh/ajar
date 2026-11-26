@@ -216,15 +216,15 @@ def timetable(out):
     im.disc(32, 20, 9, (40, 60, 100))
     im.disc(32, 20, 7, (236, 232, 214))
     text(im, "A", 29, 18, (40, 60, 100), 1)
-    im.rect(4, 40, 60, 118, (244, 242, 236))                                 # the timetable, pinned
-    im.frame(4, 40, 60, 118, (120, 118, 110), 1)
+    im.rect(1, 40, 63, 118, (244, 242, 236))                                 # the timetable, pinned: the paper is
+    im.frame(1, 40, 63, 118, (120, 118, 110), 1)                             # as wide as ГОСТИНИЦА needs (8..61)
     for k, (n, words) in enumerate((("1", "ГОСТИНИЦА"), ("2", "ТЕАТР"), ("5", "ВОКЗАЛ"), ("7", "ДЕПО"))):
-        y = 44 + k * 10
-        digit(im, n, 7, y, INK, 1)
-        cyr(im, words, 13, y, (60, 60, 70), 1)
-    text(im, "LINE 4", 8, 88, (170, 30, 26), 1)
-    text(im, "TOMORROW", 8, 98, (170, 30, 26), 1)
-    for x, y in ((6, 42), (57, 42), (6, 115), (57, 115)):
+        y = 46 + k * 10
+        digit(im, n, 2, y, INK, 1)
+        cyr(im, words, 8, y, (60, 60, 70), 1)
+    text(im, "LINE 4", 8, 90, (170, 30, 26), 1)
+    text(im, "TOMORROW", 8, 100, (170, 30, 26), 1)
+    for x, y in ((3, 42), (60, 42), (3, 115), (60, 115)):
         im.set(x, y, (150, 40, 40))
     out["textures/AJ22TT.png"] = im.png()
 

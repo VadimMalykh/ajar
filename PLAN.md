@@ -16422,10 +16422,10 @@ runs one way, then to now, at once.
 | Level | Idea | Place |
 |---|---|---|
 | 21 "In the Long Run" | then and now; long causes | the machine hall's wing, and MAP11's lobby |
-| 22 | on loan: what is taken from now is owed to then | the archive and the specimen stores: part 1's doors, and the frames they were cut from |
+| 22 "Day Return" (built 2026-11-27) | the town then, by day, and the same stop now: the bus when it was new and the old one; the turn (the clocked door hung on the bus) | MAP10's square, the hotel, the station, the theatre, the depot |
 | 23 | company in time: shut then, bones now; glass that shows one way; the wide beast and the jigsaw wall ("the vivarium", MAP20's second proposal) | the cells and runs |
 | 24 | a third time (Academy), two clocked doors, a chain through three times; the building grows | a wing that is a yard, then a hall, then a ruin |
-| 25 (special, a secret way out) | the town then, by day: the player hangs part 1's doors; the bus when it was new | the square, the hotel, the station |
+| 25 | free: the town then is 22 now. "On loan: what is taken from now is owed to then" (the 22 of the first outline: the archive and the specimen stores, part 1's doors and the frames they were cut from) waits for a level: this one, or as a mechanic of 23 or 24 | open |
 | 26 | the experiment: the machine is run, the door to after hangs | the machine hall, at a quarter to |
 | 27 to 29 | after: Doom II's own maps, with doors; one for space, one for time, one for both | open: which maps |
 | 30 | the first frame | open |
@@ -19464,7 +19464,8 @@ door left hanging then and found hanging now; lodgers in the new bus after
 the turn; the hotel and the station now; the museum; fights tuned by play.
 
 **What moves in the outline** ("The ten levels, in outline"): 22 is this;
-the old 22 ("on loan") is 23's or 24's mechanic; 25 is free.
+the old 22 ("on loan") is 23's or 24's mechanic; 25 is free. (The table is
+rewritten so, 2026-11-27.)
 
 ## MAP22 "Day Return": the first playable version (built 2026-11-27)
 
@@ -19580,8 +19581,9 @@ theatre, the secrets' 100 and 200 armour): to be tuned by play.
 - A monster killed then leaves its corpse now (then.zs's company, as in
   MAP21), also where there is no place now (the hotel): such a corpse lies
   outside the map, unseen.
-- The timetable's long word (ГОСТИНИЦА) runs over the paper's edge at
-  64 pixels; the letters are the 5 by 5 ones of the old bus.
+- The timetable's long word (ГОСТИНИЦА) ran over the paper's edge at
+  64 pixels (the letters are the 5 by 5 ones of the old bus); mended at the
+  review: the paper is the width of the piece but for a pixel each side.
 - `mapcheck`: 16 notes, all MAP10's own and in the same places shifted
   (lamps and a candle that touch a wall in the theatre and the hotel; the
   32-wide gaps MAP10 has in the theatre's and the hotel's excerpts).
