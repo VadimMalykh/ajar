@@ -16305,3 +16305,182 @@ every other piece keeps its number. The lab has 25 tracks.
 | MAP12 Going Up | Paradox Engine (AJM_ENGN), track 5 | Left Luggage (AJM_LUGG), by lot |
 
 Paradox Engine is on MAP12 and MAP18 now. Left Luggage plays on no map.
+
+## Levels 21 to 30: "Stale Air", the concept (2026-11-26, to discuss)
+
+**Vadim** (2026-11-26): "I'd like to start working on maps 21-30 concept in
+general and map21 in particular." This part shows how experiments with space
+and time led to what parts 1 and 2 are. His ideas: start in the same
+institute, "but it's new and full of scientific devices (in the part 2 it
+was kind of old and mostly empty)"; somewhere come out to places like part
+1's, "so we see connection"; classic Doom elements here and there; new space
+and time paradoxes; and the classic Doom maps somewhere, "not sure if we make
+it the part of this story, or it will be completely separate thing (map30
+for example)".
+
+Everything below is Claude's (Fable), to argue over. **Nothing is built and
+the engine has not been asked.** It keeps what is decided already: time in 21
+to 30 is "the door to before", a place built twice, then and now, with no
+recording, no copies and no paradox death (2026-11-23; copies stay in the
+secret maps); from MAP20 on Doom's own elements grow, and a Doom door is
+never a frame until the act in Doom II's maps (2026-11-24).
+
+### The story, as it is played
+
+Nobody tells it. Each line is something the player does or walks through.
+
+1. **The institute learnt to move doors** (space). Parts 1 and 2 are that,
+   seen after the end: the departments were the research, the town was the
+   field trial.
+2. **The clock department made a door keep its when**: the door to before.
+   It is the player's tool in this part, and it is safe.
+3. **The big machine was built for the other direction: a door to after.**
+   What was on its far side is Doom II: the same Earth, later. A door works
+   both ways (core rule 5), so what lived there came back through it. That
+   is where the monsters are from, why the institute was shut and left, and
+   why Doom's stone and doors seep into the building more with every level:
+   the leak is the future coming nearer.
+4. **So the classic maps are part of the story**: they are "after", and the
+   player goes there through the machine. Doom's own tale is experiments
+   with teleporters that went wrong; the institute's doors are their
+   ancestor. Late maps of the part are Doom II's own, loaded from the
+   player's `doom2.wad` and changed as they load ("A late act in Doom II's
+   own maps"); only there is a Doom door a frame.
+5. **The loops are the player's.** The door to before that they carry was
+   never made by anybody (MAP21's end, below); the doors of the hotel, the
+   theatre and the station were hung where MAP01 to MAP10 found them by the
+   player, then. The last level is the first frame, and the choice of what
+   hangs in it.
+
+Nobody is met: the rooms then are just left (tea still hot, coats on the
+hooks, a radio on). It needs no sprites of people and it is odder than a
+staff would be. Shapes behind frosted glass at most.
+
+Doom's places are never rebuilt by the generator: in Ajar's own maps Doom is
+its textures, doors and things, referenced from the IWAD; a classic place is
+the real map from the player's `doom2.wad` or nothing.
+
+### The two times, and the look
+
+Then and now are the same building in two of MAP11's three looks, which the
+generator has already: **now** is Post Box (flaking, empty, as 11 to 20);
+**then** is Thaw (the 1960s science town: white panels, aluminium, terrazzo,
+the mosaic), lit, humming and full of apparatus: racks with lamps, tape
+drives, scopes, tanks, coils, belts that run, clocks that go, blackboards
+written over. Now, the same rooms show where it all stood: squares of
+unfaded paint, bolt holes, cut cables. The third look, Academy (the 1950s),
+is a third time for a later level. New drawing: the apparatus (a look board
+for Vadim, as for the earlier levels).
+
+### The clocked door (the Stale door of the first day's table)
+
+- A carried door with a clock on its face. **It joins the frame it hangs in
+  to the same frame at the other time.** Hung now, it opens on then; taken
+  through itself and hung then, it opens on now. Rule 1 holds: what it
+  remembers is a when.
+- What it shows: the room you stand in, from that wall, as it was (or as it
+  will be), without you in it. A mirror that is forty years out. Stepping
+  through, you come out of the same wall into the same room at the other
+  time.
+- Then and now are both just places to the generator and the solver, so
+  every plain door keeps working: its far side is a place in one of the two
+  times, and carried across it makes a second link between the times.
+- Fixed ones for sights: a doorway with a clock over one face ("The
+  one-sided doorway lab"), plain from one side and then from the other.
+- Engine, expected: as a Pair whose twin is always the same frame's recess
+  in the other copy ("The Pair door": a frame's recess does serve as the
+  arriving side). To be shown in a lab first.
+- **Not in the first version: a plain door left hanging then and found
+  hanging now.** It is the obvious wish, but then one door has two near
+  sides and its far side cannot say which it leads back to. Kept as a
+  question.
+
+### What is new: long causes
+
+The goes of MAP31 to MAP33 are short time: seconds, copies, paradox. This
+part's time is long, and its paradoxes are **small things left running for
+forty years**. Each is a fixture then and a state of the room now; cause
+runs one way, then to now, at once.
+
+- A valve left dripping then is a flooded cellar now (MAP20's water).
+- A belt left running then is a heap of crates now, high enough to climb;
+  stopped again, the heap was never there and what lay under it is free.
+- A beam left on then has burnt through a wall by now: the player chooses
+  the wall. Switched off, the wall is whole.
+- A lift car sent up then stands rusted at that floor now: a bridge over
+  its shaft.
+- A monster led through to then and shut there (take the door down) is a
+  heap of bones now, on the spot. It is still alive then.
+- Shots cross doors: a switch then can be shot from now, and the room
+  changes round the player who did it. Cause and effect in one view.
+- Later levels: the future as a contract ("Time doors": a key found in the
+  ruin now was put there then, by the player, who owes it until they do);
+  the future as a warning (a corpse lying now is a fight to come then).
+
+### The ten levels, in outline (loose: numbers and order can move)
+
+| Level | Idea | Place |
+|---|---|---|
+| 21 "In the Long Run" | then and now; long causes | the machine hall's wing, and MAP11's lobby |
+| 22 | on loan: what is taken from now is owed to then | the archive and the specimen stores: part 1's doors, and the frames they were cut from |
+| 23 | company in time: shut then, bones now; glass that shows one way; the wide beast and the jigsaw wall ("the vivarium", MAP20's second proposal) | the cells and runs |
+| 24 | a third time (Academy), two clocked doors, a chain through three times; the building grows | a wing that is a yard, then a hall, then a ruin |
+| 25 (special, a secret way out) | the town then, by day: the player hangs part 1's doors; the bus when it was new | the square, the hotel, the station |
+| 26 | the experiment: the machine is run, the door to after hangs | the machine hall, at a quarter to |
+| 27 to 29 | after: Doom II's own maps, with doors; one for space, one for time, one for both | open: which maps |
+| 30 | the first frame | open |
+
+The other way to place the classic maps, if Vadim would rather keep the
+story Ajar's own: an epilogue outside the ten (their own episode), and 27
+to 30 stay in the institute. Claude's view: inside is better, because the
+story then needs them, and "what looks like Doom" has been promising them
+since MAP20.
+
+### MAP21 "In the Long Run" (outline)
+
+Name: Claude's candidate; the other is "Back in Five Minutes".
+
+**One idea**: the same place twice, and what is left running then is found
+done now. The level starts and ends at the machine.
+
+1. *See it.* The machine hall now, from MAP20's sluice: dark, the machine
+   dead, and in the machine's own frame a clocked door, hanging. Through it
+   the same hall, lit and new. Step through, turn round: the ruin you came
+   from. Take the door down.
+2. *Round it in the other time.* Now, a corridor is under its own ceiling;
+   then, it is whole, but the pass desk's turnstile is shut for the night
+   where now it lies broken. Two hangings, zigzag.
+3. *The drip.* A valve then, a pool now, a gallery reached by floating.
+4. *The belt.* The heap wanted for one thing and the bare floor for the
+   next: the belt's lever then is shot from now, through the door.
+5. *The beam.* Optics: three walls it can be turned to, one hole at a time.
+6. *MAP11's lobby, then*, from inside: the mosaic, the board of honour with
+   every photograph still up, the clock going.
+7. *The way out.* The machine then: its frame stands empty and wired, and
+   it starts only with a clocked door in it. The player hangs theirs and
+   leaves by the brass way out it opens. That is the door they found there
+   at the start: nobody made it.
+
+Fights: now is the ruin's (Doom's monsters, the leak's stone). Then is
+quiet at first, which is the point of it. Every ambush then comes through
+frames: the ruin's monsters walking into the past by doors, which is the
+story in small. Two plain doors beside the clocked one in the first
+version.
+
+**Labs first**, as for the belt and the clock:
+- *Then and now* (needed for MAP21): one room built twice in two looks; the
+  clocked door in the same frame at two times, its view, a monster through
+  it; one long cause of each kind (a level, a heap, a hole) and a switch
+  then shot from now with the player in the room that changes.
+- *A Doom door as a frame* (needed for 27 to 29, and the plan asks for it
+  since 2026-11-23): load one of Doom II's maps, make one of its doors a
+  frame from ZScript, hang a door in it. If it fails, the classic maps'
+  place is thought again before 26 is drawn.
+
+**Open, for Vadim**:
+1. Doom II as "after", behind the machine's door, and so the classic maps
+   inside the story (27 to 29 and perhaps 30)? Or apart?
+2. The clocked door as written (carried; a frame joined to itself at the
+   other time), and long causes as MAP21's idea?
+3. Nobody met then, or people seen?
+4. The two labs: go?
