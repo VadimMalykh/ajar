@@ -82,9 +82,14 @@ def desk_panel(live):
 
 
 def make_longrun(out):
-    tr = clock_trim()
+    import gfx
+    if gfx.CLOCKDOOR:                                            # a look of the board's (tools/gfx_clockdoor.py)
+        import gfx_clockdoor
+        tr, fl = gfx_clockdoor.trim(gfx.CLOCKDOOR)
+    else:
+        tr = fl = clock_trim()
     out["textures/AJCKTR.png"] = tr.png()
-    out["flats/AJCKTF.png"] = tr.png()
+    out["flats/AJCKTF.png"] = fl.png()
     out["textures/AJTHK2.png"] = desk_panel(True).png()
     out["textures/AJTHK3.png"] = desk_panel(False).png()
     causes(out)

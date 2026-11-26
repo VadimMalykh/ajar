@@ -353,9 +353,9 @@ BUSES = dict(ftex="AJQRF" if LOOK else "AJSTEEL", side="AJBUS", floor=D + ajarma
 ajarmap.fitted(m, (-512, 192 + DY, 512, 640 + DY), [
     ((-448, 384 + DY, -128, 512 + DY), BUSES), ((128, 448 + DY, 448, 576 + DY), BUSES),
     ((-64, 576 + DY, 64, 640 + DY), dict(WOOD, floor=D + 48)),
-    ((176, 576 + DY, 336, 640 + DY), low(D + 32)),                           # under the hole from PINK's room
-    ((-64, 192 + DY, 64, 256 + DY), low(D)),                                 # over YELLOW's far side
-], floor=D, light=NIGHT, ftex="AJQOC" if LOOK else "AJSTEEL", **OPEN)
+    ((176, 576 + DY, 336, 640 + DY), dict(low(D + 32), lift=D + 160 - 512)),   # under the hole from PINK's room
+    ((-64, 192 + DY, 64, 256 + DY), dict(low(D), lift=D + 128 - 512)),      # over YELLOW's far side
+], floor=D, light=NIGHT, ftex="AJQOC" if LOOK else "AJSTEEL", **OPEN)       # (a porch's wall laid as the yard's: lift)
 recess((-32, 192 + DY), (32, 192 + DY), (0, -1), D, far_id(YELLOW), 101, far_colour=YELLOW)
 # the gate: out to the lane behind the bus, a step down, and never in. It takes
 # a door through: with a hole for empty hands only, whoever carried YELLOW in
@@ -401,13 +401,125 @@ if seven.LOOK:                                                               # i
     m.line((1824, 1384), (1888, 1384), upper=seven._face("D", "A", (1824, 1384), (0, 1), "2"))
     m.line((1824, 1400), (1888, 1400), upper=seven._face("D", "A", (1824, 1384), (0, -1), "2"))
 recess((2048, 1560), (2048, 1624), (1, 0), PIT, 116, 201)                    # the dome's frame
-ajarmap.stairs(m, (1664, 1700), (1664, 1764), (-1, 0), PIT, 96, steps=6, ceil=160, light=150, **DOME)
+ajarmap.stairs(m, (1664, 1700), (1664, 1764), (-1, 0), PIT, 96, steps=6, ceil=160, light=150,
+               lift=160 - 448, **DOME)                  # its walls laid as the dome's are, from the dome's ceiling
 over((1664, 1700), (1664, 1764), DOME["wall"] if seven.LOOK else None)
 m.sector(rect(1408, 1700, 1472, 1764), floor=0, ceil=128, light=150, **PASSAGE)
 ajarmap.squeeze(m, (1416, 1700), (1464, 1700), (0, -1), 0)
 m.sector(rect(1408, 1320, 1472, 1684), floor=0, ceil=128, light=150, **PASSAGE)
 m.sector(rect(1472, 1320, 1584, 1384), floor=0, ceil=128, light=150, **PASSAGE)
 ajarmap.opening(m, (1600, 1320), (1600, 1384), (-1, 0), 0)
+
+# --- walls that carry on ------------------------------------------------------
+# (Vadim, 2026-11-26, in the pit under the stage door: "decor issue". Its band
+# stepped where the wall went on over a higher floor, and over its doorway
+# stood a block of the arch's stone.)
+#
+# 1. The wall over (or under) a frame, a far side, a doorway, an opening, a
+# hole or a squeeze is the room's own: no trim, no arch stone, no other room's
+# wall. Door faces, signs, bars and nailed-up doors stay as they are.
+BAR, GREENROOM, HOUSE, CIRCLE = "AJ3B1", "AJ3XG", "AJ3H1D", "AJ3H1B"       # MAP03's, where its pieces are
+for a, b, tex in (
+        ((608, 928 + TY), (608, 992 + TY), BACKSTAGE["wall"]),              # the pit under the stage door: its doorway
+        ((224, 912 + TY), (288, 912 + TY), BACKSTAGE["wall"]),              # ... the stage door, from the ledge
+        ((224, 896 + TY), (288, 896 + TY), STALLS["wall"]),                 # ... and from the house
+        ((672, 928 + TY), (672, 976 + TY), CIRCLE), ((672, 976 + TY), (672, 992 + TY), CIRCLE),   # ... the doorway's back, on the circle
+        ((-256, 1024 + TY), (-192, 1024 + TY), FOYER["wall"]),              # RED's far side in the foyer
+        ((240, 1488 + TY), (240, 1552 + TY), FOYER["wall"]), ((256, 1488 + TY), (256, 1552 + TY), BAR),   # foyer and bar
+        ((2112, 992 + TY), (2112, 1056 + TY), BACKSTAGE["wall"]), ((2128, 992 + TY), (2128, 1056 + TY), GREENROOM),
+        ((512, -96 + TY), (640, -96 + TY), HOUSE),                          # high in the house
+        ((HX + 224, 0), (HX + 288, 0), HOTEL["wall"]),                      # line 1, in the hotel's lobby
+        ((HX - 352, -64), (HX - 352, 0), HROOM["wall"]), ((HX - 368, -64), (HX - 368, 0), "AJ2T1"),   # a room and its bath
+        ((HX - 1696, 848), (HX - 1632, 848), "AJ2KW"),                      # a Stray door's place, in the kitchen
+        ((SX + 352, 0), (SX + 416, 0), "AJ5A1"),                            # line 5, in the station's vestibule
+        ((SX + 1088, 1280), (SX + 1152, 1280), "AJ5A1"),                    # a Stray door's place, on a platform
+        ((-464, -816), (-464, -752), "AJSAFE"),                             # ... and in the kiosk
+        ((304, -464), (304, -400), "AJXW2"), ((624, -464), (624, -400), "AJXW2"),   # the line: BLUE's and VIOLET's far sides
+        ((384, -304), (448, -304), "AJXW2"),                                # ... its hole
+        ((96, 1168), (96, 1232), "AJXW2"), ((416, 1168), (416, 1232), "AJXW2"),     # PINK's room: PINK's far side, its brass frame
+        ((224, 1072), (288, 1072), "AJXW2"),                                # ... its hole
+        ((288, -208), (352, -208), Q("AJQS")),                              # the shelter's brass frame
+        ((-32, 192 + DY), (32, 192 + DY), BRICK),                           # YELLOW's far side in the depot
+        ((432, 192 + DY), (448, 192 + DY), BRICK), ((448, 192 + DY), (496, 192 + DY), BRICK),   # the depot's gate
+        ((1824, 1000), (1888, 1000), seven.LOWW),                           # line 4, in the observatory's library
+        ((1600, 1320), (1600, 1338), seven.LOWW), ((1600, 1338), (1600, 1370), seven.LOWW),
+        ((1600, 1370), (1600, 1384), seven.LOWW),                           # ... the way round, from the library
+        ((1584, 1320), (1584, 1384), PASSAGE["wall"]),                      # ... and from the passage
+        ((1416, 1684), (1464, 1684), PASSAGE["wall"]), ((1416, 1700), (1464, 1700), PASSAGE["wall"]),   # its squeeze
+        ((2048, 1560), (2048, 1624), DOME["wall"] if seven.LOOK else None),  # the dome's frame
+        ((1472, 1700), (1472, 1764), DOME["wall"] if seven.LOOK else None),  # the top of the dome's stairs
+        ((-1600, -368), (-1600, -304), six.CELLW),                          # the cellar's frame (its mouth, whole)
+):
+    over(a, b, tex)
+for a, b, tex in (                                                           # ... and under
+        ((432, 448), (496, 448), BRICK),                                    # the depot's gate, from the lane
+        ((224, 640 + DY), (288, 640 + DY), BRICK),                          # the hole from PINK's room, in the depot
+        ((384, -208), (448, -208), Q("AJQS") or FENCE),                     # the hole from the line, in the shelter
+        ((-1184, -432), (-1184, -400), six.STAIR["wall"]),                  # the hall, from the cellar's bay
+        ((-1184, -400), (-1184, -368), six.STAIR["wall"]),
+):
+    m.line(a, b, lower=tex)
+m.line((432, 448), (496, 448), upper="AJTRIM")                               # (inside the gate)
+m.line((384, -208), (448, -208), upper="AJBRICK")                            # (inside the holes)
+m.line((224, 640 + DY), (288, 640 + DY), upper="AJBRICK")
+over((-1560, -112), (-1496, -112), six.STAIR["wall"])                        # the foot of the cellar's stairs, from them
+for a, b in (((-1184, -432), (-1184, -400)), ((-1184, -400), (-1184, -368))):
+    m.line(a, b, upper=six.STAIR["wall"])
+
+
+# 2. Where a room's own wall goes on over or under a step in the ceiling or the
+# floor (a porch, a window, a higher floor beyond, a riser), it is laid from the
+# room's ceiling as the rest of that wall is, not from the step: its bands and
+# courses run on. Only where every side that shows that part shows its own
+# room's wall, and never on a line with something on it (a railing).
+def carried(ld, sides, a, b, si, other, given):
+    if other is None or given["mid"] not in (None, "AJWIN"):          # (a window's glass is as tall as its opening)
+        return
+    for part, flag, shows in (("top", "dontpegtop", lambda s, o: s["ceil"] > o["ceil"]),
+                              ("bottom", "dontpegbottom", lambda s, o: o["floor"] > s["floor"])):
+        seen = [(k, m.sectors[x]) for k, x, y in (("sidefront", si, other), ("sideback", other, si))
+                if shows(m.sectors[x], m.sectors[y])]
+        if ld.get(flag) or not seen or any(sides[ld[k]].get("texture" + part) != s["wall"] for k, s in seen):
+            continue
+        ld[flag] = True
+        for k, s in seen:                                             # a room under a strip of lights (sector(lift=))
+            if s["lift"]:
+                sides[ld[k]]["offsety_" + part] = float(-s["lift"])
+
+
+m.line_hook = carried
+
+
+# 3. The same for the walls of a low piece of a room: the reveals of the
+# hotel's windows (sill and sky, MAP02's ajarmap.window) and the attic's floor
+# seen up its shaft are laid from the ceiling of the room they open off.
+def sector_at(x, y):
+    for i, poly in enumerate(m.polys):
+        hit = False
+        for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+            if (ay > y) != (by > y) and x < ax + (y - ay) * (bx - ax) / (by - ay):
+                hit = not hit
+        if hit:
+            return m.sectors[i]
+    return None
+
+
+def laid_from(low, room):
+    low["lift"] = low["ceil"] - (room["ceil"] - room["lift"])
+
+
+for key, p in list(m.lineprops.items()):
+    if p.get("mid") != "AJWIN" or p.get("upper") or p.get("dontpegtop"):     # (bars have their own)
+        continue
+    (ax, ay), (bx, by) = sorted(key)
+    mx, my, n = (ax + bx) / 2, (ay + by) / 2, ((bx - ax) ** 2 + (by - ay) ** 2) ** 0.5
+    ux, uy = (by - ay) / n, (ax - bx) / n
+    for s in (1, -1):
+        sill, room = sector_at(mx + s * ux * 4, my + s * uy * 4), sector_at(mx - s * ux * 4, my - s * uy * 4)
+        if sill and room and sill["ftex"] == "AJTRIMF" and sill["ceil"] - sill["floor"] == 56:
+            laid_from(sill, room)
+            laid_from(sector_at(mx + s * ux * 10, my + s * uy * 10), room)
+laid_from(sector_at(HX + 1800, 224), sector_at(HX + 1700, 224))              # the attic, from its shaft
 
 # --- doors and keys ----------------------------------------------------------
 m.thing(-64, -592, 1, angle=90)                                           # player start, in the square
