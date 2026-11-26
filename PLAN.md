@@ -16484,3 +16484,114 @@ version.
    other time), and long causes as MAP21's idea?
 3. Nobody met then, or people seen?
 4. The two labs: go?
+
+## The then and now lab (built 2026-11-26)
+
+`MAP=THEN ./run.sh` ("Ajar: then and now"; tools/map_then.py, tools/ajarthen.py,
+src/zscript/then.zs, tests src/zscript/thentest.zs; pictures tools/gfx_then.py
+and the clocked door in tools/gfx.py). The lab the concept above asks for
+before MAP21: a place built twice, a door that joins the two times, the long
+causes, company across forty years.
+
+**What is built.** One corridor with five bays, every room twice: NOW at the
+plan's own coordinates in MAP11's look 3 (Post Box, light 120), THEN 4096 north
+in look 2 (Thaw, light 216), no monsters THEN. `ajarthen.Times` builds a room in
+both copies from one description with per-copy differences (`now=`, `then=`,
+`only=`, or `both(fn)` for anything else); a frame n NOW has its twin n + 20
+THEN. The start is in the hall NOW with a shotgun, shells, a chaingun and
+bullets; the clocked door and RED lean there.
+1. *The hall*: W, M, E. NOW rubble cuts W from M; THEN a steel gate (shut for
+   good) cuts M from E, open NOW. E (a soulsphere) takes two hangings: in 101
+   NOW walk into THEN, W to M there, hang it in 122 THEN, walk into M NOW,
+   through the gap to E. Frame 131 THEN has no twin; RED's far side is NOW
+   (corridor), so RED carried into THEN and hung in 131 leads to NOW and back.
+   The lever on W's west wall NOW turns the music by time off and on.
+2. *The belt*: THEN a belt from frame 124 east; running, NOW is a heap of crate
+   steps (24 apart, the crates' lids on top) up to a ledge at 120 with a
+   megasphere; standing, the heap was never there and a pit with a berserk pack
+   is open under its first two steps. Lever and target THEN on the east wall.
+3. *The drip*: THEN's valve; open, the bay NOW is a tank 96 deep (water.zs basin
+   41, held by the cause), and the ledge at 112 (blue armour) is reached by
+   floating up and walking off the surface; shut, dry. THEN always dry.
+4. *The beam*: THEN's emitter off, at the west wall (A) or the east wall (B),
+   its beam shown as a line of dots to the wall. NOW the wall it points at has
+   a burnt hole 64 wide and 96 high (a 16-thick wall sector whose ceiling
+   opens, ASHWALL2 edges), a closet behind each (rocket launcher, plasma rifle).
+   Lever (steps off, A, B) and three targets (A, off, B) THEN on the south wall.
+5. *Company*: a pen behind a lever gate (each time its own gate), NOW two imps
+   and a demon; frame 105/125 beside it.
+
+**How it works** (then.zs).
+- *AjarThen* (20180) names the shift; a point is THEN past half of it.
+- *The clocked door* is colour 10 (CLOCKED: ivory, a clock face, HUD "the
+  clocked door"), built as a Pair whose second leaf is a shadow (args[3] 3)
+  never seen leaning. Hung in frame F (USE as for any door), its shadow hangs
+  in F's twin (the frame at F's spot ± the shift), and the two frames link
+  both ways through the Pair code that exists. Taken from either frame both
+  leaves come down and the player holds the door. Refusals: a frame with no
+  twin ("This frame has no other time."); a frame whose twin holds another
+  door; any other door into either frame of the hung clocked door. Strays,
+  the repainter and the solver know nothing of it (none in this lab).
+- *Long causes*: AjarThenCause (20181) THEN, 2 or 3 settings, stepped by its
+  lever (Thing_Activate; the NOW copy of the lever is a dead plate, AJTHD3) or
+  set by shooting an AjarThenTarget (20182; player shots only, hits within 35
+  tics count once). The NOW sectors it moves carry their heights per setting as
+  UDMF user fields (`ajarthen.heights`); they move over 64 tics; `user_hold`
+  holds a ceiling while anything stands under it, and the cause's openings wait
+  for its closings (one hole at a time); `user_raised` shows the crate lid
+  while the floor stands above setting 0. A basin is held and driven straight
+  to its depth. Things with tid 1000 + the cause's are there only in setting 0
+  (the berserk pack). THEN shows it: AjarThenEmitter (20183), AjarThenBelt
+  (20184, Scroll_Floor run and stopped at run time).
+- *Company*: a monster that dies THEN leaves an old corpse NOW at the same spot
+  (its last death frame, translation AjarDust, not solid). While no hung door
+  joins the times (the clocked door, or a plain door hung in one time with its
+  far side in the other), each monster alive THEN shows NOW as that corpse
+  where it stood when the last link came down; a link made again removes them.
+  Monsters follow through the clocked door by AjarSense as through any door.
+- *Music by time*: THEN plays AJM_AFTR, NOW the map's own (AJM_DEAD), switched
+  when the player crosses; the lever (AjarThenMusic, 20185) turns it off.
+
+**Tests** (`MAP=THEN MODE=n tools/smoke.sh`, all pass):
+1. the door: hang NOW, twin shows it, links both ways, walk into THEN facing
+   in, refusals at both frames, take THEN, twinless frame refuses, W to M
+   THEN, gate holds, hang in 122, M NOW, the far end; RED across times and
+   back; refused where the twin holds RED; music follows, lever off and on
+   (30 checks).
+2. the drip: dead lever NOW, valve by lever USE, full, THEN dry, float up,
+   onto the ledge, armour, shut by its target (12).
+3. the belt: belt runs THEN by a real shot from NOW through the clocked door
+   in 104, the player rides the step up unhurt, the pit covered, crate lids,
+   climb to the ledge, lever stops it, heap gone, pit item back and taken, a
+   player in the pit is lifted and not crushed (17).
+4. the beam: target sets A, A opens alone, beam shown, through A, stepped to B
+   with the player standing in A: A waits, B waits for A, A shuts once clear,
+   B opens, through B; off by a shot from NOW through 107 (15).
+5. company: gate by USE, monsters come out, both imps follow into THEN, one
+   killed THEN leaves its old corpse NOW, the door taken down THEN: the one
+   alive THEN shows NOW as a corpse, the dead one's stays; hung again: the
+   stand-in goes (14).
+6. 22 views (tools/smoke_THEN_6.cfg).
+
+**Measured**: a cause's change NOW takes 64 tics (1.8 s); the tank fills to 96
+in 63 tics and is dry again 63 tics after the target is shot. mapcheck: no way under 48
+(the one SLOT is water.zs's control sector in the void); the targets stand 12
+from their wall (radius 10). Other maps' wads byte-identical to main's.
+
+**Choices made here**:
+- Sector moves take 64 tics, not 70: with 70 the heights drift by rounding
+  (24/70 per tic), a floor ends a hair under its step and a 24 step can no
+  longer be climbed (measured: stuck at the second step). Any count that is a
+  power of two keeps whole heights whole. MAP21 should keep that.
+- The clocked door's sprite is AJDT/AJNT (sprite names have four letters).
+- A THEN-only frame keeps its own number (131), not +20.
+- The buoy water.zs puts in every basin is in the tank (it shows the level).
+- The beam's dots are PLSS sprites; the emitter is AJEM, the targets AJTG.
+
+**Not tested / not played by hand**: nothing here has been played by a person.
+Whether the music restarts on each switch: by GZDoom's S_ChangeMusic it starts
+the other piece from its beginning each time (no sound in the smoke tests, not
+heard). Monsters following through the clocked door from THEN back to NOW, a
+monster in a hole when it closes (only the player is tested), the lever of the
+beam pressed while standing in a hole (the test sets it by script, which a
+player cannot do), save and load, and the views as art (dark NOW bays).

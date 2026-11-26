@@ -117,6 +117,37 @@ PAIR_COLOURS = {8: (40, 170, 160), 9: (230, 120, 40)}      # TEAL and ORANGE: th
 
 STRAY = 7           # the Stray door: every colour at once, and no far side of its own
 STRAY_GREY = (120, 120, 130)
+CLOCKED = 10        # the clocked door (ajarthen, then.zs): ivory, a clock on its face; its sprites AJDT, AJNT
+IVORY = (232, 222, 196)
+
+
+def clocked_door():
+    """The clocked door's leaf: ivory, brass-edged panels, and a clock face in
+    the upper panel at ten past ten. No colour's cousin: it leads to no place
+    of its own, only to the same frame at the other time."""
+    import math
+    brass, ink = (176, 140, 66), (40, 36, 34)
+    im = Img(64, 96, IVORY)
+    im.frame(0, 0, 64, 96, shade(IVORY, 0.55), 3)
+    for y1, y2 in ((8, 52), (58, 88)):
+        im.rect(9, y1, 55, y2, shade(IVORY, 0.9))
+        im.frame(9, y1, 55, y2, brass, 2)
+    im.noise(5, CLOCKED)
+    im.disc(53, 55, 3, brass)                     # the knob
+    im.disc(32, 30, 16, brass)                    # the clock: a brass rim, a white dial
+    im.disc(32, 30, 14, (250, 248, 240))
+    for k in range(12):                           # the hours
+        a = math.radians(k * 30)
+        r = 11 if k % 3 else 10
+        for d in range(r, 13):
+            im.set(round(32 + d * math.sin(a)), round(30 - d * math.cos(a)), ink)
+    for turn, length in ((-60, 7), (60, 10)):     # ten past ten
+        a = math.radians(turn)
+        for d in range(length + 1):
+            for w in (0, 1) if length == 7 else (0,):
+                im.set(round(32 + d * math.sin(a)) + w, round(30 - d * math.cos(a)), ink)
+    im.disc(32, 30, 1, (170, 40, 30))
+    return im
 
 
 def stray_door():
@@ -143,6 +174,8 @@ def door(colour):
     """64x96 door leaf: two panels, a knob and a glyph that names the far side."""
     if colour == STRAY:
         return stray_door()
+    if colour == CLOCKED:
+        return clocked_door()
     base = DOOR_COLOURS.get(colour) or PAIR_COLOURS[colour]
     im = Img(64, 96, base)
     im.frame(0, 0, 64, 96, shade(base, 0.45), 3)
@@ -1279,10 +1312,11 @@ def make_all():
     levers(out, "AJLEVR", wall)                                      # on the plain wall (MAP08)
     levers(out, "AJLEVB", brick, 160)                                # and on brick: the caretaker's office
 
-    for c in list(DOOR_COLOURS) + [STRAY] + list(PAIR_COLOURS):
+    for c in list(DOOR_COLOURS) + [STRAY] + list(PAIR_COLOURS) + [CLOCKED]:
         d = door(c)
+        sp = "T" if c == CLOCKED else c                # a sprite's name has four letters
         out[f"textures/AJDR{c}.png"] = d.png()
-        out[f"sprites/AJD{c}A0.png"] = d.png(grab=(32, 96))
+        out[f"sprites/AJD{sp}A0.png"] = d.png(grab=(32, 96))
         # the same door nailed to its frame: two planks across it
         for y0 in (22, 62):
             for i in range(64):
@@ -1292,8 +1326,8 @@ def make_all():
                 d.set(i, y + 6, (90, 64, 40))
             for x in (5, 58):
                 d.disc(x, y0 + x // 6 + 3, 1, (220, 220, 225))
-        out[f"sprites/AJN{c}A0.png"] = d.png(grab=(32, 96))
-        if c in PAIR_COLOURS:                      # no far side, so no surround of its own
+        out[f"sprites/AJN{sp}A0.png"] = d.png(grab=(32, 96))
+        if c in PAIR_COLOURS or c == CLOCKED:      # no far side, so no surround of its own
             continue
         rgb = DOOR_COLOURS.get(c, STRAY_GREY)
         t = Img(64, 64, shade(rgb, 0.7))
@@ -1335,6 +1369,8 @@ def make_all():
     gfx_institute.weigh_dial(out, map_institute1.LOOK)           # MAP16's weighbridge dial, in the build's look
     import gfx_dispatch                                          # MAP17's line, crates, notes and board
     gfx_dispatch.make(out, map_dispatch.NOTES)
+    import gfx_then                                              # the then and now lab's levers (map THEN)
+    gfx_then.make(out)
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
                            + "cameratexture AJREEL 512 224\n"
                            + "cameratexture AJPASSC 256 160\n").encode()   # what the pass's double sees (pass.zs)

@@ -1,0 +1,586 @@
+// Then and now (the lab THEN: tools/map_then.py, tools/ajarthen.py; PLAN.md,
+// "The then and now lab"). The tests: thentest.zs.
+//
+// A place built twice: NOW, and THEN forty years before, the same plan shifted
+// by a fixed offset (AjarThen, thing 20180: args[0], args[1] the shift from NOW
+// to THEN; it stands in NOW). "The same spot at the other time" is a point
+// plus or minus the shift; a point is THEN if it lies past half the shift.
+//
+// The clocked door (AjarDoor colour 10; ajar.zs's Hang, Unhang, UseFrame call
+// the AjarHandler functions below): a Pair whose second leaf is its shadow
+// (args[3] 3, never seen leaning). Hung in frame F, its shadow hangs in F's
+// twin (the frame at F's spot plus or minus the shift), and the two frames
+// lead to each other both ways (the Pair's own links). Taken from either
+// frame, both leaves come down and the player holds the door. A frame with no
+// twin, or whose twin holds another door, does not take it; no other door
+// hangs in either of its two frames while it hangs.
+//
+// Long causes: an AjarThenCause (20181) is a fixture THEN with 2 or 3
+// settings, stepped on by USE on its lever (Thing_Activate on its tid) or set
+// by shooting an AjarThenTarget (20182). A setting puts NOW in a state, at
+// once, one way (nothing NOW changes a cause):
+//   * the NOW sectors tagged args[1] go to their heights for the setting (UDMF
+//     user_f<n> floors and user_c<n> ceilings, n the setting; user_floors and
+//     user_ceils say which are given) over MOVE_TICS. One with user_hold does
+//     not bring its ceiling down while anything stands in it, and the cause's
+//     openings wait until its closings are done (one hole at a time). One with
+//     user_raised shows that flat while its floor stands over its setting 0
+//   * the basin tagged args[2] (water.zs) stands args[3] over its floor in
+//     setting 1 and over, dry in 0, reached over MOVE_TICS
+//   * things with tid HIDDEN_TID + its tid (what lies in a pit a heap covers) are
+//     there only in setting 0, once its sectors are back
+// THEN shows it: AjarThenEmitter (20183) a beam along args[1] (setting 1) or
+// args[2] (setting 2); AjarThenBelt (20184) runs its belt (sector tag args[1],
+// args[2] - 128 and args[3] - 128 units a tic along x and y) in setting 1.
+//
+// Company: a monster that dies THEN leaves its old corpse at the same spot NOW
+// (its last death frame, pale, not solid). A monster alive THEN while no door
+// joins the two times (the clocked door hung, or a plain door hung in one time
+// whose far side is in the other) is shown NOW as that corpse, where it stood
+// when the last link came down; when a link is made again the corpse goes.
+//
+// Music by time: THEN_MUSIC while the player is THEN, the level's own NOW;
+// the lever (AjarThenMusic, 20185) turns the switching off and on again.
+
+class AjarThen : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+
+	Vector2 Off() { return (args[0], args[1]); }
+	bool InThen(Vector2 p)
+	{
+		Vector2 o = Off();
+		double l2 = o dot o;
+		return l2 > 0 && ((p - pos.xy) dot o) / l2 > 0.5;
+	}
+	// the same spot at the other time
+	Vector2 Other(Vector2 p) { return InThen(p) ? p - Off() : p + Off(); }
+	// the same spot NOW
+	Vector2 Now(Vector2 p) { return InThen(p) ? p - Off() : p; }
+
+	static AjarThen Find() { return AjarThen(ThinkerIterator.Create("AjarThen").Next()); }
+}
+
+class AjarThenCause : Actor
+{
+	int setting;
+	int changedAt;
+	bool arrived;              // its sectors and basin stand where the setting puts them
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+
+	int Settings() { return clamp(args[0], 2, 3); }
+	override void Activate(Actor activator)
+	{
+		let th = AjarThenHandler.Get();
+		if (th) th.SetCause(self, (setting + 1) % Settings(), activator);
+	}
+}
+
+// Shot by the player (from either time, through a hung door too): sets its
+// cause to args[1] - 1, or steps it on (args[1] 0). One shot is one hit: hits
+// closer together than QUIET tics (a shotgun's pellets, a chaingun held down)
+// count once.
+class AjarThenTarget : Actor
+{
+	const QUIET = 35;
+	int lastHit;
+	AjarThenCause cause;
+	Default
+	{
+		Radius 10;
+		Height 20;
+		Health 1000000;
+		Mass 1000000;
+		+SHOOTABLE +NOBLOOD +NOGRAVITY +DONTTHRUST +NEVERTARGET
+	}
+	States
+	{
+	Spawn:
+		AJTG A -1;
+		Stop;
+	Lit:
+		AJTG B -1 Bright;
+		Stop;
+	}
+	override void BeginPlay() { Super.BeginPlay(); lastHit = -1000; }
+	override int DamageMobj(Actor inflictor, Actor source, int damage, Name mod, int flags, double angle)
+	{
+		if (!source || !source.player) return 0;
+		bool quiet = level.maptime - lastHit < QUIET;
+		lastHit = level.maptime;
+		if (quiet) return 0;
+		let th = AjarThenHandler.Get();
+		if (!th || !cause) return 0;
+		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST info target of cause %d hit at t=%d", cause.tid, level.maptime);
+		A_StartSound("switches/normbutn", CHAN_AUTO);
+		th.SetCause(cause, args[1] ? args[1] - 1 : (cause.setting + 1) % cause.Settings(), source);
+		return 0;
+	}
+	void Light(bool on) { if (on) SetStateLabel("Lit"); else SetStateLabel("Spawn"); }
+}
+
+class AjarThenEmitter : Actor
+{
+	Array<Actor> dots;
+	Default { +NOBLOCKMAP +NOGRAVITY }
+	States { Spawn: AJEM A -1; Stop; }
+
+	void ShowBeam(int s)
+	{
+		for (int i = 0; i < dots.Size(); i++) if (dots[i]) dots[i].Destroy();
+		dots.Clear();
+		if (s < 1 || s > 2) return;
+		angle = args[s];
+		FLineTraceData d;
+		LineTrace(angle, 4096, 0, TRF_THRUACTORS, 40, 0, 0, d);
+		Vector2 dir = (cos(angle), sin(angle));
+		for (double r = 20; r < d.Distance - 6; r += 12)
+			dots.Push(Spawn("AjarThenDot", pos + (dir * r, 40)));
+		let spot = Spawn("AjarThenSpot", pos + (dir * (d.Distance - 3), 40));     // where it strikes the wall
+		dots.Push(spot);
+	}
+}
+
+class AjarThenDot : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +NOINTERACTION RenderStyle "Add"; Alpha 0.9; }
+	States { Spawn: PLSS A -1 Bright; Stop; }
+}
+
+class AjarThenSpot : AjarThenDot
+{
+	Default { Scale 1.4; }
+	States { Spawn: PLSE A 4 Bright; PLSE B 4 Bright; Loop; }
+}
+
+class AjarThenBelt : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+	// Scroll_Floor as an action special (tag, x * 32, y * 32, 2: the texture and what stands on it); 0, 0 stops it
+	void Run(bool on)
+	{
+		int dx = args[2] - 128, dy = args[3] - 128;
+		level.ExecuteSpecial(223, null, null, false, args[1], on ? dx * 32 : 0, on ? dy * 32 : 0, 2);
+	}
+}
+
+class AjarThenMusic : Actor
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+	override void Activate(Actor activator)
+	{
+		let th = AjarThenHandler.Get();
+		if (!th) return;
+		th.musicOff = !th.musicOff;
+		let h = AjarHandler(EventHandler.Find("AjarHandler"));
+		if (h) h.Say(th.musicOff ? "The music no longer follows the time." : "The music follows the time again.");
+	}
+}
+
+// A monster dead forty years: its own last death frame, pale, not solid.
+class AjarThenCorpse : Actor
+{
+	Actor of;                  // the monster it stands for while that one is alive THEN (null: it died THEN)
+	Default { +NOBLOCKMAP +NOGRAVITY +NOINTERACTION +DONTSPLASH }
+	States
+	{
+	Spawn:
+		TNT1 A 0;
+	Keep:
+		#### # -1;
+		Stop;
+	}
+}
+
+class AjarThenHandler : EventHandler
+{
+	const MOVE_TICS = 64;      // a long cause changes NOW over this long (a power of two: whole heights move in exact steps, and what rides them stays exactly on them)
+	const HIDDEN_TID = 1000;       // tid HIDDEN + a cause's tid: there only in its setting 0 (ajarthen.HIDDEN)
+	const THEN_MUSIC = "AJM_AFTR";
+
+	AjarThen when;
+	AjarHandler h;
+	AjarWaterHandler wh;
+	bool ready;
+	Array<AjarThenCause> causes;
+	// the NOW sectors of every cause
+	Array<int> secIdx;
+	Array<AjarThenCause> secCause;
+	Array<double> secFSpeed, secCSpeed;
+	Array<double> bx1, by1, bx2, by2;
+	Array<string> secFlat;          // its own floor flat (shown at its setting-0 height)
+	Array<AjarThenEmitter> emitters;
+	Array<AjarThenBelt> belts;
+	Array<AjarThenTarget> targets;
+	Array<Actor> hiddenItems;
+	Array<AjarThenCause> hiddenOf;
+	// company
+	bool wasLinked;
+	Array<AjarThenCorpse> corpses;
+	// music
+	bool musicOff;
+	int musicThen;
+	string nowMusic;
+	int musicChanges;          // (the tests)
+
+	static AjarThenHandler Get() { return AjarThenHandler(EventHandler.Find("AjarThenHandler")); }
+
+	AjarThenCause FindCause(int tid)
+	{
+		for (int i = 0; i < causes.Size(); i++) if (causes[i].tid == tid) return causes[i];
+		return null;
+	}
+
+	void Setup()
+	{
+		ready = true;
+		when = AjarThen.Find();
+		h = AjarHandler(EventHandler.Find("AjarHandler"));
+		wh = AjarWaterHandler.Get();
+		nowMusic = level.Music;
+		musicThen = -1;
+		wasLinked = true;          // as if a link had just come down: whatever lives THEN at the start shows NOW
+		let ci = ThinkerIterator.Create("AjarThenCause");
+		AjarThenCause c;
+		while (c = AjarThenCause(ci.Next()))
+		{
+			causes.Push(c);
+			c.setting = clamp(c.args[4], 0, c.Settings() - 1);
+			if (c.args[1])
+			{
+				let si = level.CreateSectorTagIterator(c.args[1]);
+				int s;
+				while ((s = si.Next()) >= 0)
+				{
+					Sector sec = level.sectors[s];
+					secIdx.Push(s); secCause.Push(c); secFSpeed.Push(1); secCSpeed.Push(1);
+					secFlat.Push(TexMan.GetName(sec.GetTexture(Sector.floor)));
+					double x1 = 1e9, y1 = 1e9, x2 = -1e9, y2 = -1e9;
+					for (int k = 0; k < sec.lines.Size(); k++)
+					{
+						Line l = sec.lines[k];
+						x1 = min(x1, min(l.v1.p.x, l.v2.p.x)); y1 = min(y1, min(l.v1.p.y, l.v2.p.y));
+						x2 = max(x2, max(l.v1.p.x, l.v2.p.x)); y2 = max(y2, max(l.v1.p.y, l.v2.p.y));
+					}
+					bx1.Push(x1); by1.Push(y1); bx2.Push(x2); by2.Push(y2);
+				}
+			}
+			if (c.args[2] && wh)
+			{
+				let b = wh.BasinOfTag(c.args[2]);
+				if (b) b.held = true;      // its level is the cause's, never a flow's
+			}
+			let ai = level.CreateActorIterator(HIDDEN_TID + c.tid);
+			Actor a;
+			while (a = ai.Next()) { hiddenItems.Push(a); hiddenOf.Push(c); }
+		}
+		let ti = ThinkerIterator.Create("AjarThenTarget");
+		AjarThenTarget tg;
+		while (tg = AjarThenTarget(ti.Next())) { tg.cause = FindCause(tg.args[0]); targets.Push(tg); }
+		let ei = ThinkerIterator.Create("AjarThenEmitter");
+		AjarThenEmitter em;
+		while (em = AjarThenEmitter(ei.Next())) emitters.Push(em);
+		let bi = ThinkerIterator.Create("AjarThenBelt");
+		AjarThenBelt bt;
+		while (bt = AjarThenBelt(bi.Next())) belts.Push(bt);
+		for (int i = 0; i < causes.Size(); i++) { Snap(causes[i]); ShowThen(causes[i]); }
+	}
+
+	// --- a sector's heights by setting ------------------------------------------------------------
+	static int UserF(Sector s, int n) { return n == 0 ? s.GetUDMFInt('user_f0') : n == 1 ? s.GetUDMFInt('user_f1') : s.GetUDMFInt('user_f2'); }
+	static int UserC(Sector s, int n) { return n == 0 ? s.GetUDMFInt('user_c0') : n == 1 ? s.GetUDMFInt('user_c1') : s.GetUDMFInt('user_c2'); }
+	static double FloorZ(Sector s) { return s.floorplane.ZAtPoint(s.centerspot); }
+	static double CeilZ(Sector s) { return s.ceilingplane.ZAtPoint(s.centerspot); }
+
+	double WaterWant(AjarThenCause c, AjarBasin b) { return c.setting >= 1 ? b.floorZ + c.args[3] : b.floorZ; }
+
+	// --- a cause set: NOW follows at once (over MOVE_TICS) ------------------------------------------
+	int changes;               // (the tests)
+	void SetCause(AjarThenCause c, int n, Actor who)
+	{
+		n = clamp(n, 0, c.Settings() - 1);
+		if (n == c.setting) return;
+		c.setting = n;
+		c.changedAt = level.maptime;
+		c.arrived = false;
+		changes++;
+		for (int i = 0; i < secIdx.Size(); i++)
+		{
+			if (secCause[i] != c) continue;
+			Sector s = level.sectors[secIdx[i]];
+			if (s.GetUDMFInt('user_floors')) secFSpeed[i] = max(abs(UserF(s, n) - FloorZ(s)) / MOVE_TICS, 0.25);
+			if (s.GetUDMFInt('user_ceils')) secCSpeed[i] = max(abs(UserC(s, n) - CeilZ(s)) / MOVE_TICS, 0.25);
+		}
+		ShowThen(c);
+		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST info cause %d set to %d at t=%d", c.tid, n, level.maptime);
+	}
+
+	// at once (the start; the tests' views)
+	void Snap(AjarThenCause c)
+	{
+		for (int i = 0; i < secIdx.Size(); i++)
+		{
+			if (secCause[i] != c) continue;
+			Sector s = level.sectors[secIdx[i]];
+			if (s.GetUDMFInt('user_floors'))
+			{
+				double want = UserF(s, c.setting), now = FloorZ(s);
+				if (abs(want - now) > 0.01) s.MoveFloor(abs(want - now) + 1, s.floorplane.PointToDist(s.centerspot, want), -1, want > now ? 1 : -1, false);
+			}
+			if (s.GetUDMFInt('user_ceils'))
+			{
+				double want = UserC(s, c.setting), now = CeilZ(s);
+				if (abs(want - now) > 0.01) s.MoveCeiling(abs(want - now) + 1, s.ceilingplane.PointToDist(s.centerspot, want), -1, want > now ? 1 : -1, false);
+			}
+			Flat(i, c);
+		}
+		if (c.args[2] && wh)
+		{
+			let b = wh.BasinOfTag(c.args[2]);
+			if (b) b.w = WaterWant(c, b);
+		}
+		c.arrived = true;
+	}
+
+	// The sector's floor shows its raised flat while it stands over its setting 0.
+	void Flat(int i, AjarThenCause c)
+	{
+		Sector s = level.sectors[secIdx[i]];
+		string raised = s.GetUDMFString('user_raised');
+		if (raised == "" || !s.GetUDMFInt('user_floors')) return;
+		string want = FloorZ(s) > UserF(s, 0) + 0.5 ? raised : secFlat[i];
+		if (!(TexMan.GetName(s.GetTexture(Sector.floor)) ~== want)) s.SetTexture(Sector.floor, TexMan.CheckForTexture(want, TexMan.Type_Any));
+	}
+
+	// Does anything stand in sector i's box (a hole that is to shut)?
+	bool Occupied(int i)
+	{
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+		{
+			if (!(a.player || a.bSolid || a.bShootable) || a.bNoBlockmap || a is "AjarThenTarget") continue;
+			if (a.pos.x + a.radius <= bx1[i] || a.pos.x - a.radius >= bx2[i]) continue;
+			if (a.pos.y + a.radius <= by1[i] || a.pos.y - a.radius >= by2[i]) continue;
+			return true;
+		}
+		return false;
+	}
+
+	void MoveCause(AjarThenCause c)
+	{
+		bool closing = false, moving = false;
+		for (int i = 0; i < secIdx.Size(); i++)
+		{
+			if (secCause[i] != c) continue;
+			Sector s = level.sectors[secIdx[i]];
+			if (s.GetUDMFInt('user_floors'))
+			{
+				double want = UserF(s, c.setting), now = FloorZ(s);
+				if (abs(want - now) > 0.01) { moving = true; s.MoveFloor(secFSpeed[i], s.floorplane.PointToDist(s.centerspot, want), -1, want > now ? 1 : -1, false); }
+				Flat(i, c);
+			}
+			if (s.GetUDMFInt('user_ceils'))
+			{
+				double want = UserC(s, c.setting), now = CeilZ(s);
+				if (want < now - 0.01)
+				{
+					closing = moving = true;       // until it is shut, the cause's openings wait
+					if (s.GetUDMFInt('user_hold') && Occupied(i)) continue;
+					s.MoveCeiling(secCSpeed[i], s.ceilingplane.PointToDist(s.centerspot, want), -1, -1, false);
+				}
+			}
+		}
+		for (int i = 0; i < secIdx.Size(); i++)
+		{
+			if (secCause[i] != c) continue;
+			Sector s = level.sectors[secIdx[i]];
+			if (!s.GetUDMFInt('user_ceils')) continue;
+			double want = UserC(s, c.setting), now = CeilZ(s);
+			if (want <= now + 0.01) continue;
+			moving = true;
+			if (closing && s.GetUDMFInt('user_hold')) continue;
+			s.MoveCeiling(secCSpeed[i], s.ceilingplane.PointToDist(s.centerspot, want), -1, 1, false);
+		}
+		if (c.args[2] && wh)
+		{
+			let b = wh.BasinOfTag(c.args[2]);
+			if (b)
+			{
+				double want = WaterWant(c, b), step = max(c.args[3], 1) / double(MOVE_TICS);
+				if (abs(b.w - want) > 0.001) { moving = true; b.w = b.w < want ? min(b.w + step, want) : max(b.w - step, want); }
+			}
+		}
+		c.arrived = !moving;
+	}
+
+	void ShowThen(AjarThenCause c)
+	{
+		for (int i = 0; i < emitters.Size(); i++) if (emitters[i] && emitters[i].args[0] == c.tid) emitters[i].ShowBeam(c.setting);
+		for (int i = 0; i < belts.Size(); i++) if (belts[i] && belts[i].args[0] == c.tid) belts[i].Run(c.setting == 1);
+		for (int i = 0; i < targets.Size(); i++)
+		{
+			let tg = targets[i];
+			if (tg && tg.cause == c) tg.Light(tg.args[1] ? c.setting == tg.args[1] - 1 : c.setting != 0);
+		}
+	}
+
+	void ShowHidden()
+	{
+		for (int i = 0; i < hiddenItems.Size(); i++)
+		{
+			let a = hiddenItems[i];
+			if (!a || a.bDestroyed) continue;
+			bool there = hiddenOf[i].setting == 0 && hiddenOf[i].arrived;
+			a.bInvisible = !there;
+			a.bSpecial = there;
+		}
+	}
+
+	// --- company -------------------------------------------------------------------------------------
+	// Is some door hung that joins the two times?
+	bool Linked()
+	{
+		if (!h || !when) return false;
+		let fi = ThinkerIterator.Create("AjarFrame");
+		AjarFrame f;
+		while (f = AjarFrame(fi.Next()))
+		{
+			if (!f.door || !f.door.args[0]) continue;
+			Line a = h.FindLine(f.args[0]), b = h.FindLine(f.door.args[0]);
+			if (a && b && when.InThen(a.v1.p) != when.InThen(b.v1.p)) return true;
+		}
+		return false;
+	}
+
+	AjarThenCorpse OldCorpse(Actor a, Actor of)
+	{
+		State s = a.FindState("Death");
+		for (int k = 0; s && s.Tics != -1 && k < 64; k++) s = s.NextState;
+		if (!s) return null;
+		Vector2 p = when.Now(a.pos.xy);
+		double z = level.PointInSector(p).floorplane.ZAtPoint(p);
+		let c = AjarThenCorpse(Actor.Spawn("AjarThenCorpse", (p, z)));
+		if (!c) return null;
+		c.sprite = s.sprite;
+		c.frame = s.Frame;
+		c.angle = a.angle;
+		c.scale = a.scale;
+		c.of = of;
+		c.A_SetTranslation('AjarDust');
+		corpses.Push(c);
+		if (CVar.GetCVar("ajar_autotest").GetInt())
+			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for %s", a.GetClassName(), p.x, p.y, of ? "one alive then" : "one dead then");
+		return c;
+	}
+
+	void Company()
+	{
+		bool linked = Linked();
+		if (linked == wasLinked) return;
+		wasLinked = linked;
+		if (linked)
+		{
+			for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of) { corpses[i].Destroy(); corpses[i] = null; }
+			return;
+		}
+		let it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while (a = Actor(it.Next()))
+			if (a.bIsMonster && a.health > 0 && when.InThen(a.pos.xy)) OldCorpse(a, a);
+	}
+
+	override void WorldThingDied(WorldEvent e)
+	{
+		let a = e.thing;
+		if (!ready || !when || !a || !a.bIsMonster || !when.InThen(a.pos.xy)) return;
+		for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of == a) { corpses[i].Destroy(); corpses[i] = null; }
+		OldCorpse(a, null);
+	}
+
+	// --- music by time ---------------------------------------------------------------------------
+	void Music(Actor mo)
+	{
+		int th = !musicOff && when.InThen(mo.pos.xy);
+		if (th == musicThen) return;
+		musicThen = th;
+		S_ChangeMusic(th ? THEN_MUSIC : nowMusic);
+		musicChanges++;
+	}
+
+	override void WorldTick()
+	{
+		if (!ready) Setup();
+		if (!when) return;
+		for (int i = 0; i < causes.Size(); i++) MoveCause(causes[i]);
+		ShowHidden();
+		Company();
+		let mo = players[consoleplayer].mo;
+		if (mo) Music(mo);
+	}
+}
+
+extend class AjarHandler
+{
+	// The frame at the same spot at the other time, if there is one.
+	AjarFrame TwinFrame(AjarFrame f)
+	{
+		let w = AjarThen.Find();
+		if (!w || !f) return null;
+		Vector2 at = w.Other(f.pos.xy);
+		let fi = ThinkerIterator.Create("AjarFrame");
+		AjarFrame o;
+		while (o = AjarFrame(fi.Next())) if (o != f && (o.pos.xy - at).Length() < 1) return o;
+		return null;
+	}
+
+	// Hang: the clocked door d is going into f; its shadow goes into f's twin first.
+	void ClockedHang(AjarDoor d, AjarFrame f)
+	{
+		AjarDoor s = d.Twin();
+		AjarFrame t = TwinFrame(f);
+		if (s && t && !t.door && !s.frame) Hang(s, t);
+	}
+
+	// Unhang: one leaf of the clocked door has come down; so does the other,
+	// and the door taken is the door itself, whichever frame it was taken from.
+	AjarDoor ClockedUnhang(AjarDoor d)
+	{
+		AjarDoor tw = d.Twin();
+		if (tw && tw.frame) Unhang(tw.frame);
+		AjarDoor door = d.IsShadow() && tw ? tw : d;
+		AjarDoor shadow = door.Twin();
+		if (shadow) { shadow.carried = true; shadow.Hide(); }
+		return door;
+	}
+
+	// UseFrame: what the clocked door does not do.
+	bool ClockedRefuses(AjarFrame f)
+	{
+		if (carried && carried.IsClocked())
+		{
+			AjarFrame t = TwinFrame(f);
+			if (!t)
+			{
+				Say("This frame has no other time.\nThe clocked door will not hang in it.");
+				return true;
+			}
+			if (t.door)
+			{
+				Say("At the other time a door hangs in this frame.\nThe clocked door cannot open onto it.");
+				return true;
+			}
+			return false;
+		}
+		if (carried && f.door && f.door.IsClocked())
+		{
+			Say("The clocked door hangs in this frame, now and then.\nTake it down before you hang another.");
+			return true;
+		}
+		return false;
+	}
+}

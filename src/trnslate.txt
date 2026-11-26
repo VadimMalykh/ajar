@@ -3,3 +3,5 @@
 AjarSelf1 = "112:127=[255,236,96]:[72,52,0]"
 AjarSelf2 = "112:127=[120,255,104]:[0,56,0]"
 AjarSelf3 = "112:127=[255,104,88]:[72,0,0]"
+// An old corpse (then.zs): a monster dead forty years, grey and pale as dust.
+AjarDust = "0:255=%[0.42,0.40,0.36]:[1.70,1.66,1.56]"
