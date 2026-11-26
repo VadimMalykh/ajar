@@ -100,6 +100,34 @@ A puzzle is a dict:
                 any one of which puts its beam on the sensor
 A door with barred=True (a rail before its far side) is never walked through.
 
+Two times (levels 21 on: the same rooms now and forty years earlier, then).
+To the solver both are regions like any other; three things join them:
+  twins         optional {now frame id: then frame id}: the same frame in both
+                times. Both ids are listed in `frames`, each with its region.
+                An `only` given for one id holds for its twin too (unless the
+                twin has an `only` of its own)
+  the clocked door  a door dict(clock=True, frame=id) or dict(clock=True,
+                lean=region), with no home (ajartime). Hung in a frame that
+                has a twin, it fills that frame and its twin and joins their
+                two regions both ways; it is taken down (or swapped out) from
+                either side. It hangs, or is swapped in, only where the frame
+                and its twin are both free but for the door swapped out. In
+                the state it is at the now id. A plain door fills its own
+                frame only. Not modelled with a thief, a nailer, a dash or
+                the Stray pool (solve() refuses those)
+  causes        optional {name: dict(states=(...), start=state, at=[regions],
+                via={frame id: region})}: a fixture then, with a few states
+                (a valve, a belt, a beam). In one of `at`, or in a `via`
+                region while the clocked door hangs in that frame (shot
+                through it), the player sets it to any of its states: a move
+                that costs nothing, like a shot target
+  walk          a fifth element (from, to, keys, squeeze, when): `squeeze` is
+                "squeeze" or "" / None, and `when` a dict: {cause: state, or
+                a tuple of states} and/or "hung": (door, frame id); the link
+                is there only while all of it holds (for the clocked door
+                either twin id will do). Things left in a region a cause cuts
+                off stay there
+
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
 one action each. Keys are never lost.
@@ -131,20 +159,56 @@ The printed solution uses no Stray door, and no win may depend on a draw.
 from collections import deque
 
 
+def _twins(p):
+    """{frame id: its twin's id}, both ways (see `twins`)."""
+    t = p.get("twins", {})
+    return {**t, **{b: a for a, b in t.items()}}
+
+
+def _now(p, f):
+    """The id a clocked door hung in frame f is kept at: the now one."""
+    t = p.get("twins", {})
+    return f if f in t or not t else _twins(p).get(f, f)
+
+
+def _hung(p, where):
+    """{frame id: the door that fills it}: a clocked door fills two."""
+    hung = {}
+    for c, loc in where.items():
+        if loc[0] == "frame":
+            hung[loc[1]] = c
+            if p["doors"][c].get("clock"):
+                hung[_twins(p)[loc[1]]] = c
+    return hung
+
+
+def _holds(p, when, cs, hung):
+    """Whether a walk link's condition (its fifth element) holds."""
+    names = sorted(p.get("causes", {}))
+    for k, v in when.items():
+        if k == "hung":
+            if hung.get(v[1]) != v[0]:
+                return False
+        elif cs[names.index(k)] != v and not (isinstance(v, tuple) and cs[names.index(k)] in v):
+            return False
+    return True
+
+
 def _moves(p, state, nailed=False):
     """Yields (cost, description, next state): what the player can be sure
     of doing. With `nailed`, instead, only what they can do if the nailer
     has not got there first."""
-    here, carried, locs, keys, thief, nails, car, lur = state
+    here, carried, locs, keys, thief, nails, car, lur, cs = state
     colours = sorted(p["doors"])
     where = dict(zip(colours, locs))
     nm = lambda c: p.get("names", {}).get(c, c)
     lures = p.get("lures", ())
+    hung = _hung(p, where)
 
     def out(region=here, carry=carried, at=car, **change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (region, carry, tuple(w[c] for c in colours), keys, thief, nails, at, lur)
+        return (region, carry, tuple(w[c] for c in colours), keys, thief, nails, at, lur, cs)
 
     def moved(n, i, to):
         """State n with lure i come along to `to` (and done there)."""
@@ -155,20 +219,21 @@ def _moves(p, state, nailed=False):
             ks = tuple(sorted(set(ks) | {lu["key"]}))
         else:
             ls[i] = to
-        return n[:3] + (ks,) + n[4:7] + (tuple(ls),)
+        return n[:3] + (ks,) + n[4:7] + (tuple(ls),) + n[8:]
 
     for k, region in p.get("keys", {}).items():
         if region == here and k not in keys:
-            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car, lur)
+            yield 0, f"take key {k}", (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car, lur, cs)
             if k in p.get("auto", ()):
                 return                               # it happens by itself, before anything else
     for a, b, *more in p["walk"]:
         need = tuple(more[0]) if more else ()            # "23": keys 2 and 3
-        if len(more) > 1 and carried is not None:        # a squeeze: no door fits
+        squeeze = len(more) > 1 and more[1]
+        if squeeze and carried is not None:              # a squeeze: no door fits
             continue
-        if a == here and all(k in keys for k in need):
+        if a == here and all(k in keys for k in need) and (len(more) < 3 or _holds(p, more[2], cs, hung)):
             yield 0, f"walk to {b}" + (f" (key {', '.join(need)})" if need else "") + (
-                " (squeeze)" if len(more) > 1 else ""), out(region=b)
+                " (squeeze)" if squeeze else ""), out(region=b)
     if thief & 1 and here == p["thief"]["zone"]:
         loot = [c for c, loc in where.items() if loc == ("thief",)]
         w = dict(where)
@@ -177,7 +242,7 @@ def _moves(p, state, nailed=False):
         again = p["thief"].get("respawn")              # another comes: killing it only drops what it carries
         if loot or not again:
             yield 0, "kill the thief" + (f" (it drops {nm(loot[0])})" if loot else ""), (
-                here, carried, tuple(w[c] for c in colours), keys, 1 if again else 0, nails, car, lur)
+                here, carried, tuple(w[c] for c in colours), keys, 1 if again else 0, nails, car, lur, cs)
     t = p.get("thief")
     if t and t.get("into") is not None and thief & 1 and (here == t["zone"] or here in t.get("sees", ())):
         if not any(loc == ("frame", t["into"]) for loc in where.values()):
@@ -191,13 +256,13 @@ def _moves(p, state, nailed=False):
                 ls = list(lur)
                 ls[i] = lu["home"]
                 yield 0, f"kill the {lu.get('name', 'monster')} (another comes to {lu['home']})", (
-                    here, carried, locs, keys, thief, nails, car, tuple(ls))
+                    here, carried, locs, keys, thief, nails, car, tuple(ls), cs)
         elif (here == lu["at"] and lu["key"] not in keys and all(k in keys for k in lu.get("needs", ""))
                 and where[lu["door"]] == ("frame", lu["frame"])):
             yield 0, f"through {nm(lu['door'])} to {lu['to']}, followed (key {lu['key']})", (
-                lu["to"], carried, locs, tuple(sorted(keys + (lu["key"],))), thief, nails, car, lur)
+                lu["to"], carried, locs, tuple(sorted(keys + (lu["key"],))), thief, nails, car, lur, cs)
     if nails and here in _zone(p["nailer"], keys):
-        yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0, car, lur)
+        yield 0, "kill the nailer", (here, carried, locs, keys, thief, 0, car, lur, cs)
     for k, sg in p.get("sights", {}).items():
         if k in keys:
             continue
@@ -208,7 +273,16 @@ def _moves(p, state, nailed=False):
             ok = here == sg["at"] and any(all(where[c][0] == "frame" and where[c][1] in fs for c, fs in alt.items())
                                           for alt in sg["lines"])
         if ok:
-            yield 0, sg.get("say", f"set off {k}"), (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car, lur)
+            yield 0, sg.get("say", f"set off {k}"), (here, carried, locs, tuple(sorted(keys + (k,))), thief, nails, car, lur, cs)
+    for i, name in enumerate(sorted(p.get("causes", {}))):
+        cz = p["causes"][name]
+        how = None if here in cz.get("at", ()) else next(
+            (f for f, r in cz.get("via", {}).items() if r == here and p["doors"].get(hung.get(f), {}).get("clock")), False)
+        if how is not False:
+            for st in cz["states"]:
+                if st != cs[i]:
+                    yield 0, f"set the {name} to {st}" + (f" (shot through {nm(hung[how])} in {how})" if how else ""), (
+                        here, carried, locs, keys, thief, nails, car, lur, cs[:i] + (st,) + cs[i + 1:])
     lift = p.get("lift")
     if lift:
         stops = lift["floors"]
@@ -219,13 +293,16 @@ def _moves(p, state, nailed=False):
         for n in lift["buttons"].get(here, ()):
             if n != car:
                 yield 0, f"send the lift to {stops[n]}", out(at=n)
-    hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
     dash = p.get("dash")
     if dash and here == dash["at"] and _run(dash, hung) <= dash["limit"]:
         yield 0, f"pull the lever and run to {dash['to']}", out(region=dash["to"])
     for f, c in hung.items():
         twin = p["doors"][c].get("pair")
-        if twin is not None:                         # a Pair: to the frame its twin hangs in, if it hangs
+        if p["doors"][c].get("clock"):               # the clocked door: this frame to itself at the other time
+            if where[c][1] != f:
+                continue                             # (once, from the now id)
+            ends = (p["frames"][f], p["frames"][_twins(p)[f]])
+        elif twin is not None:                         # a Pair: to the frame its twin hangs in, if it hangs
             if where[twin][0] != "frame" or twin < c:
                 continue
             ends = (p["frames"][f], p["frames"][where[twin][1]])
@@ -243,6 +320,7 @@ def _moves(p, state, nailed=False):
     for c, loc in where.items():
         if loc == ("lean", here) and carried is None:
             yield 1, f"pick up {nm(c)}", out(carry=c, **{f"d{c}": ("carried",)})
+    twins = _twins(p)
     for f, region in p["frames"].items():
         if region != here:
             continue
@@ -251,21 +329,30 @@ def _moves(p, state, nailed=False):
             continue                                 # the way out, built: it stays
         if c is not None and p.get("stays", {}).get(f) == c:
             continue                                 # so does a secret one
-        takes = p.get("only", {}).get(f, carried)
+        only = p.get("only", {})
+        takes = only.get(f, only.get(twins.get(f), carried))
         sec = p.get("home_chain", {}).get("secret", {})
         if carried is not None and f == sec.get("frame") and carried == sec.get("door"):
             continue                                 # a longer chain's third door, in its own room: it would open onto itself
         if carried is not None and carried not in (takes if isinstance(takes, tuple) else (takes,)):
             continue                                 # a frame that takes one door only, or two
+        to = f
+        if carried is not None and p["doors"][carried].get("clock"):
+            if f not in twins or hung.get(twins[f]) is not None:
+                continue                             # it fills the twin as well: that must be free
+            more = only.get(twins[f], only.get(f, carried))
+            if carried not in (more if isinstance(more, tuple) else (more,)):
+                continue
+            to = _now(p, f)
         if c is None and carried is not None:
-            yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", f)})
+            yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", to)})
         elif c is not None and bool(nails and region in _zone(p["nailer"], keys)) != nailed:
             continue                                 # it may be nailed: see _luck
         elif c is not None and carried is None:
             yield 1, f"unhinge {nm(c)} from {f}", out(carry=c, **{f"d{c}": ("carried",)})
         elif c is not None:
             yield 1, f"swap {nm(c)} for {nm(carried)} in {f}", out(
-                carry=c, **{f"d{c}": ("carried",), f"d{carried}": ("frame", f)})
+                carry=c, **{f"d{c}": ("carried",), f"d{carried}": ("frame", to)})
 
 
 DOOR_STEP = 64      # what stepping through a hung door adds to a run
@@ -333,7 +420,7 @@ def _won(p, s):
 def _luck(p, state):
     """Yields the states that the nailer being slow, or the draw of a Stray
     door, can turn `state` into."""
-    here, carried, locs, keys, thief, nails, car, lur = state
+    here, carried, locs, keys, thief, nails, car, lur, cs = state
     if nails:
         for _, _, n in _moves(p, state, True):
             yield n
@@ -343,7 +430,7 @@ def _luck(p, state):
         return
     colours = sorted(p["doors"])
     where = dict(zip(colours, locs))
-    hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
+    hung = _hung(p, where)
     for f, region in p["frames"].items():
         if region != here:
             continue
@@ -359,12 +446,12 @@ def _luck(p, state):
             # (but not the room of a longer chain's third door: ajarmap.way_longer)
             shut = p.get("home_chain", {}).get("secret", {}).get("door")
             for place in sorted(set(p["pool"]) | {p["doors"][k]["home"] for k in colours if w[k][0] != "frame" and k != shut and "home" in p["doors"][k]}):
-                yield (place, c, tuple(w[k] for k in colours), keys, thief, nails, car, lur)
+                yield (place, c, tuple(w[k] for k in colours), keys, thief, nails, car, lur, cs)
 
 
 def _thief(p, state):
     """Yields the states the thief can turn `state` into."""
-    here, carried, locs, keys, thief, nails, car, lur = state
+    here, carried, locs, keys, thief, nails, car, lur, cs = state
     if not thief & 1:
         return
     t = p["thief"]
@@ -375,7 +462,7 @@ def _thief(p, state):
     def out(**change):
         w = dict(where)
         w.update({int(k[1:]): v for k, v in change.items()})
-        return (here, carried, tuple(w[c] for c in colours), keys, thief, nails, car, lur)
+        return (here, carried, tuple(w[c] for c in colours), keys, thief, nails, car, lur, cs)
 
     takes, into = t.get("takes"), t.get("into")
     loot = next((c for c, loc in where.items() if loc == ("thief",)), None)
@@ -383,7 +470,7 @@ def _thief(p, state):
         for c, loc in where.items():
             if loc == ("lean", t["zone"]) and (takes is None or c in takes):
                 yield out(**{f"d{c}": ("thief",)})
-    hung = {loc[1]: c for c, loc in where.items() if loc[0] == "frame"}
+    hung = _hung(p, where)
     for f, region in p["frames"].items():
         c = hung.get(f)
         if into is not None:                           # a porter: it hangs in its own frame only, and never swaps
@@ -429,10 +516,20 @@ def solve(p):
     The solution is the player's alone (the thief does nothing in it); the
     states are everything player and thief can bring about between them."""
     colours = sorted(p["doors"])
+    if any(d.get("clock") for d in p["doors"].values()):
+        if any(p.get(k) for k in ("thief", "nailer", "dash", "pool")):
+            raise ValueError("the clocked door is not modelled with a thief, a nailer, a dash or the Stray pool")
+        if sum(1 for d in p["doors"].values() if d.get("clock")) > 1:
+            raise ValueError("one clocked door only")
+        for c in colours:
+            if p["doors"][c].get("clock") and "frame" in p["doors"][c] and p["doors"][c]["frame"] not in _twins(p):
+                raise ValueError("the clocked door hangs only in a frame with a twin")
     start = (p["start"], None, tuple(
-        ("frame", d["frame"]) if "frame" in d else ("thief",) if d.get("thief") else ("lean", d["lean"])
+        ("frame", _now(p, d["frame"]) if d.get("clock") else d["frame"]) if "frame" in d
+        else ("thief",) if d.get("thief") else ("lean", d["lean"])
         for d in (p["doors"][c] for c in colours)), (), 1 if p.get("thief") else 0,
-        0, p.get("lift", {}).get("at", 0), tuple(lu.get("home") for lu in p.get("lures", ())))
+        0, p.get("lift", {}).get("at", 0), tuple(lu.get("home") for lu in p.get("lures", ())),
+        tuple(p["causes"][n]["start"] for n in sorted(p.get("causes", {}))))
     # the solution: the thief and the nailer do nothing in it, and no Stray door is used
     dist, prev, back = _search(p, start, False)
     wins = [s for s in dist if _won(p, s)]
@@ -488,6 +585,8 @@ def lost(p):
     live = [s for s in dist if not _won(p, s)]
     regions = {p["start"]} | {r for link in p["walk"] for r in link[:2]} | set(p["frames"].values())
     regions |= set(p.get("pool", ()))
+    for cz in p.get("causes", {}).values():
+        regions |= set(cz.get("at", ())) | set(cz.get("via", {}).values())
     for d in p["doors"].values():
         regions |= ({d["home"]} if "home" in d else set()) | ({d["lean"]} if "lean" in d else set())
     if p.get("thief"):
