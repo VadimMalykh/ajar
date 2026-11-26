@@ -710,8 +710,12 @@ def opening(a, b, out, floor, color, thick=16, ceil=96):
     """A doorway in a wall, tinted with its part's colour."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    return m.sector([a, b, d, c], floor=floor, ceil=floor + ceil, light=176, wall="AJTRIM", ftex="AJTRIMF",
-                    ctex="AJTRIMF", color=color)
+    OPENINGS.append(m.sector([a, b, d, c], floor=floor, ceil=floor + ceil, light=176, wall="AJTRIM", ftex="AJTRIMF",
+                             ctex="AJTRIMF", color=color))
+    return OPENINGS[-1]
+
+
+OPENINGS = []        # the doorways' sectors (a look carries a room's wall over them: tools/power33.py)
 
 
 def no_monsters(a, b):
@@ -2202,6 +2206,18 @@ def walk_lengths(step=16):
 
 # every build walks each part and into each secret (about 4 s): a way a player's box does not pass stops it
 WALK = walk_lengths()
+
+# =====================================================================================
+# THE LOOK: textures, tints and pictures laid over the finished map, after every check (tools/power33.py;
+# the art tools/gfx_power*.py). Nothing moves. AJAR_POWER unset (or "mix"): the game's look, the mix Vadim
+# chose from the look board (power33.MIX); 1, 2, 3 one look whole; 0 the plain level.
+# =====================================================================================
+POWER = os.environ.get("AJAR_POWER") or "mix"
+POWER = POWER if POWER == "mix" else int(POWER)
+MAPINFO = {}         # what the build changes in src/mapinfo.txt for this map (the look's sky)
+if POWER:
+    import power33
+    power33.apply(sys.modules[__name__], POWER)
 
 if __name__ == "__main__":
     if "--walk" in sys.argv:

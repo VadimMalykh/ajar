@@ -129,9 +129,25 @@ for name, mod in MAPS.items():                  # a level checked another way pr
 out = os.path.join(root, os.environ.get("AJAR_OUT") or os.path.join("build", "ajar.pk3"))
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
     src = os.path.join(root, "src")
+    # a map may ask for lines of its mapinfo.txt block to be changed (MAPINFO: {old line: new line}; MAP33's
+    # look, AJAR_POWER, its sky); with none asked for, the file goes in as it is
+    edits = {name: mod.MAPINFO for name, mod in MAPS.items() if getattr(mod, "MAPINFO", None)}
     for d, _, files in os.walk(src):
         for f in files:
             p = os.path.join(d, f)
+            if edits and os.path.relpath(p, src) == "mapinfo.txt":
+                with open(p) as fh:
+                    text = fh.read()
+                for name, changes in edits.items():
+                    at = text.index(f'\nmap {name} "')
+                    end = text.index("\n}", at)
+                    block = text[at:end]
+                    for old, new in changes.items():
+                        assert block.count(old) == 1, (name, old)
+                        block = block.replace(old, new)
+                    text = text[:at] + block + text[end:]
+                z.writestr("mapinfo.txt", text)
+                continue
             z.write(p, os.path.relpath(p, src))
     for name, data in gfx.make_all().items():
         z.writestr(name, data)
