@@ -18693,7 +18693,7 @@ Checked: the 38 remaining pieces come out byte for byte as before;
 `./build.sh`; the sound lab test with 38 tracks. None of the seven plays on
 a map.
 
-## Look: the clocked door and its frame's trim (board made 2026-11-26; Vadim chose look 3 the same day)
+## Look: the clocked door and its frame's trim (board made 2026-11-26, not chosen yet)
 
 **Chosen: look 3, Ivory, done properly** (Vadim, 2026-11-26: "Clocked door: look 3 (Ivory, done properly).").
 It is the game's: gfx.py `CLOCKDOOR` defaults to 3; `AJAR_CLOCKDOOR=0` still builds the old art (PLAN.md, "Doors:
@@ -18749,9 +18749,10 @@ way; nothing must be seen whole.
    a brass band at the mouth, dark hour ticks, brass every 32.
 
 **The switch.** `AJAR_CLOCKDOOR=0|1|2|3` (gfx.py `CLOCKDOOR`, read by
-`clocked_door()` and by gfx_then.py `make_longrun` for the trim). 0 is the
-art before the board byte for byte. It was the default until Vadim chose;
-since 2026-11-26 the default is 3 (see "Chosen" above).
+`clocked_door()` and by gfx_then.py `make_longrun` for the trim). 0, the
+default, is today's art byte for byte: the game keeps today's door until
+Vadim chooses. To take a look: set `CLOCKDOOR`'s default in gfx.py.
+(Chosen the same day: look 3 is the default since; see "Chosen" above.)
 
 **The board.** `tools/clockdoor_shots.sh` builds each look quick
 (`AJAR_CLOCKDOOR=n AJAR_QUICK=1 AJAR_OUT=build/clock<n>.pk3`) and shoots
@@ -18768,6 +18769,224 @@ the leaves and trims to `build/boardclock/tex/`, the page
 (`design/clockdoor-board.html`) to `build/boardclock/index.html`: that
 folder is the board. The raw shots and a contact sheet per look go to
 `build/boardclock_work/`.
+
+## MAP10: wall bands that stepped (mended 2026-11-26)
+
+Vadim, playing MAP10 (a screenshot in the pit under the theatre's stage
+door, GREEN in hand, key 1): "Looks like also decor issue in map10, could
+you fix that too?"
+
+**Where.** The pit under the stage door: MAP10's own piece behind MAP03's
+house (x 288..608, y 912..1008 + TY, i.e. -3568..-3472; floor -48, ceiling
+128), the stage door's ledge at its west end, at its east end the doorway
+(line 2 of the 20) to the other stop. Its long walls are under the theatre's
+north circle, which comes along as scenery (floor 128 west of x 480, 144 east
+of it).
+
+**Causes.**
+- The band stepped 16 at x 480 of the north wall: those walls are the lower
+  parts of lines to the circle, and Doom lays a lower part from the higher
+  floor (128 and 144), while the pit's own walls hang from its ceiling.
+- Over the doorway stood the arch's stone: `ajarmap.doorway`'s far end is a
+  recess walled in AJARCH, and a two-sided line shows the other side's wall
+  over its opening. The same for every frame, far side (its trim colour),
+  opening and squeeze (AJTRIM), hole (the hole's brick) that nobody had given
+  the room's wall with `over()`.
+
+**The sweep.** `tools/bandcheck.py build/ajar.pk3 MAP10` (new, reads the built
+package): STEP, two pieces of one texture side by side whose rows stand at
+other heights; LINTEL, over or under an opening another texture than the
+wall either side. MAP10 on main: 76 steps, 56 lintels. Now: 16 steps, all the
+edge of a thing laid from its own top on purpose (beds, seats, the theatre's
+rows, the platforms' ramps, a table's 4), and 20 lintels, all door faces and
+nailed-up or bolted doors.
+
+**What was mended**, all in `tools/map_hinges10.py` ("walls that carry on");
+no shared code changed. Geometry, things, specials, ids, the PUZZLE: as they
+were (the textmap differs only in textures, offsets and the two pegging
+flags).
+1. The wall over (or under) every such mouth is the room's own (`over()`,
+   `lower=`; 44 line pieces):
+   the pit's doorway, the stage door from the ledge and from the house, the
+   doorway's back on the circle; the theatre's RED far side, foyer and bar,
+   backstage and green room, high in the house; line 1 in the hotel's lobby
+   (256 of arch stone), a room and its bath, the kitchen's Stray place; line
+   5 and a platform's Stray place in the station; the kiosk's Stray place;
+   the line's BLUE and VIOLET far sides and its hole; PINK's room's far side,
+   brass frame and hole; the shelter's brass frame and the hole over it (the
+   step under it was brick); the depot's YELLOW far side, its gate both ways
+   (368 of trim over it in the yard), the hole from PINK's room (brick under
+   it); line 4 in the library, the way round both ways, its squeeze, the
+   dome's frame (352 of trim), the top of the dome's stairs; the museum
+   cellar's frame, its bay under the hole (128 of trim under the hall), the
+   foot of its stairs.
+2. A line hook (`carried`): where a room's own wall shows over or under a
+   step in ceiling or floor, the line is upper/lower-unpegged, so that part
+   is laid from the room's ceiling like the rest of that wall (and its strip
+   of lights, `lift`). Only where every side that shows that part shows its
+   own room's wall, and not on lines with a middle texture but a window's
+   glass. 108 lines: the pit, the hotel's 16 windows (dado and paper under
+   and over each stepped), the orchestra pit's risers, the attic's shaft
+   (MAP02's), the depot's porches, and so on.
+3. Walls of a low piece laid from the room's ceiling (`lift`): the dome's
+   stairs (from the dome's 448: they showed its starry top), the depot's two
+   porches (16 off in the sand-lime courses), the reveals of the hotel's
+   windows, the attic seen up its shaft.
+
+**A judgement to look at.** The line and PINK's room (`way_through`,
+`way_longer`, shared) had columns of BLUE's, VIOLET's and PINK's colour and of
+brass over their far sides and frame, up to the ceiling; they now have the
+starry wall there, as the shelter's frame has the shelter's steel. MAP09's
+line keeps its columns. If the columns were meant, drop those rows of the
+list in (1).
+
+**The same fault elsewhere, left** (every map wad but MAP10.wad is byte for
+byte main's; figures are `bandcheck` on main's build, candidates, not all
+faults: it also lists things laid from their own tops):
+- `ajarmap.window` (only MAP02 uses it): the window's upper and lower are
+  laid from the window, not the room: 16 windows in MAP02 step their dado and
+  paper, and their reveals. Mend: unpeg the window line and lift the sill.
+- `ajarmap.recess`, `doorway`, `opening`, `squeeze`: the wall over a mouth is
+  the recess's trim or arch stone unless the level carries its wall on. Trim
+  or arch over a mouth, between two pieces of one wall: MAP01 10, MAP02 21,
+  MAP03 20, MAP04 20, MAP05 17, MAP06 14, MAP07 17, MAP08 14, MAP09 15, MAP11
+  6, MAP12 10, MAP13 9, MAP14 9, MAP15 22, MAP16 13, MAP17 17, MAP18 53,
+  MAP19 100, MAP20 32, MAP21 8, MAP32 3, MAP33 69 (some may be meant: a
+  far side's colour). The MAP21 worker is on frames in that code.
+- `ajarmap.stairs`: its walls hang from the stairs' own ceiling, whatever the
+  room's (MAP10's dome: mended with `lift`).
+- A room's wall over or under a step laid from the step (what the hook does
+  for MAP10): MAP02 (the attic's shaft, 64 and 16; the windows), MAP03 (the
+  orchestra pit's risers at x 1024..1056 show the cornice; the booth; the back
+  stairs). Steps listed on main: MAP02 56 places, MAP03 22, MAP04 14, MAP05 8,
+  MAP06 7, MAP07 20, MAP08 20, MAP09 16, MAP12 8, MAP13 14, MAP16 12, MAP17
+  27, MAP18 57, MAP19 167, MAP21 63, MAP31 24, MAP33 232.
+
+**Checks.** The full `./build.sh` (no proofs kept): exit 0, every level's
+line as main's; MAP10 "solvable in 9 door actions, 616939 states, 0 stuck",
+the secret way out 11, nothing lost. Every entry of `ajar.pk3` but
+`maps/MAP10.wad` byte for byte main's (c84fa51). mapcheck, thingcheck,
+itemcheck for `map_hinges10`: the same output as main (15 notes, 0, 0).
+`MAP=MAP10` smoke tests: MODE=1 the same 12 ambushers as main; MODE=3 the same
+19 checks (both loops, out by the secret one); MODE=2 the tour's 42 views,
+secrets 4 (its monster count drifts from run to run, on main too). Before
+and after screenshots of 45 views of the places above, side by side, looked
+at; the windows' reveals, the dome's stairs and the depot's courses checked
+there too.
+
+**Not tested / not played by hand.** Nothing played by a person. The plain
+textures (`AJAR_SQUARE=0 AJAR_MUSEUM=0 AJAR_OBSERVATORY=0`): MAP10 is made
+without error, not looked at.
+
+## MAP21: the machine's faces (built 2026-11-26)
+
+**Vadim**, playing MAP21, on a screenshot of the machine THEN from the north:
+"This decor also looks wrong (central piece)".
+
+**What was wrong.** Every face of the machine showed MAP11's one machine
+picture `MC` (128 by 256), laid again from its start on every wall piece.
+The hall's cells (`fit`) cut the north face at every feature's edge (pieces
+of 32, 32, 16, 16, 64, 16, 16, 32, 32), so it was a row of slices: gauges
+cut in half, the plate cut to "NO", the black panel cut; the other faces the
+same. And the level's centrepiece was one borrowed panel, repeated.
+
+**What each face shows now** (`tools/gfx_longrun.py`, "the machine"; THEN
+look 1, Lamps and Reels, `AJUM<face>1`; NOW `AJUX<face>1`). Every face is
+one picture at its real width and every face has the same bands, top to
+bottom, so that they go on round the corners: an aluminium cap rail, a vent
+grille (the crown), a cream band, the grey-blue body, an aluminium rail, the
+black plinth. An outer corner has an aluminium edge on both faces (a post),
+an inner corner a shadow.
+- `N` the north face (256, x 384..640): the works, symmetric about x 512.
+  In the middle the port, 92 by 162: a door's outline in brass, the same
+  again inside it, smaller, and again, drawn towards a point low in it, under
+  dark glass, a little light far in. Either side the same bay: a tape drive
+  (two reels behind glass), a lamp matrix, a green scope and two knobs, a row
+  of white keys (an orange one at the port's side); keys under the port; a
+  louvred band along the foot. The cable trunk up into the ceiling over the
+  port, three cables along the crown into it; under it the one plate,
+  MACHINE 7 (the name the hall's schematic gives it).
+- `W` the west face (192: the wing's side and the body's in one plane), the
+  power side; `E` the east face, its mirror (the same element at the same
+  place along the machine): meters along the top of the body's side; a
+  painted service door, flush, no frame (a seam, two hinges, a latch, a vent,
+  a lightning warning); the cable entry at the foot exactly where the floor
+  duct from the cabinet bank comes in (its 32), cables up into a gland box;
+  a narrow louvre column; on the wing's side three lamps, the breaker (a big
+  orange handle at ON) and a louvre field.
+- `A` the west wing's south face (80), `B` the east wing's, mirrors: two
+  towers of lamps and keys. Each tower's lamps stand as bars, taller towards
+  the alcove; an orange edge runs down its alcove side; keys (the orange at
+  the alcove's side), louvres.
+- `I`, `J` the wings' inner faces in the alcove (64), mirrors: a column of
+  nine indicator lamps in aluminium bezels.
+- `K`, `L` the body's south face beside 101's mouth (16 each): a strip of
+  small lamps. They go on into the piece over the mouth with no edge.
+- `O` over 101's mouth (64 by 160, the frame's head to the ceiling): a brass
+  plate with the port in small (a dark inlay, the three brass outlines, the
+  light far in, "7" under it), a row of five lamps under it. It is exactly
+  as high as the piece, so it stands the same whether the upper texture is
+  pegged from the head or from the ceiling (the task map21-pocket unpegs the
+  wall over every frame: either way it is right).
+- 101's two sides (16 deep): the recess runs into the machine's pillars, so
+  its sides showed the pillars' face (MAP11's `MC`), not the frame's trim as
+  in a wall. They show the clock-only trim now (`CLOCK_TRIM`, lower-unpegged:
+  laid from the recess's head as a one-sided trim wall is).
+- NOW (`AJUX..`) is the same drawing, dead: every element in its place,
+  drawn dead (lamps out, some lenses gone, the reels gone but for one on the
+  east with its tape run off, glass broken, scopes smashed, keys missing,
+  meters at nought and cracked, the breaker thrown to OFF with its grip
+  broken off and burnt, the service door sprung open a crack, two cables cut
+  at the gland, the brass gone green, a cable cut off the crown and hanging),
+  then a ruin pass (`ruin`: the colours of NOW's hall, khaki and dark, soot
+  from the top, rust runs, dust, dirt up from the floor) and some panels gone
+  with cable guts behind (the east lamp matrix, the west louvre field, the
+  east tower's lamps half, the west tower's louvres). NOW's hall is lit 120,
+  and Doom's light falls off with distance: from the north or the south at
+  250 the dead machine was a black block (its north and south faces, which
+  Doom draws darker than east and west). So the ruin pass does not darken
+  (it lays a film of dust over all, which lifts the darks), and the faces
+  NOW have their own light, 140 (`MACHINE_LIT`, the sidedefs' light; the
+  hall stays 120). The east face reads well; north and south read, dimly.
+- Looks 2 and 3 of the apparatus wear look 1's machine (only look 1 is
+  chosen; nothing drawn three times).
+
+**How the pictures are laid.** `MACHINE_FACES` in `tools/map_longrun.py`:
+each face a-b (a its left end for one looking at it) gets its picture as the
+lower texture (the machine is a pillar to the ceiling) with `exact="lower"`:
+a new value in `tools/udmf.py`, which lays one picture over every piece the
+face is cut into from the face's start, the lower texture too (`exact=True`
+did it for the middle and upper only). No other map uses it: every other
+map's wad is byte for byte as before. The piece over 101 is the mouth line's
+upper texture, set after `frame()`.
+
+**Views** (MODE=3, after the hall's north-east pair, THEN and NOW from the
+same spot): the machine from the north (as Vadim's screenshot), from the
+north-west (the north and west faces, their corner), from the east, from
+the south at 300 (the front, the towers, the alcove, the frame), and in the
+alcove before the frame looking up at the piece over it.
+`tools/smoke_MAP21_3.cfg` has 20 more shots (102).
+
+**Checks** (2026-11-26, branch `map21-machine` on main at c84fa51).
+- `./build.sh` (full, with no kept proofs: every level proved): exit 0;
+  MAP21 "solvable in 16 door actions, 2657941 states, 0 stuck". Every other
+  map's wad is byte for byte main's (47 of 48; only MAP21.wad differs).
+- `tools/mapcheck.py map_longrun`: the known 7 notes (the six targets near
+  their walls, the water's control sector's SLOT); no way under 48, no new
+  SLOT. `tools/thingcheck.py`: 0. `tools/itemcheck.py`: the known 2.
+- MAP21 MODE=1 (TIMEOUT=700): 85 checks, 0 failed, `levelExited`. MODE=2:
+  14, 0 failed. MODE=3: 51 views (the machine's are views 4 to 13). MODE=4:
+  20, 0 failed. MODE=7 (-nomonsters): `lookViewsDone=1`.
+- Looked at: every face at both times on a sheet (the faces unfolded round
+  the machine, THEN over NOW) and in the views: no picture is cut at a wall
+  piece's end or at a corner, the bands go on round every corner and across
+  the body's south face, the slivers and the piece over 101; that piece
+  stands right (crown at the ceiling) with the upper texture as it is here
+  (pegged from the frame's head) and would with map21-pocket's unpegging.
+
+**Not tested / not played by hand.** The look on the real machine (GLES);
+the machine NOW in a fight (the hall's ambush); how much the faces' own
+light NOW shows from the night room's side and through the clocked door.
 
 ## Doors: the open leaf keeps clear of walls; USE at a lever works the lever; the clocked door is look 3 (2026-11-26)
 
