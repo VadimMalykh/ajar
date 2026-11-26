@@ -18460,3 +18460,61 @@ walking under the shutter as it comes down (the wait is tested only by its
 code, not by a monster in the way). GREEN's ambush in play (in the test
 ambushers are counted and removed). Save and load with the machine stopped
 or running.
+
+## Music: fifteen pieces, Paradox Engine's tunes on three harmonies (2026-11-26)
+
+Vadim: "can you create by 5 versions combining melodic ideas from Paradox
+Engine with harmonic ideas from Distang Galaxy, Garmony and Mysterium?"
+Written by three workers (tasks `engine-galaxy`, `engine-garmonic`,
+`engine-mysterium`), merged as one. The lab (`MAP=SOUND ./run.sh`) has 46
+tracks; none of the fifteen plays on a map. How the riff and the tunes are
+laid on each harmony is in the section before this one and in
+`tools/music.py` above the three sets.
+
+| Lab | Lump | Piece | Key, speed | What it is |
+|---|---|---|---|---|
+| 32 | AJM_EGA1 | Galaxy Engine, Band | A, 132 | the Doom band as in Distant Galaxy, Fast: overdriven guitar and bass on the riff, brass tune, lead guitar in the chorus |
+| 33 | AJM_EGA2 | Galaxy Engine, Machine | G, 140 | as Machine: synth bass hammer, square wave hidden notes, four on the floor, saw lead |
+| 34 | AJM_EGA3 | Galaxy Engine, Shuffle | D, 12/8 at 132 | as Shuffle: the riff in triplets, a rock organ with the tune |
+| 35 | AJM_EGA4 | Galaxy Engine, Piano | A, 63 | as Piano: the riff in the left hand, tunes in the right, a cello later |
+| 36 | AJM_EGA5 | Galaxy Engine, Night Shift | E, 12/8 at 60 | as Night Shift: fretless bass, electric piano, vibraphone, muted trumpet |
+| 37 | AJM_EGR1 | Garmonic Engine, Upside Down | E flat, 132 | as Upside Down: the held note hammered on top by a muted guitar, the heavy riff slipping under it |
+| 38 | AJM_EGR2 | Garmonic Engine, Groove | E, 100 | in the manner of Night Porter: fingered bass, muted guitar, electric piano, vibraphone |
+| 39 | AJM_EGR3 | Garmonic Engine, Music Box | F, 3/4 at 92 | as Music Box: a waltz, a glockenspiel on the held note |
+| 40 | AJM_EGR4 | Garmonic Engine, Pizzicato | E flat, 92 | strings alone: the riff plucked, one high note held, cello, clarinet, flute |
+| 41 | AJM_EGR5 | Garmonic Engine, Slow | E flat, 54 | ambient as Garmonic I, but the tunes over it from the first bar: vibraphone, clarinet, flute |
+| 42 | AJM_EMY1 | Mysterium Engine, Choir | B flat, 52 | as Mysterium II: walking contrabass, three held lines, clarinet and horn |
+| 43 | AJM_EMY2 | Mysterium Engine, Piano | B flat, 66 | broken major chords in the left hand, the tunes in the right, a cello later |
+| 44 | AJM_EMY3 | Mysterium Engine, Music Box | C, 3/4 at 96 | a waltz in major: plucked bass, celesta, music box |
+| 45 | AJM_EMY4 | Mysterium Engine, Stream | G, 12/8 at 76 | a harp in triplets, flute and clarinet, strings |
+| 46 | AJM_EMY5 | Mysterium Engine, Band | B flat, 132 | the one fast one: the riff on a muted guitar, walking bass, organ, brass and lead |
+
+Where the pieces depart from the frames as first written down:
+
+- **Garmonic, Music Box.** The waltz has two hidden notes a bar, so the slip
+  is not "the last flat 3rd": the home pair is flat 2nd and flat 3rd, then
+  the 4th and the 2nd the flat 3rd has slipped to (the riff's second flat
+  2nd is left out).
+- **Garmonic, Slow.** The chorus tune is on a flute, not the clarinet (it
+  goes to G6), and in the last round the vibraphone doubles an octave
+  below, among the held lines.
+- **Mysterium, Band.** Over the fourth chord the hammered note steps up to
+  that chord's root (D under an E flat chord was a minor ninth for a whole
+  bar); in the two chorus bars with E natural the guitar has the hammer
+  alone.
+- **Galaxy, Piano and Night Shift.** No riff-alone verse (the full form
+  would run over five minutes). The 12/8 pieces say the verse tune the
+  same way both times: there is no cut of the walked-through tune for
+  twelve.
+- **Galaxy, verse bars 9 to 12.** The chord has no third, but the
+  walked-through tune touches the flat 3rd for two steps at the end of bar
+  12 (its last two notes moved up a fifth).
+
+Checked: the 31 older pieces come out byte for byte as before; in every
+verse and chorus of the fifteen the riff, the tunes and the bass notes are
+the frame's, bar by bar (each worker's script; for Mysterium, Band before
+the change to the hammer); semitone rubs counted by pair of voices: every
+kind follows from the frames (the Engine's flat 2nd against its key note,
+moved with the chords; a tune's passing note against a chord note; in
+Garmonic the flat 6th against the held 5th); `./build.sh`; the sound lab
+test with 46 tracks. Not checked: how they sound.
