@@ -180,10 +180,34 @@ def spatial(p=BUILT, booth=True, lobby_frame=True):
     return q
 
 
-FIRST_BUILT = BUILT                             # the first playable version: a far side in one time only
-BUILT = spatial()                               # as decided 2026-11-26: 13 door actions, 150165 states, 0 stuck,
-                                                # nothing lost; without the booth 33360 stuck and the vestibule can
-                                                # be skipped; without frame 110, 256 stuck
+def built_exit(p=None, lean="bcelN", second=None):
+    """The way out is built by the player (Vadim, 2026-11-26: "I also don't
+    like that exit is ready again. Let's make me build it"), as MAP05 on
+    (ajarmap.way_home). The night room behind the brass shutter then has
+    GREEN's far side in its west end and an empty brass frame (HOME, GREEN's
+    alone) in its east end; the machine running (keys 1 and 2, the clocked
+    door in 101) holds the shutter open. Now, the same room behind Doom's
+    stone is dead: GREEN's far side, no frame, no way but back. GREEN leans
+    in `lean`."""
+    from ajarmap import GREEN, HOME
+    q = copy.deepcopy(p or spatial(FIRST_BUILT))
+    q["walk"] = [w for w in q["walk"] if w[1] != "exit"]
+    run = {"hung": (CLOCK, 101)}
+    q["walk"] += [("hallT", "nightT", "12", None, run), ("nightT", "hallT", "12", None, run)]
+    q["frames"][HOME] = "nightT"
+    q["then_frames"] = (HOME,)
+    q["only"][HOME] = GREEN
+    q["home_frame"] = HOME
+    q["doors"][GREEN] = dict(home="nightN", home_then="nightT", lean=lean)
+    q["only"][103 + THEN_ID] = tuple(sorted(q["doors"]))     # the pocket's frame then takes any door: GREEN too
+    if second:                                  # a second frame in the corridor's first stretch (104) / the pocket (124)
+        q["frames"][104], q["frames"][104 + THEN_ID] = "spineN", "c1T"
+        q["twins"][104] = 104 + THEN_ID
+        if second == "clock":                   # now the clocked door's alone, as 103
+            q["only"][104], q["only"][104 + THEN_ID] = CLOCK, tuple(sorted(q["doors"]))
+    return q
+
+
 
 
 @record
@@ -257,7 +281,7 @@ def describe(p, s):
             f = loc[1]
             where = f"{f}/{tw[f]}" if p["doors"][c].get("clock") else f"{f}"
             far = (f"{p['frames'][f]}<->{p['frames'][tw[f]]}" if p["doors"][c].get("clock")
-                   else f"{p['frames'][f]}<->{p['doors'][c]['home']}")
+                   else f"{p['frames'][f]}<->{solve._home(p, c, f)}")
             parts.append(f"{nm(p, c)} hung in {where} ({far})")
         else:
             parts.append(f"{nm(p, c)} leans in {loc[1]}")
@@ -334,6 +358,8 @@ def stages(p, steps_states):
     out.append("belt" if "bgalN" in seen else "NO belt")
     out.append("beam" if {"closetA", "closetB", "closetC"} & seen else "NO beam")
     out.append("lobby" if "lobbyT" in seen else "NO lobby")
+    if "nightN" in seen:
+        out.append("the dead night room")
     out.append("vestibule" if "u" in keys else "NO vestibule")
     return out
 
@@ -376,6 +402,17 @@ def report(p, title, examples=10, quiet=False, lose=True):
     return actions, seen, stuck
 
 
+FIRST_BUILT = BUILT                             # the first playable version: a far side in one time only
+SPATIAL = spatial()                             # colour doors by time: 13 door actions, 150165 states, 0 stuck,
+                                                # nothing lost; without the booth 33360 stuck and the vestibule can
+                                                # be skipped; without frame 110, 256 stuck
+# ... and the way out built by the player: 16 door actions, 2657941 states, 0 stuck, nothing lost, each cause and
+# the vestibule needed (about a quarter of an hour to solve). Without the second pocket frame (104/124) 1024
+# stuck: two colour doors down in the pocket then, one in 123 and one in hand, and no way up with a door.
+BUILT = built_exit(second="any")
+BUILT["complete"] = True
+
+
 def main(args):
     """No argument: PUZZLE21. `all`: that, the causes frozen, the vestibule
     test, every frame left out in turn and every variant. Or name any of:
@@ -393,6 +430,14 @@ def main(args):
             for c in ("valve", "belt", "beam"):
                 report(frozen(c, q), f"{name}, the {c} frozen", examples=1, quiet=True, lose=False)
             report(without_vestibule(q), f"{name}, without a way in by the vestibule's bolted doors", examples=1,
+                   quiet=True, lose=False)
+    for a in args:
+        if a.startswith("exit"):
+            q = built_exit(second={"exit2": "any", "exit2c": "clock"}.get(a))
+            report(q, a, examples=6)
+            for c in ("valve", "belt", "beam"):
+                report(frozen(c, q), f"{a}, the {c} frozen", examples=1, quiet=True, lose=False)
+            report(without_vestibule(q), f"{a}, without a way in by the vestibule's bolted doors", examples=1,
                    quiet=True, lose=False)
     if "puzzle" in want:
         report(PUZZLE21, "PUZZLE21 (MAP21 as designed)")

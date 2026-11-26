@@ -118,7 +118,9 @@ To the solver both are regions like any other; three things join them:
                 (a twin's then id) it leads to home_then, the same far side
                 forty years earlier, and hung in a now frame to home. Without
                 home_then its far side is the one place `home` (the first
-                MAP21, and the lab before the rule). Not modelled with a thief, a nailer, a dash or
+                MAP21, and the lab before the rule).
+  then_frames   optional (frame ids): frames then that have no twin now (a
+                brass frame in a night room that is whole only then) Not modelled with a thief, a nailer, a dash or
                 the Stray pool (solve() refuses those)
   causes        optional {name: dict(states=(...), start=state, at=[regions],
                 via={frame id: region})}: a fixture then, with a few states
@@ -174,7 +176,8 @@ def _home(p, c, f):
     """Where door c hung in frame f leads: its far side, at the frame's time
     (see `home_then`)."""
     d = p["doors"][c]
-    return d["home_then"] if "home_then" in d and f in p.get("twins", {}).values() else d["home"]
+    then = f in p.get("twins", {}).values() or f in p.get("then_frames", ())
+    return d["home_then"] if "home_then" in d and then else d["home"]
 
 
 def _now(p, f):
@@ -425,7 +428,7 @@ def _won(p, s):
     if f is None:
         return False
     return any(loc == ("frame", f) and (c == p["home_door"] if "home_door" in p
-                                        else p["doors"][c].get("home") == p["frames"][f])
+                                        else "home" in p["doors"][c] and _home(p, c, f) == p["frames"][f])
                for c, loc in zip(sorted(p["doors"]), s[2]))
 
 
