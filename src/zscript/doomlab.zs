@@ -150,8 +150,11 @@ class AjarDoomLab : EventHandler
 	// Link only switches their portal (ajar.zs, AjarHandler.Link)
 	static bool Gate(int id)
 	{
-		return id >= GATE_FIRST && id <= GATE_LAST && Lab();
+		return id >= GATE_FIRST && id <= GATE_LAST && (Lab() || Joined());
 	}
+
+	// the joined maps lab (classic.zs): its Doom doors are made gates at build time, by tools/classic.py
+	static bool Joined() { return level.mapname.Left(7) ~== "CLASSIC"; }
 
 	// the lab is on: asked for, and this is id's MAP22 (then, and only then, the post-processor changed it)
 	static bool Lab()
@@ -207,7 +210,7 @@ class AjarDoomLab : EventHandler
 
 	override void WorldLoaded(WorldEvent e)
 	{
-		if (!Lab() || e.IsSaveGame) return;
+		if (!(Lab() || Joined()) || e.IsSaveGame) return;
 		let it = ThinkerIterator.Create("AjarDoomNote");
 		AjarDoomNote n;
 		while (n = AjarDoomNote(it.Next()))
@@ -316,6 +319,7 @@ class AjarDoomLab : EventHandler
 		if (!on) return;
 		tic++;
 		HoldTick();
+		if (!Lab()) return;           // (the joined maps lab has the hold rule only; its tests are classic.zs's)
 		int mode = CVar.GetCVar("ajar_autotest").GetInt();
 		let mo = players[consoleplayer].mo;
 		if (!mode || !mo) return;

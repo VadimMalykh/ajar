@@ -33,4 +33,6 @@ fi
 # monsters and palette) must not be under Ajar.
 DEMOARGS=()
 [ "${DEMO:-}" = 3 ] && { DEMOARGS=(+set ajar_autotest 20); MAP=MAP32; }
-gzdoom -config "$PWD/ajar.ini" -noautoload -iwad doom2.wad -file build/ajar.pk3 +skill "$((${SKILL:-3} - 1))" "${DEMOARGS[@]}" +map "${MAP:-MAP01}" "$@" 2>&1 | tee build/run.log
+# build/ajar-classic.pk3 (Doom II's own maps joined, MAP=CLASSIC) is made by ./build.sh from your doom2.wad
+CLASSIC=(); [ -f build/ajar-classic.pk3 ] && CLASSIC=(build/ajar-classic.pk3)
+gzdoom -config "$PWD/ajar.ini" -noautoload -iwad doom2.wad -file build/ajar.pk3 "${CLASSIC[@]}" +skill "$((${SKILL:-3} - 1))" "${DEMOARGS[@]}" +map "${MAP:-MAP01}" "$@" 2>&1 | tee build/run.log

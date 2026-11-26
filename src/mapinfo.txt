@@ -682,3 +682,33 @@ map SHIFT "Ajar: the first Double Shift"
 	nocrouch
 	music = ""
 }
+
+// The joined maps lab (tools/classic.py, src/zscript/classic.zs; PLAN.md, "The joined maps lab"): Doom II's
+// Entryway and Dead Simple made one level at build time from the player's own doom2.wad. The level is in
+// build/ajar-classic.pk3 only, never in ajar.pk3; without that file these entries name maps that are not there.
+// MAP=CLASSIC ./run.sh. map07special: Dead Simple's tags 666 and 667 are kept as they are.
+map CLASSIC "Ajar: Doom II joined"
+{
+	next = "CLASSIC"
+	nointermission
+	nojump
+	nocrouch
+	sky1 = "SKY1", 0
+	music = "D_RUNNIN"
+	map07special
+	EventHandlers = "AjarClassic", "ClassicTest"
+}
+
+// The same with two further pieces far out (Nirvana at (16384, 0), The Catacombs at (24576, 16384)), to see
+// what large coordinates do: MAP=CLASSIC4 ./run.sh
+map CLASSIC4 "Ajar: Doom II joined, four maps"
+{
+	next = "CLASSIC4"
+	nointermission
+	nojump
+	nocrouch
+	sky1 = "SKY1", 0
+	music = "D_RUNNIN"
+	map07special
+	EventHandlers = "AjarClassic", "ClassicTest"
+}
