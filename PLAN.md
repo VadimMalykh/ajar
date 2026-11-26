@@ -17919,3 +17919,143 @@ of then; the bus by `ajarmap.bus(livery=...)` with a new livery.
 4. Which places, and how much of each.
 5. Does the old bus of MAP10 appear (now), or only the new one?
 6. Is there anybody in the peaceful town? (Ajar has had no people so far.)
+
+## Look: MAP21, the apparatus (board made 2026-11-26, not chosen yet)
+
+THEN is the institute forty years before NOW, on its last evening: lit,
+humming, full of apparatus, nobody there; NOW the same rooms show where it
+all stood. Walls, floors and ceilings stay MAP11's (THEN look 2 "Thaw", NOW
+look 3 "Post Box"); what has three looks is the apparatus THEN. Board:
+`design/map21-board.html` (built into `build/board21/` by
+`tools/board21_shots.sh`). **Nothing is chosen: the level wears look 1
+until Vadim chooses.**
+
+**The three looks.**
+1. **Lamps and Reels**: a computing centre of the 1960s. Pale grey-blue and
+   cream enamel edged in aluminium, small round lamps, tape reels, white
+   keys, green scopes, orange accents, black legend plates.
+2. **Copper and Porcelain**: a high-voltage hall. Dark green hammered
+   enamel, black bakelite meters with white faces, knife switches, copper
+   windings and bus bars, porcelain insulators, red lamps, brass plates.
+3. **Glass and Mercury**: a vacuum and optics laboratory. Glass bulbs, tubes
+   and bell jars glowing violet or blue, nickel, white ceramic, red hoses,
+   mercury columns, small dials.
+
+**The switch.** `APPARATUS` in `tools/map_longrun.py` (just after
+`t = Times(...)`): a look (1, 2, 3) for each group, `cabinets`, `racks`,
+`benches`, `tanks`, `pumps`, `belt`, `consoles`, `pictures`, `things`,
+`emitter`; all 1 now. `AJAR_APPARATUS=1|2|3` sets every group (the board's
+builds). Vadim's picks are written into the table.
+
+**The parts** (`tools/gfx_longrun.py`, called from `gfx.make_all`; names
+`AJU<part><look>`; furniture sides 64 wide and laid by where they are unless
+marked):
+- Cabinets: fronts `AJUCB<n>A..D` (64x128, four that take turns along a
+  bank), the bank's end `CS`, its top `CT` (flat).
+- Racks: `RK` 128x96 (the board's swatch), `RF` 64x96 (the goods bay's, seamless,
+  laid), the end `RS` 64x96 (from its line's end), the top `RT`.
+- Benches: side `OB`, tops `OTA`, `OTB` (flats: a rail with lenses, a lamp, a
+  prism, a slit).
+- Tanks: `TK` 64x256 in one piece, top `TT` (flat).
+- Pumps: side `PM`, top `PT`; the valve's gauge board `GB` (a picture,
+  128 wide, in the pumps' look).
+- Belt: band `BB` (flat, ribbed across, so that it is seen to run), side
+  frames `BC` (flat), their face `BS` 64x128; the motor `BM` (64x48, from
+  its line's end) and its top `BT`.
+- Consoles: side `CN`, top `CK`.
+- Pictures, each drawn on look 2 of its own room's wall: `SC` the machine's
+  schematic (hall, 128), `PB` the pass and key board (vestibule, 128), `WN`
+  a wall newspaper (corridor, 128: IMPULSE, CURRENT, VACUUM), `PP` a pipe
+  run (lab wall, 64x256). Anywhere else, or at another offset, a copy
+  `AJUP<nn>` is drawn for that wall (`picture_name`).
+- One of a kind in every look: the notice `AJUNT<wall>2` (EXPERIMENT (1)
+  TOMORROW, a clock at a quarter to, LEAVE EVERY ROOM AS IT IS, LOCK UP) and
+  the calendar at the 14th `AJUCLEX2`, yellowed NOW `AJUCLEX3`.
+- Sprites (`src/zscript/apparatus.zs`, DoomEdNums 20195 to 20198, args
+  (look, solid)): `AJUA` a trolley 40x56, `AJUB` a tall piece 40x96, `AJUC`
+  a small thing on a desk (a radio, a telephone, a glass of tea), `AJUE`
+  the beam's emitter 40x72: A..C lit, G..I dark (the beam set to OFF), D..F
+  its wreck. Frame by look.
+- The hall's ducts `AJUDU2` (chequer plate THEN), `AJUDU3` (covers gone
+  NOW). The cellar's ledge face `AJULF2`, `AJULF3` (see below).
+
+**Where each group stands** (NOW's coordinates; THEN is y + 8192):
+- Hall: cabinet banks (0..64 and 960..1024, 448..704, 128 high) in place of
+  the benches; consoles (64..128 and 896..960, 128..256, 48); ducts from the
+  machine to the banks and from the dais; the schematic on the north wall
+  (576..704); the notice (east wall, 256..320) and the calendar
+  (416..448) by the doorway; tall pieces at (288, 736) and (736, 736), a
+  trolley at (168, 584), the radio on the desk (548, 158).
+- Vestibule: the pass and key board on the north wall (1088..1216); the
+  notice by the turnstile (east wall, 376..440); a thing on the porter's
+  desk (1176, 476). The south strip is the pass office's (another task).
+- Pocket: the wall newspaper (east wall, 256..384); a trolley (1468, 194).
+- Cellar: tanks (672..736 x 1104..1168, 864..928 and 736..800 x
+  1520..1584), 256 high from the pit's floor; the pump (576..672 x
+  1104..1168, 48) west of its tank, by the valve's pipe; the valve's gauge
+  board over the ledge's target (west wall, 1312..1440: in place of
+  MAP11's `GA`); on the landing a console (1136..1232 x 1552..1600) and a
+  pipe run (north wall, 1072..1136).
+- Goods bay: the two racks (`RACKS`, 96 high: `RS` sides, `RF` on the long
+  faces); the belt's motor (1568..1632 x 1216..1264, 48) north of the belt
+  at the flap; a console (1760..1840 x 1488..1536) west of the lever
+  BELT; THEN's belt in the belt's look (band, side frames; the alcove's too).
+- Optics: the benches (`OPT_BENCHES`, 48); the emitter on the inlay (20198
+  on then.zs's AjarThenEmitter, whose own sprite it hides; lit or dark by
+  the beam's setting); tall pieces at (1184, 2352) and (1184, 2800); a pipe
+  run on the west wall (2400..2464).
+
+**NOW: the ghosts' rule.** Where a thing hung on or stood against a wall
+THEN, the wall NOW (look 3) shows `AJUG<nn>` (`gfx_longrun.ghost`): inside
+the thing's outline the paint as it was painted, unworn and unfaded (on the
+pale whitewash also whiter), a hard edge and a rim of soot round it, bolt
+holes with rust runs, a cut cable or two. Things that stood free leave a
+footprint in the floor (MAP11's look-2 floor, `AJIF..2`), sprites nothing;
+the tanks and the pump stand in the pit, whose walls repeat the wall's
+picture below -40, so they leave only footprints. The hall's north wall is
+Doom's stone NOW, with no ghost. The emitter's wreck (`AjarEmitterWreck`,
+20189, map21.zs) shows the apparatus's `AJUE` D..F in the emitter's look
+(args[0]). THEN's belt is new in the belt's look; NOW's stays gfx_then's
+rusted one in every look.
+
+**Mended in the THEN rooms** (Vadim's screenshot): the cellar's tanks were
+MAP11's `TK`, 64 high, repeated up a pillar from the pit's floor to the
+ceiling: now 256 high in one piece with a top; the gauges were MAP11's `GA`,
+drawn on the pump room's wall (192 high) and hung on the lab's: now `GB`,
+drawn on the lab's wall; the ledge's face was `B4` (a 48 high cabinet)
+repeated three times: now `AJULF2`/`AJULF3`, the lab's wall from 16 rows
+down, so that it goes on as the pit's walls beside it do. Optics NOW was too
+dark to read the plan board and the plates: a strip along the north wall at
+light 184 and the walls A and C at 168 (the rest 120, a ruin).
+
+**The board.** `tools/board21_shots.sh` builds each look quick
+(`AJAR_APPARATUS=v`, `AJAR_OUT=build/look<v>.pk3`), runs `MAP=MAP21 MODE=7`
+(`LongRunLookViews`, apparatus.zs; `tools/smoke_MAP21_7.cfg`, 74 shots: 18
+places, each THEN then NOW from the same spot, the later of two shots kept),
+crops the test's text lines (40 px) off the top and writes 819x472 JPEGs to
+`build/board21/<look>/view_NN.jpg` (view 2k THEN, 2k+1 NOW), swatches to
+`build/board21/tex/`, and copies the page to `build/board21/index.html`. The
+page has one row per group, the three looks side by side for the camera
+chosen, NOW under THEN where the group leaves ghosts or a wreck, a pick
+per group and a line of picks to paste.
+
+**Checks** (2026-11-26, on the branch `look21` with main at e03da2d merged).
+- `./build.sh` (full, the default look 1): exit 0; MAP21 "solvable in 12
+  door actions, 226893 states, 0 stuck", as main's. Every other map's wad
+  is byte for byte main's (47 of 48; only MAP21.wad differs).
+- `tools/mapcheck.py map_longrun` in looks 1, 2 and 3: the same 7 notes as
+  main (the six targets near their walls, the SLOT of the water's control
+  sector in the void); no way under 48, no new SLOT.
+  `tools/thingcheck.py`: 0 problems (the apparatus's emitter, 20198, may
+  stand on then.zs's: it is listed with the things that may share a spot).
+  `tools/itemcheck.py`: main's 2 notes (the valve's target, the gallery's
+  rockets); the apparatus's sprites are not pickups (listed in `SKIP`).
+- MAP21 MODE=1 (TIMEOUT=700): 60 checks, all pass, `outByTheWayOut`,
+  `levelExited`. MODE=2: 14 checks, all pass (every target still shot
+  from its frame). MODE=3: its 30 views. MODE=4: 20 checks, all pass.
+  MODE=7 in looks 1, 2 and 3: `lookViewsDone=1`, 36 views each.
+
+**Not tested / not played by hand.** The look on the real machine (GLES);
+the emitter going dark at OFF (drawn, wired, not photographed: the views
+keep the beam at C); the sprites' size against the player at play speed;
+the light in optics NOW in a fight.
