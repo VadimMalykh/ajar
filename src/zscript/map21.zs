@@ -406,6 +406,7 @@ class AjarEmitterWreck : Actor
 //     (nothing posed, nothing ridden by script), with the checks on the way
 //   2 the three causes set by shots from NOW through the clocked door (posed)
 //   3 views (tools/smoke_MAP21_3.cfg shoots every 70 tics)
+//   5 the wall over every frame and far side, THEN and NOW (tools/smoke_MAP21_5.cfg shoots every 35 tics)
 class LongRunTest : EventHandler
 {
 	const OFF = 8192;
@@ -585,6 +586,7 @@ class LongRunTest : EventHandler
 		else if (mode == 2) Shots(mo);
 		else if (mode == 3) Views(mo);
 		else if (mode == 4) Causes(mo);
+		else if (mode == 5) FrameViews(mo);
 		Drive(mo);
 		if (tic % 70 == 0 && mode != 3) Info(String.Format("t=%d step %d %s carried %s", tic, step, Where(mo), h.carried ? h.carried.Label() : "-"));
 	}
@@ -1117,6 +1119,39 @@ class LongRunTest : EventHandler
 		if (S()) Wait(139);
 		if (S()) { View(mo, "the pocket THEN: the night grille, NO DOORS BEYOND THIS POINT, frame 123", 1480, OFF + 610, 200); Next(); }
 		if (S()) Wait(139);
+		// --- the pocket is the corridor (PLAN.md, "MAP21: the pocket is the corridor"): the two times one place
+		if (S()) { View(mo, "the pocket THEN looking north: through the night grille the corridor at night, its night lamps, its doors shut", 1408, OFF + 420, 90); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the same spot NOW: the grille's wreck (stubs in the walls and at the ceiling, bars on the floor), the corridor", 1408, 420, 90); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the pocket THEN facing west from 123: the turnstile, the clock", 1460, OFF + 470, 180); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the same spot NOW: the turnstile's wreck in its choked opening, the clock", 1460, 470, 180); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "frame 123 THEN from in front, empty: the wall over it", 1376, OFF + 480, 0, -14); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "frame 103 NOW from in front, empty: the wall over it", 1376, 480, 0, -14); Next(); }
+		if (S()) Wait(139);
+		if (S()) Hang(mo, 512, 280, 90);                    // the clocked door from 101 ...
+		if (S()) Wait(8);
+		if (S()) Hang(mo, 1470, 480, 0);                    // ... into 103 (its shadow in 123)
+		if (S()) Wait(8);
+		if (S()) { Info(String.Format("the clocked door in 103: %d", F(103).door == clocked));
+			View(mo, "the pocket THEN through the clocked door in 123 (as Vadim's screenshot): the corridor NOW, the clock and the turnstile's wreck", 1390, OFF + 380, 32); Next(); }
+		if (S()) Wait(119);
+		if (S()) { View(mo, "the corridor NOW through the clocked door in 103: the pocket THEN, the goods edge", 1390, 380, 32); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the pocket THEN straight at the clocked door in 123: opposite 103 NOW the turnstile's wreck, the clock's wall", 1390, OFF + 480, 0); Next(); }
+		if (S()) Wait(139);
+		if (S()) { View(mo, "the corridor NOW straight at the clocked door in 103: opposite 123 THEN the turnstile, the clock's wall", 1390, 480, 0); Next(); }
+		if (S()) Wait(139);
+		if (S()) Hang(mo, 1470, 480, 0);                    // the clocked door back into 101
+		if (S()) Wait(8);
+		if (S()) Hang(mo, 512, 280, 90);
+		if (S()) Wait(8);
+		if (S()) { Info(String.Format("the clocked door in 101: %d", F(101).door == clocked));
+			View(mo, "the start NOW again, the clocked door back in 101", 512, 40, 90); Next(); }
+		if (S()) Wait(119);
 		// --- the cellar: the valve (found open)
 		if (S()) { View(mo, "the cellar NOW, the valve open (found): the pit full, the stream from the pipe onto the water, the dead lever VALVE", 1076, 1540, 212, 16); Next(); }
 		if (S()) Wait(139);
@@ -1212,6 +1247,39 @@ class LongRunTest : EventHandler
 		if (S()) Wait(8);
 		if (S()) { Info(String.Format("running %d", desk.running)); View(mo, "the hall THEN, the clocked door taken: the machine stopped, the shutter shut", 512, OFF + 600, 90); Next(); }
 		if (S()) Wait(129);
+	}
+
+	// === MODE=5: the wall over every frame and far side, from in front, THEN and NOW (PLAN.md, "MAP21: the pocket
+	// is the corridor"; tools/smoke_MAP21_5.cfg shoots every 35 tics, two a view, the later one kept) ===========
+	static const double FV[] = {
+		// x, y (NOW's), angle, pitch
+		512, 200, 90, -14,              //  0 101 / 121, in the machine
+		1376, 480, 0, -14,              //  1 103 / 123, the corridor's (the pocket's) east wall
+		1376, 330, 270, -14,            //  2 104 / 124, its south end
+		1090, 1280, 0, -14,             //  3 105 / 125, the landing's east wall
+		1568, 2470, 270, -14,           //  4 106 / 126, optics' south wall
+		1936, 1400, 90, -14,            //  5 108 / 128, the goods bay's north wall
+		LX + 880, 320, 0, -14,          //  6 110 / 130, the lobby's east wall
+		LX + 150, 320, 180, -14,        //  7 RED's far side, the lobby's west wall
+		1168, 400, 270, -14,            //  8 BLUE's far side, the vestibule's south wall (THEN in the pass office)
+		1214, 246, 200, -14,            //  9 ... THEN from inside the pass office
+		520, 912, 180, -10,             // 10 GREEN's far side, the night room's west end
+		500, 912, 0, -10,               // 11 the brass frame HOME (190) THEN, its east end (NOW stone)
+		1260, 304, 0, -14,              // 12 the vestibule's bolted door NOW, the goods edge and NO DOORS THEN
+		1440, 1310, 0, -14,             // 13 GOODS' door from the corridor (THEN beyond the grille)
+		1380, 1472, 180, -14,           // 14 CELLAR's door from the corridor
+		1408, 2120, 90, -14,            // 15 OPTICS' door at the corridor's north end
+		860, 384, 0, -14,               // 16 the hall's doorway to the vestibule
+		LX + 150, 160, 180, -14         // 17 the lobby's way to the cloakroom
+	};
+	void FrameViews(Actor mo)
+	{
+		if (tic == 10) mo.bInvisible = true;
+		if (tic < 20 || (tic - 20) % 70) return;
+		int i = (tic - 20) / 70, k = i / 2;
+		if (k * 4 >= FV.Size()) { if (k * 4 == FV.Size() && !(i % 2)) Console.Printf("AJARTEST frameViewsDone=1"); return; }
+		Pose(mo, FV[k * 4], FV[k * 4 + 1] + (i % 2 ? 0 : OFF), FV[k * 4 + 2], FV[k * 4 + 3]);
+		Info(String.Format("frame view %d (%s): row %d", i, i % 2 ? "NOW" : "THEN", k));
 	}
 
 	// === MODE=4: the causes shown (posed): the crates, the streams, the levers beside their frames =========

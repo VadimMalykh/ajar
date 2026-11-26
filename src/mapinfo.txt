@@ -410,7 +410,7 @@ map MAP21 "In the Long Run"
 	nojump
 	nocrouch
 	music = "AJM_LUGG"
-	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "AjarLongRun", "LongRunTest", "LongRunLookViews"
+	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "AjarLongRun", "LongRunTest", "LongRunLookViews", "ClockDoorLookViews"
 }
 
 // MAP21's apparatus (tools/gfx_longrun.py, src/zscript/apparatus.zs): things THEN, args[0] the look

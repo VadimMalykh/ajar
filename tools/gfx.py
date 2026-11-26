@@ -119,12 +119,19 @@ STRAY = 7           # the Stray door: every colour at once, and no far side of i
 STRAY_GREY = (120, 120, 130)
 CLOCKED = 10        # the clocked door (ajarthen, then.zs): ivory, a clock on its face; its sprites AJDT, AJNT
 IVORY = (232, 222, 196)
+# The clocked door's look, leaf and trim (tools/gfx_clockdoor.py; PLAN.md, "Look: the clocked door and its
+# frame's trim"): 0 the art below and gfx_then.clock_trim's, 1 long-case clock, 2 station clock, 3 ivory done
+# properly. AJAR_CLOCKDOOR=n sets it for a build (the look board's: tools/clockdoor_shots.sh).
+CLOCKDOOR = int(os.environ.get("AJAR_CLOCKDOOR") or 0)
 
 
 def clocked_door():
     """The clocked door's leaf: ivory, brass-edged panels, and a clock face in
     the upper panel at ten past ten. No colour's cousin: it leads to no place
     of its own, only to the same frame at the other time."""
+    if CLOCKDOOR:
+        import gfx_clockdoor
+        return gfx_clockdoor.leaf(CLOCKDOOR)
     import math
     brass, ink = (176, 140, 66), (40, 36, 34)
     im = Img(64, 96, IVORY)

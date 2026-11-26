@@ -82,12 +82,125 @@ def desk_panel(live):
 
 
 def make_longrun(out):
-    tr = clock_trim()
+    import gfx
+    if gfx.CLOCKDOOR:                                            # a look of the board's (tools/gfx_clockdoor.py)
+        import gfx_clockdoor
+        tr, fl = gfx_clockdoor.trim(gfx.CLOCKDOOR)
+    else:
+        tr = fl = clock_trim()
     out["textures/AJCKTR.png"] = tr.png()
-    out["flats/AJCKTF.png"] = tr.png()
+    out["flats/AJCKTF.png"] = fl.png()
     out["textures/AJTHK2.png"] = desk_panel(True).png()
     out["textures/AJTHK3.png"] = desk_panel(False).png()
     causes(out)
+    pocket(out)
+
+
+# === MAP21: the pocket is the corridor (PLAN.md, "MAP21: the pocket is the corridor") ======================
+#   AJ21GRW          NOW: the night grille's wreck across the corridor at y 640, a middle texture 192 by 256
+#                    laid from the ceiling (216): stubs of its rails in both walls, stubs of its bars at the
+#                    ceiling, a piece of its top rail hanging; the rest gone (THEN the grille is AJGRIL, its
+#                    rails at 30 to 34 over the floor and every 64 up, its bars every 16 from 6)
+#   AJ21GB1, AJ21GB2 NOW: the corridor's floor (look 3) with bars of the grille lying on it (64 grid)
+#   AJ21TRW          NOW: the turnstile's wreck, 48 by 64, laid from the rubble in its opening: the post, its
+#                    arms bent and broken
+#   AJ21KN, AJ21NL   THEN: the corridor's ceiling at night (look 2's tile, its tube out); the same with a night
+#                    lamp, lit, at the tile's corner (laid at x 1376..1440: the lamp on the corridor's middle)
+TARNISH, VERDI = (150, 116, 50), (92, 124, 100)
+
+
+def _bar(im, pts, w=2, c=TARNISH, rnd=None):
+    """A brass bar along the points `pts`, w either side of its line, shaded, tarnished."""
+    rnd = rnd or random.Random(2200)
+    for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
+        n = max(abs(x2 - x1), abs(y2 - y1), 1) * 2
+        for k in range(n + 1):
+            x, y = x1 + (x2 - x1) * k / n, y1 + (y2 - y1) * k / n
+            for d in range(-w, w + 1):
+                f = 1.15 - 0.25 * abs(d) / w if d < w else 0.55          # lit on one edge, a dark edge
+                px, py = (round(x + d), round(y)) if abs(y2 - y1) > abs(x2 - x1) else (round(x), round(y + d))
+                im.set(px, py, shade(VERDI if rnd.random() < 0.08 else c, f * rnd.uniform(0.88, 1.08)))
+
+
+def _grille_wreck():
+    im = Img(192, 256, (0, 0, 0, 0))
+    rnd = random.Random(2201)
+    for row in (30, 94, 158, 222):                               # the rails' stubs in both walls
+        for left in (True, False):
+            ln = rnd.randint(12, 36)
+            sag = rnd.randint(0, 8)
+            x0, x1 = (0, ln) if left else (191, 191 - ln)
+            _bar(im, [(x0, row + 2), (x1, row + 2 + sag)], 2, rnd=rnd)
+    for x in range(6, 192, 16):                                  # the bars' stubs at the ceiling and the floor
+        if 56 < x < 120:
+            continue                                             # (there the piece of the top rail hangs)
+        if rnd.random() < 0.85:
+            ln = rnd.randint(16, 72)
+            bend = rnd.choice((-1, 1)) * rnd.randint(0, 12)
+            _bar(im, [(x + 2, 0), (x + 2, ln // 2), (x + 2 + bend, ln)], 2, rnd=rnd)
+        if rnd.random() < 0.7:
+            ln = rnd.randint(6, 22)
+            _bar(im, [(x + 2, 255), (x + 2 + rnd.randint(-3, 3), 255 - ln)], 2, rnd=rnd)
+    for x, ln in ((70, 46), (102, 58)):                          # a piece of the top rail, hanging from two bars
+        _bar(im, [(x + 2, 0), (x + 2, ln)], 2, rnd=rnd)
+    _bar(im, [(60, 30), (72, 44), (104, 54), (124, 74)], 2, rnd=rnd)
+    return im
+
+
+def _floor_bars(k):
+    from gfx_institute import floors
+    base = floors(3)["FC"]
+    im = Img(64, 64)
+    im.px = [list(p) for p in base.px]
+    rnd = random.Random(2210 + k)
+    shadow = (40, 32, 24)
+    lines = ([[(6, 52), (58, 16)], [(10, 6), (24, 28), (30, 60)]] if k == 1 else
+             [[(4, 40), (32, 37), (60, 32)], [(18, 37), (16, 28)], [(46, 34), (48, 44)], [(12, 8), (52, 20)]])
+    for pts in lines:                                            # a shadow under each, then the bar
+        _bar(im, [(x + 1, y + 2) for x, y in pts], 2, shadow, rnd)
+        _bar(im, pts, 2, rnd=rnd)
+    return im
+
+
+def _turnstile_wreck():
+    im = Img(48, 64, (0, 0, 0, 0))
+    rnd = random.Random(2220)
+    steel = (128, 124, 116)
+    for y in range(14, 64):                                      # the post, against the north side
+        for x in range(40, 47):
+            im.set(x, y, shade(RUST if rnd.random() < 0.3 else steel, (1.15 if x < 43 else 0.7) * rnd.uniform(0.85, 1.05)))
+    im.disc(42, 16, 6, shade(steel, 0.9))                        # its head, the arms' hub
+    im.disc(42, 16, 3, shade(RUST, 0.8))
+    _bar(im, [(38, 18), (20, 22), (4, 34)], 2, steel, rnd)       # an arm bent down across the opening
+    _bar(im, [(38, 20), (26, 40), (14, 60)], 2, steel, rnd)      # one wrenched to the floor
+    _bar(im, [(40, 12), (32, 6)], 2, steel, rnd)                 # the third broken off short
+    for _ in range(18):
+        x, y = rnd.randint(0, 47), rnd.randint(0, 63)
+        if im.px[y * 48 + x][3]:
+            im.set(x, y, shade(RUST, rnd.uniform(0.7, 1.1)))
+    return im
+
+
+def _night_ceiling(lamp):
+    from gfx_institute import ceiling
+    im = ceiling(2, "C")
+    im.rect(8, 28, 56, 36, (150, 152, 150))                      # the tube out
+    if lamp:                                                     # a small round lamp at the corner, lit
+        for cx in (0, 64):
+            for cy in (0, 64):
+                im.disc(cx - 0.5, cy - 0.5, 8, (120, 110, 84))
+                im.disc(cx - 0.5, cy - 0.5, 6, (255, 236, 170))
+                im.disc(cx - 0.5, cy - 0.5, 3, (255, 252, 230))
+    return im
+
+
+def pocket(out):
+    out["textures/AJ21GRW.png"] = _grille_wreck().png()
+    out["flats/AJ21GB1.png"] = _floor_bars(1).png()
+    out["flats/AJ21GB2.png"] = _floor_bars(2).png()
+    out["textures/AJ21TRW.png"] = _turnstile_wreck().png()
+    out["flats/AJ21KN.png"] = _night_ceiling(False).png()
+    out["flats/AJ21NL.png"] = _night_ceiling(True).png()
 
 
 # === MAP21: the causes made readable (PLAN.md, "MAP21: the causes made readable") ===================

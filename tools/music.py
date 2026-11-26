@@ -207,7 +207,26 @@ With that he asked: "Also can you create by 5 versions combining melodic
 ideas from Paradox Engine with harmonic ideas from Distang Galaxy, Garmony
 and Mysterium?" Fifteen, five on each harmony, after the six in TRACKS (32
 to 46). How the Engine's riff and tunes are laid on each harmony stands
-above each set, further down.
+above each set, further down. The fifteen, each made in the manner of a
+piece he kept or put on a map: five Galaxy Engine (Band, Machine, Shuffle,
+Piano, Night Shift), five Garmonic Engine (Upside Down, Groove, Music Box,
+Pizzicato, Slow), five Mysterium Engine (Choir, Piano, Music Box, Stream,
+Band).
+
+"No - 32, 33, 34, 35, 36, 38, 39, 40": all five on Distant Galaxy's harmony
+and Garmonic Engine's Groove, Music Box and Pizzicato removed, and with the
+Galaxy five their frame. Seven stay; 37 keeps its number, the others were
+moved into the empty places, as before:
+- 32 Mysterium Engine, Band (B flat, 132): the one fast one, the Doom band
+  in major. (It was 46.)
+- 33 Mysterium Engine, Stream (G, 12/8 at 76): a harp in triplets, flute
+  and clarinet. (It was 45.)
+- 34 Mysterium Engine, Music Box (C, 3/4 at 96). (It was 44.)
+- 35 Mysterium Engine, Piano (B flat, 66). (It was 43.)
+- 36 Mysterium Engine, Choir (B flat, 52). (It was 42.)
+- 37 Garmonic Engine, Upside Down (E flat, 132).
+- 38 Garmonic Engine, Slow (E flat, 54): ambient, the tunes over it from
+  the first bar. (It was 41.)
 """
 import random
 import re
@@ -1984,32 +2003,10 @@ def engine_piano():
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Paradox Engine's riff and tunes on the harmony of three other pieces, 2026-11-26 (see the top): five of each.
+# Paradox Engine's riff and tunes on the harmony of two other pieces, 2026-11-26 (see the top). There were five
+# of each and five on a third harmony, Vadim's sketch distant_galaxy_theme; he kept the seven below.
 #
-# 1. On Vadim's sketch distant_galaxy_theme (its chords: home minor; the same chord a semitone lower; home with no
-#    third; the 4th minor; then the flat 3rd over a bass on the 5th, the 5th minor, the flat 6th, and the 5th
-#    augmented becoming major). VERSE, 16 bars, his first four chords four bars each: the Engine's riff on the key
-#    note, the whole riff a semitone lower, the riff with no third in it (its flat 3rd and 4th a step higher) on the
-#    key note, the riff on the 4th. The tune over it is the first half of the Engine's (Q1 to Q4) four times, at
-#    those levels: at home, a semitone lower, a fifth higher (where it has no third in it either), on the 4th.
-#    CHORUS, 8 bars, his other four chords a bar each, twice, the bass on the 5th, 5th, flat 6th, 5th: the Engine's
-#    chorus tune with its rhythm and shape kept and its notes moved onto these chords (GALAXY_CHORUS); in the last
-#    bar of four the flat 3rd stays over the augmented chord and falls to the 2nd as it becomes major, as in his
-#    sketch.
-
-GALAXY_VERSE_LEVELS = (0, -1, 7, 5)             # Q1 to Q4 at each, four bars each
-GALAXY_CHORUS = {
-    "D1": "5' - - - - - - - b3' - - - 5' - - -",             # over the flat 3rd chord, the 5th in the bass
-    "D2": "b7' - - - - - - - 5' - - - b7' - - -",            # over the 5th minor
-    "D3": "4' - - - b3' - - - 1' - - - - - b7 -",            # over the flat 6th (the Engine's own third bar)
-    "D4": "b3' - - - - - - - 2' - - - - - - -",              # over the 5th augmented, then major
-    "D5": "b3'' - - - - - - - b7' - - - b3'' - - -",
-    "D6": "2'' - - - - - - - b7' - - - 2'' - - -",
-    "D7": "b3'' - - - b2'' - - - 1'' - - - b2'' - b3'' -",
-    "D8": "b3'' - - - - - - - 2'' - - - - - - -",
-}
-
-# 2. On Vadim's sketch garmonic (a note held on top, the 5th, while the two notes under it slip down a semitone one
+# 1. On Vadim's sketch garmonic (a note held on top, the 5th, while the two notes under it slip down a semitone one
 #    after the other, so home minor becomes the major chord on the 5th; then home minor over its flat 3rd, the major
 #    chord on the major 7th with that flat 3rd kept, the same augmented as the 5th comes back, the minor chord on
 #    the major 3rd, and home with the 5th kept). VERSE, 8 bars, his first move twice: two bars of the Engine's riff
@@ -2032,7 +2029,7 @@ GARMONIC_CHORUS = {
     "T8": "1'' - - - - - - - - - - - - - - -",
 }
 
-# 3. On the harmony of O Magnum Mysterium as Mysterium II has it (one major key, plain chords, the third in the bass
+# 2. On the harmony of O Magnum Mysterium as Mysterium II has it (one major key, plain chords, the third in the bass
 #    and the bass walking down by step, seconds and sixths added and left, endings from the fourth chord to home).
 #    The Engine's tunes are not changed by a note. Its key note is heard as the THIRD of a major key a major third
 #    lower (D as the third of B flat), where its Phrygian scale is that key's major scale: the flat 2nd that grinds
@@ -2046,13 +2043,339 @@ MYSTERIUM_VERSE = "I V I V IV I IV I"
 MYSTERIUM_CHORUS = "I II I V vi V IV I"
 
 
-# --- on Distant Galaxy's harmony: the five functions go between this line and the next marker ---
+# --- on Garmonic's harmony: two kept of five ---
+
+def garmonic_moved(bars, by):
+    """The bars of a form ('Q3-1 Q4' or a list of them) each moved `by` semitones more; '_' stays as it is."""
+    out = []
+    for bar in bars.split() if isinstance(bars, str) else bars:
+        m = BAR.fullmatch(bar)
+        if not m:
+            out.append(bar)
+            continue
+        shift = int(m[3] or 0) + by
+        out.append(m[1] + m[2] + (f"{shift:+d}" if shift else ""))
+    return out
 
 
-# --- on Garmonic's harmony: the five functions go between this line and the next marker ---
+GARMONIC_SUNG = "T1 T2 T3 T4 T5 T6 T7 T8"                    # the chorus tune's bars, with GARMONIC_CHORUS
 
 
-# --- on Mysterium's harmony: the five functions go between this line and TRACKS ---
+def garmonic_engine_upside_down():
+    """E flat, 132 a minute. Paradox Engine turned over, as Upside Down is, on Garmonic's harmony. The hammered note
+    is on top, a muted guitar on Garmonic's held note: B flat through the verses; in the choruses G flat for four bars
+    (the note their chords keep), then B flat again. Under it bass and a distorted guitar an octave up in fifths have
+    the hidden notes as a heavy riff, each held until the next, the kick drum on them: two bars at home, the second
+    with its last flat 3rd slipped to the 2nd, then two bars of the whole riff a semitone lower. In the chorus they
+    keep that rhythm on G flat, D, G and E flat. Synth brass has the verse tune, which slips with the riff; an
+    overdriven lead has the chorus tune over strings; the second time round they change, the third time together."""
+    p = Piece("Garmonic Engine, Upside Down", 132)
+    quiet = lambda bars: rep("_", bars)
+    unit = "U1 U1s U1-1 U2-1"                                  # home, home slipped, a semitone lower
+    verse = rep(unit, 2)
+    chorus = "C+3 C+3 C-1 Ca-1 C+4 C+4 C C".split()            # G flat, D, G, E flat: the bass moves little
+    low = {
+        "U1": "1! - b2 - - b3 - - b2 - - 4 - b3 - -",
+        "U1s": "1! - b2 - - b3 - - b2 - - 4 - 2 - -",
+        "U2": "1! - b2 - - b3 - - b5 - - 4 - b3 b2 -",
+        "C": "1! - 1 - - 1 - - 1 - - 1 - 1 - -",
+        "Ca": "1! - 1 - - 1 - - 1 - - 1 - 1 - -",             # over the augmented chord: the guitar has no fifth
+    }
+    # 64 bars: 4 of the one note; verse 8 (the riff alone), verse 8 (the tune), chorus 8; verse, chorus; 4 of the bass
+    # alone; verse, chorus
+    p.voice("bass", PICKBASS, 27, low, quiet(4) + verse * 2 + chorus + verse + chorus + rep(unit, 1) + verse + chorus,
+            vel=106, gate=0.95, volume=115)
+    p.voice("guitar", DISTORTION, 39, {k: re.sub(r"(b?[1-7])", r"\1^", v) for k, v in low.items() if k != "Ca"} | {
+        "Ca": low["Ca"]}, quiet(4) + verse * 2 + chorus + verse + chorus + quiet(4) + verse + chorus, vel=86,
+            gate=0.95, volume=94, pan=44)
+    kept = rep("g", 4, "k", 4)                                 # in the chorus: G flat, then B flat
+    p.voice("the one note", MUTED, 51, {
+        "k": "5 5 . 5 5 . 5 5 . 5 5 . 5 . 5 5", "g": "b3 b3 . b3 b3 . b3 b3 . b3 b3 . b3 . b3 b3",
+    }, rep("k", 20) + kept + rep("k", 8) + kept + rep("k", 12) + kept, vel=84, gate=0.6, volume=92, pan=84)
+    tunes = ENGINE_OVER_RIFF | GARMONIC_OVER_RIFF | GARMONIC_CHORUS
+    high, sung = garmonic_moved(GARMONIC_VERSE, 12), GARMONIC_SUNG.split()
+    p.voice("brass", SYNBRASS, 63, tunes, quiet(12) + high + quiet(16) + garmonic_moved(sung, -12) + quiet(4) + high
+            + garmonic_moved(sung, -12), vel=90, gate=0.97, volume=98, pan=70, reverb=50)
+    p.voice("lead", OVERDRIVE, 51, tunes, quiet(20) + sung + garmonic_moved(GARMONIC_VERSE, 24) + quiet(12)
+            + garmonic_moved(GARMONIC_VERSE, 24) + sung, vel=94, gate=0.97, volume=102, pan=56, reverb=60)
+    pads = "m m D A G G m m".split()                            # E flat minor, D, D augmented, G minor, E flat minor
+    p.voice("strings", STRINGS, 63, {k: f"{v} " + " ".join("-" * 15) for k, v in
+                                     {"m": "1m", "D": "7,M", "A": "7,a", "G": "3m"}.items()},
+            quiet(20) + pads + quiet(8) + pads + quiet(12) + pads, vel=62, gate=1.0, volume=76, pan=36, reverb=60)
+    accents = "x.x..x..x..x.x.."
+    p.drums({
+        "h": {HAT: "x.x.x.x.x.x.x.x."},
+        "a": {KICK: accents, SNARE: "....x.......x...", HAT: "X.x.X.x.X.x.X.x."},
+        "f": {KICK: "x.x..x..x.......", SNARE: "....x.....x.xx..", TOM2: "..............x.", TOM4: "...............x",
+              HAT: "X.x.X.x.X......."},
+        "c": {CRASH: "x...............", KICK: accents, SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
+        "r": {KICK: accents, SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
+    }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 2, "c r r f", 2, "a a a f", 3, "c r r f", 2), vel=98)
+    return p
+
+
+def garmonic_engine_slow():
+    """E flat, 54 a minute. Ambient, made as Garmonic I and Distant Galaxy IV are: three lines and a bass, no two
+    lines moving at once. The top line holds B flat (A for one bar of the chorus); under it the verse slips as the
+    sketch does, G flat to F, then E flat to D, and back the same way, twice; the chorus is the sketch's other
+    chords, E flat minor over G flat, D, D augmented, G minor, E flat minor, reached a note at a time. The tunes over
+    it from the first bar: the verse tune and the chorus tune on a vibraphone the first time round; the second time
+    the verse tune on a clarinet and the chorus tune on a flute; the third time the same, with the vibraphone an
+    octave under them."""
+    p = Piece("Garmonic Engine, Slow", 54)
+    #        verse: home, slipped, a semitone lower, back; twice          chorus
+    top = "Bb4 Bb4 Bb4 Bb4 Bb4 Bb4 Bb4 Bb4            Bb4 Bb4 A4 Bb4 Bb4 Bb4 Bb4 Bb4"
+    middle = "Gb4 Gb4/F4 F4 F4/Gb4 Gb4 Gb4/F4 F4 F4/Gb4   Gb4 Gb4 Gb4 Gb4 G4 G4 Gb4 Gb4"
+    low = "Eb4 Eb4 D4 D4 Eb4 Eb4 D4 D4                Eb4 Eb4 Eb4/D4 D4 D4 D4 D4/Eb4 Eb4"
+    bass = "Eb2 Eb2 D2 D2 Eb2 Eb2 D2 D2                Gb2 Gb2 D2 D2 G2 G2 Eb2 Eb2"
+    # 48 bars, three times round: the four lines; the tunes on a vibraphone, then a clarinet and a flute, then all three
+    three = lambda text, **how: spell(" ".join(text.split() * 3), **how)
+    tops, middles, lows = three(top, again=2), three(middle), three(low)
+    sounding = None
+    for b, notes in enumerate(tops):
+        for s in sorted(notes):
+            if notes[s] == sounding and (s in middles[b] or s in lows[b]):
+                del notes[s]                    # struck again, but another line moves there: it only holds
+            sounding = notes.get(s, sounding)
+    p.voice("top line", VOICE, 63, *write(tops, 63), vel=66, gate=1.0, volume=88, pan=52, reverb=90)
+    p.voice("middle line", SLOWSTR, 63, *write(middles, 63), vel=64, gate=1.0, volume=88, pan=36, reverb=80)
+    p.voice("low line", WARMPAD, 63, *write(lows, 63), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
+    p.voice("bass", CONTRABASS, 39, *write(three(bass, again=2), 39), vel=80, gate=1.0, volume=100)
+    tunes = ENGINE_OVER_RIFF | GARMONIC_OVER_RIFF | GARMONIC_CHORUS
+    over, sung = garmonic_moved(GARMONIC_VERSE, 12), GARMONIC_SUNG.split()    # both over the top line's B flat
+    p.voice("vibraphone", VIBES, 63, tunes, over + sung + rep("_", 16) + garmonic_moved(over + sung, -12), vel=84,
+            gate=1.0, volume=100, pan=30, reverb=80)
+    p.voice("clarinet", CLARINET, 63, tunes, rep("_", 16) + (over + rep("_", 8)) * 2, vel=80, gate=0.97, volume=96,
+            pan=70, reverb=80)
+    p.voice("flute", FLUTE, 63, tunes, rep("_", 16) + (rep("_", 8) + sung) * 2, vel=80, gate=0.97, volume=96, pan=60,
+            reverb=80)
+    return p
+
+
+# --- on Mysterium's harmony: five pieces ---
+
+# The chords held as three lines that move by step and keep their common notes, in semitones over the major key note
+# (low, middle, top; over B flat 3: I = D4 F4 B flat 4, V = C4 F4 A4, IV = E flat 4 G4 B flat 4, vi = D4 G4 B flat 4,
+# II = E4 G4 C5). Their notes taken an octave apart are also each chord's triad.
+MYSTERIUM_LINES = {"I": (4, 7, 12), "V": (2, 7, 11), "IV": (5, 9, 12), "vi": (4, 9, 12), "II": (6, 9, 14)}
+
+
+def mysterium_line(harmony, i, key, start=0, again=False):
+    """One of the three held lines (0 low, 1 middle, 2 top) over a list of chord names, a bar each, as bar ->
+    {step: pitch} for write(): a note that is the same as the bar before's is held, not struck again (unless
+    `again`); nothing before bar `start`."""
+    bars, last = [], None
+    for b, chord in enumerate(harmony):
+        pitch = key + MYSTERIUM_LINES[chord][i]
+        bars.append({0: pitch} if again or pitch != last or b == start else {})
+        last = pitch
+    return bars
+
+
+def mysterium_engine_choir():
+    """B flat, 52 a minute. Paradox Engine's two tunes, not a note changed, with the Engine's D heard as the third of
+    B flat major, in the manner of Mysterium II. A contrabass walks down the scale a note a bar, D to D, under verse
+    and chorus alike; a warm pad, slow strings and a choir hold the chords as three lines, each keeping its note
+    while it can, coming in one after the other in the first verse, which has no tune. Then a horn has the chorus
+    tune and a clarinet the verse tune; the second time round both walk their long notes through and a vibraphone
+    says each note again a beat later, an octave up; the third time they are plain again."""
+    p = Piece("Mysterium Engine, Choir", 52)
+    harmony = (MYSTERIUM_VERSE + " " + MYSTERIUM_CHORUS).split() * 3
+    walk = [parse(t, 1)[1][0][2][0] for t in MYSTERIUM_BASS.split()] * 6         # semitones over the key, a bar each
+    # 48 bars, three times verse and chorus: the bass and the three lines; the horn's chorus; both tunes walked
+    # through with the vibraphone after them; both tunes plain
+    p.voice("contrabass", CONTRABASS, 46, *write([{0: 46 + w} for w in walk], 46), vel=80, gate=1.0, volume=100)
+    for i, (name, program, pan, start) in enumerate((("low line", WARMPAD, 88, 0), ("middle line", SLOWSTR, 36, 2),
+                                                     ("top line", VOICE, 58, 4))):
+        p.voice(name, program, 58, *write(mysterium_line(harmony, i, 58, start), 58, start=start), vel=64,
+                gate=1.0, volume=86, pan=pan, reverb=85)
+    tunes = (ENGINE_OVER_RIFF | {k.replace("Q", "W"): v for k, v in ENGINE_OVER_RIFF_2.items()}
+             | ENGINE_CHORUS | {k.replace("S", "T"): v for k, v in ENGINE_CHORUS_2.items()})
+    over, walked_over = "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", "W1 W2 W3 W4 W5 W6 W7 W8"
+    sung, walked = "S1 S2 S3 S4 S5 S6 S7 S8", "T1 T2 T3 T4 T5 T6 T7 T8"
+    p.voice("clarinet", CLARINET, 74, tunes, rep("_", 16, walked_over, 1, "_", 8, over, 1, "_", 8), vel=86,
+            gate=0.97, volume=102, pan=66, reverb=70)
+    p.voice("horn", HORN, 62, tunes, rep("_", 8, sung, 1, "_", 8, walked, 1, "_", 8, sung, 1), vel=86, gate=0.97,
+            volume=102, pan=46, reverb=70)
+    # the vibraphone: each note of the walked tunes a beat later and an octave up, held at most a beat and only
+    # while the tune does not sound a semitone from it; a note left shorter than two steps is not said
+    said, form = {}, ["_"] * p.bars
+    for first, names, root in ((16, walked_over, 74), (24, walked, 62)):
+        for b, name in enumerate(names.split(), first):
+            events = parse(tunes[name], 16)[1]
+            under = [None] * 16
+            for s, n, (pitch,), _ in events:
+                under[s:s + n] = [pitch] * n
+            row = ["."] * 16
+            for s, n, (pitch,), _ in events:
+                end = s + 4
+                while end < min(s + 4 + min(n, 4), 16) and (under[end] is None
+                                                             or (under[end] - pitch) % 12 not in (1, 11)):
+                    end += 1
+                if end - s - 4 >= 2:
+                    row[s + 4:end] = [token(root + pitch + 12, 74)] + ["-"] * (end - s - 5)
+            said[f"v{b}"], form[b] = " ".join(row), f"v{b}"
+    p.voice("vibraphone", VIBES, 74, said, form, vel=66, gate=1.0, volume=84, pan=28, reverb=80)
+    return p
+
+
+def mysterium_engine_piano():
+    """B flat, 66 a minute. Paradox Engine's tunes on a piano, with the Engine's D heard as the third of B flat
+    major, in the manner of Paradox Engine, Piano. The left hand goes in eighths: the bar's bass note (the scale
+    walking down, D to D, a note a bar) and then the notes of the bar's chord above it, up and back. A verse of the
+    left hand alone; then the right hand has the verse tune and the chorus tune; the second time both are walked
+    through, the chorus in octaves, and a cello comes in with the bass line as long notes."""
+    p = Piece("Mysterium Engine, Piano", 66)
+    verse, chorus = MYSTERIUM_VERSE.split(), MYSTERIUM_CHORUS.split()
+    harmony = verse * 2 + chorus + verse + chorus
+    walk = [parse(t, 1)[1][0][2][0] for t in MYSTERIUM_BASS.split()] * 5
+    key = 46                                                                    # B flat 2: the bass from D3 to D2
+    # 40 bars: the left hand alone 8, verse 8, chorus 8, verse 8 (walked, the cello in), chorus 8 (walked, octaves)
+    low, left = {}, {}                          # the bass note let ring through the bar, as under the pedal
+    for b, chord in enumerate(harmony):
+        bass = key + walk[b]
+        triad = {x % 12 for x in MYSTERIUM_LINES[chord]}
+        up = [q for q in range(bass + 1, bass + 20) if (q - key) % 12 in triad][:4]
+        low[f"n{b}"] = token(bass, key) + " -" * 15
+        left[f"n{b}"] = ". . " + " ".join(f"{token(q, key)} -" for q in up + up[2::-1])
+    p.voice("left hand, bass", PIANO, key, low, list(low), vel=72, gate=1.0, volume=88, pan=50, reverb=60)
+    p.voice("left hand", PIANO, key, left, list(left), vel=66, gate=1.0, volume=88, pan=50, reverb=60)
+    tunes = (ENGINE_OVER_RIFF | {k.replace("Q", "W"): v for k, v in ENGINE_OVER_RIFF_2.items()}
+             | ENGINE_CHORUS | {k.replace("S", "T"): v for k, v in ENGINE_CHORUS_2.items()})
+    walked = "T1 T2 T3 T4 T5 T6 T7 T8"
+    p.voice("right hand", PIANO, 62, tunes,                                     # the verse tune an octave up
+            rep("_", 8) + [f"Q{i}+12" for i in range(1, 9)] + rep("S1 S2 S3 S4 S5 S6 S7 S8", 1)
+            + [f"W{i}+12" for i in range(1, 9)] + rep(walked, 1), vel=84, gate=0.97, volume=100, pan=70, reverb=60)
+    p.voice("right hand, octave", PIANO, 74, tunes, rep("_", 32, walked, 1), vel=70, gate=0.97, volume=88, pan=78,
+            reverb=60)
+    p.voice("cello", CELLO, key, *write([{0: key + w} for w in walk], key, start=24), vel=70, gate=1.0, volume=86,
+            pan=40, reverb=80)
+    return p
+
+
+def mysterium_engine_music_box():
+    """C, 96 a minute, in three. Paradox Engine's tunes as a slow waltz in C major, the Engine's key note E heard as
+    its third, in the manner of Paradox Engine, Music Box. A plucked bass has the bar's bass note on the first beat
+    (the scale walking down, E to E, a note a bar), a celesta the bar's chord on the second and third; both tunes
+    cut for three beats on a music box. A verse of the waltz alone first; slow strings hold the chords from the
+    second verse; a verse without the tune halfway; in the last chorus a voice has the chorus tune an octave under
+    the music box."""
+    p = Piece("Mysterium Engine, Music Box", 96, steps=12, per_beat=4, sig=(3, 4))
+    verse, chorus = MYSTERIUM_VERSE.split(), MYSTERIUM_CHORUS.split()
+    harmony = verse * 2 + chorus + verse + chorus + verse * 2 + chorus + verse + chorus
+    walk = [parse(t, 1)[1][0][2][0] for t in MYSTERIUM_BASS.split()] * 10
+    # 80 bars: the waltz 8, verse 8, chorus 8, verse 8 (the strings in), chorus 8, the waltz 8, verse 8, chorus 8,
+    # verse 8, chorus 8 (the voice)
+    # the bass is let ring through the bar, so that its note, not the celesta's, is the lowest on two and three
+    p.voice("plucked bass", ACBASS, 36, {f"n{b}": token(36 + w, 36) + " -" * 11 for b, w in enumerate(walk)},
+            [f"n{b}" for b in range(len(walk))], vel=82, gate=0.9, volume=98)
+    triads = {"I": "1M", "V": "5,M", "IV": "4,M", "vi": "6,m", "II": "2M"}     # near C4, as they come
+    p.voice("celesta", CELESTA, 60, {k: f". . . . {v} - - - {v} - - -" for k, v in triads.items()}, harmony,
+            vel=62, gate=1.0, volume=82, pan=76, reverb=70)
+    tunes = {
+        "Q1": "1 - - - b2 - 1 - b7, - - -", "Q2": "1 - - - - - - - 5, - b7, -",
+        "Q3": "1 - - - b2 - b3 - b2 - - -", "Q4": "1 - - - - - - - - - - -",
+        "Q5": "5 - - - b6 - 5 - 4 - - -", "Q6": "b3 - - - 4 - b3 - b2 - - -",
+        "Q7": "1 - - - b2 - - - b3 - 4 -", "Q8": "1' - - - - - - - - - - -",
+        "S1": "1' - - - b6 - - - 1' - - -", "S2": "2' - - - b7 - - - 2' - - -",
+        "S3": "4' - - - b3' - - - 1' - b7 -", "S4": "1' - - - - - - - - - - -",
+        "S5": "4' - - - 1' - - - 4' - - -", "S6": "5' - - - 2' - - - 5' - - -",
+        "S7": "5' - 4' - b3' - - - 4' - 5' -", "S8": "1'' - - - - - - - - - - -",
+    }
+    over, sung = [f"Q{i}+12" for i in range(1, 9)], rep("S1 S2 S3 S4 S5 S6 S7 S8", 1)    # both from B4 to E6
+    p.voice("music box", MUSICBOX, 64, tunes, rep("_", 8) + (over + sung) * 2 + rep("_", 8) + (over + sung) * 2,
+            vel=88, gate=1.0, volume=104, pan=50, reverb=70)
+    for i, (name, pan) in enumerate((("strings, low", 34), ("strings, middle", 44), ("strings, top", 54))):
+        p.voice(name, SLOWSTR, 48, *write(mysterium_line(harmony, i, 48, 24), 48, steps=12, start=24), vel=54,
+                gate=1.0, volume=70, pan=pan, reverb=80)
+    p.voice("voice", VOICE, 52, tunes, rep("_", 72) + sung, vel=70, gate=1.0, volume=88, pan=62, reverb=90)
+    return p
+
+
+def mysterium_engine_stream():
+    """G, 76 a minute, 12/8. Paradox Engine's tunes flowing, with the Engine's key note B heard as the third of G
+    major. A harp runs in triplets all through, twelve notes a bar: the bar's bass note (the scale walking down, B
+    to B, a note a bar) and the notes of its chord rising two octaves and falling; a contrabass holds the bass note.
+    A flute has the verse tune, a clarinet the chorus tune; strings hold the chords from the second time round; the
+    third time the flute and the clarinet have both tunes together, an octave apart."""
+    p = Piece("Mysterium Engine, Stream", 76, steps=12, per_beat=3, sig=(12, 8))
+    verse, chorus = MYSTERIUM_VERSE.split(), MYSTERIUM_CHORUS.split()
+    harmony = verse[4:] + (verse + chorus) * 3
+    walk = [parse(t, 1)[1][0][2][0] for t in MYSTERIUM_BASS.split()]
+    walk = walk[4:] + walk * 6
+    key = 43                                                                    # G2: the bass from B2 to B1
+    # 52 bars: the harp alone 4 (the verse's last four chords); verse, chorus; verse, chorus (the strings in); both
+    # tunes an octave apart
+    harp = {}
+    for b, chord in enumerate(harmony):
+        bass = key + walk[b]
+        triad = {x % 12 for x in MYSTERIUM_LINES[chord]}
+        up = [q for q in range(bass + 1, bass + 30) if (q - key) % 12 in triad][:6]
+        harp[f"n{b}"] = " ".join(token(q, key) for q in [bass] + up + up[4::-1])
+    p.voice("harp", HARP, key, harp, list(harp), vel=66, gate=1.0, volume=90, pan=40, reverb=80)
+    p.voice("contrabass", CONTRABASS, key, *write([{0: key + w} for w in walk], key, steps=12, start=4), vel=76,
+            gate=1.0, volume=96)
+    for i, (name, pan) in enumerate((("strings, low", 80), ("strings, middle", 90), ("strings, top", 100))):
+        p.voice(name, STRINGS, 55, *write(mysterium_line(harmony, i, 55, 20), 55, steps=12, start=20), vel=56,
+                gate=1.0, volume=74, pan=pan, reverb=80)
+    tunes = ENGINE_OVER_RIFF_12 | ENGINE_CHORUS_12
+    over, sung = [f"Q{i}+12" for i in range(1, 9)], rep("S1 S2 S3 S4 S5 S6 S7 S8", 1)
+    p.voice("flute", FLUTE, 71, tunes, rep("_", 4) + over + rep("_", 8) + over + rep("_", 8) + over + sung,
+            vel=86, gate=0.97, volume=100, pan=60, reverb=70)                  # F sharp 5 to B6; the last chorus G5 up
+    p.voice("clarinet", CLARINET, 59, tunes, rep("_", 12) + sung + rep("_", 8) + sung + over + sung,
+            vel=86, gate=0.97, volume=100, pan=70, reverb=70)                  # G4 to B5; the last verse F sharp 4 up
+    return p
+
+
+def mysterium_engine_band():
+    """B flat, 132 a minute. The Doom band playing in major: Paradox Engine's riff on a muted guitar in a middle
+    octave, its hammered D now the third of B flat major, over a picked bass in eighths that walks down the scale a
+    note a bar, D to D, and a rock organ holding the chords; plain driving drums, the ride in the chorus. Over the
+    fourth chord the hammer steps up to that chord's root, E flat, the notes standing out of it unchanged (a D
+    hammered under an E flat chord is a minor ninth for a whole bar). In the two bars of the chorus where E natural
+    sounds (the chord from outside the key, and the chorus tune's E over the fifth chord) the guitar has the hammer
+    alone, without the riff's E flat.
+    Synth brass has the verse tune, an overdriven lead the chorus tune; the second time both are walked through;
+    after a verse without tunes they are plain again, the brass with the lead in the last chorus."""
+    p = Piece("Mysterium Engine, Band", 132)
+    verse, chorus = MYSTERIUM_VERSE.split(), MYSTERIUM_CHORUS.split()
+    harmony = ["I"] * 4 + verse * 2 + chorus + verse + chorus + verse * 2 + chorus
+    walk = [parse(t, 1)[1][0][2][0] for t in MYSTERIUM_BASS.split()] * 8
+    # 68 bars: the riff alone 4; verse 8 (bass and drums, the organ from its fifth bar); verse, chorus; verse,
+    # chorus (walked); verse 8 without tunes; verse, chorus (the brass with the lead)
+    bare = {first + i for first in (20, 36, 60) for i in (1, 5)}        # the choruses' bars 2 and 6: E natural
+    p.voice("muted guitar", MUTED, 50, {
+        "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1",
+        "X4": "b2! b2 b2' b2 b2 b3' b2 b2 b2' b2 b2 4' b2 b3' b2 b2",    # over the fourth chord: the hammer on its root
+        "H": "1! 1 . 1 1 . 1 1 . 1 1 . 1 . 1 1",                         # the hammer alone
+    }, ["H" if b in bare else "X4" if chord == "IV" else "X1" for b, chord in enumerate(harmony)], vel=82,
+            gate=0.6, volume=90, pan=40)
+    p.voice("bass", PICKBASS, 34, {f"n{b}": " ".join([token(34 + w, 34), "-"] * 8) for b, w in enumerate(walk)},
+            rep("_", 4) + [f"n{b}" for b in range(len(walk))], vel=100, gate=0.8, volume=108)
+    for i, (name, pan) in enumerate((("organ, low", 76), ("organ, middle", 84), ("organ, top", 92))):
+        p.voice(name, ORGAN, 58, *write(mysterium_line(harmony, i, 58, 8, again=True), 58, start=8), vel=70,
+                gate=0.95, volume=78, pan=pan, reverb=40)
+    tunes = (ENGINE_OVER_RIFF | {k.replace("Q", "W"): v for k, v in ENGINE_OVER_RIFF_2.items()}
+             | ENGINE_CHORUS | {k.replace("S", "T"): v for k, v in ENGINE_CHORUS_2.items()})
+    over, walked_over = "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", "W1 W2 W3 W4 W5 W6 W7 W8"
+    sung, walked = "S1 S2 S3 S4 S5 S6 S7 S8", "T1 T2 T3 T4 T5 T6 T7 T8"
+    p.voice("brass", SYNBRASS, 74, tunes, rep("_", 12, over, 1, "_", 8, walked_over, 1, "_", 16, over, 1)
+            + [s + "-12" for s in sung.split()], vel=96, gate=0.97, volume=104, pan=64, reverb=50)
+    p.voice("lead", OVERDRIVE, 62, tunes, rep("_", 20, sung, 1, "_", 8, walked, 1, "_", 16, sung, 1), vel=96,
+            gate=0.97, volume=104, pan=56, reverb=60)
+    kick, snare = "x.....x.x.....x.", "....x.......x..."
+    fill = {KICK: "x.....x.x.......", SNARE: "....x.....x.xx..", TOM2: "..............x.", TOM4: "...............x"}
+    p.drums({
+        "h": {HAT: "x.x.x.x.x.x.x.x."},
+        "a": {KICK: kick, SNARE: snare, HAT: "X.x.X.x.X.x.X.x."},
+        "e": {CRASH: "x...............", KICK: kick, SNARE: snare, HAT: "X.x.X.x.X.x.X.x."},
+        "f": fill | {HAT: "X.x.X.x.X......."},
+        "c": {CRASH: "x...............", KICK: kick, SNARE: snare, RIDE: "x.x.x.x.x.x.x.x."},
+        "r": {KICK: kick, SNARE: snare, RIDE: "x.x.x.x.x.x.x.x."},
+        "g": fill | {RIDE: "x.x.x.x.x......."},
+    }, rep("h h h f", 1, "e a a f a a a f", 2, "c r r g r r r g", 1, "e a a f a a a f", 1, "c r r g r r r g", 1,
+           "e a a f a a a f", 2, "c r r g r r r g", 1), vel=98)
+    return p
 
 
 TRACKS = [
@@ -2088,9 +2411,14 @@ TRACKS = [
     ("AJM_ENF4", "fast, on Paradox Engine: the riff shared by a synth bass and a square wave, four on the floor, a saw lead", engine_machine),
     ("AJM_ENF5", "fast, on Paradox Engine: turned over, the key note on top on a muted guitar, the hidden notes a heavy riff below", engine_upside_down),
     ("AJM_ENS3", "slow, on Paradox Engine: a waltz, the riff as its accompaniment on a celesta, both tunes on a music box", engine_music_box),
-    # on Distant Galaxy's harmony (32 to 36 in the lab): their lines go under this one
-    # on Garmonic's harmony (37 to 41 in the lab): their lines go under this one
-    # on Mysterium's harmony (42 to 46 in the lab): their lines go under this one
+    # on Garmonic's and Mysterium's harmony, the seven kept of fifteen (32 to 38 in the lab)
+    ("AJM_EMY5", "on Mysterium's harmony: fast, the Doom band in major: the riff on a muted guitar, a walking bass, organ, brass and a lead", mysterium_engine_band),
+    ("AJM_EMY4", "on Mysterium's harmony: slow, a 12/8 stream in G major, a harp running in triplets, the tunes on a flute and a clarinet", mysterium_engine_stream),
+    ("AJM_EMY3", "on Mysterium's harmony: slow, a waltz in C major, plucked bass and celesta, Paradox Engine's tunes on a music box, strings later", mysterium_engine_music_box),
+    ("AJM_EMY2", "on Mysterium's harmony: slow, a piano breaking the major chords in the left hand, Paradox Engine's tunes in the right, a cello later", mysterium_engine_piano),
+    ("AJM_EMY1", "on Mysterium's harmony: slow, a bass walking down, a choir, strings and a pad holding the chords, the tunes on a clarinet and a horn", mysterium_engine_choir),
+    ("AJM_EGR1", "on Garmonic's harmony: fast, turned over: the held note on top on a muted guitar, the hidden notes a heavy riff slipping below it", garmonic_engine_upside_down),
+    ("AJM_EGR5", "on Garmonic's harmony: slow, ambient: three lines and a bass, no two lines moving at once, the tunes over them from the first bar", garmonic_engine_slow),
 ]
 
 
