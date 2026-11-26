@@ -17497,6 +17497,13 @@ the things MAP01's hall is known by: the terracotta walls over the navy
 dado, the slate floor and the runner, the pit, the pictures of doors, RED's
 trim. "Much older" is then what has happened to those.
 
+**Vadim** (2026-11-26), on the ideas above: "Yes, totaly agree with your
+additions." Claude reads that as: the additions stand, and where they offer
+several ways the working version is Claude's first choice of each (the
+flood of monsters forces the door down; the player is the Doom guy of the
+last view; the cell has no time; then MAP01 again). Still nothing designed,
+and the questions below are still for the discussion.
+
 **Open, for the discussion with Vadim**:
 1. Is the old room the hall, and the small room the cell, as read above?
 2. What forces the door down: the flood of monsters, something flowing, or
