@@ -406,7 +406,16 @@ map MAP21 "In the Long Run"
 	nojump
 	nocrouch
 	music = "AJM_LUGG"
-	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "AjarLongRun", "LongRunTest"
+	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "AjarLongRun", "LongRunTest", "LongRunLookViews"
+}
+
+// MAP21's apparatus (tools/gfx_longrun.py, src/zscript/apparatus.zs): things THEN, args[0] the look
+DoomEdNums
+{
+	20195 = AjarApparatusTrolley      // an instrument on a trolley
+	20196 = AjarApparatusTall         // a tall piece
+	20197 = AjarApparatusSmall        // a small thing on a desk
+	20198 = AjarApparatusEmitter      // the beam's emitter, or (args[1]) its wreck now
 }
 
 // The second secret level (tools/map_secret2.py), from MAP15's secret way

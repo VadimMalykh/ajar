@@ -58,6 +58,60 @@ m.align |= gfx_institute.ALIGNED            # MAP11's walls are laid by where th
 OFF = (0, 8192)
 t = Times(m, off=OFF, at=(512, 32))         # the AjarThen thing, in the hall NOW
 
+# --- the apparatus THEN, and where it stood NOW (tools/gfx_longrun.py, src/zscript/apparatus.zs) -----------------
+# The look each group of parts wears: 1 Lamps and Reels, 2 Copper and Porcelain, 3 Glass and Mercury. Vadim's
+# choice is written here; AJAR_APPARATUS=1, 2 or 3 sets every group to that look (the look board's builds).
+import os
+import gfx_longrun as GL
+APPARATUS = dict(cabinets=1, racks=1, benches=1, tanks=1, pumps=1, belt=1, consoles=1, pictures=1, things=1, emitter=1)
+if os.environ.get("AJAR_APPARATUS"):
+    APPARATUS = dict.fromkeys(APPARATUS, int(os.environ["AJAR_APPARATUS"]))
+m.align |= GL.ALIGNED
+TROLLEY_T, TALL_T, SMALL_T, EMITTER_LOOK_T = 20195, 20196, 20197, 20198      # (apparatus.zs)
+
+
+def ap(part, group):
+    """A part's texture in its group's look."""
+    return GL.name(part, APPARATUS[group])
+
+
+def apparatus(x, y, kind, solid=False):
+    """A piece of apparatus THEN, a sprite (a trolley, a tall piece, a small thing): in the things' look;
+    solid only where it stands flush against a wall and nobody walks."""
+    t.then.thing(x, y, kind, args=(APPARATUS["things"], int(solid)))
+
+
+def bank_front(a, b, group="cabinets"):
+    """THEN: a cabinet bank's front a-b (64s from a multiple of 64): each 64 its own cabinet, by where it is."""
+    (x1, y1), (x2, y2) = a, b
+    n = (abs(x2 - x1) + abs(y2 - y1)) // 64
+    for k in range(n):
+        p = (x1 + (x2 - x1) * k // n, y1 + (y2 - y1) * k // n)
+        q = (x1 + (x2 - x1) * (k + 1) // n, y1 + (y2 - y1) * (k + 1) // n)
+        t.then.cut(p, q)
+        t.then.line(p, q, lower=f"AJUCB{APPARATUS[group]}{'ABCD'[(p[0] + p[1]) // 64 % 4]}")
+
+
+def picture(a, b, out, kind, part, group="pictures"):
+    """THEN: the wall piece a-b, seen looking `out`, shows gfx_longrun's picture `kind` on the wall `part`."""
+    sh = I1._shift(t.then.P(a), t.then.P(b), out)
+    look = APPARATUS[group] if kind in GL.HOME else 2                   # (the notice and the calendar: one of a kind)
+    hang_raw(t.then, a, b, GL.picture_name(kind, look, part, sh))
+
+
+def ghost(a, b, out, part, rects, stubs=None):
+    """NOW: the wall piece a-b, seen looking `out`, shows where things stood or hung THEN: `rects` (x1, y1,
+    x2, y2) in the piece's picture, y from the top of the 256 (furniture h high: (x1, 256 - h, x2, 256);
+    a picture: GL.RECT[kind])."""
+    sh = I1._shift(a, b, out)
+    w = abs(a[0] - b[0]) + abs(a[1] - b[1])
+    hang_raw(t.now, a, b, GL.ghost_name(part, w, rects, sh, stubs))
+
+
+def hang_raw(c, a, b, tex):
+    c.cut(a, b)
+    c.line(a, b, mid=tex, exact=True)
+
 EX, EV, LB, CK, CO, LA, AR, PU = (Part(p) for p in ("EX", "EV", "LB", "CK", "CO", "LA", "AR", "PU"))
 FE, FL, FC, FA, FR, FP = (Part(p) for p in ("FE", "FL", "FC", "FA", "FR", "FP"))
 KE, KL, KC, KA, KP = (Part(p) for p in ("KE", "KL", "KC", "KA", "KP"))
@@ -183,12 +237,38 @@ MACHINE = [((384, 320, 480, 448), pillar("MC")), ((544, 320, 640, 448), pillar("
 # the desk it is run from, south of it on a dais: through 101 the other time's desk and machine are in view
 DAIS = ((416, 112, 608, 208), dict(floor=8, side=Part("B4"), ftex=Part("FA")))
 DESK_BOX = ((464, 144, 560, 176), box(40, "DT", "DS", floor=8))
-BENCHES = [(896, 448, 960, 640), (64, 448, 128, 640)]                           # THEN benches; NOW their footprints
+# THEN the apparatus: two banks of cabinets against the west and east walls in the north half, two low consoles in
+# the south half, cable ducts in the floor from the machine to the banks and from the dais to the machine (at both
+# times: NOW their covers are gone). NOW the banks' and consoles' footprints, and on the walls where they stood.
+BANKS = [(0, 448, 64, 704), (960, 448, 1024, 704)]                              # 128 high
+CONSOLES = [(64, 128, 128, 256), (896, 128, 960, 256)]                          # 48 high
+DUCTS = [(0, 416, 384, 448), (640, 416, 1024, 448), (416, 208, 448, 256), (576, 208, 608, 256)]
 for c in t.copies:
-    furn = [(r, box(48, "BT", "B4") if c.then else dict(ftex="AJIFE2")) for r in BENCHES]
+    if c.then:
+        furn = [(r, dict(floor=128, ftex=ap("CT", "cabinets"), side=ap("CS", "cabinets"))) for r in BANKS]
+        furn += [(r, dict(floor=48, ftex=ap("CK", "consoles"), side=ap("CN", "consoles"))) for r in CONSOLES]
+    else:
+        furn = [(r, dict(ftex="AJIFE2")) for r in BANKS + CONSOLES]
+    furn += [(r, dict(ftex="AJUDU3" if c.now else "AJUDU2")) for r in DUCTS]
     fit(c, (0, 0, 1024, 768), MACHINE + [DAIS, DESK_BOX] + furn, **HALL,
         **(dict(id=MACHINE_LIGHT, light=176) if c.then else {}))
     hang(c, (640, 0), (768, 0), "NB")                                           # the clock: going THEN, stopped NOW
+bank_front((64, 448), (64, 704))
+bank_front((960, 704), (960, 448))
+BANK_GHOST = [(0, 128, 256, 256)]
+ghost((0, 448), (0, 704), (-1, 0), "EX", BANK_GHOST, (2,))
+ghost((1024, 448), (1024, 704), (1, 0), "EX", BANK_GHOST, (1,))
+# by the doorway to the vestibule, where the player leaving the hall passes them: the notice and the calendar THEN;
+# NOW the notice's ghost and the calendar's same page, yellowed
+picture((1024, 256), (1024, 320), (1, 0), "NT", "EX")
+ghost((1024, 256), (1024, 320), (1, 0), "EX", [GL.RECT["NT"]])
+picture((1024, 416), (1024, 448), (1, 0), "CL", "EX")
+hang_raw(t.now, (1024, 416), (1024, 448), GL.picture_name("CL", 3, "EX", I1._shift((1024, 416), (1024, 448), (1, 0))))
+picture((576, 768), (704, 768), (0, 1), "SC", "EX")                            # the machine's schematic, THEN (NOW: stone)
+apparatus(32, 736, TALL_T, solid=True)                                          # two tall pieces in the north corners,
+apparatus(992, 736, TALL_T, solid=True)                                         # by the banks' ends
+apparatus(168, 584, TROLLEY_T)                                                  # a trolley left by the west bank
+apparatus(548, 158, SMALL_T)                                                    # on the desk
 frame((480, 320), (544, 320), (0, 1), 101, Part("MC"), clock=(NOW, THEN))
 t.clocked(512, 300, 90, frame=101)                                              # found hung in the machine
 t.line((480, 176), (544, 176), special=130, args=(DESK,), playeruse=True, playeruseback=True, repeatspecial=True,   # its panel faces the machine
@@ -209,7 +289,7 @@ t.now.cut((384, 768), (640, 768))
 t.now.sector([(480, -16), (480, 0), (544, 0), (544, -16)], floor=0, ceil=0, wall="AJSHUT", ftex="AJTRIMF",
              ctex="AJTRIMF", light=120)
 m.thing(512, 64, 1, angle=90)
-# the hall NOW: Doom's lamps; THEN: benches along the walls
+# the hall NOW: Doom's lamps
 for x, y in ((96, 96), (928, 96), (96, 672), (928, 672)):
     t.now.thing(x, y, 2028)                                                      # floor lamps
 # --- the doorway to the vestibule: THEN open; NOW bolted on the vestibule's side
@@ -236,6 +316,13 @@ t.then.room((1296, 272, 1312, 368), floor=0, ceil=128, wall="AJTRIM", ftex="AJTR
 t.then.line((1296, 272), (1296, 368), upper=AR)
 ajarmap.squeeze(m, t.then.P((1296, 448)), t.then.P((1296, 496)), (1, 0), -20)
 t.then.line((1296, 448), (1296, 496), upper=AR)
+# THEN the pass and key board behind the porter's desk, the notice by the turnstile, a small thing on the desk;
+# NOW where they hung (the south wall's strip is the pass office's: nothing of the apparatus there)
+picture((1088, 544), (1216, 544), (0, 1), "PB", "AR")
+ghost((1088, 544), (1216, 544), (0, 1), "AR", [GL.RECT["PB"]])
+picture((1296, 376), (1296, 440), (1, 0), "NT", "AR")
+ghost((1296, 376), (1296, 440), (1, 0), "AR", [GL.RECT["NT"]])
+apparatus(1176, 476, SMALL_T)
 
 # =================================================================================================
 # 3. THE CORRIDOR (NOW) / THE POCKET (THEN)
@@ -249,6 +336,9 @@ sign(t.then, (1312, 272), (1312, 368), (-1, 0), "CO", "NO DOORS BEYOND THIS POIN
 t.then.line((1312, 448), (1312, 496), upper=CO)
 for c in t.copies:
     hang(c, (1312, 512), (1312, 640), "NB")                                     # the clock in the pocket's stretch
+picture((1504, 256), (1504, 384), (1, 0), "WN", "CO")                          # THEN a wall newspaper; NOW its ghost
+ghost((1504, 256), (1504, 384), (1, 0), "CO", [GL.RECT["WN"]])
+apparatus(1468, 194, TROLLEY_T)                                                 # a trolley parked in the corner
 frame((1504, 448), (1504, 512), (1, 0), 103, CO, LOW, clock=(NOW,))
 
 # =================================================================================================
