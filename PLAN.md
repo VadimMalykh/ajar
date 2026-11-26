@@ -18669,3 +18669,26 @@ on the real machine (GLES): the night corridor's light through the grille,
 the lamps, the wreck's stubs at a distance; the turnstile's wreck in the
 dark seen from the corridor's far end. Monsters NOW walking through the
 wreck's line (it has no blocking flags; MODE=1 runs with them removed).
+
+## Music: eight of the fifteen removed (2026-11-26)
+
+Vadim, having heard the fifteen: "No - 32, 33, 34, 35, 36, 38, 39, 40". Removed
+from `tools/music.py`: all five on Distant Galaxy's harmony (Galaxy Engine:
+Band, Machine, Shuffle, Piano, Night Shift) with their frame, and Garmonic
+Engine's Groove, Music Box and Pizzicato. He gave no reasons. The lab has
+38 tracks. 37 keeps its number; the six others were moved into the empty
+places, the last first, as in the earlier removals:
+
+| Lab | Piece | Was |
+|---|---|---|
+| 32 | Mysterium Engine, Band (AJM_EMY5) | 46 |
+| 33 | Mysterium Engine, Stream (AJM_EMY4) | 45 |
+| 34 | Mysterium Engine, Music Box (AJM_EMY3) | 44 |
+| 35 | Mysterium Engine, Piano (AJM_EMY2) | 43 |
+| 36 | Mysterium Engine, Choir (AJM_EMY1) | 42 |
+| 37 | Garmonic Engine, Upside Down (AJM_EGR1) | 37 |
+| 38 | Garmonic Engine, Slow (AJM_EGR5) | 41 |
+
+Checked: the 38 remaining pieces come out byte for byte as before;
+`./build.sh`; the sound lab test with 38 tracks. None of the seven plays on
+a map.
