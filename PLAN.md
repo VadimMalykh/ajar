@@ -19128,6 +19128,31 @@ failed (337 by one worker's count, 341 by the other's way of counting the
 same log lines). MODE=2 to 4 were not run in looks 2 and 3: they differ
 from look 1 in pictures only.
 
+**Runs, the mix.** Before main was taken in again, a full build (the worker's):
+`AJAR_POWER=0` the whole package byte for byte the plain build's (3207
+lumps); 1, 2 and 3 their look lumps and all 48 maps byte for byte the
+earlier look builds'; the comparison of the mix with the plain level all
+the same (702 things, 617 sectors, 16 lines with specials, 2528 lines
+become 2614, the 47 other maps byte for byte); mapcheck 0 problems,
+thingcheck 0, itemcheck 0; MODE=1, 2 and 4 none failed; MODE=3 once 356
+passed and 1 failed (`groupAgain3_1`: group 1 was there, 6 of 6 aimed, but
+the line read was the wind plate's hint printed in the same tic; go 3
+reached the yard some 25 tics earlier than in other runs), the second run
+357 and none. Taken as the test's timing, not the look: the map differs
+from the plain one in textures only. If it shows again, the test's reading
+of the last line said is the place to mend. After main was taken in (MAP21's
+machine, MAP10's bands, the clocked door board), quick builds of the plain
+level and the mix: the comparison all the same, against main's package too
+(MAP33's plain TEXTMAP byte for byte, 704404 bytes); mapcheck 617 sectors,
+702 things, 288 monsters, 3 secret sectors, 0 problems; thingcheck and
+itemcheck 0; `MAP=MAP33 MODE=1` to 4 with `PK3` the mix: none failed in any
+(49 in MODE=2, 183 in MODE=4; in MODE=1 and 3 the count runs on into MAP21,
+where the exit now leads and whose own test starts, which is why counts of
+these two differ between runs and counters: 335 to 350 and 353 to 357 seen).
+The mix's 35 views were shot from the full build and looked at where looks
+meet (the gallery's windows on the coal yard, the terrace, the switchyard,
+the hall from its stands, each picture on its wall): nothing mended.
+
 **Known and left.** The pumps carry no number in look 2 (lettering is cut on
 an octagon's faces laid by world position). Look 3's pump room has the
 gatehouse's walls, not tiles (one slot for both). The outdoor places are as
