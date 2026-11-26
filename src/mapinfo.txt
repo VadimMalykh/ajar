@@ -1,7 +1,7 @@
 gameinfo
 {
 	StatusBarClass = "AjarStatusBar"
-	AddEventHandlers = "AjarHandler", "AjarTimeHandler", "AjarWorks", "AjarOddFaces"
+	AddEventHandlers = "AjarHandler", "AjarTimeHandler", "AjarWorks", "AjarOddFaces", "AjarDoomLab"
 }
 
 DoomEdNums
@@ -81,6 +81,7 @@ DoomEdNums
 	20064 = AjarCellPackEachGo        // ... and a cell pack, the same
 	20080 = AjarWorksSpot             // MAP32's look (works.zs): a light
 	20081 = AjarWorksRoom             // ... and a rectangle of a room
+	20180 = AjarDoomNote              // the Doom door lab (doomlab.zs): a Doom door line's own special, kept
 	20011 = AjarKey1
 	20012 = AjarKey2
 	20013 = AjarKey3
