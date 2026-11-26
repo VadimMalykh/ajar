@@ -19298,3 +19298,170 @@ scenery).
 **Not tested:** the levers of LEFT, LIFT, ENG and the far-side switches (no door can stand at a far side; LEFT's
 and LIFT's are lab maps the probe does not visit); a press by a real player at the keyboard (the presses are
 the engine's own CheckUse with BT_USE, from set places and angles).
+
+## MAP22 "Day Return": the first version, as decided (2026-11-27)
+
+**Vadim** (2026-11-27): "Let's build map22 regarding our plans". Settled by
+Claude on Fable from "The new bus to part 1's places" and "MAP22 is to be the
+bus level", after the solver (`tools/puzzle22.py`). Vadim has not seen this
+text. The open questions of those two sections are answered here by Claude's
+first choices, each to be overruled by a word: **the "something" is the
+player's own act** (the clocked door hung on the bus); **the places are
+MAP10's own**: the square, the hotel, the station, the theatre, the depot;
+**no Doom map yet** (Doom is its monsters and its stone, as in MAP21);
+**the old bus does appear**, since now is MAP10's square; **nobody is met**.
+
+Name: "Day Return" (a ticket there and back on the same day; and the day,
+come back). The other candidate: "Request Stop".
+
+**One idea**: the bus is one bus at two times, and a line runs to the same
+place at the time of the bus it hangs on. The level is MAP10's square forty
+years earlier, by day, the bus new and every line running, nobody about;
+and, through the clocked door, the same square now: MAP10's, at night, the
+old bus. Joining the two is the turn.
+
+**The two times** (`ajarthen.Times`; NOW's coordinates are MAP10's own, so
+that the square, the bus, the shelter, the depot and the theatre stand
+exactly where `tools/map_hinges10.py` has them; THEN is the same plan
+shifted).
+- *THEN*: day sky, bright, whole. The square, the new bus, the shelter, the
+  depot, the theatre, and the two places the fixed lines go: the hotel
+  (MAP02's ground floor) and the station (MAP05), `ajarmap.excerpt` as in
+  MAP10 but with no monsters and no pick-ups: lamps, furniture and scenery
+  only. Nothing lies about in a town at peace.
+- *NOW*: MAP10's night. The square and the old bus as MAP10 has them, the
+  kiosk (its secret, as there), the depot (MAP10's, with its company), the
+  theatre (MAP03's excerpt with its monsters and pick-ups, as MAP10 has
+  it). The hotel and the station are not built now: doors 1 and 5 of the
+  old bus are shut by Doom's stone, as whatever shuts a way now and was not
+  there then is (MAP21's rule).
+- The first version wears the levels' own looks at both times, THEN lit by
+  day (the excerpts' light raised, the day sky). A fresh look for THEN and
+  the new bus's own livery are a look board after Vadim has played it; the
+  new bus is the old one's drawing without its forty years (no rust, no
+  boarded window), which `tools/gfx_bus.py` can draw as a livery.
+
+**Doors and keys.** The clocked door, RED, YELLOW, BLUE. Keys 1 and 2. No
+Pair, no Stray door, no thief, nailer or repainter (the solver's two times
+do not model them).
+
+**The bus.** Six doors in the face it turns to the stop and two in its
+back, as MAP10's, the same at both times:
+
+| Door | THEN (the new bus) | NOW (the old bus, MAP10's) |
+|---|---|---|
+| 1 | the hotel: a line that always runs | Doom's stone |
+| 2 | frame 121; RED hangs in it at the start: the theatre | frame 101, empty |
+| 3 | GREEN's far side, shut (there is no GREEN here) | the same |
+| 4 | frame 124: the clocked door's alone; its plate is blank | frame 104: the clocked door's alone; the plate lost |
+| 5 | the station: a line that always runs | Doom's stone |
+| 6 | frame 123, brass: any colour door; no twin | MAP10's brass frame, stone in it |
+| 7 (back) | frame 122, empty | frame 102, empty |
+| 8 (back) | from the pit under the theatre's stage door: always runs | the same |
+
+101/121 and 102/122 are twins and take any door at both times; 104/124 are
+twins and take only the clocked door (`Times.clock_frame`). Colour doors
+join places, never times: RED on the new bus is the theatre then, RED on the
+old bus the theatre now; YELLOW the depot then, or now.
+
+**The places.**
+1. *The square* (start: where MAP10 starts, facing the bus). THEN: the stop
+   in order; in the shelter's south wall, where MAP10 has its brass frame, a
+   brass door locked with keys 1 and 2 (LINE 6, THE INSTITUTE), behind it a
+   stair up to the night room. A timetable in the shelter: the lines by
+   number, and "LINE 4: FROM TOMORROW". NOW: MAP10's square; the shelter's
+   brass frame is stone; the night room hangs over it as in MAP10, with its
+   hole down into the shelter.
+2. *The night room* (MAP10's place for it), at both times. THEN
+   `ajarmap.way_home`: BLUE's far side then in its west end, the brass frame
+   HOME in its east end, BLUE's alone (`only=True`, `far=` the copy then, as
+   MAP21's). NOW: BLUE's far side now and nothing else; the hole.
+3. *The hotel* THEN (line 1) and *the station* THEN (line 5). YELLOW leans
+   on the station's far platform, where MAP10 finds it.
+4. *The theatre*, both times: RED's far side in the foyer (MAP10's place),
+   the stage door's ledge, pit and the doorway to door 8 (MAP10's pit, led
+   to door 8 of the same bus instead of the other stop). NOW: BLUE leans in
+   the rooms behind the foyer, where MAP10 has GREEN.
+5. *The depot*, both times: YELLOW's far side in its south wall, the wicket
+   out into the lane, a step down and never in (MAP10's gate). THEN: the
+   buses new; the fitters' corner, and in it the clocked door, leaning,
+   under a plate: LINE 4, FROM TOMORROW. NOW: MAP10's depot and company, and
+   in its far corner (where MAP10 has key 2) a cache: a secret.
+Not built: the museum (its door on the square is shut at both times), the
+other stop, the observatory, PINK's room.
+
+**The turn.** The first time the clocked door hangs in a twinned frame the
+times are joined, and what is now comes through. From that moment:
+- one line on the screen (first wording: "The line runs to the same stop,
+  forty years on. / Something is coming the other way.");
+- the company of the square now wakes and makes for the frame;
+- every place then gets its company, by ambush (`ajarmap.ambush`, a new
+  cause: the turn), each when the player next comes near it (`near=`); the
+  stop itself in two waves, a few seconds and half a minute on;
+- **key 1 is carried by what comes to the hotel** (its biggest: a baron in
+  the lobby) **and key 2 by what comes to the theatre** (down by the stage,
+  where MAP10 has key 1). A bearer shows its key over its head; killed, the
+  key is the player's at once ("It carried key 1."). Before the turn there
+  are no keys anywhere;
+- the music then changes from the quiet piece to the fight's.
+Taking the clocked door down again shuts the line and undoes nothing: then
+is no longer quiet, which is what the levels after this one are given.
+
+**The way through** (the solver's shortest: 8 door actions):
+1. *In peace.* The stop, the bus, the lines: the hotel, the theatre (RED),
+   the station. YELLOW from the far platform, hung on the bus (6 or 7): the
+   depot. The clocked door.
+2. *The turn.* The clocked door in door 4 (or 2, or 7): the stop at night,
+   the old bus, and they come.
+3. *Key 2*: the theatre then, through RED where it hangs.
+4. *BLUE*: RED taken down, carried through the clocked door and hung on the
+   old bus: the theatre now. BLUE, and back the same way.
+5. *Key 1*: the hotel.
+6. *Out*: the shelter's brass door, the stair, BLUE into the brass frame.
+Steps 3 to 5 in any order. YELLOW on the old bus is the depot now: the
+cache, not needed.
+
+**Nothing can be lost.** `tools/puzzle22.py`: 8 door actions, 12437 states,
+0 stuck, nothing lost; the same with door 6's frame or door 7's left out,
+and with no way out of the theatre but RED. The level's `PUZZLE` is
+`puzzle22.PUZZLE22` (`complete=True`), checked in the build.
+
+**What the peace is for.** It is short: three places to look at and one
+errand (YELLOW, the depot, the clocked door). What counts later is where
+the doors are left: after the turn every line that hangs is a way for the
+player and for what follows (monsters use hung doors), and every empty
+frame is one fewer. The supplies are not then: they lie in the square now
+and in the theatre now, where part 1 left them.
+
+**Fights** (Doom's monsters; a first guess of 130 to 160 on "Resident",
+`tools/budget.py` by part; to be tuned by play):
+- the square now: a standing company that comes through at the turn (imps,
+  sergeants, chaingunners, knights, revenants, cacodemons), and the weapons
+  and ammunition of MAP10's square, more of them;
+- the stop then: the two waves of the turn;
+- the hotel then: key 1's baron and MAP02's kind of company in the lobby
+  and the halls;
+- the theatre then: key 2's bearer by the stage, the house and the foyer;
+- the theatre now: MAP03's own, as MAP10 has it; an ambush when BLUE is
+  taken;
+- the station then: a big one on the platforms, not needed (a megasphere
+  for whoever goes);
+- the depot then, on coming back: MAP10's depot mix; the depot now: MAP10's;
+- the last one: with both keys in hand, at the shelter.
+
+**Music**, by time: then in peace AJM_EMY4 (the stream in G major: day);
+then after the turn AJM_EMY5 (the same harmony as the Doom band, fast); now
+AJM_ENS4 (after dark). None of the three plays on another map. To be judged
+by ear.
+
+**mapinfo**: MAP22 "Day Return"; MAP21's `next` leads here; its own starts
+it again until there is a MAP23.
+
+**Left out of the first version**: the look of then (the town when it was
+new) and the new bus's own drawing beyond a clean livery; supplies the
+player places in the peace; shutters and other long causes in the town; a
+door left hanging then and found hanging now; lodgers in the new bus after
+the turn; the hotel and the station now; the museum; fights tuned by play.
+
+**What moves in the outline** ("The ten levels, in outline"): 22 is this;
+the old 22 ("on loan") is 23's or 24's mechanic; 25 is free.
