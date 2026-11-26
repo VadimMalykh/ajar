@@ -17364,3 +17364,46 @@ pieces seen; other skills than 3 in play; doom2.wad versions other than
 Vadim's; any of id's maps but these four in a level (the conversion check
 loads all 32, one at a time); MAP=CLASSIC without the classic package
 (GZDoom would not find the map).
+
+## The classic levels are joined maps, changed by the generator (decided 2026-11-26)
+
+This replaces, for levels 27 to 29, the concept's "loaded from the player's
+`doom2.wad` and changed as they load" and the first cut of "A late act in
+Doom II's own maps" (three maps, one each).
+
+**Vadim** (2026-11-26), after trying the Doom door lab on MAP22: "Could we
+get different map though, this one is not my favorite. Also I thoughts there
+could be several doom maps on one our map, connected and intervined by our
+door mechanics". And, told that such a level has to be built on the player's
+machine from their own `doom2.wad`: "Sure, it won't be really doom maps, it's
+our copy of doom maps, I thought that way from the start. They can be
+modified in different ways anyway, that shouldn't be classic doom map as it
+is".
+
+**Decided** (Claude on Fable, on those words and on "The joined maps lab"):
+- A classic level is several of Doom II's maps, or parts of them, joined
+  into one level by `tools/classic.py`, with Ajar's rooms, frames and far
+  sides between and inside them, and changed freely by code (trimmed,
+  heights, textures, things). Doom's maps are material, not levels kept as
+  they are.
+- The rule that stays: what is in git and in `ajar.pk3` is Ajar's code and
+  the list of changes; the geometry is read from the player's own
+  `doom2.wad` when the level is built and lives only in
+  `build/ajar-classic.pk3`. No copy of id's maps, changed or redrawn, goes
+  into the repository or the package. Whoever plays these levels builds
+  them with their own Doom II.
+- So Ajar's maps need no renaming (the tool reads the IWAD's own directory),
+  and any of the 32 maps can be material.
+- The Doom door lab's way (one map changed as it loads) is kept as a lab and
+  is not the way of the classic levels. Its finding that a Doom door can be
+  a frame holds in joined levels too (the joined maps lab's gate).
+
+**Limits to design by** (measured in the joined maps lab): the whole level
+within about 32768 across each way; one sky a level; `map07special` and boss
+specials count monsters over the whole level; a piece's exits are taken off
+and the level has Ajar's own; GZDoom's per-map compatibility fixes do not
+apply to a joined level.
+
+**Open, for Vadim**: which of Doom II's maps are the material (the lab's
+Entryway and Dead Simple were only the test; he does not care for The
+Catacombs).
