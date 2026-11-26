@@ -18549,3 +18549,24 @@ north-west (the north and west faces, their corner), from the east, from
 the south at 300 (the front, the towers, the alcove, the frame), and in the
 alcove before the frame looking up at the piece over it.
 `tools/smoke_MAP21_3.cfg` has 20 more shots (102).
+
+**Checks** (2026-11-26, branch `map21-machine` on main at c84fa51).
+- `./build.sh` (full, with no kept proofs: every level proved): exit 0;
+  MAP21 "solvable in 16 door actions, 2657941 states, 0 stuck". Every other
+  map's wad is byte for byte main's (47 of 48; only MAP21.wad differs).
+- `tools/mapcheck.py map_longrun`: the known 7 notes (the six targets near
+  their walls, the water's control sector's SLOT); no way under 48, no new
+  SLOT. `tools/thingcheck.py`: 0. `tools/itemcheck.py`: the known 2.
+- MAP21 MODE=1 (TIMEOUT=700): 85 checks, 0 failed, `levelExited`. MODE=2:
+  14, 0 failed. MODE=3: 51 views (the machine's are views 4 to 13). MODE=4:
+  20, 0 failed. MODE=7 (-nomonsters): `lookViewsDone=1`.
+- Looked at: every face at both times on a sheet (the faces unfolded round
+  the machine, THEN over NOW) and in the views: no picture is cut at a wall
+  piece's end or at a corner, the bands go on round every corner and across
+  the body's south face, the slivers and the piece over 101; that piece
+  stands right (crown at the ceiling) with the upper texture as it is here
+  (pegged from the frame's head) and would with map21-pocket's unpegging.
+
+**Not tested / not played by hand.** The look on the real machine (GLES);
+the machine NOW in a fight (the hall's ambush); how much the faces' own
+light NOW shows from the night room's side and through the clocked door.
