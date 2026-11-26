@@ -1404,6 +1404,8 @@ def make_all():
     import gfx_power                                             # MAP33's look (AJAR_POWER=0: nothing)
     import map_station
     gfx_power.make(out, map_station)
+    import gfx_dayreturn                                         # MAP22's new bus, day sky and plates
+    gfx_dayreturn.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)

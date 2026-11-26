@@ -72,6 +72,9 @@ MAPS["THEN"] = map_then
 import map_longrun                              # MAP21 "In the Long Run" (then.zs, map21.zs); last: its signs and door faces
 MAPS["MAP21"] = map_longrun                     # are numbered after MAP11's to 16's (map_institute1.SIGNS, FACES)
 
+import map_dayreturn                            # MAP22 "Day Return" (then.zs, map22.zs): after MAP21, so that no earlier
+MAPS["MAP22"] = map_dayreturn                   # map's numbering moves
+
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
 
