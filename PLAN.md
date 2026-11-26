@@ -19285,6 +19285,10 @@ scenery).
   main's, the 48 map wads byte for byte main's. Shots of the three levers THEN with a door hung beside each, from
   100 out (build/shots/MAP21_lever_{valve125,belt128,beam126}_{main,mine}.png): on main the leaf covers half the
   lever; now the lever stands whole and the leaf opens the other way. No frame in another map changed by it.
+- Main moved on once more (look33, MAP33's look) and was merged again: `./build.sh` exit 0, the solver lines as
+  before but for main's new MAP33 look line, the 48 map wads byte for byte main's (main's quick build);
+  leafcheck as before (MAP33 101's wall now line 332); MAP21 MODE=9 50 checks, none failed; MAP21 MODE=1 (85,
+  levelExited) and MAP33 MODE=1 as main's.
 - Before the switch rule, as main, every figure alike: MAP TEST MODE=1 (7) and 2 (3); LAB (16); MAP01 (13), MAP05 (41), MAP08 (63),
   MAP09 (62), MAP11 (38), MAP17 (118), MAP20 (124; 90 high-water checks) MODE=1 (passing lines); THEN MODE=1-5
   (45, 12, 17, 15, 16 checks, none failed) and 6 (views); MAP21 MODE=1 (85 checks, levelExited), 2 (14 checks),
