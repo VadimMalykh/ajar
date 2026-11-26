@@ -69,6 +69,9 @@ MAPS["YARD"] = map_yard
 import map_then                                 # the then and now lab: a place built twice (then.zs)
 MAPS["THEN"] = map_then
 
+import map_longrun                              # MAP21 "In the Long Run" (then.zs, map21.zs); last: its signs and door faces
+MAPS["MAP21"] = map_longrun                     # are numbered after MAP11's to 16's (map_institute1.SIGNS, FACES)
+
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
 

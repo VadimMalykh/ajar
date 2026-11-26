@@ -62,6 +62,8 @@ DoomEdNums
 	20183 = AjarThenEmitter           // ... THEN's emitter, showing its beam
 	20184 = AjarThenBelt              // ... THEN's belt, running or standing
 	20185 = AjarThenMusic             // ... the lever that turns the music by time off
+	20186 = AjarThenLocked            // ... a door then, locked for the night (MAP21)
+	20187 = AjarLongRunDesk           // MAP21's desk (map21.zs): keys 1 and 2 turned then start the machine
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -385,7 +387,7 @@ map MAP19 "On Paper"
 // pane of the swimming bath, the left-handed bath's door) leads to MAP33.
 map MAP20 "High Water"
 {
-	next = "MAP20"
+	next = "MAP21"
 	secretnext = "MAP33"
 	sky1 = "SKY2", 0               // the yards are open
 	nointermission
@@ -393,6 +395,18 @@ map MAP20 "High Water"
 	nocrouch
 	music = "AJM_AFTR"
 	EventHandlers = "AjarWaterHandler", "HighWaterTest"
+}
+
+// Act 3, level 1 (tools/map_longrun.py, src/zscript/map21.zs): then and now. The music follows the time:
+// AjarThenHandler plays AJM_AFTR then, this level's own now. Ajar's MAP21 hides Doom II's map of that name.
+map MAP21 "In the Long Run"
+{
+	next = "MAP21"
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_LUGG"
+	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "AjarLongRun", "LongRunTest"
 }
 
 // The second secret level (tools/map_secret2.py), from MAP15's secret way
@@ -415,7 +429,7 @@ map MAP32 "Double Shift"
 // after it, its way out starts it again (as MAP19's did).
 map MAP33 "Third Person"
 {
-	next = "MAP33"
+	next = "MAP21"
 	sky1 = "SKY2", 0               // the coal yard, the stack court and the switchyard are open
 	nointermission
 	nojump
