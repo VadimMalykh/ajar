@@ -207,7 +207,16 @@ With that he asked: "Also can you create by 5 versions combining melodic
 ideas from Paradox Engine with harmonic ideas from Distang Galaxy, Garmony
 and Mysterium?" Fifteen, five on each harmony, after the six in TRACKS (32
 to 46). How the Engine's riff and tunes are laid on each harmony stands
-above each set, further down.
+above each set, further down. The fifteen, each made in the manner of a
+piece he kept or put on a map:
+- 32 to 36, Galaxy Engine: Band (A, 132), Machine (G, 140), Shuffle (D, 12/8
+  at 132), Piano (A, 63), Night Shift (E, 12/8 at 60).
+- 37 to 41, Garmonic Engine: Upside Down (E flat, 132), Groove (E, 100),
+  Music Box (F, 3/4 at 92), Pizzicato (E flat, 92; strings alone), Slow
+  (E flat, 54; ambient, the tunes over it from the first bar).
+- 42 to 46, Mysterium Engine: Choir (B flat, 52), Piano (B flat, 66), Music
+  Box (C, 3/4 at 96), Stream (G, 12/8 at 76; a harp in triplets), Band
+  (B flat, 132; the one fast one, the Doom band in major).
 """
 import random
 import re
