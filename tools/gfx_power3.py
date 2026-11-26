@@ -46,27 +46,36 @@ PAPER = (204, 190, 150)                          # yellowed paper
 INK = (48, 40, 32)
 CHALK = (198, 194, 182)
 RED = (172, 52, 44)                              # DANGER plates only (faded)
-BED = (116, 106, 92)                             # the mortar bed under a fallen tile
+BED = (100, 90, 78)                             # the mortar bed under a fallen tile
 
 
 # === noise ===================================================================================================
+_LAT = {}                                        # the noise's lattice cells, once each
+_SS = {}                                         # smoothstep by cell, per offset
+
+
 def vnoise(x, z, cell, seed, P=0, PZ=0):
     """Smooth value noise in [0, 1), periodic in x with period P (and in z with PZ) when given (P % cell == 0)."""
     gx, rx = divmod(x, cell)
     gz, rz = divmod(z, cell)
-    fx, fz = rx / cell, rz / cell
-    fx = fx * fx * (3 - 2 * fx)
-    fz = fz * fz * (3 - 2 * fz)
-    gx1, gz1 = gx + 1, gz + 1
-    if P:
-        n = P // cell
-        gx, gx1 = gx % n, gx1 % n
-    if PZ:
-        n = PZ // cell
-        gz, gz1 = gz % n, gz1 % n
-    a, b = h32(gx, gz, seed), h32(gx1, gz, seed)
-    c, d = h32(gx, gz1, seed), h32(gx1, gz1, seed)
-    return a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz
+    key = (gx, gz, cell, seed, P, PZ)
+    v = _LAT.get(key)
+    if v is None:
+        gx0, gz0, gx1, gz1 = gx, gz, gx + 1, gz + 1
+        if P:
+            n = P // cell
+            gx0, gx1 = gx0 % n, gx1 % n
+        if PZ:
+            n = PZ // cell
+            gz0, gz1 = gz0 % n, gz1 % n
+        a, b = h32(gx0, gz0, seed), h32(gx1, gz0, seed)
+        c, d = h32(gx0, gz1, seed), h32(gx1, gz1, seed)
+        v = _LAT[key] = (a, b - a, c - a, a - b - c + d)
+    ss = _SS.get(cell)
+    if ss is None:
+        ss = _SS[cell] = [(r / cell) * (r / cell) * (3 - 2 * r / cell) for r in range(cell)]
+    fx, fz = ss[rx], ss[rz]
+    return v[0] + v[1] * fx + v[2] * fz + v[3] * fx * fz
 
 
 def fbm(x, z, seed, P=0, c1=16, c2=4, PZ=0):
@@ -129,10 +138,12 @@ def crazed(c, s=16, sh=None, seed=1, gone=0.0, P=64, grout=0.72, gone_seed=None)
     return f
 
 
-def peel(top, under, cover, seed, P, cell=16, fine=4):
-    """Paint (top) come away in patches to what is under it: where the noise is under `cover`."""
+def peel(top, under, cover, seed, P, cell=32, mid=8, fine=2):
+    """Paint (top) come away in patches to what is under it, where the noise is under `cover`: a slow noise
+    gathers the flaking into a few places, the quicker ones rag its edges."""
     def f(x, z):
-        n = 0.68 * vnoise(x, z, cell, seed, P) + 0.32 * vnoise(x, z, fine, seed + 1, P)
+        n = 0.5 * vnoise(x, z, cell, seed, P) + 0.32 * vnoise(x, z, mid, seed + 1, P) + \
+            0.18 * vnoise(x, z, fine, seed + 2, P)
         if n < cover:
             c = under(x, z)
             return shade(c, 0.72) if n > cover - 0.016 else c
@@ -222,20 +233,27 @@ def runs(w, srcs, col, density, strength, seed, length, width=2, zbot=None):
     """Runs down from the heights srcs: streaks of varying length (rust under a rail, soot, lime)."""
     top = max(srcs)
     bot = w.bot if zbot is None else zbot
+    lens = {}
+    for g in range(w.period // width + 1):
+        for i in range(len(srcs)):
+            if h32(g, i, seed) < density:
+                lens[g, i] = length * (0.25 + 0.75 * h32(g, i, seed + 1))
+    if not lens:
+        return
+    hi = top
+    lo = max(bot, int(min(srcs) - length) - 1)
 
     def f(x, z, c):
         g = x // width
         for i, s in enumerate(srcs):
             d = s - z
             if d >= 0:
-                k = h32(g, i, seed)
-                if k < density:
-                    L = length * (0.25 + 0.75 * h32(g, i, seed + 1))
-                    if d < L:
-                        t = strength * (1 - d / L) ** 0.8 * (0.75 + 0.25 * h32(x, i, seed + 2))
-                        c = mix(c, col, t)
+                L = lens.get((g, i))
+                if L and d < L:
+                    t = strength * (1 - d / L) ** 0.8 * (0.8 + 0.05 * ((x * 7 + i) % 5))
+                    c = mix(c, col, t)
         return c
-    w.tint(top, bot, f)
+    w.tint(hi, lo, f)
 
 
 def stains(w, ztop, zbot, col, amt, seed, cell=32, cut=0.45):
@@ -271,7 +289,7 @@ def cracks(w, ztop, zbot, col, seed, cell=24, thin=0.012, keep=0.55, P=None):
             return c
         n = vnoise(x, z, cell, seed, P)
         if abs(n - 0.5) < thin:
-            return mix(c, col, 0.75)
+            return mix(c, col, 0.6)
         return c
     w.tint(ztop, zbot, f)
 
@@ -337,7 +355,10 @@ def band(w, F, part, manner="tile"):
             if paint:
                 return shade(DARK, 0.6 + 0.6 * lum(c) / 90)
             return shade(DARK, 1.0 if z == lo else 0.8)
-        if g == 1 or (g == 2 and z > hi - 3) or (g == 3 and z <= lo + 3):
+        if g == 1:
+            if not ((z == hi and h32(x, 5, 405) < 0.35) or (z <= lo + 2 and h32(x, z, 406) < 0.3)):
+                return under(x, z, c)
+        elif (g == 2 and z > hi - 3) or (g == 3 and z <= lo + 3):
             return under(x, z, c)
         if (z == hi and h32(x, 2, 405) < 0.14) or (z == lo + 1 and h32(x, 3, 405) < 0.14):
             return under(x, z, c)                           # chips along its edges
@@ -364,7 +385,7 @@ def lum(c):
 
 def skirting(w, F, h=8):
     w.fill(F + h, max(w.bot, F - 8), lambda x, z: shade(DARK, 1.3) if z == F + h else
-           jit(DARK, x // 2, z, 12, 0.08) if h32(x // 3, z // 3, 412) > 0.12 else jit(BED, x, z, 413, 0.06))
+           jit(DARK, x // 2, z, 12, 0.08) if h32(x // 2, z // 2, 412) > 0.04 else jit(shade(BED, 0.8), x, z, 413, 0.06))
 
 
 # === the walls ================================================================================================
@@ -373,10 +394,10 @@ def w_painted(w, F, part, top, dado=112, cornice=14):
     cornice under the ceiling; water stains down from it; grime low down; the band in the paint."""
     P = w.period
     under = plaster(PLASTER, 501, 0.05)
-    w.fill(w.z0, w.bot, peel(plaster(WASH, 502), under, 0.36, 503, P))
+    w.fill(w.z0, F + dado, peel(plaster(WASH, 502), under, 0.34, 503, P))
     w.fill(top, top - cornice, moulding((166, 154, 128), top, top - cornice))
     w.fill(F + dado + 4, F + dado, lambda x, z: shade(GRIME, 1.25 if z == F + dado + 4 else 0.9))
-    w.fill(F + dado, F + 8, peel(plaster(PAINT, 504, 0.04), under, 0.3, 505, P, cell=8))
+    w.fill(F + dado, w.bot, peel(plaster(PAINT, 504, 0.04), under, 0.31, 505, P))
     stains(w, top, F + dado, (130, 104, 70), 0.55, 506, cell=32, cut=0.5)
     runs(w, [top - cornice], (120, 96, 66), 0.25, 0.35, 507, 70, width=4)
     gradient(w, F + 40, F, GRIME, 0.35, 508)
@@ -465,12 +486,12 @@ def m_YD(w, F, part, damp=0):
         g = 0.82 + 0.26 * math.sin(2 * math.pi * (u + 0.5) / 8)
         k = h32(sx, sz, 532)
         base = CORR
-        if k < 0.14:
+        if k < 0.1:
             base = (130, 124, 112)                          # a newer sheet, galvanised
-        elif k < 0.3:
+        elif k < 0.2:
             base = mix(CORR, RUST, 0.6)                     # an older one, rustier
         col = jit(shade(base, g), x // 2, z // 3, 533, 0.03)
-        col = mix(col, RUST, 0.45 * vnoise(x, z, 32, 534, P) ** 2 + (0.25 if k < 0.3 and k >= 0.14 else 0)
+        col = mix(col, RUST, 0.45 * vnoise(x, z, 32, 534, P) ** 2 + (0.25 if 0.1 <= k < 0.2 else 0)
                   * vnoise(x, z, 8, 535, P))
         if x % 32 == 0:
             return shade(col, 0.55)                         # the side laps
@@ -667,7 +688,7 @@ def m_BH(w, F, part):
     P = w.period
     br = brick(BRICK, seed=39)
     wash = brick(WASH_GREY, shade(WASH_GREY, 0.86), seed=601, var=0.03)
-    walls = peel(wash, br, 0.48, 602, P, cell=16)
+    walls = peel(wash, br, 0.46, 602, P)
 
     def f(x, z):
         d = min(x, P - x)
@@ -694,7 +715,7 @@ def m_BS(w):
     def f(x, z, c):
         if x % 64 in (0, 1, 2, 31, 32, 33):
             return shade(mix(IRON, RUST, 0.5), 1.1)
-        n = vnoise(x, z, 8, 611, w.period)
+        n = vnoise(x, z, 16, 611, w.period)
         if n < 0.3:
             return c                                        # torn away: the plate shows
         col = jit(shade(lag, 0.8 + 0.3 * math.sin((z - 168) / 40 * math.pi)), x, z, 44, 0.05)
@@ -729,15 +750,15 @@ def m_PC(w, F):
     """A pump's casing: grey paint flaking to rust, the flange course rusty, the brass cap line tarnished."""
     top = w.z0
     P = w.period
-    paint = (126, 120, 110)
+    paint = (114, 108, 98)
 
     def base(x, z):
         g = 0.92 + 0.12 * math.sin(math.pi * (x % 64) / 64)
         return jit(shade(paint, g), x // 2, z // 2, 48, 0.03)
 
     def rust(x, z):
-        return jit(mix(RUST, RUST_D, vnoise(x, z, 4, 631, P)), x, z, 632, 0.05)
-    body = peel(base, rust, 0.36, 633, P, cell=8)
+        return jit(mix(RUST_D, RUST, 0.6 * vnoise(x, z, 4, 631, P)), x, z, 632, 0.05)
+    body = peel(base, rust, 0.3, 633, P, cell=16, mid=4)
 
     def f(x, z):
         if z > top - 3:
@@ -786,10 +807,10 @@ def m_TH(w, F, part):
 
     def f(x, z):
         tx, tz = x // 16, (z - 1) // 16
-        n = vnoise(tx * 16, tz * 16, 32, 652, P) * 0.75 + h32(tx, tz, 653) * 0.25
-        if n < 0.24:
+        n = vnoise(tx * 16, tz * 16, 32, 652, P) * 0.9 + h32(tx, tz, 653) * 0.1
+        if n < 0.25:
             return br(x, z)
-        if n < 0.255:
+        if n < 0.27:
             return jit(BED, x, z, 654, 0.06)
         return tl(x, z)
     w.fill(w.z0, w.bot, f)
@@ -819,7 +840,8 @@ def m_TH(w, F, part):
     w.fill(w.z0, w.z0 - 12, moulding((164, 154, 132), w.z0, w.z0 - 12))
     runs(w, [lo - 24], (104, 68, 44), 0.3, 0.6, 659, 240, width=2)
     runs(w, [lo - 24], (84, 70, 56), 0.2, 0.3, 660, 120, width=6)
-    stains(w, lo - 24, F + 120, GRIME, 0.35, 661, cell=32)
+    stains(w, lo - 24, F + 120, GRIME, 0.5, 661, cell=32, cut=0.4)
+    runs(w, [w.z0 - 12], (96, 84, 68), 0.25, 0.4, 663, 200, width=4)
     gradient(w, F + 40, F, GRIME, 0.35, 662)
     band(w, F, part)
 
@@ -850,7 +872,7 @@ def m_TE(w):
         if z % 48 in (0, 1):
             return shade(paint, 0.7 if z % 48 == 0 else 1.15)
         return jit(paint, x // 2, z // 2, 53, 0.03)
-    w.fill(w.z0, w.bot, peel(top, lambda x, z: jit(mix(STEEL, RUST, 0.6), x, z, 681, 0.06), 0.36, 682, P, cell=8))
+    w.fill(w.z0, w.bot, peel(top, lambda x, z: jit(mix(STEEL, RUST, 0.6), x, z, 681, 0.06), 0.34, 682, P, cell=16, mid=4))
 
 
 def m_SW(w):
@@ -881,7 +903,7 @@ def m_WS(w, F, part):
     """The workshop: an oily dark brick dado, grimy cream painted brick above it flaking to the brick."""
     P = w.period
     under = brick(BRICK, seed=711)
-    w.fill(w.z0, w.bot, peel(brick((168, 156, 128), (150, 140, 116), seed=56, var=0.03), under, 0.33, 712, P))
+    w.fill(w.z0, w.bot, peel(brick((168, 156, 128), (150, 140, 116), seed=56, var=0.03), under, 0.3, 712, P))
     oily = brick((82, 60, 44), (64, 50, 40), seed=57, var=0.08)
     w.fill(F + 104, F, lambda x, z: mix(oily(x, z), (110, 96, 80), 0.25 * vnoise(x, z, 8, 713, P) ** 2))
     w.fill(F + 108, F + 104, lit_band((76, 56, 40))(F + 108, F + 104))
@@ -1004,10 +1026,10 @@ def m_TF(w):
     """A transformer's cooling fins, rusty, rust running from the top header."""
     top, bot = w.z0, w.bot
     P = w.period
-    g = (84, 74, 64)
+    g = (82, 76, 70)
 
     def f(x, z):
-        c = mix(g, RUST, 0.25 + 0.4 * vnoise(x, z, 16, 761, P))
+        c = mix(g, RUST, 0.12 + 0.3 * vnoise(x, z, 16, 761, P))
         if top - 12 < z <= top - 4 or bot + 4 < z <= bot + 12:
             return shade(c, 0.8 + 0.5 * math.sin((z % 8) / 8 * math.pi))
         if z > top - 4 or z <= bot + 4:
@@ -1046,7 +1068,7 @@ def m_GL(w):
 def m_RR(w, F, part):
     """The relay room: plaster with its wash flaking, a dull scratched walnut dado, a picture rail."""
     P = w.period
-    w.fill(w.z0, w.bot, peel(plaster(WASH, 66), plaster(PLASTER, 791, 0.05), 0.38, 792, P))
+    w.fill(w.z0, w.bot, peel(plaster(WASH, 66), plaster(PLASTER, 791, 0.05), 0.33, 792, P))
 
     def dado(x, z):
         u = x % 64
@@ -1113,17 +1135,18 @@ def m_TW(w, F, part):
         u = x % 64
         if u < 6:
             return shade(conc, (1.2, 1.1, 1.02, 0.95, 0.85, 0.7)[u])
-        n = vnoise(x, z, 16, 821, P) * 0.7 + vnoise(x, z, 4, 822, P) * 0.3
-        if n > 0.7:                                         # spalled: rough, paler, the rebar showing
-            if (z % 24) in (0, 1) and n > 0.73:
+        n = vnoise(x, z, 32, 821, P) * 0.8 + vnoise(x, z, 4, 822, P) * 0.2
+        if n > 0.74:                                         # spalled: rough, paler, the rebar showing
+            if (z % 24) in (0, 1) and n > 0.77:
                 return RUST_D
             return jit((176, 166, 146), x, z, 823, 0.08)
-        if n > 0.685:
+        if n > 0.725:
             return shade(conc, 0.7)
         return jit(conc, x // 3, z // 4, 72, 0.05)
     w.fill(w.z0, w.bot, f)
-    runs(w, [400], (50, 46, 42), 0.2, 0.55, 73, 400, width=3)
-    runs(w, [400], (110, 80, 56), 0.15, 0.45, 824, 200, width=2)
+    runs(w, [400], (48, 44, 40), 0.55, 0.75, 73, 480, width=3)
+    runs(w, [400], (104, 76, 54), 0.3, 0.6, 824, 260, width=2)
+    gradient(w, 200, 400, (70, 64, 58), 0.35, 826)
     w.fill(416, 400, lambda x, z: shade(mix(conc, RUST, 0.55), 1.2 if z == 416 else 0.7 if z == 401 else 1.0))
     runs(w, [400], RUST_D, 0.25, 0.5, 825, 50, width=2)
     band(w, F, part)
@@ -1132,7 +1155,7 @@ def m_TW(w, F, part):
 def m_TP(w):
     conc = (150, 142, 128)
     w.fill(w.z0, w.bot, lambda x, z: shade(conc, 1.15) if x % 64 < 2 else jit(conc, x // 3, z // 4, 74, 0.05))
-    runs(w, [w.z0], (72, 64, 56), 0.15, 0.45, 75, 200, width=3)
+    runs(w, [w.z0], (60, 54, 48), 0.3, 0.6, 75, 260, width=3)
     stains(w, w.z0, w.bot, (104, 90, 72), 0.4, 831, cell=32)
 
 
@@ -1173,7 +1196,7 @@ def m_LH(w, F, part):
             return br(x, z) if pu + pv * 0.8 < 28 else jit(BED, x, z, 863, 0.06)
         v = math.sin(x * 0.11 + z * 0.045 + 3 * math.sin(z * 0.02 + x * 0.03)) + 0.6 * math.sin(x * 0.05 - z * 0.08)
         g = 0.93 + 0.06 * h32(x // 8, z // 8, 77)
-        col = shade((178, 174, 164), g)
+        col = shade((160, 156, 146), g)
         v += 0.25 * math.sin(x * 0.37 + z * 0.23) * h32(x // 16, z // 16, 76)
         if abs(v) < 0.035:
             col = mix(col, (104, 100, 94), 0.5)
@@ -1181,8 +1204,8 @@ def m_LH(w, F, part):
             col = mix(col, (140, 136, 128), 0.18)
         return col
     w.fill(w.z0, w.bot, marble)
-    cracks(w, w.z0, 4, (70, 64, 58), 864, cell=48, thin=0.01, keep=0.5)
-    runs(w, [z for z in range(192 * (w.z0 // 192), 0, -192)] or [w.z0], (132, 120, 100), 0.35, 0.3, 865, 150,
+    cracks(w, w.z0, 4, (92, 86, 78), 864, cell=32, thin=0.007, keep=0.55)
+    runs(w, [z for z in range(192 * (w.z0 // 192), 0, -192)] or [w.z0], (120, 108, 90), 0.5, 0.45, 865, 170,
          width=4, zbot=4)
 
     def dado(x, z):
@@ -1236,7 +1259,7 @@ def chips(w, c1, top, c2, bot, seed, edge=4, amt=0.35, rust=True):
     for z in range(bot, top):
         for c in range(c1, c2):
             e = min(c - c1, c2 - 1 - c, top - 1 - z, z - bot)
-            if e >= edge:
+            if e >= edge or vnoise(c, z, 8, seed + 2, 0) < 0.5:
                 continue
             k = h32(c // 2, z // 2, seed)
             if k < amt * (1 - e / edge):
@@ -1506,7 +1529,7 @@ def p_casing(w, spec):
 
     def bare(x, z):
         return jit(mix(STEEL, RUST, 0.45 + 0.4 * vnoise(x, z, 4, 971, 0)), x, z, 972, 0.05)
-    body = peel(paint, bare, 0.34, 973, 0, cell=8)
+    body = peel(paint, bare, 0.32, 973, 0, cell=16, mid=4)
 
     def f(x, z):
         if z in (bot + 48, bot + 47) or x % 160 in (0, 1):
@@ -1711,9 +1734,6 @@ def p_shadow(w, spec):
             warp = 0.08 * math.sin(c / W * math.pi * 3 + 0.5) * math.sin((z - bot) / (top - bot) * math.pi)
             col = shade(ground, 1 + warp)
             col = mix(col, (118, 96, 66), 0.35 * vnoise(c, z, 16, 1021, 0) ** 1.5)
-            n = vnoise(c, z, 24, 1022, 0)
-            if abs(n - 0.62) < 0.012:
-                col = mix(col, (96, 74, 50), 0.6)                    # the tide marks of a leak
             w.at(c, z, col)
     w.line(3, top - 40, W - 3, top - 46, (92, 72, 50))              # a split in the board
     sil = (36, 32, 28)
@@ -1873,14 +1893,14 @@ def fn2(x, y, cell, seed, S=64):
 
 def f_lino_worn():
     """Rooms and corridors: worn brown lino, paler where people walked, dust in its joints."""
-    lino = (116, 84, 58)
+    lino = (110, 86, 66)
 
     def f(x, y):
         if x % 32 == 0 or y % 32 == 0:
             return (82, 62, 46)
         col = jit(lino, x // 2, y // 2, 1101, 0.04)
         n = fn2(x, y, 32, 1102)
-        col = mix(col, (150, 124, 94), 0.5 * max(0, n - 0.4))
+        col = mix(col, (146, 126, 102), 0.6 * max(0, n - 0.4))
         if h32(x, y, 1103) < 0.02:
             col = shade(col, 0.82)
         return col
@@ -1891,13 +1911,13 @@ def f_plaster_stained():
     def f(x, y):
         if x in (0, 63) or y in (0, 63):
             return (140, 128, 104)
-        col = jit((176, 166, 140), x // 2, y // 2, 1111, 0.03)
-        n = fn2(x, y, 32, 1112)
-        if abs(n - 0.6) < 0.012:
-            return mix(col, (110, 84, 56), 0.6)             # the tide ring of an old leak
-        if n > 0.6:
-            col = mix(col, (150, 124, 88), 0.5)
-        return col
+        col = jit((170, 160, 136), x // 2, y // 2, 1111, 0.03)
+        n = 0.7 * fn2(x, y, 32, 1112) + 0.3 * fn2(x, y, 8, 1113)
+        if abs(n - 0.64) < 0.008:
+            return mix(col, (122, 96, 66), 0.4)             # the tide ring of an old leak
+        if n > 0.64:
+            col = mix(col, (152, 128, 94), 0.3)
+        return mix(col, (120, 108, 90), 0.2 * fn2(x, y, 16, 1114))
     return flat(f)
 
 
@@ -1926,15 +1946,14 @@ def f_lumps(base, hi, seed, size, glint=None, S=64):
 
 def f_cinder():
     """The coal yard's cinder, with dry tufts of dead weed, buff and sparse."""
-    fn = lumps((70, 64, 58), (124, 116, 106), 145, 3)
+    fn = lumps((84, 78, 70), (130, 122, 110), 145, 3)
 
     def f(x, y):
         col = fn(x, y)
-        for cx, cy in ((14, 20), (46, 50), (52, 12)):
+        for cx, cy in ((14, 20), (46, 50)):
             dx, dy = (x - cx + 32) % 64 - 32, (y - cy + 32) % 64 - 32
-            r = math.hypot(dx, dy)
-            if r < 5 and ((math.atan2(dy, dx) * 4.5 + r * 0.3) % 1.0) < 0.42:
-                return shade((170, 148, 104), 0.8 + 0.4 * (1 - r / 5))
+            if dx * dx + dy * dy < 12 and h32(x, y, 1119) < 0.45:
+                return shade((146, 128, 94), 0.85 + 0.25 * h32(x, y, 1120))     # a dead tuft's stalks
         return col
     return flat(f)
 
@@ -1960,8 +1979,8 @@ def f_slabs(c=(160, 150, 130), s=32, seed=105):
             return shade(c, 0.6)
         col = jit(shade(c, 0.9 + 0.2 * h32(x // s, y // s, seed)), x // 2, y // 2, seed + 1, 0.05)
         n = fn2(x, y, 16, seed + 2)
-        if abs(n - 0.5) < 0.014 and fn2(x, y, 32, seed + 3) > 0.5:
-            return shade(col, 0.62)
+        if abs(n - 0.5) < 0.01 and fn2(x, y, 32, seed + 3) > 0.66:
+            col = shade(col, 0.82)                          # a crack, here and there
         return mix(col, (104, 90, 70), 0.3 * fn2(x, y, 32, seed + 4))
     return flat(f)
 
@@ -1987,8 +2006,8 @@ def f_brick_paving():
         off = 8 if k % 2 else 0
         if y % 8 == 0 or (x + off) % 16 == 0:
             return (112, 100, 86)
-        col = jit(shade((116, 76, 58), 0.9 + 0.2 * h32((x + off) // 16, k, 107)), x, y, 108, 0.05)
-        return mix(col, (138, 124, 102), 0.45 * fn2(x, y, 32, 1141))
+        col = jit(shade((110, 78, 62), 0.9 + 0.2 * h32((x + off) // 16, k, 107)), x, y, 108, 0.05)
+        return mix(col, (134, 122, 102), 0.2 + 0.4 * fn2(x, y, 32, 1141))
     return flat(f)
 
 
@@ -2082,7 +2101,7 @@ def f_lagged_top():
 
 def f_big_terrazzo():
     """R's floor: terrazzo in large squares, dusty, cracked and stained, its black lines worn (quiet)."""
-    base = (164, 156, 140)
+    base = (150, 142, 128)
 
     def f(x, y):
         if x % 128 < 2 or y % 128 < 2:
@@ -2092,14 +2111,14 @@ def f_big_terrazzo():
         if k < 0.05:
             col = jit((110, 100, 88), x, y, 121, 0.12)
         elif k < 0.1:
-            col = jit((186, 180, 166), x, y, 122, 0.04)
+            col = jit((170, 164, 150), x, y, 122, 0.04)
         else:
             col = jit(base, x // 2, y // 2, 124, 0.03)
         n = fn2(x, y, 32, 1213, 128)
         col = mix(col, (132, 118, 98), 0.35 * max(0, n - 0.45) * 2)
         c = fn2(x, y, 16, 1214, 128)
-        if abs(c - 0.5) < 0.01 and fn2(x, y, 64, 1215, 128) > 0.55:
-            col = shade(col, 0.72)
+        if abs(c - 0.5) < 0.006 and fn2(x, y, 64, 1215, 128) > 0.7:
+            col = shade(col, 0.84)
         return col
     return flat(f, 128)
 
@@ -2147,10 +2166,10 @@ def f_wood_block():
         if y % 8 == 0 or (x + off) % 16 == 0:
             return (58, 42, 30)
         k = h32((x + off) // 16, by, 124)
-        if h32((x + off) // 16, by, 1241) < 0.05:
-            return jit((96, 90, 80), x, y, 1242, 0.08)      # a block gone: the screed
-        col = jit(shade((112, 80, 52), 0.85 + 0.25 * k), x, y, 125, 0.05)
-        return mix(col, (52, 42, 34), 0.55 * fn2(x, y, 16, 1243))
+        if h32((x + off) // 16, by, 1241) < 0.03:
+            return jit((80, 74, 66), x, y, 1242, 0.08)      # a block gone: the screed
+        col = jit(shade((100, 76, 56), 0.85 + 0.25 * k), x, y, 125, 0.05)
+        return mix(col, (58, 48, 40), 0.25 + 0.45 * fn2(x, y, 16, 1243))
     return flat(f)
 
 
