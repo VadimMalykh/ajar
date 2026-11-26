@@ -33,11 +33,19 @@
 // args[2] (setting 2); AjarThenBelt (20184) runs its belt (sector tag args[1],
 // args[2] - 128 and args[3] - 128 units a tic along x and y) in setting 1.
 //
+// A colour door joins places, never times (Vadim, 2026-11-26): its far side is
+// built at both times (ajarthen.Times.far: line id n NOW, n + THEN_ID THEN),
+// and hung in a frame it opens on the copy at that frame's time; the copy at
+// the other time stays shut. Hang sets args[0] to that copy (FarAt), so all
+// that asks where a hung door leads (sight, shots, monsters following) is told
+// the truth; Unhang gives it back its own (ownFar, NOW's). A frame with no
+// twin is a frame at its own time like any other.
+//
 // Company: a monster that dies THEN leaves its old corpse at the same spot NOW
 // (its last death frame, pale, not solid). A monster alive THEN while no door
-// joins the two times (the clocked door hung, or a plain door hung in one time
-// whose far side is in the other) is shown NOW as that corpse, where it stood
-// when the last link came down; when a link is made again the corpse goes.
+// joins the two times (the clocked door hung; a colour door never does) is
+// shown NOW as that corpse, where it stood when the last link came down; when
+// a link is made again the corpse goes.
 //
 // Music by time: THEN_MUSIC while the player is THEN, the level's own NOW;
 // the lever (AjarThenMusic, 20185) turns the switching off and on again.
@@ -46,6 +54,8 @@ class AjarThen : Actor
 {
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
+
+	const THEN_ID = 20;        // a THEN copy's line id: NOW's + THEN_ID (frames and far sides; ajarthen.THEN_ID)
 
 	Vector2 Off() { return (args[0], args[1]); }
 	bool InThen(Vector2 p)
@@ -472,7 +482,7 @@ class AjarThenHandler : EventHandler
 	}
 
 	// --- company -------------------------------------------------------------------------------------
-	// Is some door hung that joins the two times?
+	// Is some door hung that joins the two times? (A colour door never does: AjarHandler.FarAt.)
 	bool Linked()
 	{
 		if (!h || !when) return false;
@@ -480,7 +490,7 @@ class AjarThenHandler : EventHandler
 		AjarFrame f;
 		while (f = AjarFrame(fi.Next()))
 		{
-			if (!f.door || !f.door.args[0]) continue;
+			if (!f.door || !f.door.args[0] || AjarHandler.Placed(f.door)) continue;
 			Line a = h.FindLine(f.args[0]), b = h.FindLine(f.door.args[0]);
 			if (a && b && when.InThen(a.v1.p) != when.InThen(b.v1.p)) return true;
 		}
@@ -556,6 +566,31 @@ class AjarThenHandler : EventHandler
 
 extend class AjarHandler
 {
+	// A colour door (RED .. PINK): a far side of its own, a place.
+	static bool Placed(AjarDoor d) { return d && d.args[1] >= 1 && d.args[1] <= 6 && !d.IsPair(); }
+
+	// Where the colour door d opens hung in frame f: its far side at f's time. Its own line id (ownFar) is
+	// the copy NOW, + THEN_ID the copy THEN. A map with one time, any other door, or a far side built in
+	// one copy only (Copy.far, against the rule): args[0] as it is.
+	int FarAt(AjarDoor d, AjarFrame f)
+	{
+		if (!Placed(d) || !f || !d.args[0]) return d.args[0];
+		let w = AjarThen.Find();
+		if (!w) return d.args[0];
+		if (!d.ownFar) d.ownFar = d.args[0];
+		return w.InThen(f.pos.xy) && ThenFar(d) ? ThenFar(d) : d.ownFar;
+	}
+
+	// The copy THEN of a colour door's far side, or 0 (a map with one time; none built).
+	int ThenFar(AjarDoor d)
+	{
+		let w = AjarThen.Find();
+		if (!Placed(d) || !d.args[0] || !w) return 0;
+		int thenId = (d.ownFar ? d.ownFar : d.args[0]) + AjarThen.THEN_ID;
+		Line l = FindLine(thenId);
+		return l && w.InThen(l.v1.p) ? thenId : 0;
+	}
+
 	// The frame at the same spot at the other time, if there is one.
 	AjarFrame TwinFrame(AjarFrame f)
 	{

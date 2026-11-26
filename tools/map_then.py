@@ -12,9 +12,11 @@ but where said; NOW is MAP11's look 3 (Post Box), THEN look 2 (Thaw).
     block of rubble cuts W from M; THEN a steel gate (shut for good) closes
     the gap from M to E that NOW stands open. Reaching E takes two hangings,
     one through each time. THEN only: frame 131 in W's west wall, which has
-    no twin (it does not take the clocked door). NOW only: RED's far side in
-    the corridor's south wall, and the lever that turns the music by time
-    off (W's west wall).
+    no twin (it does not take the clocked door). RED's far side is in the
+    corridor's south wall at both times (201 NOW, 221 THEN): hung NOW it
+    opens on the corridor NOW, hung THEN on the corridor THEN (a colour
+    door joins places, never times). NOW only: the lever that turns the
+    music by time off (W's west wall).
   2 the belt (x 896..1408): THEN a belt runs from frame 124 (west wall) east
     to where NOW a heap of crates stands (steps 24 apart up to a ledge at 120
     with a megasphere); with the belt standing the heap was never there and
@@ -64,7 +66,7 @@ def bay_door(x0):
 
 # --- the corridor ---------------------------------------------------------------------------------
 t.room((-64, -176, 3456, -16), wall=CO, ftex=FC, ctex=KC, ceil=160, now=dict(light=104), then=dict(light=208))
-t.now.far((160, -176), (224, -176), (0, -1), RED, target=101)              # RED's far side: NOW only
+t.far((160, -176), (224, -176), (0, -1), RED)                              # RED's far side: 201 NOW, 221 THEN
 
 # --- 1: the hall ----------------------------------------------------------------------------------
 t.room((0, 0, 256, 512), **HALL)                                           # W

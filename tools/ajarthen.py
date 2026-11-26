@@ -24,6 +24,10 @@ by lever() (live THEN, dead NOW) and target(); the NOW sectors it moves carry
 their heights per setting (heights()); the THEN pieces that show it are
 beam() and belt_run(). A frame with no twin (frame(only=)) does not take the
 clocked door.
+
+A colour door joins places, never times (2026-11-26): far() builds its far
+side at both times (line id far_id NOW, + THEN_ID THEN), and the door opens
+on the copy at the time of the frame it hangs in.
 """
 import ajarmap
 from udmf import rect
@@ -114,12 +118,21 @@ class Copy:
                        (n if self.then else n + THEN_ID) if twin else n, **k)
 
     def far(self, a, b, out, colour, floor=0, target=None, **k):
-        """A plain door's far side, in this copy only (`target`: any frame's line id)."""
+        """A plain door's far side, in this copy only (`target`: any frame's
+        line id), line id far_id(colour) whichever copy. Against the rule
+        since 2026-11-26 (PLAN.md, "Colour doors join places, never times"):
+        a far side is built at both times, Times.far. Kept for MAP21 until it
+        follows."""
         ajarmap.recess(self.m, self.P(a), self.P(b), out, floor, ajarmap.far_id(colour), target,
                        far_colour=colour, **k)
 
     def opening(self, a, b, out, floor=0, **k):
         ajarmap.opening(self.m, self.P(a), self.P(b), out, floor, **k)
+
+    def far_line(self, colour):
+        """The line id of a colour's far side in this copy (Times.far):
+        far_id(colour) NOW, + THEN_ID THEN (then.zs, AjarHandler.FarAt)."""
+        return ajarmap.far_id(colour) + (THEN_ID if self.then else 0)
 
 
 class Times:
@@ -168,6 +181,19 @@ class Times:
     def opening(self, a, b, out, floor=0, **k):
         for c in self.copies:
             c.opening(a, b, out, floor, **k)
+
+    def far(self, a, b, out, colour, floor=0, target=None, *, now=None, then=None, **k):
+        """A colour door's far side at both times, the same spot (Vadim,
+        2026-11-26: a colour door joins places, never times). Line id
+        far_id(colour) NOW, + THEN_ID THEN (Copy.far_line). Hung in a frame
+        NOW the door opens on the copy NOW, hung in a frame THEN (a twin's or
+        one with no twin) on the copy THEN; the other copy stays shut.
+        `target`: any portal line id as the dummy target (default: the other
+        copy's far side). `now=`, `then=`: per-copy differences, as room()."""
+        for c, extra in self._each(now, then):
+            other = self.copies[1 - c.when]
+            ajarmap.recess(self.m, c.P(a), c.P(b), out, floor, c.far_line(colour),
+                           target or other.far_line(colour), far_colour=colour, **dict(k, **extra))
 
     # --- the clocked door ------------------------------------------------------------------------
     def clocked(self, x, y, angle=0, *, frame=0, n=0, when=NOW):

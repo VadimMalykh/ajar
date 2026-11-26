@@ -17407,3 +17407,124 @@ apply to a joined level.
 **Open, for Vadim**: which of Doom II's maps are the material (the lab's
 Entryway and Dead Simple were only the test; he does not care for The
 Catacombs).
+
+## Colour doors join places, never times (decided 2026-11-26)
+
+**Vadim** (2026-11-26): "Colour doors should move me spatially, not
+temporally. If I'm coming from NOW, it should move me to RED door exit now,
+but if I go with this door through temporal door to THEN, it now should move
+me to the same place THEN."
+
+**The rule.** A colour door (RED to PINK) joins places, never times. Only
+the clocked door joins the times.
+- A colour door's far side is a spot in space. On a map with two times it is
+  built in both copies: now, and then at the same spot plus the offset.
+- Hung in a frame now, the door opens on its far side now; hung in a frame
+  then, on the same far side then. The far side at the other time stays
+  shut, as the far side of a door that hangs nowhere is.
+- Everything else follows from where the frame is: what is seen through it,
+  who walks and shoots through it, monsters following, the door taken down
+  from either time.
+- A frame with no twin (the lab's 131, then only) is a frame at its own
+  time: a colour door hung there opens on its far side at that time.
+- The clocked door is unchanged: the frame it hangs in, at the other time.
+- Company: only the clocked door hung joins the times. A colour door never
+  does, so with only colour doors hung a monster alive then shows now as its
+  old corpse.
+- Maps with no AjarThen thing (every level but THEN and MAP21) behave as
+  before, and their wads do not change.
+
+**What it replaces.** In "The clocked door" above: "every plain door keeps
+working: its far side is a place in one of the two times, and carried across
+it makes a second link between the times". A plain door carried across no
+longer links the times. And the lab's RED, whose far side was in the
+corridor now only, so that RED carried into then and hung in 131 led back to
+now ("The then and now lab", the hall): it now leads to the corridor then.
+
+**How the engine tells the copies apart.** By a second line id. The far side
+of colour c is line 200 + c now (as on every map) and 200 + c + 20 then
+(`AjarThen.THEN_ID`, the same 20 as a then frame's id over its twin's: RED
+201 and 221). In `Hang` a colour door's `args[0]`, its far side, is set to
+the copy at the time of its frame (`AjarHandler.FarAt` in then.zs; a frame
+is then by `AjarThen.InThen`); `Unhang` gives back its own (`AjarDoor.ownFar`,
+the copy now). As with a Pair's leaf, whatever asks where a hung door leads
+reads `args[0]` and is told the truth: the portal links, sight and shots
+through doors, `AjarSense` (monsters following), the watchers of optics.zs
+(a watch names the copy its room is in), the frame that takes one door only
+(it asks `FarAt` of the door in hand). At load the copy then is shut
+like the copy now (`ThenFar`). On a map with one time there is no AjarThen,
+`FarAt` returns `args[0]` as it is and `ThenFar` 0, so nothing changes: a
+second id touches less than resolving one id by time would, since GZDoom's
+Line_SetPortalTarget acts on every line with an id and always targets the
+first. `Linked()` (company) passes over colour doors. A far side built in
+one copy only (`Copy.far`, MAP21 until it follows) still works as before:
+with no copy then, the door leads to the one there is.
+
+**The generator.** `Times.far(a, b, out, colour, floor=0, target=None,
+now=, then=)` builds the far side in both copies (line ids by
+`Copy.far_line`; the dummy portal target is the other copy). `Copy.far`
+stays for MAP21 until it follows, and its docstring says it is against the
+rule.
+
+**The lab now.** RED's far side is in the corridor's south wall at both
+times (201 now, 221 then); the corridor is built at both times already, so
+nothing else was needed. The rest of the lab is as it was. Hung in 101 now
+RED opens on the corridor now; carried through the clocked door and hung in
+131 (or any frame then), on the corridor then.
+
+**MAP21.** Its puzzle under this rule is `puzzle21.spatial()` (13 door
+actions, 150165 states, 0 stuck, nothing lost; solved 2026-11-26). The map
+follows.
+
+**Tests** (`MAP=THEN MODE=n tools/smoke.sh`, all pass on the branch's
+build):
+1. the door, now 41 checks (was 30). Changed: RED carried through the
+   clocked door and hung in 131 now leads to the corridor then
+   (`redLeadsThen`, was `redLeadsNow`), and back. New: both copies of RED's
+   far side shut at the start; hung then, 221 open and 201 shut; at the end
+   of the mode RED hung in 101 now: 201 open, 221 shut, and walking through
+   comes out in the corridor now; the clocked door swapped in for it: RED in
+   hand, both copies shut; carried through the clocked door into then and
+   hung in 131: 221 open, 201 shut; the clocked door taken down then while
+   RED hangs then: `Linked()` false (company counts the times as apart);
+   RED taken down then is its own again (201) with both copies shut; hung
+   now again, 201 open and 221 shut, and through it the corridor now.
+2. the drip, 12. 3. the belt, 17. 4. the beam, 15 (all unchanged).
+5. company, now 16 (was 14). New: after the stand-ins go, the clocked door
+   taken down and RED hung in 125 then: RED leads to 221, nothing joins the
+   times, and the monster alive then still shows now as its old corpse (1
+   stand-in for 1 alive then).
+6. 22 views, unchanged.
+
+**Other levels.** Every other map's wad is byte for byte what the branch
+point builds (47 of 48 the same; only THEN.wad differs; MAP21.wad the
+same). Their own tests on the branch's build: `MAP=TEST MODE=1` 7 of 7,
+`MAP=LAB MODE=1` 16 of 16, `MAP=MAP11 MODE=1` 24 of 24 (level exited),
+`MAP=MAP20 MODE=1` 124 checks (its high water part 90 of 90) and the level
+exited, `MAP=MAP09 MODE=1` 57 of 57 and the level exited by its way out.
+
+**Choices made here.**
+- A second line id for the copy then (+20), not one id resolved by time:
+  Line_SetPortalTarget acts on every line with the id and targets the first,
+  so two lines with one id cannot be told apart by the engine.
+- `args[0]` of a hung colour door is the copy it leads to, as a Pair leaf's
+  is the frame its twin hangs in, so that no reader of `args[0]` had to
+  change; `ownFar` (a new field of AjarDoor) keeps the copy now.
+- A frame is then or now by where its AjarFrame thing stands
+  (`AjarThen.InThen`), the same test the clocked door's twin uses.
+- A far side whose copy then is missing (or not then) leads to the one there
+  is, as before: MAP21 is not broken by the engine before it follows.
+- The frame that takes one door only (`args[4]` 1 or 5) compares the far
+  side the door would open on at that frame (`FarAt`), so that a then frame
+  of that kind names the copy then, as a way out the player builds
+  (`ComeHome`) would, since it compares the hung door's `args[0]`.
+
+**Not tested / not played by hand.** Nothing played by a person. The Stray
+door on a map with two times: its pool lists each colour door's `args[0]`,
+so only the copy a door hangs at (or the copy now) and never both; no map
+with two times has a Stray door. A way out the player builds, a chain of
+brass frames, a watcher, a route board's lamps and a thief on a map with
+two times: none exist; the way-out frames would have to name the copy of
+their time. Monsters following RED through a frame then (only the clocked
+door is tested for that). Save and load (the new field is saved with the
+door, not tried).
