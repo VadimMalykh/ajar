@@ -113,7 +113,12 @@ To the solver both are regions like any other; three things join them:
                 either side. It hangs, or is swapped in, only where the frame
                 and its twin are both free but for the door swapped out. In
                 the state it is at the now id. A plain door fills its own
-                frame only. Not modelled with a thief, a nailer, a dash or
+                frame only, and joins places, never times (Vadim, 2026-11-26):
+                with home_then=region beside its home, hung in a then frame
+                (a twin's then id) it leads to home_then, the same far side
+                forty years earlier, and hung in a now frame to home. Without
+                home_then its far side is the one place `home` (the first
+                MAP21, and the lab before the rule). Not modelled with a thief, a nailer, a dash or
                 the Stray pool (solve() refuses those)
   causes        optional {name: dict(states=(...), start=state, at=[regions],
                 via={frame id: region})}: a fixture then, with a few states
@@ -163,6 +168,13 @@ def _twins(p):
     """{frame id: its twin's id}, both ways (see `twins`)."""
     t = p.get("twins", {})
     return {**t, **{b: a for a, b in t.items()}}
+
+
+def _home(p, c, f):
+    """Where door c hung in frame f leads: its far side, at the frame's time
+    (see `home_then`)."""
+    d = p["doors"][c]
+    return d["home_then"] if "home_then" in d and f in p.get("twins", {}).values() else d["home"]
 
 
 def _now(p, f):
@@ -309,7 +321,7 @@ def _moves(p, state, nailed=False):
         elif p["doors"][c].get("barred"):
             continue                                 # a rail before its far side: shots and sight, no walking
         else:
-            ends = (p["frames"][f], p["doors"][c]["home"])
+            ends = (p["frames"][f], _home(p, c, f))
         for a, b in (ends, ends[::-1]):
             if a == here and b != here:
                 yield 0, f"through {nm(c)} to {b}", out(region=b)
@@ -589,6 +601,7 @@ def lost(p):
         regions |= set(cz.get("at", ())) | set(cz.get("via", {}).values())
     for d in p["doors"].values():
         regions |= ({d["home"]} if "home" in d else set()) | ({d["lean"]} if "lean" in d else set())
+        regions |= {d["home_then"]} if "home_then" in d else set()
     if p.get("thief"):
         regions.add(p["thief"]["zone"])
     tests = [(r, lambda s, r=r: s[0] == r) for r in sorted(regions - {p["goal"]})]

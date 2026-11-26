@@ -165,6 +165,27 @@ def as_built(p=PUZZLE21):
 BUILT = as_built()
 
 
+def spatial(p=BUILT, booth=True, lobby_frame=True):
+    """Colour doors join places, never times (Vadim, 2026-11-26): each far
+    side is there at both times, and a door hung then leads to it then. RED's
+    is the lobby (now lobbyN, then lobbyT); BLUE's is in the vestibule: now
+    vestN; then, with `booth`, the porter's pass office (boothT, locked for
+    the night: no way out of it but back), without it the vestibule then,
+    which is open to the hall (hallT)."""
+    q = copy.deepcopy(p)
+    q["doors"][RED] = dict(home="lobbyN", home_then="lobbyT", lean="bgalN")
+    q["doors"][BLUE] = dict(home="vestN", home_then="boothT" if booth else "hallT", lean="closetA")
+    if not lobby_frame:
+        q = without_frame(110, p=q)
+    return q
+
+
+FIRST_BUILT = BUILT                             # the first playable version: a far side in one time only
+BUILT = spatial()                               # as decided 2026-11-26: 13 door actions, 150165 states, 0 stuck,
+                                                # nothing lost; without the booth 33360 stuck and the vestibule can
+                                                # be skipped; without frame 110, 256 stuck
+
+
 @record
 def variant_pocket_clock_only(p=OPEN_THEN):
     """The pocket's frame (103, and so 1103) takes only the clocked door.
@@ -364,6 +385,15 @@ def main(args):
     want = set(args) if args and "all" not in args else (every if args else {"puzzle"})
     if "frames" in want:
         want |= {f"no{f}" for f in NOW if f not in (101, 103)} | {"spare"}
+    for name, q in (("spatial", lambda: spatial()), ("spatial_nobooth", lambda: spatial(booth=False)),
+                    ("spatial_no110", lambda: spatial(lobby_frame=False))):
+        if name in args:
+            q = q()
+            report(q, name, examples=6)
+            for c in ("valve", "belt", "beam"):
+                report(frozen(c, q), f"{name}, the {c} frozen", examples=1, quiet=True, lose=False)
+            report(without_vestibule(q), f"{name}, without a way in by the vestibule's bolted doors", examples=1,
+                   quiet=True, lose=False)
     if "puzzle" in want:
         report(PUZZLE21, "PUZZLE21 (MAP21 as designed)")
     if "frozen" in want:
