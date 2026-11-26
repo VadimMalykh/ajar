@@ -13,7 +13,11 @@ lever"):
         at either jamb, and as before if none is. A wall: a one-sided line, or
         a two-sided one whose opening is lower than the leaf (96) or whose floor
         is higher than the frame's; and the leaf stands on open floor all along.
-        Things (furniture) are not walls. -v lists the clear frames too.
+        Things (furniture) are not walls. Before all that, a leaf must not stand
+        before a switch (a line with a use special, not a frame's own, that the
+        leaf, dropped square onto it, overlaps by more than 2, from its usable
+        side, within 64): the same steps are tried free of switches first.
+        -v lists the clear frames too.
   NEAR  each switch (a line with a special that the player USEs, not a frame's
         own mouth) within 96 of a frame's mouth or of a far side's.
 
@@ -29,6 +33,7 @@ import zipfile
 
 FRAME_T = 20001
 LEAF, OPEN, CLEAR, DEPTH, NEAR = 64.0, 115.0, 2.0, 16.0, 96.0
+USE = 64.0      # the player's use range: a leaf this near a switch (and over it) stands before it
 
 
 def parse(text):
@@ -135,6 +140,32 @@ class Room:
         at = mul(add(l["a"], l["b"]), 0.5)
         r = length(sub(l["b"], l["a"])) / 2 + DEPTH + LEAF + 2 * CLEAR
         self.walls = [w for w in lv.lines if lv.solid(w, z) and pdist(at, w["a"], w["b"]) < r]
+        self.switches = [w for w in lv.lines if is_switch(lv, w) and pdist(at, w["a"], w["b"]) < r + USE]
+
+    def before(self, mirrored, open_):
+        """The switch the leaf stands before, or None (AjarLeafRoom.BeforeSwitch): dropped square onto the switch's
+        line it overlaps it by more than CLEAR, on the side it is used from, within use range."""
+        h, e = self.pose(mirrored, open_)
+        for w in self.switches:
+            a, b = w["a"], w["b"]
+            n = length(sub(b, a))
+            if n <= CLEAR:
+                continue
+            t = mul(sub(b, a), 1 / n)
+            s1, s2 = dot(sub(h, a), t), dot(sub(e, a), t)
+            if min(max(s1, s2), n) - max(min(s1, s2), 0) <= CLEAR:
+                continue
+            m = mul(add(h, e), 0.5)
+            if cross(sub(b, a), sub(m, a)) > 0 and not w["ld"].get("playeruseback"):
+                continue
+            d = 0 if crosses(h, e, a, b) is not None else \
+                min(pdist(h, a, b), pdist(e, a, b), pdist(a, h, e), pdist(b, h, e))
+            if d <= USE:
+                return f"switch line {w['i']}"
+        return None
+
+    def bad(self, mirrored, open_, free):
+        return self.blocked(mirrored, open_) or (free and self.before(mirrored, open_))
 
     def pose(self, mirrored, open_):
         """The leaf: (hinge, far end), as AjarLeafRoom.Hinge and Way."""
@@ -180,26 +211,34 @@ class Room:
                 return f"floor {sec.get('heightfloor', 0):.0f} ceiling {sec.get('heightceiling', 0):.0f} at ({p[0]:.0f},{p[1]:.0f})"
         return None
 
-    def widest(self):
-        """The widest opening (degrees, to about 0.0002) at which the leaf is clear at a jamb: (mirrored, angle), the
-        frame line's first end winning a tie; None: clear at neither, at any whole degree from 114 down to 1."""
+    def widest(self, free=False):
+        """The widest opening (degrees, to about 0.0002) at which the leaf is clear at a jamb (with free, and before
+        no switch): (mirrored, angle), the frame line's first end winning a tie; None: clear at neither, at any whole
+        degree from 114 down to 1."""
         best = None
         for mirrored in (False, True):
             a = OPEN - 1
-            while a >= 1 and self.blocked(mirrored, a):
+            while a >= 1 and self.bad(mirrored, a, free):
                 a -= 1
             if a < 1:
                 continue
             lo, hi = a, a + 1
             for _ in range(12):
                 mid = (lo + hi) / 2
-                if self.blocked(mirrored, mid):
+                if self.bad(mirrored, mid, free):
                     hi = mid
                 else:
                     lo = mid
             if best is None or lo > best[1] + 0.001:     # (a tie, to rounding: the first jamb)
                 best = (mirrored, lo)
         return best
+
+
+def is_switch(lv, w):
+    """A line the player USEs with a special, not a frame's own mouth (AjarLeafRoom.IsSwitch)."""
+    if not w["special"] or not (w["ld"].get("playeruse") or w["ld"].get("playeruseback")):
+        return False
+    return not (w["special"] == 130 and w["args"][0] and w["args"][0] in lv.frame_ids)
 
 
 def frame_z(lv, l):
@@ -214,18 +253,33 @@ def report(lv, verbose):
         if not l:
             continue
         r = Room(lv, l, frame_z(lv, l))
-        why = r.blocked(False, OPEN)
+        why = r.bad(False, OPEN, True)
+        if why and not r.blocked(False, OPEN):
+            # clear of the walls but before a switch: the same steps, before no switch, else as before
+            if not r.bad(True, OPEN, True):
+                now = "hinged on the other jamb"
+            else:
+                best = r.widest(True)
+                now = "nothing is free of it: posed as before" if not best else \
+                    f"opened {best[1]:.2f} degrees{', hinged on the other jamb' if best[0] else ''}"
+            out.append(f"LEAF {lv.name} frame {fid}: before {why}; {now}")
+            continue
         if not why:
             if verbose:
                 h, e = r.pose(False, OPEN)
                 out.append(f"LEAF {lv.name} frame {fid}: clear as posed (hinge {h[0]:.1f},{h[1]:.1f})")
             continue
-        other = r.blocked(True, OPEN)
+        other = r.bad(True, OPEN, True)
         if not other:
             out.append(f"LEAF {lv.name} frame {fid}: cuts {why}; hinged on the other jamb instead")
             continue
-        best = r.widest()
+        best = r.widest(True)
+        if not best and not r.blocked(True, OPEN):
+            best = (True, OPEN)             # free of no switch anywhere: walls alone, the other jamb
+        elif not best:
+            best = r.widest()
         now = "nothing is clear: posed as before" if not best else \
+            "hinged on the other jamb instead (before a switch at every free pose)" if best[1] == OPEN else \
             f"opened {best[1]:.2f} degrees{', hinged on the other jamb' if best[0] else ''}"
         out.append(f"LEAF {lv.name} frame {fid}: cuts {why}; the other jamb too ({other}); {now}")
     return out

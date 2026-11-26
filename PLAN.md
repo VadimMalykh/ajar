@@ -19010,8 +19010,20 @@ only by its far end and the leaf's). Then:
 - else opened less: the widest angle below 115 at which the whole leaf is clear by 2, at either jamb (whole
   degrees down, then twelve halvings; the first jamb's on a tie);
 - else (nothing clear at either jamb) as it always stood.
+
+**And the leaf never stands before a switch** (asked by the coordinating session after the first report, the same
+day: at all three of MAP21's levers the leaf, swung 115 to the lever's side, leaned back over the lever, so the
+lever was half behind the door: the real cause of Vadim's complaint). A switch is what UseGoesOn calls one (below):
+a line with a use special, not a frame's own mouth. A pose stands before it when the leaf (hinge to far end),
+dropped square onto the switch's line, overlaps the line's length by more than 2, and the leaf (its middle) is on
+the side the switch is used from, within use range (64) of it. The steps are then:
+- a. as it always stood, if clear of the walls and before no switch (the same bits as before);
+- b. else the other jamb at 115, if clear of the walls and before no switch;
+- c. else the widest angle at either jamb that is clear of the walls and before no switch;
+- d. else the rule for walls alone, the four steps above.
+A dead lever (no special, as MAP21's NOW) is scenery and does not count.
 The clocked door and its shadow, hung in the same frame at both times, are posed alike by the tighter of the two
-frames. The door's Used box (radius 20 at the leaf's middle) and everything about how it plays are as they were;
+frames (a wall or a switch at either time's frame counts for both). The door's Used box (radius 20 at the leaf's middle) and everything about how it plays are as they were;
 only where the leaf stands changes.
 
 Frames posed differently (tools/leafcheck.py over the built maps, and the poses printed by the game, main against
@@ -19034,8 +19046,10 @@ it (tested: a lever behind the box then moves). So now `AjarDoor.Used` asks `Aja
 hung door and a leaning one alike: along the user's aim (flat, from where they stand, as the engine's trace), the
 lines up to the door's leaf (as posed; a leaning door's face), nearest first. The frame's own line or mouth first:
 the door's. A line with a use special usable from this side first (a lever, a switch, a desk's panel): Used returns
-false and the press goes to it. A wall first, or nothing before the leaf: the door's, as before (so a press a
-little off the leaf at a plain wall still takes the door). Only when the aim passes through the door's box within
+false and the press goes to it. A wall first, or nothing before the leaf: the door's, as before: a press whose aim
+meets a plain wall first but passes through the door's box (a press a little off the leaf) still takes the door.
+That is the rule (agreed with the coordinating session, 2026-11-26), not the stricter "only aimed at the leaf or
+the opening". Only when the aim passes through the door's box within
 use range does any of this happen; scripted calls of Used (the tests' Take) are as before.
 
 The switches within 96 of a frame or a far side (tools/leafcheck.py, NEAR): ENG 79 (80 from far side 312); LEFT
@@ -19045,13 +19059,16 @@ The switches within 96 of a frame or a far side (tools/leafcheck.py, NEAR): ENG 
 from frame 125: the valve), 2145 (0 from 128: the belt), 2465 (96 from 126), 2483 (0 from 126: the beam). MAP21's
 desk panel (lines 195/590) is 144 from frame 101. No door stands at a far side, so those are not concerned.
 
-What a player sees at MAP21's levers: from in front of a lever, aimed at it, the lever moves and the door stays
-(on main the door was taken at the belt and the beam). From in front of the frame turned to the lever, the open
-leaf (it swings towards the lever's side at all three) stands between the player and the lever, so the press is
-the door's: aimed at the leaf, by the rule. Aimed at the leaf from anywhere it is taken; aimed at the empty
-opening the carried door is hung. NOW the levers are dead (no special): they are plain wall to the rule, and the
-door in reach is taken when aimed at them from the frame and from in front of the belt and beam levers (from in
-front of the valve the door's box is not on the aim). Left so; if a dead lever should not give the door, say so.
+What a player sees at MAP21's levers: the door beside each (125, 126, 128 THEN; with the clocked door, 105, 106,
+108 NOW as well) hangs on the jamb away from the lever, so the lever stands free. From in front of the lever, from
+in front of its end by the frame, and from in front of the frame turned to it, aimed at it, the lever moves and the
+door stays (on main the door was taken at the belt and the beam from in front of the lever, and at all three from
+the frame). Aimed at the leaf from anywhere it is taken; aimed at the empty opening the carried door is hung. From
+40 out in front of the frame the lever's middle is 89 away, past the use range: there a press reaches nothing,
+door or no door (before, the leaf lay across that aim and took it). NOW the levers are dead (no special): plain
+wall to the rule, and the door in reach is taken when aimed at them from the frame and from in front of the belt
+and beam levers (from in front of the valve the door's box is not on the aim). Left so (decided: a dead lever is
+scenery).
 
 **Clocked door: look 3.** gfx.py `CLOCKDOOR` defaults to 3; `AJAR_CLOCKDOOR=0` still builds the old art
 (tools/clockdoor_shots.sh's texture export passes 0 for its "before"). Every map wad is byte for byte main's.

@@ -410,8 +410,8 @@ class AjarEmitterWreck : Actor
 //   9 doors beside walls and levers (leaf.zs): the clocked door's leaf in the machine keeps off its wings, at both
 //     times alike; real USE presses at each cause's lever with a door hung beside it (RED, the clocked door hung
 //     THEN, the clocked door hung NOW and its shadow THEN) from in front of the lever, of its end nearer the frame
-//     and of the frame: the lever moves and the door stays, or, where the open leaf lies between, the door comes
-//     down and the lever stays; aimed at the leaf the door comes down, aimed at the empty frame it is hung; NOW
+//     and of the frame: the leaf (hung on the jamb away from the lever) is not between, the lever moves and the
+//     door stays; aimed at the leaf the door comes down, aimed at the empty frame it is hung; NOW
 //     the same levers are dead (said what a press does);
 //     the desk's panel at both times with the clocked door in the machine (posed; tools/smoke_MAP21_9.cfg)
 class LongRunTest : EventHandler
@@ -1530,16 +1530,19 @@ class LongRunTest : EventHandler
 			// the lever's end by the frame: the one nearer the frame's mouth
 			Vector2 along = (o.y, -o.x), e1 = lever + along * 32, e2 = lever - along * 32;
 			Vector2 near = (e1 - MouthMid(ft)).Length() < (e2 - MouthMid(ft)).Length() ? e1 : e2;
-			Vector2 p = step == 1 ? lever + o * 40 : step == 2 ? near + o * 40 : FrontOf(ft);
-			Aim(mo, p, lever);
-			bool behind = LeafBetween(seen, p, lever);
+			// from the frame: 24 out from its mouth's middle, aimed at the lever 8 in from its end by the frame (its
+			// middle is 89 from 40 out, past the use range of 64, door or no door)
+			Vector2 p = step == 1 ? lever + o * 40 : step == 2 ? near + o * 40 : MouthMid(ft) + MouthN(ft) * 24;
+			Vector2 at = step == 3 ? near + (lever - near).Unit() * 8 : lever;
+			Aim(mo, p, at);
+			bool behind = LeafBetween(seen, p, at);
 			leverWas = c.setting;
 			PressUse(mo);
 			bool moved = c.setting == (leverWas + 1) % c.Settings(), stays = ft.door == seen && !h.carried;
 			Check(String.Format("%s_%s", step == 1 ? "fromLever" : step == 2 ? "fromLeverEnd" : "fromFrame", what),
-				behind ? !moved && h.carried == hand : moved && stays,
+				!behind && moved && stays,
 				String.Format("%s: the leaf %s; setting %d to %d; frame THEN %s; hands %s; %s", Where(mo),
-				behind ? "between, the door expected" : "not between, the lever expected", leverWas, c.setting,
+				behind ? "BETWEEN" : "not between", leverWas, c.setting,
 				ft.door ? ft.door.Label() .. (ft.door.IsShadow() ? "(shadow)" : "") : "empty", h.carried ? h.carried.Label() : "-", h.said));
 			return;
 		}

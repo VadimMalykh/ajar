@@ -14,7 +14,13 @@
 //     a thousandth of a degree): in MAP21's machine 102.64, a little past square;
 //   - and if no angle is clear at either jamb (MAP33's frame 101, whose recess is 16 below the floor in front of it),
 //     as it always was.
-// The clocked door and its shadow, hung in the same frame at both times, are posed alike, by the tighter of the two.
+// And before all that, a leaf never stands before a switch (AjarLeafRoom.BeforeSwitch: a line with a use special,
+// not a frame's own, that the leaf, dropped square onto it, overlaps by more than 2, from the side it is used from and
+// within use range): the same three steps are tried first with that as well, as it always was, mirrored, opened
+// less; only if none is free of both, walls alone decide as above. (MAP21's levers stand beside their frames on the
+// side the leaf always swung to, so it leaned back over them; now it hangs on the other jamb.)
+// The clocked door and its shadow, hung in the same frame at both times, are posed alike, by the tighter of the two
+// (a wall or a switch at either time's frame counts for both).
 // tools/leafcheck.py does the same reckoning over the built maps and lists the frames that are not as they were.
 //
 // USE. The engine's use trace (P_UseTraverse) meets a door's box (radius 20, standing out from the frame) before
@@ -23,7 +29,7 @@
 // a USE only when the aim is at it (UseGoesOn): when the first thing along the aim (from the player, flat, along
 // where they face, as the engine's trace) is a switch of its own, before the door's leaf as it stands and before its
 // frame's opening, the press goes on to the switch. Aimed at the door, at its frame, or at a plain wall with the
-// door in reach, the door is used as before. A door leaning by a switch is the same (its leaf: its face).
+// door's box on the aim (a press a little off the leaf), the door is used as before. A door leaning by a switch is the same (its leaf: its face).
 
 class AjarLeafRoom : Object play
 {
@@ -35,6 +41,8 @@ class AjarLeafRoom : Object play
 	Line l;                    // the frame line
 	double z;                  // the leaf's foot
 	Array<int> walls;          // the lines round the frame that the leaf must keep off (level.lines indices)
+	Array<int> switches;       // the switches round it that the leaf must not stand before
+	const USE = 64.0;          // the player's use range (PlayerPawn.UseRange): a leaf this near a switch is before it
 
 	static AjarLeafRoom Of(AjarFrame f)
 	{
@@ -52,9 +60,43 @@ class AjarLeafRoom : Object play
 			Line w = it.CurLine;
 			int i = w.Index();
 			if (r.walls.Find(i) < r.walls.Size()) continue;
-			if (SegDist(mid, w.v1.p, w.v2.p) < reach && r.Solid(w, mid)) r.walls.Push(i);
+			double far = SegDist(mid, w.v1.p, w.v2.p);
+			if (far < reach && r.Solid(w, mid)) r.walls.Push(i);
+			if (far < reach + USE && IsSwitch(w)) r.switches.Push(i);
 		}
 		return r;
+	}
+
+	// A switch: a line with a special that the player USEs (as UseGoesOn has it), not a frame's mouth (Ajar's own:
+	// its special starts the frame) nor a frame's line. A dead lever (no special) is scenery.
+	static bool IsSwitch(Line w)
+	{
+		if (!w.special || !(w.activation & (SPAC_Use | SPAC_UseThrough | SPAC_UseBack))) return false;
+		if (w.special == 130 && w.args[0] && level.CreateActorIterator(w.args[0], "AjarFrame").Next()) return false;
+		return true;
+	}
+
+	// The leaf so posed stands before a switch: dropped square onto the switch's line it overlaps the line by more
+	// than GAP, it is on the side the switch is used from, and within use range of it.
+	bool BeforeSwitch(bool mirrored, double ang)
+	{
+		Vector2 h = Hinge(mirrored), e = h + Way(mirrored, ang) * LEN;
+		for (int k = 0; k < switches.Size(); k++)
+		{
+			Line w = level.lines[switches[k]];
+			Vector2 a = w.v1.p, b = w.v2.p;
+			double len = w.delta.Length();
+			if (len <= GAP) continue;
+			Vector2 t = w.delta / len;
+			double s1 = (h - a) dot t, s2 = (e - a) dot t;
+			if (min(max(s1, s2), len) - max(min(s1, s2), 0) <= GAP) continue;
+			Vector2 m = (h + e) / 2;
+			bool front = Perp(w.delta, m - a) <= 0;                   // (P_PointOnLineSide)
+			if (!front && !(w.activation & SPAC_UseBack)) continue;
+			double d = Crosses(h, e, a, b) ? 0 : min(min(SegDist(h, a, b), SegDist(e, a, b)), min(SegDist(a, h, e), SegDist(b, h, e)));
+			if (d <= USE) return true;
+		}
+		return false;
 	}
 
 	// A wall to the leaf: one-sided, or an opening lower than the leaf or a floor higher than its foot.
@@ -116,40 +158,48 @@ class AjarLeafRoom : Object play
 		return true;
 	}
 
-	// Clear here and, with g, there too (the clocked door's two frames).
-	static bool ClearBoth(AjarLeafRoom r, AjarLeafRoom g, bool mirrored, double ang)
+	// Clear here and, with g, there too (the clocked door's two frames); with free, before no switch either.
+	static bool ClearBoth(AjarLeafRoom r, AjarLeafRoom g, bool mirrored, double ang, bool free = false)
 	{
-		return r.Clear(mirrored, ang) && (!g || g.Clear(mirrored, ang));
+		if (!r.Clear(mirrored, ang) || (g && !g.Clear(mirrored, ang))) return false;
+		return !free || (!r.BeforeSwitch(mirrored, ang) && !(g && g.BeforeSwitch(mirrored, ang)));
 	}
 
 	// The widest opening below OPEN that is clear (in whole degrees down, then halved twelve times between the
 	// first clear one and the blocked one above it), or -1: none down to 1 degree.
-	static double Widest(AjarLeafRoom r, AjarLeafRoom g, bool mirrored)
+	static double Widest(AjarLeafRoom r, AjarLeafRoom g, bool mirrored, bool free = false)
 	{
 		double a = OPEN - 1;
-		while (a >= 1 && !ClearBoth(r, g, mirrored, a)) a--;
+		while (a >= 1 && !ClearBoth(r, g, mirrored, a, free)) a--;
 		if (a < 1) return -1;
 		double lo = a, hi = a + 1;
 		for (int i = 0; i < 12; i++)
 		{
 			double mid = (lo + hi) / 2;
-			if (ClearBoth(r, g, mirrored, mid)) lo = mid;
+			if (ClearBoth(r, g, mirrored, mid, free)) lo = mid;
 			else hi = mid;
 		}
 		return lo;
 	}
 
-	// How the leaf stands in r (and, with g, in g too, alike): as it always stood, mirrored, or opened less.
+	// How the leaf stands in r (and, with g, in g too, alike): as it always stood, mirrored, or opened less; clear
+	// of the walls and before no switch if it can be, else clear of the walls alone.
 	static void Choose(AjarLeafRoom r, AjarLeafRoom g, out bool mirrored, out double ang)
+	{
+		if (Pick(r, g, true, mirrored, ang)) return;
+		Pick(r, g, false, mirrored, ang);
+	}
+	static bool Pick(AjarLeafRoom r, AjarLeafRoom g, bool free, out bool mirrored, out double ang)
 	{
 		mirrored = false;
 		ang = OPEN;
-		if (ClearBoth(r, g, false, OPEN)) return;
-		if (ClearBoth(r, g, true, OPEN)) { mirrored = true; return; }
-		double first = Widest(r, g, false), second = Widest(r, g, true);
-		if (first < 0 && second < 0) return;           // nothing is clear: as it always stood
+		if (ClearBoth(r, g, false, OPEN, free)) return true;
+		if (ClearBoth(r, g, true, OPEN, free)) { mirrored = true; return true; }
+		double first = Widest(r, g, false, free), second = Widest(r, g, true, free);
+		if (first < 0 && second < 0) return false;     // nothing is: (walls alone) as it always stood
 		if (second > first + 0.001) { mirrored = true; ang = second; }      // (a tie, to rounding: the first jamb)
 		else ang = first;
+		return true;
 	}
 
 	// --- plane geometry --------------------------------------------------------------------------------------

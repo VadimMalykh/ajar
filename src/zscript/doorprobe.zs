@@ -28,11 +28,12 @@ class AjarDoorProbe : EventHandler
 		"MAP31", "MAP32", "MAP33" };
 	const NEAR = 96.0;
 	// the views (8): map, frame, where the player stands, which way they look
-	static const string VIEW_MAP[] = { "MAP21", "MAP21", "MAP21", "MAP21", "MAP04", "MAP04", "MAP07", "MAP17", "MAP17", "MAP33" };
-	static const int VIEW_FRAME[] = { 101, 101, 121, 121, 103, 103, 103, 101, 101, 101 };
-	static const double VIEW_X[] = { 520, 400, 520, 400, 688, 780, 230, 552, 560, 2288 };
-	static const double VIEW_Y[] = { 230, 200, 8422, 8392, 1420, 1450, 1010, 256, 340, 4130 };
-	static const double VIEW_A[] = { 115, 50, 115, 50, 90, 135, 320, 0, 330, 90 };
+	// (MAP21 125, 128, 126: the three levers THEN with the frame beside each, from 100 out)
+	static const string VIEW_MAP[] = { "MAP21", "MAP21", "MAP21", "MAP21", "MAP21", "MAP21", "MAP21", "MAP04", "MAP04", "MAP07", "MAP17", "MAP17", "MAP33" };
+	static const int VIEW_FRAME[] = { 101, 101, 121, 121, 125, 128, 126, 103, 103, 103, 101, 101, 101 };
+	static const double VIEW_X[] = { 520, 400, 520, 400, 1132, 1904, 1600, 688, 780, 230, 552, 560, 2288 };
+	static const double VIEW_Y[] = { 230, 200, 8422, 8392, 9512, 9628, 10612, 1420, 1450, 1010, 256, 340, 4130 };
+	static const double VIEW_A[] = { 115, 50, 115, 50, 0, 90, 270, 90, 135, 320, 0, 330, 90 };
 	int tic, checks, fails, pairs;
 	AjarHandler h;
 	Array<int> pf, ps;           // the pairs: a frame's id, a switch's line index
