@@ -18460,3 +18460,111 @@ walking under the shutter as it comes down (the wait is tested only by its
 code, not by a monster in the way). GREEN's ambush in play (in the test
 ambushers are counted and removed). Save and load with the machine stopped
 or running.
+
+## MAP10: wall bands that stepped (mended 2026-11-26)
+
+Vadim, playing MAP10 (a screenshot in the pit under the theatre's stage
+door, GREEN in hand, key 1): "Looks like also decor issue in map10, could
+you fix that too?"
+
+**Where.** The pit under the stage door: MAP10's own piece behind MAP03's
+house (x 288..608, y 912..1008 + TY, i.e. -3568..-3472; floor -48, ceiling
+128), the stage door's ledge at its west end, at its east end the doorway
+(line 2 of the 20) to the other stop. Its long walls are under the theatre's
+north circle, which comes along as scenery (floor 128 west of x 480, 144 east
+of it).
+
+**Causes.**
+- The band stepped 16 at x 480 of the north wall: those walls are the lower
+  parts of lines to the circle, and Doom lays a lower part from the higher
+  floor (128 and 144), while the pit's own walls hang from its ceiling.
+- Over the doorway stood the arch's stone: `ajarmap.doorway`'s far end is a
+  recess walled in AJARCH, and a two-sided line shows the other side's wall
+  over its opening. The same for every frame, far side (its trim colour),
+  opening and squeeze (AJTRIM), hole (the hole's brick) that nobody had given
+  the room's wall with `over()`.
+
+**The sweep.** `tools/bandcheck.py build/ajar.pk3 MAP10` (new, reads the built
+package): STEP, two pieces of one texture side by side whose rows stand at
+other heights; LINTEL, over or under an opening another texture than the
+wall either side. MAP10 on main: 76 steps, 56 lintels. Now: 16 steps, all the
+edge of a thing laid from its own top on purpose (beds, seats, the theatre's
+rows, the platforms' ramps, a table's 4), and 20 lintels, all door faces and
+nailed-up or bolted doors.
+
+**What was mended**, all in `tools/map_hinges10.py` ("walls that carry on");
+no shared code changed. Geometry, things, specials, ids, the PUZZLE: as they
+were (the textmap differs only in textures, offsets and the two pegging
+flags).
+1. The wall over (or under) every such mouth is the room's own (`over()`,
+   `lower=`; 44 line pieces):
+   the pit's doorway, the stage door from the ledge and from the house, the
+   doorway's back on the circle; the theatre's RED far side, foyer and bar,
+   backstage and green room, high in the house; line 1 in the hotel's lobby
+   (256 of arch stone), a room and its bath, the kitchen's Stray place; line
+   5 and a platform's Stray place in the station; the kiosk's Stray place;
+   the line's BLUE and VIOLET far sides and its hole; PINK's room's far side,
+   brass frame and hole; the shelter's brass frame and the hole over it (the
+   step under it was brick); the depot's YELLOW far side, its gate both ways
+   (368 of trim over it in the yard), the hole from PINK's room (brick under
+   it); line 4 in the library, the way round both ways, its squeeze, the
+   dome's frame (352 of trim), the top of the dome's stairs; the museum
+   cellar's frame, its bay under the hole (128 of trim under the hall), the
+   foot of its stairs.
+2. A line hook (`carried`): where a room's own wall shows over or under a
+   step in ceiling or floor, the line is upper/lower-unpegged, so that part
+   is laid from the room's ceiling like the rest of that wall (and its strip
+   of lights, `lift`). Only where every side that shows that part shows its
+   own room's wall, and not on lines with a middle texture but a window's
+   glass. 108 lines: the pit, the hotel's 16 windows (dado and paper under
+   and over each stepped), the orchestra pit's risers, the attic's shaft
+   (MAP02's), the depot's porches, and so on.
+3. Walls of a low piece laid from the room's ceiling (`lift`): the dome's
+   stairs (from the dome's 448: they showed its starry top), the depot's two
+   porches (16 off in the sand-lime courses), the reveals of the hotel's
+   windows, the attic seen up its shaft.
+
+**A judgement to look at.** The line and PINK's room (`way_through`,
+`way_longer`, shared) had columns of BLUE's, VIOLET's and PINK's colour and of
+brass over their far sides and frame, up to the ceiling; they now have the
+starry wall there, as the shelter's frame has the shelter's steel. MAP09's
+line keeps its columns. If the columns were meant, drop those rows of the
+list in (1).
+
+**The same fault elsewhere, left** (every map wad but MAP10.wad is byte for
+byte main's; figures are `bandcheck` on main's build, candidates, not all
+faults: it also lists things laid from their own tops):
+- `ajarmap.window` (only MAP02 uses it): the window's upper and lower are
+  laid from the window, not the room: 16 windows in MAP02 step their dado and
+  paper, and their reveals. Mend: unpeg the window line and lift the sill.
+- `ajarmap.recess`, `doorway`, `opening`, `squeeze`: the wall over a mouth is
+  the recess's trim or arch stone unless the level carries its wall on. Trim
+  or arch over a mouth, between two pieces of one wall: MAP01 10, MAP02 21,
+  MAP03 20, MAP04 20, MAP05 17, MAP06 14, MAP07 17, MAP08 14, MAP09 15, MAP11
+  6, MAP12 10, MAP13 9, MAP14 9, MAP15 22, MAP16 13, MAP17 17, MAP18 53,
+  MAP19 100, MAP20 32, MAP21 8, MAP32 3, MAP33 69 (some may be meant: a
+  far side's colour). The MAP21 worker is on frames in that code.
+- `ajarmap.stairs`: its walls hang from the stairs' own ceiling, whatever the
+  room's (MAP10's dome: mended with `lift`).
+- A room's wall over or under a step laid from the step (what the hook does
+  for MAP10): MAP02 (the attic's shaft, 64 and 16; the windows), MAP03 (the
+  orchestra pit's risers at x 1024..1056 show the cornice; the booth; the back
+  stairs). Steps listed on main: MAP02 56 places, MAP03 22, MAP04 14, MAP05 8,
+  MAP06 7, MAP07 20, MAP08 20, MAP09 16, MAP12 8, MAP13 14, MAP16 12, MAP17
+  27, MAP18 57, MAP19 167, MAP21 63, MAP31 24, MAP33 232.
+
+**Checks.** The full `./build.sh` (no proofs kept): exit 0, every level's
+line as main's; MAP10 "solvable in 9 door actions, 616939 states, 0 stuck",
+the secret way out 11, nothing lost. Every entry of `ajar.pk3` but
+`maps/MAP10.wad` byte for byte main's (c84fa51). mapcheck, thingcheck,
+itemcheck for `map_hinges10`: the same output as main (15 notes, 0, 0).
+`MAP=MAP10` smoke tests: MODE=1 the same 12 ambushers as main; MODE=3 the same
+19 checks (both loops, out by the secret one); MODE=2 the tour's 42 views,
+secrets 4 (its monster count drifts from run to run, on main too). Before
+and after screenshots of 45 views of the places above, side by side, looked
+at; the windows' reveals, the dome's stairs and the depot's courses checked
+there too.
+
+**Not tested / not played by hand.** Nothing played by a person. The plain
+textures (`AJAR_SQUARE=0 AJAR_MUSEUM=0 AJAR_OBSERVATORY=0`): MAP10 is made
+without error, not looked at.
