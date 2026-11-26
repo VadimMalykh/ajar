@@ -596,6 +596,8 @@ class LongRunTest : EventHandler
 		if (S()) Wait(100);
 		if (S()) { Check("shutterOpen", Open(512, OFF + 776), String.Format("shutter %.0f", CZ(512, OFF + 776))); Next(); }
 		if (S()) Done();
+		// out: round the machine, through the shutter, into the night room's east doorway (WorldUnloaded says it)
+		if (S()) Go(mo, 700, OFF + 232);
 		if (S()) Go(mo, 700, OFF + 600);
 		if (S()) Go(mo, 512, OFF + 700);
 		if (S()) Go(mo, 512, OFF + 860);
