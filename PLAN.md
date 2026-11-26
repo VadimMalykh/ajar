@@ -17831,3 +17831,91 @@ Heavy); a walked-through tune's passing note against the chord under it
 for an eighth (Gallop, Machine, Upside Down, Piano, Music Box); and in
 Still, E in one line against F in another for half a bar while the chords
 climb. **Not checked: how any of them sounds.** Nobody has heard them.
+
+## The new bus to part 1's places, in peace, and then the monsters come (Vadim's idea, 2026-11-26; to discuss, nothing designed)
+
+**Vadim**: "Another idea for the future (actually maybe for the next map
+or 23). We discussed that at some point we also reintroduce some of our
+places from the part 1 (01-10). What if we use our teleport bus from map10
+for it? But it's completely new bus (not old as it was in map10), and it
+initially just lead you to the normal piesful places. But then something
+happened and all the monsters go there?"
+
+### What is there already
+
+- The outline of the ten levels has this in part, as level 25: "the town
+  then, by day: the player hangs part 1's doors; the bus when it was new",
+  place "the square, the hotel, the station". Vadim's idea names the bus as
+  the way round, sets the places in peace first, adds the turn, and moves it
+  forward (22 or 23).
+- MAP10's bus is "the film's bus forty years on": red gone chalky, six
+  numbered doors, lodgers in its empty frames, `ajarmap.bus`,
+  `tools/gfx_bus.py` with liveries. The new bus is the same bus then: fresh
+  red, as in the film.
+- MAP21 has what builds a place twice (`ajarthen.Times`), the clocked door,
+  and the rule that a colour door joins places and never times.
+
+### Claude's reading and additions (to discuss)
+
+**The level in two halves, on the same ground.**
+1. *In peace.* The square by day, then. The bus stands new at its stop and
+   its lines go to a few of part 1's places as they were: lit, whole, in
+   use the day before, nobody about. No monsters. What the player does
+   there is the bus's own puzzle (which door on which frame makes which
+   line) and looking: each place is known from part 1 and is the cause of
+   what part 1 found there (the door that MAP01 finds leaning is hung here,
+   by the player; the outline's "the player hangs part 1's doors").
+2. *The turn.* Something happens, and the monsters come to every place the
+   bus serves, because the bus's lines are doors and doors are how they
+   come.
+3. *After the turn.* The same places again, each a fight, and the lines the
+   player made in peace are now the ground of the fights: a line left open
+   is a way for the monsters and a way to flank them. This is the part's
+   own theme (long causes) at the size of a level: what is left as it is in
+   peace is what is found in the fight.
+
+**What the "something" is. Three candidates.**
+- *The player does it* (Claude's first choice for a level at 22 or 23). A
+  door brought from now and hung on the bus then is a line to now, and now
+  is where the monsters are. The cause is in the player's hands and in
+  view, which is what MAP21's causes were rebuilt for. It also agrees with
+  the end of MAP30 (the player is the one who hangs the first door). After
+  this level then is no longer quiet, so the levels that follow can have
+  fights at both times.
+- *The experiment* (the notice in MAP21: "EXPERIMENT 1 TOMORROW AT A QUARTER
+  TO"). Then the level belongs next to the outline's 26 and not at 22 or 23:
+  the town in the morning, a quarter to, the turn.
+- *The bus itself*: one of its doors, a seventh, was never on the timetable.
+  Nearest to the film; says least about the player.
+
+**What makes the peace worth playing.** A Doom level with no monsters is
+short of things to do, so the peaceful half is short and every act in it
+counts later: where a door is left, which shutter is opened, where the
+player's own supplies are put down (nothing lies about in a town at peace;
+what is found in the fight is what was placed in the peace). The player
+should feel the turn coming: MAP21's notice and calendar are in the town
+too.
+
+**Then and now.** The old bus of MAP10 and the new bus are one bus at two
+times. If the level has both (a clocked door on the bus), the places are
+seen three ways: at peace then, overrun then, and as part 1 left them now.
+Probably too much for one level; the simple version is then only.
+
+**Which places.** Three or four, one known set piece of each and not the
+whole level: MAP10's square is the hub; candidates are MAP01's hall and
+cell (the end of MAP30 wants it known), MAP02's hotel, MAP03's stage, the
+station. To choose with Vadim.
+
+**How it could be built.** Each place's generator code called again for
+its set piece (as `tools/classic.py` does for Doom II's maps), in the look
+of then; the bus by `ajarmap.bus(livery=...)` with a new livery.
+
+### Open questions
+
+1. Which level: 22, 23, or the outline's 25 moved forward? And what becomes
+   of the outline's 22 ("on loan") if this takes its place?
+2. What the "something" is (the three candidates above).
+3. Is then quiet again in later levels, or do the monsters stay?
+4. Which places, and how much of each.
+5. Does the old bus of MAP10 appear (now), or only the new one?
+6. Is there anybody in the peaceful town? (Ajar has had no people so far.)
