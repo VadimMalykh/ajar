@@ -26,23 +26,30 @@ valve, belt, beam and vestibule each needed. Each of 102, 104 (c2T), 106 or
 together (SPARE), the answer is the same 12 actions, 0 stuck, nothing lost.
 
 Regions NOW end in N (and the closets A, B, C), THEN in T; `exit` is the goal.
+
+Frame ids: a then frame is its now twin + ajarthen.THEN_ID (20), as the map
+and the lab have them (the two rounds above used + 1000; the numbers in
+their text are those). BUILT is the graph as the map is built
+(tools/map_longrun.py, its PUZZLE): frames 101, 103, 105, 106, 108 and 110
+only, and so no c2T.
 """
 import copy
 import sys
 
 import solve
 from ajarmap import RED, BLUE, NAMES
+from ajarthen import THEN_ID
 
 CLOCK = 10                                      # the clocked door's key
-NOW = (101, 102, 103, 104, 105, 106, 107, 108, 110, 111)     # the frames' now ids; then = now + 1000
+NOW = (101, 102, 103, 104, 105, 106, 107, 108, 110, 111)     # the frames' now ids; then = now + THEN_ID
 
 OPEN_THEN = dict(                              # the first round's graph, for the record
     start="hallN", goal="exit", names={**NAMES, CLOCK: "the clocked door"},
     frames={101: "hallN", 102: "hallN", 103: "spineN", 104: "spineN", 105: "spineN", 106: "spineN",
             107: "spineN", 108: "spineN", 110: "lobbyN", 111: "lobbyN",
-            1101: "hallT", 1102: "hallT", 1103: "c1T", 1104: "spineT", 1105: "spineT", 1106: "spineT",
-            1107: "spineT", 1108: "spineT", 1110: "lobbyT", 1111: "lobbyT"},
-    twins={f: f + 1000 for f in NOW},
+            121: "hallT", 122: "hallT", 123: "c1T", 124: "spineT", 125: "spineT", 126: "spineT",
+            127: "spineT", 128: "spineT", 130: "lobbyT", 131: "lobbyT"},
+    twins={f: f + THEN_ID for f in NOW},
     only={101: CLOCK},                          # the machine's frame
     walk=[
         ("hallT", "c1T"),                                       # a drop: anything carried goes
@@ -76,11 +83,11 @@ OPEN_THEN = dict(                              # the first round's graph, for th
 
 def _second_round():
     """PUZZLE21: OPEN_THEN with each room then locked for the night, and the
-    pocket's frame 103 the clocked door's alone (1103 takes any door)."""
+    pocket's frame 103 the clocked door's alone (123 takes any door)."""
     q = copy.deepcopy(OPEN_THEN)
-    rooms = {1104: "c2T", 1105: "vT", 1108: "bT", 1106: "oT", 1107: "oT"}   # spineT, split
+    rooms = {124: "c2T", 125: "vT", 128: "bT", 126: "oT", 127: "oT"}   # spineT, split
     q["frames"].update(rooms)
-    q["only"] = {101: CLOCK, 103: CLOCK, 1103: tuple(sorted(q["doors"]))}
+    q["only"] = {101: CLOCK, 103: CLOCK, 103 + THEN_ID: tuple(sorted(q["doors"]))}
     q["causes"]["valve"]["at"] = ["vT"]
     q["causes"]["belt"]["at"] = ["bT"]
     q["causes"]["beam"]["at"] = ["oT"]
@@ -144,6 +151,20 @@ def without_frame(*fs, p=PUZZLE21):
 SPARE = (102, 104, 107, 110, 111)               # each left out alone: still 12 actions, 0 stuck
 
 
+def as_built(p=PUZZLE21):
+    """The graph of the map as built (tools/map_longrun.py): without the
+    spare frames 102, 104, 107 and 111 (110 is built: the lobby now, a
+    secret), and the beam no longer set through 107."""
+    q = without_frame(102, 104, 107, 111, p=p)
+    for cz in q["causes"].values():
+        cz["via"] = {f: r for f, r in cz["via"].items() if f in q["frames"]}
+    q["complete"] = True                        # nothing may be lost for good: the build stops if it can be
+    return q
+
+
+BUILT = as_built()
+
+
 @record
 def variant_pocket_clock_only(p=OPEN_THEN):
     """The pocket's frame (103, and so 1103) takes only the clocked door.
@@ -166,7 +187,7 @@ def variant_pocket_now_clock_only(p=OPEN_THEN):
     to its home. A plain door in 1103 does not shut the clocked door in
     either: it is carried through it, or swapped for it."""
     q = copy.deepcopy(p)
-    q["only"] = {**q["only"], 103: CLOCK, 1103: tuple(sorted(q["doors"]))}
+    q["only"] = {**q["only"], 103: CLOCK, 103 + THEN_ID: tuple(sorted(q["doors"]))}
     return q
 
 
@@ -272,15 +293,15 @@ def _back(prev, s):
 
 def family(p, s):
     """What a stuck state is, roughly: what fills the pocket's frame now
-    (103) and then (1103), and where the clocked door is."""
+    (103) and then (123), and where the clocked door is."""
     where = dict(zip(sorted(p["doors"]), s[2]))
     hung = solve._hung(p, where)
     clock = next(c for c in p["doors"] if p["doors"][c].get("clock"))
     plain = lambda f: nm(p, hung[f]) if f in hung and hung[f] != clock else "-"
     loc = where[clock]
     at = (f"carried, player in {s[0]}" if loc == ("carried",) else
-          f"hung in {loc[1]}/{loc[1] + 1000}" if loc[0] == "frame" else f"leans in {loc[1]}")
-    return f"103: {plain(103)}, 1103: {plain(1103)}, the clocked door {at}"
+          f"hung in {loc[1]}/{loc[1] + THEN_ID}" if loc[0] == "frame" else f"leans in {loc[1]}")
+    return f"103: {plain(103)}, {103 + THEN_ID}: {plain(103 + THEN_ID)}, the clocked door {at}"
 
 
 def stages(p, steps_states):
@@ -353,7 +374,7 @@ def main(args):
         report(without_vestibule(), "PUZZLE21 without a way in by the vestibule's bolted doors", examples=2, lose=False)
     for f in NOW:
         if f"no{f}" in want:
-            report(without_frame(f), f"PUZZLE21 without frame {f}/{f + 1000}", examples=2, quiet=True)
+            report(without_frame(f), f"PUZZLE21 without frame {f}/{f + THEN_ID}", examples=2, quiet=True)
     if "spare" in want:
         report(without_frame(*SPARE), f"PUZZLE21 without all of {', '.join(map(str, SPARE))} (and their twins)",
                examples=3)

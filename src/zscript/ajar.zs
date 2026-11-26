@@ -457,6 +457,8 @@ class AjarHandler : EventHandler
 	// tag (less 20) set off; 41.., MAP17's checkers; 50, MAP18's first lap;
 	// 51..59, MAP19's register with that number (less 50) signed (pass.zs);
 	// 60 and 61, MAP20's basin first at or over, at or under a height (args[4]: water.zs).
+	// 62, MAP21's bolted sector tag args[4] first open; 63, a long cause (tid args[4] / 16) first set to the
+	// setting args[4] % 16 (then.zs).
 	// args[3], if set: it holds back until the player is
 	// within that distance of it and in sight of it. args[1]
 	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
@@ -488,6 +490,19 @@ class AjarHandler : EventHandler
 		return null;
 	}
 
+	// AjarAmbush cause 62 (MAP21): some sector with this tag has its ceiling over its floor.
+	static bool SectorOpen(int tag)
+	{
+		let si = level.CreateSectorTagIterator(tag);
+		int s;
+		while ((s = si.Next()) >= 0)
+		{
+			Sector sec = level.sectors[s];
+			if (sec.ceilingplane.ZAtPoint(sec.centerspot) > sec.floorplane.ZAtPoint(sec.centerspot) + 56) return true;
+		}
+		return false;
+	}
+
 	int ambushHid[50], ambushShown[50];      // by cause: ambushers that came unseen (UnseenJoin), and seen
 
 	void AmbushTick(PlayerPawn mo)
@@ -503,6 +518,14 @@ class AjarHandler : EventHandler
 				if (g == 60 || g == 61)                         // MAP20: a basin first at or over / under a height (water.zs)
 				{
 					if (!AjarWaterHandler.WaterDue(g, a.args[4])) continue;
+				}
+				else if (g == 62)                               // MAP21: a sector tagged args[4] first stands open (a bolted door's bolts drawn)
+				{
+					if (!SectorOpen(a.args[4])) continue;
+				}
+				else if (g == 63)                               // MAP21: a long cause first set to a setting, and arrived (then.zs)
+				{
+					if (!AjarThenHandler.CauseDue(a.args[4])) continue;
 				}
 				else if (g == 50)                               // MAP18: the first lap a pulse has made (clock.zs)
 				{
@@ -1219,7 +1242,7 @@ class AjarHandler : EventHandler
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
 		// MAP17's, MAP18's and MAP19's tests end with the level: the next map must not take the test up
-		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20") CVar.FindCVar("ajar_autotest").SetInt(0);
+		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20" || level.mapname ~== "MAP21") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1374,6 +1397,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "YARD") return;      // and the yard lab (yardtest.zs, from third.zs's tic)
 		if (level.mapname ~== "THEN") return;      // and the then and now lab (thentest.zs)
 		if (level.mapname.Left(7) ~== "CLASSIC") return;     // and the joined maps lab (classic.zs)
+		if (level.mapname ~== "MAP21") return;     // and MAP21 (map21.zs, LongRunTest)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB") LabScript(mo, t);

@@ -1371,6 +1371,7 @@ def make_all():
     gfx_dispatch.make(out, map_dispatch.NOTES)
     import gfx_then                                              # the then and now lab's levers (map THEN)
     gfx_then.make(out)
+    gfx_then.make_longrun(out)                                   # MAP21's clock trim and desk panels
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
                            + "cameratexture AJREEL 512 224\n"
                            + "cameratexture AJPASSC 256 160\n").encode()   # what the pass's double sees (pass.zs)

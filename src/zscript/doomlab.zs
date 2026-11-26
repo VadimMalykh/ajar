@@ -545,7 +545,8 @@ class AjarDoomLab : EventHandler
 			Check("map22IsIds", level.GetChecksum() ~== "4AA9B3CE449FB614497756E96509F096");
 			Check("map01IsAjarsNotIds", !(m1 ~== "3C9902E376CCA1E9C3BE8763BDC21DF5"));
 			Check("map07IsAjarsNotIds", !(m7 ~== "291F24417FB3DD411339AE82EF9B3597"));
-			Check("map21IsIds", m21 ~== "EBDAC00E9D25D884B2C8F4B1F0390539");
+			// since 2026-11-26 Ajar has a MAP21 of its own ("In the Long Run", tools/map_longrun.py): it hides id's, as 1 to 20 do
+			Check("map21IsAjarsNotIds", m21 != "" && !(m21 ~== "EBDAC00E9D25D884B2C8F4B1F0390539"));
 		}
 		// the Doom door shut: its face is a wall, portal or not
 		if (t == 10) Pose(mo, -160, -200, 270);
