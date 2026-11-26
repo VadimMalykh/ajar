@@ -2230,9 +2230,11 @@ def mysterium_engine_stream():
 def mysterium_engine_band():
     """B flat, 132 a minute. The Doom band playing in major: Paradox Engine's riff on a muted guitar in a middle
     octave, its hammered D now the third of B flat major, over a picked bass in eighths that walks down the scale a
-    note a bar, D to D, and a rock organ holding the chords; plain driving drums, the ride in the chorus. The guitar
-    rests in the two bars of the chorus where E natural sounds against the riff's E flat: the chord from outside
-    the key, and the chorus tune's E over the fifth chord.
+    note a bar, D to D, and a rock organ holding the chords; plain driving drums, the ride in the chorus. Over the
+    fourth chord the hammer steps up to that chord's root, E flat, the notes standing out of it unchanged (a D
+    hammered under an E flat chord is a minor ninth for a whole bar). In the two bars of the chorus where E natural
+    sounds (the chord from outside the key, and the chorus tune's E over the fifth chord) the guitar has the hammer
+    alone, without the riff's E flat.
     Synth brass has the verse tune, an overdriven lead the chorus tune; the second time both are walked through;
     after a verse without tunes they are plain again, the brass with the lead in the last chorus."""
     p = Piece("Mysterium Engine, Band", 132)
@@ -2241,9 +2243,13 @@ def mysterium_engine_band():
     walk = [parse(t, 1)[1][0][2][0] for t in MYSTERIUM_BASS.split()] * 8
     # 68 bars: the riff alone 4; verse 8 (bass and drums, the organ from its fifth bar); verse, chorus; verse,
     # chorus (walked); verse 8 without tunes; verse, chorus (the brass with the lead)
-    rests = {first + i for first in (20, 36, 60) for i in (1, 5)}       # the choruses' bars 2 and 6: E natural
-    p.voice("muted guitar", MUTED, 50, {"X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1"},
-            ["_" if b in rests else "X1" for b in range(len(harmony))], vel=82, gate=0.6, volume=90, pan=40)
+    bare = {first + i for first in (20, 36, 60) for i in (1, 5)}        # the choruses' bars 2 and 6: E natural
+    p.voice("muted guitar", MUTED, 50, {
+        "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1",
+        "X4": "b2! b2 b2' b2 b2 b3' b2 b2 b2' b2 b2 4' b2 b3' b2 b2",    # over the fourth chord: the hammer on its root
+        "H": "1! 1 . 1 1 . 1 1 . 1 1 . 1 . 1 1",                         # the hammer alone
+    }, ["H" if b in bare else "X4" if chord == "IV" else "X1" for b, chord in enumerate(harmony)], vel=82,
+            gate=0.6, volume=90, pan=40)
     p.voice("bass", PICKBASS, 34, {f"n{b}": " ".join([token(34 + w, 34), "-"] * 8) for b, w in enumerate(walk)},
             rep("_", 4) + [f"n{b}" for b in range(len(walk))], vel=100, gate=0.8, volume=108)
     for i, (name, pan) in enumerate((("organ, low", 76), ("organ, middle", 84), ("organ, top", 92))):
