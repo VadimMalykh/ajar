@@ -1,0 +1,263 @@
+<title>In the Long Run Apparatus</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, as MAP11's board. The three looks on top with swatches and the plan, then one band
+   per group of the apparatus (the APPARATUS table in tools/map_longrun.py): notes and a pick on the left, the same
+   camera in every look on the right, THEN, and NOW below it where the group leaves something on the walls. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); margin: 0;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--mono); font-size: .88em; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+.look { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.sws { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.sws i { display: block; height: 72px; border: 1px solid var(--line); image-rendering: pixelated;
+  background-repeat: repeat; background-position: top left; background-size: 64px auto; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.plan { background: var(--panel); border: 1px solid var(--line); padding: 12px; overflow-x: auto; }
+.plan svg { display: block; width: 100%; max-width: 620px; margin: 0 auto; height: auto; }
+.plan text { font-family: var(--body); }
+
+.part { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px;
+  border-top: 1px solid var(--line); padding-top: 22px; }
+.part > * { min-width: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; }
+.side p { font-size: 13.5px; }
+.side ul { margin: 0; padding-left: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 5px; }
+.main { display: flex; flex-direction: column; gap: 12px; }
+
+.cams, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.cams button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 819 / 472; display: block; background: var(--chip); }
+.opt .now { position: relative; }
+.opt .now::before { content: "Now"; position: absolute; left: 6px; top: 6px; z-index: 1; font: 600 11px var(--body);
+  letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(0, 0, 0, .55); padding: 2px 6px; }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt.chosen button.shot { border-color: var(--pick); box-shadow: 0 0 0 2px var(--pick); }
+.opt h4 { font-size: 14px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+@media (max-width: 820px) {
+  .part { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 25px; }
+  .sws { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+</style>
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;MAP21 "In the Long Run" · the apparatus THEN · captured 26 Nov 2026 · GZDoom, monsters off</div>
+    <h1>In the Long Run: three looks for the institute's apparatus</h1>
+    <p>THEN is the institute on its last evening, forty years ago: lit, humming, full of apparatus, nobody there. NOW the same rooms only show where it all stood. Walls, floors and ceilings stay as they are at both times; what changes between the looks below is the apparatus itself: cabinets, racks, benches, tanks, pumps, the belt, consoles, the pictures on the walls, the free-standing pieces and the beam's emitter.</p>
+    <p>Each look is built into the level and photographed from the same 18 places, THEN and NOW from the same spot. Nothing moves between the looks, and the level plays the same.</p>
+    <p class="muted">Nothing is chosen yet: the level wears look 1 until you choose. Each row below is one group of the apparatus, and the groups can be mixed, for example the cabinets of one look and the belt of another. Your picks are collected near the bottom as one line to paste into the chat. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The three looks</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>Plan of the dressed rooms, with camera numbers</h3>
+    <div class="plan" id="plan"></div>
+    <p class="muted" style="font-size:13px">One grid square is 128 map units; north is up. You start at the bottom of the hall. The cellar's pit is grey, the goods bay's belt runs along its south wall to the hatch. Each camera stands at the same spot THEN and NOW.</p>
+  </section>
+
+  <section class="stack" id="parts" style="gap:34px"></section>
+
+  <section class="sum" id="summary">
+    <h2>Your picks</h2>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and the level will be built that way.</p>
+    <output id="picksline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+</div>
+<script>
+const LOOKS = [
+  ["1", "Lamps and Reels", "A computing centre of the 1960s. Pale grey-blue and cream enamel edged in aluminium, rows of small round lamps, tape reels, white keys, green scope screens, orange accents, black legend plates."],
+  ["2", "Copper and Porcelain", "A high-voltage hall. Dark green hammered enamel, black bakelite meters with white faces, knife switches, copper windings and bus bars, porcelain insulators, red lamps, brass plates."],
+  ["3", "Glass and Mercury", "A vacuum and optics laboratory. Glass bulbs, tubes and bell jars glowing violet or blue, nickel, white ceramic, red rubber hoses, mercury columns, small dials."]];
+const SW = [["AJUCB%A", "cabinet"], ["AJURK%", "rack"], ["AJUTK%", "tank"], ["AJUPM%", "pump"], ["AJUBM%", "belt motor"],
+            ["AJUBB%", "belt"], ["AJUCN%", "console"], ["AJUOB%", "bench"]];
+const SWCAP = "A cabinet, a rack, a tank, the pump, the belt's motor and its band, a console, a bench";
+// places: [x, y, angle, label]; view 2k is THEN, 2k+1 NOW (tools/board21_shots.sh, src/zscript/apparatus.zs)
+const PLACES = [[512, 40, 90, "Hall: the start"], [300, 576, 180, "Hall: the west bank"], [724, 576, 0, "Hall: the east bank"],
+  [330, 192, 180, "Hall: a console"], [512, 520, 90, "Hall: the north wall"], [860, 330, 0, "Hall: the doorway"],
+  [1150, 380, 90, "Vestibule: the board"], [1146, 408, 0, "Vestibule: the notice"], [1360, 300, 10, "Pocket"],
+  [1080, 1250, 200, "Cellar: the pump"], [1180, 1350, 110, "Cellar: the north side"], [1070, 1376, 180, "Cellar: the gauges"],
+  [1728, 1250, 90, "Goods bay: the racks"], [1720, 1330, 215, "Goods bay: the belt"], [1930, 1420, 140, "Goods bay: by the lever"],
+  [1600, 2600, 180, "Optics: the benches"], [1408, 2440, 90, "Optics: the emitter"], [1568, 2380, 90, "Optics: from 106"]];
+// one row per APPARATUS group; cams: [place, what it shows]; now: show the NOW shot under each look
+const PARTS = [
+  {id: "cabinets", name: "Cabinets", now: true, cams: [[1, "The west bank"], [2, "The east bank"], [0, "From the start"]],
+   text: "Two banks of cabinets along the hall's west and east walls, 128 high, four fronts that take turns, an end panel at each end. They replace the benches the hall had.",
+   asks: ["NOW only the clean paint where they stood is left on the walls, with bolt holes and cut cables, and their footprints in the floor."]},
+  {id: "racks", name: "Racks", now: false, cams: [[12, "The goods bay's two racks"]],
+   text: "The goods bay's two racks, 96 high: shelves of instruments in cases and crates waiting to go out.",
+   asks: ["NOW their footprints in the floor."]},
+  {id: "benches", name: "Benches", now: false, cams: [[15, "Optics, from the east"]],
+   text: "Two optical benches in optics, 48 high: a rail along the top with lenses, a lamp, a prism and a slit on carriers.",
+   asks: ["They stand clear of the lines from frame 106 to the plan board and of the beam."]},
+  {id: "tanks", name: "Tanks", now: false, cams: [[9, "The pump's tank"], [10, "The tanks by the north wall"], [11, "Seen from across the pit"]],
+   text: "Three tanks in the cellar's dry pit THEN, 256 high in one piece, each with a top of its own.",
+   asks: ["NOW the pit stands full (the valve is found open) and only their footprints are left under the water."]},
+  {id: "pumps", name: "Pumps and the valve's gauges", now: true, cams: [[9, "The pump under the valve's pipe"], [11, "The valve's gauges over the ledge"]],
+   text: "The valve's pump in the pit's south-west corner, by the pipe that pours, and the board of the valve's gauges on the wall over the ledge's target.",
+   asks: ["The gauge board is drawn on the cellar's own wall, so the wall's bands run on round it.", "NOW the board's clean patch on the wall."]},
+  {id: "belt", name: "The belt and its motor", now: true, cams: [[13, "From the flap's end"], [12, "Past the racks"]],
+   text: "THEN the belt is new and working: its band, its side frames, and its motor north of it by the goods-in flap. The crates ride it into the open hatch when it runs.",
+   asks: ["NOW the same belt rusted and still, the same in every look; the motor's clean patch on the west wall."]},
+  {id: "consoles", name: "Consoles", now: true, cams: [[3, "Hall: the west console"], [10, "Cellar: on the landing"], [14, "Goods bay: by the lever BELT"]],
+   text: "Four low consoles, 48 high: two in the hall's south half, one on the cellar's landing, one in the goods bay west of the lever BELT.",
+   asks: ["NOW the ones against a wall leave their patch on it; the hall's two only their footprints."]},
+  {id: "pictures", name: "Pictures on the walls", now: true, cams: [[6, "The pass and key board"], [4, "The hall's schematic"], [8, "The wall newspaper"], [10, "A pipe run"], [5, "The notice and the calendar"]],
+   text: "A schematic of the machine in the hall, the porter's pass and key board in the vestibule, a wall newspaper in the pocket, pipe runs on the cellar's and optics' walls. Each is drawn on its own room's wall.",
+   asks: ["The notice (EXPERIMENT 1 TOMORROW, LEAVE EVERY ROOM AS IT IS, LOCK UP) and the calendar at the 14th are the same in every look.", "NOW each leaves its clean patch, its bolt holes and a cut cable; the calendar stays, yellowed. The schematic's wall is Doom's stone NOW, dark, with nothing on it."]},
+  {id: "things", name: "Free-standing pieces", now: false, cams: [[4, "Two tall pieces in the hall"], [1, "A trolley by the west bank"], [0, "On the desk at the start"], [6, "On the porter's desk"], [15, "Tall pieces in optics"]],
+   text: "Pieces that stand free: a trolley, a tall piece, and a small thing on a desk (a radio, a telephone, a glass of tea). They stop nobody but where they stand against a wall.",
+   asks: ["NOW they are gone without a trace."]},
+  {id: "emitter", name: "The beam's emitter", now: true, cams: [[16, "On its inlay"], [17, "From in front of 106"]],
+   text: "The emitter on the optics inlay that sends the beam to A, B or C. It is lit while the beam is set to a wall and dark when it is set to OFF.",
+   asks: ["NOW its wreck stands on the inlay, in the same look."]}];
+const pad = n => String(n).padStart(2, "0");
+const lookName = l => LOOKS[+l - 1][1];
+document.getElementById("looks").innerHTML = LOOKS.map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>
+   <div class="sws" role="img" aria-label="${name}: ${SWCAP}">${SW.map(([t]) =>
+     `<i style="background-image:url(tex/${t.replace("%", n)}.png)"></i>`).join("")}</div>
+   <div class="swcap">${SWCAP}</div>
+   <p>${d}</p></div>`).join("");
+let picks = {}, cams = {};
+try { picks = JSON.parse(localStorage.getItem("map21-picks") || "{}"); } catch (e) {}
+PARTS.forEach(p => cams[p.id] = p.cams[0][0]);
+function drawPart(p) {
+  const cam = cams[p.id], label = p.cams.find(c => c[0] === cam)[1];
+  const camBar = p.cams.length > 1 ? `<div class="cams" role="group" aria-label="Camera, ${p.name}">${p.cams.map(([v, n]) =>
+    `<button type="button" id="cam-${p.id}-${v}" data-part="${p.id}" data-cam="${v}" aria-pressed="${v === cam}">${v + 1}. ${n}</button>`).join("")}</div>` : "";
+  document.getElementById("main-" + p.id).innerHTML = camBar + `<div class="opts">${["1", "2", "3"].map(l =>
+    `<div class="opt${picks[p.id] === l ? " chosen" : ""}">
+       <button type="button" class="shot" aria-label="Enlarge: ${lookName(l)}, ${label}, then"><img src="${l}/view_${pad(2 * cam)}.jpg" alt="${p.name}, ${lookName(l)}, then: ${label}" loading="lazy"></button>
+       ${p.now ? `<button type="button" class="shot now" aria-label="Enlarge: ${lookName(l)}, ${label}, now"><img src="${l}/view_${pad(2 * cam + 1)}.jpg" alt="${p.name}, ${lookName(l)}, now: ${label}" loading="lazy"></button>` : ""}
+       <h4><span>${l}</span>${lookName(l)}</h4>
+     </div>`).join("")}</div>`;
+}
+function drawPicks(p) {
+  document.getElementById("picks-" + p.id).innerHTML = ["1", "2", "3"].map(l =>
+    `<button type="button" id="pick-${p.id}-${l}" data-part="${p.id}" data-look="${l}" aria-pressed="${picks[p.id] === l}">${lookName(l)}</button>`).join("");
+}
+function drawSummary() {
+  const line = PARTS.map(p => `${p.id} ${picks[p.id] === undefined ? "?" : picks[p.id] + " (" + lookName(picks[p.id]) + ")"}`).join("; ");
+  document.getElementById("picksline").textContent = "MAP21 apparatus. " + line + ".";
+}
+function save() { try { localStorage.setItem("map21-picks", JSON.stringify(picks)); } catch (e) {} }
+document.getElementById("parts").innerHTML = PARTS.map(p =>
+  `<article class="part" id="${p.id}">
+     <div class="side">
+       <h2>${p.name}</h2>
+       <p>${p.text}</p>
+       ${p.asks.length ? `<ul>${p.asks.map(a => `<li>${a}</li>`).join("")}</ul>` : ""}
+       <h3>Your pick</h3><div class="picks" id="picks-${p.id}" role="group" aria-label="Pick for ${p.name}"></div>
+     </div>
+     <div class="main" id="main-${p.id}"></div>
+   </article>`).join("");
+PARTS.forEach(p => { drawPart(p); drawPicks(p); });
+drawSummary();
+document.getElementById("parts").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.classList.contains("shot")) { b.parentElement.classList.toggle("big"); return; }
+  const p = PARTS.find(q => q.id === b.dataset.part);
+  if (!p) return;
+  if (b.dataset.cam !== undefined) {
+    cams[p.id] = +b.dataset.cam;
+    drawPart(p);
+    document.getElementById(`cam-${p.id}-${b.dataset.cam}`).focus();
+  } else if (b.dataset.look !== undefined) {
+    if (picks[p.id] === b.dataset.look) delete picks[p.id]; else picks[p.id] = b.dataset.look;
+    save();
+    drawPart(p); drawPicks(p); drawSummary();
+    document.getElementById(`pick-${p.id}-${b.dataset.look}`).focus();
+  }
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("picksline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("picksline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+// Plan at a quarter of full size, y flipped (NOW's coordinates; THEN is the same rooms 8192 north).
+(function () {
+  const S = 0.25, X0 = -32, X1 = 2240, Y0 = -64, Y1 = 2896, X = x => 16 + (x - X0) * S, Y = y => 16 + (Y1 - y) * S;
+  const C = { room: "#e9dfc8", corr: "#dfe6d6", pit: "#b9bec7", belt: "#d9b3a6", up: "#d9d3ee" };
+  const RECTS = [[0, 0, 1024, 768, "room", "Hall", "start, the machine"], [1040, 224, 1296, 544, "room", "Vestibule", ""],
+    [1312, 160, 1504, 2256, "corr", "", ""], [1312, 160, 1504, 640, "corr", "Pocket", ""],
+    [1056, 1088, 1232, 1600, "room", "Landing", ""], [576, 1088, 1056, 1600, "pit", "Cellar pit", ""],
+    [1568, 1088, 2160, 1536, "room", "Goods bay", ""], [1568, 1120, 1840, 1216, "belt", "belt", ""], [2032, 1088, 2160, 1536, "up", "", ""],
+    [1152, 2320, 1664, 2832, "room", "Optics", ""]];
+  const rect = (x1, y1, x2, y2, fill, label, sub) => {
+    x1 = Math.max(x1, X0); const cx = (X(x1) + X(x2)) / 2, cy = (Y(y1) + Y(y2)) / 2;
+    return `<rect x="${X(x1)}" y="${Y(y2)}" width="${(x2 - x1) * S}" height="${(y2 - y1) * S}" fill="${fill}" stroke="#1a1f27" stroke-width="1"/>` +
+      (label ? `<text x="${cx}" y="${cy + (sub ? -1 : 4)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1a1f27">${label}</text>` : "") +
+      (sub ? `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="8.5" fill="#3b4350">${sub}</text>` : "");
+  };
+  let g = "";
+  for (let x = X0; x <= X1; x += 128) g += `<line x1="${X(x)}" y1="${Y(Y1)}" x2="${X(x)}" y2="${Y(Y0)}" stroke="var(--line)" stroke-width=".5"/>`;
+  for (let y = Y0; y <= Y1; y += 128) g += `<line x1="${X(X0)}" y1="${Y(y)}" x2="${X(X1)}" y2="${Y(y)}" stroke="var(--line)" stroke-width=".5"/>`;
+  RECTS.forEach(r => { g += rect(r[0], r[1], r[2], r[3], C[r[4]], r[5], r[6]); });
+  PLACES.forEach((v, i) => {
+    const a = v[2] * Math.PI / 180, x = X(Math.max(v[0], X0 + 24)), y = Y(v[1]);
+    g += `<line x1="${x}" y1="${y}" x2="${x + 13 * Math.cos(a)}" y2="${y - 13 * Math.sin(a)}" stroke="#b3402e" stroke-width="2"/>` +
+      `<circle cx="${x}" cy="${y}" r="6.5" fill="#b3402e"/>` +
+      `<text x="${x}" y="${y + 2.8}" text-anchor="middle" font-size="7.5" font-weight="600" fill="#fff">${i + 1}</text>`;
+  });
+  document.getElementById("plan").innerHTML = `<svg viewBox="0 0 ${32 + (X1 - X0) * S} ${32 + (Y1 - Y0) * S}" role="img" aria-label="Plan of the dressed rooms with camera positions">${g}</svg>`;
+})();
+</script>

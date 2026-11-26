@@ -604,65 +604,66 @@ def bank_top(n):
 
 
 # === a goods rack ===========================================================================================
-def rack(n):
-    """A rack's front, 128x96: three shelves of cased and crated instruments."""
+def rack(n, w=128):
+    """A rack's front, w x 96: three shelves of cased and crated instruments. RF, the goods bay's racks: 64
+    wide, seamless, laid by where it is (the bay is cut into pieces along the racks' faces)."""
     rnd = random.Random(4300 + n)
     back = {1: (60, 66, 74), 2: (30, 34, 30), 3: (70, 72, 78)}[n]
     frame = {1: GB, 2: HGREEN, 3: CER}[n]
-    im = Img(128, 96, back)
-    fill(im, 0, 0, 128, 96, back, 0.03, 4301 + n)
+    im = Img(w, 96, back)
+    fill(im, 0, 0, w, 96, back, 0.03, 4301 + n)
     for sy in (0, 32, 64):
         bot = sy + 29
         x = 4
-        while x < 120:
+        while x < w - 8:
             if n == 1:
                 kind = rnd.choice("bbcrk")
                 if kind == "b":                                  # an instrument case: a dial, a lamp
-                    w, h = rnd.choice((20, 24, 28)), rnd.randrange(16, 24)
+                    wd, h = rnd.choice((20, 24, 28)), rnd.randrange(16, 24)
                     c = rnd.choice((GB, CREAM, shade(GB, 0.85)))
-                    im.rect(x, bot - h, x + w, bot, c)
-                    bevel(im, x, bot - h, x + w, bot, c)
-                    im.rect(x + 2, bot - h + 2, x + w - 2, bot - h + 5, INK)
-                    needle_dial(im, x + w // 2, bot - h // 2 + 1, min(6, h // 3), ALU, FACE, rnd.random())
-                    lamp(im, x + w - 4, bot - 4, 1.4, rnd.choice((AMBER, GREEN, AMBER_OFF)), True)
+                    im.rect(x, bot - h, x + wd, bot, c)
+                    bevel(im, x, bot - h, x + wd, bot, c)
+                    im.rect(x + 2, bot - h + 2, x + wd - 2, bot - h + 5, INK)
+                    needle_dial(im, x + wd // 2, bot - h // 2 + 1, min(6, h // 3), ALU, FACE, rnd.random())
+                    lamp(im, x + wd - 4, bot - 4, 1.4, rnd.choice((AMBER, GREEN, AMBER_OFF)), True)
                 elif kind == "c":                                # a carton, its label
-                    w, h = rnd.choice((18, 22)), rnd.randrange(14, 22)
+                    wd, h = rnd.choice((18, 22)), rnd.randrange(14, 22)
                     c = shade((176, 146, 104), rnd.uniform(0.85, 1.05))
-                    im.rect(x, bot - h, x + w, bot, c)
-                    im.rect(x, bot - h, x + w, bot - h + 1, shade(c, 1.2))
-                    im.rect(x + 3, bot - h + 4, x + w - 3, bot - h + 9, (240, 238, 226))
-                    im.rect(x + 4, bot - h + 6, x + w - 5, bot - h + 7, INK)
+                    im.rect(x, bot - h, x + wd, bot, c)
+                    im.rect(x, bot - h, x + wd, bot - h + 1, shade(c, 1.2))
+                    im.rect(x + 3, bot - h + 4, x + wd - 3, bot - h + 9, (240, 238, 226))
+                    im.rect(x + 4, bot - h + 6, x + wd - 5, bot - h + 7, INK)
                 elif kind == "r":                                # tape in a can
-                    w = 18
+                    wd = 18
                     im.disc(x + 9, bot - 9, 9, ALU)
                     im.disc(x + 9, bot - 9, 3, INK)
                     im.disc(x + 9, bot - 9, 7, shade(ALU, 0.85))
                     im.disc(x + 9, bot - 9, 2, INK)
                 else:                                            # a keyboard on its end
-                    w, h = 26, 12
-                    im.rect(x, bot - h, x + w, bot, CREAM)
-                    for kx in range(x + 2, x + w - 3, 4):
+                    wd, h = 26, 12
+                    im.rect(x, bot - h, x + wd, bot, CREAM)
+                    for kx in range(x + 2, x + wd - 3, 4):
                         im.rect(kx, bot - h + 3, kx + 3, bot - 3, KEY if kx % 3 else ORANGE)
             elif n == 2:
                 kind = rnd.choice("ccmiw")
                 if kind == "c":                                  # a crate, stencilled
-                    w, h = rnd.choice((26, 30)), rnd.randrange(18, 26)
+                    wd, h = rnd.choice((26, 30)), rnd.randrange(18, 26)
                     c = shade((150, 112, 66), rnd.uniform(0.85, 1.05))
-                    im.rect(x, bot - h, x + w, bot, c)
+                    im.rect(x, bot - h, x + wd, bot, c)
                     for yy in range(bot - h + 5, bot, 6):
-                        im.rect(x, yy, x + w, yy + 1, shade(c, 0.6))
-                    im.frame(x, bot - h, x + w, bot, shade(c, 0.6), 1)
-                    im.rect(x + w // 2 - 4, bot - h + 2, x + w // 2 + 4, bot - h + 4, BAK)
+                        im.rect(x, yy, x + wd, yy + 1, shade(c, 0.6))
+                    im.frame(x, bot - h, x + wd, bot, shade(c, 0.6), 1)
+                    im.rect(x + wd // 2 - 4, bot - h + 2, x + wd // 2 + 4, bot - h + 4, BAK)
                 elif kind == "m":                                # a meter in bakelite
-                    w, h = 20, 20
-                    im.rect(x, bot - h, x + w, bot, BAK)
+                    wd, h = 20, 20
+                    im.rect(x, bot - h, x + wd, bot, BAK)
                     needle_dial(im, x + 10, bot - 11, 7, BAK, FACE, rnd.random())
                 elif kind == "i":                                # porcelain insulators
-                    w = 22
+                    wd = 22
                     for k in range(2):
                         insulator(im, x + 5 + 12 * k, bot - 18, bot, 9)
                 else:                                            # a drum of copper wire
-                    w = 22
+                    wd = 22
                     im.disc(x + 11, bot - 11, 11, shade((150, 112, 66), 0.9))
                     im.disc(x + 11, bot - 11, 8, COPPER)
                     for r in range(3, 8, 2):
@@ -673,7 +674,7 @@ def rack(n):
             else:
                 kind = rnd.choice("ffbjx")
                 if kind == "f":                                  # a flask
-                    w = 14
+                    wd = 14
                     cx = x + 7
                     for y in range(bot - 18, bot):
                         hw = 2 if y < bot - 11 else 2 + (y - (bot - 11)) * 0.7
@@ -682,14 +683,14 @@ def rack(n):
                         im.set(int(cx - hw), y, (230, 240, 246))
                     im.rect(cx - 5, bot - 5, cx + 6, bot, mix((200, 220, 230), VIOLET, 0.4))
                 elif kind == "b":                                # a box marked fragile: glass
-                    w, h = rnd.choice((22, 26)), rnd.randrange(14, 22)
-                    im.rect(x, bot - h, x + w, bot, (214, 200, 160))
-                    im.frame(x, bot - h, x + w, bot, (160, 140, 100), 1)
+                    wd, h = rnd.choice((22, 26)), rnd.randrange(14, 22)
+                    im.rect(x, bot - h, x + wd, bot, (214, 200, 160))
+                    im.frame(x, bot - h, x + wd, bot, (160, 140, 100), 1)
                     for i in range(6):                           # a red glass drawn on it
-                        im.rect(x + w // 2 - 3 + i // 2, bot - h + 4 + i, x + w // 2 + 3 - i // 2, bot - h + 5 + i, HOSE)
-                    im.rect(x + w // 2 - 1, bot - h + 10, x + w // 2 + 1, bot - h + 13, HOSE)
+                        im.rect(x + wd // 2 - 3 + i // 2, bot - h + 4 + i, x + wd // 2 + 3 - i // 2, bot - h + 5 + i, HOSE)
+                    im.rect(x + wd // 2 - 1, bot - h + 10, x + wd // 2 + 1, bot - h + 13, HOSE)
                 elif kind == "j":                                # a small bell jar
-                    w = 18
+                    wd = 18
                     im.rect(x + 1, bot - 3, x + 17, bot, NICKEL)
                     for y in range(bot - 16, bot - 3):
                         for xx in range(x + 3, x + 15):
@@ -697,15 +698,15 @@ def rack(n):
                                 blend(im, xx, y, (190, 210, 230), 0.4)
                     im.set(x + 5, bot - 12, (255, 255, 255))
                 else:                                            # bulbs standing in a tray
-                    w = 26
-                    im.rect(x, bot - 4, x + w, bot, (150, 112, 70))
+                    wd = 26
+                    im.rect(x, bot - 4, x + wd, bot, (150, 112, 70))
                     for k in range(3):
                         bulb(im, x + 5 + 8 * k, bot - 11, 3.5, mix(VIOLET, (200, 200, 210), 0.6), 3)
-            x += w + rnd.randrange(2, 6)
-        im.rect(0, bot, 128, bot + 3, frame)
-        im.rect(0, bot, 128, bot + 1, shade(frame, 1.25))
-        im.rect(0, bot + 2, 128, bot + 3, shade(frame, 0.55))
-    for x in (0, 62, 124):
+            x += wd + rnd.randrange(2, 6)
+        im.rect(0, bot, w, bot + 3, frame)
+        im.rect(0, bot, w, bot + 1, shade(frame, 1.25))
+        im.rect(0, bot + 2, w, bot + 3, shade(frame, 0.55))
+    for x in ((0, w // 2 - 2, w - 4) if w != 64 else (0, 32)):
         im.rect(x, 0, x + 4, 96, frame)
         im.rect(x, 0, x + 1, 96, shade(frame, 1.25))
         im.rect(x + 3, 0, x + 4, 96, shade(frame, 0.55))
@@ -890,6 +891,109 @@ def tank(n):
         hose(im, curve((20, 176), (54, 236), 14), HOSE, 2)
         cyl_h(im, 14, 236, 50, 244, NICKEL)
     im.noise(2, 4510 + n)
+    return im
+
+
+def tank_top(n):
+    """TT, 64x64: a tank seen from above, its dome, a manhole, a pipe out."""
+    c = {1: CREAM, 2: HGREEN, 3: CER}[n]
+    floor = {1: (40, 42, 46), 2: (26, 28, 26), 3: (30, 30, 36)}[n]
+    im = Img(64, 64, floor)
+    fill(im, 0, 0, 64, 64, floor, 0.03, 4530 + n)
+    for y in range(64):
+        for x in range(64):
+            r = math.hypot(x - 31.5, y - 31.5)
+            if r < 31:
+                im.set(x, y, shade(c, 0.7 + 0.5 * (1 - r / 31) - 0.15 * (x - y) / 64))
+    flange = {1: ALU, 2: shade(HGREEN, 0.7), 3: NICKEL}[n]
+    for a in range(0, 360, 15):
+        im.set(round(31.5 + 29 * math.cos(math.radians(a))), round(31.5 + 29 * math.sin(math.radians(a))), shade(flange, 0.5))
+    im.disc(26, 26, 8, flange)
+    im.disc(26, 26, 6, shade(c, 0.6))
+    im.rect(40, 30, 64, 36, {1: ALU, 2: COPPER, 3: NICKEL}[n])
+    im.noise(2, 4540 + n)
+    return im
+
+
+def ledge_face(look):
+    """LF, 64x256 (aligned): the cellar's ledge seen from the pit, its 144 high face. The pit's walls show
+    the lab's wall (LA) laid from the ceiling, so 16 rows into it where the ledge's top is: the face is
+    that wall from row 16, and goes on as the walls beside it do."""
+    wall = GI.wall(look, "LA")
+    im = Img(64, 256)
+    for y in range(256):
+        for x in range(64):
+            im.px[y * 64 + x] = list(wall.px[((y + 16) % 256) * 64 + x])
+    for x in range(64):                                          # the ledge's lip
+        im.set(x, 0, shade(tuple(im.px[x][:3]), 1.3))
+        im.set(x, 1, shade(tuple(im.px[64 + x][:3]), 0.6))
+    return im
+
+
+# === the belt THEN, new and working (NOW keeps gfx_then's rusted one) ======================================
+BELT_RUBBER = {1: (50, 54, 60), 2: (28, 28, 26), 3: (168, 172, 178)}
+BELT_FRAME = {1: GB, 2: HGREEN, 3: CER}
+BELT_EDGE = {1: ALU, 2: BRASS, 3: NICKEL}
+
+
+def belt_bed(n):
+    """BB, 64x64 flat: the band, ribbed across the way it runs (along x), so that it is seen to move."""
+    rub = BELT_RUBBER[n]
+    im = Img(64, 64, rub)
+    fill(im, 0, 0, 64, 64, rub, 0.025, 4900 + n)
+    for x in range(0, 64, 8):                                    # ribs, across
+        im.rect(x, 0, x + 2, 64, shade(rub, 1.45 if n != 3 else 0.82))
+        im.rect(x + 2, 0, x + 3, 64, shade(rub, 0.7 if n != 3 else 1.08))
+    for y in (0, 63):
+        im.rect(0, y, 64, y + 1, shade(rub, 0.6))
+    if n == 1:                                                   # a painted mark on the band, orange
+        im.rect(30, 26, 34, 38, ORANGE)
+    im.noise(2, 4910 + n)
+    return im
+
+
+def belt_curb(n):
+    """BC, 64x64 flat: the belt's side frames from above, enamel with an edge strip and roller axles."""
+    c = BELT_FRAME[n]
+    im = Img(64, 64, c)
+    if n == 2:
+        hammered(im, 0, 0, 64, 64, c, 4920)
+    else:
+        fill(im, 0, 0, 64, 64, c, 0.02, 4920 + n)
+    for y in range(0, 64, 16):
+        im.rect(0, y, 64, y + 2, BELT_EDGE[n])
+    for x in range(4, 64, 16):
+        for y in range(8, 64, 16):
+            im.disc(x, y, 1.6, shade(BELT_EDGE[n], 0.6))
+    im.noise(2, 4930 + n)
+    return im
+
+
+def belt_side(n):
+    """BS, 64x128 (aligned): the belt's frame from the side; its top 16 the curb's face (rollers' ends,
+    an edge strip), below it the frame and its legs (seen where the band ends over the hatch)."""
+    c, edge = BELT_FRAME[n], BELT_EDGE[n]
+    im = Img(64, 128, (22, 22, 24))
+    fill(im, 0, 0, 64, 128, (22, 22, 24), 0.04, 4940 + n)
+    if n == 2:
+        hammered(im, 0, 0, 64, 16, c, 4941)
+    else:
+        fill(im, 0, 0, 64, 16, c, 0.02, 4941 + n)
+    im.rect(0, 0, 64, 2, edge)
+    im.rect(0, 14, 64, 16, shade(c, 0.55))
+    for x in range(8, 64, 16):                                   # the rollers' ends
+        im.disc(x, 8, 3.5, shade(edge, 0.8))
+        im.disc(x, 8, 1.5, shade(edge, 0.45))
+    if n == 1:
+        for x in range(0, 64, 8):
+            im.rect(x, 11, x + 4, 13, ORANGE)
+    elif n == 2:
+        im.rect(28, 4, 36, 7, BRASS)
+    for x in (2, 34):                                            # the legs and a stretcher
+        im.rect(x, 16, x + 6, 128, shade(c, 0.75))
+        im.rect(x, 16, x + 1, 128, shade(c, 1.1))
+    im.rect(0, 60, 64, 64, shade(c, 0.6))
+    im.noise(2, 4950 + n)
     return im
 
 
@@ -1281,6 +1385,42 @@ def pipe_run(n, shift=0, part="LA"):
     return im
 
 
+def gauge_board(n, shift=0, part="LA"):
+    """128 wide on the lab's wall (LA, look 2): the valve's gauges over the cellar's ledge, a board of
+    dials, a pipe down from each to a valve, a plate VALVE 3. Drawn on the wall it hangs on, so that the
+    wall's bands go on round it (MAP11's gauges are the pump room's wall)."""
+    im = on_wall(2, part, 128, shift)
+    x1, y1, x2, y2 = 10, 76, 118, 190
+    board = {1: GB, 2: BAK, 3: SLATE}[n]
+    edge = {1: ALU, 2: BRASS, 3: NICKEL}[n]
+    im.rect(x1 - 2, y1 - 2, x2 + 2, y2 + 2, edge)
+    if n == 2:
+        hammered(im, x1, y1, x2, y2, HGREEN, 5300)
+    else:
+        fill(im, x1, y1, x2, y2, board, 0.02, 5300 + n)
+    legend(im, "VALVE 3", 64, y1 + 5, ground=INK if n != 2 else BAK, ink=(236, 236, 228) if n != 2 else BRASS)
+    pipe = {1: GB, 2: COPPER, 3: NICKEL}[n]
+    for k, x in enumerate((32, 64, 96)):
+        if n == 1:
+            im.disc(x, y1 + 34, 13, CREAM)
+            needle_dial(im, x, y1 + 34, 11, ALU, FACE, (0.25, 0.55, 0.8)[k])
+            lamp(im, x, y1 + 54, 2.2, (AMBER, GREEN, AMBER)[k], True, INK)
+        elif n == 2:
+            im.disc(x, y1 + 34, 14, BAK)
+            needle_dial(im, x, y1 + 34, 12, BAK, FACE, (0.3, 0.6, 0.85)[k])
+            lamp(im, x, y1 + 54, 2.4, WARN if k == 1 else (90, 30, 24), True, BAK)
+        else:
+            mercury(im, x - 2, y1 + 18, y1 + 58, (0.4, 0.6, 0.5)[k])
+            needle_dial(im, x + 9, y1 + 28, 5, NICKEL, CER, 0.5)
+        cyl_v(im, x - 3, y1 + 62, x + 3, y2 - 18, pipe, 1.4, 0.55)
+        im.disc(x, y2 - 22, 8, {1: ORANGE, 2: WARN, 3: HOSE}[n])            # a valve's wheel
+        im.disc(x, y2 - 22, 5, shade(board, 0.7))
+        im.rect(x - 8, y2 - 23, x + 8, y2 - 21, {1: ORANGE, 2: WARN, 3: HOSE}[n])
+    cyl_h(im, x1, y2 - 10, x2, y2 - 4, pipe, 1.4, 0.55)               # the header they join
+    im.noise(2, 5310 + n)
+    return im
+
+
 NOTICE = [("EXPERIMENT", "r"), ("1", "r"), ("TOMORROW", "b"), ("@", "c"), ("LEAVE", "b"), ("EVERY ROOM", "b"),
           ("AS IT IS", "b"), ("-", "r"), ("LOCK UP", "r")]
 
@@ -1395,27 +1535,38 @@ def ghost(part, w, rects, shift=0, seed=0, look=3, stubs=None):
     for i, (x1, y1, x2, y2) in enumerate(rects):
         x1, x2 = max(0, x1), min(w, x2)
         y1, y2 = max(0, y1), min(base.h, y2)
+        # on a pale wall (the yellowed whitewash over the dado) the same ghost hardly shows: there the
+        # paint as it was is whiter and the soot round it darker, by how pale the wall is where it hung
+        lum = sum(sum(base.px[y * 64 + (x + shift) % 64][:3]) / 3 for y in range(y1, y2) for x in range(x1, x2))
+        k_pale = min(1.0, max(0.0, (lum / max(1, (y2 - y1) * (x2 - x1)) - 110) / 70))
+        sat, bright = 1.4 + 0.3 * k_pale, 1.2 + 0.1 * k_pale
+        soot, edge = 0.42 + 0.33 * k_pale, 0.6 + 0.3 * k_pale
         for y in range(y1, y2):
             for x in range(x1, x2):
                 p = clean.px[y * 64 + (x + shift) % 64][:3]
                 g = sum(p) / 3                                   # unfaded: brighter, the colour as it was
-                im.px[y * w + x] = list(shade(tuple(g + (v - g) * 1.4 for v in p), 1.2)) + [255]
+                q = shade(tuple(g + (v - g) * sat for v in p), bright)
+                if k_pale:                                       # whitewash as it was: whiter, not yellower
+                    q = mix(q, (250, 250, 244), 0.35 * k_pale)
+                im.px[y * w + x] = list(q) + [255]
         for x in range(x1 - 8, x2 + 8):                          # the soot and dirt that settled round it
             for k in range(8):
-                blend(im, x, y1 - 1 - k, (50, 44, 34), 0.42 * (1 - k / 8) * (1 - max(0, max(x1 - x, x - x2 + 1)) / 9))
+                blend(im, x, y1 - 1 - k, (50, 44, 34), soot * (1 - k / 8) * (1 - max(0, max(x1 - x, x - x2 + 1)) / 9))
         for y in range(y1, y2):
             for k in range(6):
-                blend(im, x1 - 1 - k, y, (50, 44, 34), 0.36 * (1 - k / 6))
-                blend(im, x2 + k, y, (50, 44, 34), 0.36 * (1 - k / 6))
+                blend(im, x1 - 1 - k, y, (50, 44, 34), soot * 0.86 * (1 - k / 6))
+                blend(im, x2 + k, y, (50, 44, 34), soot * 0.86 * (1 - k / 6))
         for x in range(x1, x2):                                  # the paint's edge: a hard line where it stood
-            blend(im, x, y1, (40, 36, 30), 0.6)
+            blend(im, x, y1, (40, 36, 30), edge)
             blend(im, x, y1 + 1, (255, 255, 250), 0.3)
         for y in range(y1, y2):
-            blend(im, x1, y, (40, 36, 30), 0.5)
-            blend(im, x2 - 1, y, (40, 36, 30), 0.5)
+            blend(im, x1, y, (40, 36, 30), edge - 0.1)
+            blend(im, x2 - 1, y, (40, 36, 30), edge - 0.1)
         if y2 < base.h:
             for x in range(x1, x2):
-                blend(im, x, y2 - 1, (40, 36, 30), 0.5)
+                blend(im, x, y2 - 1, (40, 36, 30), edge - 0.1)
+                for k in range(1, 5):                            # under a thing that hung, the soot too
+                    blend(im, x, y2 - 1 + k, (50, 44, 34), soot * 0.6 * (1 - k / 5))
         inset = 4 if min(x2 - x1, y2 - y1) > 24 else 2
         holes = [(x1 + inset, y1 + inset), (x2 - 1 - inset, y1 + inset)]
         if y2 < base.h - 4:                                      # a thing that hung: its lower holes too
@@ -1454,8 +1605,8 @@ def ghost_name(part, w, rects, shift=0, stubs=None):
 
 # where each picture covers its wall (x1, y1, x2, y2, y from the top): the size of its ghost now
 RECT = {"SC": (6, 66, 122, 200), "PB": (8, 78, 120, 178), "WN": (4, 68, 124, 202), "PP": (16, 0, 48, 222),
-        "NT": (1, 116, 64, 229)}
-HOME = {"SC": "EX", "PB": "AR", "WN": "CO", "PP": "LA"}         # the wall each is drawn for (its standing name)
+        "NT": (1, 116, 64, 229), "GB": (8, 74, 120, 192)}
+HOME = {"SC": "EX", "PB": "AR", "WN": "CO", "PP": "LA", "GB": "LA"}         # the wall each is drawn for (its standing name)
 PICS = {}           # (kind, look, wall, shift): name, for any other wall or shift
 
 
@@ -1476,7 +1627,7 @@ def picture(kind, look, part, shift):
         return notice(part, 2, shift)
     if kind == "CL":
         return calendar(part, look, shift)
-    return {"SC": schematic, "PB": passboard, "WN": newspaper, "PP": pipe_run}[kind](look, shift, part)
+    return {"SC": schematic, "PB": passboard, "WN": newspaper, "PP": pipe_run, "GB": gauge_board}[kind](look, shift, part)
 
 
 # === flats: the duct ==========================================================================================
@@ -1698,8 +1849,9 @@ def small(n):
     return im
 
 
-def emitter(n, wreck=False):
-    """EM, 40x72: the beam's emitter on its stand (then), or its wreck (now)."""
+def emitter(n, wreck=False, off=False):
+    """EM, 40x72: the beam's emitter on its stand (then: lit, or `off`: the beam set to OFF), or its
+    wreck (now)."""
     im = _sprite(40, 72)
     rnd = random.Random(6300 + n + 10 * wreck)
     stand = {1: GB, 2: BAK, 3: NICKEL}[n]
@@ -1717,14 +1869,13 @@ def emitter(n, wreck=False):
         im.disc(20, 20, 9, ALU if not wreck else (110, 100, 90))
         im.disc(20, 20, 7, (30, 34, 44))
         if not wreck:
-            im.disc(20, 20, 5, lens)
-            glow(im, 20, 20, 12, lens, 0.4)
-            im.disc(18, 18, 1.5, (255, 255, 255))
-            for k, c in enumerate((AMBER, GREEN, AMBER)):
-                lamp(im, 10 + k * 10, 4, 1.6, c, True)
+            im.disc(20, 20, 5, lens if not off else (44, 56, 70))
+            if not off:
+                glow(im, 20, 20, 12, lens, 0.4)
+            im.disc(18, 18, 1.5, (255, 255, 255) if not off else (120, 130, 140))
             im.rect(4, 2, 36, 7, CREAM)
             for k, c in enumerate((AMBER, GREEN, LRED)):
-                lamp(im, 11 + k * 9, 4.5, 1.5, c, True)
+                lamp(im, 11 + k * 9, 4.5, 1.5, c, not off or k == 2)
             im.rect(26, 28, 32, 31, ORANGE)
         else:
             im.rect(4, 2, 36, 7, (120, 110, 92))
@@ -1736,8 +1887,9 @@ def emitter(n, wreck=False):
             im.rect(6, 36, 34, 38, shade(COPPER, 0.6))
             im.disc(20, 8, 7, COPPER)
             im.disc(18, 6, 2, COPPER_HI)
-            glow(im, 20, 8, 12, (255, 220, 200), 0.4)
-            lamp(im, 33, 44, 2, WARN, True, BAK)
+            if not off:
+                glow(im, 20, 8, 12, (255, 220, 200), 0.4)
+            lamp(im, 33, 44, 2, WARN, not off, BAK)
         else:
             insulator(im, 20, 38, 52, 10, (170, 164, 150))
             for y in range(20, 36):                              # the winding unwound, blackened
@@ -1750,9 +1902,10 @@ def emitter(n, wreck=False):
             for y in range(6, 36):                               # a glass tube across, violet, in nickel clamps
                 for x in range(4, 36):
                     if abs(y - 21) < 8:
-                        im.set(x, y, mix((36, 30, 60), VIOLET, 0.3 + 0.6 * (1 - abs(y - 21) / 8)))
-            glow(im, 34, 21, 10, BLUE, 0.6)
-            im.disc(35, 21, 4, (230, 240, 255))
+                        im.set(x, y, mix((36, 30, 60), VIOLET, (0.3 + 0.6 * (1 - abs(y - 21) / 8)) * (0.35 if off else 1)))
+            if not off:
+                glow(im, 34, 21, 10, BLUE, 0.6)
+            im.disc(35, 21, 4, (230, 240, 255) if not off else (90, 96, 110))
             for x in (8, 30):
                 im.rect(x, 11, x + 3, 32, NICKEL)
                 im.rect(x, 11, x + 1, 32, (255, 255, 255))
@@ -1799,11 +1952,17 @@ def make(out):
         put("flats", name("CT", n), bank_top(n))
         put("textures", name("RK", n), rack(n))
         put("textures", name("RS", n), rack_end(n))
+        put("textures", name("RF", n), rack(n, 64))
         put("flats", name("RT", n), rack_top(n))
         put("textures", name("OB", n), bench_side(n))
         put("flats", name("OTA", n), bench_top(n, 0))
         put("flats", name("OTB", n), bench_top(n, 1))
         put("textures", name("TK", n), tank(n))
+        put("flats", name("TT", n), tank_top(n))
+        put("flats", name("BB", n), belt_bed(n))
+        put("flats", name("BC", n), belt_curb(n))
+        put("textures", name("BS", n), belt_side(n))
+        put("textures", name("GB", n), gauge_board(n))
         put("textures", name("PM", n), pump_side(n))
         put("flats", name("PT", n), pump_top(n))
         put("textures", name("BM", n), motor_side(n))
@@ -1819,12 +1978,15 @@ def make(out):
             put("sprites", f"{spr}{'ABC'[n - 1]}0", im, (im.w // 2, im.h))
         put("sprites", f"AJUE{'ABC'[n - 1]}0", emitter(n), (20, 72))
         put("sprites", f"AJUE{'DEF'[n - 1]}0", emitter(n, True), (20, 72))
+        put("sprites", f"AJUE{'GHI'[n - 1]}0", emitter(n, off=True), (20, 72))
     for part in ("EX", "AR", "CO", "LA"):
         put("textures", f"AJUNT{part}2", notice(part))
     put("textures", "AJUCLEX2", calendar("EX", 2))
     put("textures", "AJUCLEX3", calendar("EX", 3))
     put("flats", "AJUDU2", duct(False))
     put("flats", "AJUDU3", duct(True))
+    put("textures", "AJULF2", ledge_face(2))
+    put("textures", "AJULF3", ledge_face(3))
     for (kind, look, part, shift), nm in PICS.items():
         put("textures", nm, picture(kind, look, part, shift))
     for (part, w, shift, rects, stubs), nm in GHOSTS.items():
@@ -1832,4 +1994,5 @@ def make(out):
 
 
 # the textures a map lays by world position (they are 64 wide and seamless): map_longrun adds them to m.align
-ALIGNED = {name(p, n) for p in ("CS", "RS", "OB", "PM", "BM", "CN") for n in LOOKS}
+# (RS and BM are laid from their line's end: a rack's end and the motor's box are exactly one picture wide)
+ALIGNED = {name(p, n) for p in ("CS", "OB", "PM", "CN", "BS", "RF") for n in LOOKS} | {"AJULF2", "AJULF3"}
