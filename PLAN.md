@@ -19038,6 +19038,10 @@ this branch, 219 frames in MAP01-21 and MAP31-33):
   Look at this when playing MAP17.
 - MAP20 108: opened 102.64.
 - MAP33 101: nothing is clear (the recess floor is 16 below the floor in front), so as before.
+- By the switch rule: MAP21 125 (the valve, line 1857), 126 (the beam, 2483), 128 (the belt, 2145): hinged on the
+  other jamb at 115 (the clocked door in 105, 106, 108 NOW likewise, with its shadow). No other frame: LIFT 110,
+  MAP12 110, MAP07 105 and LEFT 102 have a switch near, but the leaf, at 115 on its first jamb, does not stand
+  before it (it swings away from it, or is more than 64 off).
 Every other frame keeps its pose exactly (the printed positions and angles alike to four places).
 
 **USE.** The engine's use trace meets a door's box (radius 20, standing out in front of the frame) before the
@@ -19077,8 +19081,9 @@ scenery).
 - MAP21 MODE=9 (new; src/zscript/map21.zs `Doors`, tools/smoke_MAP21_9.cfg), real USE presses (`CheckUse` with
   BT_USE): the machine's leaf clear of the wings and alike at both times (3 checks); at each of the three levers,
   with the RED door, the clocked door THEN and its shadow NOW: from in front of the lever, from in front of the
-  lever's end nearer the frame, from in front of the frame (each: the lever moves and the door stays when the leaf
-  is not between, else the door is taken and the lever does not move), aimed at the leaf (taken), at the empty
+  lever's end nearer the frame, from in front of the frame (24 out from the mouth's middle, aimed 8 in from the
+  lever's end by the frame) (each: the leaf is not between, the lever moves and the door stays), aimed at the leaf
+  (taken), at the empty
   opening with a door in hand (hung) (45 checks); the desk panel by frame 101 THEN and NOW with the clocked door
   hung beside it (2 checks). 50 checks, none failed.
 - The probe (src/zscript/doorprobe.zs, cvar `ajar_doorprobe`; tools/doorprobe.cfg; does nothing unless set):
@@ -19095,7 +19100,15 @@ scenery).
   the leaf cut off by the wing; now: whole, standing just off it); MAP04 103 (a wall near one jamb: main's leaf
   in the wall, now on the other jamb); MAP07 103 (main: no leaf to be seen; now one on the other jamb); MAP17 101
   (88 degrees, along the lane); MAP33 101 (as before).
-- As main, every figure alike: MAP TEST MODE=1 (7) and 2 (3); LAB (16); MAP01 (13), MAP05 (41), MAP08 (63),
+- After the switch rule and the merge of main (map21-machine, map10-walls), against main's build of then: the
+  poses (219) alike but for the frames listed above; the probe as above (this branch 45 checks, none failed; from
+  in front of the frame at MAP21's three levers the switch is reached now, the door was taken on main); MAP04 (27),
+  MAP07 (54), MAP17 (118), MAP20 (124) MODE=1, THEN MODE=1 (45 checks), MAP21 MODE=1 (85 checks, levelExited), 2
+  (14), 4 (20): every figure as main's; MAP21 MODE=9 50 checks, none failed; `./build.sh` exit 0, solver lines as
+  main's, the 48 map wads byte for byte main's. Shots of the three levers THEN with a door hung beside each, from
+  100 out (build/shots/MAP21_lever_{valve125,belt128,beam126}_{main,mine}.png): on main the leaf covers half the
+  lever; now the lever stands whole and the leaf opens the other way. No frame in another map changed by it.
+- Before the switch rule, as main, every figure alike: MAP TEST MODE=1 (7) and 2 (3); LAB (16); MAP01 (13), MAP05 (41), MAP08 (63),
   MAP09 (62), MAP11 (38), MAP17 (118), MAP20 (124; 90 high-water checks) MODE=1 (passing lines); THEN MODE=1-5
   (45, 12, 17, 15, 16 checks, none failed) and 6 (views); MAP21 MODE=1 (85 checks, levelExited), 2 (14 checks),
   4 (20 checks), 5 and 8 (views), 7 (views, -nomonsters); MAP21 MODE=9: 50 checks, none failed.
