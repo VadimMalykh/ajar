@@ -17408,6 +17408,184 @@ apply to a joined level.
 Entryway and Dead Simple were only the test; he does not care for The
 Catacombs).
 
+## The end of MAP30: back in MAP01's cell (Vadim's idea, 2026-11-26; to discuss, nothing designed)
+
+**Vadim** (2026-11-26): "I have some twist idea for the end. Let's just
+document for now, and discuss later. Somewhere in the end of map30 player
+appears in much older version of the room from map01. That should be
+obviously older, partly ruined maybe, but still recognizable. Game ends when
+user went through red door to that small room, and removes door from the
+frame. Not sure how we force him, there should be something to force him to
+do that. Then player either dies, or left the room through temporal door, or
+something else, not sure. The last view we should see - that exact room,
+with red door and frame, where we started map01. Then we see doom guy taking
+the door, setting it into frame and moving to that start room."
+
+**What MAP01 has** (`tools/map_hinges1.py`), so that the end can close on
+it exactly: the player starts locked in the cell (256 by 256, brick, 128
+high) with RED leaning on its wall and one empty frame (101). RED's far side
+is in the hall's west wall. The first thing ever done in the game is: take
+RED, hang it in the cell's frame, step out into the hall.
+
+**Claude's reading of the idea** (to be corrected):
+- "The room from map01" is the hall, where RED's far side is; "that small
+  room" is the cell.
+- At the end of MAP30 the player stands in MAP01's hall, much older. RED
+  hangs in the cell's frame, so its far side in the hall stands open. The
+  player goes through it into the cell and takes RED down. The cell is now
+  as MAP01 begins: a door, an empty frame, no other way out.
+- The last view is the cell as it was at the start of MAP01, and the Doom
+  guy doing the first thing ever done in the game.
+- So the ending is a loop: the door was in the cell at the beginning because
+  the player took it down there at the end. It fits what the concept of 21
+  to 30 has already: "The loops are the player's", the clocked door that
+  nobody made, MAP25 where the player hangs part 1's doors, and MAP30 as
+  "the first frame, and the choice of what hangs in it".
+
+**Ideas added by Claude** (all to argue over; none decided).
+
+*What forces the player to take the door down.*
+1. Denial, the game's own verb ("take a door away so reinforcements cannot
+   arrive", and core rule 5: whatever is on the far side can come to you).
+   Everything from "after" comes down the old hall towards the door, more
+   than can be fought. The cell is the only place to go and the only way to
+   stop what follows is to unhinge RED. MAP01 teaches hanging a door to get
+   out; the last act of the game is the opposite one, taking a door down to
+   shut everything out. This is Claude's first choice.
+2. Something that flows through a hung door (MAP20's water does): the old
+   hall floods or burns, and it comes into the cell until the door is down.
+3. No force at all: the old hall is a dead end, and the game simply ends
+   when RED comes off the cell's frame, as a level ends when a door goes
+   into a brass frame. Quietest, and the player may not guess it.
+
+*What happens to the player then.*
+1. Nothing happens to him: he is the Doom guy of the last view. With the
+   door down the view leaves his eyes, the cell is new again (the same room
+   built twice and cross-faded, as then and now are), and he, no longer
+   steered, takes RED, hangs it and steps out: the player watches himself
+   begin. MAP31 and MAP33 already show the player from outside as a puppet
+   with Doom's own marine sprites, so the picture exists.
+2. He leaves by the clocked door (Vadim's second thought): he leans RED,
+   hangs the clocked door in the cell's frame and goes back to the cell
+   then. That makes the loop a real one by the game's rules (the same cell,
+   earlier), but one door is carried at a time, so RED has to be carried
+   through after it and the clocked door has to be got rid of. It asks for
+   a clear reason why the clocked door is gone at the start of MAP01.
+3. He dies in the cell (Vadim's first thought). Then MAP01's Doom guy is
+   somebody else, or the next time round. An old corpse in the dust
+   (then.zs has them) in the old hall or the old cell would say that this
+   has happened before.
+4. The cell has no time. It is brick, it has no window, and the only way in
+   or out is a door; nothing in it says when it is ("The cell stays as it
+   is" was the decision for MAP01's look). So no machine is needed: only
+   the hall is seen old, and whoever hangs RED in the cell next comes out at
+   the beginning. This can stand together with 1.
+
+*After the last view.*
+- The game's first screen again, or MAP01 itself started over (the name of
+  MAP31, "This Is Where We Came In", is the cinema's word for this).
+- A second time round could differ in one small thing in the cell, for
+  those who play again.
+- Another end for those who refuse (the concept's "choice of what hangs in
+  it"): leave RED hanging and do something else with the frame, for example
+  swap the clocked door into it. Not thought through.
+
+*How it would be built.* MAP01's hall and cell from the same description as
+MAP01, a second time in an aged look: `ajarthen.Times` does exactly this for
+MAP21 (one plan, two copies, per-copy differences). "Recognizable" asks for
+the things MAP01's hall is known by: the terracotta walls over the navy
+dado, the slate floor and the runner, the pit, the pictures of doors, RED's
+trim. "Much older" is then what has happened to those.
+
+**Vadim** (2026-11-26), on the ideas above: "Yes, totaly agree with your
+additions." Claude reads that as: the additions stand, and where they offer
+several ways the working version is Claude's first choice of each (the
+flood of monsters forces the door down; the player is the Doom guy of the
+last view; the cell has no time; then MAP01 again). Still nothing designed,
+and the questions below are still for the discussion.
+
+**Open, for the discussion with Vadim**:
+1. Is the old room the hall, and the small room the cell, as read above?
+2. What forces the door down: the flood of monsters, something flowing, or
+   nothing?
+3. Is the Doom guy of the last view the player himself (a loop), or the
+   next one?
+4. Does the old hall lie after MAP01 in time, and if so, how does taking
+   the door down there put it in the cell at the start: the clocked door,
+   the cell outside time, or no explanation?
+5. After the last view: the end, or MAP01 again?
+6. Does the player still carry the clocked door in MAP30? (In MAP21 it is
+   left in the machine.)
+
+## Music: two variations on Paradox Engine, a toccata and a slow one (2026-11-26, no map plays them yet)
+
+**Vadim**: "Could you make 2 new variations of theme 5? One fast, but
+different arragement, and another one slow? Using same melodic idea?" Track
+5 of the sound lab is Paradox Engine (AJM_ENGN; MAP12 and MAP18).
+
+What that piece is made of, and both variations keep note for note, in D:
+the riff (a low D hammered in sixteenths, out of which E flat, F, E flat, G,
+F stand, an A flat in every fourth bar); the tune that goes over the riff
+(the square wave's); the tune of the chorus over B flat, C, D minor (the
+brass's). The two tunes now stand once in `tools/music.py`
+(`ENGINE_OVER_RIFF`, `ENGINE_CHORUS`) for the two new pieces; `engine()`
+itself is not touched.
+
+| Lump | Piece | What it is |
+|---|---|---|
+| AJM_ENGT | Paradox Engine, Toccata, D, 144, 107 s | The instruments change places. The riff is a harpsichord's, a toccata over a bass in octaves and a kick on every eighth; plucked strings pick out the notes that stand out of it. The chorus tune is a church organ's over a choir (from the second chorus in octaves), with the harpsichord in broken chords. The verse tune is an overdriven guitar's. A break of four bars: the organ alone plays the riff's hidden notes eight times slower over a held D. After it the first piece's distorted guitar comes in under the harpsichord, the same riff an octave lower, and holds its fifths in the last chorus, where the lead guitar has the tune with the organ. The form is the first piece's (4 in, verse, verse on the 4th and home, chorus, verse, chorus, break, verse, chorus) |
+| AJM_ENGS | Paradox Engine, Slow, D, 69, 153 s | Half the speed. The riff at a quarter of its speed is a muted guitar ticking on the low D, the engine turning over, the same notes standing out; a low D held; slow strings on D minor with E flat for one bar in four. The verse tune at half speed is a clarinet's; the second time its first half and the ticking are on the 4th, as the first piece's riff goes there. The ticking stops for the chorus: the brass tune at half speed on one horn, timpani far off; the second time a voice an octave over the horn and a harp. A slow heart on the drum under the clarinet, no other drums. It begins and comes round to four bars of the ticking alone |
+
+They are the last two of TRACKS: **26 Paradox Engine, Toccata, 27 Paradox
+Engine, Slow** in the lab (`MAP=SOUND ./run.sh`, MUSIC + and MUSIC -); every
+other piece keeps its number. No map plays them.
+
+Checked: both tunes and the riff compared note by note with `engine()`'s
+(the same lengths and steps; the slow riff the same notes at twice the
+steps); the other twenty-five pieces byte for byte as before; the build;
+`soundlab=ok` with 27 tracks (141 checks); GZDoom with sound on and a null
+device starts both (`S_ChangeMusic` 1). Where two voices are a semitone
+apart it is the first piece's own E flat against D (and, in the slow one,
+the E flat chord over the held D). **Not checked: how they sound**, above
+all whether the harpsichord carries the riff in GZDoom's synth and whether
+the muted guitar's ticking is too much over two and a half minutes.
+
+Which map plays which piece on this day (from `src/mapinfo.txt`; the labs
+have none):
+
+| Map | Piece | Lab number |
+|---|---|---|
+| MAP01 Borrowed Rooms | After Hours (AJM_AFTR) | 4 |
+| MAP02 No Vacancy | Mysterium II (AJM_MYS2) | 25 |
+| MAP03 Stage Door | Distant Galaxy IV (AJM_GAL4) | 20 |
+| MAP04 Party Wall | Distant Galaxy, Fast (AJM_GALF) | 24 |
+| MAP05 Lost Property | Off Its Hinges (AJM_HING) | 1 |
+| MAP06 After Hours | Fire Door (AJM_FIRE) | 7 |
+| MAP07 Small Hours | Off Its Hinges (AJM_HING) | 1 |
+| MAP08 Closing Time | Salt, Mustard, Vinegar, Pepper (AJM_SALT) | 17 |
+| MAP09 Putting You Through | What's the Time, Mr Wolf? (AJM_WOLF) | 18 |
+| MAP10 All Change | Distant Galaxy II (AJM_GAL2) | 21 |
+| MAP11 By Appointment | Do Not Disturb (AJM_DSTB) | 9 |
+| MAP12 Going Up | Paradox Engine (AJM_ENGN) | 5 |
+| MAP13 Sight Unseen | Night Bell (AJM_BELL) | 13 |
+| MAP14 On the Level | Dead Letter Office (AJM_DEAD) | 8 |
+| MAP15 On Reflection | Off Its Hinges (AJM_HING) | 1 |
+| MAP16 Watch Your Step | Fire Door (AJM_FIRE) | 7 |
+| MAP17 Made to Order | Night Porter (AJM_PORT) | 6 |
+| MAP18 Time and Motion | Paradox Engine (AJM_ENGN) | 5 |
+| MAP19 On Paper | Light Under the Door (AJM_LGHT) | 11 |
+| MAP20 High Water | After Hours (AJM_AFTR) | 4 |
+| MAP21 In the Long Run | Left Luggage (AJM_LUGG) now, After Hours then | 10, 4 |
+| MAP31 This Is Where We Came In | One Door Short (AJM_SEVN) | 3 |
+| MAP32 Double Shift | Garmonic II (AJM_GAR2) | 23 |
+| MAP33 Third Person | Standing Water (AJM_WATR) | 14 |
+
+On no map: Garmonic, Fast (2), Between Floors (12), Grandmother's Footsteps
+(15), Knock Down Ginger (16), Everything Else Moves (19), Garmonic I (22),
+and the two new ones (26, 27). On more than one: Off Its Hinges three maps;
+After Hours, Paradox Engine and Fire Door two each. The lab THEN plays Dead
+Letter Office.
+
 ## MAP21: the causes made readable (built 2026-11-26)
 
 Vadim could not follow why turning the belt on THEN gave the crate stairs

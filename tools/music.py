@@ -161,6 +161,26 @@ sound lab; that is the only reason it stands among the first ones.
 And Distant Galaxy III (AJM_GAL3, the twentieth), the same evening:
 "delete 20". Distant Galaxy IV was moved from the end to its place, as
 above, so it is 20 in the lab now and the others keep their numbers.
+
+Two more on Paradox Engine, 2026-11-26 ("Could you make 2 new variations of
+theme 5? One fast, but different arragement, and another one slow? Using
+same melodic idea?"; 5 in the lab is Paradox Engine). What that piece is
+made of, and both keep, note for note and in D: the riff (a low D hammered
+in sixteenths, out of which E flat, F, E flat, G, F stand, an A flat in every
+fourth bar); the tune that goes over the riff (the square wave's); the tune
+of the chorus over B flat, C, D minor (the brass's). They are the last two
+of TRACKS, 26 and 27 in the lab.
+- Paradox Engine, Toccata: fast, 144. The instruments change places: the
+  riff is a harpsichord's, as a toccata over a bass in octaves; the chorus
+  tune is a church organ's over a choir; the verse tune is a guitar's. In
+  the break the organ plays the notes hidden in the riff eight times
+  slower. Only after it does the distorted guitar of the first piece come
+  in under the harpsichord, and its held fifths in the last chorus.
+- Paradox Engine, Slow: 69, which is half. Both tunes at half speed, a
+  clarinet for the verse's and a horn far off for the chorus's; the riff
+  at a quarter of its speed, ticking on a muted guitar, the engine turning
+  over; strings on D minor with E flat for a bar, a low D held. The
+  ticking stops for the chorus.
 """
 import random
 import re
@@ -1614,6 +1634,139 @@ def garmonic_fast():
     return p
 
 
+# Two more on Paradox Engine, 2026-11-26 (see the top): its riff and its two tunes note for note, set anew.
+
+ENGINE_OVER_RIFF = {                            # the tune over the riff (the square wave's in Paradox Engine)
+    "Q1": "1 - - - - - b2 - 1 - - - b7, - - -",
+    "Q2": "1 - - - - - - - . . . . 5, - b7, -",
+    "Q3": "1 - - - - - b2 - b3 - - - b2 - - -",
+    "Q4": "1 - - - - - - - - - - - . . . .",
+    "Q5": "5 - - - - - b6 - 5 - - - 4 - - -",
+    "Q6": "b3 - - - - - 4 - b3 - - - b2 - - -",
+    "Q7": "1 - - - b2 - - - b3 - - - 4 - - -",
+    "Q8": "1' - - - - - - - - - - - - - - -",
+}
+ENGINE_CHORUS = {                               # the tune of the chorus, over B flat, C, D minor (the brass's)
+    "S1": "1' - - - - - - - b6 - - - 1' - - -",
+    "S2": "2' - - - - - - - b7 - - - 2' - - -",
+    "S3": "4' - - - b3' - - - 1' - - - - - b7 -",
+    "S4": "1' - - - - - - - - - - - . . . .",
+    "S5": "4' - - - - - - - 1' - - - 4' - - -",
+    "S6": "5' - - - - - - - 2' - - - 5' - - -",
+    "S7": "5' - - - 4' - - - b3' - - - 4' - 5' -",
+    "S8": "1'' - - - - - - - - - - - - - - -",
+}
+
+
+def engine_toccata():
+    """D, 144 a minute. Paradox Engine with the instruments changed places. Its riff, note for note, is a
+    harpsichord's (a toccata: one low note hammered, the others standing out of it) over a bass in octaves and a
+    kick on every eighth; plucked strings pick out the notes that stand out. The chorus tune is a church organ's
+    over a choir, the verse tune an overdriven guitar's. A break of four bars: the organ plays the riff's hidden
+    notes (E flat, F, E flat, G, F) eight times slower over a held D. Only then does the first piece's distorted
+    guitar come in, under the harpsichord, and holds its fifths in the last chorus."""
+    p = Piece("Paradox Engine, Toccata", 144)
+    riff = "X1 X1 X1 X2"
+    quiet = lambda bars: rep("_", bars)
+    tune, over = "S1 S2 S3 S4 S5 S6 S7 S8".split(), [f"Q{i}+12" for i in range(1, 9)]
+    engine = {
+        "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1",
+        "X2": "1! 1 b2' 1 1 b3' 1 1 b5' 1 1 4' 1 b3' b2' 1",
+    }
+    # 64 bars: 4 in; verse 8; verse on the 4th and home 8; chorus 8; verse 8 (the guitar's tune); chorus 8;
+    # the break 4; verse 8 (both guitars); chorus 8
+    p.voice("harpsichord", HARPSI, 50, engine | {
+        "bM": "1 5 3' 5 1' 5 3' 5 1 5 3' 5 1' 5 3' 5",
+        "bm": "1 5 b3' 5 1' 5 b3' 5 1 5 b3' 5 1' 5 b3' 5",
+        "bn": "1 5 b3' 5 1' 5 b3' 5 1 5 b3' 5 1' b7 5 b3",
+    }, rep(riff, 3, "X1+5 X1+5 X1+5 X2+5", 1, riff, 1, "bM+8 bM+10 bm bn", 2, riff, 2, "bM+8 bM+10 bm bn", 2,
+           "_", 4, riff, 2, "bM+8 bM+10 bm bn", 2), vel=92, gate=0.8, volume=110, pan=56)
+    p.voice("bass", PICKBASS, 26, {
+        "o": "1 . 1' . 1 . 1' . 1 . 1' . 1 . 1' .",
+        "ob": "1 . 1' . 1 . 1' . 1 . 1' . 1 . b3 b2",
+    }, rep("_", 4, "o o o ob", 2, "o+5 o+5 o+5 ob+5", 1, "o o o ob", 1, "o+8 o+10 o ob", 2, "o o o ob", 2,
+           "o+8 o+10 o ob", 2, "_", 4, "o o o ob", 2, "o+8 o+10 o ob", 2), vel=104, gate=0.8, volume=115)
+    p.voice("plucked strings", PIZZ, 62, {
+        "z1": ". . b2' . . b3' . . b2' . . 4' . b3' . .",
+        "z2": ". . b2' . . b3' . . b5' . . 4' . b3' b2' .",
+    }, rep("_", 4, "z1 z1 z1 z2", 2, "z1+5 z1+5 z1+5 z2+5", 1, "z1 z1 z1 z2", 1, "_", 44), vel=80, gate=0.5,
+            volume=92, pan=84)
+    p.voice("organ", CHURCH, 62, ENGINE_CHORUS, quiet(20) + tune + quiet(8) + tune + quiet(12) + tune,
+            vel=88, gate=0.97, volume=100, pan=70, reverb=70)
+    p.voice("organ, an octave under", CHURCH, 50, ENGINE_CHORUS | {         # and the break: the riff's own notes
+        "g1": "b2'^ - - - - - - - b3'^ - - - - - - -",
+        "g2": "b2'^ - - - - - - - 4'^ - - - - - - -",
+        "g3": "b3'^ - - - - - - - - - - - - - - -",
+        "g4": "1'* - - - - - - - - - - - . . . .",
+    }, quiet(36) + tune + rep("g1 g2 g3 g4", 1) + quiet(8) + tune, vel=84, gate=0.97, volume=96, pan=58, reverb=70)
+    p.voice("organ pedal", CHURCH, 38, held(d="1"), quiet(44) + rep("d T T T", 1) + quiet(16), vel=84, gate=1.0,
+            volume=100, reverb=70)
+    p.voice("choir", CHOIR, 50, {k: f"1{k} - - - - - - - - - - - - - - -" for k in "mM"},
+            rep("_", 20, "M+8 M+10 m m", 2, "_", 8, "M+8 M+10 m m", 2, "_", 12, "M+8 M+10 m m", 2), vel=64, gate=1.0,
+            volume=80, pan=40, reverb=70)
+    p.voice("lead", OVERDRIVE, 62, ENGINE_OVER_RIFF | ENGINE_CHORUS,
+            quiet(28) + over + quiet(12) + over + tune, vel=90, gate=0.97, volume=94, pan=64, reverb=60)
+    p.voice("guitar", DISTORTION, 38, engine | {"H": "1*! - - - - - - - 1* - - - 1* - 1* -"},
+            rep("_", 48, riff, 2, "H+8 H+10 H H", 2), vel=84, gate=0.8, volume=90, pan=44)
+    p.voice("timpani", TIMPANI, 38, {
+        "t": "1! . . . . . . . . . . . . . 1 1", "b": "1! . . . . . . . . . . . . . . .",
+        "r": ". . . . . . . . 1 . 1 . 1 1 1 1",
+    }, rep("_ _ _ r", 1, "_", 16, "t+8 t+10 t t", 2, "_", 8, "t+8 t+10 t t", 2, "b _ _ r", 1, "_", 8,
+           "t+8 t+10 t t", 2), vel=88, gate=0.9, volume=98, pan=76, reverb=60)
+    p.drums({
+        "i": {SNARE: "........x.x.xxxx"},
+        "a": {KICK: "x.x.x.x.x.x.x.x.", SNARE: "....X.......X...", HAT: "x.x.x.x.x.x.x.x."},
+        "f": {KICK: "x.x.x.x.x.x.....", SNARE: "....X.....x.xx..", TOM2: "..............x.", TOM4: "...............x",
+              HAT: "x.x.x.x.x......."},
+        "c": {CRASH: "x...............", KICK: "x..x..x.x..x..x.", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
+        "r": {KICK: "x..x..x.x..x..x.", SNARE: "....x.......x...", RIDE: "x.x.x.x.x.x.x.x."},
+        "k": {CRASH: "x...............", KICK: "x..............."},
+    }, rep("_ _ _ i", 1, "a a a f", 4, "c r r f", 2, "a a a f", 2, "c r r f", 2, "k _ _ i", 1, "a a a f", 2,
+           "c r r f", 2), vel=96)
+    return p
+
+
+def engine_slow():
+    """D, 69 a minute: half of Paradox Engine's speed. Its riff at a QUARTER of its speed is a muted guitar ticking
+    on the low D, the engine turning over, with the same notes standing out of it; a low D held under it; strings
+    on D minor, E flat for a bar and back. The verse tune at half speed is a clarinet's (the second time it starts
+    on the 4th, as the riff of the first piece does). The ticking stops for the chorus: B flat, C, D minor, the
+    brass tune at half speed on one horn far off, the second time with a voice an octave over it and a harp."""
+    p = Piece("Paradox Engine, Slow", 69)
+    quiet = lambda bars: rep("_", bars)
+    tune, over = "S1 S2 S3 S4 S5 S6 S7 S8".split(), "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8".split()
+    # 44 bars: 4 of the ticking alone; verse 8; verse 8 (the clarinet); chorus 8 (the horn); verse 8, four of
+    # them on the 4th; chorus 8 (horn, voice, harp); and round to the ticking alone
+    p.voice("muted guitar", MUTED, 38, {         # one bar of the riff is two of these: X1 = a b, X2 = a d
+        "a": "1 . 1 . b2'! . 1 . 1 . b3'! . 1 . 1 .",
+        "b": "b2'! . 1 . 1 . 4'! . 1 . b3'! . 1 . 1 .",
+        "d": "b5'! . 1 . 1 . 4'! . 1 . b3'! . b2'! . 1 .",
+    }, rep("a b a d", 1, "a b a b a b a d", 2, "_", 8, "a+5 b+5 a+5 d+5 a b a d", 1, "_", 8), vel=74, gate=0.9,
+            volume=96, pan=44, reverb=60)
+    p.voice("drone", CONTRABASS, 38, held(d="1"),
+            rep("_", 4, "d T", 8, "d-4 d-2 d T", 2, "d-7 T", 2, "d T", 2, "d-4 d-2 d T", 2), vel=82, gate=1.0,
+            volume=102)
+    p.voice("strings", SLOWSTR, 50, held(m="1m", M="1M"),
+            rep("_", 4, "m T M+1 m", 4, "M-4 M-2 m T", 2, "m+5 T M+6 m+5 m T M+1 m", 1, "M-4 M-2 m T", 2), vel=64,
+            gate=1.0, volume=88, pan=58, reverb=80)
+    p.voice("clarinet", CLARINET, 62, ENGINE_OVER_RIFF,
+            quiet(12) + over + quiet(8) + [f"{q}+5" for q in over[:4]] + over[4:] + quiet(8), vel=74, gate=0.97,
+            volume=92, pan=74, reverb=80)
+    p.voice("horn", HORN, 50, ENGINE_CHORUS, quiet(20) + tune + quiet(8) + tune, vel=82, gate=0.97, volume=96,
+            pan=40, reverb=90)
+    p.voice("voice", VOICE, 62, ENGINE_CHORUS, quiet(36) + tune, vel=58, gate=0.97, volume=78, pan=70, reverb=90)
+    p.voice("harp", HARP, 50, {
+        "M": "1 - - - 5 - - - 1' - - - 3' - - -", "m": "1 - - - 5 - - - 1' - - - b3' - - -",
+        "n": "b3' - - - 1' - - - 5 - - - 1 - - -",
+    }, rep("_", 36, "M-4 M-2 m n", 2), vel=66, gate=1.0, volume=86, pan=30, reverb=80)
+    p.voice("timpani", TIMPANI, 38, {
+        "t": "1 . . . . . . . . . . . . . . .", "u": "1 . . . . . . . . . . . 1 . 1 1",
+    }, rep("_", 20, "t+8 t+10 t _ t+8 t+10 t u", 1, "_", 8, "t+8 t+10 t _ t+8 t+10 t u", 1), vel=70, gate=0.9,
+            volume=88, pan=76, reverb=70)
+    p.drums({"h": {KICK2: "x.o............."}}, rep("_", 12, "h", 8, "_", 8, "h", 8, "_", 8), vel=80, volume=88)
+    return p
+
+
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_GARF", "fast, the Doom way, on Vadim's sketch garmonic: one note held by a muted guitar, the riff slipping under it", garmonic_fast),
@@ -1640,6 +1793,8 @@ TRACKS = [
     ("AJM_GAR2", "ambient, the same sketch as a chain: every note falls a semitone, the chords climb by fifths", garmonic_two),
     ("AJM_GALF", "fast, the Doom way, on Vadim's sketch distant_galaxy_theme: a riff that slips a semitone and comes back", distant_galaxy_fast),
     ("AJM_MYS2", "ambient, on Lauridsen's harmony: thirds in the bass walking down, the top line always a step late", mysterium_two),
+    ("AJM_ENGT", "fast, Paradox Engine with the instruments changed places: a harpsichord has the riff, a church organ and a guitar the tunes", engine_toccata),
+    ("AJM_ENGS", "slow, Paradox Engine at half speed: its riff ticking on a muted guitar, a clarinet and a far horn have the tunes", engine_slow),
 ]
 
 
