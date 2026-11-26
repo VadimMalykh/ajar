@@ -1382,6 +1382,7 @@ def make_all():
     out["gldefs.txt"] = works["gldefs"].encode()
     import gfx_institute2                                        # MAP13's and MAP14's own props and pictures
     gfx_institute2.make(out)
+    import gfx_longrun; gfx_longrun.make(out)                    # MAP21's apparatus, three looks (and the ghosts and pictures it asks for)
     import gfx_clockdept                                         # MAP18's own: the sign of a one-sided doorway
     import map_clockdept                                         # ... on the walls the map hangs it on
     gfx_clockdept.make(out, map_clockdept.SIGNPLATES)

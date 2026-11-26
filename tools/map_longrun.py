@@ -70,6 +70,63 @@ m.align |= gfx_institute.ALIGNED            # MAP11's walls are laid by where th
 OFF = (0, 8192)
 t = Times(m, off=OFF, at=(512, 32))         # the AjarThen thing, in the hall NOW
 
+# --- the apparatus THEN, and where it stood NOW (tools/gfx_longrun.py, src/zscript/apparatus.zs) -----------------
+# The look each group of parts wears: 1 Lamps and Reels, 2 Copper and Porcelain, 3 Glass and Mercury. Vadim's
+# choice is written here; AJAR_APPARATUS=1, 2 or 3 sets every group to that look (the look board's builds).
+import os
+import gfx_longrun as GL
+APPARATUS = dict(cabinets=1, racks=1, benches=1, tanks=1, pumps=1, belt=1, consoles=1, pictures=1, things=1, emitter=1)
+if os.environ.get("AJAR_APPARATUS"):
+    APPARATUS = dict.fromkeys(APPARATUS, int(os.environ["AJAR_APPARATUS"]))
+m.align |= GL.ALIGNED
+TROLLEY_T, TALL_T, SMALL_T, EMITTER_LOOK_T = 20195, 20196, 20197, 20198      # (apparatus.zs)
+
+
+def ap(part, group):
+    """A part's texture in its group's look."""
+    return GL.name(part, APPARATUS[group])
+
+
+def apparatus(x, y, kind, solid=False):
+    """A piece of apparatus THEN, a sprite (a trolley, a tall piece, a small thing): in the things' look;
+    solid only where it stands flush against a wall and nobody walks."""
+    t.then.thing(x, y, kind, args=(APPARATUS["things"], int(solid)))
+
+
+def bank_front(a, b, group="cabinets"):
+    """THEN: a cabinet bank's front a-b (64s from a multiple of 64): each 64 its own cabinet, by where it is."""
+    (x1, y1), (x2, y2) = a, b
+    n = (abs(x2 - x1) + abs(y2 - y1)) // 64
+    for k in range(n):
+        p = (x1 + (x2 - x1) * k // n, y1 + (y2 - y1) * k // n)
+        q = (x1 + (x2 - x1) * (k + 1) // n, y1 + (y2 - y1) * (k + 1) // n)
+        t.then.cut(p, q)
+        t.then.line(p, q, lower=f"AJUCB{APPARATUS[group]}{'ABCD'[(p[0] + p[1]) // 64 % 4]}")
+
+
+def picture(a, b, out, kind, part, group="pictures"):
+    """THEN: the wall piece a-b, seen looking `out`, shows gfx_longrun's picture `kind` on the wall `part`."""
+    sh = I1._shift(t.then.P(a), t.then.P(b), out)
+    look = APPARATUS[group] if kind in GL.HOME else 2                   # (the notice and the calendar: one of a kind)
+    hang_raw(t.then, a, b, GL.picture_name(kind, look, part, sh))
+
+
+apic = picture          # (sections 4 to 6 have a picture() of their own: there the apparatus's is apic())
+
+
+def ghost(a, b, out, part, rects, stubs=None):
+    """NOW: the wall piece a-b, seen looking `out`, shows where things stood or hung THEN: `rects` (x1, y1,
+    x2, y2) in the piece's picture, y from the top of the 256 (furniture h high: (x1, 256 - h, x2, 256);
+    a picture: GL.RECT[kind])."""
+    sh = I1._shift(a, b, out)
+    w = abs(a[0] - b[0]) + abs(a[1] - b[1])
+    hang_raw(t.now, a, b, GL.ghost_name(part, w, rects, sh, stubs))
+
+
+def hang_raw(c, a, b, tex):
+    c.cut(a, b)
+    c.line(a, b, mid=tex, exact=True)
+
 EX, EV, LB, CK, CO, LA, AR, PU = (Part(p) for p in ("EX", "EV", "LB", "CK", "CO", "LA", "AR", "PU"))
 FE, FL, FC, FA, FR, FP = (Part(p) for p in ("FE", "FL", "FC", "FA", "FR", "FP"))
 KE, KL, KC, KA, KP = (Part(p) for p in ("KE", "KL", "KC", "KA", "KP"))
@@ -195,12 +252,38 @@ MACHINE = [((384, 320, 480, 448), pillar("MC")), ((544, 320, 640, 448), pillar("
 # the desk it is run from, south of it on a dais: through 101 the other time's desk and machine are in view
 DAIS = ((416, 112, 608, 208), dict(floor=8, side=Part("B4"), ftex=Part("FA")))
 DESK_BOX = ((464, 144, 560, 176), box(40, "DT", "DS", floor=8))
-BENCHES = [(896, 448, 960, 640), (64, 448, 128, 640)]                           # THEN benches; NOW their footprints
+# THEN the apparatus: two banks of cabinets against the west and east walls in the north half, two low consoles in
+# the south half, cable ducts in the floor from the machine to the banks and from the dais to the machine (at both
+# times: NOW their covers are gone). NOW the banks' and consoles' footprints, and on the walls where they stood.
+BANKS = [(0, 448, 64, 704), (960, 448, 1024, 704)]                              # 128 high
+CONSOLES = [(64, 128, 128, 256), (896, 128, 960, 256)]                          # 48 high
+DUCTS = [(0, 416, 384, 448), (640, 416, 1024, 448), (416, 208, 448, 256), (576, 208, 608, 256)]
 for c in t.copies:
-    furn = [(r, box(48, "BT", "B4") if c.then else dict(ftex="AJIFE2")) for r in BENCHES]
+    if c.then:
+        furn = [(r, dict(floor=128, ftex=ap("CT", "cabinets"), side=ap("CS", "cabinets"))) for r in BANKS]
+        furn += [(r, dict(floor=48, ftex=ap("CK", "consoles"), side=ap("CN", "consoles"))) for r in CONSOLES]
+    else:
+        furn = [(r, dict(ftex="AJIFE2")) for r in BANKS + CONSOLES]
+    furn += [(r, dict(ftex="AJUDU3" if c.now else "AJUDU2")) for r in DUCTS]
     fit(c, (0, 0, 1024, 768), MACHINE + [DAIS, DESK_BOX] + furn, **HALL,
         **(dict(id=MACHINE_LIGHT, light=176) if c.then else {}))
     hang(c, (640, 0), (768, 0), "NB")                                           # the clock: going THEN, stopped NOW
+bank_front((64, 448), (64, 704))
+bank_front((960, 704), (960, 448))
+BANK_GHOST = [(0, 128, 256, 256)]
+ghost((0, 448), (0, 704), (-1, 0), "EX", BANK_GHOST, (2,))
+ghost((1024, 448), (1024, 704), (1, 0), "EX", BANK_GHOST, (1,))
+# by the doorway to the vestibule, where the player leaving the hall passes them: the notice and the calendar THEN;
+# NOW the notice's ghost and the calendar's same page, yellowed
+picture((1024, 256), (1024, 320), (1, 0), "NT", "EX")
+ghost((1024, 256), (1024, 320), (1, 0), "EX", [GL.RECT["NT"]])
+picture((1024, 416), (1024, 448), (1, 0), "CL", "EX")
+hang_raw(t.now, (1024, 416), (1024, 448), GL.picture_name("CL", 3, "EX", I1._shift((1024, 416), (1024, 448), (1, 0))))
+picture((576, 768), (704, 768), (0, 1), "SC", "EX")                            # the machine's schematic, THEN (NOW: stone)
+apparatus(288, 736, TALL_T, solid=True)                                         # two tall pieces against the north wall,
+apparatus(736, 736, TALL_T, solid=True)                                         # either side of the night room's wall
+apparatus(168, 584, TROLLEY_T)                                                  # a trolley left by the west bank
+apparatus(548, 158, SMALL_T)                                                    # on the desk
 frame((480, 320), (544, 320), (0, 1), 101, Part("MC"), clock=(NOW, THEN))
 t.clocked(512, 300, 90, frame=101)                                              # found hung in the machine
 t.line((480, 176), (544, 176), special=130, args=(DESK,), playeruse=True, playeruseback=True, repeatspecial=True,   # its panel faces the machine
@@ -231,7 +314,7 @@ t.now.cut((384, 768), (640, 768))
 t.now.sector([(480, -16), (480, 0), (544, 0), (544, -16)], floor=0, ceil=0, wall="AJSHUT", ftex="AJTRIMF",
              ctex="AJTRIMF", light=120)
 m.thing(512, 64, 1, angle=90)
-# the hall NOW: Doom's lamps; THEN: benches along the walls
+# the hall NOW: Doom's lamps
 for x, y in ((96, 96), (928, 96), (96, 672), (928, 672)):
     t.now.thing(x, y, 2028)                                                      # floor lamps
 # --- the doorway to the vestibule: THEN open; NOW bolted on the vestibule's side
@@ -276,6 +359,13 @@ t.then.room((1296, 272, 1312, 368), floor=0, ceil=128, wall="AJTRIM", ftex="AJTR
 t.then.line((1296, 272), (1296, 368), upper=AR)
 ajarmap.squeeze(m, t.then.P((1296, 448)), t.then.P((1296, 496)), (1, 0), -20)
 t.then.line((1296, 448), (1296, 496), upper=AR)
+# THEN the pass and key board behind the porter's desk, the notice by the turnstile, a small thing on the desk;
+# NOW where they hung (the south wall's strip is the pass office's: nothing of the apparatus there)
+picture((1088, 544), (1216, 544), (0, 1), "PB", "AR")
+ghost((1088, 544), (1216, 544), (0, 1), "AR", [GL.RECT["PB"]])
+picture((1296, 376), (1296, 440), (1, 0), "NT", "AR")
+ghost((1296, 376), (1296, 440), (1, 0), "AR", [GL.RECT["NT"]])
+apparatus(1176, 476, SMALL_T)
 
 # =================================================================================================
 # 3. THE CORRIDOR (NOW) / THE POCKET (THEN)
@@ -289,6 +379,9 @@ sign(t.then, (1312, 272), (1312, 368), (-1, 0), "CO", "NO DOORS BEYOND THIS POIN
 t.then.line((1312, 448), (1312, 496), upper=CO)
 for c in t.copies:
     hang(c, (1312, 512), (1312, 640), "NB")                                     # the clock in the pocket's stretch
+picture((1504, 256), (1504, 384), (1, 0), "WN", "CO")                          # THEN a wall newspaper; NOW its ghost
+ghost((1504, 256), (1504, 384), (1, 0), "CO", [GL.RECT["WN"]])
+apparatus(1468, 194, TROLLEY_T)                                                 # a trolley parked in the corner
 frame((1504, 448), (1504, 512), (1, 0), 103, CO, LOW, clock=(NOW,))
 frame((1344, 160), (1408, 160), (0, -1), 104, CO, LOW)                         # the stretch's south end: any door, both times
 
@@ -321,16 +414,21 @@ def lever_plate(a, b, out, cause, words, part):
 PIT, WATER, LEDGE = -200, -72, -56
 STEPS = [(1056 - 32 * (i + 1), LOW + (PIT - LOW) * (i + 1) // 7) for i in range(7)]       # x of each step's west edge, its floor
 CELLAR = look(LA, FA, KA, LOW)
-TANKS = [(640, 1104, 736, 1168), (864, 1520, 960, 1584), (736, 1520, 800, 1584)]
+TANKS = [(672, 1104, 736, 1168), (864, 1520, 928, 1584), (736, 1520, 800, 1584)]     # 64 square, 256 high (TK)
+PUMP = (576, 1104, 672, 1168)                       # the valve's pump, under its pipe run, west of its tank
+CELLAR_CONSOLE = (1136, 1552, 1232, 1600)           # on the landing, against its north wall
 for c in t.copies:
     tag = dict(id=BASIN) if c.now else {}
     feats = [((576, 1088, 1056, 1600), dict(floor=PIT, ftex=Part("FP"), **tag)),
-             ((576, 1280, 704, 1472), dict(floor=LEDGE, side=Part("B4"), ftex=Part("FA"), **tag))]
+             ((576, 1280, 704, 1472), dict(floor=LEDGE, side="AJULF3" if c.now else "AJULF2", ftex=Part("FA"), **tag))]
     feats += [((x, 1088, x + 32, 1184), dict(floor=f, side=Part("B4"), **tag)) for x, f in STEPS]
     if c.then:                                                                      # THEN: tanks in the dry pit
-        feats += [(r, pillar("TK", LOW)) for r in TANKS]
-    else:                                                                           # NOW: where the tanks stood
-        feats += [(r, dict(ftex="AJIFP2")) for r in TANKS]
+        feats += [(r, dict(floor=PIT + 256, ftex=ap("TT", "tanks"), side=ap("TK", "tanks"))) for r in TANKS]
+        feats += [(PUMP, dict(floor=PIT + 48, ftex=ap("PT", "pumps"), side=ap("PM", "pumps"))),
+                  (CELLAR_CONSOLE, dict(floor=LOW + 48, ftex=ap("CK", "consoles"), side=ap("CN", "consoles")))]
+    else:                                                                           # NOW: where they stood
+        feats += [(r, dict(ftex="AJIFP2")) for r in TANKS + [PUMP]]
+        feats += [(CELLAR_CONSOLE, dict(ftex="AJIFA2"))]
     fit(c, (576, 1088, 1232, 1600), feats, **CELLAR)
 room_door((1312, 1440), (1312, 1504), (-1, 0), LOW, CO, LA, "CELLAR", thick=80)
 frame((1232, 1248), (1232, 1312), (1, 0), 105, LA, LOW)
@@ -344,7 +442,11 @@ W.rate(m, 900, 1350, 0, 0, W.FLOAT)                                             
 t.cause(1144, 1500, VALVE, 2, basin=BASIN, depth=WATER - PIT, start=1)           # 0 shut (dry), 1 open (full): found open
 lever_plate((1232, 1328), (1232, 1392), (1, 0), VALVE, "VALVE", LA)             # on the landing's east wall, beside 105
 t.target(588, 1376, VALVE, z=44)                                                # on the ledge, across the pit: 105 sees it
-hang(t.then, (576, 1312), (576, 1440), "GA")                                    # the valve's gauges, over the target
+apic((576, 1312), (576, 1440), (-1, 0), "GB", "LA", group="pumps")              # the valve's gauges, over the target
+ghost((576, 1312), (576, 1440), (-1, 0), "LA", [GL.RECT["GB"]])                 # (NOW where they hung)
+apic((1072, 1600), (1136, 1600), (0, 1), "PP", "LA")                            # on the landing: a pipe run THEN,
+ghost((1072, 1600), (1136, 1600), (0, 1), "LA", [GL.RECT["PP"]])                # its ghost NOW; the console's ghost
+ghost((1136, 1600), (1232, 1600), (0, 1), "LA", [(0, 208, 96, 256)], (2,))
 # the pipe on the pit's west wall, just south of the ledge, at both times: its mouth at MOUTH, over NOW's
 # water. Open, a thin stream falls from it: THEN to the pit's floor (a wet patch there), NOW onto the water;
 # shut, the pipe is dry (AjarStream, map21.zs, shown by the valve's setting at once)
@@ -362,6 +464,8 @@ for c in t.copies:
 BAY = look(AR, FR, KA, LOW)
 UP_ = 56                                                                         # the gallery
 RACKS = [(1616, 1376, 1696, 1440), (1760, 1376, 1840, 1440)]
+MOTOR = (1568, 1216, 1632, 1264)                    # THEN the belt's motor, at the flap's end, north of the belt
+BAY_CONSOLE = (1760, 1488, 1840, 1536)              # THEN a console against the north wall, west of the lever
 HEAP_STEPS = [(1840, -64, -16), (1904, -88, 8), (1968, -112, 32)]               # x, floor standing (0), running (1)
 # The belt, at both times: out of the goods-in flap in the west wall, east along the south side to the hatch
 # (the heap's footprint). THEN it runs and crates ride it into the hatch, an open hole, railed (players may
@@ -378,10 +482,12 @@ for c in t.copies:
         feats += [((x, 1088, x + 64, 1216), dict(floor=f0, side="AJDSTOR", id=HEAP,
                                                  raw=heights(floors=(f0, f1), raised="AJDSTOF")))
                   for x, f0, f1 in HEAP_STEPS]
-        feats += [(r, dict(ftex="AJIFR2")) for r in RACKS]                       # where the racks stood
+        feats += [(r, dict(ftex="AJIFR2")) for r in RACKS + [MOTOR, BAY_CONSOLE]]  # where the apparatus stood
     else:
         feats += [(HATCH, None)]
-        feats += [(r, box(96, "BT", "B9", LOW)) for r in RACKS]
+        feats += [(r, dict(floor=LOW + 96, ftex=ap("RT", "racks"), side=ap("RS", "racks"))) for r in RACKS]
+        feats += [(MOTOR, dict(floor=LOW + 48, ftex=ap("BT", "belt"), side=ap("BM", "belt"))),
+                  (BAY_CONSOLE, dict(floor=LOW + 48, ftex=ap("CK", "consoles"), side=ap("CN", "consoles")))]
     fit(c, (1568, 1088, 2160, 1536), feats, **BAY)
     first = len(m.sectors)
     ajarmap.belt(m, c.P((1568, 1168)), c.P((BELT_END, 1168)), BELT_TAG if c.then else 0, floor=LOW, scroll=False,
@@ -391,14 +497,15 @@ for c in t.copies:
         bed = sec["ftex"] == "FLAT20"
         if c.now:                                                               # rusted and still
             sec.update(ftex="AJ21BT3" if bed else "AJ21CT3", side="AJ21CS3")
-        elif bed:
-            sec.update(side="SUPPORT2")
+        else:                                                                   # THEN new: the apparatus's belt
+            sec.update(ftex=ap("BB" if bed else "BC", "belt"), side=ap("BS", "belt"))
     if c.then:
         # the goods-in alcove behind the flap: low and dark, where the crates come from out of sight
         first = len(m.sectors)
         ajarmap.belt(m, c.P((FLAP, 1168)), c.P((1568, 1168)), BELT_TAG, floor=LOW, scroll=False, light=48)
         for sec in m.sectors[first:]:
-            sec.update(ceil=LOW + 40, ctex="FLAT20", wall=c.tex(AR), side="SUPPORT2" if sec["ftex"] == "FLAT20" else "METAL")
+            sec.update(ceil=LOW + 40, ctex="FLAT20", wall=c.tex(AR), side=ap("BS", "belt"),
+                       ftex=ap("BB" if sec["ftex"] == "FLAT20" else "BC", "belt"))
         for y1, y2 in ((1120, 1136), (1136, 1200), (1200, 1216)):
             c.line((1568, y1), (1568, y2), dontpegtop=True, **(dict(mid="AJ21FLP") if y1 == 1136 else {}))
         # the hatch: a rim of 8 at the floor along the walls, and the hole, dark (its ceiling lit as the room's)
@@ -415,6 +522,12 @@ for c in t.copies:
         c.cut((1568, 1136), (1568, 1200))                                           # the flap, shut
         c.line((1568, 1136), (1568, 1200), mid=picture(c, "F", AR, (1568, 1136), (1568, 1200), (-1, 0)),
                dontpegbottom=True)
+for x1, y1, x2, y2 in RACKS:                                                    # THEN the racks' long faces
+    for y in (y1, y2):
+        t.then.cut((x1, y), (x2, y))
+        t.then.line((x1, y), (x2, y), lower=ap("RF", "racks"))
+ghost((1568, 1216), (1568, 1264), (-1, 0), "AR", [(0, 208, 48, 256)], (1,))     # NOW where the motor stood
+ghost((1760, 1536), (1840, 1536), (0, 1), "AR", [(0, 208, 80, 256)], (2,))      # ... and the console
 room_door((1504, 1280), (1504, 1344), (1, 0), LOW, CO, AR, "GOODS")
 frame((1904, 1536), (1968, 1536), (0, 1), 108, AR, LOW)                       # looking straight at the hatch
 lever_plate((1840, 1536), (1904, 1536), (0, 1), BELT, "BELT", AR)               # beside it
@@ -439,7 +552,11 @@ OPT = look(LA, FA, KA, LOW)
 OPT_BENCHES = [(1216, 2400, 1312, 2448), (1216, 2688, 1296, 2736)]       # clear of the lines from 126 to the targets and of the beams
 for c in t.copies:
     feats = [((1344, 2512, 1472, 2640), dict(ftex=Part("FN")))]                     # an inlay under the emitter, both times
-    feats += [(r, box(48, "BT", "B4", LOW) if c.then else dict(ftex="AJIFA2")) for r in OPT_BENCHES]
+    feats += [(r, dict(floor=LOW + 48, ftex=ap(("OTA", "OTB")[i], "benches"), side=ap("OB", "benches")) if c.then
+               else dict(ftex="AJIFA2")) for i, r in enumerate(OPT_BENCHES)]
+    if c.now:       # light from a gap in the roof along the north wall, and on the walls A and C: the plan board
+        feats += [((1152, 2704, 1664, 2832), dict(light=184)),       # and the plates read from 106 and through it
+                  ((1152, 2480, 1216, 2672), dict(light=168)), ((1600, 2480, 1664, 2672), dict(light=168))]
     fit(c, (1152, 2320, 1664, 2832), feats, **OPT)
     hang(c, (1664, 2672), (1664, 2800), "NB")
 room_door((1376, 2256), (1440, 2256), (0, 1), LOW, CO, LA, "OPTICS")
@@ -476,7 +593,12 @@ for n, (hole, closet, faces) in HOLE_AT.items():
             t.now.line(a, b, upper=LA, dontpegtop=True)
 t.cause(1408, 2700, BEAM, 4, tag=HOLES, start=3)                                # 0 off, 1 A, 2 B, 3 C: found at C
 t.beam(1408, 2576, BEAM, (180, 90, 0))
-t.now.thing(1408, 2576, WRECK_T)                                                # NOW: the emitter's wreck, on the inlay
+t.now.thing(1408, 2576, WRECK_T, args=(APPARATUS["emitter"],))                   # NOW: the emitter's wreck, on the inlay
+t.then.thing(1408, 2576, EMITTER_LOOK_T, args=(APPARATUS["emitter"], 0, BEAM))      # THEN: the emitter, lit or OFF
+apparatus(1184, 2352, TALL_T, solid=True)                                       # tall pieces in the west corners
+apparatus(1184, 2800, TALL_T, solid=True)
+apic((1152, 2400), (1152, 2464), (-1, 0), "PP", "LA")                           # a pipe run on the west wall
+ghost((1152, 2400), (1152, 2464), (-1, 0), "LA", [GL.RECT["PP"]])
 for x, setting, z in BOARD_TARGETS:                                             # off, A, B, C: on the plan board
     t.target(x, 2820, BEAM, setting, z=z - 10 - LOW)
 ajarmap.door(m, BLUE, 1056, 2576, angle=0)                                      # behind A

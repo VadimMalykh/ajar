@@ -64,8 +64,9 @@ for name in sys.argv[1:]:
     seen = {}
     for t in m.things:
         k = (t["x"], t["y"])
-        # (a door, a porter, a figure in a glass case: a self stands on a plate figure; a MapSpot is only a mark)
-        if k in seen and t["type"] not in (20002, 20003, 20051, 9001) and seen[k] not in (20002, 20003, 20051, 9001):
+        # (a door, a porter, a figure in a glass case: a self stands on a plate figure; a MapSpot is only a mark;
+        # MAP21's apparatus emitter (20198) stands on then.zs's emitter and shows it in the apparatus's look)
+        if k in seen and t["type"] not in (20002, 20003, 20051, 9001, 20198) and seen[k] not in (20002, 20003, 20051, 9001, 20198):
             print(name, "SAME SPOT", t["type"], seen[k], k); bad += 1
         seen[k] = t["type"]
     print(name, "things check:", bad, "problems")

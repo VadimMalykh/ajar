@@ -396,7 +396,9 @@ class AjarStreamPatch : Actor
 class AjarEmitterWreck : Actor
 {
 	Default { +NOBLOCKMAP +NOGRAVITY }
-	States { Spawn: AJXW A -1; Stop; }
+	// the apparatus's wreck of the emitter (tools/gfx_longrun.py, AJUE D, E, F) in the look args[0] (1 to 3)
+	States { Spawn: AJUE D -1; Stop; }
+	override void PostBeginPlay() { Super.PostBeginPlay(); frame = 3 + clamp(args[0], 1, 3) - 1; }
 }
 
 // The checks: MAP=MAP21 MODE=n tools/smoke.sh.
