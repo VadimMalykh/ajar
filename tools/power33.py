@@ -141,6 +141,9 @@ def apply(S, n):
             s["ctex"] = ctex
         if tint == "room":
             s["color"] = None
+        elif tint == "floor" and s["color"] is not None:     # a way out of doors: its tint on its floor only (not
+            s["raw"] = dict(s["raw"], color_floor=s["color"])  # up a yard's wall to the sky)
+            s["color"] = None
         if way:
             WAYS.add(i)
         ROLE[i] = role or ROLE.get(i)
@@ -291,7 +294,7 @@ def apply(S, n):
         if i in KEEP or i in ROLE:
             continue
         if s["id"] == YP and s["ctex"] == SKY and s["color"] == S.G_WAY:
-            dress(i, wall=W("YD", F=S.FLOOR2, part=2), side=riser(i), ftex=F_("SB"), tint=None, role="ystairs")
+            dress(i, wall=W("YD", F=S.FLOOR2, part=2), side=riser(i), ftex=F_("SB"), tint="floor", role="ystairs")
 
     # --- part 3 -------------------------------------------------------------------------------------
     for i, s in enumerate(secs):
@@ -329,8 +332,8 @@ def apply(S, n):
             else:
                 dress(i, wall=wall, side=W("PF"), ftex=F_("DG"), role="pbank")
         elif within(i, S.CHANNEL):
-            dress(i, wall=W("OC", F=-8, part=3), side=W("OC", F=-8, part=3), ftex=F_("SB"), tint=None,
-                  role="outfall")
+            dress(i, wall=W("OC", F=-8, part=3), side=W("OC", F=-8, part=3), ftex=F_("SB"),
+                  tint="floor", role="outfall")
         elif s["id"] == S.TOWER:
             wall = W("TW", F=S.TF, part=3)
             if fl == S.TF + 96:
