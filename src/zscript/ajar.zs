@@ -4191,7 +4191,8 @@ class AjarStatusBar : BaseStatusBar
 				DI_SCREEN_CENTER_TOP | DI_TEXT_ALIGN_LEFT, h.shutterLeft < 70 ? Font.CR_RED : Font.CR_WHITE);
 		}
 		if (!h.carried) return;
-		DrawImage(String.Format("AJDR%d", h.carried.args[1]), (-8, 28),
+		// (the clocked door by its sprite: AJDR10 is the time door's, gfx_time.py, which shares its number)
+		DrawImage(h.carried.args[1] == AjarDoor.CLOCKED ? "AJDTA0" : String.Format("AJDR%d", h.carried.args[1]), (-8, 28),
 			DI_SCREEN_RIGHT_BOTTOM | DI_ITEM_RIGHT_BOTTOM, 1.0, (-1, -1), (1.5, 1.5));
 	}
 }
