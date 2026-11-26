@@ -17502,6 +17502,8 @@ same). Their own tests on the branch's build: `MAP=TEST MODE=1` 7 of 7,
 `MAP=LAB MODE=1` 16 of 16, `MAP=MAP11 MODE=1` 24 of 24 (level exited),
 `MAP=MAP20 MODE=1` 124 checks (its high water part 90 of 90) and the level
 exited, `MAP=MAP09 MODE=1` 57 of 57 and the level exited by its way out.
+The full build (with the solver) passes, every level 0 stuck; its MAP21 line
+(13 door actions, 150165 states) is the graph's, not yet the map's.
 
 **Choices made here.**
 - A second line id for the copy then (+20), not one id resolved by time:
