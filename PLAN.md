@@ -17605,3 +17605,174 @@ patterns for the new pieces: as they are, a second way of playing each (the
 long notes walked through), and both cut for a bar of twelve. The ten are
 written in two tasks, `engine-fast` (26 to 30 in the lab) and `engine-slow`
 (31 to 35); what each is stands in the section that follows them.
+
+## MAP21: the causes made readable (built 2026-11-26)
+
+Vadim could not follow why turning the belt on THEN gave the crate stairs
+NOW. The puzzle, the rooms' plan, the fights and the solver's graph stay as
+they were; what the player sees changes, by three rules (Fable's, given to
+an Opus worker on branch `map21-causes`):
+1. THEN the device visibly does the thing, small.
+2. NOW its wreck is at the same spot, and the result is where the device was
+   putting it.
+3. The change is watched: the frame faces the spot that changes, the lever
+   is on the frame's own wall beside it, the targets are at the device
+   opposite. A name plate (VALVE, BELT, BEAM) hangs over each lever at both
+   times (NOW faded, the lever rusted away).
+
+**The cellar (valve).**
+- The lever is on the landing's east wall beside 105 (1232, 1328..1392;
+  it was on the landing's north wall at 1120..1184).
+- A pipe on the pit's west wall just south of the ledge (576, 1216..1280),
+  at both times (THEN painted, NOW rusted), its mouth at -16 (56 over the
+  water's -72).
+- Valve open: a thin stream (`AjarStream`, thing 20191) falls from the
+  mouth, THEN to the pit's floor (-200) with a wet patch and a trickle
+  (`ajar/water`), NOW onto the water. Shut: no stream, the pipe dry. The
+  stream is shown or hidden at once with the setting, at both times.
+
+**The goods bay (belt).**
+- Frame 108 is on the north wall at 1904..1968 (it was 1680..1744), the
+  lever west of it at 1840..1904; from 108's mouth one looks south at the
+  hatch. The target hangs over the hatch at (1936, 1100), its middle at 16
+  (56 over the bay's floor), seen over the rail.
+- The belt is there at both times, along the south wall from the goods-in
+  flap in the west wall (x 1568) to the hatch (x 1840); THEN it runs on
+  past the flap into a low dark alcove (1520..1568), where the crates come
+  from out of sight.
+- THEN the hatch (1840..2032 x 1088..1216, the heap's footprint) is an open
+  dark hole down to -168, with a rim of 8 along the walls. A rail on its
+  north side (posts and a yellow and black bar) and a bar over the belt's
+  end on its west side stop players; monsters are stopped on the north
+  side only, since a monster-blocking line stops crates too.
+- `AjarGoodsIn` (thing 20188, in the alcove) puts four crates on the belt at
+  the start, 68 apart. While the belt runs they ride (2 a tic) and drop
+  into the hatch (a thud, then gone); new ones come out of the flap a
+  spacing behind the last, so that three or four are on the belt at once.
+  A crate takes 151 tics (4.3 s) from the flap to the hatch's edge. When
+  the belt stands they stand.
+- NOW the same belt, rusted and still (`AJ21BT3`, `AJ21CT3`, `AJ21CS3`), the
+  flap shut and rusted. While the belt has never run (setting 0), dusty
+  crates (`AjarOldCrate`, solid, 32 high, grey-brown with dust) stand on it
+  exactly where THEN's crates stand, and follow them when THEN's move
+  (their lids are at -8, and nothing near them is reached from there: the
+  heap is not there, the gallery is at 56). Running (setting 1): none, the heap is over the
+  hatch as before.
+- Sound: the belt hums THEN while it runs (`plats/pt1_mid`, low); NOW the
+  heap rumbles while it moves (`AjarRumble`, thing 20192) and clunks when
+  it stops.
+
+**Optics (beam).**
+- The lever is on the south wall east of 106 (1600..1664).
+- A plan board on the north wall (1472..1664, 192 wide), at both times
+  (NOW faded): the room as one faces it from 106, BEAM over it, the
+  emitter (OFF) in the middle low, A on the left, C on the right, B at the
+  top, a line from OFF to each.
+- THEN the four targets sit on the board: A at x 1504 and C at 1632 (their
+  middles at 72), OFF at 1556 (72), B at 1580 (136). The old row of targets
+  on the north wall is gone.
+- A letter plate (A, B, C; `AJ21Snn`) over each hole NOW and over each spot
+  where the beam strikes THEN.
+- NOW the emitter's wreck (`AjarEmitterWreck`, thing 20189) stands on the
+  inlay where the emitter stood.
+- The benches stand clear of the lines from 106 to the board and of the
+  beams.
+
+**Departures from the brief, and choices of my own** (the worker's).
+- DoomEdNums 20188, 20189, 20191, 20192 (20190 was already AjarDoomNote).
+- B and OFF are not one above the other: OFF at x 1556, B at 1580, 24 apart
+  across, since autoaim took the other of two targets stacked in one
+  column. B is still the top, 64 over the others.
+- The dusty crates are not at fixed spots: they follow THEN's crates (the
+  brief's "where then's crates stand"), so that NOW shows whatever THEN's
+  last moves left.
+- The second optics bench is at 1216..1296 x 2688..2736: at 1152 it left a
+  32-wide gap against the west wall (mapcheck's SLOT).
+- AVOID (the fights' spots kept clear): (1712, 1520) is now (1936, 1520),
+  (1150, 1590) is now (1200, 1360), (1632, 2352) added; THEN's (1700, 1300)
+  and (1700, 1340) taken out, since without them the bay had no room for
+  its monsters ("no room in bay"). The bay's Halton spots, and so where its
+  monsters stand, moved; the counts did not.
+- The hatch's pit has a rim of 8 at the floor along the walls, so that the
+  walls inside it stay dark (they are the rims' lower textures).
+- MODE=3's views "from beside each lever" through the hung door stand a
+  step back from the lever (a view from right beside it sees the frame's
+  jamb).
+- The levers at 1328..1392 and 1840..1904 are off the 64 grid; their
+  pictures are laid as the wall around them, by x or y.
+- New test MODE=4 (`smoke_MAP21_4.cfg`); mapcheck's ON_WALL has 20191 (the
+  stream stands against the pit's wall on purpose).
+- `ajarthen.Times.lever` takes `tex=` (a lever's own pictures); MAP21's
+  levers are `AJ21Lnn` (THEN) and `AJ21Dnn` (NOW) with the plate.
+- A translation `AjarDustCrate` (trnslate.txt): `AjarDust` made the crates
+  white in the bay's dark.
+
+**Files.** `tools/map_longrun.py` (sections 4 to 6 and AVOID only),
+`tools/gfx_then.py` (`causes`: the pictures map_longrun asks for in
+`PICTURES`, and `AJ21FLP`, `AJ21RAL`, `AJ21RAW`, `AJ21BT3`, `AJ21CT3`,
+`AJ21CS3`, sprites `AJXS` (the stream), `AJXP` (the wet patch), `AJXW` (the
+wreck)), `src/zscript/map21.zs` (`AjarGoodsCrate`, `AjarOldCrate`,
+`AjarGoodsIn`, `AjarRumble`, `AjarStream`, `AjarStreamPatch`,
+`AjarEmitterWreck`; the tests), `src/mapinfo.txt`, `src/trnslate.txt`,
+`tools/ajarthen.py`, `tools/mapcheck.py`, `tools/smoke_MAP21_3.cfg` (30
+views), `tools/smoke_MAP21_4.cfg`.
+
+**Older statements now wrong.**
+- "MAP21: the first version, as decided", 5: "now the floor is bare" when
+  the belt has stood: the dead belt runs along the south wall NOW, with the
+  dusty crates on it.
+- "MAP21: the first playable version", the level as built: 5, frame 108 is
+  at 1904..1968, not 1680..1744; the belt is there at both times, THEN
+  with the flap, the alcove and the open hatch; 6, the lever is not "by the
+  door" (the south wall at 1216..1280) but on the south wall east of 106
+  (1600..1664), and the targets are on the plan board, not a row on the
+  north wall.
+- The causes' table there: the valve's lever is beside 105 on the
+  landing's east wall; the belt's lever is on the north wall beside 108
+  (not the south wall at 1632..1696) and its target is over the hatch (not
+  by the lever);
+  the beam's lever is beside 106 and its targets are on the plan board.
+- Its choice "Shots at A through 106 ... from x 1527" and MODE=2's "the beam
+  to A (from x 1527) and then to B": every board target is now shot from
+  one place, (1568, 2360) in front of 106. MODE=2 now sets all four.
+- "MODE=3: 21 views": now 30.
+
+**Runs** (on the full build).
+- `./build.sh` (full): MAP21 "solvable in 12 door actions, 226893 states,
+  0 stuck; can be lost for good: nothing"; all 38 solver lines are the
+  same as a full build of main at d15aa2f.
+- Every other map's wad is byte for byte main's (47 maps; only MAP21.wad
+  differs).
+- `tools/mapcheck.py map_longrun`: no way under 48, no new SLOT; its 7
+  notes are as before (the six targets, the water's control sector).
+  `tools/thingcheck.py`: 0 problems. `tools/itemcheck.py`: the 2 notes
+  as before (the valve's target, the gallery's rockets).
+- MODE=1: 60 checks, all pass, out by the night room (`outByTheWayOut`,
+  `levelExited`); the levers are used from beside their frames.
+- MODE=2: 14 checks, all pass. Through 105 the valve shut and open again
+  (shot from (1200, 1280)); through 108 the belt run and stopped (from
+  (1936, 1500), in front of 108); through 106 A, B, OFF and C on the board,
+  each from (1568, 2360) in front of 106, with the holes checked after
+  each.
+- MODE=3: 30 views (each cause room THEN and NOW in both settings, a view
+  through the hung clocked door from beside each lever THEN, and from in
+  front of each frame NOW), two screenshots each.
+- MODE=4 (new, `TIMEOUT=200`): 20 checks, all pass: four crates on the
+  belt at the start and the dusty ones NOW at the same places; the stream
+  shown at both times with the valve open, onto the water NOW (-72), to
+  the floor THEN (-200), gone at once when shut and back when open; each
+  lever used from beside its frame; no dusty crates while the belt runs;
+  crates ride, 8 gone into the hatch, 8 come out of the flap, 3 on the
+  belt at once, 151 tics from the flap to the hatch; the belt stopped, the
+  crates stand, the dusty ones where THEN's stopped.
+- The THEN lab, MODE=1..5: 30, 12, 17, 15 and 14 checks, all pass.
+  `MAP=MAP17 MODE=1` (AjarGoodsCrate is an AjarCrate): 64 checks, all
+  pass, `levelExited`. water.zs and ajarwater.py are not touched (MAP20
+  not run).
+
+**Not tested / not played by hand.** The sounds (the runs are `-nosound`):
+the hum, the rumble and its clunk, the trickle, the crates' thud; how the
+crates' fall reads at speed; the look on the real machine (GLES); the
+stream and the plates beyond the MODE=3 views; a player standing on the
+belt THEN while it runs (not tried: the rail should hold him); the
+bay's monsters at their new spots in a real fight.
