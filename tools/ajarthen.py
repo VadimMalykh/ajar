@@ -215,14 +215,17 @@ class Times:
         Starts in `start`."""
         self.then.thing(x, y, CAUSE_T, id=tid, args=(settings, tag, basin, depth, start))
 
-    def lever(self, a, b, cause, *, foot=True):
+    def lever(self, a, b, cause, *, foot=True, tex=None):
         """The fixture's lever on the 64-long wall piece a-b: THEN, USE
-        steps its setting on (Thing_Activate); NOW the same lever is dead."""
+        steps its setting on (Thing_Activate); NOW the same lever is dead.
+        `tex`: its own pictures, {NOW: dead, THEN: live} (MAP21's, with a
+        name plate over them), instead of the plain ones."""
+        tex = tex or LEVER
         self.cut(a, b)
         peg = dict(dontpegbottom=True) if foot else {}
-        self.then.line(a, b, special=130, args=(cause,), playeruse=True, repeatspecial=True, mid=LEVER[THEN],
+        self.then.line(a, b, special=130, args=(cause,), playeruse=True, repeatspecial=True, mid=tex[THEN],
                        exact=True, **peg)
-        self.now.line(a, b, mid=LEVER[NOW], exact=True, **peg)
+        self.now.line(a, b, mid=tex[NOW], exact=True, **peg)
 
     def target(self, x, y, cause, setting=None, z=28):
         """Something to shoot THEN, at x, y (12 clear of its wall), `z` up:
