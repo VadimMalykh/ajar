@@ -5,3 +5,5 @@ AjarSelf2 = "112:127=[120,255,104]:[0,56,0]"
 AjarSelf3 = "112:127=[255,104,88]:[72,0,0]"
 // An old corpse (then.zs): a monster dead forty years, grey and pale as dust.
 AjarDust = "0:255=%[0.42,0.40,0.36]:[1.70,1.66,1.56]"
+// MAP21's goods bay NOW (map21.zs): a crate left on the dead belt forty years, its wood grey-brown with dust.
+AjarDustCrate = "0:255=%[0.14,0.12,0.10]:[0.78,0.70,0.58]"
