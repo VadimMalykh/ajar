@@ -1169,8 +1169,8 @@ class AjarHandler : EventHandler
 		// Monsters would walk into the scripted smoke tests. (In a real level
 		// mode 2 is a tour of it as it is played, so it keeps them.)
 		int autotest = CVar.GetCVar("ajar_autotest").GetInt();
-		// (MAP33's tests play its fights in every mode: map33.zs; the kennel lab's tests clear what they do not use)
-		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2) && !(level.mapname ~== "MAP33") && !(level.mapname ~== "KENNEL"))
+		// (MAP33's tests play its fights in every mode: map33.zs; the kennel lab's and MAP23's tests clear what they do not use)
+		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2) && !(level.mapname ~== "MAP33") && !(level.mapname ~== "KENNEL") && !(level.mapname ~== "MAP23"))
 		{
 			let mi = ThinkerIterator.Create("Actor");
 			Actor a;
@@ -1265,7 +1265,7 @@ class AjarHandler : EventHandler
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
 		// MAP17's, MAP18's and MAP19's tests end with the level: the next map must not take the test up
-		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20" || level.mapname ~== "MAP21" || level.mapname ~== "MAP22") CVar.FindCVar("ajar_autotest").SetInt(0);
+		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20" || level.mapname ~== "MAP21" || level.mapname ~== "MAP22" || level.mapname ~== "MAP23") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1423,6 +1423,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "MAP21") return;     // and MAP21 (map21.zs, LongRunTest)
 		if (level.mapname ~== "MAP22") return;     // and MAP22 (map22.zs, DayReturnTest)
 		if (level.mapname ~== "KENNEL") return;    // and the kennel lab (kenneltest.zs)
+		if (level.mapname ~== "MAP23") return;     // and MAP23 (map23.zs, SleepingDogsTest)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 4) LabReachScript(mo, t);      // the reach survey (reachtest.zs)
