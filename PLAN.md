@@ -19860,3 +19860,107 @@ main's, and the new textures are added. The three new faces were looked at
 as pictures (`AJ2X1N`, `AJQMD0`, `AJR4C`). **Not seen in the game**: the
 route board with the clocked door hung, the museum's door and the hotel's
 front doors (no test view looks at them).
+
+## MAP22: BLUE's ambush with an arch-vile; the way out is gated (decided 2026-11-27, to build)
+
+Vadim, playing the first version: "Here when I finally take blue door, let's
+have bigger ambush. Arch-vhile maybe? Not sure about cyberdemon." and "Also
+exit is too easy, let's make bigger puzzle please". Settled by Claude on
+Fable, the puzzle after the solver. Vadim has not seen this text.
+
+### The ambush when BLUE is taken (the theatre now)
+
+It was 2 imps, 3 sergeants and a knight. Now, on "Resident", cause 10 + BLUE
+as before:
+
+| When | Where | What |
+|---|---|---|
+| 1 s | the rooms behind the foyer | 2 imps (as before) |
+| 1 s | the foyer | 2 chaingunners, 2 knights |
+| 3 s | the foyer | **1 arch-vile** (on every difficulty but the easiest) |
+| 6 s | the foyer | 2 revenants |
+
+- **Why the arch-vile here**: BLUE leans in the rooms behind the foyer, and
+  the foyer between it and RED's far side is where the player has just
+  killed MAP03's own company. An arch-vile there has that fight's dead to
+  raise, and the rooms behind the foyer are cover from its flame: the
+  player holds the doorway or loses the foyer again.
+- **No cyberdemon**: the foyer is about 560 by 285 and the player has a
+  door to carry out through it. A cyberdemon there is luck, and its first
+  appearance in the game is worth a place made for it.
+- Supplies for it, in the rooms behind the foyer: a box of rockets, a cell
+  pack and two medikits more than there are. The part's budget rule
+  (ammunition at least 1.6 times the monsters' health) still holds.
+- The count on "Resident" goes from 148 to about 154 with the gate's
+  company below (the level's rule is 130 to 160).
+
+### The way out: the night room is gated then, and whole now
+
+**It was**: both keys, the shelter's brass door, the stair, and BLUE hung in
+the brass frame at the far end of the night room. One door action.
+
+**The idea**: the night room is one room at two times, and BLUE is the line
+to it at both. Then, a wall with a bolted door stands across it, the bolt on
+the far side: HOME is behind it. Now, forty years on, that wall is down. So
+the far side of the gate is reached through now.
+
+**The night room then** (320 by 256; the stair comes up into its west part):
+- a wall across it, 16 thick, at 192 from the west wall. West of it: BLUE's
+  far side then, the stair's landing. East of it (112 wide): the brass frame
+  HOME (BLUE's alone), and in the south wall a frame for the clocked door,
+  **125**.
+- in the wall, on the runner: a bolted door (`ajarmap.bolted`), the bolt on
+  the east side. It opens for good when the player first stands east of it
+  (`ajarmap.unbolt`: every way of arriving there crosses the line), or by
+  USE from that side.
+- either side of the bolted door a barred window, so that from the west
+  part the player sees HOME, the bolt's side and the clocked door's frame.
+
+**The night room now**: one room. The wall is down: a stub of it left at the
+north wall and at the south wall, the middle open (at least 128). Frame
+**105**, twin of 125, the clocked door's alone, at the same place in the
+south wall. Stone where HOME is, as before.
+- **MAP10's hole down into the shelter is shut now**: the short passage
+  north of the room ends in Doom's stone (a way that was there then, the
+  stair, and is not now: MAP21's rule). With the hole open the level can be
+  lost: the clocked door hung in 125 from the then side, the player through
+  it and down the hole, and nothing leads back up (the solver: 672 stuck
+  states, every one entered by that drop).
+- So now the room is come into and left through BLUE on the old bus, or
+  through the clocked door in 105.
+
+**The way through** (the solver's shortest: 12 door actions; it was 8):
+1. to 5. as before: the peace, the turn, key 2, BLUE from the theatre now,
+   key 1.
+6. Up the stair with both keys: the gate, bolted on the other side; HOME and
+   an empty clocked frame behind the bars.
+7. BLUE on the old bus (door 2 or 7): the night room now, whole.
+8. The clocked door off the bus, carried through BLUE, hung in 105: the far
+   side of the gate, then. The bolt is drawn.
+9. The clocked door back to the bus (through BLUE), BLUE taken down and
+   carried through the clocked door to then.
+10. The brass door, the stair, the gate, HOME.
+
+What has to be understood: BLUE is a line to the same room at the time of
+the bus it hangs on (the level's rule, used on RED before); what is shut
+then may be open now; and the clocked door cannot be in two frames, so it
+goes back to the bus before BLUE comes down. A wrong order is never fatal:
+whoever takes BLUE down too early hangs it again.
+
+**The solver** (`tools/puzzle22.py`, to be `PUZZLE22`): the night room then
+is two regions, `lineT` (west: BLUE's far side then, the stair) and `lineE`
+(east: HOME, frame 125); `lineN` has frame 105; twins 105/125, only the
+clocked door; the gate is walk links `lineT`/`lineE` needing the automatic
+key "g" that lies in `lineE`; `home_door=BLUE`; no link `lineN` to `sqN`.
+12 door actions, 28633 states, 0 stuck, nothing lost; the same without
+door 6's frame, 15 actions without door 7's, 12 with no way out of the
+theatre but RED. The brass door stays locked from both sides: free from
+inside there are 92 stuck states.
+
+**A small company at the gate**: when the bolt is drawn (`AMBUSH_BOLTS`),
+in the west part then: 2 imps and a revenant, 1 s on. Dropped if they do
+not fit.
+
+**The turn** is as it was: the clocked door's first hanging in a twinned
+frame. Frame 105/125 cannot be the first (BLUE is in the theatre now), and
+hanging there later must start nothing.
