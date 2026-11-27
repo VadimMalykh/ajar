@@ -21475,3 +21475,139 @@ and hung in 104 it brings back loose guards. The other two stay in
 - Bones at the start are there at once (no fade at the first tic).
 - Killing the knight in the stall stays possible; nothing needs it.
 
+
+## MAP23 "Sleeping Dogs": the first playable version (built 2026-11-27)
+
+Built by a worker on Opus from the section above and its correction (fix 1).
+Files: `tools/map_sleepingdogs.py` (MAP23, registered after the kennel lab),
+`tools/puzzle23.py`, `src/zscript/map23.zs` (the Doom gates, the level's
+handler, the tests), `tools/smoke_MAP23_1..4.cfg`; a few lines in
+`then.zs`, `kennel.zs`, `ajar.zs`, `build.py`, `mapinfo.txt`, `zscript.zs`;
+`tools/solve.py` gained `"apart"` (a walk only while the clocked door hangs
+nowhere).
+
+**The solver.** `MAP23: solvable in 10 door actions, 4533 states, 0 stuck`,
+nothing lost (complete). The shortest way: the clocked door to 104, the
+isolation run then (g), down; to 103, the stall then (k), down, up the
+knight's bones: key 2; to 102, the kennels then (d), back, left hung; RED
+from the guard room; RED swapped in at 102 for the clocked door: pen 1
+weighs, S1: key 1; through RED to the big run's passage, the clocked door
+in 105, the crush then (c), down; out through RED; the hall, the yard, the
+big run, up the big one's bones, the brass door. As designed: no solution
+(771 states); fixes 2 and 3 solve in 10 (5235 and 9573 states); without any
+one of the four specimens, none.
+
+**The place** (NOW's coordinates; THEN is NOW + (0, -8192)):
+- *The yard* (0, -256)-(640, 512), the start at (320, 32) facing the glass;
+  the shelter in its west part with the clocked door; the house door at
+  x 288..352 in the north wall (Doom's door NOW; THEN the institute's door
+  face, "Locked for the night."); frame 101 at x 480..544 beside it; along
+  the east side the glass (y -176..336; sill 8, 128 of AJGLAS: blocks
+  passing, shots and sight) and the big run's gateway (y 384..496: open
+  NOW, an AJSHUT wall THEN). THEN, west of the shelter, the secret: a
+  closet with blue armour.
+- *The hall* (0, 592)-(768, 1216), NOW only: west to the kennels' passage
+  and run, north to the antechamber, east by a corridor to the stalls' run.
+- *The kennels*: the run (-912, 960)-(-16, 1216), pens 240 by 256 along its
+  south side (pen 1 the scales, tag 81; THEN pens 2 and 3 shut, pen 1's
+  gate a shutter on cause 21), the passage (-1040, 544)-(-16, 672) south of
+  the pens with a hatch into each and its leg up the west side to the
+  turnstile (x -928..-912). Frame 102 in the passage's south wall
+  (x -400..-336); S1 at x -792..-728 with its closet (key 1, the super
+  shotgun); the second shutter (1000) from the closet to the secret
+  (megasphere, plasma rifle). The readouts: 400 in the passage beside pen
+  1's hatch, 1000 in the closet. THEN three demons, the Doom gate's pad at
+  the run's east end.
+- *The stalls*: the run (1152, 640)-(1408, 1536), the funnel (128 deep) to
+  the stall (1240, 304)-(1320, 496) at its south end, the passage (THEN
+  y 160..288, NOW 160..224) south of it with frame 103 (x 1152..1216), the
+  leg up the east side to the turnstile. NOW the ledge at 48 along both
+  sides and round the end, Doom's stone where the hatch was; key 2 and a
+  soul sphere on the end. THEN two knights, the pad at the run's north end.
+- *The guards*: THEN the isolation run (0, 1280)-(768, 1472) with frame 124
+  in its west end, the turnstile (x 176..240) into the passage north of it,
+  the pen (784..1024) at its east end. NOW the antechamber (frame 104), a
+  doorway, the guard room: two barons and an arch-vile (asleep, facing the
+  doorway); RED leans at (984, 1376), on the far side, in what is the pen's
+  place then.
+- *The big run* (656, -896)-(912, 560): NOW the big one's bones (a step) at
+  (784, 96); the funnel, the crush (720, -1296)-(848, -1040) with the ledge
+  at 48 on both sides and round the end; the brass door (keys 1 and 2) in
+  the east ledge's wall at y -1136..-1072, the night room behind it
+  (`way_out`, turned). THEN the cyberdemon, the pad at the north end.
+- *Its passage* (560, -1456)-(1072, -1312 THEN, -1360 NOW): frame 105 in
+  its west end, RED's far side in its south wall (x 864..928); THEN the
+  crush's hatch (x 752..816), the pier (816..864, 48 deep) beside it and
+  the crush's lever just behind the pier (x 880..944).
+
+**Engine pieces.**
+- `then.zs`: the stand-ins made at the first tic are whole at once; a
+  stand-in whose monster dies THEN becomes its corpse where it died.
+- `kennel.zs`: a step follows its bones when they are moved.
+- `AjarStockGate` (20194, `map23.zs`): as specified above. Its arrival
+  counts for no kill, and while the times are apart its bones show at once
+  (a stand-in, as every specimen's). The cyberdemon's gate keeps off while
+  a dead one lies in the crush.
+- `AjarSleepingDogs`: the specimens (and the guards) count for no kill; the
+  big one is woken when the player is in its passage THEN; the three lines,
+  each once.
+- Music: THEN MAP21's (AJM_AFTR); NOW AJM_EMY1 ("Mysterium Engine,
+  Choir"), which no other map plays.
+
+**Budget** (`python3 tools/map_sleepingdogs.py budget`; skill 3, the
+specimens apart): yard 5 monsters (ammunition x27.7), hall 20 (x9.0),
+kennels 21 (x4.5), stalls 20 (x2.4), guards' wing 8 (x3.1), big run 21
+(x2.0); the level 95 (hp 13500, x3.4). On skill 1 51, on 2 74. The
+specimens, not paid for: 9 (three demons, two knights, the big one, two
+barons and an arch-vile; hp 8150). Ambushes: key 1 (imps, sergeants, a
+knight in the kennels), key 2 (imps, revenants, chaingunners in the
+stalls), RED (imps in the antechamber, demons and cacodemons in the hall),
+the brass door first open (knights, imps, cacodemons, a revenant in the big
+run).
+
+**Checks** (headless): MODE=1 the way through (45 checks, `levelExited`,
+twice), MODE=2 the rules (28 checks), MODE=3 measured, MODE=4 23 views;
+mapcheck 0 problems, thingcheck 0; itemcheck reports key 2 and the soul
+sphere out of reach (48 above the stall's floor): only the knight's bones
+reach them, as designed.
+
+**MODE=3, measured** (specimens woken by script with no stale direction:
+`movedir` DI_NODIR, so they do not first walk east):
+- A knight in its run, the player at the stall's hatch: into the stall 10
+  of 10, 237 to 402 tics (324 on average); the player steps to the lever
+  beside the hatch and pulls it: shut in 10 of 10.
+- The big one, the player at the crush's hatch: deep in the crush 10 of 10,
+  231 to 384 tics (321); round the pier to the lever: shut in 7 of 10 (3
+  backed out while he walked). It hurt the player at the hatch 500 to 990
+  each time (7008 in all): its rockets come through the hatch. Behind the
+  pier at the lever: 0 in 10 times 210 tics.
+- Left with its gate open and the player NOW: knights 10 of 10 left the
+  stall's end of the run (69 to 99 tics), the big one 5 of 5 (51 to 54): THEN
+  south of NOW works as meant.
+- The guards led through the clocked door (since caco-through-doors): 25 of
+  30 followed by themselves within 525 tics, 210 to 531 tics after the
+  player went through. In MODE=1's own runs 1 and 2 of 3 followed within
+  350 tics; the rest were brought by the script.
+
+**Bends from the design and open choices.**
+- Fix 1 (RED with the guards, key 2 on the ledge), as decided.
+- The crush's pier is small (48 by 48) and its lever right behind it: with
+  a pier 64 by 64 and the lever 128 further on the big one backed out of
+  the crush before the gate came down (MODE=1's first run).
+- No dressing: no plates over the pens, no bowls, no notice, no LINE 6
+  plate on the shelter.
+- The specimens in the runs are not deaf (they wake by sight or a shot);
+  the big one is (it wakes by sight, or the passage).
+- The isolation pen is the guard room's east end, so penned guards' bones
+  lie round RED (two of them steps): it was taken in every run.
+
+**What reads badly, for Vadim's play.**
+- Luring the big one from the hatch costs some 700 health: the pier only
+  helps once he leaves the hatch. Whether a player can lure it from behind
+  the pier was not measured.
+- NOW the big one's bones beyond the glass are hard to see from the start
+  (the big run is dark), and the brass door in the dark crush too.
+- The guards' lead: they come through one by one over several seconds.
+  In MODE=3 the player, posed at the turnstile's mouth, was found 100 to
+  600 east of it at the end of most trials (thrown by the arch-vile or
+  pushed; not looked into).

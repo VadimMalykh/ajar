@@ -46,7 +46,10 @@
 // joins the two times (the clocked door hung; a colour door never does) is
 // shown NOW as that corpse, where it stood when the last link came down; when
 // a link is made again the corpse goes. Such a stand-in fades in and out over
-// AjarThenCorpse.FADE tics; one of a monster dead THEN is there at once. A
+// AjarThenCorpse.FADE tics; one of a monster dead THEN is there at once, and
+// so are the stand-ins made at the level's first tic (MAP23: the times are
+// apart from the start). When a monster that has a stand-in dies THEN, the
+// stand-in becomes its corpse, moved to where it died (never two for one). A
 // monster raised THEN (WorldThingRevived) loses its bones for good: they stand
 // in for it while the times are apart, and fade while they are joined. Each
 // corpse keeps the Mass and radius of its monster (kennel.zs weighs them and
