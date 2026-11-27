@@ -1,0 +1,214 @@
+<title>Ajar Title Looks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a choosing sheet, as the clocked door's board. The looks' own pieces on top (logo, cursor, lettering
+   at 4x), then one screen at a time with the four looks side by side, then a pick for each part and the line
+   to paste, then the words that are the same in every look. */
+:root {
+  --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
+  --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c; --swatch: #14161d;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; --swatch: #0c0d12; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #14171c; --panel: #1c2027; --fg: #e6e9ee; --muted: #98a2b0; --line: #313844;
+  --accent: #e8735e; --chip: #2a303a; --pick: #5fc7ad; --swatch: #0c0d12; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); margin: 0;
+  padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 21px; }
+h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-family: var(--body); }
+h4 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+.stamp { font-size: 13px; color: var(--muted); }
+.stamp b { color: var(--accent); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 26px 22px; }
+.look { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.look h4 span, .opt h4 span { color: var(--accent); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.look p { font-size: 13.5px; }
+.piece { display: flex; flex-direction: column; gap: 4px; }
+.piece img { display: block; max-width: 100%; height: auto; image-rendering: pixelated; border: 1px solid var(--line); }
+.piece .pair { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-start; }
+.swcap { font-size: 11.5px; color: var(--muted); }
+
+.views, .picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.views button, .picks button, .copy { font: 500 13px var(--body); color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); padding: 6px 11px; cursor: pointer; }
+.views button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.picks button[aria-pressed="true"] { background: var(--pick); color: var(--bg); border-color: var(--pick); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 16px 14px; }
+.opt { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.opt button.shot { all: unset; cursor: zoom-in; display: block; line-height: 0; border: 1px solid var(--line); }
+.opt button.shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opt img { width: 100%; height: auto; aspect-ratio: 1024 / 640; display: block; background: var(--chip); }
+.opt.big { grid-column: 1 / -1; }
+.opt.big button.shot { cursor: zoom-out; }
+.opt h4 { font-size: 14px; }
+.viewnote { font-size: 13.5px; }
+
+.sum { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.sum output { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.sum .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.part { display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr); gap: 6px 14px; align-items: start; }
+.part .what { font-weight: 600; font-size: 14px; }
+.part .what small { display: block; font-weight: 400; font-size: 12.5px; color: var(--muted); }
+
+.words { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 22px; }
+.words ol, .words ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+.words div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+@media (max-width: 820px) { h1 { font-size: 25px; } .part { grid-template-columns: 1fr; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="stamp"><b>To choose</b> &nbsp;Ajar · the title, the main menu, the cursor and the help page · captured 27 Nov 2026 · GZDoom, 1024 by 640</div>
+    <h1>The title and the menu: three looks of Ajar's own</h1>
+    <p>You said: "Main menu is still Doom II. Should we make it Ajar? And also some specific graphics (portals, way-out, etc)?" So each look puts one of the game's own sights behind the menu: the cell the game begins in, doors standing open onto its places, and the way out. All three title pictures are real rooms drawn by the engine, and their cameras move.</p>
+    <p>Each look has five parts, and you can take each part from a different look: the picture behind the title, the word AJAR, the menu's lettering, the cursor, and the help page with the colours of the options screens. The words are the same in every look and are listed at the bottom.</p>
+    <p class="muted">Nothing is chosen yet: the game keeps Doom II's title and menu until you choose. The line to paste into the chat is under the pictures. Click a picture to enlarge it.</p>
+  </header>
+
+  <section class="stack">
+    <h3>The looks' own pieces, at 4x: the word, the cursor, the lettering</h3>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <section class="stack">
+    <h3>On the screen</h3>
+    <div class="views" id="views" role="group" aria-label="Screen"></div>
+    <p class="viewnote muted" id="viewnote"></p>
+    <div class="opts" id="opts"></div>
+  </section>
+
+  <section class="sum" id="summary">
+    <h2>Your pick</h2>
+    <div class="part"><div class="what">A whole look<small>sets every part at once</small></div><div class="picks" id="whole" role="group" aria-label="A whole look"></div></div>
+    <div id="parts" class="stack"></div>
+    <p class="muted" style="font-size:13.5px">Kept in this browser only. Paste the line into the chat and the title will be built that way.</p>
+    <output id="pickline"></output>
+    <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
+  </section>
+
+  <section class="stack">
+    <h3>The words, the same in every look</h3>
+    <div class="words">
+      <div><h4>Main menu</h4><ul><li>New Game</li><li>Load Game</li><li>Save Game</li><li>Options</li><li>House Rules (the help page, also F1)</li><li>Quit</li></ul>
+        <p class="muted" style="font-size:13.5px">The skill menu is headed "How long are you staying?" over your four names.</p></div>
+      <div><h4>House Rules: "Notice to guests"</h4><ol><li>A door remembers where it leads. Its colour and its sign say where.</li><li>USE a door to take it down and carry it. One at a time.</li><li>USE an empty frame to hang it there.</li><li>Whatever can come through a door will. It works both ways.</li><li>The way out has no colour.</li></ol>
+        <p class="muted" style="font-size:13.5px">Under them: "USE is Doom's open key. USE on a hung door while you carry one swaps the two; a carried door is put down only in a frame. Everything else is Doom's."</p></div>
+      <div><h4>Quit messages</h4><ul><li>Leaving? Shut the door behind you.</li><li>Checking out so soon?</li><li>Leave it ajar and go?</li><li>The doors will keep. Go?</li><li>Nothing follows you out. Leave?</li><li>You can always come back the way you came. Quit?</li></ul>
+        <p class="muted" style="font-size:13.5px">Each is followed by "(Y to leave, N to stay)". The box itself stays in Doom's small red letters.</p></div>
+      <div><h4>Also</h4><ul><li>The window is named "Ajar".</li><li>The title plays "Light Under the Door".</li><li><code>./run.sh</code> still starts MAP01; <code>MAP=TITLE ./run.sh</code> starts at the title.</li><li>Left as Doom's: the HUD's numerals, message boxes, the lists of the options and save screens (recoloured).</li></ul></div>
+    </div>
+  </section>
+</div>
+<script>
+const LOOKS = /*LOOKS*/[
+  ["0", "As it is", "Doom II's title picture, logo, red letters and skull."],
+  ["1", "The Cell", ""],
+  ["2", "Portals", ""],
+  ["3", "The Way Out", ""]]/*END*/;
+const VIEWS = [
+  ["a", "Title, menu open", "A cold start: the title with the main menu over it. In looks 1 to 3 the menu opens by itself."],
+  ["b", "Title alone", "The same with the menu shut by Esc: the picture behind the title. In looks 1 to 3 the camera moves."],
+  ["c", "Esc in play", "MAP01's hall with the main menu open: the word AJAR and the lettering over a game view."],
+  ["d", "New Game", "The skill menu."],
+  ["e", "House Rules", "The help page, from the menu or F1."],
+  ["f", "Quit", "A quit message. The box is Doom's own in every look."]];
+const PARTS = [
+  ["backdrop", "Title picture", "the room behind the title, and where the menu stands"],
+  ["logo", "The word AJAR", "also shown on Esc in play"],
+  ["lettering", "Lettering", "the menus' letters and the pause sign"],
+  ["cursor", "Cursor", "beside the selected line"],
+  ["page", "Help page and colours", "the notice, the options screens' colours"]];
+const lookName = l => LOOKS[+l][1];
+const dark = n => `<div class="piece"><img src="tex/logo${n}_dark.png" alt="${lookName(n)}: the word AJAR on a dark ground">
+   <div class="pair"><img src="tex/logo${n}_light.png" alt="${lookName(n)}: the word AJAR on a light ground" style="width:48%">
+     ${CURSORS[n].map(k => `<img src="tex/cursor${n}_${k}_dark.png" alt="${lookName(n)}: the cursor, frame ${k + 1}">`).join("")}</div>
+   <div class="swcap">The word on dark and on light; the cursor${CURSORS[n].length > 1 ? "'s two frames" : " (it blinks)"}.</div></div>
+   <div class="piece"><img src="tex/lettering${n}_normal_dark.png" alt="${lookName(n)}: a line of lettering">
+     <img src="tex/lettering${n}_selected_dark.png" alt="${lookName(n)}: the selected line">
+     <img src="tex/lettering${n}_normal_light.png" alt="${lookName(n)}: a line of lettering on a light ground">
+     <div class="swcap">A menu line, the selected line, and a line on a light ground.</div></div>`;
+const CURSORS = /*CURSORS*/{1: [0, 1], 2: [0, 1], 3: [0]}/*END*/;
+document.getElementById("looks").innerHTML = LOOKS.filter(([n]) => n !== "0").map(([n, name, d]) =>
+  `<div class="look"><h4><span>${n}</span>${name}</h4>${dark(n)}<p>${d}</p></div>`).join("");
+let pick = {}, view = 0;
+try { pick = JSON.parse(localStorage.getItem("title-pick") || "{}"); } catch (e) { pick = {}; }
+function drawViews() {
+  document.getElementById("views").innerHTML = VIEWS.map(([k, n], i) =>
+    `<button type="button" id="view-${i}" data-view="${i}" aria-pressed="${i === view}">${n}</button>`).join("");
+  document.getElementById("viewnote").textContent = VIEWS[view][2];
+}
+function drawOpts() {
+  document.getElementById("opts").innerHTML = LOOKS.map(([l]) =>
+    `<div class="opt">
+       <button type="button" class="shot" aria-label="Enlarge: ${lookName(l)}, ${VIEWS[view][1]}"><img src="${l}/view_${VIEWS[view][0]}.jpg" alt="${lookName(l)}: ${VIEWS[view][2]}"></button>
+       <h4><span>${l}</span>${lookName(l)}</h4>
+     </div>`).join("");
+}
+const all = l => PARTS.every(([p]) => pick[p] === l);
+function drawPicks() {
+  document.getElementById("whole").innerHTML = LOOKS.map(([l, n]) =>
+    `<button type="button" id="whole-${l}" data-look="${l}" aria-pressed="${all(l)}">${l === "0" ? "Keep Doom II's" : l + ". " + n}</button>`).join("");
+  document.getElementById("parts").innerHTML = PARTS.map(([p, n, d]) =>
+    `<div class="part"><div class="what">${n}<small>${d}</small></div>
+       <div class="picks" role="group" aria-label="${n}">${LOOKS.filter(([l]) => l !== "0").map(([l, name]) =>
+         `<button type="button" id="pick-${p}-${l}" data-part="${p}" data-look="${l}" aria-pressed="${pick[p] === l}">${l}. ${name}</button>`).join("")}</div></div>`).join("");
+  const done = PARTS.filter(([p]) => pick[p] && pick[p] !== "0");
+  let line = "Title: nothing picked yet.";
+  if (all("0")) line = "Title: keep Doom II's.";
+  else if (LOOKS.some(([l]) => l !== "0" && all(l))) line = `Title: look ${pick.backdrop} (${lookName(pick.backdrop)}), every part.`;
+  else if (done.length) line = "Title: " + PARTS.map(([p, n]) => `${n.toLowerCase()} ${pick[p] && pick[p] !== "0" ? pick[p] : "?"}`).join(", ") + ".";
+  document.getElementById("pickline").textContent = line;
+}
+const keep = () => { try { localStorage.setItem("title-pick", JSON.stringify(pick)); } catch (e) {} };
+drawViews(); drawOpts(); drawPicks();
+document.getElementById("views").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  view = +b.dataset.view;
+  drawViews(); drawOpts();
+  document.getElementById("view-" + view).focus();
+});
+document.getElementById("opts").addEventListener("click", e => {
+  const b = e.target.closest("button.shot");
+  if (b) b.parentElement.classList.toggle("big");
+});
+document.getElementById("summary").addEventListener("click", e => {
+  const b = e.target.closest(".picks button");
+  if (!b) return;
+  if (b.dataset.part) {
+    if (all("0")) pick = {};
+    pick[b.dataset.part] = pick[b.dataset.part] === b.dataset.look ? undefined : b.dataset.look;
+  } else pick = all(b.dataset.look) ? {} : Object.fromEntries(PARTS.map(([p]) => [p, b.dataset.look]));
+  keep(); drawPicks();
+  const again = document.getElementById(b.id);
+  if (again) again.focus();
+});
+document.getElementById("copy").addEventListener("click", () => {
+  const text = document.getElementById("pickline").textContent, note = document.getElementById("copied");
+  const fallback = () => {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("pickline"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    note.textContent = "Selected. Press Ctrl+C or Cmd+C to copy.";
+  };
+  try { navigator.clipboard.writeText(text).then(() => { note.textContent = "Copied."; }, fallback); } catch (e) { fallback(); }
+});
+</script>
