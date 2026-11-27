@@ -20651,3 +20651,111 @@ leaning and empty-frame acts through again); a press at the keyboard by a real p
 engine's own CheckUse, from set places); a one-sided doorway and a fixed doorway as the opening in the survey
 (the check is the same for every line portal; the levels' runs above pass through them); the Doom
 door lab, which does not switch on now (doomlab.zs, 2026-11-27).
+
+## The title and the menus: Ajar's own; look 1, "The Cell", chosen from three (2026-11-27)
+
+**Chosen: look 1, The Cell, every part** (Vadim, 2026-11-27, from the board: "Title: look 1 (The Cell), every
+part."). It is the game's: `tools/gfx_title.py` `DEFAULT = 1` is what a build with `AJAR_TITLE` unset takes;
+`AJAR_TITLE=0` still builds Doom II's title and menus, `AJAR_TITLE=2` or `3` the other looks. Where the text
+below says "unset or 0" of the switch, that was the state before the choice: now only `0` is off.
+
+**Vadim** (2026-11-27): "Let's work on game graphics. Main menu is still Doom II. Should we make it Ajar? And
+also some specific graphics (portals, way-out, etc)?" Asked what he meant: "In-game graphics is ok, I'm only
+speaking about menu really"; the game's own recurring art (door leaves, frames, the way out, the HUD) is "All
+good as it is". So: the title, the main menu, the cursor, the help page and the quit messages become Ajar's, and
+what the title shows is the game's own sights: the cell, portals, the way out.
+
+**The board**: https://claude.ai/artifact/RwzWADohG9iEEnPbRVLFgT (published 2026-11-27; the page is
+`design/title-board.html`; shots by `tools/title_shots.sh`, into `build/boardtitle/`). Three looks beside Doom
+II's, six screens each (title with the menu, title alone, Esc in play, the skill menu, the help page, a quit
+message), and a pick for each of five parts.
+
+**The switch.** `AJAR_TITLE` unset or 0 (the default): nothing of this goes into the package, the title and
+menus are Doom II's as before (the package differs from the old one only by `zscript/title.zs`, its include line
+and one guard line in ajar.zs, none of which does anything then). `AJAR_TITLE=1|2|3`: that look, whole.
+`AJAR_TITLE_MIX=logo:2,cursor:3` (or `MIX` in `tools/gfx_title.py`) takes single parts from another look. The
+parts: `backdrop` (the title's picture, and where the menus stand), `logo`, `lettering` (the menus' font, its
+colours, the pause sign), `cursor`, `page` (the help page, the options screens' colours, the dim). To make a
+choice the game's: set `LOOK`'s default and `MIX` in `tools/gfx_title.py`.
+
+**The same in every look** (`tools/gfx_title.py`, all generated, so that 0 emits nothing):
+- One skeleton of letters (strokes on a grid: capitals, digits, punctuation; lowercase as small capitals) and a
+  pen per look; a GZDoom font folder of its own (`fonts/<name>/`, `font.inf` Scale 2). Doom's BigFont and
+  SmallFont are not replaced: the HUD's numerals and message boxes stay Doom's. Side bearings come from each
+  glyph's ink (GZDoom has no pair kerning); a little looseness is left either side of a small T.
+- MENUDEF: the main menu (the logo; New Game, Load Game, Save Game, Options, House Rules, Quit), the skill menu
+  headed "How long are you staying?", the episode and class menus and the load/save captions in the look's
+  font; `menufontcolor_*`, sliders, dim and pause sign in the look's palette.
+- The menu opens by itself on the title and the logo belongs to the menu (so it also shows on Esc in play); Esc
+  shuts it and shows the bare title. Over the title the list menus are not dimmed.
+- The title is a map (`maps/TITLEMAP.wad`, `tools/map_title.py`, `src/zscript/title.zs`): a camera that holds,
+  sways, glides to a spot and back, or goes straight ahead for good; the title's pawn stands in a closet out of
+  view. A still picture (`titlepage`) is also provided for, and used by no look.
+- House Rules (and F1): "NOTICE TO GUESTS", the five rules: a door remembers where it leads, its colour and its
+  sign say where; USE a door to take it down and carry it, one at a time; USE an empty frame to hang it there;
+  whatever can come through a door will, it works both ways; the way out has no colour. Under them: "USE is
+  Doom's open key. USE on a hung door while you carry one swaps the two; a carried door is put down only in a
+  frame. Everything else is Doom's."
+- Quit messages: "Leaving? Shut the door behind you." / "Checking out so soon?" / "Leave it ajar and go?" / "The
+  doors will keep. Go?" / "Nothing follows you out. Leave?" / "You can always come back the way you came. Quit?",
+  each with "(Y to leave, N to stay)"; the quit sound is the door's "take".
+- The window is named "Ajar" (a GAMEINFO lump with STARTUPTITLE only; the IWAD is still the one given). The
+  title plays "Light Under the Door" (AJM_LGHT).
+- `MAP=TITLE ./run.sh` starts at the title; `./run.sh` starts MAP01 as before.
+
+**The three looks** (`tools/gfx_title<n>.py`, title maps in `tools/map_title.py`, `map_title2.py`,
+`map_title3.py`):
+1. **The Cell.** MAP01's cell built by MAP01's own code (`map_hinges1.cell()`), the real RED door leaning where
+   MAP01 leans it, the empty frame; the camera sways 3 units in 40 seconds. New Game starts in the picture the
+   title shows, and the planned end of the game comes back to it. MAP01 leans RED 16 from the frame, so the menu
+   cannot stand between them: it stands on the west wall at the left, RED in the middle, the frame on the
+   right. AJAR stencilled in worn ivory with RED's sign beside it; stencil capitals, the selected line RED's red
+   with an ivory edge; a small RED leaf, shut and ajar; the notice a paper sheet pinned on the cell's brick.
+2. **Portals.** A dark hall whose north wall steps back in three bays, a frame in each with a real door hung
+   and open (real line portals): BLUE onto MAP07's planetarium and its projector, RED onto MAP03's stage seen
+   from the dress circle, YELLOW onto MAP08's toy department. The camera stands about 200 from the doors and
+   glides some 40 nearer and back, a minute each way; RED's doorway is about half the picture's height. AJAR
+   with the door in it: AJ on the wall, a slit of warm light, AR on a leaf swung towards the viewer; thin
+   monoline capitals, the selected line lamp yellow; a small doorway, shut and open; the notice a cream card in
+   a brass holder on slate.
+3. **The Way Out.** The night room as the game builds it (`ajarmap.way_out(m, 0, 0, None)`), the camera going
+   down its middle line through the brass doorway into the same room, for good, 14 units a second (a room in
+   about 25 seconds). At each portal crossing the camera is handed on to a new one, so that no frame sweeps the
+   view down the room; it never stands exactly on the portal line (it would be shown the stub behind it). The
+   engine draws the room in the doorway four deep (`r_portal_recursions`), the fourth an undrawn rectangle; map
+   fog (`fade "06070C"`, `fogdensity 220`) lets it go dark after two clear rooms and a faint third. AJAR in
+   brass Art Deco capitals with a gold star in each A where the bar would be; brass capitals with an engraved
+   line, solid small capitals, the selected line gold; a star, small and large; the notice a cream card in a
+   brass frame on the starry wall.
+
+**Checked** (in the task's worktree, quick builds): with the switch off the package's files are those of the
+commit before, but for the three ZScript lines named above; for each look the six shots, no errors or warnings
+in GZDoom's log from this task, `MAP=MAP01 MODE=1` through to `levelExited=1`; for look 1, with real key presses:
+cold start, New Game, the skill menu, MAP01 begins, and F1 in play shows the notice; for look 3, shots a tic
+apart round three crossings (the frames before and after a crossing differ as two ordinary steps do) and no
+drift over three rooms.
+
+**Left as Doom's in every look**: the HUD's numerals; message boxes, the quit box among them (the engine draws
+their text uncoloured, in Doom's small red letters, with its yes/no list); the lists inside the options and
+load/save screens (Doom's fonts, recoloured); the mouse's back arrow at the top left in play.
+
+**Weak, by the workers' and my own reading of the shots**: look 1: the selected skill "Resident" stands in
+front of the RED door, red on red. Look 2: YELLOW's doorway is small and its leaf mostly hidden; low steps show
+at the doors' feet (they make the leaves hang at the right jamb); towards the far end of the glide RED's doorway
+runs off the right edge (`GLIDE` in `map_title2.py`, not rebuilt). Look 3: two clear rooms in the doorway, then
+dark; the east candelabrum passes under the menu once a room; "House Rules" touches the far doorway's jamb at
+the start of each room; the stars in the logo are small. In every look rule 3 of the notice wraps one word
+("there") onto a line of its own.
+
+**Not tested / not played by hand**: nobody has seen any of it move on a real screen: the sway, the glides,
+the cursors' two frames, the endless glide at 35 frames a second and more (the tests' renderer draws a frame
+every 7 to 12 tics). The mixes by part (`AJAR_TITLE_MIX`) are built for and not shot. The title's music has
+not been heard on the title. Load and Save were not opened in the tests.
+
+**To see one**: in a worktree, `AJAR_TITLE=3 AJAR_QUICK=1 AJAR_OUT=build/title3.pk3 ./build.sh`, then start
+GZDoom on that package with no `+map`. The board again: `tools/title_shots.sh` (all four), `tools/title_shots.sh
+2` (one), `NOBUILD=1` to shoot packages as they are.
+
+(2026-11-27, 11:37: `/data` went read-only while looks 2 and 3 were being built. The last edit to `title.zs`,
+the camera's hand-over, was lost with it and written again after the reboot; what is here is the rewritten one,
+built and tested.)
