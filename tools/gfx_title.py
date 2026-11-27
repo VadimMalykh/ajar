@@ -1,8 +1,10 @@
 """Ajar's own title, menus, cursor, help page and quit messages, in place of Doom II's (AJAR_TITLE).
 
-The switch: AJAR_TITLE unset or 0 puts nothing of this into the package (make() returns {}, nothing is
-appended to mapinfo.txt or language.txt): the title, the menus and the help page are Doom II's, as before.
-AJAR_TITLE=n (1, 2, 3) takes every part from look n, the module tools/gfx_title<n>.py. PARTS says which
+The game's look is look 1, "The Cell", every part (Vadim, 2026-11-27: "Title: look 1 (The Cell), every
+part."): it is what AJAR_TITLE unset builds (DEFAULT). The switch: AJAR_TITLE=0 puts nothing of this into the
+package (make() returns {}, nothing is appended to mapinfo.txt or language.txt): the title, the menus and the
+help page are Doom II's, as they were. AJAR_TITLE=n (1, 2, 3) takes every part from look n, the module
+tools/gfx_title<n>.py. PARTS says which
 look each part comes from; to mix looks by part later, set MIX (here, one place) or AJAR_TITLE_MIX, e.g.
 AJAR_TITLE=1 AJAR_TITLE_MIX=logo:2,cursor:3.
 
@@ -59,7 +61,8 @@ import os
 from gfx import Img, shade
 import gfx
 
-LOOK = int(os.environ.get("AJAR_TITLE") or 0)
+DEFAULT = 1         # the look the game is built with when AJAR_TITLE is not set: 1, "The Cell" (Vadim, 2026-11-27)
+LOOK = int(os.environ.get("AJAR_TITLE") or DEFAULT) if os.environ.get("AJAR_TITLE") != "0" else 0
 PARTS = ("backdrop", "logo", "lettering", "cursor", "page")
 # A mix by part, {part: look}, over AJAR_TITLE's look for every part. Empty: one look whole.
 MIX = {}

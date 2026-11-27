@@ -50,7 +50,7 @@ import map_secret2
 import map_shift
 import map_soundlab
 import map_lefthand
-import gfx_title                                # the title, the menus and the help page (AJAR_TITLE; unset or 0: none)
+import gfx_title                                # the title, the menus and the help page (AJAR_TITLE; unset: look 1; 0: none, Doom II's)
 import music
 import music_trial
 import sfx
@@ -133,7 +133,7 @@ for name, mod in MAPS.items():                  # a level checked another way pr
 out = os.path.join(root, os.environ.get("AJAR_OUT") or os.path.join("build", "ajar.pk3"))
 # AJAR_TITLE=n: Ajar's own title, menus and help page, look n (tools/gfx_title.py). Its files go in as they
 # are; a name ending in "+" is text to add to the end of that file (mapinfo.txt, language.txt, textures.txt).
-# With the switch off there is none of either, and every file goes in as before.
+# With AJAR_TITLE=0 there is none of either, and every file goes in as it is.
 title = gfx_title.make()
 more = {name[:-1]: title.pop(name) for name in list(title) if name.endswith("+")}
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
