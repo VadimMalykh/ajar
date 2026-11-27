@@ -19860,3 +19860,108 @@ main's, and the new textures are added. The three new faces were looked at
 as pictures (`AJ2X1N`, `AJQMD0`, `AJR4C`). **Not seen in the game**: the
 route board with the clocked door hung, the museum's door and the hotel's
 front doors (no test view looks at them).
+
+## MAP18: RED's ambush, bigger (built 2026-11-27)
+
+> Vadim, 2026-11-27, playing, with a screenshot of the rotunda after that fight: "Here we have mega and take red door. I think ambush cood be bigger"
+
+(He wrote "map19"; the picture and his game log are MAP18's rotunda, the
+arena round the pillar, where the megasphere and RED are.)
+
+Decided by Claude (Fable) the same day; built by Claude on Opus in the task
+`map18-red-ambush`. Nothing of the level's geometry moved; no frame, door or
+way changed. Only `tools/map_clockdept.py`.
+
+**What was decided.** RED leans at (5700, 2480) in the rotunda (the octagon
+ROT = (5440, 1600, 6592, 2752), corners cut by 320, the solid pillar (5888,
+2048, 6144, 2304) and the stub (5936, 1600, 6096, 2048) from it to the south
+wall); the megasphere lies in the pocket east of the stub (6200, 1680).
+Taking RED the first time (cause `10 + RED`, 11) used to bring three
+spectres and, 3 s later, one mancubus. Now 24, all of it in the rotunda:
+
+| when | what | where | facing |
+|---|---|---|---|
+| at once | 3 spectres (as before) | (5650, 2500), (6350, 2500), (6200, 2650) | 270 |
+| at once | 2 hell knights, the west way in from the court | (5540, 2160), (5540, 2256) | 0 |
+| at once | 4 imps, the ring's east side | (6400, 2100), (6500, 2180), (6400, 2380), (6500, 2420) | 180 |
+| `after=3` | 1 mancubus at the lift's way (as before) | (6480, 1900) | 180 |
+| `after=3` | 1 mancubus, its mirror in the west | (5552, 1900) | 0 |
+| `after=3` | 2 revenants north of the pillar | (5920, 2540), (6112, 2540) | 270 |
+| `after=5` | 3 demons in the south pockets, up from the canteen | (5800, 1700), (5700, 1790), (6230, 1700) | 90 |
+| `after=5` | 2 cacodemons | (5800, 2380), (6240, 2380) | 270 |
+| `after=8` | 2 chaingunners | (5600, 2080) facing 0; (6520, 2016) facing 180 (two calls) | |
+| `after=8` | 1 baron north of the pillar | (6016, 2460) | 270 |
+| `after=11` | 1 arch-vile in the pocket east of the stub, `skill=2` | (6300, 1760) | 135 |
+| `after=11` | 2 spectres | (5800, 2640), (6300, 2260) | 270 |
+
+24 where there were 4: 20 more, a multiple of four, so every ambusher after
+these (GREEN's, BLUE's, the first lap's, cause 50) keeps the difficulty it
+had (`ajarmap.ambush()`). The arch-vile is there from "Short stay" (2) up,
+not thinned; the other 23 are thinned as ambushers always are, in their turn
+in the count: on "Just visiting" 12 of them come, on "Short stay" 18 of them
+and the arch-vile, from "Resident" all 24. (In that count the old mancubus at
+the lift's way is now from 3 up, where it was from 2: its turn in the order
+is a later one; its mirror in the west is on every difficulty.)
+
+*Cover.* The pillar and the stub are the cover from the arch-vile, which
+comes last, in the pocket east of the stub: the player breaks its sight by
+putting them between. It raises the arena's dead: the rotunda's 21 placed
+monsters and whatever of the earlier waves fell there.
+
+*Supplies*, added beside the rotunda's own (round the pillar: the
+megasphere, four boxes of rockets, two medikits, the rocket launcher and two
+rockets south of 109, all where they were):
+- boxes of rockets (5600, 2400), (5680, 1860), (6336, 1856);
+- boxes of shells (5780, 2560), (6420, 2460), (5580, 2100), (6460, 2120);
+- a cell pack (6016, 2400), north of the pillar;
+- a box of bullets (5860, 2680);
+- medikits (6180, 2700), (5660, 1980), (6300, 1740).
+
+**The places, checked before the build** (a script against the generator's
+things): every ambusher inside the octagon and off the pillar and the stub
+by its radius + 16 or more (the least: the imp at (6500, 2420), 74 from the
+north-east wall; the mancubi 65 from theirs), 96 or more from the middle of
+each of the rotunda's five frames (the least: the imp at (6500, 2180), 130
+from 110), no two square boxes overlapping; every new supply 48 or more
+inside the walls (the least: the medikit (6180, 2700), 52 from the north
+wall) and 40 or more from every other thing to pick up in the rotunda (the
+least: the box of shells (5780, 2560), 89 from the medikit (5700, 2600)).
+Nothing needed moving: every place is as decided.
+
+**As built** (from the generated `maps/MAP18.wad`): 24 things of cause 11;
+the arch-vile's flags skill2..4; the 27 other ambushers (TEAL's and ORANGE's
+before, GREEN's, BLUE's and cause 50's after) the same in kind, place, wait
+and skill flags as in main's wad.
+
+**The budget** (`tools/budget.py map_clockdept`), before:
+- `skill3: 234 monsters, hp 30170; ammo dmg 63310 (x2.10) sh464 bu635 ro60
+  ce840; heal 840 armor 304`
+- `skill1: 119 monsters, hp 15610; ammo dmg 57430 (x3.68) sh400 bu495 ro60
+  ce840; heal 840 armor 304`
+
+After:
+- `skill3: 254 monsters, hp 36000; ammo dmg 73310 (x2.04) sh544 bu705 ro75
+  ce940; heal 915 armor 304; SG CG BACKPACK SSG RL PL BERSERK`
+- `skill1: 129 monsters, hp 18900; ammo dmg 67330 (x3.56) sh480 bu555 ro75
+  ce940; heal 915 armor 304; SG CG BACKPACK SSG RL PL BERSERK`
+
+**The checks** (the worktree's full `./build.sh`, against a build of main's
+code, `c98ca4e`, made in the same worktree before the change):
+- The build: no problem. MAP18's measure line for line as before (one piece
+  on foot, 52 areas, 364 nodes, 28 frames; the run, the clock, the best
+  track RED 119, the fences: monsters placed nearer than 112 to an odd face
+  0).
+- The package against main's: only `maps/MAP18.wad` differs (3526 files each).
+- `MAP=MAP18 MODE=1..8`, one after another, each on both packages: 8, 8, 15,
+  24, 24, 36, 27 and 19 check lines (MODE 6's 35 views and MODE 8's 18 among
+  them), none failed, the same as main's in every mode; `levelExited` in
+  MODE 1 and 2, `oneSidedDone` in 7. The check lines are the same as
+  main's; only info lines differ (the fence tests' imps end in other places,
+  and two lines of MODE 4 come in another order).
+
+**Not tested.** The fight itself is not played: MAP18's tests clear every
+monster and every ambush before they start (`TamClearOut` in map18.zs; no
+log has a line of cause 11), so the 24 never come in a test, and nothing
+says how hard the arena is now, whether the pillar and the stub are cover
+enough from the arch-vile, or how many of the 21 placed dead it raises. Not
+played by hand.
