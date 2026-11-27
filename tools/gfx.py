@@ -119,6 +119,9 @@ STRAY = 7           # the Stray door: every colour at once, and no far side of i
 STRAY_GREY = (120, 120, 130)
 CLOCKED = 10        # the clocked door (ajarthen, then.zs): ivory, a clock on its face; its sprites AJDT, AJNT
 IVORY = (232, 222, 196)
+TENYEAR = 11        # the ten-year door (the three times lab, then.zs): THEN to BEFORE; its sprites AJDY, AJNY. Its
+                    # leaf is the long-case clock of the clocked door's board (tools/gfx_clockdoor.py, look 1): walnut,
+                    # a dial with roman ticks over brass spandrels, the pendulum behind glass; the clocked door is look 3
 # The clocked door's look, leaf and trim (tools/gfx_clockdoor.py; PLAN.md, "Look: the clocked door and its
 # frame's trim"): 0 the art below and gfx_then.clock_trim's, 1 long-case clock, 2 station clock, 3 ivory done
 # properly, the game's (Vadim chose it on 2026-11-26). AJAR_CLOCKDOOR=n sets another for a build (0 the old art;
@@ -184,6 +187,9 @@ def door(colour):
         return stray_door()
     if colour == CLOCKED:
         return clocked_door()
+    if colour == TENYEAR:
+        import gfx_clockdoor
+        return gfx_clockdoor.leaf(1)
     base = DOOR_COLOURS.get(colour) or PAIR_COLOURS[colour]
     im = Img(64, 96, base)
     im.frame(0, 0, 64, 96, shade(base, 0.45), 3)
@@ -1334,9 +1340,9 @@ def make_all():
     levers(out, "AJLEVR", wall)                                      # on the plain wall (MAP08)
     levers(out, "AJLEVB", brick, 160)                                # and on brick: the caretaker's office
 
-    for c in list(DOOR_COLOURS) + [STRAY] + list(PAIR_COLOURS) + [CLOCKED]:
+    for c in list(DOOR_COLOURS) + [STRAY] + list(PAIR_COLOURS) + [CLOCKED, TENYEAR]:
         d = door(c)
-        sp = "T" if c == CLOCKED else c                # a sprite's name has four letters
+        sp = "T" if c == CLOCKED else "Y" if c == TENYEAR else c      # a sprite's name has four letters
         out[f"textures/AJDR{c}.png"] = d.png()
         out[f"sprites/AJD{sp}A0.png"] = d.png(grab=(32, 96))
         # the same door nailed to its frame: two planks across it
@@ -1349,7 +1355,7 @@ def make_all():
             for x in (5, 58):
                 d.disc(x, y0 + x // 6 + 3, 1, (220, 220, 225))
         out[f"sprites/AJN{sp}A0.png"] = d.png(grab=(32, 96))
-        if c in PAIR_COLOURS or c == CLOCKED:      # no far side, so no surround of its own
+        if c in PAIR_COLOURS or c in (CLOCKED, TENYEAR):      # no far side, so no surround of its own
             continue
         rgb = DOOR_COLOURS.get(c, STRAY_GREY)
         t = Img(64, 64, shade(rgb, 0.7))
@@ -1394,6 +1400,8 @@ def make_all():
     import gfx_then                                              # the then and now lab's levers (map THEN)
     gfx_then.make(out)
     gfx_then.make_longrun(out)                                   # MAP21's clock trim and desk panels
+    import gfx_before                                            # the three times lab's levers (map BEFORE)
+    gfx_before.make(out)
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
                            + "cameratexture AJREEL 512 224\n"
                            + "cameratexture AJPASSC 256 160\n").encode()   # what the pass's double sees (pass.zs)

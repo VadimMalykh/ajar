@@ -63,25 +63,51 @@
 // The times joined: `joinedAt` is the level's tic at which some door first
 // joined the two times (Linked: the clocked door hung), -1 until then. MAP22's
 // turn (map22.zs; AjarAmbush cause 64, ajar.zs: JoinedDue).
+//
+// Three times (the three times lab BEFORE: tools/map_before.py, beforetest.zs;
+// PLAN.md, "The three times lab"). With args[2] 3 the AjarThen thing names a
+// third time, BEFORE, ten years before THEN, at twice the shift (TimeOf: NOW 0,
+// THEN 1, BEFORE 2). A frame or far side BEFORE has the line id of NOW's + 2 x
+// THEN_ID, and a colour door hung BEFORE opens on its far side BEFORE. The
+// ten-year door (AjarDoor colour 11) is a second clocked door: it joins a
+// frame THEN to the same frame BEFORE as the clocked door joins NOW and THEN,
+// and neither hangs at a time its clock does not reach (ClockReaches). Both
+// hung, NOW, THEN and BEFORE are a chain. A cause BEFORE moves every sector
+// with its tag, which is THEN's and NOW's (and BEFORE's own, to show it).
+// Company: a monster alive at an earlier time shows at each later time as its
+// old corpse while no chain of hung clocked doors joins the two (Joined); one
+// killed BEFORE leaves a corpse THEN and NOW. BEFORE has its own music
+// (BEFORE_MUSIC). With two times all of this is as before.
 
 class AjarThen : Actor
 {
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
 
-	const THEN_ID = 20;        // a THEN copy's line id: NOW's + THEN_ID (frames and far sides; ajarthen.THEN_ID)
+	const THEN_ID = 20;        // a THEN copy's line id: NOW's + THEN_ID (frames and far sides; ajarthen.THEN_ID); BEFORE's + 2 x THEN_ID
+	const NOW = 0;
+	const THEN = 1;
+	const BEFORE = 2;          // the third time (the three times lab): ten years before THEN, at twice the shift
 
 	Vector2 Off() { return (args[0], args[1]); }
-	bool InThen(Vector2 p)
+	// 2, or 3 with args[2] 3 (ajarthen.Times(before=True))
+	int Times() { return args[2] >= 3 ? 3 : 2; }
+	// which time p is at: NOW 0, THEN 1 (past half the shift), BEFORE 2 (past one and a half, three times only)
+	int TimeOf(Vector2 p)
 	{
 		Vector2 o = Off();
 		double l2 = o dot o;
-		return l2 > 0 && ((p - pos.xy) dot o) / l2 > 0.5;
+		if (l2 <= 0) return NOW;
+		double t = ((p - pos.xy) dot o) / l2;
+		return Times() == 3 && t > 1.5 ? BEFORE : t > 0.5 ? THEN : NOW;
 	}
-	// the same spot at the other time
+	bool InThen(Vector2 p) { return TimeOf(p) == THEN; }
+	// the same spot at time t
+	Vector2 At(Vector2 p, int t) { return p + Off() * (t - TimeOf(p)); }
+	// the same spot at the other time (NOW and THEN)
 	Vector2 Other(Vector2 p) { return InThen(p) ? p - Off() : p + Off(); }
 	// the same spot NOW
-	Vector2 Now(Vector2 p) { return InThen(p) ? p - Off() : p; }
+	Vector2 Now(Vector2 p) { return At(p, NOW); }
 
 	static AjarThen Find() { return AjarThen(ThinkerIterator.Create("AjarThen").Next()); }
 }
@@ -231,6 +257,7 @@ class AjarThenCorpse : Actor
 	const FADE = 35;
 	Actor of;                  // the monster it stands for while that one is alive THEN (null: it died THEN)
 	Actor who;                 // the monster it is the bones of, alive or dead
+	int at;                    // the time it lies at (AjarThen.NOW; THEN for a monster BEFORE)
 	int weight;                // that monster's Mass
 	double bodyRadius;         // ... and radius
 	int fading;                // 1 fading in, -1 fading out, 0 neither
@@ -281,6 +308,7 @@ class AjarThenHandler : EventHandler
 	const MOVE_TICS = 64;      // a long cause changes NOW over this long (a power of two: whole heights move in exact steps, and what rides them stays exactly on them)
 	const HIDDEN_TID = 1000;       // tid HIDDEN + a cause's tid: there only in its setting 0 (ajarthen.HIDDEN)
 	const THEN_MUSIC = "AJM_AFTR";
+	const BEFORE_MUSIC = "AJM_EMY3";       // BEFORE's piece (the three times lab): the waltz on a music box, which no level plays
 
 	AjarThen when;
 	AjarHandler h;
@@ -299,7 +327,8 @@ class AjarThenHandler : EventHandler
 	Array<Actor> hiddenItems;
 	Array<AjarThenCause> hiddenOf;
 	// company
-	bool wasLinked;
+	bool wasLinked;            // NOW and THEN joined at the last change
+	bool wasLinkedBefore;      // THEN and BEFORE joined (three times)
 	Array<AjarThenCorpse> corpses;
 	// music
 	bool musicOff;
@@ -328,6 +357,7 @@ class AjarThenHandler : EventHandler
 		musicThen = -1;
 		joinedAt = -1;
 		wasLinked = true;          // as if a link had just come down: whatever lives THEN at the start shows NOW
+		wasLinkedBefore = when && when.Times() == 3;       // (and BEFORE THEN and NOW)
 		atStart = true;            // ... and is there at once, not fading in (MAP23: bones from the first tic)
 		let ci = ThinkerIterator.Create("AjarThenCause");
 		AjarThenCause c;
@@ -541,8 +571,11 @@ class AjarThenHandler : EventHandler
 	}
 
 	// --- company -------------------------------------------------------------------------------------
-	// Is some door hung that joins the two times? (A colour door never does: AjarHandler.FarAt.)
-	bool Linked()
+	// Is some door hung that joins the two times NOW and THEN? (A colour door never does: AjarHandler.FarAt.)
+	bool Linked() { return LinkedAt(AjarThen.NOW); }
+
+	// ... that joins time k to time k + 1: NOW and THEN (the clocked door), THEN and BEFORE (the ten-year door)
+	bool LinkedAt(int k)
 	{
 		if (!h || !when) return false;
 		let fi = ThinkerIterator.Create("AjarFrame");
@@ -551,17 +584,27 @@ class AjarThenHandler : EventHandler
 		{
 			if (!f.door || !f.door.args[0] || AjarHandler.Placed(f.door)) continue;
 			Line a = h.FindLine(f.args[0]), b = h.FindLine(f.door.args[0]);
-			if (a && b && when.InThen(a.v1.p) != when.InThen(b.v1.p)) return true;
+			if (!a || !b) continue;
+			int ta = when.TimeOf(a.v1.p), tb = when.TimeOf(b.v1.p);
+			if (min(ta, tb) == k && max(ta, tb) == k + 1) return true;
 		}
 		return false;
 	}
 
-	AjarThenCorpse OldCorpse(Actor a, Actor of)
+	// Are times u and t joined by a chain of hung clocked doors, as the links stood at the last change?
+	bool Joined(int u, int t)
+	{
+		for (int k = min(u, t); k < max(u, t); k++) if (!(k == AjarThen.NOW ? wasLinked : wasLinkedBefore)) return false;
+		return true;
+	}
+
+	// a's old corpse at the time `at` (NOW unless said), where a stands; `of` a: a stand-in for a while it lives
+	AjarThenCorpse OldCorpse(Actor a, Actor of, int at = AjarThen.NOW)
 	{
 		State s = a.FindState("Death");
 		for (int k = 0; s && s.Tics != -1 && k < 64; k++) s = s.NextState;
 		if (!s) return null;
-		Vector2 p = when.Now(a.pos.xy);
+		Vector2 p = when.At(a.pos.xy, at);
 		double z = level.PointInSector(p).floorplane.ZAtPoint(p);
 		let c = AjarThenCorpse(Actor.Spawn("AjarThenCorpse", (p, z)));
 		if (!c) return null;
@@ -571,42 +614,73 @@ class AjarThenHandler : EventHandler
 		c.scale = a.scale;
 		c.of = of;
 		c.who = a;
+		c.at = at;
 		c.weight = a.Mass;
 		c.bodyRadius = a.radius;
 		c.A_SetTranslation('AjarDust');
 		if (of && !atStart) c.FadeIn();
 		corpses.Push(c);
 		if (CVar.GetCVar("ajar_autotest").GetInt())
-			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for %s", a.GetClassName(), p.x, p.y, of ? "one alive then" : "one dead then");
+			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for %s%s", a.GetClassName(), p.x, p.y,
+				of ? "one alive then" : "one dead then", at ? " (THEN)" : "");
 		return c;
 	}
 
+	// Each time two times come apart (a link down), every monster alive at an earlier time than another and no
+	// longer joined to it shows there as its old corpse; each time some are joined (a link up), the stand-ins of
+	// the monsters now joined to their corpse's time go. With two times: NOW and THEN, the clocked door.
 	void Company()
 	{
-		bool linked = Linked();
-		if (linked && joinedAt < 0) joinedAt = level.maptime;
-		if (linked == wasLinked) return;
-		wasLinked = linked;
-		if (linked)
+		bool l0 = Linked(), l1 = when.Times() == 3 && LinkedAt(AjarThen.THEN);
+		if ((l0 || l1) && joinedAt < 0) joinedAt = level.maptime;
+		if (l0 == wasLinked && l1 == wasLinkedBefore) return;
+		bool up = (l0 && !wasLinked) || (l1 && !wasLinkedBefore);
+		bool down = (!l0 && wasLinked) || (!l1 && wasLinkedBefore);
+		wasLinked = l0;
+		wasLinkedBefore = l1;
+		if (up)
 		{
-			for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of) corpses[i].FadeOut();
-			return;
+			for (int i = 0; i < corpses.Size(); i++)
+			{
+				let c = corpses[i];
+				if (!c || !c.of) continue;
+				int t = when.TimeOf(c.of.pos.xy);
+				if (t <= c.at || Joined(c.at, t)) c.FadeOut();
+			}
 		}
+		if (!down) return;
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
 		while (a = Actor(it.Next()))
-			if (a.bIsMonster && a.health > 0 && when.InThen(a.pos.xy) && !Returns(a)) OldCorpse(a, a);
+		{
+			if (!a.bIsMonster || a.health <= 0) continue;
+			int t = when.TimeOf(a.pos.xy);
+			for (int u = AjarThen.NOW; u < t; u++)
+				if (!Joined(u, t) && !StandsIn(a, u) && !Returns(a, u)) OldCorpse(a, a, u);
+		}
+	}
+
+	// a has a stand-in at time u that is not fading out (three times: a pair of times came apart while another
+	// pair stayed apart)
+	bool StandsIn(Actor a, int u)
+	{
+		for (int i = 0; i < corpses.Size(); i++)
+		{
+			let c = corpses[i];
+			if (c && c.of == a && c.at == u && !c.Leaving()) return true;
+		}
+		return false;
 	}
 
 	// The times come apart again while a's stand-in is still fading out from where a still stands: it
 	// fades in again from there rather than a second one beside it.
-	bool Returns(Actor a)
+	bool Returns(Actor a, int u = AjarThen.NOW)
 	{
-		Vector2 p = when.Now(a.pos.xy);
+		Vector2 p = when.At(a.pos.xy, u);
 		for (int i = 0; i < corpses.Size(); i++)
 		{
 			let c = corpses[i];
-			if (c && c.of == a && c.Leaving() && (c.pos.xy - p).Length() < 1) { c.FadeIn(); return true; }
+			if (c && c.of == a && c.at == u && c.Leaving() && (c.pos.xy - p).Length() < 1) { c.FadeIn(); return true; }
 		}
 		return false;
 	}
@@ -617,56 +691,66 @@ class AjarThenHandler : EventHandler
 	// Killed THEN: its old corpse NOW, for good, where it died. If its stand-in is there (the times apart, or
 	// joined while it is still fading out), that becomes the corpse: moved to where it died, whole at once, so
 	// that whatever weighs bones never counts two for one (MAP23; the kennel lab faded one out and made another).
+	// Killed BEFORE: so too THEN and NOW, a corpse at each.
 	override void WorldThingDied(WorldEvent e)
 	{
 		let a = e.thing;
-		if (!ready || !when || !a || !a.bIsMonster || !when.InThen(a.pos.xy)) return;
+		if (!ready || !when || !a || !a.bIsMonster) return;
+		int t = when.TimeOf(a.pos.xy);
+		for (int u = AjarThen.NOW; u < t; u++) DiedAt(a, u);
+	}
+
+	void DiedAt(Actor a, int u)
+	{
 		AjarThenCorpse kept = null;
 		for (int i = 0; i < corpses.Size(); i++)
 		{
 			let c = corpses[i];
-			if (!c || c.of != a) continue;
+			if (!c || c.of != a || c.at != u) continue;
 			if (!kept) kept = c;
 			else c.FadeOut();
 		}
-		if (!kept) { OldCorpse(a, null); return; }
-		Vector2 p = when.Now(a.pos.xy);
+		if (!kept) { OldCorpse(a, null, u); return; }
+		Vector2 p = when.At(a.pos.xy, u);
 		kept.SetOrigin((p, level.PointInSector(p).floorplane.ZAtPoint(p)), false);
 		kept.angle = a.angle;
 		kept.of = null;
 		kept.fading = 0;
 		kept.A_SetRenderStyle(1, STYLE_Normal);
 		if (CVar.GetCVar("ajar_autotest").GetInt())
-			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for one dead then (its stand-in, kept)", a.GetClassName(), p.x, p.y);
+			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for one dead then (its stand-in, kept)%s", a.GetClassName(), p.x, p.y,
+				u ? " (THEN)" : "");
 	}
 
 	// Raised THEN (an arch-vile; Thing_Raise): it is not dead after all, so its bones NOW are not for good.
 	// While the times are apart they stand in for it from where it lies (it gets up there); while joined
-	// they fade out.
+	// they fade out. (Raised BEFORE: its bones THEN and NOW, each by whether its time and BEFORE are joined.)
 	int revived;               // (the tests)
 	override void WorldThingRevived(WorldEvent e)
 	{
 		let a = e.thing;
-		if (!ready || !when || !a || !a.bIsMonster || !when.InThen(a.pos.xy)) return;
+		if (!ready || !when || !a || !a.bIsMonster || when.TimeOf(a.pos.xy) == AjarThen.NOW) return;
+		int t = when.TimeOf(a.pos.xy);
 		revived++;
 		for (int i = 0; i < corpses.Size(); i++)
 		{
 			let c = corpses[i];
 			if (!c || c.of || c.who != a) continue;
-			if (wasLinked) c.FadeOut();
+			bool joined = Joined(c.at, t);
+			if (joined) c.FadeOut();
 			else c.of = a;
 			if (CVar.GetCVar("ajar_autotest").GetInt())
-				Console.Printf("AJARTEST info old corpse of a %s raised then: %s", a.GetClassName(), wasLinked ? "fades out" : "stands in for it");
+				Console.Printf("AJARTEST info old corpse of a %s raised then: %s", a.GetClassName(), joined ? "fades out" : "stands in for it");
 		}
 	}
 
 	// --- music by time ---------------------------------------------------------------------------
 	void Music(Actor mo)
 	{
-		int th = !musicOff && when.InThen(mo.pos.xy);
+		int th = musicOff ? AjarThen.NOW : when.TimeOf(mo.pos.xy);
 		if (th == musicThen) return;
 		musicThen = th;
-		S_ChangeMusic(th ? ThenMusic() : nowMusic);
+		S_ChangeMusic(th == AjarThen.BEFORE ? BEFORE_MUSIC : th ? ThenMusic() : nowMusic);
 		musicChanges++;
 	}
 
@@ -706,44 +790,72 @@ extend class AjarHandler
 	static bool Placed(AjarDoor d) { return d && d.args[1] >= 1 && d.args[1] <= 6 && !d.IsPair(); }
 
 	// Where the colour door d opens hung in frame f: its far side at f's time. Its own line id (ownFar) is
-	// the copy NOW, + THEN_ID the copy THEN. A map with one time, any other door, or a far side built in
-	// one copy only (Copy.far, against the rule): args[0] as it is.
+	// the copy NOW, + THEN_ID the copy THEN, + 2 x THEN_ID the copy BEFORE. A map with one time, any other
+	// door, or a far side built in one copy only (Copy.far, against the rule): args[0] as it is.
 	int FarAt(AjarDoor d, AjarFrame f)
 	{
 		if (!Placed(d) || !f || !d.args[0]) return d.args[0];
 		let w = AjarThen.Find();
 		if (!w) return d.args[0];
 		if (!d.ownFar) d.ownFar = d.args[0];
-		return w.InThen(f.pos.xy) && ThenFar(d) ? ThenFar(d) : d.ownFar;
+		int t = w.TimeOf(f.pos.xy);
+		return t != AjarThen.NOW && FarCopy(d, t) ? FarCopy(d, t) : d.ownFar;
 	}
 
 	// The copy THEN of a colour door's far side, or 0 (a map with one time; none built).
-	int ThenFar(AjarDoor d)
+	int ThenFar(AjarDoor d) { return FarCopy(d, AjarThen.THEN); }
+
+	// The copy at time t (THEN, BEFORE) of a colour door's far side, or 0 (none built at that time).
+	int FarCopy(AjarDoor d, int t)
 	{
 		let w = AjarThen.Find();
-		if (!Placed(d) || !d.args[0] || !w) return 0;
-		int thenId = (d.ownFar ? d.ownFar : d.args[0]) + AjarThen.THEN_ID;
-		Line l = FindLine(thenId);
-		return l && w.InThen(l.v1.p) ? thenId : 0;
+		if (!Placed(d) || !d.args[0] || !w || t == AjarThen.NOW) return 0;
+		int id = (d.ownFar ? d.ownFar : d.args[0]) + AjarThen.THEN_ID * t;
+		Line l = FindLine(id);
+		return l && w.TimeOf(l.v1.p) == t ? id : 0;
 	}
 
-	// The frame at the same spot at the other time, if there is one.
+	// The frame at the same spot at the other time (NOW and THEN), if there is one.
 	AjarFrame TwinFrame(AjarFrame f)
 	{
 		let w = AjarThen.Find();
+		if (!w || !f || w.TimeOf(f.pos.xy) == AjarThen.BEFORE) return null;
+		return FrameAt(f, AjarThen.THEN - w.TimeOf(f.pos.xy));
+	}
+
+	// The frame at f's spot at time t, if there is one.
+	AjarFrame FrameAt(AjarFrame f, int t)
+	{
+		let w = AjarThen.Find();
 		if (!w || !f) return null;
-		Vector2 at = w.Other(f.pos.xy);
+		Vector2 at = w.At(f.pos.xy, t);
 		let fi = ThinkerIterator.Create("AjarFrame");
 		AjarFrame o;
 		while (o = AjarFrame(fi.Next())) if (o != f && (o.pos.xy - at).Length() < 1) return o;
 		return null;
 	}
 
+	// Does the clocked door d reach f's time? (The clocked door NOW and THEN, the ten-year door THEN and BEFORE.)
+	bool ClockReaches(AjarDoor d, AjarFrame f)
+	{
+		let w = AjarThen.Find();
+		int t = w ? w.TimeOf(f.pos.xy) : AjarThen.NOW;
+		return t == d.SpanFrom() || t == d.SpanFrom() + 1;
+	}
+
+	// The frame d's other leaf hangs in when d hangs in f: f's spot at the other time of d's span.
+	AjarFrame ClockedTwin(AjarDoor d, AjarFrame f)
+	{
+		let w = AjarThen.Find();
+		if (!w || !f || !ClockReaches(d, f)) return null;
+		return FrameAt(f, w.TimeOf(f.pos.xy) == d.SpanFrom() ? d.SpanFrom() + 1 : d.SpanFrom());
+	}
+
 	// Hang: the clocked door d is going into f; its shadow goes into f's twin first.
 	void ClockedHang(AjarDoor d, AjarFrame f)
 	{
 		AjarDoor s = d.Twin();
-		AjarFrame t = TwinFrame(f);
+		AjarFrame t = ClockedTwin(d, f);
 		if (s && t && !t.door && !s.frame) Hang(s, t);
 	}
 
@@ -760,7 +872,8 @@ extend class AjarHandler
 	}
 
 	// UseFrame: what the clocked door does not do; and a frame that takes it only (args[4] 6: MAP21's
-	// machine frame, at both times, and its corridor's first frame, now) takes no other door.
+	// machine frame, at both times, and its corridor's first frame, now) takes no other door. The same for
+	// the ten-year door, between THEN and BEFORE; and neither hangs at a time its clock does not reach.
 	bool ClockedRefuses(AjarFrame f)
 	{
 		if (carried && !carried.IsClocked() && f.args[4] == 6)
@@ -770,15 +883,21 @@ extend class AjarHandler
 		}
 		if (carried && carried.IsClocked())
 		{
-			AjarFrame t = TwinFrame(f);
+			string name = carried.ClockName();
+			if (!ClockReaches(carried, f))
+			{
+				Say("The " .. name .. " door's clock does not reach this time.\nIt will not hang in this frame.");
+				return true;
+			}
+			AjarFrame t = ClockedTwin(carried, f);
 			if (!t)
 			{
-				Say("This frame has no other time.\nThe clocked door will not hang in it.");
+				Say("This frame has no other time.\nThe " .. name .. " door will not hang in it.");
 				return true;
 			}
 			if (t.door)
 			{
-				Say("At the other time a door hangs in this frame.\nThe clocked door cannot open onto it.");
+				Say("At the other time a door hangs in this frame.\nThe " .. name .. " door cannot open onto it.");
 				return true;
 			}
 			return false;
