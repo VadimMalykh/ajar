@@ -305,6 +305,7 @@ class AjarThenHandler : EventHandler
 	string thenPiece;          // the level's piece for THEN ("": THEN_MUSIC)
 	int musicChanges;          // (the tests)
 	int joinedAt;              // the tic the two times were first joined; -1: not yet
+	bool atStart;              // the first tic's company: stand-ins made then are there at once
 
 	static AjarThenHandler Get() { return AjarThenHandler(EventHandler.Find("AjarThenHandler")); }
 
@@ -324,6 +325,7 @@ class AjarThenHandler : EventHandler
 		musicThen = -1;
 		joinedAt = -1;
 		wasLinked = true;          // as if a link had just come down: whatever lives THEN at the start shows NOW
+		atStart = true;            // ... and is there at once, not fading in (MAP23: bones from the first tic)
 		let ci = ThinkerIterator.Create("AjarThenCause");
 		AjarThenCause c;
 		while (c = AjarThenCause(ci.Next()))
@@ -569,7 +571,7 @@ class AjarThenHandler : EventHandler
 		c.weight = a.Mass;
 		c.bodyRadius = a.radius;
 		c.A_SetTranslation('AjarDust');
-		if (of) c.FadeIn();
+		if (of && !atStart) c.FadeIn();
 		corpses.Push(c);
 		if (CVar.GetCVar("ajar_autotest").GetInt())
 			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for %s", a.GetClassName(), p.x, p.y, of ? "one alive then" : "one dead then");
@@ -609,12 +611,30 @@ class AjarThenHandler : EventHandler
 	// a stand-in that has faded out is gone from the list
 	void Forget(AjarThenCorpse c) { for (int i = corpses.Size() - 1; i >= 0; i--) if (corpses[i] == c) corpses.Delete(i); }
 
+	// Killed THEN: its old corpse NOW, for good, where it died. If its stand-in is there (the times apart, or
+	// joined while it is still fading out), that becomes the corpse: moved to where it died, whole at once, so
+	// that whatever weighs bones never counts two for one (MAP23; the kennel lab faded one out and made another).
 	override void WorldThingDied(WorldEvent e)
 	{
 		let a = e.thing;
 		if (!ready || !when || !a || !a.bIsMonster || !when.InThen(a.pos.xy)) return;
-		for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of == a) corpses[i].FadeOut();
-		OldCorpse(a, null);
+		AjarThenCorpse kept = null;
+		for (int i = 0; i < corpses.Size(); i++)
+		{
+			let c = corpses[i];
+			if (!c || c.of != a) continue;
+			if (!kept) kept = c;
+			else c.FadeOut();
+		}
+		if (!kept) { OldCorpse(a, null); return; }
+		Vector2 p = when.Now(a.pos.xy);
+		kept.SetOrigin((p, level.PointInSector(p).floorplane.ZAtPoint(p)), false);
+		kept.angle = a.angle;
+		kept.of = null;
+		kept.fading = 0;
+		kept.A_SetRenderStyle(1, STYLE_Normal);
+		if (CVar.GetCVar("ajar_autotest").GetInt())
+			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for one dead then (its stand-in, kept)", a.GetClassName(), p.x, p.y);
 	}
 
 	// Raised THEN (an arch-vile; Thing_Raise): it is not dead after all, so its bones NOW are not for good.
@@ -671,6 +691,7 @@ class AjarThenHandler : EventHandler
 		for (int i = 0; i < causes.Size(); i++) MoveCause(causes[i]);
 		ShowHidden();
 		Company();
+		atStart = false;
 		let mo = players[consoleplayer].mo;
 		if (mo) Music(mo);
 	}

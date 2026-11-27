@@ -17,9 +17,11 @@ clocked door). Regions NOW end in N, THEN in T; `exit` is the goal.
             open while pen 1's scales hold 400: key 1
   stallN    the stalls NOW (run, funnel, stall 2, passage): frame 103.
             ledgeN, the stall's ledge at 48, reached only up the bones of a
-            knight in the stall: RED leans there. Down is a drop
+            knight in the stall: key 2 (as first designed RED leant there).
+            Down is a drop
   anteN     the guards' antechamber: frame 104. guardN, the guard room's far
-            side: key 2, past two barons and an arch-vile
+            side, past two barons and an arch-vile: RED leans there (as first
+            designed key 2 lay there)
   bigN      the big run NOW, off the yard: the big one's bones in its middle
             (a step that leads nowhere). cledgeN, the crush's ledge, reached
             only up its bones in the crush; the brass door on it (keys 1 and
@@ -43,6 +45,14 @@ make NOW need them; S1, the stall's ledge and the crush's ledge need too that
 the clocked door hangs nowhere ("apart", tools/solve.py: bones stand in for one
 alive THEN only while the times are apart). The guards' going is a key with no
 such condition: once THEN they are out of the guard room whatever hangs.
+
+As first designed (AS_DESIGNED, RED on the stall's ledge) there is no
+solution: the bones stand in only while the clocked door hangs nowhere, and
+then it is in the player's hands, and a door is never put down, so RED on the
+ledge can never be taken (`all` prints why()). PUZZLE23 is fix 1 of three:
+RED with the guards, key 2 on the ledge (10 door actions, 0 stuck, nothing
+lost). Every stall and pen lies on the south side or at the south end of its
+run; that is the map's business, not the solver's.
 """
 import copy
 import sys
@@ -56,7 +66,7 @@ NOW_FRAMES = {101: "yardN", 102: "kenN", 103: "stallN", 104: "anteN", 105: "bpas
 THEN_REGION = {101: "yardT", 102: "kenT", 103: "stallT", 104: "isoT", 105: "bpassT"}
 APART = {"apart": True}
 
-PUZZLE23 = dict(
+AS_DESIGNED = dict(
     start="yardN", goal="exit", names={**NAMES, CLOCK: "the clocked door"}, complete=True,
     frames={**NOW_FRAMES, **{f + THEN_ID: r for f, r in THEN_REGION.items()}},
     twins={f: f + THEN_ID for f in NOW_FRAMES},
@@ -81,6 +91,21 @@ PUZZLE23 = dict(
 )
 
 
+def red_with_the_guards(p=AS_DESIGNED):
+    """Fix 1, taken (PLAN.md, "Corrected by the solver"): RED on the guard
+    room's far side, key 2 on the stall's ledge. The guards once THEN are out
+    of the guard room whatever hangs (unless left loose with the clocked door
+    in 104), so RED is taken with empty hands, the clocked door hung in another
+    wing; key 2 is taken with it in hand."""
+    q = copy.deepcopy(p)
+    q["keys"]["2"] = "ledgeN"
+    q["doors"][RED]["lean"] = "guardN"
+    return q
+
+
+PUZZLE23 = red_with_the_guards()
+
+
 def without_key(k, p=PUZZLE23):
     """p with bones `k` never to be had: is that wing needed?"""
     q = copy.deepcopy(p)
@@ -88,7 +113,7 @@ def without_key(k, p=PUZZLE23):
     return q
 
 
-def keys_only(p=PUZZLE23):
+def keys_only(p=AS_DESIGNED):
     """The bones as keys alone, with no "apart": what the condition costs."""
     q = copy.deepcopy(p)
     q["walk"] = [w[:3] if len(w) > 3 else w for w in q["walk"]]
@@ -105,7 +130,7 @@ def frame_on_ledge(p=PUZZLE23):
     return q
 
 
-def knight_killed(p=PUZZLE23):
+def knight_killed(p=AS_DESIGNED):
     """The knight killed THEN in the stall (through the hatch): its bones are
     there for good, whatever hangs (key "K", no "apart")."""
     q = copy.deepcopy(p)
@@ -114,7 +139,7 @@ def knight_killed(p=PUZZLE23):
     return q
 
 
-def red_behind_shutter(p=PUZZLE23):
+def red_behind_shutter(p=AS_DESIGNED):
     """On the stall's ledge a switch (key "r", for good) opens a closet off
     the stall's run at floor level, where RED leans."""
     q = copy.deepcopy(p)
@@ -124,15 +149,7 @@ def red_behind_shutter(p=PUZZLE23):
     return q
 
 
-def red_with_the_guards(p=PUZZLE23):
-    """RED on the guard room's far side, key 2 on the stall's ledge."""
-    q = copy.deepcopy(p)
-    q["keys"]["2"] = "ledgeN"
-    q["doors"][RED]["lean"] = "guardN"
-    return q
-
-
-def why(p=PUZZLE23):
+def why(p=AS_DESIGNED):
     """What the player can have, as designed: the keys and places reached."""
     solve.solve(p)
     dist, _ = solve.solve.plain
@@ -171,15 +188,15 @@ def report(p, title, quiet=False):
 
 
 def main(args):
-    report(PUZZLE23, "PUZZLE23 (MAP23 as designed)")
-    why()
+    report(PUZZLE23, "PUZZLE23 (MAP23 as built: fix 1, RED with the guards, key 2 on the stall's ledge)")
     if "all" in args:
-        report(knight_killed(), "the knight may be killed in the stall then (for-good bones)", quiet=False)
-        report(red_behind_shutter(), "a switch on the ledge opens RED's closet for good", quiet=False)
-        report(red_with_the_guards(), "RED with the guards, key 2 on the stall's ledge", quiet=False)
+        report(AS_DESIGNED, "as first designed (RED on the stall's ledge, key 2 with the guards)", quiet=True)
+        why()
+        report(knight_killed(), "fix 3: as designed, the knight may be killed in the stall then", quiet=True)
+        report(red_behind_shutter(), "fix 2: as designed, a switch on the ledge opens RED's closet for good", quiet=True)
         for k, wing in (("d", "the kennels"), ("k", "the stalls"), ("g", "the guards"), ("c", "the big run")):
             report(without_key(k), f"without {wing} (no key {k})", quiet=True)
-        report(keys_only(), "bones as keys alone (no 'apart')", quiet=True)
+        report(keys_only(PUZZLE23), "bones as keys alone (no 'apart')", quiet=True)
         report(frame_on_ledge(), "a twinned frame on the stall's ledge (against the rule)", quiet=True)
 
 
