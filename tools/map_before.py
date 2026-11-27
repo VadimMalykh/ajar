@@ -46,9 +46,12 @@ later time) adds two bays and BLUE:
     hangs BEFORE in 150 from the start, so THEN (130) and NOW (110) an old BLUE
     hangs there, ten and fifty years old, onto BLUE's far side in bay 8. An imp
     NOW (deaf), to follow the player through the old door.
-  8 (x 4480..4992): two rooms, each with a door from the corridor; BLUE's far
-    side 202 in the east one's north wall.
-The checks are src/zscript/beforetest.zs (MODE=1..5 tools/smoke.sh).
+  8 the water (x 4480..4992): NOW a tank (west, frame 111 in its north wall)
+    and a dry room (east, BLUE's far side 202 in its north wall), each with a
+    door from the corridor; THEN's valve on the tank's west wall fills the tank
+    96 deep. BLUE left hanging THEN or BEFORE in 111's frame is an old door NOW
+    between the two, and the water stands in both.
+The checks are src/zscript/beforetest.zs (MODE=1..6 tools/smoke.sh).
 """
 import ajarmap
 import ajarthen
@@ -70,7 +73,9 @@ YARD = dict(wall=LA, ftex="FLAT10", ctex="F_SKY1", ceil=256)       # BEFORE: the
 HALL_X, STRONG_X, STRING_X, HOIST_X, DRIP_X, PEN_X = 0, 640, 1280, 1920, 2560, 3200
 OLD_X, WATER_X = 3840, 4480                                        # the old door lab's bays
 STRING_TAG, HOIST_TAG, BASIN, GATE_NOW, GATE_THEN = 31, 32, 41, 61, 62
+TANK, DRY = 42, 43
 STRING, HOIST, DRIP = 11, 12, 13                                   # the causes' tids
+VALVE = 14                                                         # ... the old door lab's
 END = WATER_X + 576                                                # the corridor's east end
 LATER = (NOW, THEN)                                                # the two times with walls
 
@@ -268,22 +273,27 @@ frame((X + 96, 512), (X + 160, 512), (0, 1), 110)                          # BLU
 ajarmap.door(m, BLUE, *t.before.P((X + 128, 400)), frame=150)
 t.now.thing(X + 256, 400, 3001, angle=270, skill=1, ambush=True)           # an imp NOW, deaf: it follows through old BLUE
 
-# --- 8: BLUE's far side (the old door lab) ---------------------------------------------------------
+# --- 8: the water (the old door lab) --------------------------------------------------------------
 X = WATER_X
 
 
 def water_bay(c):
     if c.before:
         return
-    c.room(box(X, 0, 0, 224, 512), **ROOM)
-    c.room(box(X, 288, 0, 512, 512), **ROOM)
+    c.room(box(X, 0, 0, 224, 512), **ROOM, **(dict(id=TANK) if c.now else {}))          # the tank
+    c.room(box(X, 288, 0, 512, 512), **ROOM, **(dict(id=DRY) if c.now else {}))         # the dry room
     for x in (80, 368):
         ajarmap.roomdoor(m, c.P((X + x, -16)), c.P((X + x + 64, -16)), (0, 1), 0)
 
 
 t.both(water_bay)
-t.far((X + 368, 512), (X + 432, 512), (0, 1), BLUE)                       # BLUE's far side: 202, 222, 242
+frame((X + 80, 512), (X + 144, 512), (0, 1), 111, now=dict(tag=TANK))
+t.far((X + 368, 512), (X + 432, 512), (0, 1), BLUE, now=dict(tag=DRY))     # BLUE's far side: 202, 222, 242
 pier((X + 368, 512), (X + 432, 512), (0, 1))
+t.lever((X, 288), (X, 352), VALVE)
+t.cause(X + 112, 160, VALVE, 2, basin=TANK, depth=96)
+W.basin(m, TANK, 224 * 512, 240, floor=0, at=(X + 112, 200))
+W.basin(m, DRY, 224 * 512, 240, floor=0, at=(X + 400, 200))
 
 # --- BEFORE: the yard -----------------------------------------------------------------------------
 def tiles(area, holes):
@@ -323,7 +333,7 @@ assert not problems, problems
 # (the three times lab's was the strongroom THEN: NOW was out of reach with the two clocked doors alone, since the
 # clocked door could not be brought into the strongroom THEN). With a door left hanging (old=True) a colour door
 # left BEFORE in the strongroom's free frame 144 is an old door into it THEN (124) and NOW (104), each onto its
-# far side at that time. Bays 7 and 8 (BLUE) move nothing the puzzle needs and
+# far side at that time. Bays 7 and 8 (BLUE, the water) move nothing the puzzle needs and
 # are left out: with BLUE as a fourth door the search ran past ten minutes and 3.7 GB (57375 states without).
 ROOMS = {101: "now", 102: "now", 103: "now", 104: "strongroom now", 105: "strongroom now", 106: "now",
          107: "now", 108: "now", 109: "now"}

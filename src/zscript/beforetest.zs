@@ -12,8 +12,9 @@
 //   shoots at about 50 + 70 n).
 // The old door lab (PLAN.md, "The old door lab"; then.zs, a door left hanging): bays
 // 7 the door left on the site x 3840 (frame 110/130/150, BLUE in 150 from the
-// start), 8 x 4480 (BLUE's far side 202/222/242, the east room).
-//   5 the rule.
+// start), 8 the water x 4480 (frame 111/131/151 in the tank, tag 42; BLUE's far
+// side 202/222/242 in the dry room, tag 43; the valve THEN, cause 14).
+//   5 the rule; 6 water through an old door.
 
 class BeforeTest : EventHandler
 {
@@ -183,6 +184,7 @@ class BeforeTest : EventHandler
 		else if (mode == 3) Company(mo);
 		else if (mode == 4) Views(mo);
 		else if (mode == 5) Rule(mo);
+		else if (mode == 6) Water(mo);
 		Drive(mo);
 		if (mode != 4 && tic == cur + 2) Console.Printf("AJARTEST beforeDone=1 checks=%d failed=%d", checks, fails);
 	}
@@ -868,5 +870,40 @@ class BeforeTest : EventHandler
 			mo.player.cheats |= CF_NOTARGET;
 			oDone = 1;
 		}
+	}
+
+	// === MODE=6: water through an old door ===============================================================
+	int dryAt;
+	void Water(Actor mo)
+	{
+		let tank = th.wh.BasinOfTag(42), dry = th.wh.BasinOfTag(43);
+		let vc = Cause(14);
+		if (At()) Check("waterDryAtStart", tank && dry && !tank.Wet() && !dry.Wet() && vc.setting == 0);
+		// BLUE taken BEFORE from 150 and hung BEFORE in 151: old BLUE NOW in 111 (in the tank), onto 202 (in the dry room)
+		if (At()) { Pose(mo, OLD_X + 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) { Pose(mo, WATER_X + 112, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("blueIn151", blue.frame == F(151) && OldOf(131, blue, 10, 222) && OldOf(111, blue, 50, 202), Olds());
+		// the valve THEN, on the tank's west wall: the tank NOW fills, and the dry room through old BLUE
+		if (At()) { Pose(mo, WATER_X + 32, OFF + 320, 180); PressUse(mo); fullAt = -1; dryAt = -1; }
+		if (Seg(700))
+		{
+			if (tt == 0) Check("valveOpenThen", vc.setting == 1);
+			if (fullAt < 0 && tank.w >= 95.5) fullAt = tt;
+			if (dryAt < 0 && dry.w >= 95.5) dryAt = tt;
+			if (tt % 70 == 0) Info(String.Format("t+%d tank %.2f, dry room %.2f", tt, tank.w, dry.w));
+			if (tt == 699)
+				Check("waterStandsInBoth", fullAt >= 0 && dryAt >= 0 && abs(tank.w - 96) < 0.01 && abs(dry.w - tank.w) < 0.5,
+					String.Format("tank full in %d tics, the dry room in %d; %.2f / %.2f", fullAt, dryAt, tank.w, dry.w));
+		}
+		if (At()) Pose(mo, WATER_X + 400, 200, 90);
+		if (Seg(3) && tt == 2) Check("dryRoomNowUnderWater", mo.waterlevel >= 2 && TimeOf(mo) == AjarThen.T_NOW, String.Format("waterlevel %d", mo.waterlevel));
+		if (At()) Pose(mo, WATER_X + 400, OFF + 200, 90);
+		if (Seg(3) && tt == 2) Check("dryRoomThenDry", mo.waterlevel == 0 && TimeOf(mo) == AjarThen.T_THEN);
+		// BLUE taken down BEFORE: the old door is gone, and with it the link; what came through stays (water.zs moves
+		// water through a hung door and keeps no history)
+		if (At()) { Pose(mo, WATER_X + 112, 2 * OFF + 470, 90); PressUse(mo); }
+		if (Seg(70) && tt == 69)
+			Check("oldDoorGoneTheWaterStays", !F(111).door && h.carried == blue && abs(dry.w - 96) < 0.5 && abs(tank.w - 96) < 0.01,
+				String.Format("tank %.2f, dry room %.2f", tank.w, dry.w));
 	}
 }
