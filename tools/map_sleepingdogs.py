@@ -71,6 +71,7 @@ PAD = "GATE3"                               # a Doom gate's pad THEN
 TRIM, TRIMF = "AJTRIM", "AJTRIMF"
 GLASS = dict(mid="AJGLAS", midboth=True, blocking=True, blockeverything=True, blockhitscan=True,
              blockprojectiles=True, blocksight=True, blocksound=True)
+CRUSH_GLASS = {k: v for k, v in GLASS.items() if k != "blocksound"}
 
 ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE = 3004, 9, 3001, 3002, 58
 CHAINGUNNER, KNIGHT, BARON, REVENANT, SOUL, CACO, MANCUBUS, VILE, CYBER = 65, 69, 3003, 66, 3006, 3005, 67, 64, 16
@@ -368,27 +369,37 @@ BRUN = (656, -896, 912, 560)
 BFUNNEL = [(656, -896), (912, -896), (848, -1024), (720, -1024)]
 BGATE = (720, -1040, 848, -1024)
 CRUSH_BOX = (720, -1296, 848, -1040)                                    # 128 wide, 256 deep
-CHATCH = (752, -1312, 816, -1296)
+CGLASS = (720, -1312, 848, -1296)                                       # THEN: the crush's end wall, glass (sill 24, to 120)
 CLEDGES = [(656, -1344, 720, -1040), (848, -1344, 912, -1040), (720, -1344, 848, -1296)]
 BPASS = {THEN: (560, -1456, 1072, -1312), NOW: (560, -1456, 1072, -1360)}
-PIER = (816, -1360, 864, -1312)                                         # THEN: beside the hatch, east of it
+BONES_LIT = (720, 32, 848, 160)                                         # NOW: a hole in the roof over the big one's bones
+DOOR_LIT = (848, -1168, 912, -1040)                                     # NOW: the east ledge before the brass door, lit
 BPAD = (720, 416, 848, 544)
 BIG_AT = (784, 96)                                                      # the big one THEN; its bones NOW
 BRASS_Y = (-1136, -1072)
 
 
 def big(c):
-    run(c, BRUN, BPAD, BIG_RUN, 192)
+    if c.then:
+        run(c, BRUN, BPAD, BIG_RUN, 192)
+    else:
+        fit(c, BRUN, [(BONES_LIT, dict(light=200, ctex="F_SKY1"))], floor=0, ceil=192, wall=CO, ftex=FC, ctex=KC,
+            light=c.light)
     c.sector(BFUNNEL, floor=0, ceil=192, wall=CO, ftex=FC, ctex=KC, **(dict(raw=moreids(BIG_RUN)) if c.then else {}))
     gate(c, BGATE, CRUSH_GATE, 160, tags=(BIG_RUN,))
     if c.then:
         c.room(CRUSH_BOX, floor=0, ceil=160, wall=AR, ftex=FR, ctex=KA, id=CRUSH, raw=moreids(BIG_RUN))
-        hatch(c, CHATCH)
-        fit(c, BPASS[THEN], [(PIER, None)], floor=0, ceil=128, wall=LA, ftex=FA, ctex=KA)
+        # the glass that shows one way: the player sees the whole crush and its gate from the passage; nothing
+        # passes, no shot, and the big one never sees him (blocksight); sound passes
+        c.room(CGLASS, floor=24, ceil=120, wall=TRIM, ftex=TRIMF, ctex=TRIMF, light=c.light)
+        for y in (CGLASS[1], CGLASS[3]):
+            c.line((CGLASS[0], y), (CGLASS[2], y), **CRUSH_GLASS)
+        c.room(BPASS[THEN], floor=0, ceil=128, wall=LA, ftex=FA, ctex=KA)
     else:
         c.room(CRUSH_BOX, floor=0, ceil=160, wall=AR, ftex=FR, ctex=KA)
         for box in CLEDGES:
-            c.room(box, floor=LEDGE, ceil=160, wall=AR, ftex=FR, ctex=KA, side=TRIM)
+            lit = [(DOOR_LIT, dict(light=208))] if box[0] == 848 else []
+            fit(c, box, lit, floor=LEDGE, ceil=160, wall=AR, ftex=FR, ctex=KA, side=TRIM, light=c.light)
         c.room(BPASS[NOW], floor=0, ceil=128, wall=LA, ftex=FA, ctex=KA)
 
 
@@ -398,10 +409,10 @@ t.clock_frame((560, -1376), (560, -1440), (-1, 0), 105, when=(NOW, THEN))
 t.line((560, -1376), (560, -1440), upper=LA, dontpegtop=True)
 t.far((928, -1456), (864, -1456), (0, -1), RED)
 t.line((928, -1456), (864, -1456), upper=LA, dontpegtop=True)
-lever_then((880, -1312), (944, -1312), CRUSH_GATE)                      # the crush's gate, behind the pier
+lever_then((848, -1312), (912, -1312), CRUSH_GATE)                      # the crush's gate, beside its glass
 t.cause(1000, -1400, CRUSH_GATE, 2, tag=GATE_TAG[CRUSH_GATE], start=1)
 t.then.thing(784, 480, GATE_T, angle=270, args=(BIG_RUN, CYBER, BIG_ONE, CRUSH))
-t.then.thing(*BIG_AT, CYBER, angle=270, id=BIG_ONE, ambush=True, skill=1)    # deaf: it wakes by sight (or the passage)
+t.then.thing(*BIG_AT, CYBER, angle=270, id=BIG_ONE, ambush=True, skill=1)    # deaf: it wakes by scent (the passage)
 # NOW: the brass door in the crush's east wall, on the ledge (keys 1 and 2), and the night room, the way out
 first = len(m.sectors)
 ajarmap.roomdoor(m, (912, BRASS_Y[0]), (912, BRASS_Y[1]), (1, 0), LEDGE, keys="12", line_id=BRASS_LINE)

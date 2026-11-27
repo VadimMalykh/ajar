@@ -181,6 +181,8 @@ class AjarSleepingDogs : EventHandler
 			if (a.health <= 0 || a.target == mo) continue;
 			a.bAmbush = false;
 			a.target = mo;
+			a.movedir = 8;          // DI_NODIR: its next A_Chase picks a direction toward him (else it starts east)
+			a.movecount = 0;
 			if (a.SeeState) a.SetState(a.SeeState);
 			woke++;
 			if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST info the big one woken by the passage at t=%d", level.maptime);
@@ -205,6 +207,8 @@ class SleepingDogsTest : EventHandler
 	const STALL_DOGS = 2312;
 	const BIG_ONE = 2313;
 	const GUARDS = 2314;
+	const LEVER_X = 840;       // THEN: where the player pulls the crush's lever (facing 60), the gate in sight through the glass
+	const LEVER_Y = -1336;
 	int tic, checks, fails;
 	int step, cur, stepTic;
 	bool entered;
@@ -753,11 +757,10 @@ class SleepingDogsTest : EventHandler
 		if (S()) { Check("clockedIn105", F(105).door == clocked && F(125).door == shadow, h.said); Next(); }
 		if (S()) Through(mo, 180);
 		if (S()) { Check("bigRunsPassageThen", InThen(mo) && NowY(mo) > -1456 && NowY(mo) < -1312, Where(mo)); Next(); }
-		if (S()) GoT(mo, 784, -1340);
-		if (S()) { mo.angle = 90; if (LureInto(mo, BIG_ONE, 3, 1050, 784, -1170)) { came1 += lured; Next(); } }
-		if (S()) GoT(mo, 840, -1390);
-		if (S()) GoT(mo, 912, -1340);
-		if (S()) Use(mo, 90);
+		// at the lever beside the glass: it comes by scent; the gate pulled without moving
+		if (S()) GoT(mo, LEVER_X, LEVER_Y);
+		if (S()) { mo.angle = 60; if (LureInto(mo, BIG_ONE, 3, 1050, 784, -1170)) { came1 += lured; Next(); } }
+		if (S()) Use(mo, 60);
 		if (S()) Wait(100);
 		if (S())
 		{
@@ -767,7 +770,6 @@ class SleepingDogsTest : EventHandler
 			if (!InCrush(a)) { Bring(a, mo, 784, -1170); a.target = null; Info("put into the crush by the script"); }
 			Next();
 		}
-		if (S()) GoT(mo, 840, -1390);
 		if (S()) GoT(mo, 600, -1408);
 		if (S()) Through(mo, 180);
 		if (S()) { Check("backNowBigRunsPassage", !InThen(mo) && mo.pos.y > -1456 && mo.pos.y < -1360, Where(mo)); Next(); }
@@ -957,7 +959,19 @@ class SleepingDogsTest : EventHandler
 		// killed in the crush: none comes
 		if (S()) { Bring(cyber2, null, 784, -1168); cyber2.target = null; Next(); }
 		if (S()) Wait(5);
-		if (S()) { Check("secondInTheCrush", InCrush(cyber2), Where(cyber2)); Kill(cyber2, mo); Next(); }
+		if (S()) { Check("secondInTheCrush", InCrush(cyber2), Where(cyber2)); Pose(mo, LEVER_X, LEVER_Y + OFF, 60); Next(); }
+		if (S())
+		{
+			Check("glassBlocksSightBothWays", !cyber2.CheckSight(mo) && !mo.CheckSight(cyber2), String.Format("it sees him %d, he it %d", cyber2.CheckSight(mo), mo.CheckSight(cyber2)));
+			// a shot of his from the lever: the glass takes it
+			int h0 = cyber2.health;
+			Vector2 v = cyber2.pos.xy - mo.pos.xy;
+			mo.angle = VectorAngle(v.x, v.y);
+			mo.LineAttack(mo.angle, 4096, 0, 100, 'Hitscan', "BulletPuff");
+			Check("glassStopsShots", cyber2.health == h0, String.Format("health %d of %d", cyber2.health, h0));
+			Kill(cyber2, mo);
+			Next();
+		}
 		if (S()) Wait(300);
 		if (S())
 		{
@@ -969,7 +983,7 @@ class SleepingDogsTest : EventHandler
 	}
 
 	// === MODE=3: measurements ==========================================================================
-	int trial, entered3, sumTics, dmgHatch, dmgPier, left3, shut3;
+	int trial, entered3, sumTics, dmgHatch, dmgPier, left3, shut3, seen3, sightTics;
 	Actor sub;
 	string results;
 	void Setup3(Actor mo)
@@ -1032,57 +1046,51 @@ class SleepingDogsTest : EventHandler
 			}
 		}
 		if (S()) { results = String.Format("knight into the stall: %d of 10, %d tics on average; shut in by the lever after: %d of 10", entered3, entered3 ? sumTics / entered3 : 0, shut3); Info(results); Next(); }
-		// B: the big one in its run, the player at the crush's hatch; then round the pier to the lever (is it shut
-		// in?), and its rockets at the player there
-		if (S()) { trial = entered3 = sumTics = dmgHatch = dmgPier = shut3 = 0; Next(); }
+		// B: the big one in its run, a fresh one (asleep, as a Doom gate brings it); the player stands at the lever
+		// beside the crush's glass THEN and does not move: the level's handler wakes it by scent; does it come into
+		// the crush, how fast, does it ever see him (CheckSight, either way through the glass), is he hurt; the
+		// lever pulled from where he stands: is it shut in?
+		if (S()) { trial = entered3 = sumTics = dmgHatch = shut3 = seen3 = 0; Next(); }
 		if (S())
 		{
 			if (First())
 			{
 				Clear("Cyberdemon");
 				SetGate(24, 1);
-				Pose(mo, 784, -1336 + OFF, 90);
+				Pose(mo, LEVER_X, LEVER_Y + OFF, 60);
 				Heal(mo);
 				sub = Spawn3("Cyberdemon", 700 + (trial * 41) % 168, -500 + (trial * 157) % 900, true, BIG_ONE);
-				Wake(sub, mo);
+				sub.bAmbush = true;
+				sub.angle = 90 + (trial * 67) % 180;
+				sightTics = 0;
 			}
+			if (sub.CheckSight(mo) || mo.CheckSight(sub)) sightTics++;
 			bool inside = InCrush(sub) && NowY(sub) < -1150;
 			if (inside || Age() >= 700)
 			{
 				if (inside) { entered3++; sumTics += Age(); }
-				dmgHatch += Hurt(mo);
-				Info(String.Format("big one trial %d: %s after %d tics; at %s; the player at the hatch hurt %d", trial, inside ? "deep in the crush" : "NOT in", Age(), Where(sub), Hurt(mo)));
-				Heal(mo);
+				Info(String.Format("big one trial %d: %s after %d tics; at %s; target %s", trial, inside ? "deep in the crush" : "NOT in", Age(), Where(sub), sub.target == mo ? "the player" : "none"));
+				mo.angle = 60; mo.pitch = 0;
+				PressUse(mo);
 				Next();
 			}
 		}
-		if (S()) GoT(mo, 840, -1390);
-		if (S()) GoT(mo, 912, -1340);
-		if (S()) Use(mo, 90);
 		if (S())
 		{
 			First();
+			if (sub.CheckSight(mo) || mo.CheckSight(sub)) sightTics++;
 			if (Age() >= 100)
 			{
 				bool shut = Gate(784, -1032) < 1 && InCrush(sub);
 				if (shut) shut3++;
-				Info(String.Format("big one trial %d: the lever pulled; %s; it at %s", trial, shut ? "shut in" : "NOT shut in", Where(sub)));
-				if (!shut) { Bring(sub, mo, 784, -1170); SetGate(24, 0); }
-				Heal(mo);
-				Next();
+				if (sightTics) seen3++;
+				dmgHatch += Hurt(mo);
+				Info(String.Format("big one trial %d: the lever pulled from where he stood: %s; it at %s; sight %d tics; the player hurt %d, at %s",
+					trial, shut ? "shut in" : "NOT shut in", Where(sub), sightTics, Hurt(mo), Where(mo)));
+				if (++trial < 10) { step -= 1; entered = false; } else Next();
 			}
 		}
-		if (S())
-		{
-			if (First()) sub.target = mo;
-			if (Age() >= 210)
-			{
-				dmgPier += Hurt(mo);
-				Info(String.Format("big one trial %d: at the lever behind the pier for 210 tics, the player hurt %d; it at %s", trial, Hurt(mo), Where(sub)));
-				if (++trial < 10) { step -= 5; entered = false; } else Next();
-			}
-		}
-		if (S()) { Info(String.Format("big one deep into the crush: %d of 10, %d tics on average; shut in by the lever after: %d of 10; hurt at the hatch %d in all, behind the pier %d in all", entered3, entered3 ? sumTics / entered3 : 0, shut3, dmgHatch, dmgPier)); Next(); }
+		if (S()) { Info(String.Format("big one by scent into the crush: %d of 10, %d tics on average; shut in from the lever: %d of 10; trials with any sight: %d; the player hurt %d in all", entered3, entered3 ? sumTics / entered3 : 0, shut3, seen3, dmgHatch)); Next(); }
 		// C: left with its gate open, the player NOW: does it leave the pen's end of the run?
 		if (S()) { trial = left3 = 0; Next(); }
 		if (S())
@@ -1182,7 +1190,9 @@ class SleepingDogsTest : EventHandler
 		V(mo, "NOW the big run from the gateway: the big one's bones", 680, 440, 280);
 		V(mo, "THEN the big run from its Doom gate: the big one", 784, 400 + OFF, 270);
 		V(mo, "NOW the crush from the funnel: the ledges, the brass door", 784, -900, 270, 10);
-		V(mo, "THEN the crush's hatch and the pier, from frame 125", 600, -1408 + OFF, 20);
+		V(mo, "NOW the brass door from the big run's floor, at the funnel", 700, -880, 313, 4);
+		V(mo, "THEN the crush through its glass, from the lever", LEVER_X, LEVER_Y + OFF, 95, -4);
+		V(mo, "THEN the passage from frame 125: the glass, the lever, RED's far side", 600, -1408 + OFF, 20);
 		V(mo, "NOW the big run's passage: RED's far side, frame 105", 1040, -1400, 190);
 		V(mo, "THEN the secret behind the shelter", 40, 224 + OFF, 180);
 		V(mo, "NOW the night room", 1072, -1220, 90);
