@@ -56,8 +56,10 @@ MONSTERS = {3004, 9, 3001, 3002, 58, 65, 69, 3003, 66, 3006, 3005, 67, 68, 71, 6
 # things that are not solid and stand against a wall on purpose: the wind and
 # begin-anew plates, the press's switch, the lamps, the figures in a glass
 # case, MAP16's weighbridge dial, MAP33's plates that wind (third.zs), MAP21's stream from a pipe (map21.zs),
-# the kennel lab's scales (kennel.zs: their readout on the wall), MAP23's decor (dogs.zs: bowls, buckets, stores)
-ON_WALL = {20043, 20045, 20047, 20048, 20051, 20052, 20053, 20071, 20165, 20171, 20191, 20193, 20199, 20202, 20203}
+# the kennel lab's scales (kennel.zs: their readout on the wall), MAP23's decor (dogs.zs: bowls, buckets, stores),
+# a long cause's target (then.zs: 12 off its wall, radius 10, shot, never walked into)
+ON_WALL = {20043, 20045, 20047, 20048, 20051, 20052, 20053, 20071, 20165, 20171, 20191, 20193, 20199, 20202, 20203,
+           20182}
 RADIUS = {3002: 30, 58: 30, 69: 24, 3003: 24, 3005: 31, 67: 48, 68: 64, 71: 31, 66: 20, 16: 40}
 for t in m.things:
     x, y = t["x"], t["y"]
@@ -299,6 +301,7 @@ for g in members.values():
 # (2026-11-24: MAP19's drawing office could not be entered, its counter 32 from
 # the wall across the way in; the second such place on that map.)
 SG, NARROW, WIDE = 8, 16, 24
+VOID = (-6000, -6000)                                               # ajarwater.VOID
 
 
 def slots():
@@ -319,6 +322,8 @@ def slots():
     ceil = [[VC] * nx for _ in range(ny)]
     h = SG / 2
     for poly, s in zip(polys, m.sectors):
+        if all(VOID[1] <= p[1] <= VOID[1] + 32 and p[0] < VOID[0] + 4096 for p in poly):
+            continue                                                # a basin's control sectors (ajarwater.basin), in the void
         f, c = s["floor"], s["ceil"]
         if f == c and s["id"]:
             c = f + 128
