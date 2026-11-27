@@ -137,6 +137,29 @@ To the solver both are regions like any other; three things join them:
                 stand in now for a monster alive then only then). Things left
                 in a region a cause cuts off stay there
 
+Three times (the three times lab, tools/map_before.py: before, ten years
+before then). As two times, and:
+  befores       optional {then frame id: before frame id}: the same frame
+                then and before (a then id is its now twin's + 20, a before
+                id + 40). Both ids are listed in `frames`. A then frame that
+                is only in `befores` (no now twin) is a then frame all the same
+  more clocked doors  dict(clock=True, span=1, ...): the ten-year door, which
+                joins a then frame to its before twin as the clocked door
+                (span 0, the default) joins now and then: it fills the frame
+                and its twin under its own span, is kept at the then id, and
+                hangs nowhere else. One clocked door for each span. Carried,
+                any door goes through either
+  home_before   beside home and home_then: a plain door hung in a before
+                frame (a `befores` value, or one of before_frames) leads to
+                its far side before
+  before_frames optional (frame ids): frames before that have no twin then
+  causes        with door=colour: shot through that clocked door only, in a
+                `via` frame (a cause before is shot from then through the
+                ten-year door; any clocked door if not given)
+  "apart"       means what it means for two times: the clocked door (span 0)
+                hangs nowhere, now and then apart; the ten-year door does not
+                count
+
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
 one action each. Keys are never lost.
@@ -168,24 +191,34 @@ The printed solution uses no Stray door, and no win may depend on a draw.
 from collections import deque
 
 
-def _twins(p):
-    """{frame id: its twin's id}, both ways (see `twins`)."""
-    t = p.get("twins", {})
+SPANS = ("twins", "befores")     # a clocked door's span: 0 now and then, 1 then and before (the ten-year door)
+
+
+def _twins(p, span=0):
+    """{frame id: its twin's id}, both ways (see `twins`; span 1: `befores`)."""
+    t = p.get(SPANS[span], {})
     return {**t, **{b: a for a, b in t.items()}}
+
+
+def _span(p, c):
+    return p["doors"][c].get("span", 0)
 
 
 def _home(p, c, f):
     """Where door c hung in frame f leads: its far side, at the frame's time
-    (see `home_then`)."""
+    (see `home_then`, `home_before`)."""
     d = p["doors"][c]
-    then = f in p.get("twins", {}).values() or f in p.get("then_frames", ())
+    if "home_before" in d and (f in p.get("befores", {}).values() or f in p.get("before_frames", ())):
+        return d["home_before"]
+    then = f in p.get("twins", {}).values() or f in p.get("then_frames", ()) or f in p.get("befores", {})
     return d["home_then"] if "home_then" in d and then else d["home"]
 
 
-def _now(p, f):
-    """The id a clocked door hung in frame f is kept at: the now one."""
-    t = p.get("twins", {})
-    return f if f in t or not t else _twins(p).get(f, f)
+def _now(p, f, span=0):
+    """The id a clocked door hung in frame f is kept at: the now one (the
+    then one for the ten-year door, span 1)."""
+    t = p.get(SPANS[span], {})
+    return f if f in t or not t else _twins(p, span).get(f, f)
 
 
 def _hung(p, where):
@@ -195,7 +228,7 @@ def _hung(p, where):
         if loc[0] == "frame":
             hung[loc[1]] = c
             if p["doors"][c].get("clock"):
-                hung[_twins(p)[loc[1]]] = c
+                hung[_twins(p, _span(p, c))[loc[1]]] = c
     return hung
 
 
@@ -207,7 +240,7 @@ def _holds(p, when, cs, hung):
             if hung.get(v[1]) != v[0]:
                 return False
         elif k == "apart":
-            if v != (not any(p["doors"][c].get("clock") for c in hung.values())):
+            if v != (not any(p["doors"][c].get("clock") and not _span(p, c) for c in hung.values())):
                 return False
         elif cs[names.index(k)] != v and not (isinstance(v, tuple) and cs[names.index(k)] in v):
             return False
@@ -297,7 +330,8 @@ def _moves(p, state, nailed=False):
     for i, name in enumerate(sorted(p.get("causes", {}))):
         cz = p["causes"][name]
         how = None if here in cz.get("at", ()) else next(
-            (f for f, r in cz.get("via", {}).items() if r == here and p["doors"].get(hung.get(f), {}).get("clock")), False)
+            (f for f, r in cz.get("via", {}).items() if r == here and p["doors"].get(hung.get(f), {}).get("clock")
+             and cz.get("door", hung.get(f)) == hung.get(f)), False)
         if how is not False:
             for st in cz["states"]:
                 if st != cs[i]:
@@ -321,7 +355,7 @@ def _moves(p, state, nailed=False):
         if p["doors"][c].get("clock"):               # the clocked door: this frame to itself at the other time
             if where[c][1] != f:
                 continue                             # (once, from the now id)
-            ends = (p["frames"][f], p["frames"][_twins(p)[f]])
+            ends = (p["frames"][f], p["frames"][_twins(p, _span(p, c))[f]])
         elif twin is not None:                         # a Pair: to the frame its twin hangs in, if it hangs
             if where[twin][0] != "frame" or twin < c:
                 continue
@@ -341,6 +375,9 @@ def _moves(p, state, nailed=False):
         if loc == ("lean", here) and carried is None:
             yield 1, f"pick up {nm(c)}", out(carry=c, **{f"d{c}": ("carried",)})
     twins = _twins(p)
+    clock = carried is not None and p["doors"][carried].get("clock")
+    span = _span(p, carried) if clock else 0
+    ctw = _twins(p, span) if span else twins       # the frames the carried clocked door joins
     for f, region in p["frames"].items():
         if region != here:
             continue
@@ -357,13 +394,13 @@ def _moves(p, state, nailed=False):
         if carried is not None and carried not in (takes if isinstance(takes, tuple) else (takes,)):
             continue                                 # a frame that takes one door only, or two
         to = f
-        if carried is not None and p["doors"][carried].get("clock"):
-            if f not in twins or hung.get(twins[f]) is not None:
+        if clock:
+            if f not in ctw or hung.get(ctw[f]) is not None:
                 continue                             # it fills the twin as well: that must be free
-            more = only.get(twins[f], only.get(f, carried))
+            more = only.get(ctw[f], only.get(f, carried))
             if carried not in (more if isinstance(more, tuple) else (more,)):
                 continue
-            to = _now(p, f)
+            to = _now(p, f, span)
         if c is None and carried is not None:
             yield 1, f"hang {nm(carried)} in {f}", out(carry=None, **{f"d{carried}": ("frame", to)})
         elif c is not None and bool(nails and region in _zone(p["nailer"], keys)) != nailed:
@@ -539,13 +576,14 @@ def solve(p):
     if any(d.get("clock") for d in p["doors"].values()):
         if any(p.get(k) for k in ("thief", "nailer", "dash", "pool")):
             raise ValueError("the clocked door is not modelled with a thief, a nailer, a dash or the Stray pool")
-        if sum(1 for d in p["doors"].values() if d.get("clock")) > 1:
-            raise ValueError("one clocked door only")
+        spans = [d.get("span", 0) for d in p["doors"].values() if d.get("clock")]
+        if len(spans) != len(set(spans)):
+            raise ValueError("one clocked door for each span")
         for c in colours:
-            if p["doors"][c].get("clock") and "frame" in p["doors"][c] and p["doors"][c]["frame"] not in _twins(p):
+            if p["doors"][c].get("clock") and "frame" in p["doors"][c] and p["doors"][c]["frame"] not in _twins(p, _span(p, c)):
                 raise ValueError("the clocked door hangs only in a frame with a twin")
     start = (p["start"], None, tuple(
-        ("frame", _now(p, d["frame"]) if d.get("clock") else d["frame"]) if "frame" in d
+        ("frame", _now(p, d["frame"], d.get("span", 0)) if d.get("clock") else d["frame"]) if "frame" in d
         else ("thief",) if d.get("thief") else ("lean", d["lean"])
         for d in (p["doors"][c] for c in colours)), (), 1 if p.get("thief") else 0,
         0, p.get("lift", {}).get("at", 0), tuple(lu.get("home") for lu in p.get("lures", ())),
@@ -610,6 +648,7 @@ def lost(p):
     for d in p["doors"].values():
         regions |= ({d["home"]} if "home" in d else set()) | ({d["lean"]} if "lean" in d else set())
         regions |= {d["home_then"]} if "home_then" in d else set()
+        regions |= {d["home_before"]} if "home_before" in d else set()
     if p.get("thief"):
         regions.add(p["thief"]["zone"])
     tests = [(r, lambda s, r=r: s[0] == r) for r in sorted(regions - {p["goal"]})]
