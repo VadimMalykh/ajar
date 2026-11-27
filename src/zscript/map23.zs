@@ -339,7 +339,9 @@ class SleepingDogsTest : EventHandler
 	void Wait(int n) { First(); if (Age() >= n) Next(); }
 
 	// --- monsters ---------------------------------------------------------------------------------
-	void Wake(Actor a, Actor mo) { if (!a || a.health <= 0) return; a.bAmbush = false; a.target = mo; a.movecount = 0; if (a.SeeState) a.SetState(a.SeeState); }
+	// set on the player with no stale direction: DI_NODIR (8) makes its next A_Chase pick one toward him (a woken
+	// monster's movedir is 0, east, and it walked that way first: the caco-through-doors session's warning)
+	void Wake(Actor a, Actor mo) { if (!a || a.health <= 0) return; a.bAmbush = false; a.target = mo; a.movedir = 8; a.movecount = 0; if (a.SeeState) a.SetState(a.SeeState); }
 	// put a monster at x, y (NOW's coordinates; `then`), after the player, with no door in its head
 	void Bring(Actor a, Actor mo, double x, double y, bool then = true)
 	{
@@ -351,7 +353,7 @@ class SleepingDogsTest : EventHandler
 		let sense = AjarSense(a.FindInventory("AjarSense"));
 		if (sense) { sense.via = null; sense.Unmute(); if (sense.lure) sense.lure.Destroy(); }
 		a.target = mo;
-		a.movedir = 0;
+		a.movedir = 8;
 		a.movecount = 0;
 	}
 	void Kill(Actor a, Actor by) { if (a && a.health > 0) a.DamageMobj(by, by, a.health + 1000, 'None', DMG_FORCED); }
@@ -551,10 +553,11 @@ class SleepingDogsTest : EventHandler
 		if (S()) Wait(50);
 		if (S()) Through(mo, 180);
 		if (S()) { Check("guardsWingThen", InThen(mo) && mo.pos.x < 400 && NowY(mo) > 1280 && NowY(mo) < 1472, Where(mo)); Next(); }
-		if (S()) GoT(mo, 120, 1376);
+		if (S()) GoT(mo, 208, 1440);
 		if (S())
 		{
 			First();
+			mo.angle = 180;
 			Array<Actor> l;
 			Of(GUARDS, l);
 			int n = 0;
@@ -567,7 +570,6 @@ class SleepingDogsTest : EventHandler
 				Next();
 			}
 		}
-		if (S()) GoT(mo, 208, 1440);
 		if (S()) GoT(mo, 208, 1540);
 		if (S()) GoT(mo, 904, 1540);
 		if (S()) GoT(mo, 904, 1515);
@@ -790,8 +792,11 @@ class SleepingDogsTest : EventHandler
 		if (S()) { big = CrushBones(); Check("bigOnesBonesInTheCrush", big != null, big ? String.Format("(%.0f,%.0f), step %d", big.pos.x, big.pos.y, StepOf(big) != null) : "none"); Next(); }
 		if (S()) { if (big) Go(mo, big.pos.x, big.pos.y); else Next(); }
 		if (S()) { Check("onTheBigOnesBones", abs(mo.pos.z - 24) < 1, Where(mo)); Next(); }
-		if (S()) { if (big) Go(mo, 872, big.pos.y); else Next(); }
+		// to the nearer side (the arithmetic: one side is always in reach), round the end to the east ledge
+		if (S()) { if (big) Go(mo, big.pos.x < 784 ? 688 : 880, big.pos.y); else Next(); }
 		if (S()) { Check("upOnTheCrushsLedge", abs(mo.pos.z - 48) < 1, Where(mo)); Next(); }
+		if (S()) { if (big && big.pos.x < 784) Go(mo, 688, -1320); else Next(); }
+		if (S()) { if (big && big.pos.x < 784) Go(mo, 880, -1320); else Next(); }
 		if (S()) Go(mo, 880, -1104);
 		if (S()) Use(mo, 0);
 		if (S()) Wait(40);
@@ -1121,22 +1126,28 @@ class SleepingDogsTest : EventHandler
 				for (int i = 0; i < 3; i++) { g3[i].angle = 180; Wake(g3[i], mo); }
 			}
 			if (Age() == 50) { pushAngle = 180; pushing = true; last = mo.pos.xy; }
-			if (pushing && (mo.pos.xy - last).Length() > 100) { pushing = false; Keys(); Pose(mo, 120, 1376 + OFF, 0); }
+			if (pushing && (mo.pos.xy - last).Length() > 100) { pushing = false; Keys(); Pose(mo, 208, 1440 + OFF, 180); crossedAt = Age(); }
 			if (pushing) last = mo.pos.xy;
+			if (First3()) { came3[0] = came3[1] = came3[2] = -1; }
+			for (int i = 0; i < 3; i++) if (came3[i] < 0 && g3[i] && InThen(g3[i])) came3[i] = Age();
 			if (Age() >= 50 + 525)
 			{
 				pushing = false; Keys();
 				int n = 0;
 				for (int i = 0; i < 3; i++) if (g3[i] && g3[i].health > 0 && InThen(g3[i])) n++;
 				guardsCame += n;
-				Info(String.Format("guards trial %d: %d of 3 followed through the clocked door in 525 tics (the player %s)", trial, n, Where(mo)));
+				Info(String.Format("guards trial %d: %d of 3 followed through the clocked door in 525 tics (the player through at +%d, then posed at the turnstile's mouth; %s); first THEN at +%d +%d +%d",
+					trial, n, crossedAt, Where(mo), came3[0], came3[1], came3[2]));
 				if (++trial < 10) entered = false; else Next();
 			}
 		}
 		if (S()) { Info(String.Format("guards that followed: %d of 30 in 10 trials", guardsCame)); Done(); }
 	}
-	int leftAt;
+	int leftAt, crossedAt;
 	Array<Actor> g3;
+	int came3[3];
+	int g3trial;
+	bool First3() { if (g3trial != trial + 1) { g3trial = trial + 1; return true; } return false; }
 
 	// === MODE=4: views, 140 tics each (a screenshot every 70 tics: tools/smoke_MAP23_4.cfg; two a view) ============
 	void View(Actor mo, string what, double x, double y, double ang, double pitch = 0)
