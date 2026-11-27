@@ -1207,7 +1207,7 @@ class SleepingDogsTest : EventHandler
 	// 35: two a shot, the later kept). The player stays at the start, not drawn, no target; NOW's ordinary company is
 	// cleared (ClearOrdinary), the specimens THEN and their bones NOW kept. A view is x, y (NOW's), angle, pitch,
 	// when: 0 THEN and then NOW from the same spot (THEN is y + OFF), 1 THEN only, 2 NOW only.
-	static const double TOUR[] = {
+	static const double PLACES5[] = {
 		600, -200, 110, 0, 0,      // yard: the front, the door, the shelter
 		120, 40, 15, 0, 0,         // yard: the glass, the gateway
 		300, 224, 180, 0, 0,       // yard: the shelter straight on
@@ -1254,23 +1254,23 @@ class SleepingDogsTest : EventHandler
 		if (tic == 2) mo.A_SetRenderStyle(1.0, STYLE_None);
 		if (tic < 20 || (tic - 20) % 70) return;
 		int i = (tic - 20) / 70, k = 0;
-		for (int v = 0; v * 5 < TOUR.Size(); v++)
+		for (int v = 0; v * 5 < PLACES5.Size(); v++)
 		{
-			int when = int(TOUR[v * 5 + 4]);
+			int when = int(PLACES5[v * 5 + 4]);
 			int times = when == 0 ? 2 : 1;
 			for (int t = 0; t < times; t++)
 			{
 				k++;
 				if (k - 1 != i) continue;
 				bool early = when == 1 || (when == 0 && t == 0);
-				double x = TOUR[v * 5], y = TOUR[v * 5 + 1] + (early ? OFF : 0);
+				double x = PLACES5[v * 5], y = PLACES5[v * 5 + 1] + (early ? OFF : 0);
 				if (!tourCam) tourCam = AjarTourCam23(Actor.Spawn("AjarTourCam23", (x, y, 0)));
 				tourCam.SetOrigin((x, y, FZ(x, y) + 41), false);
-				tourCam.angle = TOUR[v * 5 + 2];
-				tourCam.pitch = TOUR[v * 5 + 3];
+				tourCam.angle = PLACES5[v * 5 + 2];
+				tourCam.pitch = PLACES5[v * 5 + 3];
 				tourCam.ClearInterpolation();
 				mo.player.camera = tourCam;
-				Console.PrintfEx(PRINT_HIGH | PRINT_NONOTIFY, "AJARTEST view=%d place=%d %s (%d,%d) %d", i, v, early ? "THEN" : "NOW", x, y - (early ? OFF : 0), TOUR[v * 5 + 2]);
+				Console.PrintfEx(PRINT_HIGH | PRINT_NONOTIFY, "AJARTEST view=%d place=%d %s (%d,%d) %d", i, v, early ? "THEN" : "NOW", x, y - (early ? OFF : 0), PLACES5[v * 5 + 2]);
 				return;
 			}
 		}
