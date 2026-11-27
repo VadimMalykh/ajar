@@ -21184,7 +21184,8 @@ and what was led away is not there.
   below needs it.
 - At the start of a level no stand-ins were made (then.zs made them only
   when a link came down). Here the times are apart at the start, and every
-  monster alive then is bones now from the first tic.
+  monster alive then is bones now from the first tic (whole at once: no fade
+  at the start; corrected below).
 - A stand-in whose monster dies then becomes the for-good corpse in its
   place (the lab faded one out and made another: for 35 tics the scales
   read double).
@@ -21212,8 +21213,11 @@ door, none of Ajar's own company.
 | 104 / 124 | the guards' antechamber | the west end of the isolation run | any door |
 | 105 / 125 | the big run's passage | the big run's keeper's passage | the clocked door only |
 
-One frame to each part then, so a colour door can never hang then (the
-clocked door's twin holds the only frame there).
+~~One frame to each part then, so a colour door can never hang then (the
+clocked door's twin holds the only frame there).~~ Struck (the correction
+below): RED swapped in at 122, 123 or 124 THEN for the clocked door's leaf
+hangs then, and opens on the big run's passage THEN: a second way to the
+crush's hatch.
 
 **The places.**
 1. *The yard* (the start, NOW): line 6's stop, a shelter with the plate
@@ -21227,8 +21231,8 @@ clocked door's twin holds the only frame there).
 2. *The hall* (NOW only as a place): the hub. Off it the kennels' run and
    passage, the stalls' run and passage, the guards' antechamber. Its
    tenants and the first fight. A chaingun.
-3. *The kennels* (bones weigh). A run with three pens on one side and the
-   keeper's passage behind the pens; a hatch from the passage into each
+3. *The kennels* (bones weigh). A run with three pens along its south side
+   and the keeper's passage behind (south of) the pens; a hatch from the passage into each
    pen. THEN: three demons in the run, asleep; pen 1's gate by a lever in
    the passage beside its hatch; a turnstile between passage and run;
    the run's Doom gate (stocked with demons). NOW: frame 102 in the
@@ -21236,20 +21240,20 @@ clocked door's twin holds the only frame there).
    at 400 the shutter S1 in the passage stands open: a closet with **key
    1** and a super shotgun. At 1000 (all three demons in the one pen) a
    second shutter in the closet: a secret (a megasphere).
-4. *The stalls* (a big one's bones are a step). A run, and at its end, on
+4. *The stalls* (a big one's bones are a step). A run, and at its south end, on
    its own line and behind a funnel, stall 2: 80 wide, 192 deep, a gate at
    its mouth. THEN: two hell knights in the
    run, the stall's gate by a lever in the keeper's passage beside the
    stall's hatch, a turnstile, the run's Doom gate (stocked with a
    knight). NOW: frame 103 in the passage; in the stall a ledge at 48
    along both long sides and round the end (the hatch is Doom's stone
-   now), no other way up: **RED** leans on it at the end, with a soul
+   now), no other way up: **key 2** lies on it at the end, with a soul
    sphere.
    Down is a drop.
 5. *The guards* (what was led away is not there). NOW an antechamber with
    frame 104 and, through a doorway, the guard room: two barons and an
    arch-vile, more than the level's ammunition pays for; on the room's far
-   side **key 2**. THEN frame 124 is in the west end of the isolation run;
+   side **RED** leans. THEN frame 124 is in the west end of the isolation run;
    beside it a turnstile into the keeper's passage, which runs along the
    run to the isolation pen at its east end: its hatch and the lever of
    its gate. The way: be seen, through the door, sideways through the
@@ -21260,7 +21264,7 @@ clocked door's twin holds the only frame there).
    the way; killed (now or then) they are out of it as well.
 6. *The big run* (the test). NOW it opens off the yard: long, the big
    one's bones standing in the middle of it from the first tic (a step 80
-   across that leads nowhere: the player may climb it at once). At its far
+   across that leads nowhere: the player may climb it at once). At its south
    end, on its line and behind a funnel, the crush: 128 wide, 256 deep, a ledge at 48 along both sides and
    round the end (its hatch is Doom's stone now), and in its east wall, on
    the ledge, a brass door locked with
@@ -21280,9 +21284,12 @@ clocked door's twin holds the only frame there).
 2. *The kennels*: the clocked door in 102; a demon baited into pen 1 and
    shut in; back, the door down: the scales read 400, S1 opens: key 1.
 3. *The stalls*: the door in 103; a knight baited into stall 2 and shut
-   in; back, the door down; up its bones onto the ledge: RED.
+   in; back, the door down; up its bones onto the ledge: key 2.
 4. *The guards*: the door in 104; lead them through, pen them or leave
-   them; back, the door down: key 2.
+   them; back, the door down. RED, on the room's far side, wants empty
+   hands: the clocked door must hang somewhere, and hung in 104 it brings
+   back loose guards; so it hangs in another wing (the solver's way: left
+   in 102 after the demon is penned, then swapped there for RED).
 5. *The big run*: RED hung in 102, 103 or 104: the big run's passage; the
    clocked door carried through RED and hung in 105; the big one baited
    into the crush and shut in; back, the door down, out through RED; the
@@ -21295,7 +21302,7 @@ what the level does not give for the big ones.)
 21 and 22. Bones are keys the solver gets in the keeper's passages then
 (the house is always stocked, so a specimen can always be had); the solver
 proves the doors. The rules the generator keeps: no frame beyond a way
-that bones make; one frame to each part then; a gate or a shutter never
+that bones make; a gate or a shutter never
 shuts on anything; a step is never solid while something stands in it.
 
 **Fights** (Doom's monsters; a first guess of 90 to 120 on "Resident" in
@@ -21323,3 +21330,39 @@ starts it again until there is a MAP24.
 at the stop (the shelter only); glass that shows one way inside the house
 (the yard's wall is the one pane); a circuit that runs one way; the look
 (the kennels' own drawing, the name plates); fights tuned by play.
+
+### Corrected by the solver (2026-11-27)
+
+*What failed.* `tools/puzzle23.py`, with bones only while the clocked door
+hangs nowhere (the solver's new `apart`), found no way through the design
+as written: 771 states, none of them the way out. RED leant on the stall's
+ledge, which only the knight's bones reach, and they are there only while
+the clocked door hangs nowhere; but one door is carried at a time and a
+door is never put down, so with the door down the player's hands hold it,
+and RED cannot be taken. (The design had assumed the clocked door could be
+put down.)
+
+*Three fixes, each proven* (door actions, states, stuck):
+1. RED leans in the guard room (on its far side, where key 2 was) and key
+   2 lies on the stall's ledge: 10 door actions, 4533 states, 0 stuck.
+2. RED behind a shutter that the knight's bones open: 10, 5235, 0 stuck.
+3. The knight killed in the stall (its bones there for good, so the door
+   can hang while RED is taken): 10, 9573, 0 stuck.
+
+*Fix 1 was taken* (Claude on Fable, 2026-11-27). The lesson to be found,
+not said: RED wants empty hands, so the clocked door must hang somewhere,
+and hung in 104 it brings back loose guards. The other two stay in
+`puzzle23.py` as variants (`all`).
+
+*Also corrected:*
+- Every pen and stall lies on the south side or at the south end of its run
+  (THEN is south of NOW, and a monster THEN after a player NOW walks north,
+  away from it): the kennels' pens along the south side of their run, the
+  knights' stall at the south end of theirs, the crush at the south end of
+  the big run. The isolation run stays east to west.
+- "One frame to each part then" is struck: RED swapped in at 122, 123 or
+  124 THEN opens on the big run's passage THEN, a second way to the crush's
+  hatch.
+- Bones at the start are there at once (no fade at the first tic).
+- Killing the knight in the stall stays possible; nothing needs it.
+

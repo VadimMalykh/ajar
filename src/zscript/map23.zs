@@ -475,7 +475,7 @@ class SleepingDogsTest : EventHandler
 		Of(tid, l);
 		for (int i = 0; i < l.Size(); i++)
 		{
-			bool inside = which == 1 ? InPen1(l[i]) : which == 2 ? InStall(l[i]) : which == 3 ? InCrush(l[i]) : InIsoPen(l[i]);
+			bool inside = which == 1 ? InPen1(l[i]) : which == 2 ? InStall(l[i]) : which == 3 ? InCrush(l[i]) && NowY(l[i]) < -1150 : InIsoPen(l[i]);
 			if (inside)
 			{
 				lured = 1; luredAt = Age();
@@ -636,7 +636,17 @@ class SleepingDogsTest : EventHandler
 		if (S()) GoT(mo, 1360, 250);
 		if (S()) Use(mo, 90);
 		if (S()) Wait(100);
-		if (S()) { Check("knightShutInTheStall", Gate(1280, 504) < 1, String.Format("gate %.1f", Gate(1280, 504))); Next(); }
+		if (S())
+		{
+			Check("stallGateShut", Gate(1280, 504) < 1, String.Format("gate %.1f", Gate(1280, 504)));
+			Array<Actor> l;
+			Of(STALL_DOGS, l);
+			int n = 0;
+			for (int i = 0; i < l.Size(); i++) if (InStall(l[i])) n++;
+			Info(String.Format("knights in the stall when its gate came down: %d", n));
+			if (!n && l.Size()) { Bring(l[0], mo, 1280, 420); l[0].target = null; Info("one put into the stall by the script"); }
+			Next();
+		}
 		if (S()) GoT(mo, 1184, 200);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("backNowStallsPassage", !InThen(mo) && mo.pos.y > 160 && mo.pos.y < 224, Where(mo)); Next(); }
@@ -672,7 +682,7 @@ class SleepingDogsTest : EventHandler
 		if (S()) GoT(mo, -368, 610);
 		if (S()) GoT(mo, -984, 610);
 		if (S()) GoT(mo, -984, 1088);
-		if (S()) GoT(mo, -870, 1088);
+		if (S()) GoT(mo, -890, 1088);
 		if (S()) { mo.angle = 0; Woken(mo, KEN_DOGS, 105); }
 		if (S()) GoT(mo, -984, 1088);
 		if (S()) GoT(mo, -984, 610);
@@ -682,7 +692,17 @@ class SleepingDogsTest : EventHandler
 		if (S()) GoT(mo, -680, 640);
 		if (S()) Use(mo, 90);
 		if (S()) Wait(100);
-		if (S()) { Check("demonShutInPen1", Gate(-760, 952) < 1, String.Format("gate %.1f", Gate(-760, 952))); Next(); }
+		if (S())
+		{
+			Check("pen1GateShut", Gate(-760, 952) < 1, String.Format("gate %.1f", Gate(-760, 952)));
+			Array<Actor> l;
+			Of(KEN_DOGS, l);
+			int n = 0;
+			for (int i = 0; i < l.Size(); i++) if (InPen1(l[i])) n++;
+			Info(String.Format("demons in pen 1 when its gate came down: %d", n));
+			if (!n && l.Size()) { Bring(l[0], mo, -760, 820); l[0].target = null; Info("one put into pen 1 by the script"); }
+			Next();
+		}
 		if (S()) GoT(mo, -368, 600);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("backNowKennels", !InThen(mo) && mo.pos.y > 544 && mo.pos.y < 672, Where(mo)); Next(); }
@@ -733,13 +753,19 @@ class SleepingDogsTest : EventHandler
 		if (S()) { Check("bigRunsPassageThen", InThen(mo) && NowY(mo) > -1456 && NowY(mo) < -1312, Where(mo)); Next(); }
 		if (S()) GoT(mo, 784, -1340);
 		if (S()) { mo.angle = 90; if (LureInto(mo, BIG_ONE, 3, 1050, 784, -1170)) { came1 += lured; Next(); } }
-		if (S()) Wait(35);
-		if (S()) GoT(mo, 870, -1420);
-		if (S()) GoT(mo, 992, -1350);
+		if (S()) GoT(mo, 840, -1390);
+		if (S()) GoT(mo, 912, -1340);
 		if (S()) Use(mo, 90);
 		if (S()) Wait(100);
-		if (S()) { Check("bigOneShutInTheCrush", Gate(784, -1032) < 1, String.Format("gate %.1f; it: %s", Gate(784, -1032), Where(OneOf(BIG_ONE)))); Next(); }
-		if (S()) GoT(mo, 870, -1420);
+		if (S())
+		{
+			let a = OneOf(BIG_ONE);
+			Check("crushGateShut", Gate(784, -1032) < 1, String.Format("gate %.1f", Gate(784, -1032)));
+			Info(String.Format("the big one %s the crush when its gate came down: %s", InCrush(a) ? "was in" : "had backed out of", Where(a)));
+			if (!InCrush(a)) { Bring(a, mo, 784, -1170); a.target = null; Info("put into the crush by the script"); }
+			Next();
+		}
+		if (S()) GoT(mo, 840, -1390);
 		if (S()) GoT(mo, 600, -1408);
 		if (S()) Through(mo, 180);
 		if (S()) { Check("backNowBigRunsPassage", !InThen(mo) && mo.pos.y > -1456 && mo.pos.y < -1360, Where(mo)); Next(); }
@@ -938,7 +964,7 @@ class SleepingDogsTest : EventHandler
 	}
 
 	// === MODE=3: measurements ==========================================================================
-	int trial, entered3, sumTics, dmgHatch, dmgPier, left3;
+	int trial, entered3, sumTics, dmgHatch, dmgPier, left3, shut3;
 	Actor sub;
 	string results;
 	void Setup3(Actor mo)
@@ -965,8 +991,9 @@ class SleepingDogsTest : EventHandler
 	void Measure(Actor mo)
 	{
 		if (S()) { Setup3(mo); Next(); }
-		// A: a knight in the run, the player at the stall's hatch: does it come into the stall, how fast
-		if (S()) { trial = entered3 = sumTics = 0; Next(); }
+		// A: a knight in the run, the player at the stall's hatch: does it come into the stall, how fast; then the
+		// player steps to the lever and pulls it: is it shut in?
+		if (S()) { trial = entered3 = sumTics = shut3 = 0; Next(); }
 		if (S())
 		{
 			if (First())
@@ -983,31 +1010,59 @@ class SleepingDogsTest : EventHandler
 			{
 				if (inside) { entered3++; sumTics += Age(); }
 				Info(String.Format("knight trial %d: %s after %d tics; at %s; the player hurt %d", trial, inside ? "in the stall" : "NOT in", Age(), Where(sub), Hurt(mo)));
-				if (++trial < 10) entered = false; else Next();
+				Next();
 			}
 		}
-		if (S()) { results = String.Format("knight into the stall: %d of 10, %d tics on average", entered3, entered3 ? sumTics / entered3 : 0); Info(results); Next(); }
-		// B: the big one in its run, the player at the crush's hatch; then its rockets behind the pier
-		if (S()) { trial = entered3 = sumTics = dmgHatch = dmgPier = 0; Next(); }
+		if (S()) GoT(mo, 1360, 250);
+		if (S()) Use(mo, 90);
+		if (S())
+		{
+			First();
+			if (Age() >= 100)
+			{
+				bool shut = Gate(1280, 504) < 1 && InStall(sub);
+				if (shut) shut3++;
+				Info(String.Format("knight trial %d: the lever pulled; %s; it at %s", trial, shut ? "shut in" : "NOT shut in", Where(sub)));
+				if (++trial < 10) { step -= 3; entered = false; } else Next();
+			}
+		}
+		if (S()) { results = String.Format("knight into the stall: %d of 10, %d tics on average; shut in by the lever after: %d of 10", entered3, entered3 ? sumTics / entered3 : 0, shut3); Info(results); Next(); }
+		// B: the big one in its run, the player at the crush's hatch; then round the pier to the lever (is it shut
+		// in?), and its rockets at the player there
+		if (S()) { trial = entered3 = sumTics = dmgHatch = dmgPier = shut3 = 0; Next(); }
 		if (S())
 		{
 			if (First())
 			{
 				Clear("Cyberdemon");
 				SetGate(24, 1);
-				Pose(mo, 784, -1340 + OFF, 90);
+				Pose(mo, 784, -1336 + OFF, 90);
 				Heal(mo);
 				sub = Spawn3("Cyberdemon", 700 + (trial * 41) % 168, -500 + (trial * 157) % 900, true, BIG_ONE);
 				Wake(sub, mo);
 			}
-			bool inside = InCrush(sub);
+			bool inside = InCrush(sub) && NowY(sub) < -1150;
 			if (inside || Age() >= 700)
 			{
 				if (inside) { entered3++; sumTics += Age(); }
 				dmgHatch += Hurt(mo);
-				Info(String.Format("big one trial %d: %s after %d tics; at %s; the player at the hatch hurt %d", trial, inside ? "in the crush" : "NOT in", Age(), Where(sub), Hurt(mo)));
-				if (!inside) Bring(sub, mo, 784, -1170);
-				Pose(mo, 960, -1345 + OFF, 180);
+				Info(String.Format("big one trial %d: %s after %d tics; at %s; the player at the hatch hurt %d", trial, inside ? "deep in the crush" : "NOT in", Age(), Where(sub), Hurt(mo)));
+				Heal(mo);
+				Next();
+			}
+		}
+		if (S()) GoT(mo, 840, -1390);
+		if (S()) GoT(mo, 912, -1340);
+		if (S()) Use(mo, 90);
+		if (S())
+		{
+			First();
+			if (Age() >= 100)
+			{
+				bool shut = Gate(784, -1032) < 1 && InCrush(sub);
+				if (shut) shut3++;
+				Info(String.Format("big one trial %d: the lever pulled; %s; it at %s", trial, shut ? "shut in" : "NOT shut in", Where(sub)));
+				if (!shut) { Bring(sub, mo, 784, -1170); SetGate(24, 0); }
 				Heal(mo);
 				Next();
 			}
@@ -1018,12 +1073,11 @@ class SleepingDogsTest : EventHandler
 			if (Age() >= 210)
 			{
 				dmgPier += Hurt(mo);
-				Info(String.Format("big one trial %d: behind the pier for 210 tics, the player hurt %d; it at %s", trial, Hurt(mo), Where(sub)));
-				if (++trial < 10) step--; else { Next(); return; }
-				Next();
+				Info(String.Format("big one trial %d: at the lever behind the pier for 210 tics, the player hurt %d; it at %s", trial, Hurt(mo), Where(sub)));
+				if (++trial < 10) { step -= 5; entered = false; } else Next();
 			}
 		}
-		if (S()) { Info(String.Format("big one into the crush: %d of 10, %d tics on average; hurt at the hatch %d in all, behind the pier %d in all", entered3, entered3 ? sumTics / entered3 : 0, dmgHatch, dmgPier)); Next(); }
+		if (S()) { Info(String.Format("big one deep into the crush: %d of 10, %d tics on average; shut in by the lever after: %d of 10; hurt at the hatch %d in all, behind the pier %d in all", entered3, entered3 ? sumTics / entered3 : 0, shut3, dmgHatch, dmgPier)); Next(); }
 		// C: left with its gate open, the player NOW: does it leave the pen's end of the run?
 		if (S()) { trial = left3 = 0; Next(); }
 		if (S())

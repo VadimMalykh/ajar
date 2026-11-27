@@ -371,7 +371,7 @@ CRUSH_BOX = (720, -1296, 848, -1040)                                    # 128 wi
 CHATCH = (752, -1312, 816, -1296)
 CLEDGES = [(656, -1344, 720, -1040), (848, -1344, 912, -1040), (720, -1344, 848, -1296)]
 BPASS = {THEN: (560, -1456, 1072, -1312), NOW: (560, -1456, 1072, -1360)}
-PIER = (832, -1376, 896, -1312)                                         # THEN: beside the hatch, east of its line
+PIER = (816, -1360, 864, -1312)                                         # THEN: beside the hatch, east of it
 BPAD = (720, 416, 848, 544)
 BIG_AT = (784, 96)                                                      # the big one THEN; its bones NOW
 BRASS_Y = (-1136, -1072)
@@ -398,7 +398,7 @@ t.clock_frame((560, -1376), (560, -1440), (-1, 0), 105, when=(NOW, THEN))
 t.line((560, -1376), (560, -1440), upper=LA, dontpegtop=True)
 t.far((928, -1456), (864, -1456), (0, -1), RED)
 t.line((928, -1456), (864, -1456), upper=LA, dontpegtop=True)
-lever_then((960, -1312), (1024, -1312), CRUSH_GATE)                     # the crush's gate, behind the pier
+lever_then((880, -1312), (944, -1312), CRUSH_GATE)                      # the crush's gate, behind the pier
 t.cause(1000, -1400, CRUSH_GATE, 2, tag=GATE_TAG[CRUSH_GATE], start=1)
 t.then.thing(784, 480, GATE_T, angle=270, args=(BIG_RUN, CYBER, BIG_ONE, CRUSH))
 t.then.thing(*BIG_AT, CYBER, angle=270, id=BIG_ONE, ambush=True, skill=1)    # deaf: it wakes by sight (or the passage)
