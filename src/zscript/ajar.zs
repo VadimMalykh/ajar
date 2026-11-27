@@ -1438,6 +1438,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "MAP22") return;     // and MAP22 (map22.zs, DayReturnTest)
 		if (level.mapname ~== "KENNEL") return;    // and the kennel lab (kenneltest.zs)
 		if (level.mapname ~== "MAP23") return;     // and MAP23 (map23.zs, SleepingDogsTest)
+		if (level.mapname ~== "BEFORE") return;    // and the three times lab (beforetest.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 4) LabReachScript(mo, t);      // the reach survey (reachtest.zs)
