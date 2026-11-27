@@ -1227,12 +1227,12 @@ class SleepingDogsTest : EventHandler
 		1500, 200, 180, 0, 0,      // passages: the stalls' passage
 		1040, -1400, 180, 0, 0,    // passages: the big run's passage
 		40, 1552, 0, 0, 1,         // passages: the isolation passage (THEN)
-		352, 224, 180, -10, 0,     // plates 1: LINE 6, THE INSTITUTE
+		600, 224, 180, -14, 0,     // plates 1: LINE 6, THE INSTITUTE
 		320, 352, 90, -16, 0,      // plates 2: ANIMAL HOUSE
-		144, 352, 90, -12, 0,      // plates 2: the plan (yard)
+		144, 352, 90, -20, 0,      // plates 2: the plan (yard)
 		496, 752, 270, -12, 2,     // plates 2: the plan (hall)
 		-608, 668, 270, -10, 0,    // plates 4: the rules (kennels' passage)
-		1376, 218, 270, -14, 0,    // plates 4: the rules (stalls' passage)
+		1376, 218, 270, -28, 0,    // plates 4: the rules (stalls' passage)
 		480, 1492, 90, -10, 1,     // plates 4: the rules (isolation passage)
 		736, -1364, 270, -12, 0,   // plates 4: the rules (big run's passage)
 		-928, 668, 270, -10, 0,    // plates 5: the weigh record

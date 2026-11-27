@@ -31,7 +31,7 @@
 #               30 THEN, 31 NOW  (1500, 200) 180   the stalls' passage
 #               32 THEN, 33 NOW  (1040, -1400) 180 the big run's passage
 #               34 THEN          (40, 1552) 0      the isolation passage
-#   plates      35 THEN, 36 NOW  (352, 224) 180    1 LINE 6, THE INSTITUTE (the shelter)
+#   plates      35 THEN, 36 NOW  (600, 224) 180    1 LINE 6, THE INSTITUTE (the shelter)
 #               37 THEN, 38 NOW  (320, 352) 90     2 ANIMAL HOUSE
 #               39 THEN, 40 NOW  (144, 352) 90     2 the plan (the yard)
 #               41 NOW           (496, 752) 270    2 the plan (the hall)
