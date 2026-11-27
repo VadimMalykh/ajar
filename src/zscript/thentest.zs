@@ -480,12 +480,30 @@ class ThenTest : EventHandler
 		if (Seg(70) && tt == 69)
 		{
 			Check("gateOpen", CZ(PEN_X + 256, 520) > 64);
-			for (int i = 0; i < pen.Size(); i++) { pen[i].target = mo; pen[i].SetState(pen[i].SeeState); }
+			// (no fighting among themselves: an imp's ball in the demon's back, as they come out at the player in a
+			// line, set them on each other in about one run of three, and then none was after him at the door)
+			for (int i = 0; i < pen.Size(); i++) { pen[i].target = mo; pen[i].bNoInfighting = true; pen[i].SetState(pen[i].SeeState); }
 			Pose(mo, PEN_X + 256, 380, 90);
 		}
 		// wait at the gate for them to come out, then step back to the frame and go through into THEN
 		if (Seg(210) && tt % 35 == 0) Info(MonsterPlaces());
-		if (At()) Pose(mo, PEN_X + 40, 256, 180);
+		if (At())
+		{
+			// What is checked below is following through the door, not Doom's chase finding the pen's 64-wide gate:
+			// in about one run of four none had come out into the bay by now (the imps stand in the pen throwing,
+			// the demon, 60 wide, does not line up), nobody saw the player go through, and all three then went
+			// at his place THEN straight, to the pen's north wall. So an imp is put in the bay if none is there.
+			bool inBay = false;
+			for (int i = 0; i < pen.Size(); i++) if (pen[i].health > 0 && pen[i].pos.y < 512) inBay = true;
+			for (int i = 0; i < pen.Size() && !inBay; i++)
+				if (pen[i].health > 0 && pen[i].radius <= 20)
+				{
+					pen[i].SetOrigin((PEN_X + 256, 440, 0), false);
+					Info("none had come out of the pen: an imp put in the bay by the script");
+					inBay = true;
+				}
+			Pose(mo, PEN_X + 40, 256, 180);
+		}
 		if (At()) Keys(WALKKEY);
 		if (Seg(40) && tt == 39) { Keys(); Check("playerThen", InThen(mo), Where(mo)); }
 		if (At()) WalkTo(PEN_X + 400, OFF + 100);
