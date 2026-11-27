@@ -19966,6 +19966,270 @@ says how hard the arena is now, whether the pillar and the stub are cover
 enough from the arch-vile, or how many of the 21 placed dead it raises. Not
 played by hand.
 
+## MAP22: BLUE's ambush with an arch-vile; the way out is gated (decided 2026-11-27, to build)
+
+Vadim, playing the first version: "Here when I finally take blue door, let's
+have bigger ambush. Arch-vhile maybe? Not sure about cyberdemon." and "Also
+exit is too easy, let's make bigger puzzle please". Settled by Claude on
+Fable, the puzzle after the solver. Vadim has not seen this text.
+
+### The ambush when BLUE is taken (the theatre now)
+
+It was 2 imps, 3 sergeants and a knight. Now, on "Resident", cause 10 + BLUE
+as before:
+
+| When | Where | What |
+|---|---|---|
+| 1 s | the rooms behind the foyer | 2 imps (as before) |
+| 1 s | the foyer | 2 chaingunners, 2 knights |
+| 3 s | the foyer | **1 arch-vile** (on every difficulty but the easiest) |
+| 6 s | the foyer | 2 revenants |
+
+- **Why the arch-vile here**: BLUE leans in the rooms behind the foyer, and
+  the foyer between it and RED's far side is where the player has just
+  killed MAP03's own company. An arch-vile there has that fight's dead to
+  raise, and the rooms behind the foyer are cover from its flame: the
+  player holds the doorway or loses the foyer again.
+- **No cyberdemon**: the foyer is about 560 by 285 and the player has a
+  door to carry out through it. A cyberdemon there is luck, and its first
+  appearance in the game is worth a place made for it.
+- Supplies for it, in the rooms behind the foyer: a box of rockets, a cell
+  pack and two medikits more than there are. The part's budget rule
+  (ammunition at least 1.6 times the monsters' health) still holds.
+- The count on "Resident" goes from 148 to about 154 with the gate's
+  company below (the level's rule is 130 to 160).
+
+### The way out: the night room is gated then, and whole now
+
+**It was**: both keys, the shelter's brass door, the stair, and BLUE hung in
+the brass frame at the far end of the night room. One door action.
+
+**The idea**: the night room is one room at two times, and BLUE is the line
+to it at both. Then, a wall with a bolted door stands across it, the bolt on
+the far side: HOME is behind it. Now, forty years on, that wall is down. So
+the far side of the gate is reached through now.
+
+**The night room then** (320 by 256; the stair comes up into its west part):
+- a wall across it, 16 thick, at 192 from the west wall. West of it: BLUE's
+  far side then, the stair's landing. East of it (112 wide): the brass frame
+  HOME (BLUE's alone), and in the south wall a frame for the clocked door,
+  **125**.
+- in the wall, on the runner: a bolted door (`ajarmap.bolted`), the bolt on
+  the east side. It opens for good when the player first stands east of it
+  (`ajarmap.unbolt`: every way of arriving there crosses the line), or by
+  USE from that side.
+- either side of the bolted door a barred window, so that from the west
+  part the player sees HOME, the bolt's side and the clocked door's frame.
+
+**The night room now**: one room. The wall is down: a stub of it left at the
+north wall and at the south wall, the middle open (at least 128). Frame
+**105**, twin of 125, the clocked door's alone, at the same place in the
+south wall. Stone where HOME is, as before.
+- **MAP10's hole down into the shelter is shut now**: the short passage
+  north of the room ends in Doom's stone (a way that was there then, the
+  stair, and is not now: MAP21's rule). With the hole open the level can be
+  lost: the clocked door hung in 125 from the then side, the player through
+  it and down the hole, and nothing leads back up (the solver: 672 stuck
+  states, every one entered by that drop).
+- So now the room is come into and left through BLUE on the old bus, or
+  through the clocked door in 105.
+
+**The way through** (the solver's shortest: 12 door actions; it was 8):
+1. to 5. as before: the peace, the turn, key 2, BLUE from the theatre now,
+   key 1.
+6. Up the stair with both keys: the gate, bolted on the other side; HOME and
+   an empty clocked frame behind the bars.
+7. BLUE on the old bus (door 2 or 7): the night room now, whole.
+8. The clocked door off the bus, carried through BLUE, hung in 105: the far
+   side of the gate, then. The bolt is drawn.
+9. The clocked door back to the bus (through BLUE), BLUE taken down and
+   carried through the clocked door to then.
+10. The brass door, the stair, the gate, HOME.
+
+What has to be understood: BLUE is a line to the same room at the time of
+the bus it hangs on (the level's rule, used on RED before); what is shut
+then may be open now; and the clocked door cannot be in two frames, so it
+goes back to the bus before BLUE comes down. A wrong order is never fatal:
+whoever takes BLUE down too early hangs it again.
+
+**The solver** (`tools/puzzle22.py`, to be `PUZZLE22`): the night room then
+is two regions, `lineT` (west: BLUE's far side then, the stair) and `lineE`
+(east: HOME, frame 125); `lineN` has frame 105; twins 105/125, only the
+clocked door; the gate is walk links `lineT`/`lineE` needing the automatic
+key "g" that lies in `lineE`; `home_door=BLUE`; no link `lineN` to `sqN`.
+12 door actions, 28633 states, 0 stuck, nothing lost; the same without
+door 6's frame, 15 actions without door 7's, 12 with no way out of the
+theatre but RED. The brass door stays locked from both sides: free from
+inside there are 92 stuck states.
+
+**A small company at the gate**: when the bolt is drawn (`AMBUSH_BOLTS`),
+in the west part then: 2 imps and a revenant, 1 s on. Dropped if they do
+not fit.
+
+**The turn** is as it was: the clocked door's first hanging in a twinned
+frame. Frame 105/125 cannot be the first (BLUE is in the theatre now), and
+hanging there later must start nothing.
+
+## MAP22: BLUE's ambush and the gated way out (built 2026-11-27)
+
+Built as decided in "MAP22: BLUE's ambush with an arch-vile; the way out is
+gated" above, on branch `map22-gate` (an Opus worker; the design is
+Fable's). Coordinates are NOW's; THEN is NOW + (0, 12288).
+
+**Files.** `tools/map_dayreturn.py` (the level, its fights and budget),
+`tools/puzzle22.py` (`PUZZLE22` and its docstring), `src/zscript/map22.zs`
+(the tests; nothing in the level's own script changed),
+`tools/smoke_MAP22_3.cfg` (80 screenshots, for 39 views). No shared file
+(`ajarmap.py`, `ajarthen.py`, `then.zs`, `ajar.zs`) is changed.
+
+**The ambush when BLUE is taken** (cause 10 + BLUE, the theatre now).
+- The rooms behind the foyer: 2 imps after 1 s, as before (box `behindN`).
+- The foyer (box `foyerN`): 2 chaingunners and 2 knights after 1 s; the
+  arch-vile (thing 64) after 3 s at (-128, -3240), placed with
+  `ajarmap.ambush(skill=2)`, so that it is there on "Short stay" and up
+  and still takes its turn in the ambushers' count; 2 revenants after 6 s.
+- The three sergeants and the single knight of the old ambush are gone.
+- Supplies added in the rooms behind the foyer: a box of rockets at
+  (480, -2860), a cell pack at (560, -2860), medikits at (400, -3060) and
+  (480, -3060). They are placed before the ambush, so that its spots keep
+  clear of them.
+- The theatre now on "Resident": 30 monsters, 3950 hp, ammunition 13170
+  (x3.33; it was x5.29), health 210.
+
+**The night room then** (`way_home`'s room built by hand, since it is now in
+two parts; NX, NY = 304, -560, floor 64).
+- The wall: x 496..512 across the room (192 from the west wall). In it, on
+  the runner, the bolted door (`ajarmap.bolted`, mouth on the west face
+  y -464..-400, the bolt on the east face, sector tag 2202, the bolt side's
+  line 311: USE there opens it). Barred windows (the level's `bars`, sill
+  32 over the floor, top 96) at y -544..-480 and -384..-320, 16 of wall
+  between each and the door and between each and the room's walls.
+- West part (192 wide): BLUE's far side then (222) in the west wall, the
+  stair's landing in the north wall (x 304..448), two candelabra as before.
+- East part (112 wide, x 512..624): HOME (190, BLUE's alone, as
+  `way_home(only=True)` made it) in the east wall on the runner; frame 125
+  in the south wall, its mouth x 520..584 (8 from the gate's wall); the
+  candelabra moved to (600, -536) and (600, -328), so that the 80 before
+  frame 125's mouth and the 160 before HOME are clear.
+- The unbolt line: y -528, across the whole east part (x 512..624), 32 north
+  of frame 125's mouth. The only way of arriving east of the wall is the
+  clocked door in 125, and whoever comes out of it crosses the line in the
+  first step or two.
+- Both mouths of the room keep the line id `HOME_MOUTH`, as `way_home` gives
+  them.
+
+**The night room now.** One room: the wall's line (x 496..512) keeps two
+stubs, y -560..-496 and -368..-304, and is open between (128, the runner in
+the middle). BLUE's far side now (202), Doom's stone where HOME is, and
+frame 105 at the same place as 125 (`t.clock_frame(..., 105, when=(NOW,
+THEN))` makes both; both take the clocked door only). The passage north of
+the room (x 384..448) now ends at y -240 in Doom's stone (TANROCK2); the
+shelter's back wall where the hole came out is a plain wall.
+
+**The gate's company**: 2 imps and a revenant, `AMBUSH_BOLTS` with arg 2202,
+1 s after the bolt is drawn, in the west part then (box `gateW`): imps at
+(400, -464) and (416, -384), the revenant at (408, -512) (skills 1, 2, 1).
+All three fit. They are counted in the part "then".
+
+**The puzzle.** `PUZZLE22` as the design's paragraph "The solver": regions
+`lineT` (west: BLUE's far side then, the stair) and `lineE` (HOME, frame
+125); `lineN` has frame 105; twins 105/125, only the clocked door; the gate
+the walk links `lineT`/`lineE` needing the automatic key "g", which lies in
+`lineE`; `home_door=BLUE`; no link `lineN` to `sqN`.
+
+**The turn.** Nothing in `map22.zs` or `then.zs` is keyed to frames 101,
+102 or 104: the turn is `joinedAt`, the first hanging of the clocked door in
+any twinned frame, and `AjarDayReturn` turns once. Hanging it in 105 later
+starts nothing (checked in MODE=1).
+
+**Fights**: 154 on "Resident", 119 on "Short stay", 79 on "Just visiting"
+(it was 148, 114, 76). The square and then together: 110 monsters, 16770 hp,
+ammunition 29250 (x1.74).
+
+**Checks** (the worktree's full build):
+- The build: `MAP22: solvable in 12 door actions, 28633 states, 0 stuck`.
+- `puzzle22.py all`: `PUZZLE22 (MAP22 as designed): solvable in 12 door
+  actions, 28633 states, 0 stuck`, `can be lost for good: nothing`; `the
+  theatre with no way out but RED: solvable in 12 door actions, 23371
+  states, 0 stuck`; `without frame 102: solvable in 15 door actions, 4295
+  states, 0 stuck`; `without frame 123: solvable in 12 door actions, 12664
+  states, 0 stuck`; each `can be lost for good: nothing`.
+- `mapcheck`: 16 notes, the same 16 as before (MAP10's own); with the
+  candelabra first at x 608 there were four more (a candelabrum touching
+  the east wall), hence (600, ...). `thingcheck` and `itemcheck`: 0
+  problems.
+- MODE=1, the solver's way: `dayReturnDone=1 checks=58 failed=0`,
+  `outByTheWayOut=1 (step 152, MAP22)`, `levelExited=1`. New on the way:
+  the gate posed from the west at the start, shut, and USE on its west face
+  does nothing (`gateShutAtStart`, `gateBoltedFromTheWest`); BLUE swapped
+  for the clocked door in 102 (`blueIn102`), through it to the night room
+  now (`blueToNightRoomNow`); up the passage north, which ends in stone
+  (`noWayDownTheHoleNow`: the player stays at floor 64, short of y -240);
+  the clocked door in 105 (`clockedIn105`, `noSecondTurnAt105`, the gate
+  still shut and its company waiting: `gateShutBefore`); through it, east of
+  the gate then, the bolt drawn (`throughClockedToTheGatesEastThen`,
+  `boltDrawnOnArriving`); its company came, 2 imps and a revenant
+  (`gatesCompanyCame`); back now, the clocked door down from 105, through
+  BLUE to the lane, the clocked door swapped for BLUE in 102
+  (`backToNightRoomNow`, `clockedDownFrom105`, `throughBlueToTheLaneNow`,
+  `clockedBackIn102`); then as before to the stair, and through the open
+  gate (`throughTheGate`) to BLUE in HOME. The BLUE ambush came whole: 2
+  imps, 2 chaingunners, 2 knights, the arch-vile, 2 revenants.
+- MODE=2: `dayReturnDone=1 checks=14 failed=0` in two runs. Changed in one
+  thing: before the walk to door 4 after the waves, the square's company
+  (22, woken and hunting the player through the hung clocked door) is
+  removed, its checks done. Without that the walk to door 4 failed in two
+  runs of three (`walkTo_64_12260=0`, the player held 10 to 90 short), a
+  monster in the way; it has nothing to do with this change and could fail
+  on main as well.
+- MODE=3: 39 views (78 screenshots), `views done`. Looked at: THEN from
+  before HOME, the gate's bolt side (the steel door at full height) between
+  the two barred windows; THEN the east part from its north-west, HOME on
+  the left, frame 125 in the south wall with a candelabrum beside it, the
+  bolt side on the right; THEN the gate straight on from the west part, the
+  door and both windows, a candelabrum and the edge of frame 125's trim
+  through the south one; THEN close at the north bars, HOME (its brass
+  inlaid with blue, empty) plain to see; THEN close at the south bars,
+  frame 125 with the clocked door's trim; NOW from BLUE's far side, the two
+  stubs either side and the stone at the far end; NOW the east end, the
+  stone where HOME is, frame 105 by the south stub; NOW from the east, BLUE's
+  far side between the stubs; NOW the passage north ending in stone; NOW the
+  shelter, stone in the brass frame and a plain wall over it. From the
+  west part at a distance HOME is hidden by the shut door: it is seen from
+  close to the north window.
+- MAP21 MODE=1: `longRunDone=1 checks=85 failed=0`, `outByTheWayOut=1 (step
+  326, MAP22)`, `levelExited=1`.
+- The package against main's: only `maps/MAP22.wad` and `zscript/map22.zs`
+  differ, and `maps/MAP18.wad`, because main has since taken MAP18's bigger
+  ambush (c63fd20), which this branch does not have.
+- Which build each ran on: the build, MODE=1 and MODE=2 (twice) on the last
+  build; MODE=3 and MAP21 on earlier builds of the same level, which
+  differed only in the tests of `map22.zs` (MODE=2's removal above, and
+  for MAP21 the views added to MODE=3).
+
+**Departed from the design, or settled here.**
+- The east part's two candelabra moved (see above); the design said
+  nothing of them.
+- The arch-vile is placed with `ajarmap.ambush(skill=2)` rather than by
+  finding a turn of the counter that thins to 2: the same result, and it
+  does not depend on how many ambushers come before it.
+- The gate's door is `AJBOLT` at the room's full height (176 on the runner,
+  the texture is 256 tall), with no lintel: the room is 160 high, as
+  `way_home` makes it.
+
+**Not tested / not played by hand.** The fights: MODE=1 runs with every
+monster removed and the ambushers counted and removed as they come, so the
+arch-vile in the foyer (whether it raises MAP03's dead, and whether the
+rooms behind the foyer are cover enough), the gate's company coming at the
+player through the opened gate, and the balance on each difficulty are
+not seen. Whether a player reads the gate from the west part as meant (the
+bolt side, HOME and frame 125 through the bars) is judged only from the
+MODE=3 screenshots. A player who hangs BLUE in 101 rather than 102 for the
+night room now, or who takes BLUE down before the clocked door is back on
+the bus, is left to the solver. The bolted door opened by USE from the east
+side is not tested (the line opens it first). The music by ear and the
+automap.
+
 ## MAP18: the way out is the player's to build, with BLUE (built 2026-11-27)
 
 > Vadim, 2026-11-27, playing MAP18: "And BTW blue door and all that area - ablolutely optional, check my last play log. Is this planned?" (His log: he took GREEN, RED and the TEAL leaves, never BLUE or ORANGE.)
