@@ -33,6 +33,10 @@
 //    goes up (8 units a tic, to 4 below the lowest ceiling beside it, never
 //    crushing) while a lane's pulse lives, and down when it does not. Every
 //    lap ticks, wherever the player is, with a word on the screen.
+//    args[3] (0: none, as before): the sector tag of the room the shutter
+//    shuts (MAP18's night room, 2026-11-27): the shutter is also up while a
+//    player stands in a sector with that tag or in the shutter's own, so
+//    that nobody is shut in there. The lamps and the ticks stay the pulse's.
 
 class AjarPulse : Actor
 {
@@ -290,6 +294,8 @@ class AjarDelayShutter : Actor
 	double top, bottom;
 	Array<int> lamps;           // the lamps: every sector tagged args[1] + k (sector numbers)
 	Array<int> lampOf;          // ... and which k
+	Array<int> room;            // the room it shuts: every sector tagged args[3] (sector numbers)
+	bool occupied;               // a player stands in that room (or under the shutter): it stays up
 	int dark;
 	// what the tests read: when the last pulse was fired and went, how, and its laps' tics
 	int firedAt, goneAt, gone;  // gone: 0 alive, 1 burnt out, 2 burst, 3 called back
@@ -333,7 +339,25 @@ class AjarDelayShutter : Actor
 				dark = level.sectors[i].lightlevel;
 			}
 		}
+		if (args[3])
+		{
+			it = level.CreateSectorTagIterator(args[3]);
+			while ((i = it.Next()) >= 0) room.Push(i);
+		}
 		upAt = downAt = -1;
+	}
+
+	// A player in the room the shutter shuts, or under the shutter itself.
+	bool SomeoneIn()
+	{
+		if (!room.Size() || !shutter) return false;
+		for (int p = 0; p < MAXPLAYERS; p++)
+		{
+			if (!playeringame[p] || !players[p].mo) continue;
+			Sector s = players[p].mo.CurSector;
+			if (s == shutter || room.Find(s.Index()) != room.Size()) return true;
+		}
+		return false;
 	}
 
 	double PulseSpeed()
@@ -389,15 +413,17 @@ class AjarDelayShutter : Actor
 			}
 		}
 		wasLive = live;
+		occupied = SomeoneIn();
 		if (shutter)
 		{
 			double c = shutter.CenterCeiling();
-			if (live && c < top)
+			bool open = live || occupied;
+			if (open && c < top)
 			{
 				shutter.MoveCeiling(SPEED, top, -1, 1, false);
 				if (Up()) upAt = level.maptime;
 			}
-			else if (!live && c > bottom)
+			else if (!open && c > bottom)
 			{
 				shutter.MoveCeiling(SPEED, bottom, -1, -1, false);
 				if (Down()) downAt = level.maptime;

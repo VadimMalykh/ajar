@@ -6,7 +6,14 @@ pulse, its lanes and its contacts are the clock lab's (src/zscript/clock.zs).
 A big building to make geometries in, and one measure: the stopwatch. No
 keys, no thief, no nailer, no lodger, no Stray door: every area and every
 frame is reached on foot from every other with no door hung (the lift is on
-foot). The doors are shortcuts and the makings of the paradoxes.
+foot). The doors are shortcuts and the makings of the paradoxes, all but
+BLUE: BLUE is the way out. The night room is a way out the player builds
+(ajarmap.way_home): BLUE's far side in its west end, an empty brass frame
+that takes BLUE only in its east end. So BLUE is no door of the track: it
+is carried from the workshop to the lever, and on the run, through the
+shutter while the pulse lives, and hung in the brass frame. Hung anywhere
+else, BLUE is a way into the night room for empty hands (and back), never
+for itself; whoever is in the night room is never shut in by the shutter.
 
 The run. The delay hall (west) has three lanes, 2048, 1024 and 512 long,
 each with a frame in its west end (the long one in the hall's west wall, the
@@ -16,7 +23,8 @@ contact. The levers are in the regulator room at the hall's west end, behind
 glass, whose only door is to the yard. A lever calls back any pulse alive in
 the hall, fires its lane's pulse and so raises the night room's shutter at
 the other end of the building (the basement's north-east): the shutter is
-up while the pulse lives. A pulse lives for LAPS passes of its own lane's
+up while the pulse lives (and while the player is in the night room, so
+that nobody is shut in there; the pulse alone is the clock). A pulse lives for LAPS passes of its own lane's
 contact and then burns out; with no loop it bursts on the lane's end. So the
 time for the run is LAPS times the loop: a Pair in a lane is the clock, and
 two lanes joined by both Pairs (the east end of one to the west end of the
@@ -31,7 +39,7 @@ Areas, west to east (x 0..8000, y 0..4000; the court in the middle):
   the yard (south-west, open; the porter's hut)     ground
   the regulator room and the delay hall (west)      ground
   the north corridor, the stair hall and the stair  ground .. upper
-  upper west: the spine, the drawing office, the workshop, four offices,
+  upper west: the spine, the drawing office, the workshop (BLUE), four offices,
     the hall with no size                            upper
   the porch, the entrance hall (the start), the cloakroom   ground
   the court (open; the clock tower: the inside-out booth)   ground
@@ -42,6 +50,7 @@ Areas, west to east (x 0..8000, y 0..4000; the court in the middle):
     regulator store (ORANGE)                         upper
   the canteen and the kitchen (south-east)          ground
   the basement: the cellar, the stores, the boiler room, the night room
+    (BLUE's far side and the brass frame: the way out, built)
 
 The paradoxes, each an ordinary part of the building:
   the endless corridor: any lane, a Pair in its two frames (walked too);
@@ -101,6 +110,8 @@ LEVER_ID = 1840                              # + the lane: the levers' lines
 LAMP_TAG = 1830                              # + 0..LAPS-1: the lamps that count the beats left
 SHUTTER_TAG = 1850                           # the night room's shutter
 SHUTTER_ID = 1851                            # its line on the boiler room's side
+NIGHT_TAG = 1852                             # the night room's floor: the shutter stays up while the player is on it
+NIGHT = (7616, 2608, 7936, 2864)             # the night room (ajarmap.way_home): BLUE's far side west, frame 190 east
 ROUTE_A, ROUTE_B = 1860, 1900                # MapSpots: the measured ways (tid of the first; + 0 the doors)
 MAPSPOT = 9001
 CAR_TIDS = 1701                              # the lift's buttons: 1701..1706
@@ -698,7 +709,6 @@ fit((3008, 1344, 4992, 2944), [((x, y, x + 256, y + 256), dict(ftex=T("FL") if L
 W.area("court", (3008, 1344, 4992, 2944), G, obst=[BOOTH] + [r for r, _ in beds])
 gap((3936, 1280), (4064, 1280), (0, 1), G, "LB", "LB", "entrance", "court")
 gap((2944, 2176), (2944, 2240), (1, 0), G, "CO", "LB", "ncorr", "court")
-far((3968, 2944), (4032, 2944), (0, 1), BLUE, G, "court")
 frame((3264, 1344), (3328, 1344), (0, -1), 127, G, "court")
 # the four faces of the tower, each the far end of a fixed doorway whose
 # near end is a wall of the hall with no size: from the hall the court is
@@ -897,8 +907,19 @@ fit((7040, 2160, 7936, 2592), grid((7040, 2160, 7680, 2592), 3, 2, 176) + boiler
     **BASE, **look("PU", "FP", "KQ", 144, B + 224, COLD))
 W.area("boiler", (7040, 2160, 7936, 2592), B, obst=[r for r, _ in boilers])
 gap((7616, 2096), (7744, 2096), (0, 1), B, "PU", "PU", "mid", "boiler")
-# the shutter: up while a pulse lives (AjarDelayShutter, clock.zs), from the boiler room into the night room
-ajarmap.way_out(m, 7616, 2608, None, floor=B)
+# the night room: the way out the player builds with BLUE (ajarmap.way_home; PLAN.md, "MAP18: the way out is the
+# player's to build, with BLUE"): BLUE's far side in its west end, the brass frame 190 in its east end, BLUE's
+# only. Its floor's sectors are tagged NIGHT_TAG (the far side's and the frame's recesses are not: nobody stands
+# in those). The shutter: up while a pulse lives or while the player is in the night room (AjarDelayShutter,
+# clock.zs), from the boiler room into the night room's south wall (the shutter's corners split that wall, so
+# the two sectors meet there as they did with way_out's).
+night = len(m.sectors)
+ajarmap.way_home(m, NIGHT[0], NIGHT[1], BLUE, only=True, floor=B)
+for i in range(night, len(m.sectors)):
+    if all(NIGHT[0] <= x <= NIGHT[2] and NIGHT[1] <= y <= NIGHT[3] for x, y in m.polys[i]):
+        assert not m.sectors[i]["id"], m.sectors[i]
+        m.sectors[i]["id"] = NIGHT_TAG
+assert sum(s["id"] == NIGHT_TAG for s in m.sectors[night:]) == 3
 m.sector(rect(7744, 2592, 7808, 2608), floor=B, ceil=B, light=160, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
          id=SHUTTER_TAG)
 for p, q in (((7744, 2592), (7744, 2608)), ((7808, 2592), (7808, 2608))):
@@ -907,7 +928,7 @@ m.line((7744, 2592), (7808, 2592), id=SHUTTER_ID)
 SHUTTER_NODE = W.node(7776, 2568, "the shutter", "boiler")
 for k in range(LAPS):
     lamp((7712 - 32 * k, 2592), (7736 - 32 * k, 2592), (0, 1), B, k, "PU")
-m.thing(7600, 2500, DELAY_T, args=(SHUTTER_TAG, LAMP_TAG, LAPS))
+m.thing(7600, 2500, DELAY_T, args=(SHUTTER_TAG, LAMP_TAG, LAPS, NIGHT_TAG))
 
 # =================================================================================================
 # THE UPPER FLOOR, EAST
@@ -995,7 +1016,8 @@ ajarmap.pair(m, TEAL, (3584, 640, 0), (4416, 640, 180))                     # bo
 ajarmap.pair(m, ORANGE, (7488, 3800, 270), (7744, 3800, 270))               # both ORANGE leaves, far east upstairs
 ajarmap.door(m, RED, 5700, 2480, angle=315)                                 # in the rotunda, by the lift
 ajarmap.door(m, GREEN, 900, 3800, angle=270)                                # the furthest find: the far north-west office
-ajarmap.door(m, BLUE, 2752, 2944, angle=270)                                # the workshop, upstairs
+ajarmap.door(m, BLUE, 2752, 2944, angle=270)                                # the workshop, upstairs: the way out's door
+BLUE_NODE = W.node(2752, 2944, "BLUE, where it leans", "workshop")
 
 # --- weapons, in the order of MAP15 to MAP17, and ammunition for the size --------------------------
 m.thing(4000, 560, 2001)                                                    # shotgun: the entrance hall
@@ -1228,12 +1250,14 @@ def measure():
     near_s = min(min(dS[n], dS_from[n]) for n, _ in list(FRAMES.values()) + list(FARS.values()))
     lines.append(f"MAP18: one piece on foot: {len(W.areas)} areas, {len(W.nodes)} nodes, {len(FRAMES)} frames, "
                  f"{len(FARS)} far sides (RED's at three floors), {len(W.arcs)} one way links; the nearest frame or far side "
-                 f"{near_l:.0f} on foot from a lever, {near_s:.0f} from the shutter (either way)")
+                 f"{near_l:.0f} on foot from a lever, {near_s:.0f} from the shutter (either way; BLUE's far side and the "
+                 f"brass frame are behind it in the night room by design, and not counted)")
     if near_l < NEAR or near_s < NEAR:
         bad.append(f"a frame or far side nearer than {NEAR} to a lever ({near_l:.0f}) or the shutter ({near_s:.0f})")
     w0 = dL[SHUTTER_NODE]
     track = [n for n in FRAMES if n not in (101, 102)]                     # TEAL hangs in the long lane
-    fars = {RED: [FARS[(RED, z)][0] for z in (B, G, U)], GREEN: [FARS[GREEN][0]], BLUE: [FARS[BLUE][0]]}
+    # (BLUE is no door of the track: it is in the player's hands on the run, the way out's door)
+    fars = {RED: [FARS[(RED, z)][0] for z in (B, G, U)], GREEN: [FARS[GREEN][0]]}
 
     def one(colour):
         best = w0
@@ -1254,7 +1278,7 @@ def measure():
     D = {k: W.dijkstra(k) for k in keys}
     frame_of = {FRAMES[f][0]: f for f in track}
     far_of = {x: c for c, v in fars.items() for x in v}
-    bit = {ORANGE: 1, RED: 2, GREEN: 4, BLUE: 8}
+    bit = {ORANGE: 1, RED: 2, GREEN: 4}
     start = (lever, 0, None)
     best = {start: 0.0}
     back = {start: None}
@@ -1278,7 +1302,7 @@ def measure():
                 for g in track:
                     if g != f:
                         moves.append(((FRAMES[g][0], used | bit[ORANGE], FRAMES[g][0]), 32, ("pair", f, g)))
-            for c in (RED, GREEN, BLUE):
+            for c in (RED, GREEN):
                 if not used & bit[c]:
                     for x in fars[c]:
                         moves.append(((x, used | bit[c], None), 32, ("door", c, f, x)))
@@ -1311,12 +1335,12 @@ def measure():
             used_frames.append(how[2])
     if len(set(used_frames)) != len(used_frames):
         bad.append(f"the best track hangs two doors in one frame: {hung}")
-    ws = {c: one(c) for c in (ORANGE, RED, GREEN, BLUE)}
+    ws = {c: one(c) for c in (ORANGE, RED, GREEN)}
     w1 = min(ws.values())
     t = {k: life(k) for k in LANES}
     t_lm = life(1, 2)
     pairs = {(a, b): life(a, b) for a, b in ((1, 2), (1, 3), (2, 3))}
-    name = {ORANGE: "ORANGE", RED: "RED", GREEN: "GREEN", BLUE: "BLUE"}
+    name = {ORANGE: "ORANGE", RED: "RED", GREEN: "GREEN"}
     lines.append(f"    the run, at {RUN} a tic (LAPS {LAPS}, the pulse {SPEED} a tic): lever to shutter on foot "
                  f"{w0:.0f} ({tics(w0):.0f} tics)" + "".join(f"; {name[c]} only {ws[c]:.0f} ({tics(ws[c]):.0f})" for c in ws)
                  + f"; all of them {w_all:.0f} ({tics(w_all):.0f})")
@@ -1330,6 +1354,11 @@ def measure():
                  f"{spare_1:.0f} tics spare")
     lines.append("    the best track with everything (TEAL in the long lane): "
                  + ", ".join(f"{name[c]} {v[0]}" + (f" and {v[1]}" if c == ORANGE else "") for c, v in hung.items()))
+    d_blue, d_start = W.dijkstra(BLUE_NODE)[0][lever], W.dijkstra(START)[0][BLUE_NODE]
+    lines.append(f"    the way out is the player's to build: the run is made with BLUE in hand (the start to BLUE "
+                 f"{d_start:.0f} on foot, BLUE to the lever {d_blue:.0f}, {tics(d_blue):.0f} tics) and BLUE hung in the "
+                 f"night room's brass frame 190; BLUE hung anywhere else is a way into the night room for empty hands, "
+                 f"and 0 for the door itself")
     if not 1.25 <= ratio <= 1.45:
         bad.append(f"the long lane alone with nothing on the track: the way is {ratio:.2f} of its time, not about 4/3")
     if spare_lm < 0:
@@ -1410,14 +1439,13 @@ def walk_spots(a, b):
 
 route_a = as_spots(legs, SHUTTER_NODE)
 route_b = as_spots([(i, False) for i in Walk.path(_R["pL"], SHUTTER_NODE)[:-1]], SHUTTER_NODE)
-for r in (route_a, route_b):                 # the shutter, and beyond it into the night room and out by its east end
+for r in (route_a, route_b):                 # the shutter, and beyond it into the night room, before its brass frame
     r += [(7776, 2568, 0, 0), (7776, 2648, 0, 0), (7776, 2736, 0, 0), (7904, 2736, 0, 0)]
 hung = _R["hung"]
 red_floor = next((z for z in (B, G, U) if RED in hung and hung[RED][1] == CARN[z]), G)
-# the doors hung for way A: ORANGE's two frames, RED's, GREEN's, BLUE's; RED's car's floor + 512
+# the doors hung for way A: ORANGE's two frames, RED's, GREEN's (BLUE is in hand); RED's car's floor + 512
 m.thing(200, 200, MAPSPOT, id=ROUTE_A, args=(*(hung[ORANGE] if ORANGE in hung else (0, 0)),
-                                           hung[RED][0] if RED in hung else 0, hung[GREEN][0] if GREEN in hung else 0,
-                                           hung[BLUE][0] if BLUE in hung else 0))
+                                           hung[RED][0] if RED in hung else 0, hung[GREEN][0] if GREEN in hung else 0))
 m.thing(264, 200, MAPSPOT, id=ROUTE_A - 1, args=(red_floor + 512,))
 spots(ROUTE_A, route_a)
 spots(ROUTE_B, route_b, dy=1)
