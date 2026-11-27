@@ -45,7 +45,12 @@
 // (its last death frame, pale, not solid). A monster alive THEN while no door
 // joins the two times (the clocked door hung; a colour door never does) is
 // shown NOW as that corpse, where it stood when the last link came down; when
-// a link is made again the corpse goes.
+// a link is made again the corpse goes. Such a stand-in fades in and out over
+// AjarThenCorpse.FADE tics; one of a monster dead THEN is there at once. A
+// monster raised THEN (WorldThingRevived) loses its bones for good: they stand
+// in for it while the times are apart, and fade while they are joined. Each
+// corpse keeps the Mass and radius of its monster (kennel.zs weighs them and
+// makes a big one's a step).
 //
 // Music by time: the level's piece for THEN while the player is THEN (THEN_MUSIC,
 // MAP21's, unless the level names its own: SetThenMusic, MAP22's map22.zs), the
@@ -214,9 +219,18 @@ class AjarThenLocked : Actor
 }
 
 // A monster dead forty years: its own last death frame, pale, not solid.
+// A stand-in (of != null) fades in over FADE tics when the times come apart and
+// out over FADE when they are joined, then is gone; one of a monster dead THEN
+// is there at once. Whatever counts or weighs bones (kennel.zs) counts one from
+// its spawning to its destruction, fading or not.
 class AjarThenCorpse : Actor
 {
+	const FADE = 35;
 	Actor of;                  // the monster it stands for while that one is alive THEN (null: it died THEN)
+	Actor who;                 // the monster it is the bones of, alive or dead
+	int weight;                // that monster's Mass
+	double bodyRadius;         // ... and radius
+	int fading;                // 1 fading in, -1 fading out, 0 neither
 	Default { +NOBLOCKMAP +NOGRAVITY +NOINTERACTION +DONTSPLASH }
 	States
 	{
@@ -225,6 +239,37 @@ class AjarThenCorpse : Actor
 	Keep:
 		#### # -1;
 		Stop;
+	}
+	bool Leaving() { return fading < 0; }
+	void FadeIn()
+	{
+		if (fading == 0) alpha = 0;
+		fading = 1;
+		A_SetRenderStyle(alpha, STYLE_Translucent);
+	}
+	void FadeOut()
+	{
+		fading = -1;
+		A_SetRenderStyle(alpha, STYLE_Translucent);
+	}
+	override void Tick()
+	{
+		Super.Tick();
+		if (fading > 0)
+		{
+			alpha = min(1., alpha + 1. / FADE);
+			if (alpha >= 1) { fading = 0; A_SetRenderStyle(1, STYLE_Normal); }
+		}
+		else if (fading < 0)
+		{
+			alpha -= 1. / FADE;
+			if (alpha <= 0.001)
+			{
+				let th = AjarThenHandler.Get();
+				if (th) th.Forget(self);
+				Destroy();
+			}
+		}
 	}
 }
 
@@ -520,7 +565,11 @@ class AjarThenHandler : EventHandler
 		c.angle = a.angle;
 		c.scale = a.scale;
 		c.of = of;
+		c.who = a;
+		c.weight = a.Mass;
+		c.bodyRadius = a.radius;
 		c.A_SetTranslation('AjarDust');
+		if (of) c.FadeIn();
 		corpses.Push(c);
 		if (CVar.GetCVar("ajar_autotest").GetInt())
 			Console.Printf("AJARTEST info old corpse of a %s at (%.0f,%.0f) for %s", a.GetClassName(), p.x, p.y, of ? "one alive then" : "one dead then");
@@ -535,21 +584,57 @@ class AjarThenHandler : EventHandler
 		wasLinked = linked;
 		if (linked)
 		{
-			for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of) { corpses[i].Destroy(); corpses[i] = null; }
+			for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of) corpses[i].FadeOut();
 			return;
 		}
 		let it = ThinkerIterator.Create("Actor");
 		Actor a;
 		while (a = Actor(it.Next()))
-			if (a.bIsMonster && a.health > 0 && when.InThen(a.pos.xy)) OldCorpse(a, a);
+			if (a.bIsMonster && a.health > 0 && when.InThen(a.pos.xy) && !Returns(a)) OldCorpse(a, a);
 	}
+
+	// The times come apart again while a's stand-in is still fading out from where a still stands: it
+	// fades in again from there rather than a second one beside it.
+	bool Returns(Actor a)
+	{
+		Vector2 p = when.Now(a.pos.xy);
+		for (int i = 0; i < corpses.Size(); i++)
+		{
+			let c = corpses[i];
+			if (c && c.of == a && c.Leaving() && (c.pos.xy - p).Length() < 1) { c.FadeIn(); return true; }
+		}
+		return false;
+	}
+
+	// a stand-in that has faded out is gone from the list
+	void Forget(AjarThenCorpse c) { for (int i = corpses.Size() - 1; i >= 0; i--) if (corpses[i] == c) corpses.Delete(i); }
 
 	override void WorldThingDied(WorldEvent e)
 	{
 		let a = e.thing;
 		if (!ready || !when || !a || !a.bIsMonster || !when.InThen(a.pos.xy)) return;
-		for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of == a) { corpses[i].Destroy(); corpses[i] = null; }
+		for (int i = 0; i < corpses.Size(); i++) if (corpses[i] && corpses[i].of == a) corpses[i].FadeOut();
 		OldCorpse(a, null);
+	}
+
+	// Raised THEN (an arch-vile; Thing_Raise): it is not dead after all, so its bones NOW are not for good.
+	// While the times are apart they stand in for it from where it lies (it gets up there); while joined
+	// they fade out.
+	int revived;               // (the tests)
+	override void WorldThingRevived(WorldEvent e)
+	{
+		let a = e.thing;
+		if (!ready || !when || !a || !a.bIsMonster || !when.InThen(a.pos.xy)) return;
+		revived++;
+		for (int i = 0; i < corpses.Size(); i++)
+		{
+			let c = corpses[i];
+			if (!c || c.of || c.who != a) continue;
+			if (wasLinked) c.FadeOut();
+			else c.of = a;
+			if (CVar.GetCVar("ajar_autotest").GetInt())
+				Console.Printf("AJARTEST info old corpse of a %s raised then: %s", a.GetClassName(), wasLinked ? "fades out" : "stands in for it");
+		}
 	}
 
 	// --- music by time ---------------------------------------------------------------------------

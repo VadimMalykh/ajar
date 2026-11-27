@@ -526,9 +526,9 @@ class ThenTest : EventHandler
 			Check("stillAliveThen", Count(true) > 0);
 			Check("deadOneStays", FindCorpse(killedAt - (0, OFF), null) != null);
 		}
-		// hung again: the stand-ins go, the dead one's stays
+		// hung again: the stand-ins go (they fade out over AjarThenCorpse.FADE tics since 2026-11-27), the dead one's stays
 		if (At()) PressUse(mo);
-		if (Seg(3) && tt == 2)
+		if (Seg(40) && tt == 39)
 		{
 			int standIns = 0;
 			for (int i = 0; i < th.corpses.Size(); i++) if (th.corpses[i] && th.corpses[i].of) standIns++;

@@ -68,6 +68,7 @@ DoomEdNums
 	20189 = AjarEmitterWreck          // ... the emitter's wreck NOW
 	20191 = AjarStream                // ... a stream from the cellar's pipe while the valve is open (both times)
 	20192 = AjarRumble                // ... the heap's rumble NOW while it moves
+	20193 = AjarKennelScales          // the kennel lab (kennel.zs): a pen's scales NOW, its readout and its shutter
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -547,6 +548,17 @@ map THEN "Ajar: then and now"
 	nocrouch
 	music = "AJM_DEAD"
 	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "ThenTest"
+}
+
+// The kennel lab (tools/map_kennel.py, src/zscript/kennel.zs): MAP=KENNEL ./run.sh. Bones as a tool, for MAP23.
+map KENNEL "Ajar: the kennel lab"
+{
+	next = "KENNEL"
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_DEAD"
+	EventHandlers = "AjarThenHandler", "AjarKennel", "KennelTest"
 }
 
 // The left-handed room lab (tools/map_lefthand.py, src/zscript/lefthand.zs): MAP=LEFT ./run.sh
