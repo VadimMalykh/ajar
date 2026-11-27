@@ -132,8 +132,10 @@ To the solver both are regions like any other; three things join them:
                 "squeeze" or "" / None, and `when` a dict: {cause: state, or
                 a tuple of states} and/or "hung": (door, frame id); the link
                 is there only while all of it holds (for the clocked door
-                either twin id will do). Things left in a region a cause cuts
-                off stay there
+                either twin id will do); "apart": True, only while the clocked
+                door hangs nowhere (the two times apart: MAP23's bones, which
+                stand in now for a monster alive then only then). Things left
+                in a region a cause cuts off stay there
 
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
@@ -203,6 +205,9 @@ def _holds(p, when, cs, hung):
     for k, v in when.items():
         if k == "hung":
             if hung.get(v[1]) != v[0]:
+                return False
+        elif k == "apart":
+            if v != (not any(p["doors"][c].get("clock") for c in hung.values())):
                 return False
         elif cs[names.index(k)] != v and not (isinstance(v, tuple) and cs[names.index(k)] in v):
             return False

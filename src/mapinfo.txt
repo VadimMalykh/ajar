@@ -69,6 +69,7 @@ DoomEdNums
 	20191 = AjarStream                // ... a stream from the cellar's pipe while the valve is open (both times)
 	20192 = AjarRumble                // ... the heap's rumble NOW while it moves
 	20193 = AjarKennelScales          // the kennel lab (kennel.zs): a pen's scales NOW, its readout and its shutter
+	20194 = AjarStockGate             // MAP23 (map23.zs): a run's Doom gate THEN, which stocks it with its kind
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker
@@ -420,13 +421,26 @@ map MAP21 "In the Long Run"
 // Ajar's MAP22 hides Doom II's map of that name (the Doom door lab, doomlab.zs, ran on it).
 map MAP22 "Day Return"
 {
-	next = "MAP22"
+	next = "MAP23"
 	sky1 = "SKY1", 0
 	nointermission
 	nojump
 	nocrouch
 	music = "AJM_ENS4"
 	EventHandlers = "AjarThenHandler", "AjarDayReturn", "DayReturnTest"
+}
+
+// Act 3, level 3 (tools/map_sleepingdogs.py, src/zscript/map23.zs; kennel.zs): the animal house then and now. The
+// music follows the time: AjarThenHandler plays AJM_AFTR then (MAP21's), this level's own now: AJM_EMY1, a piece no
+// other map plays. Ajar's MAP23 hides Doom II's map of that name; its own next starts it again until there is a MAP24.
+map MAP23 "Sleeping Dogs"
+{
+	next = "MAP23"
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_EMY1"
+	EventHandlers = "AjarThenHandler", "AjarKennel", "AjarSleepingDogs", "SleepingDogsTest"
 }
 
 // MAP21's apparatus (tools/gfx_longrun.py, src/zscript/apparatus.zs): things THEN, args[0] the look

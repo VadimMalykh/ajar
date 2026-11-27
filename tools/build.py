@@ -78,6 +78,8 @@ MAPS["MAP22"] = map_dayreturn                   # map's numbering moves
 
 import map_kennel                               # the kennel lab: bones as a tool (then.zs, kennel.zs); last, so that no
 MAPS["KENNEL"] = map_kennel                     # other map's numbering moves
+import map_sleepingdogs                         # MAP23 "Sleeping Dogs" (then.zs, kennel.zs, map23.zs): after the kennel
+MAPS["MAP23"] = map_sleepingdogs                # lab, so that no other map's numbering moves
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(os.path.join(root, "build"), exist_ok=True)
