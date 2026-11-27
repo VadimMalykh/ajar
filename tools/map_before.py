@@ -59,7 +59,7 @@ later time) adds three bays and BLUE:
     in the corridor in front of RED's far side 201 while it ran with RED in
     132 (the crates went through RED THEN, onto the corridor at 221); none
     while it stood (a cause that follows frame 132 and the belt's cause).
-The checks are src/zscript/beforetest.zs (MODE=1..8 tools/smoke.sh).
+The checks are src/zscript/beforetest.zs (MODE=1..9 tools/smoke.sh).
 """
 import ajarmap
 import ajarthen

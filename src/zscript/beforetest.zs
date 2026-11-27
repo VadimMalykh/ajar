@@ -17,7 +17,7 @@
 // cause 14), 9 the belt x 5120 (frame 112/132/152, the belt THEN into 132, cause 15;
 // the heap NOW, cause 16, at the belt's end or before RED's far side 201).
 //   5 the rule; 6 water through an old door; 7 a cause that follows a frame; 8 the
-//   belt's heap.
+//   belt's heap; 9 views of the old door (tools/smoke_BEFORE_9.cfg, as 4).
 
 class BeforeTest : EventHandler
 {
@@ -190,8 +190,9 @@ class BeforeTest : EventHandler
 		else if (mode == 6) Water(mo);
 		else if (mode == 7) Closet(mo);
 		else if (mode == 8) Belt(mo);
+		else if (mode == 9) OldViews(mo);
 		Drive(mo);
-		if (mode != 4 && tic == cur + 2) Console.Printf("AJARTEST beforeDone=1 checks=%d failed=%d", checks, fails);
+		if (mode != 4 && mode != 9 && tic == cur + 2) Console.Printf("AJARTEST beforeDone=1 checks=%d failed=%d", checks, fails);
 	}
 
 	// walk 24 tics from a frame's mouth into it (the player stands 18 in front of it, facing it)
@@ -1019,5 +1020,53 @@ class BeforeTest : EventHandler
 		}
 		if (At()) { Pose(mo, BELT_X + 384, OFF + 32, 270); PressUse(mo); }
 		if (Seg(80) && tt == 79) Check("standingAgainNoHeap", bc.setting == 0 && hc.setting == 0 && FZ(fx, fy) == 0 && FZ(ex, 256) == 0, heaps);
+	}
+
+	// === MODE=9: views of the old door (smoke_BEFORE_9.cfg: a shot at about 50 + 70 n) ===================
+	void OldViews(Actor mo)
+	{
+		let tank = th.wh.BasinOfTag(42), dry = th.wh.BasinOfTag(43);
+		if (Seg(15)) {}
+		if (At()) mo.bInvisible = true;
+		if (At()) View(mo, "BEFORE: BLUE, new, hung on the site in 150", OLD_X + 128, 2 * OFF + 330, 90);
+		if (Seg(69)) {}
+		if (At()) View(mo, "THEN: old BLUE in 130, ten years", OLD_X + 128, OFF + 330, 90);
+		if (Seg(69)) {}
+		if (At()) View(mo, "NOW: old BLUE in 110, fifty years", OLD_X + 128, 330, 90);
+		if (Seg(69)) {}
+		if (At()) View(mo, "NOW: bay 7, old BLUE and the closet open", OLD_X + 40, 40, 50);
+		if (Seg(69)) {}
+		if (At()) View(mo, "NOW: old BLUE seen from its far side 202 (the dry room)", WATER_X + 400, 300, 90);
+		if (Seg(69)) {}
+		if (At()) View(mo, "THEN: old BLUE seen from its far side 222", WATER_X + 400, OFF + 300, 90);
+		if (Seg(69)) {}
+		if (At()) { ScriptHang(red, 121); h.carried = null; View(mo, "NOW: old RED in 101, forty years (RED hung THEN in 121)", 128, 330, 90); }
+		if (Seg(69)) {}
+		if (At()) View(mo, "NOW: old RED seen from its far side 201 (the corridor)", 192, -40, 270);
+		if (Seg(69)) {}
+		if (At()) View(mo, "THEN: RED itself in 121, new", 128, OFF + 330, 90);
+		if (Seg(69)) {}
+		if (At()) { ScriptHang(red, 144); h.carried = null; View(mo, "NOW: the strongroom, old RED in 104, fifty years", STRONG_X + 128, 330, 90); }
+		if (Seg(69)) {}
+		if (At()) View(mo, "THEN: the strongroom, old RED in 124, ten years", STRONG_X + 128, OFF + 330, 90);
+		if (Seg(69)) {}
+		if (At()) View(mo, "NOW: old RED in 104 from the side, close", STRONG_X + 220, 440, 150);
+		if (Seg(69)) {}
+		if (At()) { ScriptHang(blue, 151); h.carried = null; th.SetCause(Cause(14), 1, null); th.Snap(Cause(14)); if (dry) dry.w = 96; View(mo, "NOW: the tank and the dry room, water through old BLUE in 111", WATER_X + 256, 40, 90, 10); }
+		if (Seg(69)) {}
+		if (At()) View(mo, "NOW: old BLUE in 111 under water, from the tank", WATER_X + 112, 300, 90);
+		if (Seg(69)) {}
+		if (At()) { th.SetCause(Cause(15), 1, null); }
+		if (At()) { th.Snap(Cause(16)); View(mo, "NOW: the heap at the belt's end (the belt ran into an empty frame)", BELT_X + 200, 256, 0, 10); }
+		if (Seg(69)) {}
+		if (At()) { ScriptHang(red, 132); h.carried = null; }
+		if (At()) { th.Snap(Cause(16)); View(mo, "NOW: the heap before RED's far side 201 (the belt ran with RED in 132)", 192, -40, 270, 10); }
+		if (Seg(69)) {}
+		if (At()) View(mo, "THEN: the belt and RED in 132", BELT_X + 100, OFF + 120, 30);
+		if (Seg(69)) {}
+		if (At()) { th.SetCause(Cause(15), 0, null); ScriptUnhang(blue); h.carried = null; }
+		if (At()) { th.Snap(Cause(17)); View(mo, "NOW: the closet shut (no door in 150)", OLD_X + 384, 300, 90); }
+		if (Seg(69)) {}
+		if (At()) Console.Printf("AJARTEST beforeViews=%d", viewN);
 	}
 }
