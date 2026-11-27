@@ -3929,6 +3929,7 @@ class AjarHandler : EventHandler
 
 	void TestLevelScript(Actor mo, int t, int mode)
 	{
+		if (mode == 14) { CacoScript(mo, t); return; }      // doorcaco.zs
 		if (mode == 13) { RoundScript(mo, t); return; }
 		if (mode == 12) { HomeScript(mo, t); return; }
 		if (mode == 11) { StrayScript(mo, t); return; }
