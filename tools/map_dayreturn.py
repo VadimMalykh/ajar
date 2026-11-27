@@ -1,43 +1,55 @@
 """Act 3, level 2: "Day Return" (MAP22). PLAN.md, "MAP22 "Day Return": the
-first version, as decided" and "... the first playable version"; the puzzle
-is tools/puzzle22.py, the level's script src/zscript/map22.zs.
+first version, as decided", "... the first playable version", "MAP22: BLUE's
+ambush ... gated" and "MAP22 bigger"; the puzzle is tools/puzzle22.py, the
+level's script src/zscript/map22.zs.
 
-MAP10's square twice (tools/ajarthen.py, src/zscript/then.zs):
+All of MAP10's town twice (tools/ajarthen.py, src/zscript/then.zs):
   NOW   MAP10's own, at night, at MAP10's own coordinates: the old bus, the
         kiosk (a secret), the shelter, the depot with its company, the theatre
         (MAP03's excerpt with MAP03's monsters and pick-ups), the night room
         over the shelter, whole (frame 105; its hole down into the shelter
-        shut by Doom's stone). No hotel, no station: doors 1 and 5 of the old
-        bus are Doom's stone.
+        shut by Doom's stone); the other stop with the old 20; the
+        observatory (library and dome: key 3 lies on the dome's floor); the
+        museum (great hall, gallery, cellar; PINK's store a secret). No hotel,
+        no station: doors 1 and 5 of the old bus are Doom's stone.
   THEN  forty years earlier, by day, NOW + OFF (12288 north): the new bus, the
-        shelter, the depot (the clocked door leans in its fitters' corner),
-        the theatre, and the two places the fixed lines go, the hotel (MAP02,
-        line 1) and the station (MAP05, line 5; YELLOW on its far platform),
-        all as MAP10 lifts them out (ajarmap.excerpt) but with no monsters and
-        no pick-ups. Behind the shelter's brass door (keys 1 and 2) a stair up
-        to the night room: BLUE's far side THEN west of a gate (a bolted door,
-        bolted on its east side), the brass frame HOME and frame 125 east of
-        it.
+        shelter, the depot (the clocked door leans in its fitters' corner,
+        under their tag: FOUND IN THE YARD. NOT OURS.), the theatre, the other
+        stop with the new 20, the observatory, the museum, and the two places
+        the fixed lines go, the hotel (MAP02, line 1) and the station (MAP05,
+        line 5; YELLOW on its far platform), the excerpts as MAP10 lifts them
+        out (ajarmap.excerpt) but with no monsters and no pick-ups. Behind the
+        shelter's brass door (keys 3 and 4) a stair up to the night room:
+        BLUE's far side THEN west of a gate (a bolted door, bolted on its east
+        side), the brass frame HOME and frame 125 east of it.
 
-The bus's doors (south face 1..6, back 7 and 8), THEN / NOW:
+The 10's doors (south face 1..6, back 7 and 8), THEN / NOW:
   1  the hotel (doorway 1)                 / Doom's stone
   2  frame 121, RED hangs in it             / frame 101
   3  GREEN's far side, shut (no GREEN)      / the same
-  4  frame 124, the clocked door's alone    / frame 104, the same
+  4  frame 124, any door                    / frame 104, any door
   5  the station (doorway 2)                / Doom's stone
   6  frame 123, brass, any door, no twin    / MAP10's brass frame, stone in it
   7  frame 122                              / frame 102
-  8  doorway 4, from the pit under the theatre's stage door / doorway 3, the same
+  8  the 20's door 1 (doorway 4)            / the same (doorway 3)
+The 20's doors (south face 1..3, back 4), the same at both times: 1 door 8 of
+the 10; 2 the pit under the theatre's stage door (doorways 6 THEN, 5 NOW); 3
+frames 126 / 106, any door; 4 the observatory's library (doorways 8, 7). No
+frame of a bus is the clocked door's alone; 105 / 125 in the night room are.
 Far sides at both times (Times.far): RED in the theatre's foyer, YELLOW in the
-depot's south wall, BLUE in the night room's west end.
+depot's south wall, BLUE in the night room's west end. Locked doors (both
+sides): the museum's (key 1), the dome's (key 2), the shelter's brass door
+(keys 3 and 4).
 
 The turn (map22.zs): the first time the clocked door hangs in a twinned
 frame. Ambush cause 64 (the turn) brings every THEN place its company, each
-when the player is next there (near=); two of them carry keys (args[4]): key 1
-the hotel lobby's baron, key 2 the theatre's baron in the orchestra pit. Cause 65:
-both keys in hand, at the shelter. BLUE taken (cause 10 + BLUE): the theatre
-now's ambush, an arch-vile with it. The gate's bolt drawn (AMBUSH_BOLTS): a
-small company west of it.
+when the player is next there (near=); three of them carry keys (args[4]): key
+1 the hotel lobby's baron, key 2 the theatre's baron in the orchestra pit, key
+4 the museum's mancubus in the great hall. Key 3 taken (cause 3): the dome's
+ambush now. Cause 65 with args[4] 34: keys 3 and 4 both in hand, the last
+fight at the stop then. BLUE taken (cause 10 + BLUE): the theatre now's
+ambush, an arch-vile with it. The gate's bolt drawn (AMBUSH_BOLTS): a small
+company west of it.
 """
 import math
 

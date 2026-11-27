@@ -1,17 +1,20 @@
-// MAP22 "Day Return" (tools/map_dayreturn.py; PLAN.md, "MAP22 "Day Return""): the level's own script, and its
-// checks (DayReturnTest, below). THEN is NOW + (0, 12288). Frames NOW / THEN: 101/121 door 2 of the bus (RED
-// hangs in 121 at the start), 102/122 door 7, 104/124 door 4 (the clocked door's alone at both times), 123 door 6
-// THEN (brass, any colour door, no twin), 190 HOME in the night room THEN (BLUE's alone), 105/125 the night room's
-// south wall (the clocked door's alone; 125 east of the gate THEN). The gate THEN: a bolted door (sector tag 2202,
-// its bolt side line 311) across the night room, opened by crossing the line north of frame 125. Far sides NOW / THEN:
-// RED 201/221 the theatre's foyer, BLUE 202/222 the night room, GREEN 203/223 door 3 (there is no GREEN),
-// YELLOW 204/224 the depot. Fixed doorways: 1 the hotel and 2 the station (THEN), 3 and 4 door 8 from the pit
-// under the stage door (NOW, THEN).
+// MAP22 "Day Return" (tools/map_dayreturn.py; PLAN.md, "MAP22 "Day Return"" and "MAP22 bigger"): the level's own
+// script, and its checks (DayReturnTest, below). THEN is NOW + (0, 12288). Frames NOW / THEN, every one of a bus
+// twinned and taking any door: 101/121 door 2 of the 10 (RED hangs in 121 at the start), 102/122 door 7, 104/124
+// door 4; 106/126 door 3 of the 20, at the other stop; 123 door 6 THEN (brass, any colour door, no twin); 190 HOME
+// in the night room THEN (BLUE's alone), 105/125 the night room's south wall (the clocked door's alone; 125 east
+// of the gate THEN). The gate THEN: a bolted door (sector tag 2202, its bolt side line 311) across the night room,
+// opened by crossing the line north of frame 125. Far sides NOW / THEN: RED 201/221 the theatre's foyer, BLUE
+// 202/222 the night room, GREEN 203/223 door 3 (there is no GREEN), YELLOW 204/224 the depot. Fixed doorways:
+// 1 the hotel and 2 the station (THEN); door 8 of the 10 to door 1 of the 20, 3 NOW and 4 THEN; the pit under the
+// stage door to door 2 of the 20, 5 and 6; door 4 of the 20 to the observatory's library, 7 and 8. Locked doors:
+// the museum's on the square (key 1; mouth line 301 NOW, 321 THEN), the dome's (key 2; 302, 322), the shelter's
+// brass door THEN (keys 3 and 4; 310). Key 3 lies on the dome's floor NOW.
 
 // The turn: the first time the clocked door hangs in a twinned frame (AjarThenHandler.joinedAt, then.zs). Once:
 // the line on the screen; the music THEN from the quiet piece to the fight's; the square's company NOW (tid
 // SQUARE_TID) woken and set on the player. What it brings THEN comes by ambush (cause 64, ajar.zs), each when the
-// player is next there; two of those carry keys (AjarKeyBearer). Taking the clocked door down undoes nothing.
+// player is next there; three of those carry keys 1, 2 and 4 (AjarKeyBearer). Taking the clocked door down undoes nothing.
 class AjarDayReturn : EventHandler
 {
 	const SQUARE_TID = 2201;
@@ -119,7 +122,7 @@ class AjarKeyBearer : Actor
 //   1 the solver's way through (tools/puzzle22.py), to the way out: through every door and doorway on foot and by
 //     USE (hanging, taking, swapping, the brass door's lock), the walks inside a place posed (the excerpts are
 //     walkable by construction: ajarmap.excerpt); the bearers killed by the script; checks on the way
-//   2 the turn by itself (posed): the clocked door hung in 124, the line, the music, the square's company woken, the
+//   2 the turn by itself (posed): the clocked door hung in 124 (an ordinary frame), the line, the music, the square's company woken, the
 //     stop's two waves; taken down and hung again in 122: no second turn
 //   3 views (tools/smoke_MAP22_3.cfg shoots every 70 tics; two a view)
 class DayReturnTest : EventHandler
@@ -353,6 +356,23 @@ class DayReturnTest : EventHandler
 	}
 
 	// === MODE=1: the way through ===================================================================
+	// The solver's way (tools/puzzle22.py), in one of its orders, with a look at every new thing on it: the peace
+	// first (the museum, the brass door and the dome locked; door 8 to the other stop and its door 4 to the library);
+	// YELLOW in the 20's frame 126 for the depot; the clocked door into 124 (the turn); key 2; the dome then with key
+	// 2, out by its stair carrying nothing; RED to the theatre now, BLUE, out by the pit to the other stop; BLUE in
+	// 104 for the night room now, the gate as before; key 1, the brass door shut with keys 1 and 2; the museum now
+	// with key 1; key 3 in the dome now, out by its stair carrying BLUE; key 4 from the museum's mancubus then; the
+	// brass door with keys 3 and 4, the last fight; HOME
+	bool DoorOpen(double x, double y) { return CZ(x, y) > FZ(x, y) + 56; }
+	bool DoorShut(double x, double y) { return CZ(x, y) <= FZ(x, y) + 1; }
+	const BY = 3168;            // the 20's south face (map_dayreturn.py)
+	const MUSEUM_X = -520;      // the middle of the museum's door, its mouth on the square at x -512, y -400..-336
+	const DOME_Y = 1392;        // the middle of the dome's door, x 1824..1888
+	string Shut(double x, double y) { return String.Format("ceiling %.0f over %.0f", CZ(x, y), FZ(x, y)); }
+	bool InLibrary(Actor mo, bool then) { double y = mo.pos.y - (then ? OFF : 0); return InThen(mo) == then && mo.pos.x > 1600 && mo.pos.x < 2112 && y > 1000 && y < 1384 && abs(mo.pos.z) < 1; }
+	bool AtStop2(Actor mo, bool then) { double y = mo.pos.y - (then ? OFF : 0); return InThen(mo) == then && abs(mo.pos.x) < 640 && y > BY - 288 && y < BY + 432; }
+	bool InHall(Actor mo, bool then) { double y = mo.pos.y - (then ? OFF : 0); return InThen(mo) == then && mo.pos.x > -1168 && mo.pos.x < -528 && y > -640 && y < -128; }
+
 	void Walk(Actor mo)
 	{
 		if (S()) { Wait(2); }
@@ -363,28 +383,58 @@ class DayReturnTest : EventHandler
 			Check("clockedLeansInDepotThen", clocked && !clocked.frame && !clocked.carried && InThen(clocked) && clocked.pos.y > OFF + 544 && clocked.pos.y < OFF + 992);
 			Check("yellowLeansOnPlatformThen", yellow && !yellow.frame && InThen(yellow) && yellow.pos.x > SX);
 			Check("blueLeansInTheatreNow", blue && !blue.frame && !InThen(blue) && blue.pos.y < 0);
-			Check("noKeys", !h.Has(mo, 1) && !h.Has(mo, 2));
+			Check("noKeys", !h.Has(mo, 1) && !h.Has(mo, 2) && !h.Has(mo, 3) && !h.Has(mo, 4));
 			Check("peaceMusicThen", th.musicThen == 1 && th.ThenMusic() == "AJM_EMY4", th.ThenMusic());
 			Check("notTurned", !DR().turned && th.joinedAt < 0);
 			Check("gatesCompanyWaits", Left(62) > 0, String.Format("%d", Left(62)));
+			Check("frame104Ordinary", F(104) && F(124) && F(104).args[4] == 0 && F(124).args[4] == 0, F(104) ? String.Format("only %d / %d", F(104).args[4], F(124).args[4]) : "no 104");
+			Check("frames106And126", F(106) && F(126) && !F(106).door && !F(126).door);
+			Check("key3LiesInTheDomeNow", Key3Lying());
 			Next();
 		}
-		// the gate THEN, from its west side (posed: the way there needs both keys): bolted, USE does nothing
+		// the gate THEN, from its west side (posed: the way there needs keys 3 and 4): bolted, USE does nothing
 		if (S()) { Check("gateShutAtStart", GateShut(), String.Format("ceiling %.0f", CZ(GATE_X, OFF - 432))); Next(); }
 		if (S()) Put(mo, 470, OFF - 432, 0);
 		if (S()) Use(mo, 0);
 		if (S()) Wait(40);
 		if (S()) { Check("gateBoltedFromTheWest", GateShut(), String.Format("ceiling %.0f", CZ(GATE_X, OFF - 432))); Next(); }
 		if (S()) Put(mo, -64, OFF - 592, 90);
+		// the museum THEN: locked, no key 1
+		if (S()) Go(mo, -400, OFF - 368);
+		if (S()) Go(mo, -470, OFF - 368);
+		if (S()) Use(mo, 180);
+		if (S()) Wait(30);
+		if (S()) { Check("museumLockedThen", DoorShut(MUSEUM_X, OFF - 368), Shut(MUSEUM_X, OFF - 368)); Next(); }
 		// the shelter's brass door THEN: locked, no keys
-		if (S()) Go(mo, -64, OFF - 30);
-		if (S()) Go(mo, 320, OFF - 30);
+		if (S()) Go(mo, -420, OFF - 250);
+		if (S()) Go(mo, 100, OFF - 200);
 		if (S()) Go(mo, 320, OFF - 180);
 		if (S()) Use(mo, 270);
 		if (S()) Wait(30);
-		if (S()) { Check("brassDoorLocked", CZ(320, OFF - 216) <= FZ(320, OFF - 216) + 1, String.Format("ceiling %.0f", CZ(320, OFF - 216))); Next(); }
-		// line 5: the station; YELLOW from its far platform
+		if (S()) { Check("brassDoorLocked", DoorShut(320, OFF - 216), Shut(320, OFF - 216)); Next(); }
+		// in peace: door 8 of the 10 to the other stop, its door 4 to the library, the dome locked; back by door 1
 		if (S()) Go(mo, 320, OFF - 30);
+		ToBack(mo, OFF);
+		if (S()) Go(mo, -192, OFF + 200);
+		if (S()) Through(mo, 270);
+		if (S()) { Check("door8ToTheOtherStopThen", AtStop2(mo, true) && abs(mo.pos.x + 320) < 40 && mo.pos.y < OFF + BY, Where(mo)); Next(); }
+		ToBack(mo, OFF + BY);
+		if (S()) Go(mo, 64, OFF + BY + 200);
+		if (S()) Through(mo, 270);
+		if (S()) { Check("door4OfThe20ToTheLibraryThen", InLibrary(mo, true), Where(mo)); Next(); }
+		if (S()) Go(mo, 1856, OFF + 1360);
+		if (S()) Use(mo, 90);
+		if (S()) Wait(30);
+		if (S()) { Check("domeLockedThenWithoutKey2", DoorShut(1856, OFF + DOME_Y), Shut(1856, OFF + DOME_Y)); Next(); }
+		if (S()) Go(mo, 1856, OFF + 1030);
+		if (S()) Through(mo, 270);
+		if (S()) { Check("backByDoor4ToTheOtherStopThen", AtStop2(mo, true) && abs(mo.pos.x - 64) < 40 && mo.pos.y > OFF + BY + 144, Where(mo)); Next(); }
+		ToFront(mo, OFF + BY);
+		if (S()) Go(mo, -320, OFF + BY - 24);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("door1OfThe20BackToTheLaneThen", InThen(mo) && abs(mo.pos.x + 192) < 40 && mo.pos.y > OFF + 144 && mo.pos.y < OFF + 448, Where(mo)); Next(); }
+		// line 5: the station; YELLOW from its far platform
+		ToFront(mo, OFF);
 		if (S()) Go(mo, 192, OFF - 30);
 		if (S()) Through(mo, 90);
 		if (S()) { Check("line5ToStation", InThen(mo) && mo.pos.x > SX && mo.pos.x < SX + 2100, Where(mo)); Next(); }
@@ -394,13 +444,16 @@ class DayReturnTest : EventHandler
 		if (S()) Put(mo, SX + 384, OFF + 70, 270);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("backFromStation", InThen(mo) && abs(mo.pos.x - 192) < 40 && mo.pos.y < OFF && mo.pos.y > OFF - 64, Where(mo)); Next(); }
-		// YELLOW in door 7 THEN (122): the depot THEN, the clocked door
+		// YELLOW in the 20's door 3 THEN (126): the depot THEN, the clocked door
 		ToBack(mo, OFF);
-		if (S()) Go(mo, 192, OFF + 200);
-		if (S()) Use(mo, 270);
-		if (S()) { Check("yellowIn122", F(122).door == yellow && yellow.args[0] == 224 && !F(102).door, h.said); Next(); }
+		if (S()) Go(mo, -192, OFF + 200);
 		if (S()) Through(mo, 270);
-		if (S()) { Check("yellowToDepotThen", InThen(mo) && mo.pos.y > OFF + 544 && mo.pos.y < OFF + 700 && abs(mo.pos.z - 48) < 1, Where(mo)); Next(); }
+		if (S()) { Check("yellowCarriedToTheOtherStop", AtStop2(mo, true) && h.carried == yellow, Where(mo)); Next(); }
+		if (S()) Go(mo, 192, OFF + BY - 24);
+		if (S()) Use(mo, 90);
+		if (S()) { Check("yellowIn126", F(126).door == yellow && yellow.args[0] == 224 && !F(106).door && !h.carried, h.said); Next(); }
+		if (S()) Through(mo, 90);
+		if (S()) { Check("yellowFrom126ToDepotThen", InThen(mo) && mo.pos.y > OFF + 544 && mo.pos.y < OFF + 700 && abs(mo.pos.z - 48) < 1, Where(mo)); Next(); }
 		if (S()) Go(mo, 96, OFF + 700);
 		if (S()) Go(mo, 96, OFF + 960);
 		if (S()) Go(mo, 200, OFF + 960);
@@ -416,26 +469,36 @@ class DayReturnTest : EventHandler
 		if (S()) { Check("downTheGate", abs(mo.pos.z) < 1 && mo.pos.y < OFF + 448, Where(mo)); Next(); }
 		if (S()) Push(mo, 90, 40);
 		if (S()) { Check("gateOneWay", mo.pos.y < OFF + 450, Where(mo)); Next(); }
-		// swap YELLOW for the clocked door in 122: the turn
-		if (S()) Go(mo, 192, OFF + 200);
-		if (S()) Use(mo, 270);
+		// the clocked door into door 4 THEN (124), an ordinary frame: the turn
+		ToFront(mo, OFF);
+		if (S()) Go(mo, 64, OFF - 24);
+		if (S()) Use(mo, 90);
 		if (S()) Wait(3);
 		if (S())
 		{
-			Check("clockedIn122", F(122).door == clocked && F(102).door == shadow && h.carried == yellow, h.said);
+			Check("clockedIn124", F(124).door == clocked && F(104).door == shadow && !h.carried, h.said);
 			Check("theTurn", DR().turned && Said("forty years on"), h.said);
 			Check("fightMusicThen", th.ThenMusic() == "AJM_EMY5" && th.musicThen == 1, th.ThenMusic());
 			Next();
 		}
-		if (S()) Through(mo, 270);
-		if (S()) { Check("throughClockedToNow", !InThen(mo) && mo.pos.y > 144 && mo.pos.y < 448, Where(mo)); Next(); }
+		if (S()) Through(mo, 90);
+		if (S()) { Check("throughClockedToNow", !InThen(mo) && abs(mo.pos.x - 64) < 40 && mo.pos.y < 0 && mo.pos.y > -300, Where(mo)); Next(); }
 		if (S()) Wait(3);
 		if (S()) { Check("nowMusicNow", th.musicThen == 0); Next(); }
-		if (S()) Go(mo, 192, 200);
-		if (S()) Through(mo, 270);
-		if (S()) { Check("backThen", InThen(mo) && mo.pos.y > OFF + 144, Where(mo)); Next(); }
+		// now, without keys (posed: the walks are later): the museum and the dome locked
+		if (S()) Put(mo, -470, -368, 180);
+		if (S()) Use(mo, 180);
+		if (S()) Wait(30);
+		if (S()) { Check("museumLockedNow", DoorShut(MUSEUM_X, -368), Shut(MUSEUM_X, -368)); Next(); }
+		if (S()) Put(mo, 1856, 1360, 90);
+		if (S()) Use(mo, 90);
+		if (S()) Wait(30);
+		if (S()) { Check("domeLockedNowWithoutKey2", DoorShut(1856, DOME_Y), Shut(1856, DOME_Y)); Next(); }
+		if (S()) Put(mo, 64, -60, 90);
+		if (S()) Go(mo, 64, -24);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("backThen", InThen(mo) && mo.pos.y < OFF && abs(mo.pos.x - 64) < 40, Where(mo)); Next(); }
 		// key 2: RED, where it hangs, to the theatre THEN; its bearer by the stage
-		ToFront(mo, OFF);
 		if (S()) Go(mo, -192, OFF - 24);
 		if (S()) Through(mo, 90);
 		if (S()) { Check("redToTheatreThen", InThen(mo) && mo.pos.y > OFF + TY + 1000 && mo.pos.y < OFF + TY + 1700, Where(mo)); Next(); }
@@ -446,34 +509,70 @@ class DayReturnTest : EventHandler
 		if (S()) Put(mo, -224, OFF + TY + 1024 + 48, 270);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("backFromTheatreThen", InThen(mo) && abs(mo.pos.x + 192) < 40 && mo.pos.y < OFF, Where(mo)); Next(); }
-		// RED down, YELLOW up in 121; RED through the clocked door and onto the old bus: the theatre NOW
-		if (S()) Go(mo, -192, OFF - 24);
-		if (S()) Use(mo, 90);
-		if (S()) { Check("yellowFor121", F(121).door == yellow && h.carried == red && red.args[0] == 201, h.said); Next(); }
+		// the dome THEN with key 2, carrying nothing: door 8, the 20's door 4, the library, the dome; out by its stair
 		if (S()) Go(mo, 470, OFF - 24);
 		ToBack(mo, OFF);
-		if (S()) Go(mo, 192, OFF + 200);
+		if (S()) Go(mo, -192, OFF + 200);
 		if (S()) Through(mo, 270);
+		ToBack(mo, OFF + BY);
+		if (S()) Go(mo, 64, OFF + BY + 200);
+		if (S()) Through(mo, 270);
+		if (S()) { Check("libraryThenAgain", InLibrary(mo, true) && !h.carried, Where(mo)); Next(); }
+		if (S()) Go(mo, 1856, OFF + 1360);
+		if (S()) Use(mo, 90);
+		if (S()) Wait(30);
+		if (S()) { Check("domeOpensThenWithKey2", DoorOpen(1856, OFF + DOME_Y), Shut(1856, OFF + DOME_Y)); Next(); }
+		if (S()) Go(mo, 1856, OFF + 1440);
+		if (S()) Go(mo, 1856, OFF + 1500);
+		if (S()) Wait(10);
+		if (S()) { Check("downIntoTheDomeThen", InThen(mo) && abs(mo.pos.z + 96) < 1, Where(mo)); Next(); }
+		if (S()) Wait(35 * 3);
+		if (S()) { Check("theDomeThensCompanyCame", ObsThenLeft() == 0, String.Format("%d still to come", ObsThenLeft())); Next(); }
+		if (S()) Go(mo, 1720, OFF + 1500);
+		if (S()) Go(mo, 1700, OFF + 1736);
+		if (S()) Go(mo, 1440, OFF + 1732);
+		if (S()) Go(mo, 1440, OFF + 1352);
+		if (S()) Go(mo, 1640, OFF + 1352);
+		if (S()) { Check("outOfTheDomeThenByTheStairCarryingNothing", InLibrary(mo, true) && !h.carried, Where(mo)); Next(); }
+		if (S()) Go(mo, 1856, OFF + 1100);
+		if (S()) Go(mo, 1856, OFF + 1030);
+		if (S()) Through(mo, 270);
+		ToFront(mo, OFF + BY);
+		if (S()) Go(mo, -320, OFF + BY - 24);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("backToTheLaneThen", InThen(mo) && mo.pos.y > OFF + 144 && mo.pos.y < OFF + 448, Where(mo)); Next(); }
+		// RED down from 121, carried through the clocked door (124) and hung in 101: the theatre NOW, BLUE
+		ToFront(mo, OFF);
+		if (S()) Go(mo, -192, OFF - 24);
+		if (S()) Use(mo, 90);
+		if (S()) { Check("redDownFrom121", h.carried == red && !F(121).door, h.said); Next(); }
+		if (S()) Go(mo, 64, OFF - 24);
+		if (S()) Through(mo, 90);
 		if (S()) { Check("redCarriedToNow", !InThen(mo) && h.carried == red, Where(mo)); Next(); }
-		ToFront(mo, 0);
 		if (S()) Go(mo, -192, -24);
 		if (S()) Use(mo, 90);
-		if (S()) { Check("redIn101", F(101).door == red && red.args[0] == 201 && F(121).door == yellow, String.Format("RED leads to %d; ", red.args[0]) .. h.said); Next(); }
+		if (S()) { Check("redIn101", F(101).door == red && red.args[0] == 201 && !F(121).door, String.Format("RED leads to %d; ", red.args[0]) .. h.said); Next(); }
 		if (S()) Through(mo, 90);
 		if (S()) { Check("redToTheatreNow", !InThen(mo) && mo.pos.y > TY + 1000 && mo.pos.y < TY + 1700, Where(mo)); Next(); }
 		if (S()) Put(mo, 540, TY + 1450, 0);
 		if (S()) Use(mo, 0);
 		if (S()) { Check("tookBlue", h.carried == blue, h.said); Next(); }
-		if (S()) Put(mo, -224, TY + 1024 + 48, 270);
-		if (S()) Through(mo, 270);
-		if (S()) { Check("backFromTheatreNow", !InThen(mo) && mo.pos.y < 0 && h.carried == blue, Where(mo)); Next(); }
-		// BLUE swapped for the clocked door in 102: the night room NOW, whole; the hole shut
-		if (S()) Go(mo, 470, -24);
-		ToBack(mo, 0);
-		if (S()) Go(mo, 192, 200);
-		if (S()) Use(mo, 270);
-		if (S()) { Check("blueIn102", F(102).door == blue && blue.args[0] == 202 && !F(122).door && h.carried == clocked, String.Format("BLUE leads to %d; ", blue.args[0]) .. h.said); Next(); }
-		if (S()) Through(mo, 270);
+		// out by the stage door's ledge (posed on it) and the pit: the other stop NOW; back by the 20's door 1
+		if (S()) Put(mo, 256, TY + 960, 0);
+		if (S()) Go(mo, 420, TY + 960);
+		if (S()) { Check("downIntoThePitNow", !InThen(mo) && abs(mo.pos.z + 48) < 1 && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Go(mo, 570, TY + 960);
+		if (S()) Through(mo, 0);
+		if (S()) { Check("thePitToTheOtherStopNow", AtStop2(mo, false) && abs(mo.pos.x + 64) < 40 && mo.pos.y < BY && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Go(mo, -320, BY - 24);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("door1OfThe20BackToTheLaneNow", !InThen(mo) && abs(mo.pos.x + 192) < 40 && mo.pos.y > 144 && mo.pos.y < 448, Where(mo)); Next(); }
+		// BLUE swapped for the clocked door in 104: the night room NOW, whole; the hole shut
+		ToFront(mo, 0);
+		if (S()) Go(mo, 64, -24);
+		if (S()) Use(mo, 90);
+		if (S()) { Check("blueIn104", F(104).door == blue && blue.args[0] == 202 && !F(124).door && h.carried == clocked, String.Format("BLUE leads to %d; ", blue.args[0]) .. h.said); Next(); }
+		if (S()) Through(mo, 90);
 		if (S()) { Check("blueToNightRoomNow", !InThen(mo) && InNightRoom(mo), Where(mo)); Next(); }
 		if (S()) Go(mo, 416, -330);
 		if (S()) Go(mo, 416, -260);
@@ -502,7 +601,7 @@ class DayReturnTest : EventHandler
 		}
 		if (S()) Wait(35 * 4);
 		if (S()) { Check("gatesCompanyCame", Left(62) == 0, String.Format("%d still to come", Left(62))); Next(); }
-		// the clocked door back to the bus: through it to NOW, down from 105, through BLUE, swapped for BLUE in 102
+		// the clocked door back to the bus: through it to NOW, down from 105, through BLUE, swapped for BLUE in 104
 		if (S()) Go(mo, 552, OFF - 500);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("backToNightRoomNow", !InThen(mo) && InNightRoom(mo), Where(mo)); Next(); }
@@ -511,14 +610,13 @@ class DayReturnTest : EventHandler
 		if (S()) { Check("clockedDownFrom105", h.carried == clocked && !F(105).door && !F(125).door, h.said); Next(); }
 		if (S()) Go(mo, 340, -432);
 		if (S()) Through(mo, 180);
-		if (S()) { Check("throughBlueToTheLaneNow", !InThen(mo) && mo.pos.y > 144 && mo.pos.y < 448, Where(mo)); Next(); }
-		if (S()) Go(mo, 192, 200);
-		if (S()) Use(mo, 270);
-		if (S()) { Check("clockedBackIn102", h.carried == blue && (F(102).door == clocked || F(122).door == clocked) && F(102).door && F(122).door, h.said); Next(); }
+		if (S()) { Check("throughBlueToTheSquareNow", !InThen(mo) && abs(mo.pos.x - 64) < 40 && mo.pos.y < 0 && mo.pos.y > -300, Where(mo)); Next(); }
+		if (S()) Go(mo, 64, -24);
+		if (S()) Use(mo, 90);
+		if (S()) { Check("clockedBackIn104", h.carried == blue && F(104).door && F(124).door && (F(104).door == clocked || F(124).door == clocked), h.said); Next(); }
 		// BLUE through the clocked door, THEN; line 1: the hotel, key 1's baron
-		if (S()) Through(mo, 270);
+		if (S()) Through(mo, 90);
 		if (S()) { Check("blueCarriedToThen", InThen(mo) && h.carried == blue, Where(mo)); Next(); }
-		ToFront(mo, OFF);
 		if (S()) Go(mo, -320, OFF - 24);
 		if (S()) Through(mo, 90);
 		if (S()) { Check("line1ToHotel", InThen(mo) && mo.pos.x < HX + 600 && mo.pos.x > HX - 2000, Where(mo)); Next(); }
@@ -528,12 +626,117 @@ class DayReturnTest : EventHandler
 		if (S()) Put(mo, HX + 256, OFF + 60, 270);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("backFromHotel", InThen(mo) && abs(mo.pos.x + 320) < 40 && mo.pos.y < OFF, Where(mo)); Next(); }
-		// the shelter's brass door: keys 1 and 2; the stair; BLUE in HOME
-		if (S()) Go(mo, 320, OFF - 30);
+		// the brass door with keys 1 and 2 only: shut; the last fight waits for keys 3 and 4
+		if (S()) Go(mo, -320, OFF - 200);
+		if (S()) Go(mo, 100, OFF - 200);
 		if (S()) Go(mo, 320, OFF - 180);
 		if (S()) Use(mo, 270);
 		if (S()) Wait(40);
-		if (S()) { Check("brassDoorOpens", CZ(320, OFF - 216) > FZ(320, OFF - 216) + 60, String.Format("ceiling %.0f", CZ(320, OFF - 216))); Next(); }
+		if (S())
+		{
+			Check("brassDoorShutWithKeys1And2", h.Has(mo, 1) && h.Has(mo, 2) && !h.Has(mo, 3) && DoorShut(320, OFF - 216), Shut(320, OFF - 216));
+			Check("lastFightWaitsForKeys3And4", Left(65) > 0, String.Format("%d to come", Left(65)));
+			Next();
+		}
+		// now through the clocked door (104), BLUE carried: the museum NOW opens with key 1
+		if (S()) Go(mo, 320, OFF - 30);
+		if (S()) Go(mo, 64, OFF - 30);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("blueCarriedToNowAgain", !InThen(mo) && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Go(mo, -400, -368);
+		if (S()) Go(mo, -470, -368);
+		if (S()) Use(mo, 180);
+		if (S()) Wait(30);
+		if (S()) { Check("museumOpensNowWithKey1", DoorOpen(MUSEUM_X, -368), Shut(MUSEUM_X, -368)); Next(); }
+		if (S()) Go(mo, -580, -368);
+		if (S()) { Check("intoTheMuseumNow", InHall(mo, false), Where(mo)); Next(); }
+		if (S()) Go(mo, -470, -368);
+		// door 8 NOW, the other stop, the 20's door 4, the library: the dome with key 2, key 3, out by the stair with BLUE
+		if (S()) Go(mo, -420, -250);
+		if (S()) Go(mo, -420, -60);
+		if (S()) Go(mo, -520, 0);
+		if (S()) Go(mo, -520, 220);
+		if (S()) Go(mo, -192, 200);
+		if (S()) Through(mo, 270);
+		if (S()) { Check("door8ToTheOtherStopNow", AtStop2(mo, false) && abs(mo.pos.x + 320) < 40 && mo.pos.y < BY && h.carried == blue, Where(mo)); Next(); }
+		ToBack(mo, BY);
+		if (S()) Go(mo, 64, BY + 200);
+		if (S()) Through(mo, 270);
+		if (S()) { Check("door4OfThe20ToTheLibraryNow", InLibrary(mo, false), Where(mo)); Next(); }
+		if (S()) Go(mo, 1856, 1360);
+		if (S()) Use(mo, 90);
+		if (S()) Wait(30);
+		if (S()) { Check("domeOpensNowWithKey2", DoorOpen(1856, DOME_Y), Shut(1856, DOME_Y)); Next(); }
+		if (S()) Go(mo, 1856, 1440);
+		if (S()) Go(mo, 1856, 1500);
+		if (S()) Wait(10);
+		if (S()) { Check("downIntoTheDomeNow", !InThen(mo) && abs(mo.pos.z + 96) < 1 && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Go(mo, 1990, 1500);
+		if (S()) Go(mo, 1990, 1736);
+		if (S()) Wait(5);
+		if (S()) { Check("key3TakenInTheDomeNow", h.Has(mo, 3) && !Key3Lying() && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Wait(35 * 4);
+		if (S()) { Check("theDomesAmbushCame", Left(3) == 0, String.Format("%d still to come", Left(3))); Next(); }
+		if (S()) Go(mo, 1700, 1736);
+		if (S()) Go(mo, 1440, 1732);
+		if (S()) Go(mo, 1440, 1352);
+		if (S()) Go(mo, 1640, 1352);
+		if (S()) { Check("outOfTheDomeNowByTheStairCarryingBlue", InLibrary(mo, false) && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Go(mo, 1856, 1100);
+		if (S()) Go(mo, 1856, 1030);
+		if (S()) Through(mo, 270);
+		ToFront(mo, BY);
+		if (S()) Go(mo, -320, BY - 24);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("backToTheLaneNow", !InThen(mo) && mo.pos.y > 144 && mo.pos.y < 448 && h.carried == blue, Where(mo)); Next(); }
+		// THEN through the clocked door: the museum THEN with key 1, key 4's mancubus; down the hole, up the cellar's
+		// stair with BLUE, out
+		ToFront(mo, 0);
+		if (S()) Go(mo, 64, -24);
+		if (S()) Through(mo, 90);
+		if (S()) { Check("blueAndKey3ToThen", InThen(mo) && h.carried == blue && h.Has(mo, 3), Where(mo)); Next(); }
+		if (S()) Go(mo, -400, OFF - 368);
+		if (S()) Go(mo, -470, OFF - 368);
+		if (S()) Use(mo, 180);
+		if (S()) Wait(30);
+		if (S()) { Check("museumOpensThenWithKey1", DoorOpen(MUSEUM_X, OFF - 368), Shut(MUSEUM_X, OFF - 368)); Next(); }
+		if (S()) Go(mo, -570, OFF - 368);
+		if (S()) KillBearer(mo, 4, 350);
+		if (S()) Wait(5);
+		if (S()) { Check("key4FromTheMancubus", h.Has(mo, 4) && Said("It carried key 4."), h.said); Next(); }
+		if (S()) Go(mo, -700, OFF - 300);
+		if (S()) Go(mo, -1120, OFF - 300);
+		if (S()) Go(mo, -1120, OFF - 400);
+		if (S()) Go(mo, -1220, OFF - 400);
+		if (S()) Wait(10);
+		if (S()) { Check("downTheHoleIntoTheCellarThen", InThen(mo) && abs(mo.pos.z + 128) < 1 && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Go(mo, -1300, OFF - 480);
+		if (S()) Go(mo, -1528, OFF - 480);
+		if (S()) Go(mo, -1528, OFF - 140);
+		if (S()) Go(mo, -1528, OFF + 176);
+		if (S()) Go(mo, -1440, OFF + 176);
+		if (S()) { Check("upTheCellarsStairCarryingBlue", InThen(mo) && abs(mo.pos.z) < 1 && mo.pos.x > -1480 && mo.pos.x < -720 && h.carried == blue, Where(mo)); Next(); }
+		if (S()) Go(mo, -1440, OFF - 40);
+		if (S()) Go(mo, -868, OFF - 40);
+		if (S()) Go(mo, -868, OFF - 200);
+		if (S()) Go(mo, -570, OFF - 368);
+		if (S()) Use(mo, 0);
+		if (S()) Wait(30);
+		if (S()) { Check("museumOpensFromInsideWithKey1", DoorOpen(MUSEUM_X, OFF - 368), Shut(MUSEUM_X, OFF - 368)); Next(); }
+		if (S()) Go(mo, -470, OFF - 368);
+		if (S()) { Check("outOfTheMuseumThen", InThen(mo) && mo.pos.x > -512 && h.carried == blue, Where(mo)); Next(); }
+		// the brass door: keys 3 and 4; the last fight; the stair; the gate; BLUE in HOME
+		if (S()) Go(mo, -420, OFF - 250);
+		if (S()) Go(mo, 100, OFF - 200);
+		if (S()) Go(mo, 320, OFF - 180);
+		if (S()) Use(mo, 270);
+		if (S()) Wait(40);
+		if (S())
+		{
+			Check("brassDoorOpensWithKeys3And4", DoorOpen(320, OFF - 216), Shut(320, OFF - 216));
+			Check("lastFightCameWithKeys3And4", Left(65) == 0, String.Format("%d still to come", Left(65)));
+			Next();
+		}
 		if (S()) Go(mo, 320, OFF - 296);
 		if (S()) Go(mo, 400, OFF - 330);
 		if (S()) { Check("upTheStair", abs(mo.pos.z - 64) < 1 && InThen(mo), Where(mo)); Next(); }
@@ -544,6 +747,24 @@ class DayReturnTest : EventHandler
 		if (S()) { Check("blueIn190", F(190).door == blue && blue.args[0] == 222 && h.wayOutBuilt, String.Format("BLUE leads to %d; ", blue.args[0]) .. h.said); Next(); }
 		if (S()) Done();
 		if (S()) Push(mo, 0, 60);
+	}
+	// key 3 still lying on the dome's floor now
+	bool Key3Lying()
+	{
+		let it = ThinkerIterator.Create("AjarKey3");
+		Inventory k;
+		while (k = Inventory(it.Next())) if (!k.owner) return true;
+		return false;
+	}
+	// the turn's company of the observatory then still to come (ambushers of cause 64 in its box)
+	int ObsThenLeft()
+	{
+		int n = 0;
+		let it = ThinkerIterator.Create("AjarAmbush");
+		Actor a;
+		while (a = Actor(it.Next()))
+			if (a.args[0] == 64 && a.pos.x > 1600 && a.pos.x < 2112 && a.pos.y > OFF + 1000 && a.pos.y < OFF + 1784) n++;
+		return n;
 	}
 
 	override void WorldUnloaded(WorldEvent e)
@@ -661,7 +882,8 @@ class DayReturnTest : EventHandler
 		V(mo, "NOW the bus's back", 620, 420, 200);
 		V(mo, "THEN the bus's front", -620, OFF + 72, 0);
 		V(mo, "THEN the depot from YELLOW's far side: the new buses", 0, OFF + 620, 90, -4);
-		V(mo, "THEN the fitters' corner: the clocked door under its plate", 40, OFF + 900, 15, -6);
+		V(mo, "THEN the fitters' corner: the clocked door under the fitters' tag", 40, OFF + 900, 15, -6);
+		V(mo, "THEN the fitters' tag close: FOUND IN THE YARD. NOT OURS.", 256, OFF + 860, 90, -8);
 		V(mo, "NOW the depot: the old buses, the cache in the far corner", 300, 700, 135, -4);
 		V(mo, "NOW the cache", -448, 940, 90);
 		V(mo, "THEN the night room's east part from HOME: the gate's bolt side, the bars", 600, OFF - 432, 180);
@@ -687,6 +909,36 @@ class DayReturnTest : EventHandler
 		V(mo, "NOW the rooms behind the foyer: BLUE", 300, TY + 1400, 20);
 		V(mo, "NOW the kiosk behind its bars", -288, -560, 270);
 		V(mo, "NOW the lane from its corner", 620, 420, 215);
+		// MAP22 bigger: the other stop, the observatory, the museum, door 4, the timetable
+		V(mo, "THEN door 4 of the bus: an ordinary frame, its blank plate", 64, OFF - 200, 90);
+		V(mo, "NOW door 4 of the bus: frame 104, the plate lost", 64, -200, 90);
+		V(mo, "THEN the timetable in the shelter: line 4 a dash", 480, OFF - 140, 270);
+		V(mo, "THEN the shelter's brass door: locks 3 and 4", 320, OFF - 120, 270);
+		V(mo, "THEN the other stop: the new 20 (livery F), doors 1 to 3", 0, OFF + 2930, 90, -4);
+		V(mo, "NOW the other stop: the old 20, frame 106 in door 3", 0, 2930, 90, -4);
+		V(mo, "THEN the 20's back: door 4, the observatory", 64, OFF + 3560, 270, -4);
+		V(mo, "NOW the 20's back", 64, 3560, 270, -4);
+		V(mo, "THEN the 20's front from the west", -620, OFF + 3240, 0);
+		V(mo, "THEN the library from door 4 of the 20", 1856, OFF + 1040, 90);
+		V(mo, "NOW the library", 1856, 1040, 90);
+		V(mo, "THEN the dome's door from the library: the plate 2", 1856, OFF + 1250, 90);
+		V(mo, "NOW the dome from the ledge: the pier, the telescope", 1856, 1440, 90, 12);
+		V(mo, "THEN the dome from the ledge", 1856, OFF + 1440, 90, 12);
+		V(mo, "NOW the dome's floor: key 3, the stair out", 1900, 1700, 0, 4);
+		V(mo, "NOW the stair out of the dome, from its foot", 1700, 1732, 180, -8);
+		V(mo, "NOW the top of the dome's stair: a plain opening", 1440, 1560, 90);
+		V(mo, "THEN the museum's door on the square: the plate 1", -380, OFF - 368, 180);
+		V(mo, "NOW the museum's door on the square", -380, -368, 180);
+		V(mo, "THEN the great hall from its door", -580, OFF - 368, 180, -8);
+		V(mo, "NOW the great hall from its door", -580, -368, 180, -8);
+		V(mo, "THEN the hall's way down to the cellar", -1000, OFF - 400, 180);
+		V(mo, "THEN the gallery", -760, OFF + 150, 180);
+		V(mo, "NOW the gallery: PINK's store behind its bars", -1068, 300, 90);
+		V(mo, "THEN the gallery's north wall: shut", -1068, OFF + 300, 90);
+		V(mo, "THEN the cellar from the bay", -1220, OFF - 400, 180);
+		V(mo, "NOW the cellar's stair", -1528, -300, 90, -10);
+		V(mo, "NOW the top of the cellar's stair: a plain opening to the gallery", -1528, 120, 90);
+		V(mo, "THEN the gallery from the cellar's stair", -1528, OFF + 176, 0);
 		if (S()) { Info("views done"); Next(); }
 	}
 }
