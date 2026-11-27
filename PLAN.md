@@ -21242,6 +21242,370 @@ whose far side is in a lift. Save and load while a monster is waiting with
 its speed 0 (the old speed is saved with it). Nightmare skill (monsters
 there attack while moving, which muting does not change).
 
+## MAP22 bigger: the other stop, the observatory, the museum; four keys; no frame of the time door's own on the bus (decided 2026-11-27, to build)
+
+**Vadim**, playing MAP22 with the gate (2026-11-27): "Also can we make map
+bigger? Include the second bus from the map10, etc?" And: "Also maybe we
+shouldn't have frame in the bus which is for time door only. This kind of
+contradicts with our story, that that was accident and I just used wrong
+door where I shouldn't?" Settled by Claude on Fable, the puzzle after the
+solver. Vadim has seen the outline of this (the places, the four keys, door
+4, the tag) in the session's messages, not this text; every choice here is
+to be overruled by a word.
+
+**One idea**, as before: the bus is one bus at two times. Now the town is
+all of MAP10's town at both times, and there are two buses.
+
+### What is added
+
+NOW's coordinates are MAP10's own (`tools/map_hinges10.py`), THEN is the
+same plan shifted, as for everything else in the level.
+
+1. **The other stop**, at both times: MAP10's second square (the 20's south
+   face at y 3168). THEN by day, the 20 new: MAP10's amber livery C without
+   its forty years, as livery E is B's (a new livery, F). NOW MAP10's old
+   20 at night. Its doors, the same at both times:
+
+   | Door of the 20 | THEN and NOW |
+   |---|---|
+   | 1 | door 8 of the 10: a line that always runs, both ways |
+   | 2 | the pit under the theatre's stage door, both ways (MAP10's wiring) |
+   | 3 | frames 126 / 106: twins, any door |
+   | 4 (back) | the observatory: a line that always runs |
+
+   So door 8 of the 10 no longer leads from the pit: whoever drops off the
+   stage door's ledge comes out at the other stop and rides back by door 1.
+2. **The observatory**, at both times: MAP10's library and dome, dressed as
+   MAP07. The dome's door has the plate 2 and opens with key 2, at both
+   times. The dome is MAP10's: a ledge inside the door, the sunk floor, the
+   telescope on its pier, the stair out. Two things are not MAP10's: there
+   is **no frame in the dome** (plain wall where MAP10 has frame 116), and
+   the way out at the top of the stair is **a plain opening, 64 wide**, not
+   a squeeze, so that a door carried in can be carried out (with MAP10's
+   drop and squeeze and a frame down there, RED can be shut in for good:
+   the solver, 29856 stuck states).
+3. **The museum**, on the square, at both times: MAP10's great hall, gallery
+   and cellar, dressed as MAP06. Its door on the square is a real door
+   again, with the plate 1 (`AJQMD1`), and **opens with key 1** at both
+   times (it was a face with a CLOSED card). The cellar as MAP10's (the hole
+   in the hall's floor to drop through, the stair up to the gallery), again
+   with **no frame** (MAP10's 114 is plain wall) and **an opening, not a
+   squeeze**, at the top of its stair. PINK's store off the gallery: NOW a
+   secret behind bars, opened by shooting its bell as in MAP10 (a
+   megasphere in it); THEN shut, a plain wall, as the kiosk is.
+
+Not built, as before: the hotel and the station now (doors 1 and 5 of the
+old 10 stay Doom's stone), PINK's room over the depot.
+
+### No frame on the bus is the time door's alone
+
+- **Door 4 of the 10** is an ordinary frame at both times, twins 124 / 104,
+  any door, in the bus's ordinary trim. The time door hangs wherever a door
+  hangs (doors 2, 4 and 7 of the 10, door 3 of the 20). That it can is the
+  accident.
+- Its plate stays blank THEN and lost NOW. The shelter's timetable no
+  longer says "LINE 4: FROM TOMORROW": line 4 has a dash.
+- The fitters' plate over the time door in the depot ("LINE 4, FROM
+  TOMORROW") goes. In its place a tag as fitters would write it: **FOUND IN
+  THE YARD. NOT OURS.** (see "The time door in the depot").
+- The frame in the night room behind the gate (125 / 105) stays the time
+  door's own, with its trim: that room is the institute's line.
+- **The turn** is as it was: the first time the time door hangs in a
+  twinned frame, whichever (but 125 / 105, which cannot be the first).
+
+### Four keys
+
+| Key | Where | Opens |
+|---|---|---|
+| 1 | carried by the hotel lobby's baron, then, after the turn (as built) | the museum, at both times |
+| 2 | carried by the baron in the theatre's orchestra pit, then (as built) | the dome, at both times |
+| 3 | **lies in the dome now**, on the sunk floor where MAP10 has BLUE | with 4: the shelter's brass door |
+| 4 | **carried by the mancubus in the museum's great hall, then**, after the turn | with 3: the shelter's brass door |
+
+- The shelter's brass door (LINE 6, THE INSTITUTE) has two locks, **3 and
+  4** (lock 47, face `AJ22D34`), locked from both sides as before.
+- Every plate in the level is now true: 1 on the museum, 2 on the dome, 3
+  and 4 on the brass door.
+- Keys 1 and 2 by themselves open nothing on the way out any more; they
+  open the two places where 3 and 4 are.
+- Key 3 is the first thing in the level that lies about, and it lies now:
+  nothing lies about in a town at peace.
+
+### The way through (the solver's shortest: 12 door actions, as before; the walk is much longer)
+
+1. *In peace.* The stop, the two buses, every line: the hotel, the theatre
+   (RED), the station, the other stop (door 8), the observatory's library
+   (the 20's door 4). The museum and the dome are locked (plates 1 and 2),
+   the brass door too (3 and 4). YELLOW from the far platform, hung on the
+   bus: the depot. The time door, leaning under the fitters' tag.
+2. *The turn.* The time door in any frame of a bus.
+3. *Key 2*: the theatre then, the pit's baron.
+4. *BLUE*: RED to the old bus, the theatre now, BLUE (the arch-vile's
+   ambush), back.
+5. *The gate*: BLUE on the old bus, the night room now, the time door into
+   105, the bolt drawn (as built).
+6. *Key 3*: now, door 8 of the old 10, the other stop, the 20's door 4, the
+   library, the dome's door (key 2), down, key 3, up the stair.
+7. *Key 1*: the hotel then, the lobby's baron.
+8. *Key 4*: the museum then (key 1), the great hall's mancubus.
+9. *Out*: the brass door (3 and 4), the stair, the gate, BLUE in HOME.
+Steps 3 to 8 in several orders; 2 before 6 and 1 before 8 always.
+
+**The solver** (`tools/puzzle22.py`, `PUZZLE22`): new regions `stop2T/N`,
+`obsT/N`, `domeT/N`, `museumT/N`, `museumK`; walk links both ways `sq`
+and `stop2`, `pit` and `stop2`, `stop2` and `obs` (no more `pit` and `sq`);
+`obs` to `dome` with key 2 and `dome` to `obs` free; `sq` and `museum`
+with key 1 both ways; `sqT` and `lineT` with keys 3 and 4; key 3 in `domeN`,
+key 4 in `museumK` (behind the turn's automatic key, as 1 and 2); frames
+106 / 126 twins at the other stop; 104 / 124 no longer the time door's
+alone. **12 door actions, 761148 states, 0 stuck, nothing lost** (170 s,
+once: the proof is kept). Checked beside it, each 0 stuck and nothing lost:
+without the 20's frame (258026 states), and that with no way out of the
+theatre but RED, without door 7's frame, without door 6's (12 actions
+each); with door 4 shut and the 20's frame (258116). What is not sound, and
+why the dome and the cellar have no frame and no squeeze: MAP10's drops
+with a frame below, 29856 stuck states with the 20's frame and 9788 with
+no new frame at all.
+
+### Fights and supplies
+
+The level was 154 on "Resident". The new ground brings it to **about 230**
+(a first guess, `budget` by part, to be tuned by play). The rule of the
+supplies stands: none then, all of them now; each part now pays for itself
+and the fights then are paid for by the square now, the museum now and the
+observatory now together.
+
+| Part | When it comes | What (on "Resident") |
+|---|---|---|
+| the other stop now | standing, as MAP10's (not woken by the turn) | about 10: imps, sergeants, a knight, 2 cacodemons |
+| the other stop then | the turn, when the player is next there | about 10: imps, chaingunners, a revenant, a knight |
+| the library now | standing | about 8: imps, 2 revenants, a knight |
+| the dome now | standing: 3 cacodemons and 2 lost souls (it is 448 high); when key 3 is taken (cause 3): 2 revenants and 2 knights on the ledge and the stair's top, 2 s on | about 9 |
+| the library then, the dome then | the turn, when next there | about 8: imps and a knight in the library; 2 cacodemons in the dome. Nothing to find there: it is the one place that is only to be looked at and fought in |
+| the museum then | the turn, when the player is next in the hall: **the mancubus with key 4**, 2 knights, imps on the gallery's side; 4 demons in the cellar | about 14 |
+| the museum now | standing, MAP10's kind: sergeants, imps, a knight in the hall, spectres in the cellar, revenants in the gallery | about 14 |
+| the last one | keys **3 and 4** both in hand, at the stop then (it was 1 and 2) | 9, as built |
+
+Supplies now: in the museum's hall and gallery a rocket launcher or its
+rockets, shells, a medikit or two, armour in the cellar; in the library
+cells and shells, a medikit; in the dome by key 3 a box of rockets; at the
+other stop bullets and stimpacks; the megasphere in PINK's store. No
+weapon the level does not already give.
+
+### Left out, as before, or new
+
+Left out: the look of then as a whole; lodgers; the hotel and the station
+now; PINK's room. New and open: whether the peace is now too long a walk
+for one errand (the solver's peace is still YELLOW, the depot, the time
+door; the rest is looking); whether the observatory then wants a reason;
+names on the 20's plates then.
+
+## MAP22 bigger (built 2026-11-27)
+
+Built as decided in "MAP22 bigger: the other stop, the observatory, the
+museum; four keys; no frame of the time door's own on the bus" above, on
+branch `map22-bigger` (an Opus worker; the design is Fable's). Coordinates
+are NOW's, MAP10's own; THEN is NOW + (0, 12288). 1561 sectors, 496 things.
+
+**Files.**
+- `tools/map_dayreturn.py`: the other stop, the observatory and the museum
+  at both times (ported from `map_hinges10.py` with the level's `At`
+  helpers, as the square and the theatre were); door 4 an ordinary frame;
+  key 3, the new fights and supplies, the budget's new parts; the header.
+- `tools/gfx_dayreturn.py`: `bus()` takes a livery; livery F (the 20, new:
+  MAP10's amber C without its forty years, `AJFUS*`, plates `AJFN*`: 1
+  ПЕРЕСАДКА, 2 ТЕАТР, 4 ПЛАНЕТАРИЙ, 3 the number only); livery E's plate 8
+  now says ПЕРЕСАДКА; the brass door `AJ22D34` (locks 3 and 4; `AJ22D12` is
+  no longer drawn); the timetable `AJ22TT` (1, 2, 4 a dash, 5, 7, 8
+  ПЕРЕСАДКА); the fitters' tag `AJ22P4` (a manila card on a nail: FOUND IN
+  THE YARD. / NOT OURS.).
+- `src/zscript/ajar.zs` (a few lines): ambush cause 65 is now "the two room
+  keys args[4] names both in hand" (34: keys 3 and 4). Only MAP22 uses it.
+- `src/zscript/map22.zs`: the header; MODE=1 rewritten to the new way;
+  views for MODE=3. `tools/smoke_MAP22_1.cfg` (wait 14000) and
+  `tools/smoke_MAP22_3.cfg` (139 screenshots for 69 views).
+- `tools/puzzle22.py` is as committed with the design (660dbbb).
+- `map_hinges10.py` is untouched; MAP10.wad is byte for byte as main's.
+
+**The level as built.**
+1. *The other stop* (MAP10's, `BY` = 3168): pavement -640..640 x
+   2880..3600, the 20 at x -400..400, y 3120..3360. THEN by day, the new 20
+   (livery F); NOW MAP10's night, the old 20 (livery C). Its doors, the
+   same at both times:
+   - 1 (x -352..-288, south face): door 8 of the 10, doorways 3 NOW, 4
+     THEN.
+   - 2 (x -96..-32): the pit under the theatre's stage door, doorways 5 NOW,
+     6 THEN. The pit no longer leads to door 8 of the 10.
+   - 3 (x 160..224): frames 106 NOW / 126 THEN, twins, any door. Plate 3
+     (the number only) at both times; MAP10's AJCN0 over it is not used.
+   - 4 (x 32..96, north face, y 3360): the observatory's library, doorways 7
+     NOW, 8 THEN. Doorway 9 (every level's way out) is left alone.
+   Lamps at the four corners at both times.
+2. *The observatory* (MAP10's, dressed and lit as MAP07's), both times:
+   the library 1600..2112 x 1000..1384 (320 high, the torches, the stacks);
+   the dome 1664..2048 x 1400..1784, its floor at -96, the ledge inside the
+   door (1792..1920 x 1400..1464, floor 0), the pier and the telescope. The
+   dome's door (`roomdoor`, x 1824..1888 at y 1384, keys "2", mouth line
+   302 NOW, 322 THEN) with MAP10's two faces (plate 2). No frame in the
+   dome: MAP10's 116 is plain wall. The stair out west, and **a plain
+   opening 64 wide** at its top (x 1408..1472 at y 1700) where MAP10 has a
+   squeeze; then MAP10's passage back to the library. THEN its rooms are 40
+   lighter (`DAYLIGHT`, as the excerpts).
+3. *The museum* (MAP10's, dressed as MAP06's), both times: the great hall
+   -1168..-528 x -640..-128, the gallery -1480..-720 x -96..400, the cellar
+   -1600..-1184 x -560..-112 (floor -128). Its door on the square (x
+   -528..-512, y -400..-336): `roomdoor`, keys "1", mouth line 301 NOW, 321
+   THEN, the face `AJQMD1` on the square (the plate 1) and MAP06's face
+   inside; locked from both sides. The way down from the hall (an opening
+   at x -1168, y -432..-368, and the bay below, a drop of 128), the
+   cellar's stair north to the landing (-1560..-1496 x 144..208), and **a
+   plain opening 64 wide** (-1496..-1480 x 144..208) into the gallery where
+   MAP10 has a squeeze. No frame in the cellar: MAP10's is plain wall.
+   PINK's store NOW: MAP10's secret (bars, the target to shoot, tag 402, its
+   bolted face line 306), a megasphere at (-1160, 560) and two candles; THEN
+   the gallery's north wall is whole. THEN its rooms are 40 lighter.
+4. *Door 4 of the 10*: `t.frame(..., 104)`, twins 104 / 124 in the bus's
+   ordinary trim, any door. Its plate is blank THEN and gone NOW. Frames
+   105 / 125 in the night room stay the clocked door's own.
+5. *The shelter's brass door*: keys "34" (lock 47, face `AJ22D34`), locked
+   from both sides, line 310 as before.
+6. *Keys.* 1 and 2 as before (the hotel lobby's baron, the orchestra pit's
+   baron, then). Key 3 lies NOW on the dome's floor at (2000, 1736), a box
+   of rockets by it. Key 4 is carried by a mancubus (`AjarKeyBearer`) that
+   comes to the great hall THEN with the turn's company, at (-736, -280),
+   there on every difficulty.
+
+**Fights** (on "Resident"; counts on "Just visiting" / "Short stay" /
+"Resident"). The level is now 227 on "Resident" (it was 154), 175 on
+"Short stay", 116 on "Just visiting"; the assert is 200..250.
+- the other stop now (6 / 8 / 10), standing, not the square's company and
+  not woken by the turn: 4 imps, 3 sergeants, a knight, 2 cacodemons
+  standing deaf in the lane behind the 20; 5 boxes of bullets, 4
+  stimpacks, a medikit.
+- the other stop then (5 / 7 / 10), the turn, `near` 640: 5 imps, 3
+  chaingunners, a knight, a revenant.
+- the observatory now (9 / 13 / 17): the library standing, 4 imps, 2
+  revenants, a knight, a chaingunner; the dome standing, 3 cacodemons and 2
+  lost souls; when key 3 is taken (cause 3), 2 revenants on the ledge
+  (1824 and 1888, 1432) and 2 knights at the stair's top (1440, 1732 and
+  1440, 1640). Supplies: 2 cell packs and 3 boxes of shells (library and
+  passage), 4 medikits, the box of rockets by key 3.
+- the observatory then (4 / 6 / 8), the turn: 5 imps and a knight in the
+  library, 2 cacodemons in the dome. Nothing to find.
+- the museum then (7 / 11 / 14), the turn: the mancubus with key 4, 2
+  knights and 2 imps in the hall, 5 imps in the gallery, 4 demons in the
+  cellar.
+- the museum now (6 / 11 / 14), standing: 3 sergeants, 4 imps and a knight
+  in the hall, 3 spectres in the cellar, 2 revenants and a chaingunner in
+  the gallery. Supplies: a rocket launcher and 3 boxes of rockets, 2 boxes
+  of shells and 4 shells, a cell pack, 5 medikits, green armour in the
+  cellar; the megasphere in PINK's store (counted with the secrets).
+- the last fight: as built (2 knights, 2 revenants, 2 cacodemons, 3 imps on
+  the square then), now cause 65 with args[4] 34: keys 3 and 4 both in hand.
+- **The budget by part** (`python3 map_dayreturn.py budget`, "Resident"):
+  the other stop now 1630 hp, ammunition 3340 (x2.05); the observatory now
+  4410 hp, 9200 (x2.09); the museum now 1950 hp, 7920 (x4.06); the theatre
+  now x3.33 and the depot now x6.47 as before. The fights then (the square's
+  waves, the districts', the other stop, the observatory and the museum
+  then, the station, the last fight) are paid for by the square now, the
+  museum now and the observatory now together: 173 monsters, 28660 hp,
+  ammunition 46670 (x1.63), health 380, armour 202. Each is asserted at
+  1.6 or more.
+
+**Bent from the design, or settled here.**
+- Livery E's plate 8 says ПЕРЕСАДКА (door 8 is now a line that always runs
+  to the other stop, as MAP10's plate 8 says), and the timetable lists line
+  8 too; the design said only that line 4 becomes a dash.
+- The 20's plates then are the old one's names (ПЕРЕСАДКА, ТЕАТР,
+  ПЛАНЕТАРИЙ): the design left "names on the 20's plates then" open.
+- The fitters' tag is a manila card hung on a nail, two lines.
+- The other stop now keeps 2 cacodemons, as the design's table says; they
+  stand deaf in its lane (MAP10's `ambush` flag) and are its own, not
+  meant to come through doors.
+- Counts are the table's "about" on "Resident": the other stop 10 now and
+  10 then, the observatory 17 now (8 in the library, 5 in the dome, 4 for
+  key 3) and 8 then, the museum 14 now and 14 then.
+- The dome's company then: the cacodemon behind the pier is seen (and
+  comes) only once the player is round it; the test waits for that.
+- Three things of MAP10's mended here (MAP10 itself is untouched), since
+  `mapcheck` noted them at both times: the library's east torches stand at
+  x 2088 (MAP10's at 2096 touch the wall); the stacks run to the walls
+  (1600..1760 and 1952..2112 x 1160..1224; MAP10's leave a 32 slot at each
+  end); the cellar's second crate stands in the north-east corner
+  (-1248..-1184 x -176..-112; MAP10's leaves a 32 slot round it).
+
+**Checks.**
+- `./build.sh` (full): `MAP22: solvable in 12 door actions, 761148
+  states, 0 stuck`, as `tools/puzzle22.py` gives it.
+- `mapcheck`: 1561 sectors, 496 things, 16 problems, the 16 known ones of
+  MAP10's excerpts (the theatre's and the hotel's lamps, candles and slots,
+  at both times). `thingcheck` and `itemcheck`: 0 problems.
+- The budget: as above; monsters on skill 1 / 2 / 3 / 4: 116 / 175 / 227 /
+  227.
+- MAP22 MODE=1 (TIMEOUT=700, the cfg waits 14000 tics): `dayReturnDone=1
+  checks=99 failed=0`, `outByTheWayOut=1 (step 320, MAP22)`,
+  `levelExited=1`. It walks the solver's way: the peace tour first (door 8
+  to the other stop then, the 20's door 4 to the library, the dome locked
+  without key 2, back), YELLOW in 126 (`yellowCarriedToTheOtherStop`), the
+  turn, the museum and the dome locked now; key 2; the dome then with key 2
+  (its company, `theDomeThensCompanyCame`), out by the stair; RED and BLUE
+  as before; the pit to the other stop now (`thePitToTheOtherStopNow`);
+  the gate's sequence; key 1; the brass door shut with keys 1 and 2 and the
+  last fight waiting (`brassDoorShutWithKeys1And2`,
+  `lastFightWaitsForKeys3And4`); the museum now open with key 1; door 8 and
+  the 20's door 4 now, the dome with key 2, key 3 taken
+  (`key3TakenInTheDomeNow`) and its ambush come (`theDomesAmbushCame`: 2
+  revenants, 2 hell knights), out by the stair's opening carrying BLUE;
+  through door 4 (104) then, the museum then with key 1, the mancubus
+  killed (`key4FromTheMancubus`), down the hole, up the cellar's stair
+  carrying BLUE (`upTheCellarsStairCarryingBlue`), out with key 1 from
+  inside; the brass door with keys 3 and 4 (`brassDoorOpensWithKeys3And4`,
+  `lastFightCameWithKeys3And4`: 2 knights, 2 revenants, 2 cacodemons, 3
+  imps); BLUE in HOME. Also checked at the start: frame 104 an ordinary
+  one, frames 106 and 126 there, key 3 lying in the dome now.
+- MAP22 MODE=2: `dayReturnDone=1 checks=14 failed=0`.
+- MAP22 MODE=3: 69 views, 139 screenshots, `views done`. Looked at: door
+  4's blank plate then and the lost one now; the timetable (4 a dash, 8
+  ПЕРЕСАДКА); the brass door with locks 3 and 4; the other stop then (the
+  new 20, plates 2 and 3) and now; the 20's back with door 4 (ПЛАНЕТАРИЙ);
+  its front from the west (АВТОБУС 20); the library from door 4 then and
+  now; the dome's door with the plate 2; the dome from the ledge both
+  times; key 3 on the dome's floor with the box of rockets; the stair and
+  its plain opening; the museum's door with the plate 1 both times; the
+  great hall both times; the hall's way down; the gallery then (its north
+  wall whole) and now (PINK's store behind its bars); the cellar from the
+  bay; the cellar's stair and its plain opening into the gallery; the
+  fitters' tag.
+- MAP21 MODE=1: `longRunDone=1 checks=85 failed=0`, `outByTheWayOut=1
+  (step 326, MAP22)`, `levelExited=1`.
+- MAP10 MODE=1 (TIMEOUT=300): keys 1 and 2 given, 12 ambushers come, no
+  script error. THEN MODE=1: `thenDone=1 checks=45 failed=0`.
+- The package against main's (`/data/src/doom/doomer/ajar/build/ajar.pk3`,
+  read only; main has moved on to 5220a3b): of the maps only
+  `maps/MAP22.wad` differs because of this branch; `maps/MAP18.wad` and
+  `maps/LAB.wad` differ because main has since changed them
+  (`map_clockdept.py`, `map_lab.py`), as have `zscript.zs`, `clock.zs`,
+  `map18.zs` and `reach.zs`. MAP10.wad and every other map is byte for
+  byte main's. Textures: `AJ22P4`, `AJ22TT`, `AJEN8` changed, `AJ22D12`
+  gone, `AJ22D34` and the 19 of livery F new.
+- Which build each ran on: the full build, then MODE=1, MODE=2, MAP10 and
+  THEN on it; MAP21 and the first MODE=3 on an earlier build of the same
+  level before the three mends above; the last MODE=3 on a quick build
+  that differs from the full one only in the tag's view.
+
+**Not tested / not played by hand.** The fights: MODE=1 removes every
+monster and counts the ambushers as they come, so whether the other stop,
+the observatory and the museum are fair on each difficulty, whether the
+mancubus in the great hall is a fair keeper of key 4 (it is killed by the
+test), the dome's cacodemons and lost souls over the sunk floor, and the
+key 3 ambush in the passage are not seen. The budget is the only measure of
+the supplies. A player who goes to the observatory or the museum in an
+order other than the solver's is left to the solver (761148 states, 0
+stuck). Doors carried through the 20's doors other than BLUE and YELLOW,
+and a door hung in 106 now, are not tested. The cacodemons of the other
+stop now are deaf until they see the player; whether they float into the
+square through door 8 is not seen. The music by ear and the automap.
+
 ## MAP23 "Sleeping Dogs": the first version, as decided (2026-11-27)
 
 **Vadim** (2026-11-27): "Let's go with idea 1." Settled by Claude on Fable
