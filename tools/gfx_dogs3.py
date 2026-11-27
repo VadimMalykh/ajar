@@ -1077,8 +1077,10 @@ def s_bowl(then):
     im.rect(0, 3, 24, 5, rim if then else (70, 66, 70))
     im.rect(6, 10, 18, 12, rim)
     if then:
-        for x in range(3, 21, 3):
-            im.disc(x + 1, 2, 1.4, (150, 104, 60))
+        for x in range(3, 21):                                      # a heap of biscuit
+            top = 3 - int(2.6 * math.sin((x - 3) / 18 * math.pi))
+            for y in range(top, 4):
+                im.set(x, y, jt((150, 104, 60), x, y, 503, 0.18))
     else:
         for x, y in ((5, 6), (15, 8), (9, 4), (19, 5)):
             im.set(x, y, (30, 26, 24))

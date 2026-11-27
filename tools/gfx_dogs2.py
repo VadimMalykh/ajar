@@ -123,7 +123,7 @@ def grime(c, x, z, then, top=24, s=7, col=(70, 58, 44)):
     """NOW: dirt from the floor up, ragged."""
     if then:
         return c
-    lim = top * (0.5 + 0.7 * vn(x, 0, 8, s))
+    lim = top * (0.45 + 0.55 * vn(x, 0, 8, s) + 0.25 * h32(x // 2 % 32, 0, s + 1))
     if z <= lim:
         return mix(c, col, 0.15 + 0.45 * (1 - z / max(lim, 1)))
     return c
