@@ -493,14 +493,14 @@ class ThenTest : EventHandler
 			// in about one run of four none had come out into the bay by now (the imps stand in the pen throwing,
 			// the demon, 60 wide, does not line up), nobody saw the player go through, and all three then went
 			// at his place THEN straight, to the pen's north wall. So an imp is put in the bay if none is there.
-			bool out = false;
-			for (int i = 0; i < pen.Size(); i++) if (pen[i].health > 0 && pen[i].pos.y < 512) out = true;
-			for (int i = 0; i < pen.Size() && !out; i++)
+			bool inBay = false;
+			for (int i = 0; i < pen.Size(); i++) if (pen[i].health > 0 && pen[i].pos.y < 512) inBay = true;
+			for (int i = 0; i < pen.Size() && !inBay; i++)
 				if (pen[i].health > 0 && pen[i].radius <= 20)
 				{
 					pen[i].SetOrigin((PEN_X + 256, 440, 0), false);
 					Info("none had come out of the pen: an imp put in the bay by the script");
-					out = true;
+					inBay = true;
 				}
 			Pose(mo, PEN_X + 40, 256, 180);
 		}
