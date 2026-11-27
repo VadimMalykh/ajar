@@ -251,6 +251,37 @@ def coverage(segs, dots, w, h, half, butt):
     return cov
 
 
+def profile(ss, hw):
+    """The ink's left and right edge on each row of the cap zone (y 0..10, every quarter unit) of a glyph
+    whose skeleton strokes are `ss` drawn `hw` units half-wide, and the ink's whole extent: ([left or None
+    per row], [right or None per row], (xmin, xmax)), in skeleton units."""
+    pts = []
+    for st in ss:
+        pts.append(st[0])
+        for (ax, ay), (bx, by) in zip(st, st[1:]):
+            n = max(1, int(math.hypot(bx - ax, by - ay) / 0.08))
+            pts += [(ax + (bx - ax) * k / n, ay + (by - ay) * k / n) for k in range(1, n + 1)]
+    ys = [k * 0.25 for k in range(41)]
+    left, right = [None] * len(ys), [None] * len(ys)
+    for px, py in pts:
+        for i, y in enumerate(ys):
+            d = abs(py - y)
+            if d <= hw:
+                r = math.sqrt(hw * hw - d * d)
+                if left[i] is None or px - r < left[i]:
+                    left[i] = px - r
+                if right[i] is None or px + r > right[i]:
+                    right[i] = px + r
+    xs = [p[0] for p in pts]
+    return left, right, (min(xs) - hw, max(xs) + hw)
+
+
+def whitespace(edges, outer, depth, sign):
+    """The mean white a side of a glyph holds inside its own extent (`outer`: its outermost ink on that side),
+    over the cap zone, each row's counted at most `depth` units (an empty row: `depth`)."""
+    return sum(depth if e is None else min(depth, sign * (e - outer)) for e in edges) / len(edges)
+
+
 class Pen:
     """How a look draws the skeleton. Sizes are pixels of the 320x200 grid (glyphs are drawn RES times finer).
 
@@ -262,9 +293,19 @@ class Pen:
     track          the space between letters, as a part of the weight
     spacing        the menus' line spacing
     light, dark    the grey of the ink and of its edge in the glyphs (the menu's text colour maps them)
+
+    Spacing by eye (GZDoom's fonts have no pair kerning): each side of a glyph gets the white a straight
+    stem gets (edge + track/2 + loose x weight, from the ink), less `optical` times the white the side
+    already holds inside the glyph's own extent (the mean, over the cap zone, of how far in from its
+    outermost ink the ink is on each row, counted to at most `depth` skeleton units). So a side that is
+    open (T F L J Y V A P) stands closer to its neighbour than a stem, a round one (O C) a little closer,
+    but never nearer than its edge + `tight` x weight. A glyph's width is a whole pixel of the 320 grid
+    (so that the engine, which may move on by whole pixels only, puts it where width() says), the slack
+    shared by its two sides.
     """
     cap, small, weight, gap, butt, edge, track, spacing = 15, 11, 3.0, 0, False, 0.75, 0.6, 17
     light, dark = 236, 24
+    optical, depth, loose, tight = 0.6, 2.4, 0.3, 0.03
 
     def size(self, cap):
         """(weight, gap, edge, track) at a capital height of `cap` px; the edge does not grow with the size."""
@@ -278,6 +319,7 @@ class Pen:
         edge), `height` px high in all. ink: None for a grey glyph (light ink, dark edge), else (ink, edge)
         colours to draw it in directly. Returns (Img, advance in grid px)."""
         w_, gap, edge, track = self.size(cap)
+        own = small is None and cap == self.cap and res == RES      # a glyph of the font itself
         small = small if small is not None else cap * self.small / self.cap
         c = cap
         if ch.islower():
@@ -291,8 +333,20 @@ class Pen:
         s = (c - w_) / 10                                   # grid px per skeleton unit
         base = top + cap                                    # the baseline, from the image's top
         ss = bridged(ss, gap / s if s else 0)
-        lead = edge + track / 2 + w_ / 2
-        wpx = lead * 2 + width * s
+        left, right, (xmin, xmax) = profile(ss, w_ / 2 / s)
+        straight = edge + track / 2 + self.loose * w_      # the white beside a stem, from its ink
+        least = edge + self.tight * w_
+        mL = max(least, straight - self.optical * s * whitespace(left, xmin, self.depth, 1))
+        mR = max(least, straight - self.optical * s * whitespace(right, xmax, self.depth, -1))
+        inkw = (xmax - xmin) * s
+        wpx = mL + inkw + mR
+        if own:                                             # the font's: a whole pixel of the 320 grid wide
+            n = max(1, round(wpx))
+            if min(mL, mR) + (n - wpx) / 2 < least:
+                n += 1
+            mL += (n - wpx) / 2
+            wpx = n
+        lead = mL - xmin * s                                # where the skeleton's x = 0 is, from the left
         hpx = height if height is not None else base + w_ * 0.5 + edge + 0.25 * cap
         W, H = max(1, math.ceil(wpx * res)), max(1, math.ceil(hpx * res))
         segs, dots, joins = [], [], []
@@ -570,7 +624,7 @@ def help_page(L, P):
     box = (34, 8, 286, 192)
     P.page_sheet(im, tuple(v * RES for v in box))
     pen = copy.copy(L.pen)                  # dark on paper: no edge, and set a little closer
-    pen.edge, pen.track = 0, pen.track * 0.7
+    pen.edge, pen.track, pen.loose = 0, pen.track * 0.7, pen.loose * 0.5
     ink, head, num = P.PAGE["ink"], P.PAGE["head"], P.PAGE["rule"]
     x1, y1, x2, y2 = box
     title = "NOTICE TO GUESTS"
