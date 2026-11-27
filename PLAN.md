@@ -17517,6 +17517,183 @@ and the questions below are still for the discussion.
 6. Does the player still carry the clocked door in MAP30? (In MAP21 it is
    left in the machine.)
 
+### Vadim's addition: the room between, and the player hangs RED himself (2026-11-27; still nothing designed)
+
+**Vadim** (2026-11-27): "To add to our idea of map30 final. After the player
+is forsed do step into blick room and remove the red door from the frame, he
+finds himself in a temp room. From that room he exits back to the brick
+room, takes red door, sets it into frame and see exactly the same room as in
+map01 with exactly the same monsters, etc. When he steps into the room -
+game overs."
+
+**The end, step by step, as it stands now.**
+1. The old hall. Something forces the player through RED into the cell (the
+   working version: the flood of monsters) and he takes RED off the cell's
+   frame.
+2. He finds himself in another room, "a temp room".
+3. From it he goes back into the brick cell. RED leans there and the frame
+   is empty, as at the start of MAP01.
+4. He takes RED and hangs it in the frame, himself. Through it he sees
+   MAP01's hall exactly as it was at the beginning, with the same monsters.
+5. He steps into the hall and the game is over.
+
+**What this changes in the working version above.**
+- "What happens to the player then", way 1 (the view leaves his eyes and he
+  watches a puppet take RED) is replaced: the player does it with his own
+  hands. Open question 3 is answered: the Doom guy of the last view is the
+  player, and nobody is watched from outside.
+- The last thing done in the game is the first thing done in the game, with
+  the same door, the same frame and nothing else in the room to do, but this
+  time he knows what is behind it. MAP01's first act needed no words, and
+  needs none the second time.
+- "After the last view": the end comes at the step into the hall. "MAP01
+  again" of the working version is not what Vadim wrote; see question 11.
+- "A second time round could differ in one small thing" is dropped: the
+  hall of the last view is exactly MAP01's.
+- What forces the door down (the flood), the old hall and "the cell has no
+  time" stand as they were.
+
+**Claude's reading of the room between** (to be corrected).
+- It is what turns old into new. If the player stayed in the old cell and
+  hung RED again, he would open the old hall and the flood. He has to leave
+  the cell and come back, and the cell he comes back to is the cell of the
+  beginning.
+- It also answers a thing MAP01 never says: the game starts with the player
+  locked in a cell that has no way in. The room between is where he came
+  from.
+- "Temp" can be temporary (a room of no place, only for this passage) or
+  temporal (a room of the time machinery, as MAP21's machine). Claude reads
+  temporary; question 7.
+
+**Ideas added by Claude** (all to argue over; none decided).
+
+*How he gets there and back.* The cell is sealed once RED is down, and at
+the start of MAP01 it has one frame and no other opening, so no door of any
+kind can lead into it (a colour door needs a second frame, a clocked door a
+frame of its own, a Doom door a doorway).
+1. Two cuts (Claude's first choice). When RED comes off the frame the
+   hammering on the far side stops, there is a moment of silence in the
+   sealed cell, then the picture goes and he stands in the room between. Its
+   only way on is one dark doorway; stepping into it puts him on MAP01's own
+   start spot, facing as MAP01 begins, so the first second of the game is
+   seen again exactly.
+2. The cell itself changes round him (the cross-fade of the working
+   version), and the room between is the cell in the middle of the change.
+   This is not "he exits back", so probably not what Vadim means.
+3. He falls into the cell from above. It leaves a hole in a room that must
+   be exactly MAP01's.
+
+*What is in the room between.* Nobody tells the story in this game, so no
+text there.
+1. Nothing of any time: bare, one light, the dark doorway (Claude's first
+   choice). After the flood it is the one quiet place, and it is short.
+2. The room where the player becomes who he was: whatever he carries stays
+   there, and he goes on with the pistol and full health, as MAP01 begins
+   (question 10).
+3. The machine's room, if "temp" is temporal: it would say that the
+   institute's machine makes the loop. It explains more than the rest of
+   the game does.
+
+*RED.* It is in the player's hands when the old cell is sealed, and it must
+lean on the cell's wall when he comes back. Claude's choice: he arrives in
+the room between with empty hands, and never sees how RED got back to its
+wall (but hears it: see "the same first second" below). The other way is
+that he carries it out and leans it himself, which is a second thing to make
+him do.
+
+*The last view.* MAP01's hall as seen from the cell through RED: the runner,
+the two zombies, the barrels, the red torches, the pit beyond, the imp on
+the ledge and the imp on the gallery. The monsters are alive, as in MAP01,
+so the zombies turn on him as the door opens; the end comes on his first
+step over the door's line, before a shot matters, and the picture stops
+there.
+
+*How it would be built.* Three copies in MAP30 from MAP01's own description
+(`tools/map_hinges1.py`): the old hall and old cell (aged), the new cell and
+as much of the new hall as is seen from the door and the first step (in
+MAP01's own look, with MAP01's own things at their own places), and the room
+between. `ajarthen.Times` builds one plan twice already. "Exactly the same"
+can be checked and not only believed: one screenshot in MAP01 with RED just
+hung, one at the end from the same spot, compared.
+
+### What could change in MAP01 so that the two ends meet (Claude's ideas, 2026-11-27; none decided, nothing built)
+
+**Vadim** (2026-11-27): "Maybe any other ideas, something to change in map01
+to make ellusion even better (that it's just time loop)?"
+
+The rule for all of them: at the first play each is ordinary decoration or
+the ordinary way a game opens, and gives nothing away; at the end the same
+thing is the proof. Whatever is added to MAP01's cell and hall is in the
+end's cell and hall too, by being built from the same description.
+
+1. **The same first second** (Claude's first choice). MAP01 does not simply
+   begin: it opens in the dark with the sound of a door being leaned on a
+   brick wall, a moment of silence, and then the picture comes up on the
+   start spot. The first time this is how the game opens. At the end the
+   dark doorway of the room between gives the same dark, the same sound, the
+   same picture, and the player knows whose door that was. It also says how
+   RED got back to its wall without showing it.
+2. **The same last second.** If MAP01 shows its name when it begins
+   ("Borrowed Rooms") and its music starts from the first bar, then the step
+   into the hall at the end brings the name up and the first bar again, and
+   the game stops on them. The end is then MAP01 beginning, cut off.
+3. **A worn path in the cell.** The brick floor is worn pale along the way
+   everybody walks in that room: from the start spot to where RED leans and
+   from there to the frame. The first time it is a floor that leads a new
+   player to the door (as the runners lead in the hall). The second time it
+   is a floor worn by this having been done many times. The same for the
+   place where RED's corner rests on the wall, and the hinge side of the
+   frame.
+4. **Two pictures of one hall.** MAP01's hall has pictures of the doors.
+   One more hangs among them: this hall in ruins. In the old hall of MAP30
+   the same frame holds the hall as new. Each time shows the other; at the
+   first play it is one odd picture on a wall.
+5. **The old hall keeps MAP01's places** (in MAP30, but it is what makes
+   the hall of the last view the same hall). Scorch where the two barrels
+   stand, bones where the two zombies stand and where the demon is in the
+   pit, an empty spot on the ledge's runner where the shotgun lay, YELLOW's
+   frame in the pit. Things at exactly MAP01's coordinates, so that the
+   player who has just seen them as ruins sees them whole a minute later.
+6. **The old hall as this player left it** (dearer; the engine is to be
+   asked). When the player leaves MAP01 the game notes where he left each
+   door (hanging in which frame, leaning in which room) and keeps it with
+   him to MAP30, where the old hall shows the doors there, grey with dust.
+   Then the old hall is his own MAP01, later. For a player who starts at
+   MAP30 the doors stand as the shortest solution leaves them.
+7. **The title picture is the cell.** The game's first screen is the brick
+   cell, RED leaning, the frame empty, nobody there: the moment between the
+   end and the beginning. The game is over into that picture.
+8. **Tally marks scratched in the cell's brick.** The plainest sign of "many
+   times", and the one most likely to be read too early. Claude would rather
+   not.
+9. **A dead marine among "the last visitors" in the pit** (the pit has a
+   dead zombie and a dead imp already). It says the loop has had other ends.
+   Claude would rather not either: it makes the loop less of a clean circle,
+   which is the illusion wanted.
+
+Already so in MAP01, to be kept: the two zombies in the hall stand facing
+the west wall, the place where RED's far side opens. They are waiting for
+the door.
+
+Of these 1, 2, 3 and 5 are Claude's choice; 1 to 4 and 7 are small changes
+to a finished level (a script at MAP01's start, one floor texture, one
+picture, the title picture). "The cell stays as it is" was the decision for
+MAP01's look, so 3 needs Vadim's word.
+
+**Open, added to the list above**:
+7. The "temp room": temporary or temporal? What is in it?
+8. The way into it and out of it: two cuts, the second onto MAP01's start
+   spot?
+9. RED after the old cell is sealed: back on its wall by itself (heard, not
+   seen), or carried and leaned by the player?
+10. Is the player himself as at the beginning (full health, the pistol
+    only), and if so where does the rest go?
+11. "Game over": the end of the game there (a last screen, the credits), or
+    does MAP01 itself go on from that step?
+12. Are the monsters of the last view alive, and does the picture stop on
+    the step?
+13. Which of the changes to MAP01 above, and may the cell's floor change?
+
 ## Music: two variations on Paradox Engine, a toccata and a slow one (2026-11-26, no map plays them yet)
 
 **Vadim**: "Could you make 2 new variations of theme 5? One fast, but
