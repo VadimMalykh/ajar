@@ -4,12 +4,19 @@
 //
 // MAP=MAP18 MODE=1..6 tools/smoke.sh:
 //   1  the winning run: TEAL in the long lane, the doors on the track the
-//      generator found best, the lever, then the measured way (MapSpots
-//      1861 on) walked at 16.7 a tic; through the shutter and out
+//      generator found best, BLUE taken at the lever and the lever pulled,
+//      then the measured way (MapSpots 1861 on) walked at 16.7 a tic with
+//      BLUE in hand; through the shutter, BLUE hung in the brass frame 190
+//      (the empty frame no way out before), and out
 //   2  both Pairs joining the two longest lanes, and the way on foot
-//      (MapSpots 1901 on, the lift ridden) at 16.7 a tic
+//      (MapSpots 1901 on, the lift ridden) at 16.7 a tic, BLUE in hand, the
+//      way out built as in 1
 //   3  the failures: nothing hung; the long lane alone on foot; a leaf taken
-//      while the pulse laps; a second pull
+//      while the pulse laps; a second pull; a run made without BLUE: nobody
+//      is shut in the night room, the shutter comes down behind him; BLUE
+//      hung elsewhere is a way in for empty hands; USE pressed (for real) at
+//      its far side from the night room does not take it down (reach.zs; it did: PLAN.md); the brass frame
+//      takes no other door
 //   4  each lane's laps, and the two longest joined: the lap's tics, the
 //      laps counted, the lamps, how long the shutter is up
 //   5  the paradoxes walked
@@ -26,6 +33,8 @@ extend class AjarHandler
 	const TAM_LEVER = 1840;
 	const TAM_WAY_A = 1860;
 	const TAM_WAY_B = 1900;
+	const TAM_HOME = 190;           // the night room's brass frame (ajarmap.HOME): BLUE's only
+	const TAM_BLUE = 2;
 	int tamStep, tamAt;
 	int tamI, tamThrough, tamT0, tamArrive, tamCase, tamSeen;
 	double tamAng, tamLastX, tamLastY, tamLastZ, tamRideZ;
@@ -193,6 +202,57 @@ extend class AjarHandler
 		if (want) Check("theShutterIsUpWhenThere", d.Live() && TamOpen() >= 56);
 	}
 
+	// The night room (map_clockdept.py, NIGHT): BLUE's far side in its west end, the brass frame in its east end.
+	bool TamInNight(Actor mo) { return InBox(mo, 7616, 2608, 7936, 2864) && mo.pos.z < -200; }
+
+	// TEAL in the long lane and the doors of way A as the generator found them (MapSpot 1860: ORANGE's two
+	// frames, RED's, GREEN's; 1859: RED's car's floor + 512), and the car sent there.
+	void TamHangWayA(Actor mo)
+	{
+		Actor doors = TamSpot(TAM_WAY_A), car = TamSpot(TAM_WAY_A - 1);
+		BeltHang(mo, LabLeaf(8, 0), 101);
+		BeltHang(mo, LabLeaf(8, 1), 102);
+		if (doors.args[0]) { BeltHang(mo, LabLeaf(9, 0), doors.args[0]); BeltHang(mo, LabLeaf(9, 1), doors.args[1]); }
+		if (doors.args[2]) BeltHang(mo, DoorOf(1), doors.args[2]);
+		if (doors.args[3]) BeltHang(mo, DoorOf(3), doors.args[3]);
+		Console.Printf("AJARTEST info the track: ORANGE %d %d, RED %d (the car at %d), GREEN %d (BLUE is no door of the track)",
+			doors.args[0], doors.args[1], doors.args[2], car.args[0] - 512, doors.args[3]);
+		if (doors.args[2]) LiftSend(LIFT_TAG, car.args[0] - 512);
+	}
+	bool TamCarWaits()
+	{
+		Actor doors = TamSpot(TAM_WAY_A), car = TamSpot(TAM_WAY_A - 1);
+		return !LiftMoving() && LiftAt() == (doors.args[2] ? car.args[0] - 512 : LiftAt());
+	}
+
+	// At the lever: BLUE taken (from wherever it leans) and carried from here on.
+	void TamTakeBlue(Actor mo)
+	{
+		if (carried) BeltPutBack(carried);
+		TakeLeaning(DoorOf(TAM_BLUE), mo);
+		Check("blueInHandAtTheLever", carried == DoorOf(TAM_BLUE));
+	}
+
+	// The end of a run made with BLUE in hand (MODE=1 and 2), from before the brass frame: the frame empty is
+	// no way out (walked into, nothing ends); BLUE hung in it makes the room the way out, and walking on into
+	// its east end ends the level.
+	void TamBuildTheWayOut(Actor mo, int t)
+	{
+		int k = TamIn(t);
+		AjarFrame f = FindFrame(TAM_HOME);
+		if (k == 1) Check("noWayOutYet", !wayOutBuilt && carried == DoorOf(TAM_BLUE) && TamInNight(mo) && !f.door);
+		if (k <= 24) mo.vel.xy = (TAM_RUN, 0);           // into the empty frame: its back is a wall
+		else if (k == 30)
+		{
+			Check("theEmptyFrameIsNoWayOut", !wayOutBuilt && InBox(mo, 7616, 2608, 7952, 2864) && carried == DoorOf(TAM_BLUE));
+			TamPose(mo, 7872, 2736, 0);
+			f.Activate(mo);
+			Check("wayOutBuilt", wayOutBuilt && !carried && f.door == DoorOf(TAM_BLUE));
+		}
+		else if (k > 30) mo.vel.xy = (TAM_RUN, 0);
+		if (k > 90) { Check("outByTheNightRoom", false); TamNext(t); }
+	}
+
 	void TimeAndMotionScript(Actor mo, int t, int mode)
 	{
 		if (t == 1)
@@ -218,26 +278,18 @@ extend class AjarHandler
 	// MODE=1: TEAL in the long lane, the rest as the generator's best track.
 	void TamWinningRun(Actor mo, int t)
 	{
-		Actor doors = TamSpot(TAM_WAY_A), car = TamSpot(TAM_WAY_A - 1);
 		switch (tamStep)
 		{
 		case 0:
-			BeltHang(mo, LabLeaf(8, 0), 101);
-			BeltHang(mo, LabLeaf(8, 1), 102);
-			if (doors.args[0]) { BeltHang(mo, LabLeaf(9, 0), doors.args[0]); BeltHang(mo, LabLeaf(9, 1), doors.args[1]); }
-			if (doors.args[2]) BeltHang(mo, DoorOf(1), doors.args[2]);
-			if (doors.args[3]) BeltHang(mo, DoorOf(3), doors.args[3]);
-			if (doors.args[4]) BeltHang(mo, DoorOf(2), doors.args[4]);
-			Console.Printf("AJARTEST info the track: ORANGE %d %d, RED %d (the car at %d), GREEN %d, BLUE %d",
-				doors.args[0], doors.args[1], doors.args[2], car.args[0] - 512, doors.args[3], doors.args[4]);
+			TamHangWayA(mo);
 			Check("tealInTheLongLane", LabLeaf(8, 0).frame == FindFrame(101) && LabLeaf(8, 1).frame == FindFrame(102));
-			if (doors.args[2]) LiftSend(LIFT_TAG, car.args[0] - 512);
 			TamNext(t);
 			break;
 		case 1:
-			TamWait(t, "theCarWaits", !LiftMoving() && LiftAt() == (doors.args[2] ? car.args[0] - 512 : LiftAt()), 400);
+			TamWait(t, "theCarWaits", TamCarWaits(), 400);
 			break;
 		case 2:
+			TamTakeBlue(mo);
 			TamPull(mo, 1);
 			Check("theLeverFiresTheLongLane", Delay().Live() && Delay().pulse.lane == 1);
 			TamStartRun(t);
@@ -252,8 +304,7 @@ extend class AjarHandler
 			}
 			break;
 		case 4:
-			mo.vel.xy = (TAM_RUN, 0);
-			if (TamIn(t) > 60) { Check("outByTheNightRoom", false); TamNext(t); }
+			TamBuildTheWayOut(mo, t);
 			break;
 		}
 	}
@@ -274,6 +325,7 @@ extend class AjarHandler
 			TamNext(t);
 			break;
 		case 1:
+			TamTakeBlue(mo);
 			TamPull(mo, 1);
 			TamStartRun(t);
 			TamNext(t);
@@ -293,10 +345,52 @@ extend class AjarHandler
 			}
 			break;
 		case 3:
-			mo.vel.xy = (TAM_RUN, 0);
-			if (TamIn(t) > 60) { Check("outByTheNightRoom", false); TamNext(t); }
+			TamBuildTheWayOut(mo, t);
 			break;
 		}
+	}
+
+	// A USE press as the player makes one (the key down, then up): the engine's own use trace, not a script call.
+	void TamPressUse(Actor mo)
+	{
+		let pp = PlayerPawn(mo);
+		pp.player.cmd.buttons = BT_USE;
+		pp.CheckUse();
+		pp.player.cmd.buttons = 0;
+		pp.CheckUse();
+	}
+
+	// MODE=3, with BLUE hung in 128 and the player in the night room, empty-handed: USE pressed facing west at
+	// BLUE's far side (its mouth at x 7616, y 2704..2768; the portal 16 behind it, at x 7600), one press a tic,
+	// from x 7604, 7616, 7632, 7648, 7664 (4 to 64 from the portal), y 2720, 2736, 2752 (either jamb, the
+	// middle), facing 165, 180, 195. Each press logged; a door taken is hung back in 128 and the presses go on.
+	int tamFarTaken;
+	bool TamFarSideUse(Actor mo, int t)
+	{
+		static const double xs[] = { 7604, 7616, 7632, 7648, 7664 };
+		static const double ys[] = { 2720, 2736, 2752 };
+		static const double angs[] = { 165, 180, 195 };
+		int k = TamIn(t);
+		if (k == 1) tamFarTaken = 0;
+		int i = k - 1;
+		if (i < 45)
+		{
+			TamPose(mo, xs[i / 9], ys[(i / 3) % 3], angs[i % 3]);
+			TamPressUse(mo);
+			bool hung = FindFrame(128).door == DoorOf(TAM_BLUE);
+			Console.Printf("AJARTEST info far side USE %d at (%.0f,%.0f,%.0f) facing %.0f: carried %s, 128 %s, in the night room %d",
+				i + 1, mo.pos.x, mo.pos.y, mo.pos.z, mo.angle, carried ? carried.Label() : "-", hung ? "BLUE" : FindFrame(128).door ? "another" : "empty", TamInNight(mo));
+			if (carried || !hung)
+			{
+				tamFarTaken++;
+				Console.Printf("AJARTEST info far side USE %d TOOK %s down from 128", i + 1, carried ? carried.Label() : "?");
+				if (carried == DoorOf(TAM_BLUE)) { BeltHang(mo, DoorOf(TAM_BLUE), 128); }
+				if (carried) BeltPutBack(carried);
+			}
+			return false;
+		}
+		Check("blueIsNotTakenFromItsFarSide", tamFarTaken == 0 && FindFrame(128).door == DoorOf(TAM_BLUE) && !carried && TamInNight(mo));
+		return true;
 	}
 
 	// MODE=3: what fails.
@@ -390,6 +484,76 @@ extend class AjarHandler
 			break;
 		case 11:
 			TamWait(t, "theMiddleLaneAloneBursts", d.gone == 2, 100);
+			break;
+		case 12:    // a run made without BLUE (way A, the pulse alive on arrival): nobody is shut in the night room
+			TamTakeAll(mo);
+			TamHangWayA(mo);
+			TamNext(t);
+			break;
+		case 13:
+			TamWait(t, "readyForARunWithoutBlue", TamCarWaits() && d.Down(), 400);
+			break;
+		case 14:
+			TamPull(mo, 1);
+			TamStartRun(t);
+			TamNext(t);
+			break;
+		case 15:
+			TamWatchShutter(mo, t, false);
+			if (TamRun(mo, t, TAM_WAY_A, TAM_RUN) || TamIn(t) > 1500)
+			{
+				Check("inTheNightRoomWithoutBlue", tamArrive > 0 && TamInNight(mo) && !carried && !wayOutBuilt && d.Live());
+				TamNext(t);
+			}
+			break;
+		case 16:
+			mo.vel.xy = (0, 0);
+			if (TamWait(t, "theRunWithoutBlueBurnsOut", d.gone == 1, 600))
+				Console.Printf("AJARTEST info the pulse burnt out with the player in the night room, %d tics after the pull", d.goneAt - d.firedAt);
+			break;
+		case 17:
+			if (TamIn(t) == 40)
+			{
+				Console.Printf("AJARTEST info 40 tics after the pulse went: the player at (%.0f,%.0f,%.0f), the shutter open %.0f", mo.pos.x, mo.pos.y, mo.pos.z, TamOpen());
+				Check("nobodyIsShutIn", !d.Live() && d.Up() && d.occupied && TamInNight(mo));
+				TamNext(t);
+			}
+			break;
+		case 18:    // out by the shutter, south into the boiler room
+			if (TamWalk(mo, t, 7776, 2680, 270, 20)) { Check("outByTheShutter", !tamJumped && mo.pos.y < 2560 && mo.pos.z < -200); TamNext(t); }
+			break;
+		case 19:
+			if (TamWait(t, "theShutterComesDownBehind", d.Down() && !d.occupied && mo.pos.y < 2592, 100))
+				Console.Printf("AJARTEST info down again %d tics after the walk out ended (the shutter %d tics down)", TamIn(t), level.maptime - d.downAt);
+			break;
+		case 20:    // BLUE hung elsewhere (128, the north corridor) is a way into the night room for empty hands
+			if (TamIn(t) == 1) { TamTakeAll(mo); BeltHang(mo, DoorOf(TAM_BLUE), 128); }
+			if (TamWalk(mo, t, 2272, 2200, 90, 20))
+			{
+				Console.Printf("AJARTEST info through BLUE in 128: at (%.0f,%.0f,%.0f) facing %.0f", mo.pos.x, mo.pos.y, mo.pos.z, mo.angle);
+				Check("blueHungIsAWayIn", tamJumped && TamInNight(mo) && !carried && !wayOutBuilt);
+				TamNext(t);
+			}
+			break;
+		case 21:
+			TamWait(t, "theShutterGoesUpForWhoeverIsIn", d.Up() && !d.Live() && d.occupied, 60);
+			break;
+		case 22:    // BLUE must not be taken down from its far side: real USE presses at it from the night room (it is: PLAN.md)
+			if (TamFarSideUse(mo, t)) TamNext(t);
+			break;
+		case 23:    // the brass frame takes no door but BLUE: GREEN stays in hand
+			if (carried) BeltPutBack(carried);
+			TakeLeaning(DoorOf(3), mo);
+			TamPose(mo, 7872, 2736, 0);
+			FindFrame(TAM_HOME).Activate(mo);
+			Check("theBrassFrameTakesBlueOnly", carried == DoorOf(3) && !FindFrame(TAM_HOME).door && !wayOutBuilt);
+			TamNext(t);
+			break;
+		case 24:    // ... and GREEN is carried out by the shutter
+			if (TamWalk(mo, t, 7776, 2680, 270, 20)) { Check("outByTheShutterWithGreen", !tamJumped && mo.pos.y < 2560 && carried == DoorOf(3)); TamNext(t); }
+			break;
+		case 25:
+			if (TamWait(t, "theShutterComesDownBehindAgain", d.Down() && !d.occupied, 100) && carried) BeltPutBack(carried);
 			break;
 		}
 	}
@@ -591,7 +755,7 @@ extend class AjarHandler
 			7100, 500, 0, 0,        // 23 the stores
 			7480, 1300, 60, 0,      // 24 the cellar
 			7250, 2250, 30, 0,      // 25 the boiler room and the shutter
-			7700, 2680, 0, 0,       // 26 the night room
+			7700, 2680, 0, 0,       // 26 the night room: the brass frame, BLUE's only, empty
 			5700, 3616, 0, 0,       // 27 the six-sided hall
 			6848, 3450, 90, 0,      // 28 the room that is its own neighbour
 			7600, 3400, 90, 0,      // 29 the regulator store (ORANGE)
