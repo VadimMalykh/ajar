@@ -41,7 +41,7 @@ what is said below.
     each time its own gate and lever; frame 109 (west wall).
 The old door lab (PLAN.md, "The old door lab"; Times(old=True), then.zs: a
 colour door hung at an earlier time is an old door in the same frame at every
-later time) adds two bays and BLUE:
+later time) adds three bays and BLUE:
   7 the door left on the site (x 3840..4352): frame 110 (north wall); BLUE
     hangs BEFORE in 150 from the start, so THEN (130) and NOW (110) an old BLUE
     hangs there, ten and fifty years old, onto BLUE's far side in bay 8. THEN
@@ -53,7 +53,13 @@ later time) adds two bays and BLUE:
     door from the corridor; THEN's valve on the tank's west wall fills the tank
     96 deep. BLUE left hanging THEN or BEFORE in 111's frame is an old door NOW
     between the two, and the water stands in both.
-The checks are src/zscript/beforetest.zs (MODE=1..7 tools/smoke.sh).
+  9 the belt (x 5120..5632): THEN a belt runs east into frame 132 (east wall)
+    with three crates on it, its lever THEN on the south wall. NOW a heap: at
+    the belt's end, in front of 112, while the belt ran into an empty frame;
+    in the corridor in front of RED's far side 201 while it ran with RED in
+    132 (the crates went through RED THEN, onto the corridor at 221); none
+    while it stood (a cause that follows frame 132 and the belt's cause).
+The checks are src/zscript/beforetest.zs (MODE=1..8 tools/smoke.sh).
 """
 import ajarmap
 import ajarthen
@@ -73,12 +79,14 @@ ROOM = dict(wall=LA, ftex=FA, ctex=KA, ceil=256)
 HALL = dict(wall=LB, ftex=FL, ctex=KL, ceil=256)
 YARD = dict(wall=LA, ftex="FLAT10", ctex="F_SKY1", ceil=256)       # BEFORE: the site, under the sky; the piers look 1
 HALL_X, STRONG_X, STRING_X, HOIST_X, DRIP_X, PEN_X = 0, 640, 1280, 1920, 2560, 3200
-OLD_X, WATER_X = 3840, 4480                                        # the old door lab's bays
+OLD_X, WATER_X, BELT_X = 3840, 4480, 5120                          # the old door lab's bays
 STRING_TAG, HOIST_TAG, BASIN, GATE_NOW, GATE_THEN = 31, 32, 41, 61, 62
-CLOSET_TAG, TANK, DRY = 33, 42, 43
+CLOSET_TAG, HEAP_TAG, TANK, DRY = 33, 34, 42, 43
+BELT = ajarmap.BELT_TAG + 1
 STRING, HOIST, DRIP = 11, 12, 13                                   # the causes' tids
-VALVE, CLOSET = 14, 17                                             # ... the old door lab's
-END = WATER_X + 576                                                # the corridor's east end
+VALVE, BELT_RUN, HEAP, CLOSET = 14, 15, 16, 17                     # ... the old door lab's
+HEAP_FAR = (144, -176, 240, -128)                                  # NOW: the heap in front of RED's far side 201
+END = BELT_X + 576                                                 # the corridor's east end
 LATER = (NOW, THEN)                                                # the two times with walls
 
 
@@ -122,8 +130,38 @@ def pier(a, b, out):
 
 
 # --- the corridor ---------------------------------------------------------------------------------
-t.room((-64, -176, END, -16), wall=CO, ftex=FC, ctex=KC, ceil=160, now=dict(light=104), then=dict(light=208),
-       only=LATER)
+CORRIDOR = dict(wall=CO, ftex=FC, ctex=KC, ceil=160)
+t.room((-64, -176, END, -16), **CORRIDOR, light=208, only=THEN)
+
+
+def tiles(area, holes):
+    """The rectangle `area` less the rectangles `holes`, as rectangles: strips
+    between the holes' x edges, each cut along y round the holes it crosses,
+    strips alike side by side joined."""
+    x1, y1, x2, y2 = area
+    xs = sorted({x1, x2} | {h[0] for h in holes if x1 < h[0] < x2} | {h[2] for h in holes if x1 < h[2] < x2})
+    out, open_ = [], {}
+    for xa, xb in zip(xs, xs[1:]):
+        cover = sorted((h[1], h[3]) for h in holes if h[0] <= xa and h[2] >= xb)
+        spans, y = [], y1
+        for ha, hb in cover:
+            if ha > y:
+                spans.append((y, ha))
+            y = max(y, hb)
+        if y < y2:
+            spans.append((y, y2))
+        for s in [s for s in open_ if s not in spans]:
+            out.append((open_.pop(s), s[0], xa, s[1]))
+        for s in spans:
+            open_.setdefault(s, xa)
+    out += [(xa, s[0], x2, s[1]) for s, xa in open_.items()]
+    return out
+
+
+for r in tiles((-64, -176, END, -16), [HEAP_FAR]):                        # NOW round the heap that may lie there
+    t.now.room(r, **CORRIDOR, light=104)
+HEAP_SECTOR = dict(side="AJDSTOR", id=HEAP_TAG)                            # (the heap's look: crates, their lids)
+t.now.room(HEAP_FAR, **dict(CORRIDOR, **HEAP_SECTOR), light=104, raw=heights(floors=(0, 0, 24), raised="AJDSTOF"))
 t.far((160, -176), (224, -176), (0, -1), RED)                              # RED's far side: 201 NOW, 221 THEN, 241 BEFORE
 pier((160, -176), (224, -176), (0, -1))
 
@@ -304,31 +342,39 @@ t.cause(X + 112, 160, VALVE, 2, basin=TANK, depth=96)
 W.basin(m, TANK, 224 * 512, 240, floor=0, at=(X + 112, 200))
 W.basin(m, DRY, 224 * 512, 240, floor=0, at=(X + 400, 200))
 
+# --- 9: the belt (the old door lab) ---------------------------------------------------------------
+X = BELT_X
+BELT_Y = (224, 288)                                                        # the belt, a door wide; its curbs 16 more
+
+
+def belt_bay(c):
+    if c.before:
+        return
+    if c.then:
+        for b in ((0, 0, 512, BELT_Y[0] - 16), (0, BELT_Y[1] + 16, 512, 512), (0, BELT_Y[0] - 16, 64, BELT_Y[1] + 16)):
+            c.room(box(X, *b), **ROOM)
+        first = len(m.sectors)
+        ajarmap.belt(m, c.P((X + 64, 256)), c.P((X + 512, 256)), BELT, scroll=False, light=c.light)
+        for sec in m.sectors[first:]:                                      # under the room's own ceiling
+            sec.update(ceil=256, ctex=c.tex(KA))
+        return
+    for b in ((0, 0, 512, 208), (0, 304, 512, 512), (0, 208, 352, 304)):
+        c.room(box(X, *b), **ROOM)
+    for x1, x2, up in ((352, 432, 12), (432, 512, 24)):                    # the heap at the belt's end: setting 1
+        c.room(box(X, x1, 208, x2, 304), **dict(ROOM, **HEAP_SECTOR), raw=heights(floors=(0, up, 0), raised="AJDSTOF"))
+
+
+t.both(belt_bay)
+bay_door(X, 224)
+frame((X + 512, 224), (X + 512, 288), (1, 0), 112, then=dict(tag=BELT))    # the belt runs into it THEN (132)
+t.lever((X + 352, 0), (X + 416, 0), BELT_RUN)
+t.cause(X + 256, 420, BELT_RUN, 2)
+t.belt_run(X + 256, 440, BELT_RUN, BELT, (ajarmap.BELT_SPEED, 0))
+for x in (160, 224, 288):                                                  # three crates on it THEN
+    t.then.thing(X + x, 256, 20094)
+t.frame_cause(X + 128, 400, HEAP, 132, tag=HEAP_TAG, gate=BELT_RUN, colour=RED)
+
 # --- BEFORE: the yard -----------------------------------------------------------------------------
-def tiles(area, holes):
-    """The rectangle `area` less the rectangles `holes`, as rectangles: strips
-    between the holes' x edges, each cut along y round the holes it crosses,
-    strips alike side by side joined."""
-    x1, y1, x2, y2 = area
-    xs = sorted({x1, x2} | {h[0] for h in holes if x1 < h[0] < x2} | {h[2] for h in holes if x1 < h[2] < x2})
-    out, open_ = [], {}
-    for xa, xb in zip(xs, xs[1:]):
-        cover = sorted((h[1], h[3]) for h in holes if h[0] <= xa and h[2] >= xb)
-        spans, y = [], y1
-        for ha, hb in cover:
-            if ha > y:
-                spans.append((y, ha))
-            y = max(y, hb)
-        if y < y2:
-            spans.append((y, y2))
-        for s in [s for s in open_ if s not in spans]:
-            out.append((open_.pop(s), s[0], xa, s[1]))
-        for s in spans:
-            open_.setdefault(s, xa)
-    out += [(xa, s[0], x2, s[1]) for s, xa in open_.items()]
-    return out
-
-
 for r in tiles((-192, -384, END + 128, 720), PIERS):
     t.before.room(r, **YARD)
 
@@ -342,7 +388,7 @@ assert not problems, problems
 # (the three times lab's was the strongroom THEN: NOW was out of reach with the two clocked doors alone, since the
 # clocked door could not be brought into the strongroom THEN). With a door left hanging (old=True) a colour door
 # left BEFORE in the strongroom's free frame 144 is an old door into it THEN (124) and NOW (104), each onto its
-# far side at that time. Bays 7 and 8 (BLUE, the closet, the water) move nothing the puzzle needs and
+# far side at that time. Bays 7 to 9 (BLUE, the closet, the water, the belt) move nothing the puzzle needs and
 # are left out: with BLUE as a fourth door the search ran past ten minutes and 3.7 GB (57375 states without).
 ROOMS = {101: "now", 102: "now", 103: "now", 104: "strongroom now", 105: "strongroom now", 106: "now",
          107: "now", 108: "now", 109: "now"}

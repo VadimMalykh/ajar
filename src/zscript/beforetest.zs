@@ -14,14 +14,16 @@
 // 7 the door left on the site x 3840 (frame 110/130/150, BLUE in 150 from the start;
 // the closet, cause 17, follows 150), 8 the water x 4480 (frame 111/131/151 in the
 // tank, tag 42; BLUE's far side 202/222/242 in the dry room, tag 43; the valve THEN,
-// cause 14).
-//   5 the rule; 6 water through an old door; 7 a cause that follows a frame.
+// cause 14), 9 the belt x 5120 (frame 112/132/152, the belt THEN into 132, cause 15;
+// the heap NOW, cause 16, at the belt's end or before RED's far side 201).
+//   5 the rule; 6 water through an old door; 7 a cause that follows a frame; 8 the
+//   belt's heap.
 
 class BeforeTest : EventHandler
 {
 	const OFF = 4096;
 	const STRONG_X = 640; const STRING_X = 1280; const HOIST_X = 1920; const DRIP_X = 2560; const PEN_X = 3200;
-	const OLD_X = 3840; const WATER_X = 4480;
+	const OLD_X = 3840; const WATER_X = 4480; const BELT_X = 5120;
 	const WALKKEY = 0x1900;
 	int tic, cur, tt;
 	int checks, fails;
@@ -187,6 +189,7 @@ class BeforeTest : EventHandler
 		else if (mode == 5) Rule(mo);
 		else if (mode == 6) Water(mo);
 		else if (mode == 7) Closet(mo);
+		else if (mode == 8) Belt(mo);
 		Drive(mo);
 		if (mode != 4 && tic == cur + 2) Console.Printf("AJARTEST beforeDone=1 checks=%d failed=%d", checks, fails);
 	}
@@ -941,5 +944,80 @@ class BeforeTest : EventHandler
 			if (tt == 1) Check("tenYearLeafIsNoColourDoor", tenShadow.frame == F(150) && cc.setting == 0);
 			if (tt == 99) Check("closetShutByTheTenYearLeaf", CZ(cx, cy) == 0 && CZ(cx, OFF + cy) == 0);
 		}
+	}
+
+	// === MODE=8: the belt's heap ==========================================================================
+	Array<Actor> boxes;
+	int CratesOut()
+	{
+		int n = 0;
+		for (int i = 0; i < boxes.Size(); i++) if (boxes[i] && InBox(boxes[i], 1, -64, -208, 640, -16)) n++;     // (221's recess too)
+		return n;
+	}
+	int CratesAtEnd()
+	{
+		int n = 0;
+		for (int i = 0; i < boxes.Size(); i++) if (boxes[i] && InBox(boxes[i], 1, BELT_X + 400, 208, BELT_X + 512, 304)) n++;
+		return n;
+	}
+	int CratesOnBelt()
+	{
+		int n = 0;
+		for (int i = 0; i < boxes.Size(); i++) if (boxes[i] && InBox(boxes[i], 1, BELT_X, 208, BELT_X + 512, 304)) n++;
+		return n;
+	}
+	string Crates()
+	{
+		string s = "crates:";
+		for (int i = 0; i < boxes.Size(); i++)
+			if (boxes[i]) s = s .. String.Format(" (%.0f,%.0f) %s", boxes[i].pos.x, boxes[i].pos.y, timeNames[TimeOf(boxes[i])]);
+		return s;
+	}
+	void Belt(Actor mo)
+	{
+		let bc = Cause(15), hc = Cause(16);
+		double ex = BELT_X + 472, mx = BELT_X + 392, fx = 192, fy = -152;     // the heap at the belt's end (24, 12); at RED's far side NOW
+		string heaps = String.Format("end %.0f/%.0f, far side %.0f; belt %d heap %d", FZ(ex, 256), FZ(mx, 256), FZ(fx, fy), bc ? bc.setting : -1, hc ? hc.setting : -1);
+		if (At())
+		{
+			let it = ThinkerIterator.Create("AjarCrate");
+			Actor c;
+			while (c = Actor(it.Next())) boxes.Push(c);
+			Check("beltStandsNoHeap", bc && hc && bc.setting == 0 && hc.setting == 0 && FZ(ex, 256) == 0 && FZ(mx, 256) == 0 && FZ(fx, fy) == 0 && boxes.Size() == 3, heaps .. "; " .. Crates());
+		}
+		// THEN the belt run into the empty frame 132: the boxes stop at it, and the heap NOW lies at the belt's end
+		if (At()) { Pose(mo, BELT_X + 384, OFF + 32, 270); PressUse(mo); }
+		if (Seg(250))
+		{
+			if (tt == 1) Check("beltRunsThen", bc.setting == 1 && hc.setting == 1, heaps);
+			if (tt % 50 == 0) Info(Crates());
+			if (tt == 249)
+			{
+				Check("heapAtTheBeltsEndNow", FZ(ex, 256) == 24 && FZ(mx, 256) == 12 && FZ(fx, fy) == 0, heaps);
+				Check("cratesStopAtTheEmptyFrame", CratesAtEnd() == 3 && CratesOut() == 0, Crates());
+			}
+		}
+		// standing: no heap
+		if (At()) { Pose(mo, BELT_X + 384, OFF + 32, 270); PressUse(mo); }
+		if (Seg(80) && tt == 79) Check("standingNoHeap", bc.setting == 0 && hc.setting == 0 && FZ(ex, 256) == 0 && FZ(mx, 256) == 0 && FZ(fx, fy) == 0, heaps);
+		// RED hung THEN in 132; run: the boxes ride through RED onto the corridor THEN at 221, and the heap NOW lies at
+		// RED's far side NOW, before 201
+		if (At()) ScriptHang(red, 132);
+		if (At()) Check("redIn132", red.frame == F(132) && OldCount() == 1 + 2 && hc.setting == 0, Olds() .. "; " .. heaps);
+		if (At()) { Pose(mo, BELT_X + 384, OFF + 32, 270); PressUse(mo); }
+		if (Seg(300))
+		{
+			if (tt == 1) Check("beltRunsWithRed", bc.setting == 1 && hc.setting == 2, heaps);
+			if (tt % 50 == 0) Info(Crates());
+			if (tt == 299)
+			{
+				// (no belt THEN beyond 221: the first crates stop just past it, and the last waits in 132's recess)
+				Check("cratesThroughRed", CratesOut() >= 2 && CratesOnBelt() == 0, Crates());
+				Info(String.Format("%d of the 3 crates came out of 221 THEN; %d still in 132's recess", CratesOut(), 3 - CratesOut()));
+				Check("heapAtRedsFarSideNow", FZ(fx, fy) == 24 && FZ(ex, 256) == 0 && FZ(mx, 256) == 0, heaps);
+			}
+		}
+		if (At()) { Pose(mo, BELT_X + 384, OFF + 32, 270); PressUse(mo); }
+		if (Seg(80) && tt == 79) Check("standingAgainNoHeap", bc.setting == 0 && hc.setting == 0 && FZ(fx, fy) == 0 && FZ(ex, 256) == 0, heaps);
 	}
 }
