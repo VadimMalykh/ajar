@@ -6,15 +6,18 @@ MAP10's square twice (tools/ajarthen.py, src/zscript/then.zs):
   NOW   MAP10's own, at night, at MAP10's own coordinates: the old bus, the
         kiosk (a secret), the shelter, the depot with its company, the theatre
         (MAP03's excerpt with MAP03's monsters and pick-ups), the night room
-        over the shelter with its hole. No hotel, no station: doors 1 and 5 of
-        the old bus are Doom's stone.
+        over the shelter, whole (frame 105; its hole down into the shelter
+        shut by Doom's stone). No hotel, no station: doors 1 and 5 of the old
+        bus are Doom's stone.
   THEN  forty years earlier, by day, NOW + OFF (12288 north): the new bus, the
         shelter, the depot (the clocked door leans in its fitters' corner),
         the theatre, and the two places the fixed lines go, the hotel (MAP02,
         line 1) and the station (MAP05, line 5; YELLOW on its far platform),
         all as MAP10 lifts them out (ajarmap.excerpt) but with no monsters and
         no pick-ups. Behind the shelter's brass door (keys 1 and 2) a stair up
-        to the night room: BLUE's far side THEN and the brass frame HOME.
+        to the night room: BLUE's far side THEN west of a gate (a bolted door,
+        bolted on its east side), the brass frame HOME and frame 125 east of
+        it.
 
 The bus's doors (south face 1..6, back 7 and 8), THEN / NOW:
   1  the hotel (doorway 1)                 / Doom's stone
@@ -32,7 +35,9 @@ The turn (map22.zs): the first time the clocked door hangs in a twinned
 frame. Ambush cause 64 (the turn) brings every THEN place its company, each
 when the player is next there (near=); two of them carry keys (args[4]): key 1
 the hotel lobby's baron, key 2 the theatre's baron in the orchestra pit. Cause 65:
-both keys in hand, at the shelter.
+both keys in hand, at the shelter. BLUE taken (cause 10 + BLUE): the theatre
+now's ambush, an arch-vile with it. The gate's bolt drawn (AMBUSH_BOLTS): a
+small company west of it.
 """
 import math
 
@@ -273,21 +278,58 @@ Sn.line((-320, -848), (-256, -848), special=11, args=(KIOSK, 32), impact=True, m
 # =================================================================================================================
 # THE NIGHT ROOM, over the shelter: the same plan at both times
 # =================================================================================================================
-# THEN: ajarmap.way_home: BLUE's far side THEN in its west end, the brass frame HOME (BLUE's alone) in its east end;
-# the way in: the shelter's brass door (keys 1 and 2) and a stair up to it. NOW: BLUE's far side NOW, Doom's stone
-# where HOME is THEN, MAP10's hole down into the shelter (a drop, never in).
+# THEN (PLAN.md, "MAP22: BLUE's ambush with an arch-vile; the way out is gated"): ajarmap.way_home's room, but gated:
+# a wall 16 thick across it at GATE_X, a bolted door in it on the runner (the bolt on its east side) and a barred
+# window either side. West of it BLUE's far side THEN and the stair's landing; east of it the brass frame HOME
+# (BLUE's alone) and, in the south wall, frame 125 (the clocked door's alone). The only way of arriving east of
+# the wall is the clocked door in 125, and its unbolt line (GATE_LINE_Y) is crossed on coming out of that frame.
+# The way in from below: the shelter's brass door (keys 1 and 2) and a stair up to it.
+# NOW: one room, the wall down (a stub of it at the north wall and at the south wall); BLUE's far side NOW, frame
+# 105 (twin of 125), Doom's stone where HOME is THEN. MAP10's hole down into the shelter is shut: the short passage
+# north of the room ends in Doom's stone (with the hole open the level could be lost: puzzle22.py).
 St = AT_[THEN]
-ajarmap.way_home(St, NX, NY, BLUE, only=True, far=far_id(BLUE) + THEN_ID, floor=LINE)
-ajarmap.room(Sn, [NX, NX + 320], [NY, NY + 96, NY + 160, NY + 256], lambda i, j: j == 1, ceil=LINE + 160, light=150,
-             wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2", floor=LINE)
+GATE_X = NX + 192                       # the wall's west face; its east face is GATE_X + 16, the east part 112 wide
+GATE_TAG, GATE_LINE = 2202, 311         # the bolted door's sector tag; its line on the bolt side (USE opens it)
+GATE_LINE_Y = NY + 32                   # the unbolt line across the east part, just north of frame 125's mouth
+CLOCK5 = ((NX + 216, NY), (NX + 280, NY))  # frames 105 / 125: their mouth in the south wall, 8 from the gate's wall
+WALL_STUB = 64                          # NOW: the length of each stub of the wall left standing
+NIGHT_ROOM = dict(ceil=LINE + 160, light=150, wall="AJXW2", ftex="AJXG2", rug="AJXR2", ctex="AJXC2", floor=LINE)
+RUNNER_ROW = (NY + 96, NY + 160)
+on_runner = lambda ys: (lambda i, j: (ys[j], ys[j + 1]) == RUNNER_ROW)
+WEST_YS = [NY, NY + 96, NY + 160, NY + 256]
+EAST_YS = [NY, GATE_LINE_Y, NY + 96, NY + 160, NY + 256]
+ajarmap.room(St, [NX, GATE_X], WEST_YS, on_runner(WEST_YS), **NIGHT_ROOM)
+ajarmap.room(St, [GATE_X + 16, NX + 320], EAST_YS, on_runner(EAST_YS), **NIGHT_ROOM)
+ajarmap.bolted(St, (GATE_X, NY + 96), (GATE_X, NY + 160), (1, 0), LINE, GATE_TAG, line_id=GATE_LINE)
+ajarmap.unbolt(St, (GATE_X + 16, GATE_LINE_Y), (NX + 320, GATE_LINE_Y), GATE_TAG)
+for y in (NY + 16, NY + 176):                       # the barred windows, 16 of wall either side of each
+    bars(St, (GATE_X, y + 64), (GATE_X, y), (1, 0), LINE, near="AJXW2", far="AJXW2")
+ajarmap.recess(St, (NX, NY + 96), (NX, NY + 160), (-1, 0), LINE, far_id(BLUE) + THEN_ID, HOME, far_colour=BLUE)
+ajarmap.recess(St, (NX + 320, NY + 96), (NX + 320, NY + 160), (1, 0), LINE, HOME, far_id(BLUE) + THEN_ID,
+               trim=(f"AJXA{BLUE}", f"AJXF{BLUE}"), home=far_id(BLUE) + THEN_ID, only=True)
+for xx in (NX, NX + 320):
+    St.line((xx, NY + 96), (xx, NY + 160), id=ajarmap.HOME_MOUTH)
+# (the candelabra of way_home, those of the east part moved clear of frame 125's mouth)
+things(St, CANDELABRA, (NX + 32, NY + 48), (NX + 32, NY + 208), (NX + 296, NY + 24), (NX + 296, NY + 232))
+# NOW
+NOW_XS = [NX, GATE_X, GATE_X + 16, NX + 320]
+NOW_YS = [NY, NY + WALL_STUB, NY + 96, NY + 160, NY + 256 - WALL_STUB, NY + 256]
+for i, (x1, x2) in enumerate(zip(NOW_XS, NOW_XS[1:])):
+    ys = NOW_YS if i != 1 else NOW_YS[1:-1]         # the wall's line: its two stubs stand, the middle is open
+    ajarmap.room(Sn, [x1, x2], ys, on_runner(ys), **NIGHT_ROOM)
 ajarmap.recess(Sn, (NX, NY + 96), (NX, NY + 160), (-1, 0), LINE, far_id(BLUE), far_id(BLUE) + THEN_ID, far_colour=BLUE)
 Sn.cut((NX + 320, NY + 96), (NX + 320, NY + 160))
 Sn.line((NX + 320, NY + 96), (NX + 320, NY + 160), mid=STONE)
-things(Sn, CANDELABRA, (NX + 32, NY + 48), (NX + 32, NY + 208), (NX + 288, NY + 48), (NX + 288, NY + 208))
-Sn.sector(rect(384, NY + 256, 448, -208), floor=LINE, ceil=LINE + 96, light=150, wall="AJBRICK",
+things(Sn, CANDELABRA, (NX + 32, NY + 48), (NX + 32, NY + 208), (NX + 296, NY + 24), (NX + 296, NY + 232))
+t.clock_frame(*CLOCK5, (0, -1), 105, floor=LINE, when=(NOW, THEN))
+for c in t.copies:                                  # over frames 105 / 125, the room's wall
+    over(AT_[c.when], *CLOCK5, "AJXW2")
+# the passage north of the room NOW: where MAP10 has its hole down into the shelter, Doom's stone
+PASSAGE_END = -240
+Sn.sector(rect(384, NY + 256, 448, PASSAGE_END), floor=LINE, ceil=LINE + 96, light=150, wall="AJBRICK",
           ftex="AJTRIMF", ctex="AJTRIMF")
 over(Sn, (384, -304), (448, -304), "AJXW2")
-Sn.line((384, -208), (448, -208), lower=Q("AJQS") or FENCE, upper="AJBRICK")
+Sn.line((384, PASSAGE_END), (448, PASSAGE_END), mid=STONE, dontpegbottom=True)
 # THEN: the brass door in the shelter's south wall, where MAP10 has its brass frame; behind it a stair up by
 # LINE in four steps of 16, and a landing under the night room's north wall
 PASSAGE = dict(light=170, wall="AJXW2", ftex="AJXG2", ctex="AJXC2")
@@ -505,11 +547,14 @@ AREAS = {   # name: the box things stand in, in NOW's coordinates, and at which 
     # the station: the far platform, the tracks, the concourse
     "farplat": ((SX + 530, 1030, SX + 1595, 1180), THEN), "tracks": ((SX + 520, 520, SX + 2040, 810), THEN),
     "conc": ((SX + 580, 20, SX + 795, 172), THEN),
+    # the night room then, west of the gate
+    "gateW": ((NX + 24, NY + 24, GATE_X - 24, NY + 232), THEN),
 }
 # mouths of frames and doorways, far sides, the doors where they lean: nothing stands there
 AVOID = [(x, y + 24 * s) for x in (-320, -192, -64, 64, 192, 320) for y, s in ((0, -1), (144, 1))]
 AVOID += [(320, -208), (0, 544), (256, 966), (-224, -3456), (256, -3584), (600, 1450 + TY), (590, -432),
-          (SX + 1700, 1250), (SX + 384, 0), (HX + 256, 0), (-448, 1024), (640, 960 + TY)]
+          (SX + 1700, 1250), (SX + 384, 0), (HX + 256, 0), (-448, 1024), (640, 960 + TY),
+          (NX, NY + 128), (376, NY + 256), (GATE_X, NY + 128)]       # the night room: BLUE's far side, the stair, the gate
 TAKEN = []
 R = {CACO: 31, MANCUBUS: 48, ARACH: 64, BARON: 24, KNIGHT: 24, DEMON: 30, SPECTRE: 30, REVENANT: 20}
 TALL = {CACO: 56, MANCUBUS: 64, ARACH: 64, BARON: 64, KNIGHT: 64}
@@ -600,6 +645,7 @@ def items(part, *spec):
 
 
 MEGA = 83
+BEHIND_SUPPLIES = [(480, -2860, ROCKETBOX), (560, -2860, CELLS), (400, -3060, MEDIKIT), (480, -3060, MEDIKIT)]
 mark("theatre now", *MAP03_NOW)
 # --- the square now: a standing company, deaf until the turn wakes it (map22.zs); MAP10's weapons and more
 items("square", (-576, -16, 2001), (576, -16, 2049), (-560, 160, 2048), (560, 160, 2049), (-400, -280, 2012),
@@ -663,12 +709,24 @@ ambush("then", "sqST", BOTH_KEYS, KNIGHT, 2, angle=90, after=1)
 ambush("then", "sqWT", BOTH_KEYS, REVENANT, 2, angle=0, after=2)
 ambush("then", "sqET", BOTH_KEYS, CACO, 2, angle=180, after=2)
 ambush("then", "laneT", BOTH_KEYS, IMP, 3, angle=270, after=1)
-# --- the theatre now: an ambush when BLUE is taken, in the rooms behind the foyer and the foyer
+# --- the theatre now: an ambush when BLUE is taken, in the rooms behind the foyer and the foyer (PLAN.md, "MAP22:
+# BLUE's ambush with an arch-vile"): the foyer's dead to raise, the rooms behind it for cover. The arch-vile is
+# there on every difficulty but the easiest (skill 2 up: ajarmap.ambush's own `skill`, in its turn in the count)
+items("theatre now", *BEHIND_SUPPLIES)          # for it: a box of rockets, a cell pack, two medikits
 ambush("theatre now", "behindN", 10 + BLUE, IMP, 2, angle=0, after=1)
-ambush("theatre now", "foyerN", 10 + BLUE, SERGEANT, 3, angle=90, after=1)
-ambush("theatre now", "foyerN", 10 + BLUE, KNIGHT, 1, angle=90, after=2)
+ambush("theatre now", "foyerN", 10 + BLUE, CHAINGUNNER, 2, angle=90, after=1)
+ambush("theatre now", "foyerN", 10 + BLUE, KNIGHT, 2, angle=90, after=1)
+_first = len(m.things)
+ajarmap.ambush(m, 10 + BLUE, VILE, t.now.P(spot("foyerN", R.get(VILE, 20), TALL.get(VILE, 56))), angle=90, after=3,
+               skill=2)
+mark("theatre now", _first)
+ambush("theatre now", "foyerN", 10 + BLUE, REVENANT, 2, angle=90, after=6)
 items("theatre now", (-400, -3200, 2049), (40, -3200, 2048), (-400, -3420, 2012), (40, -3420, 2046),
       (300, -2900, 2049), (440, -2900, 17))
+# --- the gate's small company: when its bolt is drawn (the player east of it, come through frame 125), in the
+# west part then
+ambush("then", "gateW", ajarthen.AMBUSH_BOLTS, IMP, 2, angle=0, after=1, arg=GATE_TAG)
+ambush("then", "gateW", ajarthen.AMBUSH_BOLTS, REVENANT, 1, angle=0, after=1, arg=GATE_TAG)
 # --- the depot now: MAP10's company and its stores
 put("depot now", "depotN", IMP, 4, 270)
 put("depot now", "depotN", SERGEANT, 3, 270)
@@ -677,7 +735,7 @@ put("depot now", "depotN", DEMON, 2, 270)
 put("depot now", "depotN", CHAINGUNNER, 2, 270)
 items("depot now", (-480, 580, 2049), (480, 580, 2048), (-480, 900, 2046), (480, 900, 2012), (0, 940, 2049),
       (-200, 580, 2008), (200, 580, 2007))
-items("secrets", (-448, 1024, 2019), (-288, -560, 2013))       # the depot's cache, the kiosk
+items("secrets", (-448, 1024, 2019), (-352, -784, 2013))       # the depot's cache; the kiosk: inside it, where MAP10 has its plasma rifle
 
 # --- the budget, part by part: each part's ammunition does at least 1.6 times its monsters' health ("Resident").
 # The fights then are paid for by the square now, which is where the supplies are (PLAN.md)

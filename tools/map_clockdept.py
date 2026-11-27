@@ -1047,6 +1047,12 @@ things(2047, (5000, 3300))
 m.thing(6200, 1680, 83)
 things(2046, (5520, 1980), (6500, 1980))
 things(2012, (5700, 2600), (6350, 2600))
+# ... and for RED's ambush, 24 strong (2026-11-27): rockets, shells, a cell pack, bullets and medikits round the ring
+things(2046, (5600, 2400), (5680, 1860), (6336, 1856))
+things(2049, (5780, 2560), (6420, 2460), (5580, 2100), (6460, 2120))
+things(17, (6016, 2400))
+things(2048, (5860, 2680))
+things(2012, (6180, 2700), (5660, 1980), (6300, 1740))
 # the canteen and the kitchen
 things(2049, (5150, 1400), (6300, 400))
 things(2048, (5700, 1400))
@@ -1162,9 +1168,24 @@ ajarmap.ambush(m, 10 + TEAL, IMP, (3700, 1200), (4300, 1200), angle=270, after=3
 # an ORANGE leaf: lost souls round you in the regulator store, revenants on the spine 4 s later
 ajarmap.ambush(m, 10 + ORANGE, SOUL, (7400, 3500), (7800, 3500), (7600, 3750), angle=270)
 ajarmap.ambush(m, 10 + ORANGE, REVENANT, (7616, 3136), (7300, 3120), angle=90, after=4)
-# RED: the arena wakes: spectres round the pillar, a mancubus at the lift's way 3 s later
+# RED: the arena wakes, all of it in the rotunda (PLAN.md, "MAP18: RED's ambush, bigger"). It was 3
+# spectres and a mancubus; Vadim, 2026-11-27: "Here we have mega and take red door. I think ambush cood be
+# bigger". 24 for 4: 20 more, a multiple of four, so GREEN's, BLUE's and the pulse's ambushers keep the
+# difficulty they had (ajarmap.ambush). The arch-vile is there from "Short stay" up, not thinned; it raises
+# the arena's placed dead, and the pillar and the stub are the cover from it.
 ajarmap.ambush(m, 10 + RED, SPECTRE, (5650, 2500), (6350, 2500), (6200, 2650), angle=270)
-ajarmap.ambush(m, 10 + RED, MANCUBUS, (6480, 1900), angle=180, after=3)
+ajarmap.ambush(m, 10 + RED, KNIGHT, (5540, 2160), (5540, 2256), angle=0)              # the west way in, from the court
+ajarmap.ambush(m, 10 + RED, IMP, (6400, 2100), (6500, 2180), (6400, 2380), (6500, 2420), angle=180)   # the ring's east
+ajarmap.ambush(m, 10 + RED, MANCUBUS, (6480, 1900), angle=180, after=3)              # at the lift's way
+ajarmap.ambush(m, 10 + RED, MANCUBUS, (5552, 1900), angle=0, after=3)                # ... and its mirror in the west
+ajarmap.ambush(m, 10 + RED, REVENANT, (5920, 2540), (6112, 2540), angle=270, after=3)   # north of the pillar
+ajarmap.ambush(m, 10 + RED, DEMON, (5800, 1700), (5700, 1790), (6230, 1700), angle=90, after=5)   # the south pockets
+ajarmap.ambush(m, 10 + RED, CACO, (5800, 2380), (6240, 2380), angle=270, after=5)
+ajarmap.ambush(m, 10 + RED, CHAINGUNNER, (5600, 2080), angle=0, after=8)
+ajarmap.ambush(m, 10 + RED, CHAINGUNNER, (6520, 2016), angle=180, after=8)
+ajarmap.ambush(m, 10 + RED, BARON, (6016, 2460), angle=270, after=8)                 # north of the pillar
+ajarmap.ambush(m, 10 + RED, VILE, (6300, 1760), angle=135, after=11, skill=2)       # the pocket east of the stub
+ajarmap.ambush(m, 10 + RED, SPECTRE, (5800, 2640), (6300, 2260), angle=270, after=11)
 # GREEN: chaingunners at the offices' doors when you are back on the spine, a cacodemon 5 s later
 ajarmap.ambush(m, 10 + GREEN, CHAINGUNNER, (1536, 3136), (2112, 3136), angle=180, near=700)
 ajarmap.ambush(m, 10 + GREEN, CACO, (1000, 3500), angle=270, after=5)
