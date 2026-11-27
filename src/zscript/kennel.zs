@@ -204,6 +204,11 @@ class AjarKennelStep : Actor
 	{
 		Super.Tick();
 		if (!bones || bones.bDestroyed) { Destroy(); return; }
+		if ((bones.pos.xy - pos.xy).Length() > 0.5)        // its stand-in kept where its monster died (then.zs)
+		{
+			SetOrigin(bones.pos, false);
+			bSolid = false;
+		}
 		if (!bSolid && !Overlapped()) { bSolid = true; solidAt = level.maptime; }
 	}
 }
