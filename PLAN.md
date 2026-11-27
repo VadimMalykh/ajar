@@ -21954,12 +21954,12 @@ sphere out of reach (48 above the stall's floor): only the knight's bones
 reach them, as designed.
 
 **The other maps** (the full build re-proved every map, `solve.py` having
-changed): every proof line as in main's `build/proofs.json` but MAP22's,
-whose main has since taken map22-bigger (742209a; this branch has main at
-a8af54e, and its MAP22 wad is byte for byte main's package's); every other
-wad byte for byte as in main's package. KENNEL MODE=1 (30 checks), 2 (44),
+changed; again after main's map22-bigger was merged in): every proof line
+as in main's `build/proofs.json` (MAP22's: 12 door actions, 761148 states),
+every other wad byte for byte as in main's package. KENNEL MODE=1 (30 checks), 2 (44),
 4 (13); THEN MODE=1 (45); MAP21 MODE=1 (85, `levelExited`); MAP22 MODE=1
-(58, `levelExited`) and MODE=2 (14): all pass. THEN MODE=5 failed once of
+(58, `levelExited`) and MODE=2 (14): all pass; after the merge of
+map22-bigger MAP22 MODE=1 again: 99 checks, out by the way out to MAP23. THEN MODE=5 failed once of
 two runs (`monsterFollowsToThen=0` and the four checks after it) and failed
 as well with main's then.zs and kennel.zs put back, and passed on main's
 older package (before caco-through-doors): it hangs on whether a monster
@@ -21981,7 +21981,7 @@ follows by itself, not on this branch's changes.
   stall's end of the run (69 to 99 tics), the big one 5 of 5 (51 to 54): THEN
   south of NOW works as meant.
 - The guards led through the clocked door (since caco-through-doors): 25 of
-  30 followed by themselves within 525 tics, 210 to 531 tics after the
+  30 followed by themselves within 525 tics (19 of 30 in a second run), 210 to 531 tics after the
   player went through. In MODE=1's own runs 1 and 2 of 3 followed within
   350 tics; the rest were brought by the script.
 
