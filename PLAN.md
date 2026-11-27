@@ -20064,3 +20064,21 @@ through RED's door into the car (MODE=1), the lift ridden (MODE=2) and GREEN car
 
 **Not seen in the game**: the night room with BLUE hung in the brass frame, and BLUE's far side in its west end (no
 view looks west there).
+
+**Found after the build: BLUE can be taken down from its own far side** (asked by the coordinating session, the
+same day; not mended, the door rules unchanged). The design rests on "BLUE hung anywhere is a way into the night
+room for empty hands, never for BLUE itself", and the solver has always assumed a frame is worked only from its own
+region. MODE=3 now presses USE as the player does (`cmd.buttons = BT_USE`, `CheckUse()`: the engine's use trace,
+not a script call) after `blueHungIsAWayIn`, with BLUE in 128 and the player in the night room, empty-handed,
+facing west at BLUE's far side (mouth x 7616, y 2704..2768; the portal 16 behind it at x 7600): 45 presses, from
+x 7604, 7616, 7632, 7648, 7664, y 2720, 2736, 2752, facing 165, 180, 195. Three of them take BLUE down from 128
+into the player's hands, in the night room: (7604, 2752), (7616, 2752) and (7632, 2752), all facing 165 (at the
+jamb on the leaf's side, aimed 15 to it); the last stands in the room proper, 16 in from the mouth. From 48 back,
+or at the middle or the other jamb, or facing 180 or 195, nothing. The check `blueIsNotTakenFromItsFarSide`
+fails: that is the finding. A probe (not committed) showed what is reached: with the hung leaf moved out of the
+way, no press takes BLUE, so the use trace goes through the far side's portal and finds the leaf (the AjarDoor
+standing open at its frame's jamb, `Used` → `UseFrame`), not the frame's mouth line. The same three presses take
+BLUE from 119 and from 127 as well; and in MAP11 (VIOLET hung in 101, 102, 103 or 104, the same presses at
+VIOLET's far side in its night room, (76 / 88 / 104, 2544) facing 165) they take VIOLET. So every way_home room
+(MAP05 on) has the same hole: the way out's door can be fetched into its own room through its far side, without
+the way it was meant to come by (in MAP18, the run). Hanging it in the brass frame after that was not tried.

@@ -14,8 +14,9 @@
 //   3  the failures: nothing hung; the long lane alone on foot; a leaf taken
 //      while the pulse laps; a second pull; a run made without BLUE: nobody
 //      is shut in the night room, the shutter comes down behind him; BLUE
-//      hung elsewhere is a way in for empty hands; the brass frame takes no
-//      other door
+//      hung elsewhere is a way in for empty hands; USE pressed (for real) at
+//      its far side from the night room must not take it down (it does: PLAN.md); the brass frame
+//      takes no other door
 //   4  each lane's laps, and the two longest joined: the lap's tics, the
 //      laps counted, the lamps, how long the shutter is up
 //   5  the paradoxes walked
@@ -349,6 +350,49 @@ extend class AjarHandler
 		}
 	}
 
+	// A USE press as the player makes one (the key down, then up): the engine's own use trace, not a script call.
+	void TamPressUse(Actor mo)
+	{
+		let pp = PlayerPawn(mo);
+		pp.player.cmd.buttons = BT_USE;
+		pp.CheckUse();
+		pp.player.cmd.buttons = 0;
+		pp.CheckUse();
+	}
+
+	// MODE=3, with BLUE hung in 128 and the player in the night room, empty-handed: USE pressed facing west at
+	// BLUE's far side (its mouth at x 7616, y 2704..2768; the portal 16 behind it, at x 7600), one press a tic,
+	// from x 7604, 7616, 7632, 7648, 7664 (4 to 64 from the portal), y 2720, 2736, 2752 (either jamb, the
+	// middle), facing 165, 180, 195. Each press logged; a door taken is hung back in 128 and the presses go on.
+	int tamFarTaken;
+	bool TamFarSideUse(Actor mo, int t)
+	{
+		static const double xs[] = { 7604, 7616, 7632, 7648, 7664 };
+		static const double ys[] = { 2720, 2736, 2752 };
+		static const double angs[] = { 165, 180, 195 };
+		int k = TamIn(t);
+		if (k == 1) tamFarTaken = 0;
+		int i = k - 1;
+		if (i < 45)
+		{
+			TamPose(mo, xs[i / 9], ys[(i / 3) % 3], angs[i % 3]);
+			TamPressUse(mo);
+			bool hung = FindFrame(128).door == DoorOf(TAM_BLUE);
+			Console.Printf("AJARTEST info far side USE %d at (%.0f,%.0f,%.0f) facing %.0f: carried %s, 128 %s, in the night room %d",
+				i + 1, mo.pos.x, mo.pos.y, mo.pos.z, mo.angle, carried ? carried.Label() : "-", hung ? "BLUE" : FindFrame(128).door ? "another" : "empty", TamInNight(mo));
+			if (carried || !hung)
+			{
+				tamFarTaken++;
+				Console.Printf("AJARTEST info far side USE %d TOOK %s down from 128", i + 1, carried ? carried.Label() : "?");
+				if (carried == DoorOf(TAM_BLUE)) { BeltHang(mo, DoorOf(TAM_BLUE), 128); }
+				if (carried) BeltPutBack(carried);
+			}
+			return false;
+		}
+		Check("blueIsNotTakenFromItsFarSide", tamFarTaken == 0 && FindFrame(128).door == DoorOf(TAM_BLUE) && !carried && TamInNight(mo));
+		return true;
+	}
+
 	// MODE=3: what fails.
 	void TamFailures(Actor mo, int t)
 	{
@@ -494,7 +538,10 @@ extend class AjarHandler
 		case 21:
 			TamWait(t, "theShutterGoesUpForWhoeverIsIn", d.Up() && !d.Live() && d.occupied, 60);
 			break;
-		case 22:    // the brass frame takes no door but BLUE: GREEN stays in hand
+		case 22:    // BLUE must not be taken down from its far side: real USE presses at it from the night room (it is: PLAN.md)
+			if (TamFarSideUse(mo, t)) TamNext(t);
+			break;
+		case 23:    // the brass frame takes no door but BLUE: GREEN stays in hand
 			if (carried) BeltPutBack(carried);
 			TakeLeaning(DoorOf(3), mo);
 			TamPose(mo, 7872, 2736, 0);
@@ -502,10 +549,10 @@ extend class AjarHandler
 			Check("theBrassFrameTakesBlueOnly", carried == DoorOf(3) && !FindFrame(TAM_HOME).door && !wayOutBuilt);
 			TamNext(t);
 			break;
-		case 23:    // ... and GREEN is carried out by the shutter
+		case 24:    // ... and GREEN is carried out by the shutter
 			if (TamWalk(mo, t, 7776, 2680, 270, 20)) { Check("outByTheShutterWithGreen", !tamJumped && mo.pos.y < 2560 && carried == DoorOf(3)); TamNext(t); }
 			break;
-		case 24:
+		case 25:
 			if (TamWait(t, "theShutterComesDownBehindAgain", d.Down() && !d.occupied, 100) && carried) BeltPutBack(carried);
 			break;
 		}
