@@ -2,7 +2,8 @@
 // floor height, a second one floating well above the RED door's opening and
 // a demon, all set on the player, who stands still in the red room beyond
 // RED. Each must come all the way through and out of the far recess into the
-// red room; none may stay in either opening.
+// red room; none may stay in either opening. Then a cacodemon while the
+// player stands just beyond RED's far opening, and after he steps back.
 extend class AjarHandler
 {
 	Actor cacoTest[3];
@@ -35,6 +36,18 @@ extend class AjarHandler
 				cacoTest[i].SetState(cacoTest[i].SeeState);
 			}
 		}
+		// Then the user's case: the player waits just beyond the door, where a
+		// monster coming through would stand. A cacodemon must keep out of the
+		// opening while he is there, and come through once he steps back.
+		if (t == 1410)
+		{
+			for (int i = 0; i < 3; i++) if (cacoTest[i]) { cacoTest[i].ClearCounters(); cacoTest[i].Destroy(); }
+			Pose(mo, 192, 2030, 0, 270);
+			cacoTest[0] = Actor.Spawn("Cacodemon", (170, 380, 0));
+			cacoTest[0].target = mo;
+			cacoTest[0].SetState(cacoTest[0].SeeState);
+			cacoThrough[0] = cacoInMouth[0] = cacoLongest[0] = 0;
+		}
 		if (t <= 40) return;
 		for (int i = 0; i < 3; i++)
 		{
@@ -55,6 +68,18 @@ extend class AjarHandler
 			Check("demonLeftTheOpening", cacoTest[2] && InRedRoom(cacoTest[2]) && cacoLongest[2] < 105);
 			Console.Printf("AJARTEST info through at t=%d %d %d, longest in an opening %d %d %d tics",
 				cacoThrough[0], cacoThrough[1], cacoThrough[2], cacoLongest[0], cacoLongest[1], cacoLongest[2]);
+		}
+		if (t == 2100)
+		{
+			Check("cacoKeepsOutWhileBlocked", cacoTest[0] && !cacoThrough[0] && cacoLongest[0] < 105);
+			Console.Printf("AJARTEST info blocked: longest in an opening %d tics; %s", cacoLongest[0], AjarDoorTrace.Of(cacoTest[0]));
+			cacoLongest[0] = 0;
+			Pose(mo, 192, 2250, 0, 270);
+		}
+		if (t == 2800)
+		{
+			Check("cacoComesOnceFree", cacoThrough[0] > 0 && cacoTest[0] && InRedRoom(cacoTest[0]) && cacoLongest[0] < 105);
+			Console.Printf("AJARTEST info freed: through at t=%d, longest in an opening %d tics; %s", cacoThrough[0], cacoLongest[0], AjarDoorTrace.Of(cacoTest[0]));
 		}
 	}
 }

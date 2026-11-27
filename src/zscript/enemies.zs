@@ -13,6 +13,14 @@ struct AjarSight play
 		return src.v1.p + Actor.RotateVector(p - dst.v2.p, -a);
 	}
 
+	// The other way: where a point p beyond `src` (past its line) is taken
+	// to beyond `dst`.
+	static Vector2 Through(Line src, Line dst, Vector2 p)
+	{
+		double a = VectorAngle(dst.delta.x, dst.delta.y) - VectorAngle(src.delta.x, src.delta.y) + 180;
+		return dst.v2.p + Actor.RotateVector(p - src.v1.p, a);
+	}
+
 	// Does the straight walk from a to b go through the opening of line l?
 	// `at` is how far along a..b (0..1) it crosses.
 	static bool Crosses(Line l, Vector2 a, Vector2 b, double margin, out double at)
@@ -1162,6 +1170,8 @@ class AjarSense : Inventory
 	int stuckTics;      // in an opening and making no way (GiveUp)
 	double nearest;
 	int noDoorUntil;    // it gave a door up: no door before then
+	bool held;          // waiting in front of a door (its speed is 0 meanwhile)
+	double ownSpeed;
 
 	// An opening is 64 wide and as high as a door.
 	bool Fits() { return owner.radius <= 31 && owner.height <= 96; }
@@ -1188,7 +1198,12 @@ class AjarSense : Inventory
 		if (!owner || owner.health <= 0) return;
 		let p = players[consoleplayer].mo;
 		Crossed(p);
-		if (outOf) { Leave(p); return; }
+		if (outOf)
+		{
+			Hold(false);
+			Leave(p);
+			return;
+		}
 		if (p && p.health > 0 && (level.time + owner.SpawnTime) % 4 == 0) Look(p);
 		if (lure && owner.target == lure && via) Steer(p);
 		else Unmute();
@@ -1267,17 +1282,30 @@ class AjarSense : Inventory
 		if (off dot n < 0) n = -n;
 		double side = off dot along;
 		double ahead = off dot n;
-		bool close = ahead < 128 && abs(side) < 24;
+		bool close = ahead < 160 && abs(side) < 24;     // (the waiting place below is in it)
 		Vector2 to = viaImg;
+		bool hold = false;
 		if (!viaStraight || close)
 		{
 			// Someone standing just beyond the far opening (the player, as a
-			// rule) would stop it half way: it waits in front of the opening.
-			bool lined = abs(side) < 16 && ahead < 128 && RoomBeyond(via);
-			to = lined ? mid - n * 40 : mid + n * (owner.radius + 28);
+			// rule) would stop it half way: it waits, far enough off that one
+			// already in the opening can back out past the mouth; and one
+			// already in the opening backs out at once.
+			bool room = !close || RoomBeyond(via, mid - n * (owner.radius + 8));
+			if (!room && ahead < owner.radius + 12)
+			{
+				Back(p, false);
+				return;
+			}
+			bool lined = abs(side) < 16 && ahead < 128 && room;
+			to = lined ? mid - n * 40 : mid + n * (owner.radius + (room ? 28 : 96));
+			// There it holds its place: Doom's chase, at its target, would
+			// wander off in any direction (and through another door).
+			hold = !room && (owner.pos.xy - to).Length() < 24;
 			if (close && abs(side) > 0.25 && !(abs(side) < 16 && owner.TryMove(owner.pos.xy - along * side, 1)))
 				owner.TryMove(owner.pos.xy - along * clamp(side, -2, 2), 1);
 		}
+		Hold(hold);
 		// At the height of the opening's floor: a floating monster comes down
 		// to it as it nears (Doom floats a monster towards its target's height).
 		Vector2 at = mid + n * 8;
@@ -1304,6 +1332,7 @@ class AjarSense : Inventory
 
 	void Unmute()
 	{
+		Hold(false);
 		if (!muted) return;
 		muted = false;
 		owner.meleerange = ownRange;
@@ -1314,11 +1343,12 @@ class AjarSense : Inventory
 	// standing in front of the far opening (as a rule the player, waiting by
 	// the door) stops a monster with its middle across the line: the engine
 	// will not move it through, and it stood in the opening, filling it.
-	bool RoomBeyond(Line l)
+	// (`past`: where it would stand once over the line; that place beyond.)
+	bool RoomBeyond(Line l, Vector2 past)
 	{
 		Line d = l.getPortalDestination();
 		if (!d) return true;
-		Vector2 c = (d.v1.p + d.v2.p) / 2 + (d.delta.y, -d.delta.x).Unit() * (owner.radius + 8);
+		Vector2 c = AjarSight.Through(l, d, past);
 		double z = level.PointInSector(c).floorplane.ZAtPoint(c);
 		let it = BlockThingsIterator.CreateFromPos(c.x, c.y, z, owner.height, owner.radius + 64, false);
 		while (it.Next())
@@ -1342,13 +1372,32 @@ class AjarSense : Inventory
 			stuckTics = 0;
 			return;
 		}
-		if (++stuckTics < 35) return;
+		if (++stuckTics >= 35) Back(p, true);
+	}
+
+	// Out of the opening of `via`, back where it came from. Stuck (`forget`):
+	// no door for three seconds; kept out by someone beyond: it waits.
+	void Back(Actor p, bool forget)
+	{
 		stuckTics = 0;
 		outOf = via;
 		outUntil = level.time + 70;
+		if (!forget) return;
 		via = null;
 		noDoorUntil = level.time + 105;
 		owner.target = p && p.health > 0 ? p : null;
+	}
+
+	void Hold(bool on)
+	{
+		if (on == held) return;
+		held = on;
+		if (on)
+		{
+			ownSpeed = owner.speed;
+			owner.speed = 0;
+		}
+		else owner.speed = ownSpeed;
 	}
 
 	// The engine has just taken it through a door: from one side of a portal
