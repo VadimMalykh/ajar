@@ -74,7 +74,7 @@ BRASS = ("AJXA", "AJXAF")
 SKY_TAG = 2200                      # THEN's sky sectors: the day sky (a sky transfer, Static_Init 255)
 SQUARE_TID = 2201                   # the square's company NOW, woken by the turn (map22.zs)
 KIOSK = ten.KIOSK
-TURN, BOTH_KEYS = 64, 65            # ambush causes (ajar.zs): the turn; keys 1 and 2 both in hand
+TURN, LAST_KEYS = 64, 65            # ambush causes (ajar.zs): the turn; the two keys args[4] names in hand (34)
 DAYLIGHT = 40                       # THEN the excerpts are this much lighter than in MAP10
 
 
@@ -209,10 +209,7 @@ for c in t.copies:
     pieces(S, -512, (-576, -256), "y", Q("AJQMA"))
     pieces(S, -640, (-192,), "x", Q("AJQFA"))
     pieces(S, -640, (64,), "x", Q("AJQFB"))
-    # the museum's door: shut at both times (not built). No lock plate on it: the player has keys 1 and 2 here,
-    # and a plate with a 1 says that key 1 opens it. A card instead: CLOSED.
-    S.cut((-512, -400), (-512, -336))
-    S.line((-512, -400), (-512, -336), mid="AJQMD0" if ten.LOOK else "AJHDOR", exact=True)
+    # (the museum's door, a real one with the plate 1, is built with the museum below)
     # the shelter, its roof, the route board; THEN its timetable
     SHELTER = low(wall="AJQS", ctex="AJQSC")
     ajarmap.fitted(S, (224, -208, 512, -48), [
@@ -258,10 +255,11 @@ for c in t.copies:
 
 # THEN door 6: frame 123, brass, any colour door; no twin (the clocked door will not hang there)
 t.then.frame(*MOUTHS[THEN, 6], (0, 1), 123, twin=False, trim=BRASS)
-# doors 2 and 7: twins at both times, any door; door 4: the clocked door's alone at both times
+# doors 2, 4 and 7: twins at both times, any door, in the bus's ordinary trim. No frame of a bus is the clocked
+# door's alone (PLAN.md, "MAP22 bigger"): that it hangs there is the accident
 t.frame(*MOUTHS[NOW, 2], (0, 1), 101)
 t.frame(*MOUTHS[NOW, 7], (0, -1), 102)
-t.clock_frame(*MOUTHS[NOW, 4], (0, 1), 104, when=(NOW, THEN))
+t.frame(*MOUTHS[NOW, 4], (0, 1), 104)
 # door 3: GREEN's far side at both times, shut for good (there is no GREEN here)
 t.far(*MOUTHS[NOW, 3], (0, 1), GREEN)
 
@@ -283,7 +281,7 @@ Sn.line((-320, -848), (-256, -848), special=11, args=(KIOSK, 32), impact=True, m
 # window either side. West of it BLUE's far side THEN and the stair's landing; east of it the brass frame HOME
 # (BLUE's alone) and, in the south wall, frame 125 (the clocked door's alone). The only way of arriving east of
 # the wall is the clocked door in 125, and its unbolt line (GATE_LINE_Y) is crossed on coming out of that frame.
-# The way in from below: the shelter's brass door (keys 1 and 2) and a stair up to it.
+# The way in from below: the shelter's brass door (keys 3 and 4) and a stair up to it.
 # NOW: one room, the wall down (a stub of it at the north wall and at the south wall); BLUE's far side NOW, frame
 # 105 (twin of 125), Doom's stone where HOME is THEN. MAP10's hole down into the shelter is shut: the short passage
 # north of the room ends in Doom's stone (with the hole open the level could be lost: puzzle22.py).
@@ -335,7 +333,7 @@ Sn.line((384, PASSAGE_END), (448, PASSAGE_END), mid=STONE, dontpegbottom=True)
 PASSAGE = dict(light=170, wall="AJXW2", ftex="AJXG2", ctex="AJXC2")
 ajarmap.stairs(St, (288, -224), (448, -224), (0, -1), 0, LINE, steps=4, depth=16, ceil=LINE + 96, **PASSAGE)
 St.sector(rect(288, NY + 256, 448, -288), floor=LINE, ceil=LINE + 96, **PASSAGE)
-ajarmap.roomdoor(St, (288, -208), (352, -208), (0, -1), 0, keys="12", skin="AJ22D", line_id=310)   # (the rooms first)
+ajarmap.roomdoor(St, (288, -208), (352, -208), (0, -1), 0, keys="34", skin="AJ22D", line_id=310)   # (the rooms first)
 over(St, (304, NY + 256), (448, NY + 256), "AJXW2")
 for c in t.copies:                                       # over BLUE's far side (both) and HOME (THEN), the room's wall
     over(AT_[c.when], (NX, NY + 96), (NX, NY + 160), "AJXW2")
@@ -345,7 +343,7 @@ over(St, (NX + 320, NY + 96), (NX + 320, NY + 160), "AJXW2")
 # THE DEPOT (YELLOW's far side), beyond the lane, at both times
 # =================================================================================================================
 FITTERS = (320, 944, 512, 992)          # THEN: the fitters' bench along the north wall, east of the clocked door
-PLATE4 = ((192, 992), (320, 992))       # ... the plate over the clocked door: LINE 4, FROM TOMORROW
+PLATE4 = ((192, 992), (320, 992))       # ... the fitters' tag over the clocked door: FOUND IN THE YARD. NOT OURS.
 CACHE = (-496, 992, -400, 1056)         # NOW: the cache in the far corner (MAP10's key 2), a secret
 for c in t.copies:
     S = AT_[c.when]
@@ -403,11 +401,190 @@ for c in t.copies:
                       ((2112, 992 + TY), (2112, 1056 + TY), BACKSTAGE["wall"]), ((2128, 992 + TY), (2128, 1056 + TY), GREENROOM),
                       ((512, -96 + TY), (640, -96 + TY), HOUSE)):
         over(S, a, b, tex)
-    # door 8 of the bus at this time: from the pit, both ways
-    ajarmap.doorway(S, 3 if c.now else 4, *MOUTHS[c.when, 8], (0, -1), 0, (608, 928 + TY), (608, 992 + TY), (1, 0), -48)
+    # (the pit's doorway is door 2 of the 20, at the other stop: below)
 assert THEATRE[NOW][0] == THEATRE[THEN][0]
 _a, _b, _out, _floor = THEATRE[NOW][0]
 t.far(_a, _b, _out, RED, floor=_floor)                                          # RED's far side in the foyer
+
+
+def daylight(first_sector):
+    """THEN: this level's own rooms (the museum, the observatory) since this index are lit by day, as the
+    excerpts are (peaceful)."""
+    for s in m.sectors[first_sector:]:
+        s["light"] = min(255, s["light"] + DAYLIGHT)
+
+
+# =================================================================================================================
+# THE OTHER STOP (PLAN.md, "MAP22 bigger"): MAP10's second square at both times, the 20 standing at it: new THEN
+# (livery F, gfx_dayreturn), MAP10's old one NOW (C). Its doors, the same at both times: 1 is door 8 of the 10, 2
+# the pit under the theatre's stage door, 3 frames 106 / 126 (twins, any door), 4 (in its back) the observatory
+# =================================================================================================================
+BY = 3168                                           # the 20's south face (MAP10's)
+LIVERY20 = {NOW: "C", THEN: "F"}
+MOUTHS20 = {}                                       # (copy, door 1..4 of the 20): its mouth
+for c in t.copies:
+    S, L = AT_[c.when], (DAY if c.then else NIGHT)
+    for box, feats in (((-640, BY - 288, 640, BY - 48), [((-192, BY - 208, -64, BY - 176), SEAT),
+                                                         ((64, BY - 208, 192, BY - 176), SEAT)]),
+                       ((-640, BY - 48, -400, BY + 192), []), ((400, BY - 48, 640, BY + 192), []),
+                       ((-640, BY + 192, 640, BY + 432), [])):
+        ajarmap.fitted(S, box, feats, floor=0, light=L, **(PAVE if ten.LOOK else dict(ftex="AJ5P1")), **SQUARE)
+    STOP2 = STOP if ten.LOOK else dict(ftex="AJ5P1")
+    south2 = ajarmap.bus(S, -400, BY, face=1, first=1, slots=(0, 2, 4), free=True, livery=LIVERY20[c.when],
+                         light=L + 20, **STOP2)
+    north2 = ajarmap.bus(S, -400, BY + 144, face=-1, first=4, slots=(3,), free=True, livery=LIVERY20[c.when],
+                         light=L + 20, **STOP2)
+    pieces(S, BY - 288, (-320, 384), "x", Q("AJQFA"))
+    pieces(S, BY + 432, (128,), "x", Q("AJQFB"))
+    pieces(S, BY + 432, (-512,), "x", Q("AJQFA"))
+    ajarmap.bus_ends(S, -400, BY, livery=LIVERY20[c.when])
+    for n, mouth in enumerate(south2 + north2):
+        MOUTHS20[c.when, n + 1] = mouth
+    # door 8 of the 10 is door 1 of the 20 (doorways 3 NOW, 4 THEN); door 2 of the 20 is the pit's doorway under the
+    # theatre's stage door (5 NOW, 6 THEN): whoever drops off the ledge comes out here
+    ajarmap.doorway(S, 3 if c.now else 4, *MOUTHS[c.when, 8], (0, -1), 0, *south2[0], (0, 1), 0)
+    ajarmap.doorway(S, 5 if c.now else 6, *south2[1], (0, 1), 0, (608, 928 + TY), (608, 992 + TY), (1, 0), -48)
+    things(S, LAMP, (-616, BY - 264), (616, BY - 264), (-616, BY + 408), (616, BY + 408))
+t.frame(*MOUTHS20[NOW, 3], (0, 1), 106)                                         # 3: frames 106 / 126, any door
+
+# =================================================================================================================
+# THE OBSERVATORY (door 4 of the 20), at both times: MAP10's library and dome, dressed and lit as MAP07's. Not
+# MAP10's: no frame in the dome (MAP10's 116 is plain wall), and the top of the stair out is a plain opening 64
+# wide, not a squeeze, so that a door carried in can be carried out (puzzle22.py: with MAP10's drop, squeeze and a
+# frame RED can be shut in for good). The dome's door opens with key 2 at both times. THEN lit by day
+# =================================================================================================================
+seven = ten.seven
+m.align |= seven.m.align | ten.six.m.align
+LIB, DOME, LOW7 = seven.LIB, seven.DOME, seven.low()
+PASSAGE7 = dict(wall=seven.LOWW or LIB["wall"], ftex=LIB["ftex"], ctex=LOW7["ctex"])
+TORCHES = [(1616, 1100), (2096, 1100), (1616, 1290), (2096, 1290)]
+LBOX = (1600, 1000, 2112, 1384)
+PIT7 = -96                                          # the dome's sunk floor
+LEDGE = (1792, 1400, 1920, 1464)
+DOME_DOOR = {NOW: 302, THEN: 322}                   # its mouth's line id (the library's side), for the tests
+STAIR_TOP = ((1408, 1700), (1472, 1700))            # the opening at the top of the dome's stair
+KEY3 = (2000, 1736)                                 # NOW, on the sunk floor, near where MAP10 leans BLUE
+for c in t.copies:
+    S, fs = AT_[c.when], len(m.sectors)
+    ajarmap.shaped(S, LBOX, ten.pools(TORCHES, seven.DARK) + [
+        ((1824, 1000, 1888, 1384), seven.RUN),
+        ((1632, 1160, 1760, 1224), dict(seven.BOOKS, floor=96)),                         # stacks
+        ((1952, 1160, 2080, 1224), dict(seven.BOOKS, floor=96)),
+        ((1792, 1000, 1920, 1064), LOW7),                                                # before the bus's door
+        ((1792, 1320, 1920, 1384), LOW7),                                                # before the dome's
+        ((1600, 1320, 1664, 1384), LOW7),                                                # before the way round
+    ], floor=0, ceil=320, light=seven.DARK, **LIB)
+    porch(S, (1792, 1000, 1920, 1064), LIB["wall"] if seven.LOOK else None, "NEW")
+    porch(S, (1792, 1320, 1920, 1384), LIB["wall"] if seven.LOOK else None, "SEW")
+    porch(S, (1600, 1320, 1664, 1384), LIB["wall"] if seven.LOOK else None, "SE")
+    # door 4 of the 20: doorways 7 NOW, 8 THEN
+    ajarmap.doorway(S, 7 if c.now else 8, *MOUTHS20[c.when, 4], (0, -1), 0, (1824, 1000), (1888, 1000), (0, -1), 0)
+    ajarmap.shaped(S, (1664, 1400, 2048, 1784), ten.pools([(1688, 1424), (2024, 1424)], seven.DARK) + [
+        (LEDGE, dict(LOW7, floor=0, **seven.WOOD)),                                      # the ledge inside the door
+        ((1808, 1544, 1904, 1640), dict(seven.PIER, floor=PIT7 + 64,
+                                        light=min(255, seven.DARK + 85) if seven.DIM else seven.DARK)),   # the pier
+    ], floor=PIT7, ceil=448, light=seven.DARK, **DOME)
+    porch(S, LEDGE, DOME["wall"] if seven.LOOK else None, "NEW")
+    ajarmap.roomdoor(S, (1824, 1384), (1888, 1384), (0, 1), 0, keys="2", line_id=DOME_DOOR[c.when])
+    if seven.LOOK:                                                               # its two faces, each under a porch
+        S.line((1824, 1384), (1888, 1384), upper=seven._face("D", "A", (1824, 1384), (0, 1), "2"))
+        S.line((1824, 1400), (1888, 1400), upper=seven._face("D", "A", (1824, 1384), (0, -1), "2"))
+    ajarmap.stairs(S, (1664, 1700), (1664, 1764), (-1, 0), PIT7, 96, steps=6, ceil=160, light=150,
+                   lift=160 - 448, **DOME)              # its walls laid as the dome's are, from the dome's ceiling
+    over(S, (1664, 1700), (1664, 1764), DOME["wall"] if seven.LOOK else None)
+    S.sector(rect(1408, 1700, 1472, 1764), floor=0, ceil=128, light=150, **PASSAGE7)
+    ajarmap.opening(S, *STAIR_TOP, (0, -1), 0)                                   # (MAP10: a squeeze)
+    S.sector(rect(1408, 1320, 1472, 1684), floor=0, ceil=128, light=150, **PASSAGE7)
+    S.sector(rect(1472, 1320, 1584, 1384), floor=0, ceil=128, light=150, **PASSAGE7)
+    ajarmap.opening(S, (1600, 1320), (1600, 1384), (-1, 0), 0)
+    for a, b, tex in (((1824, 1000), (1888, 1000), seven.LOWW),                  # door 4 of the 20, in the library
+                      ((1600, 1320), (1600, 1338), seven.LOWW), ((1600, 1338), (1600, 1370), seven.LOWW),
+                      ((1600, 1370), (1600, 1384), seven.LOWW),                  # the way round, from the library
+                      ((1584, 1320), (1584, 1384), PASSAGE7["wall"]),            # ... and from the passage
+                      ((1408, 1684), (1472, 1684), PASSAGE7["wall"]),            # the opening at the stair's top
+                      ((1408, 1700), (1472, 1700), PASSAGE7["wall"]),
+                      ((1472, 1700), (1472, 1764), DOME["wall"] if seven.LOOK else None)):   # the stair's top
+        over(S, a, b, tex)
+    things(S, 46, *TORCHES)                                                      # the library's torches, as MAP07's
+    things(S, 20021, (1856, 1592), angle=90)                                     # the telescope on its pier
+    things(S, TECHLAMP, (1688, 1424), (2024, 1424))
+    if c.then:
+        daylight(fs)
+
+# =================================================================================================================
+# THE MUSEUM, on the square, at both times: MAP10's great hall, gallery and cellar, dressed as MAP06's. Its door
+# on the square is a real door with the plate 1 and opens with key 1, from either side (it was a face with a CLOSED
+# card). The cellar as MAP10's (the hole in the hall's floor to drop through, the stair up to the gallery), but no
+# frame in it (MAP10's 114 is plain wall) and a plain opening, 64 wide, at the top of its stair (MAP10: a
+# squeeze). PINK's store off the gallery NOW: a secret behind bars, opened by shooting its bell (a megasphere in
+# it); THEN shut, plain wall, as the kiosk is
+# =================================================================================================================
+six, T6 = ten.six, ten.T6
+HK, LOW6 = T6("HK"), six.LOW
+MUSEUM_DOOR = {NOW: 301, THEN: 321}                 # its mouth's line id (the square's side), for the tests
+CELL = dict(floor=-128, ceil=0, light=140, wall=six.CELLW, ftex="AJPIT")
+STORE = ten.STORE
+for c in t.copies:
+    S, fs = AT_[c.when], len(m.sectors)
+    ajarmap.fitted(S, (-1168, -640, -528, -128), [
+        ((-592, -432, -528, -304), LOW6),                                        # inside its door
+        ((-1168, -464, -1104, -336), LOW6),                                      # before the way down
+        ((-932, -192, -804, -128), LOW6),                                        # before the gallery
+        ((-960, -480, -832, -352), six.CASE),                                    # a case
+        ((-720, -608, -592, -576), six.SEAT),
+    ], floor=0, ceil=384, light=190, **six.HALL)
+    porch(S, (-592, -432, -528, -304), HK, "NSW")
+    porch(S, (-1168, -464, -1104, -336), HK, "NSE")
+    porch(S, (-932, -192, -804, -128), HK, "SEW")
+    pieces(S, -128, (-1088,), "x", T6("H", "1"))                                 # its two big pictures
+    pieces(S, -640, (-896,), "x", T6("H", "2"))
+    ajarmap.roomdoor(S, (-512, -400), (-512, -336), (-1, 0), 0, keys="1", line_id=MUSEUM_DOOR[c.when])
+    if ten.LOOK:
+        S.line((-512, -400), (-512, -336), upper="AJQMD1")                       # its face on the square: the plate 1
+    if six.LOOK:
+        S.line((-528, -400), (-528, -336), upper=T6("D") + "P")                  # ... and inside, under the hall's porch
+    # the cellar: dropped into through the hole in the hall's floor, left by its stair up to the gallery
+    ajarmap.fitted(S, (-1600, -560, -1184, -112), [
+        ((-1440, -400, -1344, -304), dict(six.CRATE, floor=-128 + 48)),          # crates
+        ((-1280, -208, -1216, -144), dict(six.CRATE, floor=-128 + 48)),
+        ((-1248, -464, -1184, -336), dict(ceil=128, wall=six.STAIR["wall"], ctex=six.STAIR.get("ctex", "AJBOARD"))),
+    ], **CELL)
+    ajarmap.opening(S, (-1168, -432), (-1168, -368), (-1, 0), 0)
+    over(S, (-1168, -432), (-1168, -368), six.LOWW)
+    ajarmap.stairs(S, (-1560, -112), (-1496, -112), (0, 1), -128, 128, ceil=128, light=140, **six.STAIR)
+    S.sector(rect(-1560, 144, -1496, 208), floor=0, ceil=128, light=150, **six.LANDING)
+    ajarmap.opening(S, (-1496, 144), (-1496, 208), (1, 0), 0)                    # (MAP10: a squeeze)
+    over(S, (-1496, 144), (-1496, 208), six.CELLW if six.LOOK else None)
+    over(S, (-1480, 144), (-1480, 208), six.WA.get("wall"))
+    # the gallery
+    ajarmap.fitted(S, (-1480, -96, -720, 400), [
+        ((-1320, 64, -1192, 192), six.CASE),                                     # cases
+        ((-1000, 64, -872, 192), six.CASE),
+        ((-784, 256, -720, 384), six.SEAT),
+    ], floor=0, ceil=160, light=175, **six.WA)
+    for i, (fixed, start) in enumerate(((400, -1408), (400, -960), (400, -832), (-96, -1344), (-96, -1152), (-96, -1024))):
+        pieces(S, fixed, (start,), "x", T6("WA", "123"[i % 3]))                  # its pictures
+    ajarmap.opening(S, (-900, -128), (-836, -128), (0, 1), 0, thick=32)
+    over(S, (-900, -128), (-836, -128), six.LOWW)
+    over(S, (-900, -96), (-836, -96), six.WA.get("wall"))
+    for a, b in (((-1184, -432), (-1184, -400)), ((-1184, -400), (-1184, -368))):  # the hall, from the cellar's bay
+        S.line(a, b, lower=six.STAIR["wall"], upper=six.STAIR["wall"])
+    over(S, (-1560, -112), (-1496, -112), six.STAIR["wall"])                     # the foot of the cellar's stairs
+    things(S, TECHLAMP, (-552, -616), (-1144, -616))
+    if c.now:
+        # PINK's store (secret), seen through bars: shoot its bell. A megasphere in it
+        S.sector(rect(-1320, 416, -1000, 480), ceil=112, light=150, color=ten.ROSE, wall="AJSAFE")
+        S.sector(rect(-1320, 480, -1000, 640), ceil=112, light=150, color=ten.ROSE, wall="AJSAFE", special=1024)
+        ajarmap.bolted(S, (-1260, 400), (-1196, 400), (0, 1), 0, STORE, line_id=306)
+        if six.LOOK:
+            S.line((-1260, 400), (-1196, 400), upper=f"AJ6Z{six.LOOK}G")         # its face in the gallery's wall
+        ajarmap.unbolt(S, (-1320, 480), (-1000, 480), STORE)
+        bars(S, (-1100, 400), (-1036, 400), (0, 1), 0, near=six.WA.get("wall"), far="AJSAFE" if six.LOOK else None)
+        S.cut((-1100, 640), (-1036, 640))
+        S.line((-1100, 640), (-1036, 640), special=11, args=(STORE, 32), impact=True, mid="AJTARG", exact=True)
+        things(S, CANDLE, (-1020, 500), (-1020, 620))
+    else:
+        daylight(fs)
 
 # =================================================================================================================
 # THE HOTEL (line 1) AND THE STATION (line 5): THEN only, as MAP10 lifts them out, at peace
@@ -550,11 +727,27 @@ AREAS = {   # name: the box things stand in, in NOW's coordinates, and at which 
     # the night room then, west of the gate
     "gateW": ((NX + 24, NY + 24, GATE_X - 24, NY + 232), THEN),
 }
+for _w, _s in ((NOW, ""), (THEN, "T")):     # the places of "MAP22 bigger", at both times
+    AREAS.update({
+        # the other stop: south of the 20, its two ends, the lane behind it
+        "st2S" + _s: ((-630, BY - 280, 630, BY - 60), _w), "st2E" + _s: ((410, BY - 40, 630, BY + 180), _w),
+        "st2W" + _s: ((-630, BY - 40, -410, BY + 180), _w), "st2B" + _s: ((-630, BY + 196, 630, BY + 424), _w),
+        # the observatory: the library, the dome's sunk floor
+        "lib" + _s: ((1608, 1008, 2104, 1376), _w), "dome" + _s: ((1672, 1472, 2040, 1776), _w),
+        # the museum: the great hall, the gallery, the cellar
+        "hall" + _s: ((-1160, -632, -536, -136), _w), "gallery" + _s: ((-1472, -88, -728, 392), _w),
+        "cellar" + _s: ((-1592, -552, -1192, -120), _w),
+    })
 # mouths of frames and doorways, far sides, the doors where they lean: nothing stands there
 AVOID = [(x, y + 24 * s) for x in (-320, -192, -64, 64, 192, 320) for y, s in ((0, -1), (144, 1))]
 AVOID += [(320, -208), (0, 544), (256, 966), (-224, -3456), (256, -3584), (600, 1450 + TY), (590, -432),
           (SX + 1700, 1250), (SX + 384, 0), (HX + 256, 0), (-448, 1024), (640, 960 + TY),
           (NX, NY + 128), (376, NY + 256), (GATE_X, NY + 128)]       # the night room: BLUE's far side, the stair, the gate
+AVOID += [(-320, BY - 24), (-64, BY - 24), (192, BY - 24), (64, BY + 168),     # the 20's doors
+          (1856, 1024), (1856, 1360), (1632, 1352), (1440, 1700), (1440, 1732), (1680, 1732),   # the library's ways
+          (KEY3[0], KEY3[1]),                                                  # ... key 3 on the dome's floor
+          (-480, -368), (-560, -368), (-1150, -400), (-868, -150), (-868, -70),   # the museum's ways
+          (-1460, 176), (-1528, -136), (-1216, -400)]
 TAKEN = []
 R = {CACO: 31, MANCUBUS: 48, ARACH: 64, BARON: 24, KNIGHT: 24, DEMON: 30, SPECTRE: 30, REVENANT: 20}
 TALL = {CACO: 56, MANCUBUS: 64, ARACH: 64, BARON: 64, KNIGHT: 64}
@@ -704,11 +897,11 @@ ambush("then", "depotT", TURN, IMP, 4, angle=270, near=NEAR)
 ambush("then", "depotT", TURN, SERGEANT, 3, angle=270, near=NEAR)
 ambush("then", "depotT", TURN, DEMON, 2, angle=270, near=NEAR)
 ambush("then", "depotT", TURN, KNIGHT, 1, angle=270, near=NEAR)
-# --- the last one: both keys in hand, at the stop then
-ambush("then", "sqST", BOTH_KEYS, KNIGHT, 2, angle=90, after=1)
-ambush("then", "sqWT", BOTH_KEYS, REVENANT, 2, angle=0, after=2)
-ambush("then", "sqET", BOTH_KEYS, CACO, 2, angle=180, after=2)
-ambush("then", "laneT", BOTH_KEYS, IMP, 3, angle=270, after=1)
+# --- the last one: keys 3 and 4 both in hand (cause 65, args[4] 34), at the stop then
+ambush("then", "sqST", LAST_KEYS, KNIGHT, 2, angle=90, after=1, arg=34)
+ambush("then", "sqWT", LAST_KEYS, REVENANT, 2, angle=0, after=2, arg=34)
+ambush("then", "sqET", LAST_KEYS, CACO, 2, angle=180, after=2, arg=34)
+ambush("then", "laneT", LAST_KEYS, IMP, 3, angle=270, after=1, arg=34)
 # --- the theatre now: an ambush when BLUE is taken, in the rooms behind the foyer and the foyer (PLAN.md, "MAP22:
 # BLUE's ambush with an arch-vile"): the foyer's dead to raise, the rooms behind it for cover. The arch-vile is
 # there on every difficulty but the easiest (skill 2 up: ajarmap.ambush's own `skill`, in its turn in the count)
@@ -737,22 +930,103 @@ items("depot now", (-480, 580, 2049), (480, 580, 2048), (-480, 900, 2046), (480,
       (-200, 580, 2008), (200, 580, 2007))
 items("secrets", (-448, 1024, 2019), (-352, -784, 2013))       # the depot's cache; the kiosk: inside it, where MAP10 has its plasma rifle
 
-# --- the budget, part by part: each part's ammunition does at least 1.6 times its monsters' health ("Resident").
-# The fights then are paid for by the square now, which is where the supplies are (PLAN.md)
+
+# --- MAP22 bigger (PLAN.md, "Fights and supplies"): the other stop, the observatory, the museum. The supplies are
+# now only, and each part now pays for itself; the fights then are paid for by the square now, the museum now and
+# the observatory now together (the budget below). Nothing that comes at the player through hung doors is a
+# cacodemon, but for the dome's, which stay in it, and the other stop's two, standing deaf in its lane
+
+
+def ambush_at(part, cause, kind, when, *spots, angle=0, after=0, near=0, arg=0):
+    """As ambush(), at given spots (NOW's coordinates) in copy `when`; each must be one a `kind` can stand at."""
+    first, c = len(m.things), t.copies[when]
+    for x, y in spots:
+        if not stands(*c.P((x, y)), R.get(kind, 20), TALL.get(kind, 56)):
+            PROBLEMS.append(f"no room for {kind} at {(x, y)}")
+        TAKEN.append((x, y, R.get(kind, 20), when))
+    ajarthen.ambush(m, cause, arg, kind, *(c.P(p) for p in spots), angle=angle, after=after, near=near)
+    mark(part, first)
+
+
+# the other stop now: standing, as MAP10's (not woken by the turn: it is not the square's company); bullets and
+# stimpacks
+items("stop2 now", (-600, BY - 120, AMMOBOX), (600, BY - 120, AMMOBOX), (-560, BY + 400, AMMOBOX),
+      (560, BY + 400, AMMOBOX), (0, BY + 400, AMMOBOX), (-560, BY + 60, STIM), (560, BY + 60, STIM),
+      (-240, BY - 240, STIM), (240, BY - 240, STIM), (-560, BY + 120, MEDIKIT))
+put("stop2 now", "st2S", IMP, 3, 90)
+put("stop2 now", "st2S", SERGEANT, 3, 90)
+put("stop2 now", "st2B", KNIGHT, 1, 270)
+put("stop2 now", "st2E", IMP, 1, 180)
+put("stop2 now", "st2B", CACO, 2, 270, ambush=True)
+# the other stop then: the turn, when the player is next there
+ambush("stop2 then", "st2ST", TURN, IMP, 4, angle=90, near=NEAR)
+ambush("stop2 then", "st2ET", TURN, CHAINGUNNER, 2, angle=180, near=NEAR)
+ambush("stop2 then", "st2WT", TURN, CHAINGUNNER, 1, angle=0, near=NEAR)
+ambush("stop2 then", "st2WT", TURN, KNIGHT, 1, angle=0, near=NEAR)
+ambush("stop2 then", "st2BT", TURN, REVENANT, 1, angle=270, near=NEAR)
+ambush("stop2 then", "st2BT", TURN, IMP, 1, angle=270, near=NEAR)
+# the observatory now: the library standing; the dome standing (cacodemons and lost souls: it is 448 high), key 3
+# on its sunk floor and a box of rockets by it; key 3 taken (cause 3), revenants on the ledge and knights at the
+# top of the stair out, 2 s on
+items("observatory now", (1632, 1040, CELLS), (2080, 1040, CELLS), (1700, 1340, SHELLBOX), (2032, 1340, SHELLBOX),
+      (1632, 1300, MEDIKIT), (2080, 1300, MEDIKIT), (1956, 1736, ROCKETBOX), (1720, 1736, MEDIKIT),
+      (1440, 1380, SHELLBOX), (1520, 1352, MEDIKIT))
+ajarmap.key(m, 3, *KEY3)
+put("observatory now", "lib", IMP, 4, 270)
+put("observatory now", "lib", REVENANT, 2, 270)
+put("observatory now", "lib", KNIGHT, 1, 270)
+put("observatory now", "lib", CHAINGUNNER, 1, 270)
+put("observatory now", "dome", CACO, 3, 270)
+put("observatory now", "dome", SOUL, 2, 270)
+ambush_at("observatory now", 3, REVENANT, NOW, (1824, 1432), (1888, 1432), angle=270, after=2)
+ambush_at("observatory now", 3, KNIGHT, NOW, (1440, 1732), (1440, 1640), angle=0, after=2)
+# the observatory then: the turn, when next there; nothing to find there
+ambush("observatory then", "libT", TURN, IMP, 5, angle=270, near=NEAR)
+ambush("observatory then", "libT", TURN, KNIGHT, 1, angle=270, near=NEAR)
+ambush("observatory then", "domeT", TURN, CACO, 2, angle=270, near=NEAR)
+# the museum then: the turn, when the player is next in it: the mancubus in the great hall carries key 4
+MANCUBUS_AT = (-736, -280)
+if not stands(*St.P(MANCUBUS_AT), R[MANCUBUS], TALL[MANCUBUS]):
+    PROBLEMS.append("no room for key 4's mancubus")
+bearer("museum then", *MANCUBUS_AT, MANCUBUS, 4, angle=0)
+ambush("museum then", "hallT", TURN, KNIGHT, 2, angle=0, near=NEAR)
+ambush("museum then", "hallT", TURN, IMP, 2, angle=0, near=NEAR)
+ambush("museum then", "galleryT", TURN, IMP, 5, angle=270, near=NEAR)
+ambush("museum then", "cellarT", TURN, DEMON, 4, angle=0, near=NEAR)
+# the museum now: standing, MAP10's kind; a rocket launcher and its rockets, shells, medikits, armour in the
+# cellar, cells in the gallery; the megasphere in PINK's store (a secret)
+items("museum now", (-576, -600, LAUNCHER), (-560, -560, ROCKETBOX), (-1080, -600, ROCKETBOX), (-576, -170, SHELLBOX),
+      (-1130, -170, MEDIKIT), (-560, -480, MEDIKIT), (-1560, -150, ARMOR), (-1220, -420, SHELLS),
+      (-760, -60, SHELLBOX), (-1440, 360, MEDIKIT), (-1440, -40, MEDIKIT), (-1500, -480, MEDIKIT), (-1096, 240, CELLS), (-824, 360, ROCKETBOX))
+items("secrets", (-1160, 560, MEGA))
+put("museum now", "hall", SERGEANT, 3, 0)
+put("museum now", "hall", IMP, 4, 0)
+put("museum now", "hall", KNIGHT, 1, 0)
+put("museum now", "cellar", SPECTRE, 3, 180)
+put("museum now", "gallery", REVENANT, 2, 270)
+put("museum now", "gallery", CHAINGUNNER, 1, 270)
+
+# --- the budget, part by part: each part now pays for itself (ammunition at least 1.6 times its monsters' health
+# on "Resident"); the fights then (the square's waves, the districts', the last one) are paid for by the square
+# now, the museum now and the observatory now together
 SKILLS = m._skills()
 BUDGET = {}
 for part in dict.fromkeys(p for _, p in PART_OF):
     idx = [i for i, p in PART_OF if p == part]
     for level in (3, 1):
         BUDGET[(part, level)] = budget.reckon([m.things[i] for i in idx], [SKILLS[i] for i in idx], level)
+PAY_THEN = ("square", "museum now", "observatory now", "then", "station", "stop2 then", "observatory then",
+            "museum then")
 for level in (3, 1):
-    idx = [i for i, p in PART_OF if p in ("square", "then", "station")]
-    BUDGET[("square and then", level)] = budget.reckon([m.things[i] for i in idx], [SKILLS[i] for i in idx], level)
-for part in ("theatre now", "depot now", "square and then"):
+    idx = [i for i, p in PART_OF if p in PAY_THEN]
+    BUDGET[("square, museum, observatory now and then", level)] = budget.reckon(
+        [m.things[i] for i in idx], [SKILLS[i] for i in idx], level)
+for part in ("theatre now", "depot now", "stop2 now", "museum now", "observatory now",
+             "square, museum, observatory now and then"):
     r = BUDGET[(part, 3)]
     assert r["dmg"] >= 1.6 * r["hp"], budget.line(part, r, 3)
 MONSTERS = {lv: sum(budget.reckon(m.things, SKILLS, lv)["monsters"].values()) for lv in (1, 2, 3, 4)}
-assert 130 <= MONSTERS[3] <= 160, MONSTERS
+assert 200 <= MONSTERS[3] <= 250, MONSTERS
 assert not PROBLEMS, PROBLEMS
 
 PUZZLE = puzzle22.PUZZLE22

@@ -466,7 +466,8 @@ class AjarHandler : EventHandler
 	// 60 and 61, MAP20's basin first at or over, at or under a height (args[4]: water.zs).
 	// 62, MAP21's bolted sector tag args[4] first open; 63, a long cause (tid args[4] / 16) first set to the
 	// setting args[4] % 16 (then.zs). 64, MAP22's turn: the two times first joined (then.zs, JoinedDue); one
-	// with args[4] 1..4 carries that room key (map22.zs, AjarKeyBearer). 65, keys 1 and 2 both in hand.
+	// with args[4] 1..4 carries that room key (map22.zs, AjarKeyBearer). 65, the two room keys args[4] names
+	// both in hand (34: keys 3 and 4).
 	// args[3], if set: it holds back until the player is
 	// within that distance of it and in sight of it. args[1]
 	// is the monster's Doom editor number. It comes in a flash where the thing stands, a moment
@@ -539,9 +540,9 @@ class AjarHandler : EventHandler
 				{
 					if (!AjarThenHandler.JoinedDue()) continue;
 				}
-				else if (g == 65)                               // MAP22: keys 1 and 2 both in hand
+				else if (g == 65)                               // MAP22: the two keys args[4] names (34: 3 and 4) both in hand
 				{
-					if (!Has(mo, 1) || !Has(mo, 2)) continue;
+					if (!Has(mo, a.args[4] / 10) || !Has(mo, a.args[4] % 10)) continue;
 				}
 				else if (g == 50)                               // MAP18: the first lap a pulse has made (clock.zs)
 				{
