@@ -21839,6 +21839,11 @@ and hung in 104 it brings back loose guards. The other two stay in
 - Bones at the start are there at once (no fade at the first tic).
 - Killing the knight in the stall stays possible; nothing needs it.
 
+*Corrected by the tests* (2026-11-27): the crush's hatch is glass that
+shows one way; the big one comes by scent. At the open hatch its rockets
+cost the player 491 to 991 health in each of ten lures (MODE=3), the pier
+helping only once he had left the hatch.
+
 
 ## MAP23 "Sleeping Dogs": the first playable version (built 2026-11-27)
 
@@ -21900,9 +21905,17 @@ one of the four specimens, none.
   the east ledge's wall at y -1136..-1072, the night room behind it
   (`way_out`, turned). THEN the cyberdemon, the pad at the north end.
 - *Its passage* (560, -1456)-(1072, -1312 THEN, -1360 NOW): frame 105 in
-  its west end, RED's far side in its south wall (x 864..928); THEN the
-  crush's hatch (x 752..816), the pier (816..864, 48 deep) beside it and
-  the crush's lever just behind the pier (x 880..944).
+  its west end, RED's far side in its south wall (x 864..928). THEN the
+  crush's whole end wall is glass that shows one way (x 720..848, 16 thick,
+  sill 24, up to 120; AJGLAS lines that block passing, shots and sight,
+  not sound), and the crush's lever is beside it on the passage's north
+  wall (x 848..912): from (840, -1336), facing it, the player sees the
+  crush and its gate through the glass. No pier (corrected by the tests,
+  2026-11-27: the open hatch cost 491 to 991 health a lure). NOW the end
+  wall stays Doom's stone behind the ledge.
+- *Light NOW*: a hole in the roof over the big one's bones (720..848,
+  32..160, light 200, sky) and the east ledge before the brass door lit
+  (y -1168..-1040, light 208); the rest of the run as dark as before.
 
 **Engine pieces.**
 - `then.zs`: the stand-ins made at the first tic are whole at once; a
@@ -21913,8 +21926,13 @@ one of the four specimens, none.
   (a stand-in, as every specimen's). The cyberdemon's gate keeps off while
   a dead one lies in the crush.
 - `AjarSleepingDogs`: the specimens (and the guards) count for no kill; the
-  big one is woken when the player is in its passage THEN; the three lines,
-  each once.
+  big one comes by scent: while the player is in its passage THEN, every
+  living one (the first, and each a Doom gate brings) is set on him with
+  its see state and no stale direction (`movedir` DI_NODIR, `movecount`
+  0). That was all it took: a cyberdemon walks at a target it has never
+  seen (A_Chase moves without sight) and does not fire at one it cannot
+  see (it never fired in ten trials, no sight in either direction); the
+  three lines, each once.
 - Music: THEN MAP21's (AJM_AFTR); NOW AJM_EMY1 ("Mysterium Engine,
   Choir"), which no other map plays.
 
@@ -21930,7 +21948,7 @@ the brass door first open (knights, imps, cacodemons, a revenant in the big
 run).
 
 **Checks** (headless): MODE=1 the way through (45 checks, `levelExited`,
-twice), MODE=2 the rules (28 checks), MODE=3 measured, MODE=4 23 views;
+twice), MODE=2 the rules (30 checks: with the glass blocking sight both ways and a shot), MODE=3 measured, MODE=4 25 views;
 mapcheck 0 problems, thingcheck 0; itemcheck reports key 2 and the soul
 sphere out of reach (48 above the stall's floor): only the knight's bones
 reach them, as designed.
@@ -21952,11 +21970,13 @@ follows by itself, not on this branch's changes.
 - A knight in its run, the player at the stall's hatch: into the stall 10
   of 10, 237 to 402 tics (324 on average); the player steps to the lever
   beside the hatch and pulls it: shut in 10 of 10.
-- The big one, the player at the crush's hatch: deep in the crush 10 of 10,
-  231 to 384 tics (321); round the pier to the lever: shut in 7 of 10 (3
-  backed out while he walked). It hurt the player at the hatch 500 to 990
-  each time (7008 in all): its rockets come through the hatch. Behind the
-  pier at the lever: 0 in 10 times 210 tics.
+- The big one, first with the open hatch: deep in the crush 10 of 10, 231
+  to 384 tics; round the pier to the lever: shut in 7 of 10; hurt at the
+  hatch 491 to 991 each time. Then with the glass (the build as it is): a
+  fresh one asleep in its run, the player standing still at the lever: it
+  came by scent and deep into the crush 10 of 10, 172 to 349 tics (231 on
+  average); sight between them in no tic of any trial; the player hurt 0;
+  the lever pulled from where he stood shut it in 10 of 10.
 - Left with its gate open and the player NOW: knights 10 of 10 left the
   stall's end of the run (69 to 99 tics), the big one 5 of 5 (51 to 54): THEN
   south of NOW works as meant.
@@ -21967,9 +21987,10 @@ follows by itself, not on this branch's changes.
 
 **Bends from the design and open choices.**
 - Fix 1 (RED with the guards, key 2 on the ledge), as decided.
-- The crush's pier is small (48 by 48) and its lever right behind it: with
-  a pier 64 by 64 and the lever 128 further on the big one backed out of
-  the crush before the gate came down (MODE=1's first run).
+- The crush's glass is 128 wide, the crush's own width (it cannot be wider:
+  beyond it are the crush's side walls); the lever is beside it, not under
+  it, and the gate is in sight from it only from the glass's end of it
+  (the player at x 840 facing 60).
 - No dressing: no plates over the pens, no bowls, no notice, no LINE 6
   plate on the shelter.
 - The specimens in the runs are not deaf (they wake by sight or a shot);
@@ -21978,11 +21999,24 @@ follows by itself, not on this branch's changes.
   lie round RED (two of them steps): it was taken in every run.
 
 **What reads badly, for Vadim's play.**
-- Luring the big one from the hatch costs some 700 health: the pier only
-  helps once he leaves the hatch. Whether a player can lure it from behind
-  the pier was not measured.
-- NOW the big one's bones beyond the glass are hard to see from the start
-  (the big run is dark), and the brass door in the dark crush too.
+- The light (MODE=4's views, taken again): from the start, the big one's
+  bones are a pale heap in the middle of the glass, the only bright thing
+  beyond it: a player would notice them. The brass door: from the west side
+  of the funnel (700, -880) it is plain, lit over the ledge's lip with its
+  two plates; from the middle of the funnel, looking straight down the
+  crush, it is not in sight at all (it faces across the crush), and the
+  crush itself is dark. A player who comes up the crush's middle sees it
+  only once he is in the crush.
+- Bones as steps where the design did not mean them (floors 25 to 48 over a
+  floor where a knight, a baron or the big one can die or be left THEN):
+  the only such heights NOW are the stall's and the crush's ledges (48)
+  and, behind the brass door, the night room. A knight or the big one left
+  or killed in its gate's strip or the funnel's last 16 or so (outside the
+  stall or the crush) still reaches the ledge from its bones: for the big
+  one that is the way out without the crush (and, killed there, its Doom
+  gate brings another). The hall, the runs, the guard room (RED at floor
+  0), the antechamber and the yard have no floor over 8 (the yard's glass
+  sill); a step there leads nowhere. Not mended.
 - The guards' lead: they come through one by one over several seconds.
   In MODE=3 the player, posed at the turnstile's mouth, was found 100 to
   600 east of it at the end of most trials (thrown by the arch-vile or
