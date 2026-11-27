@@ -22063,3 +22063,124 @@ four checks after it). Task `then5-follow`. Only `src/zscript/thentest.zs`
 - If MODE=5 fails again: look for the `put in the bay` line in its log
   first; with it, the door code is the suspect; without it and with nobody
   THEN, the three's places at the door (`AJARTEST info`, the sixth line).
+
+## Look: MAP23, the animal house (2026-11-27; board of three looks, not chosen yet)
+
+Decided by Claude (Fable): the design of the board, the three looks and
+what each group holds. Built by Claude on Opus in three parts: the
+mechanism, the shared slots, look 1 whole, the tour and the tools (this
+part); looks 2 and 3, to be painted, each by one worker in its own module.
+Not played by hand.
+
+**The switch.** `AJAR_DOGS` unset or `0`: the plain level, MAP23's TEXTMAP
+and every other map byte for byte as in main's package, and `dogs23` not
+imported (`tools/map_sleepingdogs.py` imports it only when the switch is
+set). `1`, `2`, `3`: that look for every group. `mix`: the line
+`MIX = dict(yard=1, hall=1, runs=1, pens=1, passages=1, plates=1, things=1)`
+in `tools/dogs23.py`, to be set once Vadim has chosen. Texture names are
+`AJD<look><slot><T|N>` (THEN or NOW; a wall slot laid at a height of its
+own carries one more character); pictures `AJD<look>Q<nn><T|N>`; the decor
+sprites `AJVB`, `AJVK`, `AJVS` with one frame per look and time. Only what
+the build uses is painted. MAP23's sky is `AJ7SKY` in every build (a night
+for NOW); in a look THEN's 8 sky sectors get tag 2380 and one line of the
+yard THEN (192..640, 128) the sky transfer (190, 2380, 255) with `AJ22SKY`,
+the day.
+
+**The rule: nothing moves.** A look changes wall textures and their
+offsets, flats, hangs pictures on pieces cut out of one-sided walls, and
+appends decor things (dogs.zs: no tid, no special, not solid, not
+shootable, no count; skipped by mapcheck's wall test, thingcheck and
+itemcheck). Untouched: frames and their trim, far sides, the door leaves,
+the clocked door, RED, the levers, the glass `AJGLAS`, the crush's glass
+strip, the readouts, S1 and S2, the brass door, the night room and the way
+out, `TANROCK2`, the `GATE3` pads, Doom's front door (`BIGDOOR2`,
+`DOORTRAK`). `tools/dogs_compare.py build/plain.pk3 build/look<n>.pk3
+[build/main.pk3]` proves it; for look 1: 194 things the same and 24 decor
+after them (10 bowls, 7 buckets, 7 stores), 175 sectors the same (8 of
+THEN's sky sectors tagged), the 35 lines with specials the same plus the
+one sky transfer, the lines the same once joined (670 plain, 746 in the
+look: 44 cut into pieces), 51 other maps byte for byte.
+
+**How it is laid on** (`tools/dogs23.py`, on the model of `power33.py`):
+`apply` puts every sector in a group by its box (NOW's coordinates) and
+its time, a line hook gives each side the wall of its room and lays it by
+world position at absolute heights (a texture's height and its top row's
+height found in a collect pass), and the faces (pictures) are matched to
+the pieces of line cut for them. Where a way meets a room (a doorway, a
+turnstile, a gate's gap) the upper over it is the room's own wall.
+
+**The slots** (`tools/gfx_dogs.py`; every one 64 wide):
+- yard: `YF` the house's front (the yard's north wall), `YW` the yard's
+  other walls, `SM` the shelter's mass, `SL` sills and frames, `GW` the big
+  run's gateway THEN, `HD` the front door's face THEN; flats `YG` ground,
+  `SC` the shelter's ceiling, `SF` a sill's top.
+- hall (NOW only): `HW`; flats `HF`, `HC`.
+- runs: `RW`; flats `RF` (128, the run's tile with its drain), `RC`.
+- pens: `PW` the pens', stall's and crush's walls, `LF` a ledge's face
+  NOW, `GL` a gate's leaf (laid from 192), `GR` a gate's reveal, `HS` a
+  hatch's surround; flats `PF`, `WP` (256, pen 1's weigh plate), `PC`, `LT`
+  a ledge's top NOW, `GT` a gate's and a hatch's head and sill.
+- passages: `KW` (and S1's closet, the yard's secret THEN), `TS` a
+  turnstile's jambs; flats `KF`, `KK`, `TF`.
+- pictures (kinds): `shelter`, `house`, `plan`, `gate`, `hatch`, `lever`,
+  `rules`, `weigh`, `glass`, `keepers`, `board`, `card`. Their text is in
+  the shared module (`RUNS`, `RULES`, `WEIGH`), so every look writes the
+  same words.
+- things: `bowl`, `bucket`, `store`, each painted for THEN and NOW.
+
+**To add a look** (2 or 3): write `tools/gfx_dogs<n>.py` with the four
+dicts `WALLS` (slot to `fn(w, spec, then)` painting a `gfx_power.Wall`),
+`FLATS` (slot to `fn(then)` returning the flat), `PICTURES` (kind to
+`fn(w, spec, then)`, painted over the wall it hangs on, which is already
+in `w`) and `SPRITES` (kind to `fn(then)` returning the image and its grab),
+in the manner of `gfx_dogs1.py`. Nothing in the map side changes. A missing
+module falls back to look 1 with a printed note. Then
+`AJAR_QUICK=1 AJAR_DOGS=<n> AJAR_OUT=build/look<n>.pk3 ./build.sh`,
+`tools/dogs_compare.py`, and `tools/board23_shots.sh <n> build/look<n>.pk3`.
+
+**The three looks.**
+1. **Vivarium** (painted): white glazed tile with a green course,
+   grey-green paint over it, terrazzo with a drain in the runs, red oxide
+   in the pens, galvanised gates with rivets, stainless hatch surrounds,
+   cream gloss over a grey dado in the passages, lino; the yard of
+   concrete panels with a window ribbon, asphalt, a concrete shelter.
+   Lettering: white enamel plates, black capitals; the run's names on
+   specimen cards (SPECIMEN K 1, MASS 400, FED 0600 1800). NOW: tiles
+   fallen to the brick, rust runs, black mould, cracked terrazzo, the
+   plates chipped.
+2. **Menagerie**: to be painted.
+3. **The Kennels**: to be painted.
+
+**Where the pictures and things are** (NOW's coordinates; THEN the same,
+y - 8192): LINE 6 / THE INSTITUTE on the shelter's front (x 192); ANIMAL
+HOUSE over the front door (240..400, 512) and the plan beside it (64..224,
+512), the plan once more in the hall NOW (416..576, 592); the gate names
+over the pens' gates (y 960), the stall's (1240..1320, 512), the
+isolation's THEN (x 768) and the crush's (720..848, -1024); the small
+names over the kennels' hatches (y 672), STALL GATE and ISOLATION GATE
+with an arrow over their hatches THEN; GATE PEN 1 beside pen 1's lever
+(-632..-568, 672) and GATE CRUSH beside the crush's lever THEN (928..992,
+-1312); the keeper's rules in the four passages; the weigh record
+(-1024..-832, 544); DO NOT TAP ON THE GLASS on the yard's glass (x 640);
+KEEPERS ONLY at the three turnstiles; the name boards (-576..-384, 1216),
+(1408, 960..1088), (384..576, 1280), (912, 224..352) and a card in each
+passage. A bowl at each hatch, a bucket and a store in each passage.
+
+**The board's pictures.** `MAP=MAP23 MODE=5` (`src/zscript/map23.zs`
+Tour, `tools/smoke_MAP23_5.cfg`): a camera of its own, the player at the
+start with no target, NOW's ordinary company cleared, the specimens THEN
+and the bones NOW kept. `tools/board23_shots.sh <n> <pk3>` writes 70 views
+(numbered in its header: the yard 00-05, the hall 06-07, runs 08-15, pens
+16-25, passages 26-34, plates 35-65, things 66-69) to
+`build/board23/look<n>/view_NN.jpg`, the sheet `build/board23/sheet_look<n>.jpg`
+and the swatches in `build/board23/tex_<n>/`.
+
+**Checked (look 1, 2026-11-27).** Plain build: 52 of 52 maps byte for byte
+as main's; the package differs only in `mapinfo.txt` (the sky line and the
+decor's DoomEdNums), `zscript.zs`, `zscript/map23.zs` (the tour) and the new
+`zscript/dogs.zs`. Look 1: `dogs_compare` all the same; mapcheck,
+thingcheck and itemcheck the plain level's notes and no more (0, 0, the
+two OUT OF REACH of the stall's ledge); MODE=1 `levelExited=1` with 45
+checks and 0 failed; MODE=2 30 checks, 0 failed; MODE=5 all 70 views shot.
+Not checked: the look played by hand; the `mix` build (its line is all
+look 1 until the choice).
