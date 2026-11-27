@@ -1,6 +1,8 @@
 version "4.10"
 #include "zscript/ajar.zs"
 #include "zscript/leaf.zs"
+#include "zscript/reach.zs"
+#include "zscript/reachtest.zs"
 #include "zscript/enemies.zs"
 #include "zscript/time.zs"
 #include "zscript/timedoor.zs"
