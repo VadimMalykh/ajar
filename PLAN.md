@@ -21132,3 +21132,112 @@ are; a mancubus is 96 across, more than the stall); a stall wider than 80; sever
 load (the stand-ins' fade and the steps are not tested across a load); the
 readout seen from far off; whether a player finds the ledge from the bones
 without being told.
+
+## Monsters and doors: a cacodemon no longer hangs in the opening (fixed 2026-11-27)
+
+The user, playing MAP22: "It looks like Caco always hangs in the time door
+and blocks it. Is this planned?" It was not. The MAP23 session's kennel lab
+found the same at the clocked door with other monsters: none followed the
+player through it by itself, and a demon jammed in the frame, flipping
+between NOW and THEN.
+
+**The causes, as measured** (headless runs, a trace of every monster each
+15 tics: `AjarDoorTrace` in `doorcaco.zs`):
+- *Through the clocked door every monster went back and forth.* The engine
+  turns a monster's angle and speed as it carries it through a portal, but
+  not the direction Doom's chase walks in (`movedir`). A colour door does
+  not turn anything (its frame and far side face each other), but the
+  clocked door's two frames face the same way, so it turns a monster half
+  round: its next step took it straight back, and back again, until a new
+  chase direction happened to lead out. A cacodemon in the THEN lab: NOW
+  at (2867.9,256) angle 135 movedir 4 (west), 15 tics later THEN at
+  (2868.1,4352) angle 0 (turned) movedir 4 (not), and so on for 870 tics.
+  Before the fix the THEN lab's new MODE=7 (below) passed 1 of 14: the imp
+  29 crossings, the demon 197, the cacodemon 270, the floating one 251,
+  the arch-vile 496; 66 to 997 tics in an opening each.
+- *In MAP22 the player waiting in front of door 4 THEN kept the cacodemon
+  in the opening NOW.* A monster crossing a portal must fit where it comes
+  out; the player 29 in front of frame 124's mouth stood in that place, so
+  the engine never moved it through. It stood in frame 104's opening with
+  its middle on the portal line (64,16), for the rest of the run (1100
+  tics), not attacking (it was after its lure, so its attacks were off),
+  and from THEN it filled the door. A second cacodemon waited right
+  behind it, so it could not have backed out either.
+- *Out of the far opening a monster stopped to fight.* Once through, a
+  monster sees the player and attacks at once; a cacodemon through RED in
+  the TEST map stood 51 tics in the far recess firing.
+- *A cacodemon floating above an opening never saw through it.* The view
+  through a door was traced level from half its height; at z 120 that line
+  meets the wall over the opening (96 high), so it never made for the door.
+Not a cause: the cacodemon's width. With the slide onto the middle line a
+62-wide monster goes through a 64-wide opening (TEST MODE=14, before and
+after). Nor the image of the player through the clocked door: the lures
+stood where they should.
+
+**What was changed** (`src/zscript/enemies.zs`, `AjarSense` and
+`AjarSight`; nothing else of the game):
+- `Crossed`: a jump of more than 96 units in a tic, from near a portal
+  line to near its far side, is a crossing. From then the monster is
+  walked straight out of the far opening (`Leave`: its movedir set away
+  from the line, 2 units a tic more, no attacking) until it is clear of the
+  mouth, at most 3 s; the lure is dropped and its target is the player.
+  Someone in its way at once is fought (it stops leaving).
+- `RoomBeyond`: before it goes into the opening, the place where it would
+  come out (worked out through the portal's own mapping, `AjarSight.
+  Through`) must be free of solid things. If not, it waits in front of the
+  door, 96 + its radius off the line (room for one in the opening to back
+  out), holding its place (its speed is 0 while it stands there, else
+  Doom's chase wanders off, and through other doors); one already in the
+  opening backs out at once (`Back`).
+- `GiveUp`: a monster in an opening that makes no way for 35 tics backs out
+  and leaves that door alone for 3 s.
+- In front of the opening (within 160 and 24 to the side) it is always
+  lined up, even with a straight view through (before only without), and
+  the last 16 units onto the middle line are done at once.
+- The lure stands at the opening's floor, so a floating monster comes down
+  to it as it nears; a floater's view through a door is traced to the
+  middle of the opening (`ClearTo`).
+The rule now: a monster never stays in a door's opening. It comes through
+and walks out, or it waits outside.
+
+**What was checked** (a quick build, `tools/smoke.sh`):
+- `MAP=TEST MODE=14` (new, `doorcaco.zs`): a cacodemon at floor height,
+  one floating at z 120, a demon, the player still in the red room: all
+  three through RED and out of the far recess (in this run at t 223, 394,
+  158; longest in an opening 27, 60, 16 tics); then a cacodemon while the
+  player stands 30 beyond RED's far mouth: it waits at (160,386), 0 tics in
+  the opening, and comes through 65 tics after he steps back. 8 checks.
+- `MAP=THEN MODE=7` (new, `ClockedFollow` in `doorcaco.zs`, one line in
+  `thentest.zs`): the clocked door in 105/125; an imp, a hell knight, a
+  demon, a cacodemon, one floating at z 150, a baron and an arch-vile, one
+  at a time, follow the player through it, NOW to THEN and THEN to NOW: all
+  14 come through with one crossing and leave the far recess, 72 to 213
+  tics after they are set on him (he is through at about 25), 10 to 30
+  tics in an opening. 16 checks, 0 failed.
+- `MAP=TEST MODE=10` as before: 2 checks pass (all three follow, no lure
+  attacked).
+- `MAP=MAP22 MODE=2`: `dayReturnDone=1 checks=14 failed=0`; `MODE=1`:
+  `checks=58 failed=0`, `outByTheWayOut=1`, `levelExited=1`.
+- `MAP=MAP10 MODE=1`: its 12 ambushers, no error. `MAP=THEN MODE=5`:
+  `checks=16 failed=0` (of its pen, one imp came THEN by itself). `MAP=MAP16 MODE=3` (the dogged baron walks there through RED):
+  46 checks, 0 failed.
+- MAP22 after the turn with the player THEN in front of door 4 (as MODE=2
+  stands him), to the side of it at (-150, OFF-80), and far off at (-300,
+  OFF-280), by a pose added to MODE=2 for these runs only, a trace of both
+  cacodemons every 15 tics: before the fix (front) one stood in frame
+  104's opening the whole run; after, in front 1 sample of 166 in an
+  opening (backing out), to the side 0 (both came through and fought THEN),
+  far off 3 (passing through). The run with the player to the side failed
+  `theStopsSecondWave` ("1 of it to come"), before the last changes as
+  after: monsters that came THEN stood where the wave's ambusher was to
+  appear, a matter of that pose, not of the doors; with MODE=2 as it is
+  nobody comes through and it passes.
+
+**Not tested / not played by hand.** Nothing here was played by a person.
+A crowd: one monster in an opening with others pressed behind it cannot
+back out (seen in MAP22 before the waiting place moved back; not seen
+since). Doors not 64 wide or recesses not 16 deep. Lost souls and pain
+elementals (fit, flying, not tried). A monster carried through by a door
+whose far side is in a lift. Save and load while a monster is waiting with
+its speed 0 (the old speed is saved with it). Nightmare skill (monsters
+there attack while moving, which muting does not change).
