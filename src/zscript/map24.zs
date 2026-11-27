@@ -110,7 +110,7 @@ class LeftHangingTest : EventHandler
 	bool InSump(Actor a) { return InBox(a, 0, 1024, 448, 1600, 1024); }
 	bool InStrong(Actor a, int t) { return InBox(a, t, 1536, -512, 2048, -16); }
 	bool InHallOrLobby(Actor a, int t) { return InBox(a, t, 0, 0, 2048, 512); }
-	string Mouth() { return String.Format("mouth: cause %d; ceiling NOW %.0f THEN %.0f", Cause(MOUTH).setting, CZ(320, 520), CZ(320, OFF + 520)); }
+	string MouthInfo() { return String.Format("mouth: cause %d; ceiling NOW %.0f THEN %.0f", Cause(MOUTH).setting, CZ(320, 520), CZ(320, OFF + 520)); }
 	string Water()
 	{
 		let c = Basin(CISTERN), s = Basin(SUMP);
@@ -289,7 +289,7 @@ class LeftHangingTest : EventHandler
 		{
 			Check("threeTimesOldDoors", th.when.Times() == 3 && th.when.OldDoors() && TimeOf(mo) == AjarThen.T_NOW, Where(mo));
 			Check("doorsAtTheStart", green.frame == F(141) && ten.frame == F(122) && tenShadow.frame == F(142) && !clocked.frame && OldOf(121, 10, 223) && OldOf(101, 50, 203), DoorsSaid());
-			Check("mouthOpenAtTheStart", Cause(MOUTH).setting == 1 && CZ(320, 520) == 128 && CZ(320, OFF + 520) == 128, Mouth());
+			Check("mouthOpenAtTheStart", Cause(MOUTH).setting == 1 && CZ(320, 520) == 128 && CZ(320, OFF + 520) == 128, MouthInfo());
 			Check("dryAtTheStart", sump && cistern && !sump.Wet() && !cistern.Wet(), Water());
 		}
 		// 1, 2: the clocked door taken in the lobby and hung in 105; through into THEN
@@ -306,7 +306,7 @@ class LeftHangingTest : EventHandler
 		// 3: GREEN out of 141: the test room is gone, THEN and NOW
 		if (At()) Use(mo, 470, 2 * OFF + 720, 0);
 		if (At()) Check("tookGreen", h.carried == green && OldCount() == 0 && Cause(MOUTH).setting == 0, DoorsSaid());
-		if (Seg(100) && tt == 99) Check("testRoomGone", CZ(320, 520) == 0 && CZ(320, OFF + 520) == 0 && Said("The test room was never built."), Mouth());
+		if (Seg(100) && tt == 99) Check("testRoomGone", CZ(320, 520) == 0 && CZ(320, OFF + 520) == 0 && Said("The test room was never built."), MouthInfo());
 		if (At()) Through(mo, 832, 2 * OFF + 516, 90);
 		if (Seg(24) && tt == 23) { Keys(); Check("backIntoTheHallThen", InHallOrLobby(mo, 1) || InBox(mo, 1, 704, 384, 960, 576), Where(mo)); }
 		// 4, 5, 6: GREEN swapped into 122 for the ten-year door, that hung in 123, GREEN fetched from 122
@@ -387,7 +387,7 @@ class LeftHangingTest : EventHandler
 		if (Seg(24) && tt == 23) { Keys(); Pose(mo, 320, 300, 90); }
 		if (Seg(250) && tt == 249)
 		{
-			Check("testRoomFound", CZ(320, 520) == 128 && CZ(320, OFF + 520) == 128 && Said("It was found after all."), Mouth());
+			Check("testRoomFound", CZ(320, 520) == 128 && CZ(320, OFF + 520) == 128 && Said("It was found after all."), MouthInfo());
 			Check("lastFightCame", ToCome(63, MOUTH * 16 + 1) == 0, String.Format("%d to come", ToCome(63, MOUTH * 16 + 1)));
 			Check("sumpDrainsThroughOldGreenIn101", sump.w < BOTTOM + 90, Water());
 		}
@@ -416,7 +416,7 @@ class LeftHangingTest : EventHandler
 		{
 			Check("oldGreenFromTheFirstTic", green.frame == F(141) && OldOf(121, 10, 223) && OldOf(101, 50, 203) && Open(243) && OldCount() == 2, DoorsSaid());
 			Check("causesAtTheStart", Cause(MOUTH).setting == 1 && Cause(HOIST).setting == 0 && Cause(VALVE).setting == 0 && FZ(2240, 448) == 0 && FZ(2240, OFF + 448) == 0 && FZ(2240, 2 * OFF + 448) == 0,
-				Mouth() .. String.Format("; landing %.0f %.0f %.0f", FZ(2240, 448), FZ(2240, OFF + 448), FZ(2240, 2 * OFF + 448)));
+				MouthInfo() .. String.Format("; landing %.0f %.0f %.0f", FZ(2240, 448), FZ(2240, OFF + 448), FZ(2240, 2 * OFF + 448)));
 		}
 		// rusted, NOW and THEN
 		if (At()) Use(mo, 470, 720, 0);
@@ -433,21 +433,21 @@ class LeftHangingTest : EventHandler
 		// the mouth: GREEN taken from 141 (by script) while the player stands NOW in the mouth: THEN it shuts, NOW it waits
 		if (At()) { Pose(mo, 320, 520, 90); InHand(green); }
 		if (Seg(100) && tt == 99)
-			Check("mouthWaitsForThePlayer", Cause(MOUTH).setting == 0 && CZ(320, 520) == 128 && CZ(320, OFF + 520) == 0 && mo.health > 0 && Said("The test room was never built."), Mouth());
+			Check("mouthWaitsForThePlayer", Cause(MOUTH).setting == 0 && CZ(320, 520) == 128 && CZ(320, OFF + 520) == 0 && mo.health > 0 && Said("The test room was never built."), MouthInfo());
 		if (At()) Pose(mo, 320, 300, 90);
-		if (Seg(100) && tt == 99) Check("mouthShutAtBothTimes", CZ(320, 520) == 0 && CZ(320, OFF + 520) == 0, Mouth());
+		if (Seg(100) && tt == 99) Check("mouthShutAtBothTimes", CZ(320, 520) == 0 && CZ(320, OFF + 520) == 0, MouthInfo());
 		if (At()) WalkTo(320, 700);
 		if (Seg(40) && tt == 39) { walking = false; Keys(); Check("noWayIntoTheTestRoom", mo.pos.y < 512, Where(mo)); }
 		// the ten-year door's leaf in 141 is no colour door: still shut
 		if (At()) ScriptHang(ten, 121);
-		if (Seg(60) && tt == 59) Check("tenYearLeafIn141KeepsItShut", tenShadow.frame == F(141) && Cause(MOUTH).setting == 0 && CZ(320, 520) == 0, Mouth());
+		if (Seg(60) && tt == 59) Check("tenYearLeafIn141KeepsItShut", tenShadow.frame == F(141) && Cause(MOUTH).setting == 0 && CZ(320, 520) == 0, MouthInfo());
 		if (At()) { ScriptHang(ten, 122); h.carried = green; }
 		// GREEN hung back in 141 in play: open again, at both times
 		if (At()) Use(mo, 470, 2 * OFF + 720, 0);
 		if (Seg(100))
 		{
 			if (tt == 0) Check("greenBackIn141", green.frame == F(141) && OldOf(121, 10, 223) && OldOf(101, 50, 203) && Cause(MOUTH).setting == 1, DoorsSaid());
-			if (tt == 99) Check("mouthOpenAgain", CZ(320, 520) == 128 && CZ(320, OFF + 520) == 128 && Said("It was found after all."), Mouth());
+			if (tt == 99) Check("mouthOpenAgain", CZ(320, 520) == 128 && CZ(320, OFF + 520) == 128 && Said("It was found after all."), MouthInfo());
 		}
 		// the swaps: at 122 (GREEN for the ten-year door and back), at 123
 		if (At()) Use(mo, 470, 2 * OFF + 720, 0);
@@ -597,7 +597,7 @@ class LeftHangingTest : EventHandler
 		if (Seg(69)) {}
 		if (At()) View(mo, "the gallery THEN: the valve's lever", 2340, OFF + 600, 0);
 		if (Seg(69)) {}
-		if (At()) { Th(); View(mo, "the lobby NOW with no colour door in 141: the test room never built", 320, 300, 90); }
+		if (At()) { ShutMouth(); View(mo, "the lobby NOW with no colour door in 141: the test room never built", 320, 300, 90); }
 		if (Seg(69)) {}
 		if (At()) View(mo, "the cellar BEFORE (GREEN's far side 243)", 1300, 2 * OFF + 760, 90);
 		if (Seg(69)) {}
@@ -606,5 +606,5 @@ class LeftHangingTest : EventHandler
 		if (At()) Console.Printf("AJARTEST leftHangingViews=%d", viewN);
 	}
 	// (the mouth shut at once, for the view)
-	void Th() { if (green.frame == F(141)) ScriptUnhang(green); th.FollowFrames(); th.Snap(Cause(MOUTH)); }
+	void ShutMouth() { if (green.frame == F(141)) ScriptUnhang(green); th.FollowFrames(); th.Snap(Cause(MOUTH)); }
 }

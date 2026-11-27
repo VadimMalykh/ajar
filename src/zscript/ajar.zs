@@ -1318,7 +1318,8 @@ class AjarHandler : EventHandler
 		// MAP32's walk-through ends with the level: MAP16 after it is not tested (its own mode 3 is another test)
 		if (mode == 3 && level.mapname ~== "MAP32") CVar.FindCVar("ajar_autotest").SetInt(0);
 		// MAP17's, MAP18's and MAP19's tests end with the level: the next map must not take the test up
-		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20" || level.mapname ~== "MAP21" || level.mapname ~== "MAP22" || level.mapname ~== "MAP23") CVar.FindCVar("ajar_autotest").SetInt(0);
+		if (level.mapname ~== "MAP17" || level.mapname ~== "MAP18" || level.mapname ~== "MAP19" || level.mapname ~== "MAP20" || level.mapname ~== "MAP21" || level.mapname ~== "MAP22" || level.mapname ~== "MAP23"
+			|| level.mapname ~== "MAP24") CVar.FindCVar("ajar_autotest").SetInt(0);
 	}
 
 	// --- shooting yourself through a door ---------------------------------
@@ -1478,6 +1479,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "KENNEL") return;    // and the kennel lab (kenneltest.zs)
 		if (level.mapname ~== "MAP23") return;     // and MAP23 (map23.zs, SleepingDogsTest)
 		if (level.mapname ~== "BEFORE") return;    // and the three times lab (beforetest.zs)
+		if (level.mapname ~== "MAP24") return;     // and MAP24 (map24.zs, LeftHangingTest)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 4) LabReachScript(mo, t);      // the reach survey (reachtest.zs)
