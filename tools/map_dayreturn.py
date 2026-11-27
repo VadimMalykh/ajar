@@ -469,7 +469,7 @@ seven = ten.seven
 m.align |= seven.m.align | ten.six.m.align
 LIB, DOME, LOW7 = seven.LIB, seven.DOME, seven.low()
 PASSAGE7 = dict(wall=seven.LOWW or LIB["wall"], ftex=LIB["ftex"], ctex=LOW7["ctex"])
-TORCHES = [(1616, 1100), (2096, 1100), (1616, 1290), (2096, 1290)]
+TORCHES = [(1616, 1100), (2088, 1100), (1616, 1290), (2088, 1290)]   # (MAP10's east ones at 2096 touch the wall)
 LBOX = (1600, 1000, 2112, 1384)
 PIT7 = -96                                          # the dome's sunk floor
 LEDGE = (1792, 1400, 1920, 1464)
@@ -480,8 +480,8 @@ for c in t.copies:
     S, fs = AT_[c.when], len(m.sectors)
     ajarmap.shaped(S, LBOX, ten.pools(TORCHES, seven.DARK) + [
         ((1824, 1000, 1888, 1384), seven.RUN),
-        ((1632, 1160, 1760, 1224), dict(seven.BOOKS, floor=96)),                         # stacks
-        ((1952, 1160, 2080, 1224), dict(seven.BOOKS, floor=96)),
+        ((1600, 1160, 1760, 1224), dict(seven.BOOKS, floor=96)),                         # stacks, against the walls
+        ((1952, 1160, 2112, 1224), dict(seven.BOOKS, floor=96)),                         # (MAP10's leave 32 slots)
         ((1792, 1000, 1920, 1064), LOW7),                                                # before the bus's door
         ((1792, 1320, 1920, 1384), LOW7),                                                # before the dome's
         ((1600, 1320, 1664, 1384), LOW7),                                                # before the way round
@@ -558,7 +558,7 @@ for c in t.copies:
     # the cellar: dropped into through the hole in the hall's floor, left by its stair up to the gallery
     ajarmap.fitted(S, (-1600, -560, -1184, -112), [
         ((-1440, -400, -1344, -304), dict(six.CRATE, floor=-128 + 48)),          # crates
-        ((-1280, -208, -1216, -144), dict(six.CRATE, floor=-128 + 48)),
+        ((-1248, -176, -1184, -112), dict(six.CRATE, floor=-128 + 48)),          # (in the corner: MAP10's leaves a 32 slot)
         ((-1248, -464, -1184, -336), dict(ceil=128, wall=six.STAIR["wall"], ctex=six.STAIR.get("ctex", "AJBOARD"))),
     ], **CELL)
     ajarmap.opening(S, (-1168, -432), (-1168, -368), (-1, 0), 0)
