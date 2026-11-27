@@ -19860,3 +19860,102 @@ main's, and the new textures are added. The three new faces were looked at
 as pictures (`AJ2X1N`, `AJQMD0`, `AJR4C`). **Not seen in the game**: the
 route board with the clocked door hung, the museum's door and the hotel's
 front doors (no test view looks at them).
+
+## MAP18: the way out is the player's to build, with BLUE (built 2026-11-27)
+
+> Vadim, 2026-11-27, playing MAP18: "And BTW blue door and all that area - ablolutely optional, check my last play log. Is this planned?" (His log: he took GREEN, RED and the TEAL leaves, never BLUE or ORANGE.)
+
+> "Also exit way-out is build already, can we make player to build it?"
+
+Decided by Claude (Fable) the same day; built by Claude on Opus in the task `map18-way-out`.
+
+**What was decided.**
+1. *The night room is a way out the player builds, with BLUE.* It was `ajarmap.way_out(m, 7616, 2608, None,
+   floor=B)`: a ready way out, walking into either end ended the level. Now it is `ajarmap.way_home(m, 7616, 2608,
+   BLUE, only=True, floor=B)`: the same room in the same place (7616..7936 x 2608..2864), BLUE's far side in its west
+   end, the brass frame 190 in its east end, inlaid with blue, taking BLUE and no other door. The shutter stays where
+   it was, in the room's south wall (x 7744..7808, from the boiler room), and is the way BLUE is carried in.
+2. *Why BLUE.* It was the one door with no use: its far side in the court was the worst link of the track by far
+   (BLUE only: lever to shutter 7540 against 9078 on foot; RED only 2367, ORANGE 3202, GREEN 3496), and its workshop
+   upstairs, with the hall with no size and its ambush, a part of the building nothing asked for. BLUE's far side
+   leaves the court (its north wall is plain wall there); BLUE itself stays in the workshop with its ambush. Hung in
+   any frame, BLUE is now a way into the night room for empty hands (and back), never for itself: to build the way
+   out BLUE is carried from the workshop to the lever, the run made with it in hand through the shutter while the
+   pulse lives, and BLUE hung in the brass frame. The other doors are the track and the clock, as before. The plan's
+   "a door is never needed, only wanted" has this one exception now: the last door.
+3. *The shutter never shuts anyone in.* It is up while a lane's pulse lives, as before, or while the player stands
+   in the night room; otherwise down, never crushing. The lamps and the ticks stay the pulse's only. Whoever runs in
+   without BLUE, or comes in through BLUE hung somewhere, walks out by the shutter, and it comes down behind him.
+4. *The measure.* BLUE is no door of the track. Out of the far sides, the single-door ways, the "everything hung"
+   search and route A's MapSpot; out of the "no frame or far side nearer than NEAR to the shutter" rule (its far side
+   is behind the shutter by design). Every other rule and bound as it was.
+
+**What is built.**
+- `tools/map_clockdept.py`: the header says what BLUE is now (the doors are shortcuts and the makings of the
+  paradoxes, all but BLUE: BLUE is the way out), that the shutter is also up while the player is in the night room,
+  the workshop (BLUE) and the night room (BLUE's far side and the brass frame) in the list of areas. `NIGHT` (the
+  room's box) and `NIGHT_TAG = 1852`. `way_home(... BLUE, only=True, floor=B)` in place of `way_out`; the three
+  sectors of the room's floor (those inside `NIGHT`; not the recesses of the far side and the frame, which nobody
+  stands in) get the sector tag `NIGHT_TAG`, and the build asserts there are three and that none had a tag. The
+  shutter's sector is as it was: its corners (7744, 2608) and (7808, 2608) lie on way_home's south wall, and
+  `udmf.Map` splits every edge at every vertex on it, so the two sectors meet there as they did with way_out's
+  (whose south wall was already cut at those x); nothing else was needed. The AjarDelayShutter thing has a fourth
+  argument, `NIGHT_TAG`. BLUE's `far(...)` in the court's north wall is gone. `BLUE_NODE`: a node where BLUE leans,
+  for the measure. In `measure()`, BLUE is out of `fars`, `bit`, the hang moves and `ws`; route A's MapSpot 1860 has
+  four args now (ORANGE's two frames, RED's, GREEN's). The night room is not a Walk area: it is reached only through
+  the shutter (timed) or through BLUE hung (not on foot), so as before it stays out of "one piece on foot"; the
+  routes' last four spots, through the shutter to before the brass frame (7904, 2736), are fixed as before.
+- `src/zscript/clock.zs`: `AjarDelayShutter` args[3] (0: none, as before; the clock lab has no such thing and
+  behaves as before): the sector tag of the room the shutter shuts. Its sectors are gathered at the start; every tic
+  `SomeoneIn()` asks whether a player's sector is one of them or the shutter's own (`occupied`), and the shutter goes
+  up while the pulse lives or someone is in, down otherwise, at the same speed and never crushing. `upAt`, `downAt`,
+  the lamps and the ticks as before.
+- `src/zscript/map18.zs`: `TamHangWayA` (the track of way A, shared by MODE=1 and 3), `TamCarWaits`, `TamTakeBlue`
+  (BLUE taken at the lever: `blueInHandAtTheLever`), `TamInNight`, `TamBuildTheWayOut` (in the night room with BLUE:
+  `noWayOutYet`; 24 tics walked into the empty frame, nothing ends: `theEmptyFrameIsNoWayOut`; frame 190 used:
+  `wayOutBuilt` (`wayOutBuilt && !carried`, BLUE in 190); on east into it: `levelExited`). MODE=1 and 2 take BLUE
+  before the pull and end with `TamBuildTheWayOut`. MODE=3 has eleven more steps: a run of way A without BLUE
+  (`readyForARunWithoutBlue`, `inTheNightRoomWithoutBlue`), the pulse burns out with the player in the room
+  (`theRunWithoutBlueBurnsOut`); 40 tics on the shutter is still up (`nobodyIsShutIn`); out south by the shutter
+  (`outByTheShutter`), and it comes down (`theShutterComesDownBehind`); BLUE hung in 128 (the north corridor) and
+  walked into: the player lands in the night room by BLUE's far side, empty-handed, no way out built
+  (`blueHungIsAWayIn`), and the shutter goes up for him (`theShutterGoesUpForWhoeverIsIn`); GREEN offered to the
+  brass frame stays in hand (`theBrassFrameTakesBlueOnly`) and is carried out by the shutter
+  (`outByTheShutterWithGreen`), which comes down again (`theShutterComesDownBehindAgain`).
+  `tools/smoke_MAP18_3.cfg` runs 1950 tics (was 1050).
+- Other modes: nothing read BLUE's far side in the court. MODE=1 hung BLUE from route A's args[4] only when the
+  search put BLUE on the track (it never did: the best track was RED 119 alone); that is gone. MODE=6's view 15 (the
+  court) shows plain north wall now; its view 26 (the night room, looking east) shows the empty brass frame inlaid
+  with blue, and the shutter up on the right, since the viewer stands in the room.
+
+**Carrying on the run** (looked at in the code). The levers are plain use lines (`Thing_Activate`, special 130);
+the lift's buttons the same (`ajarmap.lift_button`); nothing in ajar.zs, clock.zs or lift.zs stops a use or a ride
+while a door is carried (lift.zs only leaves a carried door's height alone). Hung doors and the one-sided doorways
+are portals and take the player whatever he carries. The only thing that stops a carrier is a squeeze (line 500,
+`AjarHandler.Squeeze`): MAP18 has none (`way_home` makes one only with `grille`). In the tests BLUE is carried
+through RED's door into the car (MODE=1), the lift ridden (MODE=2) and GREEN carried out by the shutter (MODE=3).
+
+**The measure** (before: as main on 2026-11-27; after: this build):
+- one piece on foot: 52 areas, 364 nodes (one far side out, BLUE's node in), 28 frames; far sides 5, now 4 (BLUE's
+  in the night room is not counted); the nearest frame or far side 1125 from a lever, 1211 from the shutter (both as
+  before).
+- lever to shutter on foot 9078 (544 tics); ORANGE only 3202 (192), RED only 2367 (142), GREEN only 3496 (209); BLUE
+  only 7540 (451) before, gone now; all of them 2367 (142); the best track RED 119 (as before).
+- the long lane alone, nothing on the track: 1.31 of its time; both Pairs in lanes 1 and 2 on foot: 81 tics spare;
+  the long lane and the best single link: 272 tics spare (all as before).
+- new: the run is made with BLUE in hand: the start to BLUE 2080 on foot, BLUE to the lever 6965 (417 tics); BLUE
+  hung anywhere else is a way into the night room for empty hands, and 0 for the door itself.
+
+**Checked** (the worktree's build, the smoke tests one after another):
+- `MAP=MAP18 MODE=1`: 12 checks (was 8), all pass, `levelExited`; the way 163 tics, the pulse alive, 1 lap.
+- `MODE=2`: 12 (was 8), all pass, `levelExited`; the way 565 tics, 3 laps; the joined lap 157 tics (156.8).
+- `MODE=3`: 26 (was 15), all pass; the pulse burnt out with the player in the room 414 tics after the pull, the
+  shutter open 156 40 tics later; through BLUE in 128 the player came out at (7606, 2736, -256).
+- `MODE=4` 15, `MODE=5` 24, `MODE=6` 2 (35 views), `MODE=7` 27, `MODE=8` 2: all pass, as before.
+- `MAP=CLOCK MODE=1..7` (clock.zs changed): 12, 8, 27, 24, 13, 10, 7 checks, all pass.
+- `MAP=MAP11 MODE=1` (way_home elsewhere): 21, all pass, `levelExited`.
+- thingcheck and itemcheck on `map_clockdept`: 0 problems. mapcheck: 2, the same two as main's (SLOTs by the
+  six-sided hall's slanting walls, "approximate"); nothing in the basement.
+
+**Not seen in the game**: the night room with BLUE hung in the brass frame, and BLUE's far side in its west end (no
+view looks west there).
