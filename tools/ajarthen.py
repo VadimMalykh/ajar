@@ -267,7 +267,7 @@ class Times:
         name plate over them), instead of the plain ones. `when` BEFORE: live
         BEFORE, dead THEN and NOW (DEAD)."""
         if when == BEFORE:
-            tex = tex or dict(DEAD, **{BEFORE: LIVE[BEFORE]})
+            tex = tex or {**DEAD, BEFORE: LIVE[BEFORE]}
             self.cut(a, b)
             peg = dict(dontpegbottom=True) if foot else {}
             self.before.line(a, b, special=130, args=(cause,), playeruse=True, repeatspecial=True, mid=tex[BEFORE],

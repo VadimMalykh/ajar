@@ -575,6 +575,19 @@ map KENNEL "Ajar: the kennel lab"
 	EventHandlers = "AjarThenHandler", "AjarKennel", "KennelTest"
 }
 
+// The three times lab (tools/map_before.py, src/zscript/then.zs): MAP=BEFORE ./run.sh. NOW, THEN and BEFORE, the
+// clocked door and the ten-year door, for MAP24. The sky is BEFORE's only (the yard): MAP22's day sky.
+map BEFORE "Ajar: three times"
+{
+	next = "BEFORE"
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_DEAD"
+	sky1 = "AJ22SKY", 0
+	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "BeforeTest"
+}
+
 // The left-handed room lab (tools/map_lefthand.py, src/zscript/lefthand.zs): MAP=LEFT ./run.sh
 // Its exit (behind the door in the reflected room) is the secret one.
 map LEFT "Ajar: the left-handed room"
