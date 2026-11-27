@@ -20100,7 +20100,7 @@ ammunition 29250 (x1.74).
 - Which build each ran on: the build, MODE=1 and MODE=2 (twice) on the last
   build; MODE=3 and MAP21 on earlier builds of the same level, which
   differed only in the tests of `map22.zs` (MODE=2's removal above, and
-  for MAP21 the four views added to MODE=3).
+  for MAP21 the views added to MODE=3).
 
 **Departed from the design, or settled here.**
 - The east part's two candelabra moved (see above); the design said
