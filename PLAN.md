@@ -17694,6 +17694,66 @@ MAP01's look, so 3 needs Vadim's word.
     the step?
 13. Which of the changes to MAP01 above, and may the cell's floor change?
 
+### Vadim's second addition: the time door opens, and death in the cell leads the same way (2026-11-27; still nothing designed)
+
+**Vadim** (2026-11-27): "Also for map30 end, once user got to that room and
+take out door, we open time door and user get to the time room. Maybe we can
+also do the same if user will be killed in that brick box (but only there,
+not ourside, if user killed outside he looses the level). So user get to
+time room either if he take red door from the frame inside brick box, or he
+killed in brick box. Then user step from the time room and appears in the
+same box with red door, as discussed before."
+
+**What it settles.**
+- Question 7: the room between is the **time room**. It is temporal, not
+  only temporary.
+- Question 8, the way in: **the time door opens**. Not a cut.
+- **Two ways into the time room, and both are in the cell**: taking RED off
+  the cell's frame, or being killed in the cell. Killed anywhere else (the
+  old hall, the rest of MAP30) the player has lost the level, as in any
+  level.
+- The way out stands as it was: he steps out of the time room and is in the
+  cell, RED leaning, the frame empty; he hangs RED, sees MAP01's hall, steps
+  in, and the game is over.
+
+**Claude's reading** (to be corrected).
+- *Where the time door opens.* The cell has one frame and no other opening,
+  and RED has just come off that frame. So the time door opens **in that
+  same frame**, by itself, the moment RED is down: nobody hangs it. The
+  hammering stops; where the old hall was a second ago there is the time
+  room. The player still holds RED.
+- *Death in the cell.* The flood can follow him into the cell before he has
+  the door down. A blow that would kill him there does not: the picture
+  goes white (or dark) for a moment and he stands in the time room, as if he
+  had gone through the time door. For the engine: while he stands in the
+  cell he cannot fall below 1 health, and the blow that would have killed
+  him is the trigger. Outside the cell nothing is changed.
+- *Why this is good for the end.* The last room of the game cannot be
+  failed. A player who is too slow with the door, or who does not guess
+  that the door must come down, still reaches the end, and the loop then
+  reads as "he died there, and began again", Vadim's first thought of
+  2026-11-26 (way 3 above), kept without a second Doom guy.
+- *RED.* If he took it down, he walks into the time room with it and can
+  lean it in the cell himself (question 9, the second way). If he was
+  killed, RED still hangs in the old cell's frame; the cell he comes back
+  to is the cell of the beginning, where RED leans in any case. So the
+  cell he comes back to is always the new copy, never the old one.
+- *The time door at the two ends.* With "the time door in the depot"
+  (the section of that name at the end of this file) the game has the time
+  door doing the same thing twice: it is where it is because the player
+  left it there, and it opens for him at the very end without being hung.
+  It would be right if the time room is where that door is from.
+
+**Open, added to the list**:
+14. What is in the time room: bare (Claude's first choice for the room
+    between), or the machine of MAP21?
+15. Does the time door stay open behind him in the cell of the beginning?
+    MAP01's cell has one empty frame and no door in it, so it must be gone
+    when he looks round: shut and gone as he steps out (a Stray door
+    already does this).
+16. Killed in the cell: does he keep what he carried (weapons, RED)? At the
+    beginning he has the pistol only (question 10).
+
 ## Music: two variations on Paradox Engine, a toccata and a slow one (2026-11-26, no map plays them yet)
 
 **Vadim**: "Could you make 2 new variations of theme 5? One fast, but
@@ -20229,3 +20289,113 @@ night room now, or who takes BLUE down before the clocked door is back on
 the bus, is left to the solver. The bolted door opened by USE from the east
 side is not tested (the line opens it first). The music by ear and the
 automap.
+
+## A door that does not open shows no lock plate; MAP22's kiosk has its soul sphere (mended 2026-11-27)
+
+Vadim, playing MAP22 (the hotel's lobby then, a door with the plate 1, key 1
+and key 2 in hand): "map22 - one more door claiming key1, but not opening
+with key1 (I also saw couple more in the Hotel). Door with key should
+either open, or don't claim the key." And later: "Also shootable secret is
+empty. Is this planned that way?"
+
+**The rule, for every level**: a door with a lock plate opens with the keys
+its plate names. A door that is only a face shows no plate.
+
+1. *The plates.*
+   - **Why**: `ajarmap.excerpt` leaves behind every door that was locked in
+     its own level, and shows it as a face: nailed up (MAP10, MAP22 now) or
+     whole (MAP22 then, `nailed=False`). The face was the locked door's own,
+     plates and all. In MAP02, 03 and 05 those plates are true; in MAP22 the
+     player holds keys 1 and 2 and the plates are not. The museum's door on
+     the square was the first of these (mended earlier today by hand); this
+     is the rest, at the root.
+   - **Now**: `ajarmap.roomdoor` writes down, for every door it makes, the
+     same door without plates (`ajarmap.PLAIN`: `AJHK<keys>` to `AJHDOR`,
+     `AJ2K<look><keys>` to `AJ2D<look>`, `<skin><keys>` to `<skin>`), and
+     `excerpt` shows a door that stays behind by that face, nailed up or
+     not. No new texture is drawn.
+   - **What changed in the maps** (texture counts of the two wads, against
+     main's): MAP22 loses `AJ2K11`, `AJ2K14`, `AJ2K123` (the hotel: rooms
+     106 and 105, and one more), `AJ3D1F1` (the theatre's office), two
+     `AJ3DXB23` (the star's door, at both times) and `AJ5D112` (the
+     station's lost property office); each is now the plain door of the
+     same look. MAP10 loses `AJ2K123` and `AJ3DXB23`, and its nailed-up
+     doors are the plain doors nailed up (`AJNB04` is no longer made). The
+     real locked doors keep their plates: MAP10's museum and dome
+     (`AJHK1`, `AJHK2`), MAP22's brass door in the shelter (`AJ22D12`).
+   - Every other map's wad is byte for byte as on main.
+
+2. *The kiosk* (MAP22 now, the secret opened by shooting its bell).
+   - **Why**: its soul sphere was put at (-288, -560), which is the
+     pavement in front of the kiosk, not the kiosk. It lay in the open and
+     the secret was empty.
+   - **Now**: at (-352, -784), inside, where MAP10 has its plasma rifle.
+     Not planned that way.
+
+**Checked** (the worktree's full build, 11:31, and its tests after the
+disk came back): the build's proofs as on main (`MAP22: solvable in 12 door
+actions, 28633 states, 0 stuck`; MAP10 9 actions); `MAP=MAP22 MODE=1`: no
+check fails, `levelExited`; `MAP=MAP10 MODE=1`: its 12 ambushers, no
+error. The plain faces were looked at as pictures (`AJ2D1` beside
+`AJ2K11`). **Not seen in the game**: the doors themselves in the hotel,
+the theatre and the station (no test view looks at them), and the soul
+sphere through the kiosk's bars.
+
+## The time door in the depot: the player leaves it there himself (Vadim's idea, 2026-11-27; to discuss, nothing designed)
+
+**Vadim** (2026-11-27): "Another idea for some future map - maybe at some
+point I should find myself in that bus depo and left time door there (which
+I found in map22). It will close the loop - trying to save the world I left
+that door in depo, which I found in the past, misused it and this creates
+all the chaos. What do you think?"
+
+And, the same day, on MAP22 as built: "Also maybe we shouldn't have frame in
+the bus which is for time door only. This kind of contradicts with our
+story, that that was accident and I just used wrong door where I shouldn't?"
+
+**Claude's answer**: yes, to both.
+
+**The story as it now stands.** In MAP22 the player finds the time door
+leaning in the depot's fitters' corner, forty years ago, hangs it on the bus
+where no such door belongs, and what is now comes through: the turn, and
+every level after it. Nobody in the town made that door or meant it for the
+bus. In a later level the player, trying to undo this, comes to the same
+depot at the same time (the day before MAP22's morning, or earlier that
+morning) carrying the time door, and leaves it there. It is in the depot
+because he left it; he left it because he found it. The plan has had "the
+clocked door that nobody made" since the concept of levels 21 to 30; this
+says where it comes from.
+
+**What it asks of the later level** (ideas, none decided).
+- *He must leave it without being told to.* The game has the means: a way
+  too small for a door (a squeeze: empty hands only). The only way on from
+  the fitters' corner is one, so the door stays where MAP22 finds it. The
+  player who knows MAP22 sees which corner he is in before he puts it down.
+- *He should think it is the right thing.* The level's errand is to get the
+  time door out of now, where it is doing harm, to somewhere it cannot be
+  used: then, behind a wall, in a yard nobody goes to. That is the depot.
+- *Which level.* After the levels that fight at both times, before MAP30:
+  28 or 29. MAP30's end (the cell, RED) is the other loop; this one should
+  close first, so that MAP30's is the second time the player sees that he
+  is the cause.
+- *The same place exactly.* The depot of that level is MAP22's depot then,
+  from the same description (`tools/map_dayreturn.py`), with the door's
+  place at MAP22's coordinates (256, 966) and nothing leaning there yet.
+
+**What it asks of MAP22** (to be done with "MAP22 bigger", next).
+- No frame on the bus that is the time door's alone: door 4 becomes an
+  ordinary frame, and the time door hangs wherever a door hangs. That it
+  can is the accident.
+- The fitters' plate over the door, "LINE 4, FROM TOMORROW", and the same
+  line on the shelter's timetable say that the town meant to hang it. They
+  go. In the plate's place a tag as fitters would write it: FOUND IN THE
+  YARD. NOT OURS. (Claude's wording, to be overruled.) After the later
+  level that tag is true.
+- The frame in the night room behind the gate (105/125) stays the time
+  door's own: that room is the institute's line, not the town's bus, and
+  the institute has such frames (MAP21). To be overruled if it reads as the
+  same contradiction.
+
+**Open**: which level; whether the player can refuse (and what then);
+whether the door he leaves is seen leaning there from MAP22's side at once
+(a level with both mornings); what the tag says.
