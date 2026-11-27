@@ -43,13 +43,7 @@ extend class AjarHandler
 			if (!cacoThrough[i] && InRedRoom(a)) cacoThrough[i] = t;
 			if (InRedMouth(a)) { cacoInMouth[i]++; cacoLongest[i] = max(cacoLongest[i], cacoInMouth[i]); }
 			else cacoInMouth[i] = 0;
-			if (t % 17 == 0)
-			{
-				let s = AjarSense(a.FindInventory("AjarSense"));
-				Console.Printf("AJARTEST   %d %s at (%.1f,%.1f,%.1f) floor %.0f ceil %.0f target=%s via=%d mouth=%d dir=%d",
-					i, a.GetClassName(), a.pos.x, a.pos.y, a.pos.z, a.floorz, a.ceilingz,
-					a.target ? a.target.GetClassName() : 'none', s && s.via ? s.via.Index() : -1, cacoInMouth[i], a.movedir);
-			}
+			if (t % 15 == 0) Console.Printf("AJARTEST info t=%d %d mouth %d %s", t, i, cacoInMouth[i], AjarDoorTrace.Of(a));
 		}
 		if (t == 1400)
 		{
@@ -61,6 +55,100 @@ extend class AjarHandler
 			Check("demonLeftTheOpening", cacoTest[2] && InRedRoom(cacoTest[2]) && cacoLongest[2] < 105);
 			Console.Printf("AJARTEST info through at t=%d %d %d, longest in an opening %d %d %d tics",
 				cacoThrough[0], cacoThrough[1], cacoThrough[2], cacoLongest[0], cacoLongest[1], cacoLongest[2]);
+		}
+	}
+}
+
+// A monster's state, for the logs of these tests.
+struct AjarDoorTrace play
+{
+	static string Of(Actor a)
+	{
+		if (!a) return "gone";
+		let s = AjarSense(a.FindInventory("AjarSense"));
+		bool steered = s && s.lure && a.target == s.lure && s.via;
+		return String.Format("%s (%.1f,%.1f,%.1f) fl %.0f ce %.0f ang %.0f dir %d cnt %d vel (%.1f,%.1f,%.1f) hp %d tgt %s%s via %s img (%.0f,%.0f) str %d",
+			a.GetClassName(), a.pos.x, a.pos.y, a.pos.z, a.floorz, a.ceilingz, a.angle, a.movedir, a.movecount,
+			a.vel.x, a.vel.y, a.vel.z, a.health,
+			a.target ? a.target.GetClassName() : 'none',
+			a.target ? String.Format(" at (%.0f,%.0f,%.0f)", a.target.pos.x, a.target.pos.y, a.target.pos.z) : "",
+			s && s.via ? String.Format("%d", s.via.Index()) : "-", s ? s.viaImg.x : 0, s ? s.viaImg.y : 0, s && s.viaStraight);
+	}
+}
+
+// MODE=7 of the THEN lab (MAP=THEN MODE=7 tools/smoke.sh): following through
+// the clocked door. It hangs in 105 (NOW) / 125 (THEN), the company bay's west
+// wall. One monster at a time, of every kind that fits an opening, is set on
+// the player in the bay, who walks through the door to the other time and on
+// into the bay there; first NOW to THEN, then THEN to NOW. Each must come
+// through and out of the far recess into the bay, without going back and
+// forth between the times and without staying in an opening.
+extend class ThenTest
+{
+	static const string followKinds[] = { "DoomImp", "HellKnight", "Demon", "Cacodemon", "Cacodemon", "BaronOfHell", "Archvile" };
+	int fTrial, fStart, fOut, fOutAt, fFlips, fInMouth, fLongest;
+	bool fWasThen, fGoing;
+	Actor fDog;
+
+	// in the bay at its own time `then`, out of the recess and clear of the mouth
+	bool InBay(Actor a, bool then) { double y = a.pos.y - (then ? OFF : 0); return InThen(a) == then && a.pos.x > PEN_X + a.radius + 8 && a.pos.x < PEN_X + 512 && y > 0 && y < 512; }
+	// in the clocked door's opening (recess or mouth) at either time
+	bool InMouth(Actor a) { double y = a.pos.y - (InThen(a) ? OFF : 0); return a.pos.x < PEN_X + a.radius + 2 && a.pos.x > PEN_X - 64 && y > 224 - 32 && y < 288 + 32; }
+
+	void ClockedFollow(Actor mo)
+	{
+		mo.player.cheats &= ~CF_NOTARGET;
+		if (tic == 2)
+		{
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			Array<Actor> gone;
+			while (a = Actor(it.Next())) if (a.bIsMonster) gone.Push(a);
+			for (int i = 0; i < gone.Size(); i++) { gone[i].ClearCounters(); gone[i].Destroy(); }
+			HangIn(105);
+			Check("clockedIn105", clocked.frame == F(105) && shadow.frame == F(125), h.said);
+			fTrial = 0;
+			fStart = 5;
+		}
+		if (tic < 5) { cur = tic; return; }
+		int n = followKinds.Size();
+		if (fTrial >= 2 * n) { if (!fGoing) { fGoing = true; cur = tic - 2; } return; }
+		cur = tic;
+		bool fromThen = fTrial >= n;               // the monster and the player start THEN
+		string kind = followKinds[fTrial % n];
+		bool floating = fTrial % n == 4;
+		double ya = fromThen ? OFF : 0, yb = fromThen ? 0 : OFF;
+		int st = tic - fStart;
+		if (st == 0)
+		{
+			Pose(mo, PEN_X + 40, ya + 256, 180);
+			fDog = Actor.Spawn(kind, (PEN_X + 380, ya + 120, floating ? 150 : FloorAt((PEN_X + 380, ya + 120))));
+			fDog.angle = 180;
+			fDog.target = mo;
+			fDog.SetState(fDog.SeeState);
+			fOut = fOutAt = fFlips = fInMouth = fLongest = 0;
+			fWasThen = fromThen;
+		}
+		if (st == 20) Keys(WALKKEY);
+		if (st == 50) { Keys(); WalkTo(PEN_X + 420, yb + 420); }
+		if (st > 0 && fDog)
+		{
+			bool nowThen = InThen(fDog);
+			if (nowThen != fWasThen) { fFlips++; fWasThen = nowThen; }
+			if (InMouth(fDog)) { fInMouth++; fLongest = max(fLongest, fInMouth); } else fInMouth = 0;
+			if (InBay(fDog, !fromThen)) { if (!fOutAt) fOutAt = st; fOut++; } else fOut = 0;
+			if (st % 15 == 0) Info(String.Format("follow %d t+%d %s", fTrial, st, AjarDoorTrace.Of(fDog)));
+		}
+		if (st == 1050 || (fOut >= 70 && st > 60) || (st > 0 && (!fDog || fDog.health <= 0)))
+		{
+			string name = String.Format("%s%s%s", floating ? "floating" : "", kind, fromThen ? "ThenToNow" : "NowToThen");
+			Check(name .. "_through", fDog && fDog.health > 0 && fOut >= 70 && fFlips == 1 && fLongest < 105,
+				String.Format("out of the far recess at t+%d (the player through at about t+25), %d crossings, longest in an opening %d tics; %s",
+					fOutAt, fFlips, fLongest, AjarDoorTrace.Of(fDog)));
+			if (fDog) { fDog.ClearCounters(); fDog.Destroy(); }
+			walking = false; Keys();
+			fTrial++;
+			fStart = tic + 1;
 		}
 	}
 }
