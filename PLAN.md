@@ -22608,3 +22608,66 @@ door left in the free frame BEFORE is an old door into the strongroom THEN,
 and the clocked door is carried in through it. The old door lab shows
 exactly this, and the lab's puzzle graph then has the strongroom NOW as its
 goal.
+
+## The old door lab: what it has to show (2026-11-27, Claude on Fable; to be built)
+
+The second lab for MAP24, on the three times lab's map (`MAP=BEFORE`). The
+rule is "A door left hanging" in "MAP24 "Left Hanging""; this says it exactly
+enough to build and test.
+
+**The rule.**
+1. A colour door (RED to PINK, not a Pair, not a Stray, not a clocked door)
+   hung in frame F at time t has, at every later time u at which F has a
+   frame at the same spot, an *old door* hanging in that frame. It is there
+   at once (also at the first tic, for a door that hangs at the start) and
+   gone at once when the door comes down at t.
+2. The old door at u opens on the door's far side at u, both ways, and is a
+   hung door for everything that asks: walking, sight, shots, monsters
+   following (AjarSense), water (water.zs), a belt's crates (belt.zs), the
+   frame being full.
+3. It cannot be taken down or swapped out: USE at it, with empty hands or
+   with a door, says "Rusted to its frame." and changes nothing. A thief
+   leaves it as it leaves a nailed door.
+4. A colour door does not go into a frame while a frame at the same spot at
+   a later time holds any door (a clocked leaf, a colour door, another old
+   door): it is refused with a line that says so. Swapping at t (a carried
+   door for the hung one) moves the old doors with it. The clocked doors
+   leave no old doors; their own refusals already cover an old door in the
+   twin.
+5. Its look: the door's own colour, read at a glance, and its age read at a
+   glance too: ten years (a door hung BEFORE, seen THEN) dulled; forty and
+   fifty (seen NOW) flaking, rust from the hinges. The same on its far
+   side's face.
+
+**Flows** (after the rule works; each its own commit).
+6. *Water.* NOW, a basin filled by a cause and a dry room joined by an old
+   door: the water stands in both as water.zs has it for any hung door.
+   Nothing new is expected; the test shows it.
+7. *A cause that follows a frame.* A long cause whose setting is not a
+   lever's but what hangs in a frame at its time: 0 while the frame is
+   empty, 1 while a colour door hangs in it. The level's last act is this
+   (the test room and the way out are there THEN and NOW only while a door
+   hangs BEFORE in the first frame). In the lab: a closet THEN and NOW that
+   is open only while a door hangs in one of the yard's frames BEFORE.
+8. *The belt.* THEN a belt runs to a frame. Running with the frame empty,
+   the heap NOW lies at the belt's end (as in the then and now lab);
+   running with RED hung in that frame THEN, the crates ride through RED
+   and the heap NOW lies at RED's far side NOW, and none at the belt's end;
+   standing, no heap. If belt.zs cannot carry a crate through a hung door
+   THEN as it does in MAP17, say so and stop at the heap's place NOW.
+
+**The solver.** An old door fills its frame and is a link at each later
+time; a hanging that rule 4 refuses is no move. The lab's puzzle graph gets
+the strongroom NOW as its goal (the three times lab could not reach it):
+RED left in the strongroom's free frame BEFORE.
+
+**Tests** (beforetest.zs, new modes; the old ones unchanged): the rule (1 to
+4, every refusal, RED hung BEFORE seen THEN and NOW, RED hung THEN seen NOW
+only, a door that hangs BEFORE from the start, the swap, a monster NOW
+through an old door, the strongroom NOW reached in play); the flows (6, 7,
+8); views of the old door at each age from both sides.
+
+**Kept as they are**: every map with one or two times builds byte for byte
+(a colour door hung THEN on MAP21 to MAP23 would now leave an old door NOW:
+that is the rule, but it is switched on by the map, as the third time is, so
+that 21 to 23 do not change until Vadim says so).
