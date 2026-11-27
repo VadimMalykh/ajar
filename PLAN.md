@@ -21132,3 +21132,194 @@ are; a mancubus is 96 across, more than the stall); a stall wider than 80; sever
 load (the stand-ins' fade and the steps are not tested across a load); the
 readout seen from far off; whether a player finds the ledge from the bones
 without being told.
+
+## MAP23 "Sleeping Dogs": the first version, as decided (2026-11-27)
+
+**Vadim** (2026-11-27): "Let's go with idea 1." Settled by Claude on Fable
+from "MAP23 "Sleeping Dogs": the animal house, chosen" and from what "The
+kennel lab" measured. Vadim has not seen this text. Claude's choices where
+he was asked and has not answered: the name; the specimens outside the
+budget.
+
+**One idea**: a monster is a long cause that can be led. Where it is left
+then is where its bones lie now. Bones weigh, a big one's bones are a step,
+and what was led away is not there.
+
+**What the lab changed in the outline.**
+- *The hatch brings a monster into the pen, not to a spot* (it ends
+  anywhere in the back half). So nothing asks for a spot: scales weigh a
+  whole pen, and a step is wanted only in a stall so narrow that bones
+  anywhere in it reach a ledge: 80 wide for a knight or a baron, 128 for
+  the big one, the ledge at 48 along both long sides. (The arithmetic, shown
+  in the lab's stall: the player stands on bones while his middle is within
+  the bones' radius + 16 of theirs, and is on a ledge once his middle is
+  within 16 of the stall's side; so one side or the other is always in
+  reach, with 16 to spare.)
+- *Bones in front of a hatch were a dead zone* (the lab's first pen 2: a
+  ledge across the end wall with the hatch a notch in it; nobody can stand
+  in the notch, so from bones lying before it neither half of the ledge was
+  reached). So a hatch is never in a ledge: now, the hatch of a stall is
+  shut by Doom's stone and the ledge runs round the end over it; then, the
+  hatch is open and there is no ledge.
+- *A stall off the side of a run is a poor trap* (the lab's second pass:
+  12 knights of 20 and 17 barons of 20 turned into an 80-wide mouth in the
+  run's side wall; through a 128-wide gate 15 of 15). Doom's chase goes
+  straight at its target and slides past a narrow turning. So a stall is
+  never off the side: it is the end of its run, on the run's own line, and
+  the run narrows to it as a funnel (from the run's width to the stall's
+  over 128), so that walking at the hatch is walking into the stall. Not
+  tried in the lab: the level's tests measure it.
+- *Two cells set on each other* did not happen by itself in five runs, and
+  the lab never tried the shot that starts it. Not in this version.
+- *The house is always stocked.* Killing a specimen in the wrong place
+  would lose it for good, and the level with it. So each run then has a
+  gate of Doom's stone (a teleporter's pad), and when no specimen of the
+  run's kind is alive in that run or its pen, another arrives there. It is
+  the leak, and it is the rule that nothing can be lost.
+- *No frame beyond a way that bones make* (the scales' closet, the ledges),
+  except the way out. With the clocked door hung beyond such a way and the
+  player dropped back, the bones would be gone and the door out of reach.
+- *Monsters did not follow through the clocked door by themselves*
+  (enemies.zs; mended in its own task, `clocked-follow`). The guards' wing
+  below needs it.
+- At the start of a level no stand-ins were made (then.zs made them only
+  when a link came down). Here the times are apart at the start, and every
+  monster alive then is bones now from the first tic.
+- A stand-in whose monster dies then becomes the for-good corpse in its
+  place (the lab faded one out and made another: for 35 tics the scales
+  read double).
+
+**The two times** (`ajarthen.Times`; THEN south of NOW, as the lab has it).
+NOW: night, the ruin, Doom's tenants, the runs open to the hall (their
+gates and turnstiles are gone). THEN: day, lit, whole; every part of the
+house is locked for the night from the next, and is entered only by the
+clocked door; the monsters then are in the runs, behind hatches and gates,
+and the player in the keepers' passages: a zoo, until a gate is left open.
+The first version wears MAP11's looks (NOW look 3, THEN look 2), with
+plain dressing (name plates over the pens, bowls, a notice); the animal
+house's own look is a look board after Vadim has played it.
+
+**Doors and keys.** The clocked door; RED. Keys 1 and 2. No Pair, no Stray
+door, none of Ajar's own company.
+
+**Frames** (n NOW, n + 20 THEN):
+
+| Frame | NOW | THEN | Takes |
+|---|---|---|---|
+| 101 / 121 | the yard | the yard by day (sealed: a look, and a secret) | the clocked door only |
+| 102 / 122 | the kennels' passage | the kennels' keeper's passage | any door |
+| 103 / 123 | the stalls' passage | the stalls' keeper's passage | any door |
+| 104 / 124 | the guards' antechamber | the west end of the isolation run | any door |
+| 105 / 125 | the big run's passage | the big run's keeper's passage | the clocked door only |
+
+One frame to each part then, so a colour door can never hang then (the
+clocked door's twin holds the only frame there).
+
+**The places.**
+1. *The yard* (the start, NOW): line 6's stop, a shelter with the plate
+   LINE 6, THE INSTITUTE; the clocked door leans in it; a shotgun. The
+   animal house's front: its door (Doom's, by USE) into the hall, and
+   frame 101. Along the yard's east side a wall of glass onto the big run
+   (blocksight, nothing passes), and at its end the big run's gateway,
+   open NOW. THEN the yard is sealed (the house door locked for the
+   night, the gateway shut): through 121 it is the same yard by day, and
+   through the glass the big one, alive. A secret behind the shelter then.
+2. *The hall* (NOW only as a place): the hub. Off it the kennels' run and
+   passage, the stalls' run and passage, the guards' antechamber. Its
+   tenants and the first fight. A chaingun.
+3. *The kennels* (bones weigh). A run with three pens on one side and the
+   keeper's passage behind the pens; a hatch from the passage into each
+   pen. THEN: three demons in the run, asleep; pen 1's gate by a lever in
+   the passage beside its hatch; a turnstile between passage and run;
+   the run's Doom gate (stocked with demons). NOW: frame 102 in the
+   passage; pen 1's floor is the scales (the readout on the passage wall);
+   at 400 the shutter S1 in the passage stands open: a closet with **key
+   1** and a super shotgun. At 1000 (all three demons in the one pen) a
+   second shutter in the closet: a secret (a megasphere).
+4. *The stalls* (a big one's bones are a step). A run, and at its end, on
+   its own line and behind a funnel, stall 2: 80 wide, 192 deep, a gate at
+   its mouth. THEN: two hell knights in the
+   run, the stall's gate by a lever in the keeper's passage beside the
+   stall's hatch, a turnstile, the run's Doom gate (stocked with a
+   knight). NOW: frame 103 in the passage; in the stall a ledge at 48
+   along both long sides and round the end (the hatch is Doom's stone
+   now), no other way up: **RED** leans on it at the end, with a soul
+   sphere.
+   Down is a drop.
+5. *The guards* (what was led away is not there). NOW an antechamber with
+   frame 104 and, through a doorway, the guard room: two barons and an
+   arch-vile, more than the level's ammunition pays for; on the room's far
+   side **key 2**. THEN frame 124 is in the west end of the isolation run;
+   beside it a turnstile into the keeper's passage, which runs along the
+   run to the isolation pen at its east end: its hatch and the lever of
+   its gate. The way: be seen, through the door, sideways through the
+   turnstile, along the passage to the hatch (they come along the run
+   after you), shut the gate on them, back, through the door, take it
+   down. Left loose in the run then, they are bones in the run now, and
+   they wait there. No Doom gate here: these three are not needed, only in
+   the way; killed (now or then) they are out of it as well.
+6. *The big run* (the test). NOW it opens off the yard: long, the big
+   one's bones standing in the middle of it from the first tic (a step 80
+   across that leads nowhere: the player may climb it at once). At its far
+   end, on its line and behind a funnel, the crush: 128 wide, 256 deep, a ledge at 48 along both sides and
+   round the end (its hatch is Doom's stone now), and in its east wall, on
+   the ledge, a brass door locked with
+   **keys 1 and 2**. Behind it the night room and the way out
+   (`ajarmap.way_out`, no far side, as MAP21's). THEN: the cyberdemon in
+   the middle of the run; the crush's gate; the run's Doom gate ("there is
+   always one": if it dies anywhere but in the crush, another comes).
+7. *The big run's keeper's passage*, sealed at both times: **RED's far
+   side** is in it (NOW and THEN, as a colour door's is), and nothing else
+   leads there. NOW frame 105. THEN: the crush's hatch, with a pier beside
+   it to stand behind (its rockets), and the lever of the crush's gate
+   behind the pier.
+
+**The way through** (the wings in any order):
+1. *See it.* The yard, the bones in the big run, the clocked door; through
+   101: the day, and it is alive.
+2. *The kennels*: the clocked door in 102; a demon baited into pen 1 and
+   shut in; back, the door down: the scales read 400, S1 opens: key 1.
+3. *The stalls*: the door in 103; a knight baited into stall 2 and shut
+   in; back, the door down; up its bones onto the ledge: RED.
+4. *The guards*: the door in 104; lead them through, pen them or leave
+   them; back, the door down: key 2.
+5. *The big run*: RED hung in 102, 103 or 104: the big run's passage; the
+   clocked door carried through RED and hung in 105; the big one baited
+   into the crush and shut in; back, the door down, out through RED; the
+   big run now, up its bones, the brass door, out.
+Each time the lesson is the same act: the past is past only when the door
+is down. (Or the specimen is killed where it stands, for good, which costs
+what the level does not give for the big ones.)
+
+**Nothing can be lost.** `tools/puzzle23.py`, checked in the build as for
+21 and 22. Bones are keys the solver gets in the keeper's passages then
+(the house is always stocked, so a specimen can always be had); the solver
+proves the doors. The rules the generator keeps: no frame beyond a way
+that bones make; one frame to each part then; a gate or a shutter never
+shuts on anything; a step is never solid while something stands in it.
+
+**Fights** (Doom's monsters; a first guess of 90 to 120 on "Resident" in
+`tools/budget.py` by part, the specimens apart from it: the three demons,
+the knights, the guards, the big one and whatever the Doom gates bring are
+not paid for).
+- NOW: the hall's tenants (imps, sergeants, zombies, a chaingunner or
+  two); the kennels' run (demons, spectres); the stalls' run (imps,
+  revenants, a knight); the big run (cacodemons, lost souls, a mancubus at
+  the crush); an ambush at each key and at RED; the last one when the
+  brass door opens.
+- THEN: nothing walks free unless the player lets it. The specimens in
+  their runs; what follows him through the clocked door.
+- Weapons: shotgun (the yard), chaingun (the hall), super shotgun (S1's
+  closet), a rocket launcher in the stalls' run now; a plasma rifle is the
+  second secret's.
+
+**Music**, by time: then MAP21's default piece; now a piece no other map
+plays, if one is free. To be judged by ear.
+
+**mapinfo**: MAP23 "Sleeping Dogs"; MAP22's `next` leads here; its own
+starts it again until there is a MAP24.
+
+**Left out of the first version**: two cells set on each other; the bus
+at the stop (the shelter only); glass that shows one way inside the house
+(the yard's wall is the one pane); a circuit that runs one way; the look
+(the kennels' own drawing, the name plates); fights tuned by play.
