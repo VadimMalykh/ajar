@@ -91,20 +91,32 @@ class AjarTitleHandler : EventHandler
 
 	// Straight ahead for good (args[4] units a second; look 3, the night room: tools/map_title3.py). The
 	// camera is moved as a thing walks (TryMove), so it goes through a line portal as a player does, turned
-	// as the portal turns it, and the engine carries the view across with no seam: P_TryMove notes where
-	// the camera crossed, and the view's interpolation between two tics follows that path through the
-	// portal. It is no player, no monster and not solid: it crosses lines without setting off their
-	// specials (a level's exit is the player's to cross) and passes through things. With `developer` on it
-	// says when it went through a portal (for the seam's proof shots).
+	// as the portal turns it. It is no player, no monster and not solid: it crosses lines without setting
+	// off their specials (a level's exit is the player's to cross) and passes through things.
+	// Where it went through a portal, the view must not slide from where it was to where it is (the far
+	// end of the room, a moment ago): the engine follows a crossing in the view's interpolation only in
+	// the tic it happened, so a frame drawn after two tics or more (a slow machine) would sweep the view
+	// down the whole room. So the camera is handed on to a new one there, whose view is not interpolated
+	// from anywhere: at most one tic of the glide (0.4 units) is shown still. With `developer` on it says
+	// when it went through (for the seam's proof shots).
 	void Ahead()
 	{
 		cam.bNoInteraction = false;     // (with it, a move skips the line checks that carry a thing through a portal)
 		Vector3 was = cam.pos;
 		double turned = cam.angle;
 		if (!cam.TryMove(cam.pos.xy + Actor.AngleToVector(cam.angle, cam.args[4] / double(TICRATE)), 1)) return;
-		if ((cam.pos.xy - was.xy).Length() > cam.args[4] && CVar.FindCVar("developer").GetInt())
+		if ((cam.pos.xy - was.xy).Length() <= cam.args[4]) return;
+		if (CVar.FindCVar("developer").GetInt())
 			Console.Printf("AJARTITLE camera through a portal at tic %d: (%.2f, %.2f) to (%.2f, %.2f), turned %.1f",
 				level.maptime, was.x, was.y, cam.pos.x, cam.pos.y, cam.angle - turned);
+		let next = AjarTitleCamera(Actor.Spawn("AjarTitleCamera", cam.pos));
+		if (!next) return;
+		next.angle = cam.angle;
+		next.pitch = cam.pitch;
+		for (int i = 0; i < 5; i++) next.args[i] = cam.args[i];
+		cam.Destroy();
+		cam = next;
+		Look();
 	}
 
 	// The menu opens over the title by itself, once; Esc still shuts it and shows the bare title.

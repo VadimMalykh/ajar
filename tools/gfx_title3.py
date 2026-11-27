@@ -43,16 +43,17 @@ def mix(a, b, f):
 # --- the lettering: an inline face ------------------------------------------------------------------------
 class Inline(T.Pen):
     """Art Deco capitals from the shared skeleton: square ends, and an engraved line down the middle of every
-    stroke (an inline), where a stroke is heavy enough to hold one (`least` RES px half-wide; below that, as
-    on the help page, the strokes are plain). The line is found from the drawn ink itself: it is the middle of
+    stroke (an inline), on the capitals only, where a stroke is heavy enough to hold one (`least` RES px
+    half-wide; below that, as on the help page, the strokes are plain). The small capitals are solid: with
+    the line they broke up at 1024x640 ("New Game", "House Rules" read as fragments). The line is found from the drawn ink itself: it is the middle of
     the stroke, the pixels as far from the ink's outside as the stroke's half weight (so it follows any
     skeleton and any spacing). The glyphs are grey: the edge dark, the inline mid grey, the body light and a
     little lighter at the top, like lit metal; the menu's TEXTCOLO colour maps that to dark edge, a brass
     groove and brass. Drawn in given colours (ink, edge), the inline is the ink a little under half way to
     the edge colour: a dark groove in brass with a dark edge, a light line in dark letters on cream."""
     # A little smaller than look 1's (cap 15) and heavy for its size: the widest item (House Rules) has to
-    # end left of the doorway at the far end of the room (from 131 on the 320 grid), and the strokes, small
-    # capitals too, have to stay heavy enough to hold the inline.
+    # end left of the doorway at the far end of the room (from 131 on the 320 grid), and the capitals'
+    # strokes have to stay heavy enough to hold the inline.
     cap, small, weight, gap, butt, edge, track, spacing = 13, 9.5, 3.2, 0, True, 0.75, 0.25, 16
     light, dark = 236, 24
     groove = 0.45           # the inline: this far from the ink to the edge's colour
@@ -60,6 +61,7 @@ class Inline(T.Pen):
                             # 3.2, its small capitals' 3.1; the help page's heading's 2.7 is too light (its
                             # inline came and went with where a stroke fell on the pixels)
     top_lift = 18           # the body's grey this much lighter at its top than at its foot
+    small_inline = False    # small capitals (lowercase) solid
 
     def glyph(self, ch, cap, res=T.RES, top=None, height=None, small=None, ink=None):
         """The shared glyph; this only notes the stroke's half weight for paint() (as Pen.glyph weighs it:
@@ -73,7 +75,8 @@ class Inline(T.Pen):
 
     def paint(self, body, rim, W, H, ch, ink):
         im = Img(W, H, (0, 0, 0, 0))
-        inl = self.inline(body, W, H, getattr(self, "_half", 0))
+        plain = ch.islower() and not self.small_inline
+        inl = self.inline(body, W, H, 0 if plain else getattr(self, "_half", 0))
         rows = [y for y in range(H) if any(v > 0.5 for v in body[y])]
         y0, y1 = (rows[0], rows[-1]) if rows else (0, H)
         for y in range(H):
