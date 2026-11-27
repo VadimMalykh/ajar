@@ -583,7 +583,10 @@ class DayReturnTest : EventHandler
 		if (S()) { Check("theStopsFirstWave", Wave(3) == 0, String.Format("%d of it to come", Wave(3))); Check("theSecondWaveWaits", Wave(30) > 0, String.Format("%d", Wave(30))); Next(); }
 		if (S()) Wait(35 * 26);
 		if (S()) { Check("theStopsSecondWave", Wave(30) == 0, String.Format("%d of it to come", Wave(30))); Check("theDistrictsWait", Left(64, 1) > 0, String.Format("%d near", Left(64, 1))); Next(); }
-		// taken down and hung again elsewhere: no second turn
+		// taken down and hung again elsewhere: no second turn. The square's company, woken and hunting, has come
+		// through door 4 by now and may stand in the walk to it (the walk failed in two runs of three): it is
+		// removed first, its part of the test done
+		if (S()) { Info(String.Format("%d of the square's company removed", RemoveSquareCompany())); Next(); }
 		if (S()) Put(mo, 64, OFF - 120, 90);
 		if (S()) Go(mo, 64, OFF - 28);
 		if (S()) Use(mo, 90);
@@ -603,6 +606,15 @@ class DayReturnTest : EventHandler
 		Actor a;
 		while (a = it.Next()) if (a.bIsMonster && a.health > 0) n++;
 		return n;
+	}
+	int RemoveSquareCompany()
+	{
+		Array<Actor> all;
+		let it = level.CreateActorIterator(AjarDayReturn.SQUARE_TID);
+		Actor a;
+		while (a = it.Next()) if (a.bIsMonster) all.Push(a);
+		for (int i = 0; i < all.Size(); i++) { all[i].ClearCounters(); all[i].Destroy(); }
+		return all.Size();
 	}
 	int Hunting(Actor mo)
 	{
