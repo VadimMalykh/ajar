@@ -343,6 +343,7 @@ class AjarThief : AjarWorker
 		while (f = AjarFrame(fi.Next()))
 		{
 			if (f == lastFrame || f == avoid || (f.door && f.door.Stuck())) continue;
+			if (loot && h.OldBlocker(loot, f)) continue;     // a later time has a door in it (then.zs, a door left hanging)
 			// with a door: hang it, or swap; without: take the one that hangs there.
 			// Anything that takes a hung door down needs the player watching.
 			bool job = loot ? (!f.door || seen) : (f.door && seen);
@@ -746,7 +747,7 @@ class AjarNailer : AjarWorker
 		AjarDoor d;
 		while (d = AjarDoor(di.Next()))
 		{
-			if (!d.frame || d.nailer) continue;
+			if (!d.frame || d.nailer || d.IsOld()) continue;        // (an old door is rusted in: then.zs)
 			Line l = h.FindLine(d.frame.args[0]);
 			double dist = Distance2D(d.frame);
 			if (l && dist < bestDist && CanReach(Front(l, REACH))) { best = d; bestDist = dist; }

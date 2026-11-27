@@ -45,6 +45,10 @@
 //    one door is in the player's hands.
 //  * The ten-year door (colour 11, then.zs; the three times lab BEFORE): a
 //    second clocked door, joining a frame THEN to the same frame BEFORE.
+//  * An old door (args[1] 12, then.zs; the old door lab): on a map that says
+//    so, a colour door hung at an earlier time hangs at once in the same frame
+//    at every later time, ten, forty or fifty years old (made by Hang, unmade
+//    by Unhang of the door itself); rusted to its frame.
 //  * A colour door on a map with two times (then.zs, FarAt): its far side is
 //    built at both times, line id args[0] NOW and args[0] + 20 THEN, and it
 //    opens on the copy at the time of the frame it hangs in; while it hangs,
@@ -121,6 +125,9 @@ class AjarDoor : Actor
 	int joinEnds;      // joined for a time only (goes.zs): the level's tic it shuts again (0: for good)
 	int joinTics;      // and how long that time is
 	int ownFar;        // a colour door on a map with two times: its own far side's line id (NOW's copy); args[0] is the copy at its frame's time while it hangs (then.zs, FarAt)
+	AjarDoor oldOf;    // an old door (args[1] OLD, then.zs, a door left hanging): the colour door hung at an earlier time
+	int oldColour;     // ... its colour
+	int oldYears;      // ... and how long it has hung: 10 (BEFORE seen THEN), 40 (THEN seen NOW), 50 (BEFORE seen NOW)
 
 	Default
 	{
@@ -176,16 +183,32 @@ class AjarDoor : Actor
 		AJNT A -1;
 		AJNY A -1;
 		Stop;
+	Old:               // the old door (then.zs): RED to PINK at ten years (AJO1..6), at forty and fifty (AJQ1..6)
+		AJO1 A -1;
+		AJO2 A -1;
+		AJO3 A -1;
+		AJO4 A -1;
+		AJO5 A -1;
+		AJO6 A -1;
+		AJQ1 A -1;
+		AJQ2 A -1;
+		AJQ3 A -1;
+		AJQ4 A -1;
+		AJQ5 A -1;
+		AJQ6 A -1;
+		Stop;
 	}
 
-	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF, 0x30D0C0, 0xFF8A30, 0xFFF0D0, 0xE0A060 };
+	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF, 0x30D0C0, 0xFF8A30, 0xFFF0D0, 0xA8B8D0 };
 	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK", "STRAY", "TEAL", "ORANGE", "CLOCKED", "TEN-YEAR" };
 	const STRAY = 7;
 	const CLOCKED = 10;
 	const TENYEAR = 11;    // the ten-year door: a clocked door from THEN to BEFORE (then.zs)
 	const SHADOW = 3;      // args[3] of the clocked door's other leaf
+	const OLD = 12;        // args[1] of an old door: a colour door left hanging at an earlier time (then.zs)
 
-	int Colour() { return clamp(args[1], 1, 11); }
+	int Colour() { return IsOld() ? oldColour : clamp(args[1], 1, 11); }
+	bool IsOld() { return args[1] == OLD; }
 	bool IsClocked() { return args[1] == CLOCKED || args[1] == TENYEAR; }
 	// a clocked door joins the time SpanFrom() to the one before it: the clocked door NOW (0) to THEN, the
 	// ten-year door THEN (1) to BEFORE (AjarThen's times)
@@ -205,8 +228,8 @@ class AjarDoor : Actor
 	}
 	// A Pair leaf that hangs while its twin does not: a shut door, flat in its frame.
 	bool Shut() { return IsPair() && frame && !args[0]; }
-	// Nobody can take it out of its frame: nailed, a fixed doorway, or a Stray door once open.
-	bool Stuck() { return nailer || (IsStray() && frame); }
+	// Nobody can take it out of its frame: nailed, a fixed doorway, a Stray door once open, or an old door (rusted).
+	bool Stuck() { return nailer || (IsStray() && frame) || IsOld(); }
 	string BackTex() { return String.Format("AJDR%d", Colour()); }
 	string Label() { return names[Colour()]; }
 
@@ -218,10 +241,17 @@ class AjarDoor : Actor
 		if (IsShadow() && !frame) { Hide(); return; }          // the clocked door's other leaf is only ever seen hung
 		int c = Colour();
 		sprite = GetSpriteIndex(nailer ? nailedSpr[c] : spr[c]);
+		static const name tenSpr[] = { 'AJO1', 'AJO1', 'AJO2', 'AJO3', 'AJO4', 'AJO5', 'AJO6' };
+		static const name fiftySpr[] = { 'AJQ1', 'AJQ1', 'AJQ2', 'AJQ3', 'AJQ4', 'AJQ5', 'AJQ6' };
+		if (IsOld()) sprite = GetSpriteIndex(oldYears > 10 ? fiftySpr[clamp(c, 1, 6)] : tenSpr[clamp(c, 1, 6)]);     // dulled, or flaking
 		bInvisible = false;
 		bOnlyVisibleInMirrors = args[3] == 2;      // ajarmap.door(unseen=True), until it is first taken
 		if (bOnlyVisibleInMirrors) A_RemoveLight('glow');
-		else A_AttachLight('glow', DynamicLight.PointLight, glow[c], 80, 80, 0, (0, 0, 56));
+		else
+		{
+			int r = IsOld() ? (oldYears > 10 ? 40 : 60) : 80;      // an old door's glow is weaker, the older the weaker
+			A_AttachLight('glow', DynamicLight.PointLight, glow[c], r, r, 0, (0, 0, 56));
+		}
 	}
 
 	void Hide()
@@ -327,7 +357,7 @@ class AjarHandler : EventHandler
 		AjarDoor d;
 		while (d = AjarDoor(di.Next()))
 		{
-			if (d.IsStray() || d.IsPair() || !FindLine(d.args[0]) || ids.Find(d.args[0]) < ids.Size()) continue;
+			if (d.IsStray() || d.IsPair() || d.IsOld() || !FindLine(d.args[0]) || ids.Find(d.args[0]) < ids.Size()) continue;
 			// not the room of a longer chain's third door (Vadim, 2026-11-18): a
 			// door comes there only through that door, hung somewhere, so one
 			// hung in its frame can always be fetched again, and the frame
@@ -848,7 +878,7 @@ class AjarHandler : EventHandler
 			AjarDoor o;
 			while (o = AjarDoor(si.Next())) if (o.IsStray() && o.frame && o.args[0] == d.args[0]) { StrayShut(o); break; }
 			// (a sprung frame made with `only` takes its door and is no way out: shut.zs)
-			if (!f.args[3] && f.args[4] != 2 && f.args[4] != 5 && f.args[1] && f.args[1] == d.args[0] && !PlateFor(f)) ComeHome(d, f);
+			if (!f.args[3] && f.args[4] != 2 && f.args[4] != 5 && f.args[1] && f.args[1] == d.args[0] && !PlateFor(f) && !d.IsOld()) ComeHome(d, f);
 		}
 		// A Pair leaf leads to the frame its twin hangs in, if it hangs; and
 		// then the twin leads here.
@@ -877,6 +907,7 @@ class AjarHandler : EventHandler
 		d.Show();
 		ChainUpdate();
 		Spring(f);          // a sprung frame's door is shut unless its plate is pressed (plate.zs)
+		OldHang(d, f);      // a colour door left hanging: its old selves at the later times (then.zs)
 	}
 
 	AjarDoor Unhang(AjarFrame f)
@@ -898,6 +929,7 @@ class AjarHandler : EventHandler
 			if (tw) { tw.args[0] = 0; tw.joinEnds = tw.joinTics = 0; if (tw.frame) tw.Show(); }
 		}
 		ChainUpdate();
+		OldUnhang(d);       // ... and it was never there later (then.zs)
 		if (d.IsClocked()) d = ClockedUnhang(d);       // both leaves come down; the one door is the one taken (then.zs)
 		return d;
 	}
@@ -1054,6 +1086,11 @@ class AjarHandler : EventHandler
 
 	void UseFrame(AjarFrame f, Actor user)
 	{
+		if (f.door && f.door.IsOld())
+		{
+			Say("Rusted to its frame.");        // an old door (then.zs): nobody takes it down or swaps it out
+			return;
+		}
 		if (f.door && f.door.IsStray() && !f.door.nailer)
 		{
 			Say("The STRAY door is already on its way.\nNobody takes it down now.");
@@ -1073,6 +1110,7 @@ class AjarHandler : EventHandler
 			return;
 		}
 		if (ClockedRefuses(f)) return;        // a frame with no other time; one that is the clocked door's at either time (then.zs)
+		if (OldRefuses(f)) return;            // a colour door, where a later time has a door in this frame (then.zs)
 		Actor line = ChainRoom();
 		if (carried && f.args[4] == 2 && line && carried.args[0] == line.args[3])
 		{
@@ -1204,6 +1242,7 @@ class AjarHandler : EventHandler
 		{
 			// the clocked door's other leaf: hung with it (Hang), never by itself
 			if (d.IsShadow()) { if (!d.frame) { d.carried = true; d.Hide(); } continue; }
+			if (d.IsOld()) continue;          // an old door, made just now by a door hung from the start (then.zs)
 			Link(d.args[0], 0, d.BackTex());
 			Link(ThenFar(d), 0, d.BackTex());      // its far side's copy THEN, on a map with two times (then.zs)
 			Link(FarCopy(d, AjarThen.T_BEFORE), 0, d.BackTex());     // ... and BEFORE, on a map with three

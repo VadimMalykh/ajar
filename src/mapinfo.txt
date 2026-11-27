@@ -63,6 +63,7 @@ DoomEdNums
 	20184 = AjarThenBelt              // ... THEN's belt, running or standing
 	20185 = AjarThenMusic             // ... the lever that turns the music by time off
 	20186 = AjarThenLocked            // ... a door then, locked for the night (MAP21)
+	20208 = AjarThenFrameCause        // ... a long cause that follows what hangs in a frame (the old door lab)
 	20187 = AjarLongRunDesk           // MAP21's desk (map21.zs): keys 1 and 2 turned then start the machine
 	20188 = AjarGoodsIn               // ... MAP21's goods-in THEN (map21.zs): crates on the belt, into the hatch; in dust NOW
 	20189 = AjarEmitterWreck          // ... the emitter's wreck NOW

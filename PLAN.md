@@ -22641,3 +22641,299 @@ door left in the free frame BEFORE is an old door into the strongroom THEN,
 and the clocked door is carried in through it. The old door lab shows
 exactly this, and the lab's puzzle graph then has the strongroom NOW as its
 goal.
+
+## The old door lab: what it has to show (2026-11-27, Claude on Fable; to be built)
+
+The second lab for MAP24, on the three times lab's map (`MAP=BEFORE`). The
+rule is "A door left hanging" in "MAP24 "Left Hanging""; this says it exactly
+enough to build and test.
+
+**The rule.**
+1. A colour door (RED to PINK, not a Pair, not a Stray, not a clocked door)
+   hung in frame F at time t has, at every later time u at which F has a
+   frame at the same spot, an *old door* hanging in that frame. It is there
+   at once (also at the first tic, for a door that hangs at the start) and
+   gone at once when the door comes down at t.
+2. The old door at u opens on the door's far side at u, both ways, and is a
+   hung door for everything that asks: walking, sight, shots, monsters
+   following (AjarSense), water (water.zs), a belt's crates (belt.zs), the
+   frame being full.
+3. It cannot be taken down or swapped out: USE at it, with empty hands or
+   with a door, says "Rusted to its frame." and changes nothing. A thief
+   leaves it as it leaves a nailed door.
+4. A colour door does not go into a frame while a frame at the same spot at
+   a later time holds any door (a clocked leaf, a colour door, another old
+   door): it is refused with a line that says so. Swapping at t (a carried
+   door for the hung one) moves the old doors with it. The clocked doors
+   leave no old doors; their own refusals already cover an old door in the
+   twin.
+5. Its look: the door's own colour, read at a glance, and its age read at a
+   glance too: ten years (a door hung BEFORE, seen THEN) dulled; forty and
+   fifty (seen NOW) flaking, rust from the hinges. The same on its far
+   side's face.
+
+**Flows** (after the rule works; each its own commit).
+6. *Water.* NOW, a basin filled by a cause and a dry room joined by an old
+   door: the water stands in both as water.zs has it for any hung door.
+   Nothing new is expected; the test shows it.
+7. *A cause that follows a frame.* A long cause whose setting is not a
+   lever's but what hangs in a frame at its time: 0 while the frame is
+   empty, 1 while a colour door hangs in it. The level's last act is this
+   (the test room and the way out are there THEN and NOW only while a door
+   hangs BEFORE in the first frame). In the lab: a closet THEN and NOW that
+   is open only while a door hangs in one of the yard's frames BEFORE.
+8. *The belt.* THEN a belt runs to a frame. Running with the frame empty,
+   the heap NOW lies at the belt's end (as in the then and now lab);
+   running with RED hung in that frame THEN, the crates ride through RED
+   and the heap NOW lies at RED's far side NOW, and none at the belt's end;
+   standing, no heap. If belt.zs cannot carry a crate through a hung door
+   THEN as it does in MAP17, say so and stop at the heap's place NOW.
+
+**The solver.** An old door fills its frame and is a link at each later
+time; a hanging that rule 4 refuses is no move. The lab's puzzle graph gets
+the strongroom NOW as its goal (the three times lab could not reach it):
+RED left in the strongroom's free frame BEFORE.
+
+**Tests** (beforetest.zs, new modes; the old ones unchanged): the rule (1 to
+4, every refusal, RED hung BEFORE seen THEN and NOW, RED hung THEN seen NOW
+only, a door that hangs BEFORE from the start, the swap, a monster NOW
+through an old door, the strongroom NOW reached in play); the flows (6, 7,
+8); views of the old door at each age from both sides.
+
+**Kept as they are**: every map with one or two times builds byte for byte
+(a colour door hung THEN on MAP21 to MAP23 would now leave an old door NOW:
+that is the rule, but it is switched on by the map, as the third time is, so
+that 21 to 23 do not change until Vadim says so).
+
+## The old door lab (built 2026-11-27)
+
+`MAP=BEFORE ./run.sh` (the three times lab's map, three bays more;
+tools/map_before.py, tools/ajarthen.py `Times(old=True)` and
+`frame_cause`, src/zscript/then.zs "a door left hanging" and
+`AjarThenFrameCause`, ajar.zs, enemies.zs, tools/solve.py `old`; the
+pictures in tools/gfx_olddoor.py; tests src/zscript/beforetest.zs MODE=5 to
+9). Lab 2 of MAP24: the rule "a door left hanging" as asked above, its three
+flows, the solver for it.
+
+**What is built.** The rule is switched on by the map: the AjarThen thing's
+args[3] 1 (`Times(old=True)`), on BEFORE only, so every other map builds as
+before. BLUE joins the lab, and the corridor runs on east to three new bays:
+7. *The door left on the site* (x 3840): frame 110 / 130 / 150 in the north
+   wall; BLUE hangs BEFORE in 150 from the start, so an old BLUE hangs THEN
+   in 130 (ten years) and NOW in 110 (fifty), onto BLUE's far side in bay 8.
+   An imp NOW (deaf: it waits to follow). Off the north wall, THEN and NOW, a
+   closet (a berserk pack NOW) whose mouth is open only while a colour door
+   hangs BEFORE in 150 (flow 7).
+8. *The water* (x 4480): NOW a tank (tag 42; frame 111 in its north wall)
+   and a dry room (tag 43; BLUE's far side 202 / 222 / 242 in its north
+   wall), each with a door from the corridor; THEN's valve (cause 14, on the
+   tank's west wall) holds the tank 96 deep (flow 6).
+9. *The belt* (x 5120): THEN a belt (cause 15, lever on the south wall) runs
+   east into frame 132 (east wall) with three crates on it. NOW a heap
+   (cause 16): at the belt's end, or in the corridor before RED's far side
+   201, or nowhere (flow 8). The corridor NOW is cut round the heap's place.
+
+**How it works.**
+- *The old door* (then.zs, `OldHang`, `OldUnhang`) is an AjarDoor made at
+  run time with args[1] 12 (`AjarDoor.OLD`), `oldOf` the door, `oldColour`,
+  `oldYears`. `Hang` of a colour door (RED to PINK: `Placed`, so no Pair,
+  Stray or clocked door) at time t makes one in the frame at each later time
+  u that has a frame at that spot (`FrameAt`) and is free, open onto the
+  door's far side at u (`FarCopy`; NOW its own far side); `Unhang` of the
+  door unmakes them at once. A door the map hangs from the start goes
+  through `Hang` at the first tic, so its old selves are there from the
+  first tic too (WorldLoaded skips the old doors it has just made). The old
+  door is the frame's door like any other, so walking, sight, shots,
+  monsters following (AjarSense finds the door by the frames), water
+  (water.zs joins basins through any frame whose door has a far side), belts
+  (the line portals carry the crates) and a full frame needed nothing new.
+- *Rusted*: `Stuck()` is true for an old door, so a thief and a nailer leave
+  it; `UseFrame` at its frame says "Rusted to its frame." and does nothing,
+  with a door in hand too (no swap).
+- *Rule 4* (`OldBlocker`, `OldRefuses`): a colour door does not go into a
+  frame while a frame at its spot at a later time holds a door, other than
+  what goes with the door swapped out (the same door, its old selves, a
+  clocked door's other leaf): "A door hangs in this frame at a later time.
+  / The BLUE door will not hang in it." A swap takes the old door's old
+  selves down and hangs the new one's. The thief's frame choice skips a
+  frame the rule refuses. The clocked doors leave no old doors, and their
+  own refusal ("At the other time a door hangs in this frame.") already
+  covers an old door in their twin.
+- *The look* (tools/gfx_olddoor.py, AjarDoor.Show): ten years (hung BEFORE,
+  seen THEN) AJO1..AJO6, the paint dulled and greyed a little, scuffed at
+  the foot and round the knob, the glyph yellowed, its glow 60 (a new door's
+  80); forty or fifty years (seen NOW) AJQ1..AJQ6, the paint faded and
+  flaking in patches to the primer and the wood, rust run from the two
+  hinges, the knob dark, glow 40. The colour reads at a glance in both. The
+  leaf is a sprite, so its far side sees the same face; the far side's own
+  face, its recess's colour surround, ages with the old door open onto it
+  (`AgeFar`: AJTRn / AJTFn become AJTRnO / AJTFnO ten years, AJTRnQ /
+  AJTFnQ forty or fifty, and back when it goes).
+- *A cause that follows a frame* (AjarThenFrameCause, thing 20208,
+  `ajarthen.frame_cause`): a long cause with no lever, set each tic
+  (`FollowFrames`) to what hangs in its frame at that frame's time: 0
+  empty, 1 a colour door or an old one. With a gate cause and a colour (the
+  heap): 0 while the gate stands, 1 with the frame empty, 2 with that
+  colour's door (or its old self) in it, 0 with any other door. It moves its
+  sectors as any long cause (`user_hold`: the closet's mouth waits for the
+  player standing in it).
+- *Solver* (tools/solve.py, `old=True`): a plain door hung in a then or
+  before frame fills the frame at each later time and joins its region to
+  the door's far side there; an old door is never taken or swapped; a plain
+  door is not hung where a later frame at its spot is filled by anything but
+  what goes with the door swapped out. The lab's PUZZLE has the strongroom
+  NOW as its goal: 6 door actions (the clocked door in 101, the ten-year
+  door in 122, RED carried to BEFORE and left in 144, through old RED's far
+  side into the strongroom NOW), 74,487 states, 0 stuck, `lost()` nothing.
+  The strongroom NOW the three times lab could not reach is now reached.
+
+**Tests** (`MAP=BEFORE MODE=n tools/smoke.sh`, all pass on the full build):
+1. to 4. as in the three times lab, the same counts (42, 30, 15, 28 views).
+   With old doors on, RedAt counts RED's far sides at the later times as
+   open by its old selves, and before the clocked door goes into 125 the
+   script takes RED out of 145 (its old self THEN filled 125).
+5. the rule (29 checks): BLUE BEFORE from the first tic, old THEN and NOW;
+   RED hung BEFORE in 141 seen THEN (ten) and NOW (fifty), walked through
+   at both, back through 221; rusted NOW and THEN, empty-handed and with a
+   door in hand; BLUE taken BEFORE: its old selves gone at once; Stuck for
+   the thief and the nailer; the swap BEFORE moves the old doors, and back;
+   refusals: a colour door later (one and two times on), a clocked leaf
+   later, an old door later (the blocker is 101); RED hung THEN in 123 (no
+   BEFORE) seen NOW only, forty years, walked through; the clocked door
+   refused THEN at 123 by its own rule (old RED in its twin 103); RED taken
+   down at its time: never there later, 201 shut again, its surround as
+   new; the strongroom NOW in play (RED in 144, through 201, the
+   megasphere), the clocked door carried into the strongroom THEN through
+   221, hung in 125, on to NOW; an imp NOW after the player through old BLUE
+   in 110, out of 202 into the dry room. Each old door is checked for its
+   door, years, far side, sprite and its far side's aged surround.
+6. water (7): dry at first; BLUE hung BEFORE in 151, old BLUE in 111; the
+   valve THEN; the tank full NOW in 63 tics, the dry room in 327, both at
+   96; under water NOW, dry THEN; BLUE taken down, the old door gone, the
+   water stays (water.zs keeps no history).
+7. the closet (9): open at both times at first (BLUE in 150); walked into
+   NOW (the berserk pack); BLUE down: THEN shuts, NOW waits for the player
+   in its mouth, then shuts; walked against NOW; RED hung in 150 in play
+   opens it; the ten-year door's leaf in 150 is no colour door: shut.
+8. the belt (10): standing, no heap; run into the empty frame 132, the
+   crates stop at it, the heap NOW at the belt's end (24 and 12); stopped,
+   no heap; RED hung THEN in 132 (old RED NOW in 112), run: the heap NOW
+   before 201 (24), none at the end; 2 of 3 crates out of 221 THEN, none
+   left on the belt; stopped, no heap.
+9. 18 views (tools/smoke_BEFORE_9.cfg): BLUE new BEFORE, ten years THEN,
+   fifty NOW, from its far side at both times; old RED forty and fifty years,
+   from 201, in the strongroom THEN and NOW, close from the side; the tank
+   and the dry room; old BLUE under water; the two heaps; the belt with RED;
+   the closet shut.
+
+**Measured**: the tank full NOW in 63 tics after the valve, the dry room
+through old BLUE in 327 (both at 96). Of the three crates run THEN through
+RED in 132, two come out of 221 and the third stays in 132's recess (nothing
+carries them on past 221). The imp NOW follows the player through old BLUE
+and stands in the dry room. The solver on the lab: 74,487 states in about 4
+seconds; with BLUE as a fourth door, stopped after ten minutes at 3.7 GB.
+Every map's wad but BEFORE.wad is byte for byte that of the commit this
+branch started from (52 the same; against main's package as it stands
+MAP23.wad differs too, from the kennels23 merge that came after); every
+other level's proof lines in proofs.json are the same as main's (21 of 21).
+The full build, every proof again (solve.py changed): 16.5 minutes.
+mapcheck, thingcheck, itemcheck on map_before: 0 problems (and at each of
+the five commits).
+
+**Choices made here**:
+- The old door is an AjarDoor with args[1] 12, made and destroyed at run
+  time: it is the frame's door to everything, and Placed() leaves it out of
+  everything a colour door does (stray pool, coming home, far side copies).
+- Its sprites are separate names (AJO1..6, AJQ1..6), not frames of one
+  sprite: AjarDoor's field `frame` (its AjarFrame) hides Actor.frame.
+- Ten years for a door hung BEFORE and seen THEN; forty for one hung THEN
+  seen NOW; fifty for one hung BEFORE seen NOW; forty and fifty share a look.
+- "Its far side's face" is taken as the far side recess's colour surround
+  (the leaf is a sprite and shows one face from both sides).
+- BLUE leans nowhere: it hangs BEFORE in 150 from the start (the door that
+  hangs from the start), and its far side is in bay 8, so the imp's follow
+  and the water both use it.
+- The solver's PUZZLE leaves bays 7 to 9 out (BLUE, the closet, the water,
+  the belt move nothing the goal needs): with BLUE as a fourth door the
+  search ran past ten minutes and 3.7 GB before it was stopped (74,487
+  states without). The solver's `filled` link (a cause that follows a
+  frame) was written for the closet and taken out again with it, unused.
+- The heap is a frame cause gated by the belt's cause, not a count of what
+  went through: the crates THEN do not decide it.
+- Flow 8: there is no belt THEN beyond 221, so the crates that come through
+  stop just past it and the last one waits in 132's recess; the test counts
+  "through" as out of 221 (its recess too) and none left on the belt.
+- MODE=1 and the old door rule: RedAt now counts the old doors' far sides,
+  and the script takes RED out of 145 before the clocked door goes into 125.
+  The meaning (RED's far side at the time of its frame, the strongroom NOW
+  through 125) and the count (42) are as they were.
+- The commits: the rule (with bay 7 and bay 8's rooms, MODE=5), then flows
+  6, 7, 8, then the views; the four earlier stages were checked by the map
+  checks and the solver only, the ZScript built and tested at the last.
+
+**Not tested / not played by hand**: nothing here has been played by a
+person. A thief or a nailer at an old door in play (Stuck() is checked, not
+a thief's walk). An old door made while a monster or the player stands in
+its frame at the later time, or while a crate is in that recess. Save and
+load with old doors hung (they are actors made at run time). The heap while
+the player stands on its place NOW (the cause waits as `user_hold` does
+elsewhere; not run). Old doors of GREEN, YELLOW, VIOLET and PINK (drawn,
+not seen in a test). The views as art: the fifty-year doors' flakes are
+pale blots on a still-bright colour; whether that reads as "old" is for
+Vadim to judge (MODE=9's shots).
+
+## After the old door lab: the looks mended, and what is decided for 21 to 24 (2026-11-28)
+
+**The ten-year door's look** (Vadim, 2026-11-27, after playing the three times lab: "Just for that new door, can
+we make it same as normal time door but different color? I don't quite like that graphics"). It is now the
+clocked door's own drawing (tools/gfx_clockdoor.py, `leaf3(paint)`) in slate paint, `SLATE` (62, 72, 86), where
+the clocked door is ivory; brass, dial and hands the same. Its glow is a pale steel (ajar.zs, `glow[]` 0xA8B8D0).
+The long-case walnut clock (look 1 of the clocked door's board) is no door of the game again. Slate was Claude's
+pick from a sheet of five (slate, bottle green, oxblood, pale blue-grey, black enamel); Vadim has not named
+another, and one number changes it.
+
+**The old door's look, drawn again** (Claude on Fable, from the lab's MODE=9 shots: ten years read as a new door,
+and fifty as a bright door with pale spots on it). tools/gfx_olddoor.py: ten years is plainly duller and darker
+(0.42 to grey, 0.74 to 0.80 of the light), scuffed, with the first chips at the foot; forty and fifty years has
+most of the colour gone (0.62 to grey, about 0.55 of the light) and the paint off in a few ragged patches down to
+grey weathered wood with its grain (`peel`: a smooth random field cut at a level, weighted to the foot and the
+edges and away from the glyph; `bare`), rust from the hinges, a dark knob. The far side's surrounds the same way.
+The sprite and texture names are the lab's, so its tests hold as written.
+
+**The old door is the law in MAP21 to MAP23 too** (decided 2026-11-27, late). Vadim: "With this old door idea,
+should we change something in maps 21-23, because colour doors worked differently with time there? Won't it look
+inconsistent?" Claude: yes, it should be the rule there too (a monster left THEN is bones NOW already; a door is
+the same law), measured with the solver first. Vadim: "Yes, let's do that changes, but without much focus on it in
+21-23 (as part of puzzles, etc). Just that law should work already, and can be discovered by user, but focus of
+those maps are different."
+- MAP21, MAP22 and MAP23 get the rule switched on (`Times(old=True)`, the PUZZLE's `old`). No puzzle of theirs is
+  to need it or teach it: their ways through stay as they are.
+- The task: switch it on per map, prove each again (solvable by the same way, 0 stuck, nothing lost), and mend
+  only what the rule breaks or short-cuts (a frame moved or made one-time, never a new errand).
+- First, with no map changed: run the three solvers with `old` on and say what it would break.
+- The labs THEN and KENNEL stay as they are unless a test needs the rule.
+
+**MAP23: the way out built by the player, more puzzle** (Vadim, 2026-11-28, with a picture of the night room as
+it is, a ready way out: "could you make exit not ready how it is now. This should be build one way or another by
+player. Also can you add puzzles? Yes this thing that I need bones to go up is good one, but once you discover
+that - everything else is very easy. Also if we can go up by bones, should it be the same way in all other maps
+with old corpses?"; to the proposal below: "Agreed, let's do as proposed").
+- *The way out*: `ajarmap.way_home` with BLUE (the brass frame takes BLUE only), behind the brass door on the
+  crush's ledge as now. BLUE has to be carried up the big one's bones.
+- *Why that is a puzzle*: bones stand in only while the clocked door hangs nowhere, and then it is in the
+  player's hands (no door is ever put down). So BLUE goes up only over bones that are there for good: the big one
+  killed in the crush, which the level's ammunition does not pay for. The crush gets a press, worked by a lever
+  THEN in the keeper's passage.
+- *The same lesson, cheap, first*: BLUE leans behind the kennels' second shutter (1000 on the scales, three
+  demons in pen 1; the megasphere and plasma secret moves). Penned demons open it only while the player's hands
+  are full of the clocked door; shot dead in the pen through the hatch they open it for good.
+- So three grades: pen (free, undone at will, hands full), kill cheap (for good), kill dear (the press).
+  puzzle23's fix 3 already proved the shape (a specimen killed in place so that a door can hang).
+- The old door rule on, as above; proved again with puzzle23.
+
+**Bones are a step in every map with old corpses** (the same answer): the bones of a knight, a baron or anything
+bigger are a step 24 high, the law of kennel.zs, in MAP21, MAP22 and MAP24 as in MAP23, quietly, as the old door:
+switched on, each map scanned for a ledge a step would reach that it should not, and mended only there.
+
+**The order**: the old door lab and the two looks above (this merge); MAP24's first playable version; MAP23 (the
+built way out with BLUE, the press, the two laws); the two laws in MAP21 and MAP22.

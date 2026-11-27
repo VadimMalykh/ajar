@@ -40,6 +40,11 @@ BEFORE (cause(when=BEFORE), its lever() and target() BEFORE too) moves every
 sector with its tag, THEN and NOW (and BEFORE: what shows it). check_ids()
 says whether a map's frames and far sides keep clear of each other and of the
 ids the engine reserves.
+
+A door left hanging (the old door lab, the same map; PLAN.md, "The old door
+lab"): Times(old=True) switches on the rule that a colour door hung at an
+earlier time is an old door in the same frame at every later time (then.zs).
+frame_cause() is a long cause whose setting follows what hangs in a frame.
 """
 import ajarmap
 from udmf import rect
@@ -53,6 +58,7 @@ LIGHT = {NOW: 120, THEN: 216, BEFORE: 240}
 THEN_ID = 20        # a THEN frame's line id: its NOW twin's + THEN_ID
 OFF = (0, 4096)     # THEN is NOW shifted by this
 THEN_T, CAUSE_T, TARGET_T, EMITTER_T, BELT_T, MUSIC_T = 20180, 20181, 20182, 20183, 20184, 20185
+FRAME_CAUSE_T = 20208       # AjarThenFrameCause (then.zs): a long cause that follows a frame (the old door lab)
 HIDDEN = 1000       # a thing with tid HIDDEN + a cause's tid is there only in its setting 0 (in a pit the heap covers)
 LEVER = {NOW: "AJTHD3", THEN: "AJTHL2"}     # a cause's lever: dead NOW, live THEN (tools/gfx_then.py)
 LIVE = {NOW: "AJTHL3", THEN: "AJTHL2", BEFORE: "AJTHL1"}     # a lever that works at every time (a gate's)
@@ -154,18 +160,23 @@ class Copy:
 
 
 class Times:
-    def __init__(self, m, off=OFF, at=(0, 0), light=None, before=False):
+    def __init__(self, m, off=OFF, at=(0, 0), light=None, before=False, old=False):
         """`at`: a point of NOW (the AjarThen thing): a point is THEN if it
         lies more than half the offset from it, along the offset. `before`:
         a third copy, BEFORE, at twice the offset (args[2] of the AjarThen
-        thing 3: a point past one and a half offsets is BEFORE)."""
+        thing 3: a point past one and a half offsets is BEFORE). `old`: a
+        colour door left hanging is an old door at every later time (args[3]
+        1)."""
         self.m, self.off = m, off
         self.light = dict(LIGHT, **(light or {}))
         self.now, self.then = Copy(self, NOW), Copy(self, THEN)
         self.before = Copy(self, BEFORE) if before else None
         self.copies = (self.now, self.then) + ((self.before,) if before else ())
         self.ids = {}                   # the frames' and far sides' line ids: what each is (check_ids)
-        m.thing(at[0], at[1], THEN_T, args=off + ((3,) if before else ()))
+        args = off + ((3,) if before else ())
+        if old:
+            args = off + (3 if before else 0, 1)
+        m.thing(at[0], at[1], THEN_T, args=args)
 
     def used(self, line_id, what):
         """A frame's or far side's line id, kept for check_ids(); one used twice stops the build."""
@@ -281,6 +292,17 @@ class Times:
         self.then.line(a, b, special=130, args=(cause,), playeruse=True, repeatspecial=True, mid=tex[THEN],
                        exact=True, **peg)
         self.now.line(a, b, mid=tex[NOW], exact=True, **peg)
+
+    def frame_cause(self, x, y, tid, frame, *, tag=0, basin=0, depth=0, gate=0, colour=0, when=NOW):
+        """A long cause whose setting is what hangs in `frame` (a line id,
+        at its own time): 0 while it is empty, 1 while a colour door (or an
+        old one) hangs there; its sectors, basin and depth as cause(). With
+        `gate` (a cause's tid) and `colour`: 0 while that cause stands in its
+        setting 0, else 1 with the frame empty, 2 with that colour's door in
+        it, 0 with any other (a belt's heap: then.zs, AjarThenFrameCause).
+        The thing stands at x, y in the copy `when` (where makes no
+        difference)."""
+        self.copies[when].thing(x, y, FRAME_CAUSE_T, id=tid, args=(frame, tag, basin, depth, gate * 16 + colour))
 
     def target(self, x, y, cause, setting=None, z=28, when=THEN):
         """Something to shoot THEN, at x, y (12 clear of its wall), `z` up:
