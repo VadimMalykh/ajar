@@ -3,7 +3,8 @@ The notice THEN over the first frame 121, where the old GREEN hangs: ON TEST.
 DO NOT REMOVE., on a card pinned to the test room's wall (look 2, LA), as
 MAP21's notice (gfx_longrun.notice) is. It is the wall over the frame (an
 upper, laid from the ceiling at 256: the frame's head is at 96, so rows 0 to
-160 show), the card at rows 62 to 116, 140 to 194 over the floor."""
+160 show), the card at rows 98 to 152, 158 to 104 over the floor: just over
+the frame's head."""
 import gfx_institute as GI
 from gfx import text
 
@@ -23,7 +24,7 @@ def words(im, s, x, y, c):
 def notice():
     im = GI.on_wall(LOOK, PART, 64, SHIFT)
     red, blue, card = (196, 36, 30), (36, 64, 140), (248, 248, 244)
-    x1, y1, x2, y2 = 5, 62, 59, 116
+    x1, y1, x2, y2 = 5, 98, 59, 152
     im.rect(x1 + 1, y1 + 1, x2 + 1, y2 + 1, (40, 40, 40))       # its shadow on the wall
     im.rect(x1, y1, x2, y2, card)
     im.frame(x1, y1, x2, y2, red, 1)

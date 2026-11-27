@@ -271,7 +271,7 @@ class LeftHangingTest : EventHandler
 				th.when.Times(), th.when.OldDoors(), th.causes.Size(), th.secIdx.Size(),
 				clocked != null, shadow != null, ten != null, tenShadow != null, green != null, Basin(CISTERN) != null, Basin(SUMP) != null));
 		}
-		if (mode != 3 && tic % 35 == 1) ClearOrdinary();
+		if (mode != 3 ? tic % 35 == 1 : tic == 1) ClearOrdinary();          // (the views: the places, not their company)
 		cur = 2;
 		if (mode == 1) Way(mo);
 		else if (mode == 2) Rules(mo);
@@ -563,7 +563,7 @@ class LeftHangingTest : EventHandler
 		if (Seg(69)) {}
 		if (At()) View(mo, "the lobby THEN", 320, OFF + 60, 100);
 		if (Seg(69)) {}
-		if (At()) View(mo, "the test room THEN: old GREEN in 121, ten years, under ON TEST. DO NOT REMOVE.", 360, OFF + 720, 0, -8);
+		if (At()) View(mo, "the test room THEN: old GREEN in 121, ten years, under ON TEST. DO NOT REMOVE.", 360, OFF + 720, 0);
 		if (Seg(69)) {}
 		if (At()) View(mo, "the hall NOW from the lobby", 600, 200, 0);
 		if (Seg(69)) {}
