@@ -588,6 +588,9 @@ def stray(m, x, y, *, angle=0):
     m.thing(x, y, DOOR_T, angle=angle, args=(far_id(STRAY), STRAY, 0))
 
 
+PLAIN = {}          # a room door's face -> the same door with no lock plates (roomdoor fills it; excerpt reads it)
+
+
 def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look="", skin="", free_inside=False):
     """An ordinary door, as in any Doom level: opened with USE, shuts by
     itself, and monsters can open it too. It fills the wall between two
@@ -607,8 +610,10 @@ def roomdoor(m, a, b, out, floor, *, thick=16, keys="", line_id=0, look="", skin
     in). In a PUZZLE graph the walk link out of there has no key."""
     c = (a[0] + out[0] * thick, a[1] + out[1] * thick)
     d = (b[0] + out[0] * thick, b[1] + out[1] * thick)
-    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=skin + keys if skin else (f"AJ2K{look}{keys}" if keys else f"AJ2D{look}") if look else f"AJHK{keys}" if keys else "AJHDOR",
-             ftex="AJTRIMF", ctex="AJTRIMF")
+    plain = skin or (f"AJ2D{look}" if look else "AJHDOR")
+    face = (skin + keys if skin else f"AJ2K{look}{keys}" if look else f"AJHK{keys}") if keys else plain
+    PLAIN[face] = plain
+    m.sector([a, b, d, c], floor=floor, ceil=floor, light=160, wall=face, ftex="AJTRIMF", ctex="AJTRIMF")
     for p, q in ((a, b), (c, d)):
         if keys and not (free_inside and p == c):
             m.line(p, q, special=13, args=(0, 24, 150, LOCK[keys]), playeruse=True, repeatspecial=True,
@@ -1035,7 +1040,9 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000, without=(), nailed
     bolted), the wall shows that door nailed up (boarded()); where it ends
     at anything else, the room's own wall. With `nailed` False the door is
     its own face, shut and whole (MAP22 THEN: the town at peace, where
-    nothing is nailed up yet).
+    nothing is nailed up yet). Either way a door that was locked is shown
+    without its lock plates (PLAIN): it does not open here with any key,
+    and the player may hold the key its plate names.
 
     Returns the places where a recess was, [(m1, m2, out, floor), ...] in
     the new map, in the order `src` made them: the caller may make recesses
@@ -1180,7 +1187,10 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000, without=(), nailed
             rooms = {edge.get((b, a)) for a, b in pieces}
             if abs(A[0] - B[0]) + abs(A[1] - B[1]) != 64 or not rooms <= keep or any(S[k]["floor"] != S[sj]["floor"] for k in rooms):
                 continue
+            # no lock plate on it: a plate with a 1 says that key 1 opens the door, and this one is only a face
+            # (Vadim, 2026-11-27: "Door with key should either open, or don't claim the key")
             face = props(A, B).get("upper") or S[sj]["wall"]
+            face = PLAIN.get(face, face)
             m.cut(move(A), move(B))
             m.lineprops[frozenset((move(A), move(B)))] = dict(mid=boarded(face) if nailed and rooms & ground else face,
                                                               dontpegbottom=True, exact=True)
