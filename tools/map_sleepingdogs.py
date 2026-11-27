@@ -570,10 +570,11 @@ assert 90 <= MONSTERS[3] <= 120, MONSTERS
 
 PUZZLE = puzzle23.PUZZLE23
 
-# THE LOOK (PLAN.md, "Look: MAP23, the animal house"): AJAR_DOGS=1, 2, 3 a look for every group, mix the picks
-# (tools/dogs23.py, MIX); unset or 0 the plain level, and the look's files are not imported
+# THE LOOK (PLAN.md, "Look: MAP23, the animal house"): AJAR_DOGS unset (or mix) the picks (tools/dogs23.py, MIX:
+# The Kennels since 2026-11-27), 1, 2, 3 a look for every group; 0 the plain level, and the look's files are not
+# imported
 import os                                                               # noqa: E402
-if (os.environ.get("AJAR_DOGS") or "0").strip() != "0":
+if (os.environ.get("AJAR_DOGS") or "mix").strip() != "0":
     import sys                                                          # noqa: E402
     import dogs23                                                       # noqa: E402
     DOGS = dogs23.setting()

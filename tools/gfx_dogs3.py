@@ -25,10 +25,11 @@ TAR_N = (68, 66, 62)              # dull, and lighter for the night
 WASH = (232, 230, 220)            # whitewash (lime over brick)
 WASH_N = (178, 180, 168)          # grey with forty years
 ALGAE = (98, 128, 70)
-BRICK = (136, 92, 72)             # the brick under the lime (brown, never door red)
+BRICK = (128, 108, 94)            # the brick under the lime (a dull grey-brown: never door red, never blood)
 MORTAR = (162, 156, 142)
 CREO = (70, 50, 34)               # creosoted boards
 CREO_N = (104, 88, 68)
+PEN_N = (158, 144, 122)           # the pens' boards NOW: grey timber, lighter, to read at 120 from the run
 WOOD = (122, 94, 64)              # the gates' planks
 WOOD_N = (128, 118, 102)
 OAK = (158, 126, 86)              # frames, hatch surrounds
@@ -66,7 +67,7 @@ def vn(x, z, s, cell):
 
 def patch(x, z, s, cell=14):
     """A patch's measure: low where something has fallen away (rough at the edge)."""
-    return vn(x, z, s, cell) * 0.75 + h32(x // 2, z // 2, s + 1) * 0.25
+    return vn(x, z, s, cell) * 0.88 + h32(x // 3, z // 3, s + 1) * 0.12
 
 
 # === the surfaces, by absolute height ==========================================================================
@@ -83,7 +84,7 @@ def raw_brick(x, z, s):
     return jt(BRICK, (x + 16 * (row % 2)) // 32, row, s, 0.14)
 
 
-def wash(x, z, then, seed, floor=48, fallen=0.24):
+def wash(x, z, then, seed, floor=48, fallen=0.22):
     """Whitewash on brick: the courses show (a joint's shadow, the brick's face a shade apart). NOW: grey with
     streaks, green with algae from `floor` up, fallen in patches to the brick."""
     row, bx, bz = course(x, z)
@@ -146,7 +147,7 @@ def wood_now(c, x, z, seed, rot=40, floor=0):
     c = mix(c, (132, 124, 110), 0.45)
     if z < floor + rot:
         f = 1 - (z - floor) / rot
-        if h32(x // 2, z // 3, seed) < 0.55 * f * (0.4 + 0.9 * h32(x // 8, 1, seed + 1)):
+        if vn(x, z, seed, 5) * 0.85 + h32(x // 2, z // 2, seed + 2) * 0.15 < 0.62 * f * (0.3 + 0.9 * h32(x // 8, 1, seed + 1)):
             return DARK
         c = mix(c, (50, 44, 36), 0.35 * f)
     return c
@@ -172,7 +173,7 @@ def runs_wall(w, then):
     if not then:
         for c in range(w.w):
             if (w.shift + c) % 64 in (27, 34):
-                rust_run(w, c, 136, 26 + 14 * h32((w.shift + c) % 64, 1, 14), RUST, 0.5, 1)
+                rust_run(w, c, 136, 12 + 8 * h32((w.shift + c) % 64, 1, 14), (100, 82, 64), 0.4, 1)
 
 
 def passage_wall(w, then):
@@ -231,7 +232,7 @@ def pens_wall(w, then):
             if not then:
                 if h32(x // 8, 5, 23) < 0.1:
                     return raw_brick(x, z, 24)                       # a board gone
-                c = wood_now(mix(c, CREO_N, 0.5), x, z, 25, 34, 12)
+                c = wood_now(mix(c, PEN_N, 0.6), x, z, 25, 34, 12)
             return c
         if z <= 102:
             c = jt(CREO, x, z, 26, 0.05)
@@ -239,7 +240,7 @@ def pens_wall(w, then):
                 c = shade(c, 1.25)
             elif z == 97:
                 c = (18, 14, 10)
-            return c if then else wood_now(mix(c, CREO_N, 0.5), x, z, 27, 0)
+            return c if then else wood_now(mix(c, PEN_N, 0.6), x, z, 27, 0)
         return wash(x, z, then, 28, floor=102, fallen=0.2)
     w.fill(w.z0, w.bot, fn)
     for c in range(w.w):
@@ -252,7 +253,7 @@ def ledge_face(w, then):
     pens_wall(w, then)
     for c in range(w.w):
         xw = (w.shift + c) % 64
-        top = 30 + int(12 * h32(xw // 8, 1, 31)) + int(3 * h32(xw, 2, 32))
+        top = 36 + int(8 * h32(xw // 8, 1, 31)) + int(2 * h32(xw, 2, 32))
         for z in range(top + 1, 49):
             w.at(c, z, raw_brick(xw, z, 33))
         w.at(c, top, (170, 150, 120))                                # the splintered end
@@ -465,13 +466,17 @@ def shelter_mass(w, then):
             return shade(c, 1.6) if z <= 113 else c
         if z <= 232:
             b = (z - 121) % 14
-            base = (50, 48, 46) if then else (100, 98, 92)
+            base = (58, 56, 54) if then else (100, 98, 92)
             c = jt(base, x // 16 + (z - 121) // 14 * 5, 0, 82, 0.08)
             c = jt(c, x, z // 3, 83, 0.03)
             if b == 0:
-                c = (10, 10, 10) if then else (40, 38, 36)               # the lap's shadow
+                c = (6, 6, 6) if then else (40, 38, 36)                  # the lap's shadow
+            elif b == 1:
+                c = shade(c, 0.6)
             elif b == 13:
-                c = shade(c, 1.35)
+                c = shade(c, 1.7)
+            elif b == 12:
+                c = shade(c, 1.3)
             if not then and h32(x // 24, (z - 121) // 14, 84) < 0.08:
                 c = DARK                                                # a board gone
             return c
@@ -681,13 +686,13 @@ def run_floor(then):
                 return jt((76, 102, 56), x, y, 253, 0.15)
             return JOINT if then else (66, 70, 76)
         c = jt(PAVE if then else PAVE_N, k[0] * 5, k[1], 254, 0.08)
-        if sx in (4, 8, 12) or sy == 4:
-            c = shade(c, 0.78)                                         # the chequer's grooves
+        if sx == 8 or sy == 4:
+            c = shade(c, 0.84)                                         # the chequer's grooves
         c = jt(c, x, y, 255, 0.03)
         if not then:
-            c = shade(c, 0.78 + 0.4 * h32(k[0], k[1], 256))
-            if abs(math.sin(x * 0.05 + 3 * math.sin(y * 0.04))) < 0.025:
-                c = (34, 34, 36)
+            c = shade(c, 0.84 + 0.26 * h32(k[0], k[1], 256))
+            if h32(k[0], k[1], 257) < 0.08 and abs(sx - 2 - sy * 1.5) < 0.6:
+                c = (40, 40, 42)                                        # a cracked paviour
         return c
     return flat(fn, 128)
 
@@ -716,8 +721,8 @@ def straw_floor(then, size=64, seed=271):
         else:
             c = jt(PAVE if then else PAVE_N, (x + off) // 16 * 5, row, seed, 0.08)
             if not then:
-                c = shade(c, 0.8 + 0.35 * h32((x + off) // 16, row, seed + 1))
-        thin = h32(x // 16, y // 16, seed + 2) < (0.2 if then else 0.6)
+                c = shade(c, 0.78 + 0.18 * h32((x + off) // 16, row, seed + 1))
+        thin = vn(x, y, seed + 2, 16) * 0.85 + h32(x // 2, y // 2, seed + 5) * 0.15 < (0.28 if then else 0.36)
         if not thin:
             c = jt((150, 118, 52), x, y, seed + 3, 0.15) if then else jt((70, 62, 46), x, y, seed + 3, 0.15)
         return c
@@ -726,7 +731,7 @@ def straw_floor(then, size=64, seed=271):
         _strands(im, 15 * size, seed + 4, [(222, 190, 98), (196, 160, 74), (238, 214, 132), (176, 140, 60),
                                            (230, 200, 110)], size)
     else:
-        _strands(im, 4 * size, seed + 4, [(58, 52, 40), (82, 74, 54), (46, 42, 34), (100, 90, 66)], size)
+        _strands(im, 6 * size, seed + 4, [(66, 58, 44), (88, 78, 56), (54, 48, 38), (104, 94, 68)], size)
     return im
 
 
@@ -801,8 +806,9 @@ def concrete(then):
         if x == 0 or y == 0:
             return (120, 118, 112) if then else (100, 98, 92)
         c = jt(CONC, x, y, 311, 0.03)
-        best = min(math.hypot(x - cx, y - cy) for cx in (0, 32, 64) for cy in (0, 32, 64))
-        c = shade(c, 1 + 0.035 * math.sin(best * 0.7))
+        best = min(math.hypot(x - cx - 10 * h32(cx, cy, 314), y - cy - 10 * h32(cy, cx, 315))
+                   for cx in (0, 32, 64) for cy in (0, 32, 64))
+        c = shade(c, 1 + 0.014 * math.sin(best * 0.5 + 3 * vn(x, y, 316, 24)))
         if not then:
             c = mix(c, (150, 148, 138), 0.2)
             if abs(math.sin(x * 0.09 + 2.5 * math.sin(y * 0.07))) < 0.035:

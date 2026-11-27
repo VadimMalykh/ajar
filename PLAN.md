@@ -22066,7 +22066,7 @@ four checks after it). Task `then5-follow`. Only `src/zscript/thentest.zs`
   first; with it, the door code is the suspect; without it and with nobody
   THEN, the three's places at the door (`AJARTEST info`, the sixth line).
 
-## Look: MAP23, the animal house (2026-11-27; board of three looks, not chosen yet)
+## Look: MAP23, the animal house (2026-11-27; chosen from a board of three looks: look 3, The Kennels; built)
 
 > Vadim, 2026-11-27: "Let's go with map23 decoration"
 
@@ -22074,9 +22074,18 @@ Board: https://claude.ai/artifact/5akzFqoGY1VMwJ47Nk1bSi (source
 `design/map23-board.html`; published 2026-11-27 from the session's
 scratchpad: the page, `0/` today's level (views 00-34), `1/`, `2/`, `3/` the
 looks (62 views each: all but the rules in three passages and two
-turnstiles), `tex/` eight swatches a look). **Nothing is chosen: the game
-keeps the plain level until Vadim picks**, and the looks are behind
-`AJAR_DOGS`.
+turnstiles), `tex/` eight swatches a look; since the choice `3/` holds the
+built level's views and the page says "Chosen").
+
+**The choice.**
+
+> Vadim, 2026-11-27, with the board published: "Let's go with option 3"
+
+Read by Claude as look 3, The Kennels, for every group (the board's looks
+are numbered 1 to 3; nothing else then on the table had a third option),
+and told to him so. The level in the game is one line in `tools/dogs23.py`:
+`MIX = dict(yard=3, hall=3, runs=3, pens=3, passages=3, plates=3, things=3)`.
+A later change of mind, a mix by group included, is a change of that line.
 
 Decided by Claude (Fable): the design of the board, the three looks and
 what each group holds. Built by Claude on Opus in three parts: the
@@ -22087,12 +22096,11 @@ The three looks are three answers to what the institute took these animals
 for: specimens (1), exhibits (2), animals it kept and named (3). The name
 boards say it: numbers, species, names.
 
-**The switch.** `AJAR_DOGS` unset or `0`: the plain level, MAP23's TEXTMAP
-and every other map byte for byte as in main's package, and `dogs23` not
-imported (`tools/map_sleepingdogs.py` imports it only when the switch is
-set). `1`, `2`, `3`: that look for every group. `mix`: the line
-`MIX = dict(yard=1, hall=1, runs=1, pens=1, passages=1, plates=1, things=1)`
-in `tools/dogs23.py`, to be set once Vadim has chosen. Texture names are
+**The switch.** `AJAR_DOGS` unset (or `mix`) builds the chosen mix, the
+line `MIX` in `tools/dogs23.py`. `AJAR_DOGS=0` is the plain level as it was
+before the looks: MAP23's TEXTMAP and every other map byte for byte, and
+`dogs23` not imported. `1`, `2`, `3`: that look for every group, as on the
+board. (Until the choice, unset was the plain level.) Texture names are
 `AJD<look><slot><T|N>` (THEN or NOW; a wall slot laid at a height of its
 own carries one more character); pictures `AJD<look>Q<nn><T|N>`; the decor
 sprites `AJVB`, `AJVK`, `AJVS` with one frame per look and time. Only what
@@ -22233,14 +22241,39 @@ only. Mended by Claude (Fable) after look 1's review: a knight's Mass on
 its card is 1000 (was 500); the tour clears the level's opening hint before
 its first view.
 
-**Known and left until the choice** (to be mended for the looks chosen):
-look 3's concrete floor shows its trowel arcs as rings, its run paviours
-are busy, and its thin straw NOW falls in 16-pixel squares (three mends the
-worker had made were lost when the disk dropped at 21:10); look 2's rock
-top wanders 2 pixels and may step at a corner, and its demon's silhouette
-reads as any four-legged animal; the guard room's name board NOW is nearly
-black (the room's light is 104); pen 1 NOW from the run is too dark to
-judge its walls. `tools/board23_shots.sh` takes `build/board23` as a link
+**Look 3 finished after the choice** (task `kennels23`, the same worker):
+the three mends lost when the disk dropped at 21:10 redone (calmer run
+paviours, the straw thinned by noise and not in 16-pixel squares, the
+concrete's trowel arcs faint: they had shown as rings on the passages'
+floor); the weatherboard's laps clearer; rot in blobs; the pens' boards
+NOW lighter; the brick under the fallen lime a dull grey-brown and the rust
+runs short and brown (in the first shots both read as blood on the walls);
+the wavy cracks off the run's floor.
+
+**Checked (the level as chosen, quick builds, 2026-11-27).** `AJAR_DOGS=0`:
+all 52 map lumps and every other file of the package byte for byte as
+main's package before the choice. Unset: `dogs_compare` all the same
+against it (194 things and 24 decor, 175 sectors, the 35 lines with
+specials and the sky transfer, 670 lines become 746, 51 other maps byte for
+byte); mapcheck 175 sectors, 218 things, 74 monsters, 2 secret sectors, 0
+problems; thingcheck 0; itemcheck the two OUT OF REACH at the stall's
+ledge; MODE=2 30 checks, 0 failed; MODE=5 70 views. MODE=1: four runs,
+three of them `levelExited=1` with 45 checks and 0 failed; the first of the
+four exited too but failed one step, `walkTo_-890_1088` (the player stood
+at (-899.6, 1088) THEN, by the kennels' turnstile, 10 short of the spot;
+the three demons woke by themselves just after). Not seen in the four runs
+of the board's task; the build differs from the plain level in textures
+only. Taken as the test's walk, not the look; if it shows again, that walk
+step in `SleepingDogsTest` is the place to look.
+
+**Known and left.** Look 2's rock top wanders 2 pixels and may step at a
+corner, and its demon's silhouette reads as any four-legged animal (look 2
+is not in the game). In the level: NOW the pens seen from their runs are
+very dark (the sector light and the distance: lighter paint helped little;
+from inside they read), the fallen-lime patches are dull dark stains, the
+guard room's name board is nearly black (the room's light is 104). Light
+is not a look's to change: a task of its own if Vadim wants the night
+brighter. Not played by hand. `tools/board23_shots.sh` takes `build/board23` as a link
 to a folder off the disk (the shots of looks 2 and 3 were written to the
 scratchpad, in memory, to spare /data).
 

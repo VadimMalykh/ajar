@@ -1,6 +1,7 @@
 """MAP23's looks, the map's side (PLAN.md, "Look: MAP23, the animal house"). tools/map_sleepingdogs.py calls
-apply() once the map is built and checked, when AJAR_DOGS is set: 1, 2, 3 one look for every group; "mix" the
-table MIX below (Vadim's picks, group by group). Unset or 0: the plain level, and this file is not imported.
+apply() once the map is built and checked: AJAR_DOGS unset (or "mix") the table MIX below (Vadim's picks, group
+by group): the level in the game; 1, 2, 3 one look for every group (the look board's builds); 0 the plain level as
+it was before the looks, and this file is not imported.
 
 The art is tools/gfx_dogs.py (the slots, shared) and tools/gfx_dogs<n>.py (each look's painters). This file says
 which slot each surface of the map wears, where the pictures hang and where the decor things stand: the same for
@@ -27,8 +28,9 @@ import gfx_dogs
 from power33 import _dot, _line_key, oriented
 
 GROUPS = ("yard", "hall", "runs", "pens", "passages", "plates", "things")
-# MAP23's look as Vadim picks it from the look board, group -> look (1 Vivarium, 2 Menagerie, 3 The Kennels):
-MIX = dict(yard=1, hall=1, runs=1, pens=1, passages=1, plates=1, things=1)
+# MAP23's look as Vadim picked it from the look board, group -> look (1 Vivarium, 2 Menagerie, 3 The Kennels).
+# 2026-11-27: "Let's go with option 3": The Kennels for every group. A change of mind is a change of this line.
+MIX = dict(yard=3, hall=3, runs=3, pens=3, passages=3, plates=3, things=3)
 
 SKY_TAG = 2380                               # THEN's sky sectors (the day sky, a sky transfer)
 DECOR_T = dict(bowl=20199, bucket=20202, store=20203)       # dogs.zs: AjarDogsBowl, AjarDogsBucket, AjarDogsStore
@@ -37,13 +39,13 @@ NOTES = []                                   # where each picture and thing is (
 
 
 def setting():
-    """AJAR_DOGS: 0 (unset or 0: the plain level), 1, 2, 3, or "mix"."""
-    v = (os.environ.get("AJAR_DOGS") or "").strip()
-    if v in ("", "0"):
+    """AJAR_DOGS: "mix" (unset or mix: the picks, the level in the game), 0 (the plain level), 1, 2 or 3."""
+    v = (os.environ.get("AJAR_DOGS") or "mix").strip()
+    if v == "0":
         return 0
     if v == "mix":
         return "mix"
-    assert v in ("1", "2", "3"), f"AJAR_DOGS={v}: 0, 1, 2, 3 or mix"
+    assert v in ("1", "2", "3"), f"AJAR_DOGS={v}: unset, mix, 0, 1, 2 or 3"
     return int(v)
 
 

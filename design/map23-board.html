@@ -4,7 +4,7 @@
 <style>
 /* Layout: a choosing sheet, as MAP21's and MAP33's boards. The three looks on top with swatches and the plan with
    the tour's cameras, then one band per group: notes and a pick on the left; on the right the same camera THEN
-   (by day, whole) and under it NOW (the ruin), the three looks side by side and the level as it is today last. */
+   (by day, whole) and under it NOW (the ruin), the three looks side by side and the level as it was last. */
 :root {
   --bg: #eceef1; --panel: #f8f9fb; --fg: #1a1f27; --muted: #5b6573; --line: #cfd4dc;
   --accent: #b3402e; --chip: #dfe3e9; --pick: #1f6f5c; --paper: #f3efe4; --ink: #1a1f27;
@@ -90,11 +90,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 <div class="wrap">
   <header>
-    <div class="stamp"><b>Not chosen yet</b> &nbsp;MAP23 "Sleeping Dogs" · the animal house · captured 27 Nov 2026 · GZDoom, the specimens asleep</div>
+    <div class="stamp"><b>Chosen 27 Nov 2026</b> &nbsp;MAP23 "Sleeping Dogs" · the animal house · captured 27 Nov 2026 · GZDoom, the specimens asleep</div>
     <h1>Sleeping Dogs: three looks for the animal house</h1>
     <p>The level wears MAP11's borrowed walls today and has no dressing. Here are three looks of its own, each an answer to one question: what did the institute take these animals for? Specimens, exhibits, or animals it kept and named.</p>
     <p>Every look is built into the level twice, as the level is: THEN, by day, with the animals asleep in their runs, and NOW, the same walls forty years on with their bones. Nothing moves between the looks: only wall and floor textures, the pictures on the walls and a few things on the floor change, and the level plays and tests the same.</p>
-    <p class="muted">Pick a look for each row and paste the line near the bottom into the chat. Rows can be mixed freely; where two looks meet at a doorway, each side keeps its own. Click a picture to enlarge it.</p>
+    <p><b>The choice is made:</b> look 3, The Kennels, for every part. That is the level in the game now, and its pictures here are photographed from the built level.</p>
+    <p class="muted">The other two looks and the level as it was stay beside it for comparison. A change of mind is still cheap, and rows can be mixed freely: pick again in any row and paste the line near the bottom into the chat. Click a picture to enlarge it.</p>
   </header>
 
   <section class="stack">
@@ -112,7 +113,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   <section class="sum" id="summary">
     <h2>Your picks</h2>
-    <p class="muted" style="font-size:13.5px">Picks are kept in this browser only. To have the level built, paste this line into the chat.</p>
+    <p class="muted" style="font-size:13.5px">The level is built as this line reads when nothing is changed above. Picks are kept in this browser only; to change the level, pick again and paste the line into the chat.</p>
     <output id="picksline"></output>
     <div class="row"><button type="button" class="copy" id="copy">Copy</button><span class="muted" id="copied" style="font-size:13px" role="status"></span></div>
   </section>
@@ -147,7 +148,7 @@ const PLACES = [
 const PARTS = [
   {id: "yard", name: "The yard", cams: [0, 1, 2],
    text: "The start, at both times: the house's front and the yard's walls, the ground, line 6's shelter, the frames of the glass wall and the gateway, the front door's face THEN.",
-   asks: ["The sky is new in every look: night NOW, a day sky THEN. Today's level has no sky at all (the checker in the last picture).", "NOW the front door is Doom's and stays so."]},
+   asks: ["The sky is new in every look: night NOW, a day sky THEN. The level as it was had no sky at all (the checker in the last picture).", "NOW the front door is Doom's and stays so."]},
   {id: "hall", name: "The hall", cams: [3, 4],
    text: "The hub between the wings. It is a place NOW only, so there is nothing to show THEN.",
    asks: []},
@@ -175,8 +176,10 @@ document.getElementById("looks").innerHTML = LOOKS.map(([n, name, d]) =>
      `<i style="background-image:url(tex/AJD${n}${t}.png)"></i>`).join("")}</div>
    <div class="swcap">${SWCAP}</div>
    <p>${d}</p></div>`).join("");
-let picks = {}, cams = {};
-try { const kept = JSON.parse(localStorage.getItem("map23-picks") || "null"); if (kept) picks = kept; } catch (e) {}
+// Vadim's choice, 27 Nov 2026 ("Let's go with option 3"); tools/dogs23.py MIX builds it, and folder 3/ holds its views
+const CHOSEN = {yard: "3", hall: "3", runs: "3", pens: "3", passages: "3", plates: "3", things: "3"};
+let picks = {...CHOSEN}, cams = {};
+try { const kept = JSON.parse(localStorage.getItem("map23-picks") || "null"); if (kept && Object.keys(kept).length) picks = kept; } catch (e) {}
 PARTS.forEach(p => cams[p.id] = p.cams[0]);
 function drawPart(p) {
   const cam = cams[p.id], place = PLACES[cam], label = place[3];
@@ -190,7 +193,7 @@ function drawPart(p) {
   const band = (view, when, note) => view === null ? "" :
     `<div class="when"><h3><b>${when}</b> · ${note}</h3><div class="opts">` +
     ["1", "2", "3"].map(l => tile(l, view, lookName(l), when, picks[p.id] === l ? " chosen" : "")).join("") +
-    (place[6] ? tile("0", view, "The level today", when, " plain") : "") + `</div></div>`;
+    (place[6] ? tile("0", view, "The level as it was", when, " plain") : "") + `</div></div>`;
   document.getElementById("main-" + p.id).innerHTML = camBar +
     band(place[4], "THEN", "by day, forty years ago") + band(place[5], "NOW", "the same spot tonight");
 }
