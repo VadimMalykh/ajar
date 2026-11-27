@@ -1169,8 +1169,8 @@ class AjarHandler : EventHandler
 		// Monsters would walk into the scripted smoke tests. (In a real level
 		// mode 2 is a tour of it as it is played, so it keeps them.)
 		int autotest = CVar.GetCVar("ajar_autotest").GetInt();
-		// (MAP33's tests play its fights in every mode: map33.zs)
-		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2) && !(level.mapname ~== "MAP33"))
+		// (MAP33's tests play its fights in every mode: map33.zs; the kennel lab's tests clear what they do not use)
+		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2) && !(level.mapname ~== "MAP33") && !(level.mapname ~== "KENNEL"))
 		{
 			let mi = ThinkerIterator.Create("Actor");
 			Actor a;
@@ -1422,6 +1422,7 @@ class AjarHandler : EventHandler
 		if (level.mapname.Left(7) ~== "CLASSIC") return;     // and the joined maps lab (classic.zs)
 		if (level.mapname ~== "MAP21") return;     // and MAP21 (map21.zs, LongRunTest)
 		if (level.mapname ~== "MAP22") return;     // and MAP22 (map22.zs, DayReturnTest)
+		if (level.mapname ~== "KENNEL") return;    // and the kennel lab (kenneltest.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 4) LabReachScript(mo, t);      // the reach survey (reachtest.zs)
