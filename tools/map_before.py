@@ -39,12 +39,21 @@ what is said below.
     Frame 108 (west wall), the lever and target THEN on the east wall.
   6 company (x 3200..3712): the THEN lab's pen, NOW two imps and a demon,
     each time its own gate and lever; frame 109 (west wall).
-The checks are src/zscript/beforetest.zs (MODE=1..4 tools/smoke.sh).
+The old door lab (PLAN.md, "The old door lab"; Times(old=True), then.zs: a
+colour door hung at an earlier time is an old door in the same frame at every
+later time) adds two bays and BLUE:
+  7 the door left on the site (x 3840..4352): frame 110 (north wall); BLUE
+    hangs BEFORE in 150 from the start, so THEN (130) and NOW (110) an old BLUE
+    hangs there, ten and fifty years old, onto BLUE's far side in bay 8. An imp
+    NOW (deaf), to follow the player through the old door.
+  8 (x 4480..4992): two rooms, each with a door from the corridor; BLUE's far
+    side 202 in the east one's north wall.
+The checks are src/zscript/beforetest.zs (MODE=1..5 tools/smoke.sh).
 """
 import ajarmap
 import ajarthen
 import ajarwater as W
-from ajarmap import RED
+from ajarmap import RED, BLUE
 from ajarthen import (Times, NOW, THEN, BEFORE, THEN_ID, LB, CO, LA, AR, FL, FC, FA, FR, KL, KC, KA, heights, LIVE,
                       CLOCKED, TENYEAR)
 from udmf import Map, rect
@@ -52,14 +61,17 @@ from udmf import Map, rect
 m = Map()
 import gfx_institute
 m.align |= gfx_institute.ALIGNED            # MAP11's walls are laid by where they are
-t = Times(m, at=(128, -96), before=True)    # the AjarThen thing, in NOW's corridor; BEFORE at twice the offset
+t = Times(m, at=(128, -96), before=True, old=True)      # the AjarThen thing, in NOW's corridor; BEFORE at twice the
+                                                        # offset; a door left hanging is an old door later
 
 ROOM = dict(wall=LA, ftex=FA, ctex=KA, ceil=256)
 HALL = dict(wall=LB, ftex=FL, ctex=KL, ceil=256)
 YARD = dict(wall=LA, ftex="FLAT10", ctex="F_SKY1", ceil=256)       # BEFORE: the site, under the sky; the piers look 1
 HALL_X, STRONG_X, STRING_X, HOIST_X, DRIP_X, PEN_X = 0, 640, 1280, 1920, 2560, 3200
+OLD_X, WATER_X = 3840, 4480                                        # the old door lab's bays
 STRING_TAG, HOIST_TAG, BASIN, GATE_NOW, GATE_THEN = 31, 32, 41, 61, 62
 STRING, HOIST, DRIP = 11, 12, 13                                   # the causes' tids
+END = WATER_X + 576                                                # the corridor's east end
 LATER = (NOW, THEN)                                                # the two times with walls
 
 
@@ -103,7 +115,7 @@ def pier(a, b, out):
 
 
 # --- the corridor ---------------------------------------------------------------------------------
-t.room((-64, -176, 3776, -16), wall=CO, ftex=FC, ctex=KC, ceil=160, now=dict(light=104), then=dict(light=208),
+t.room((-64, -176, END, -16), wall=CO, ftex=FC, ctex=KC, ceil=160, now=dict(light=104), then=dict(light=208),
        only=LATER)
 t.far((160, -176), (224, -176), (0, -1), RED)                              # RED's far side: 201 NOW, 221 THEN, 241 BEFORE
 pier((160, -176), (224, -176), (0, -1))
@@ -240,6 +252,39 @@ for kind, x, y in ((3001, 176, 700), (3001, 336, 700), (3002, 256, 620)):  # two
     t.now.thing(X + x, y, kind, angle=270, skill=1)
 
 
+# --- 7: the door left on the site (the old door lab) ---------------------------------------------
+X = OLD_X
+
+
+def old_bay(c):
+    if c.before:
+        return
+    c.room(box(X, 0, 0, 512, 512), **ROOM)
+
+
+t.both(old_bay)
+bay_door(X, 224)
+frame((X + 96, 512), (X + 160, 512), (0, 1), 110)                          # BLUE in it BEFORE (150) from the start
+ajarmap.door(m, BLUE, *t.before.P((X + 128, 400)), frame=150)
+t.now.thing(X + 256, 400, 3001, angle=270, skill=1, ambush=True)           # an imp NOW, deaf: it follows through old BLUE
+
+# --- 8: BLUE's far side (the old door lab) ---------------------------------------------------------
+X = WATER_X
+
+
+def water_bay(c):
+    if c.before:
+        return
+    c.room(box(X, 0, 0, 224, 512), **ROOM)
+    c.room(box(X, 288, 0, 512, 512), **ROOM)
+    for x in (80, 368):
+        ajarmap.roomdoor(m, c.P((X + x, -16)), c.P((X + x + 64, -16)), (0, 1), 0)
+
+
+t.both(water_bay)
+t.far((X + 368, 512), (X + 432, 512), (0, 1), BLUE)                       # BLUE's far side: 202, 222, 242
+pier((X + 368, 512), (X + 432, 512), (0, 1))
+
 # --- BEFORE: the yard -----------------------------------------------------------------------------
 def tiles(area, holes):
     """The rectangle `area` less the rectangles `holes`, as rectangles: strips
@@ -265,27 +310,28 @@ def tiles(area, holes):
     return out
 
 
-for r in tiles((-192, -384, 3904, 720), PIERS):
+for r in tiles((-192, -384, END + 128, 720), PIERS):
     t.before.room(r, **YARD)
 
 # --- the times' ids (frames n, n + 20, n + 40; RED's far side 201, 221, 241) ------------------------
 problems = ajarthen.check_ids(m)
 assert not problems, problems
 
-# --- the puzzle (tools/solve.py: three times, two clocked doors) ----------------------------------
+# --- the puzzle (tools/solve.py: three times, two clocked doors, a door left hanging) --------------
 # NOW and THEN each one region but for what a cause cuts off (the strips beside the partitions, the hoist's
-# ledge, the drip's ledge NOW) and the strongroom; BEFORE one yard. The goal is the strongroom THEN, entered
-# only by the ten-year door hung BEFORE in 144. The strongroom NOW is listed as a region of its own: frame 105
-# would take the clocked door there, but the clocked door cannot be brought into the strongroom THEN (it is
-# carried in only through 144 from BEFORE, and the ten-year door, which has to hang in 144 for that, is the
-# door the player came to BEFORE by: one pair of hands), so lost() names it.
+# ledge, the drip's ledge NOW) and the strongroom; BEFORE one yard. The goal is the strongroom NOW
+# (the three times lab's was the strongroom THEN: NOW was out of reach with the two clocked doors alone, since the
+# clocked door could not be brought into the strongroom THEN). With a door left hanging (old=True) a colour door
+# left BEFORE in the strongroom's free frame 144 is an old door into it THEN (124) and NOW (104), each onto its
+# far side at that time. Bays 7 and 8 (BLUE) move nothing the puzzle needs and
+# are left out: with BLUE as a fourth door the search ran past ten minutes and 3.7 GB (57375 states without).
 ROOMS = {101: "now", 102: "now", 103: "now", 104: "strongroom now", 105: "strongroom now", 106: "now",
          107: "now", 108: "now", 109: "now"}
 FRAMES = dict(ROOMS)
 FRAMES.update({n + THEN_ID: r.replace("now", "then") for n, r in ROOMS.items()})
 FRAMES.update({n + 2 * THEN_ID: "before" for n in ROOMS if n != 103})
 PUZZLE = dict(
-    start="now", goal="strongroom then",
+    start="now", goal="strongroom now", old=True,
     names={RED: "RED", CLOCKED: "the clocked door", TENYEAR: "the ten-year door"},
     frames=FRAMES,
     twins={n: n + THEN_ID for n in ROOMS},

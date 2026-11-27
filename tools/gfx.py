@@ -1402,6 +1402,8 @@ def make_all():
     gfx_then.make_longrun(out)                                   # MAP21's clock trim and desk panels
     import gfx_before                                            # the three times lab's levers (map BEFORE)
     gfx_before.make(out)
+    import gfx_olddoor                                           # the old door, ten and fifty years old (map BEFORE)
+    gfx_olddoor.make(out)
     out["animdefs.txt"] = ("".join(f"switch {n} on pic {n}N tics 0\n" for n in dict.fromkeys(LEVERS))
                            + "cameratexture AJREEL 512 224\n"
                            + "cameratexture AJPASSC 256 160\n").encode()   # what the pass's double sees (pass.zs)

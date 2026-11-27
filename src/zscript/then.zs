@@ -78,6 +78,19 @@
 // old corpse while no chain of hung clocked doors joins the two (Joined); one
 // killed BEFORE leaves a corpse THEN and NOW. BEFORE has its own music
 // (BEFORE_MUSIC). With two times all of this is as before.
+//
+// A door left hanging (the old door lab, the same map; PLAN.md, "The old door lab"). With args[3] 1 the AjarThen
+// thing switches on the rule (ajarthen.Times(old=True)); every other map is as before. A colour door (RED .. PINK)
+// hung in frame F at time t has, at each later time u (nearer NOW) at which a frame stands at F's spot (FrameAt), an
+// old door hanging in that frame: an AjarDoor with args[1] OLD, made by Hang (OldHang) the moment the door goes in,
+// also at the first tic for a door that hangs from the start, and unmade by Unhang when the door comes down at t
+// (OldUnhang). It is a hung door to everything that asks (it is the frame's door, args[0] its far side at u: sight,
+// shots, monsters, water, belts), opens on the door's far side at u, and is rusted to its frame: USE at it says so
+// (UseFrame), and a thief or a nailer leaves it (Stuck). A colour door does not go into a frame while a frame at
+// its spot at a later time holds any door but those that go with the one swapped out (OldRefuses); the clocked
+// doors leave none, and their own refusals cover an old door in their twin. Its look (AjarDoor.Show): ten years old
+// THEN (dulled, AJO1..6), forty or fifty NOW (flaking, rust from the hinges, AJQ1..6; tools/gfx_olddoor.py), and
+// the surround of the far side it opens onto ages with it (AgeFar).
 
 class AjarThen : Actor
 {
@@ -90,6 +103,8 @@ class AjarThen : Actor
 	const T_BEFORE = 2;       // the third time (the three times lab): ten years before THEN, at twice the shift
 
 	Vector2 Off() { return (args[0], args[1]); }
+	// a door left hanging is an old door at every later time (args[3] 1: ajarthen.Times(old=True))
+	bool OldDoors() { return args[3] == 1; }
 	// 2, or 3 with args[2] 3 (ajarthen.Times(before=True))
 	int Times() { return args[2] >= 3 ? 3 : 2; }
 	// which time p is at: NOW 0, THEN 1 (past half the shift), BEFORE 2 (past one and a half, three times only)
@@ -906,5 +921,106 @@ extend class AjarHandler
 		// leaves come down, the carried door hangs in this frame alone, and the clocked door is in hand. Vadim's
 		// game rule since MAP02, 2026-11-26: no door is ever put down, so a refusal here left full hands nothing)
 		return false;
+	}
+
+	// --- a door left hanging (the old door lab) -----------------------------------------------------------
+	// Hang: the colour door d has just gone into f at time t. At each later time u whose frame at f's spot is free
+	// an old door hangs in that frame, opening on d's far side at u: ten years old THEN (d hung BEFORE), forty NOW (d
+	// hung THEN), fifty NOW (d hung BEFORE).
+	void OldHang(AjarDoor d, AjarFrame f)
+	{
+		let w = AjarThen.Find();
+		if (!w || !w.OldDoors() || !Placed(d) || !f) return;
+		int t = w.TimeOf(f.pos.xy);
+		for (int u = AjarThen.T_NOW; u < t; u++)
+		{
+			AjarFrame g = FrameAt(f, u);
+			if (!g || g.door) continue;           // (OldRefuses keeps it free; a door the map hangs there from the start stays)
+			let o = AjarDoor(Actor.Spawn("AjarDoor", g.pos));
+			if (!o) continue;
+			o.args[1] = AjarDoor.OLD;
+			o.oldOf = d;
+			o.oldColour = d.Colour();
+			o.oldYears = (t == AjarThen.T_BEFORE ? 10 : 0) + (u == AjarThen.T_NOW ? 40 : 0);
+			o.args[0] = u == AjarThen.T_NOW ? (d.ownFar ? d.ownFar : d.args[0]) : FarCopy(d, u);     // 0: none built then, shut
+			Hang(o, g);
+			AgeFar(o.args[0], o.oldColour, o.oldYears > 10 ? "Q" : "O");
+			if (CVar.GetCVar("ajar_autotest").GetInt())
+				Console.Printf("AJARTEST info old %s door in %d, %d years, open onto %d", o.Label(), g.args[0], o.oldYears, o.args[0]);
+		}
+	}
+
+	// Unhang: the colour door d has come down; it was never there later.
+	void OldUnhang(AjarDoor d)
+	{
+		if (!d || !Placed(d)) return;
+		Array<AjarDoor> old;
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor o;
+		while (o = AjarDoor(di.Next())) if (o.IsOld() && o.oldOf == d) old.Push(o);
+		for (int i = 0; i < old.Size(); i++)
+		{
+			if (old[i].frame) Unhang(old[i].frame);
+			AgeFar(old[i].args[0], old[i].oldColour, "");
+			old[i].Destroy();
+		}
+	}
+
+	// The far side's face ages with the old door that opens onto it: the colour's surround of its recess, AJTRn and
+	// AJTFn, is AJTRnO / AJTFnO ten years on, AJTRnQ / AJTFnQ forty or fifty (age ""; tools/gfx_olddoor.py).
+	void AgeFar(int id, int colour, string age)
+	{
+		Line l = id ? FindLine(id) : null;
+		if (!l) return;
+		string wall = String.Format("AJTR%d", colour), flat = String.Format("AJTF%d", colour);
+		TextureID wallTex = TexMan.CheckForTexture(wall .. age, TexMan.Type_Any);
+		TextureID flatTex = TexMan.CheckForTexture(flat .. age, TexMan.Type_Any);
+		for (int k = 0; k < 2; k++)
+		{
+			Sector s = k ? l.backsector : l.frontsector;
+			if (!s) continue;
+			for (int p = 0; p < 2; p++)
+			{
+				int at = p ? Sector.ceiling : Sector.floor;
+				if (Aged(TexMan.GetName(s.GetTexture(at)), flat)) s.SetTexture(at, flatTex);
+			}
+			for (int i = 0; i < s.lines.Size(); i++)
+				for (int sd = 0; sd < 2; sd++)
+				{
+					Side side = s.lines[i].sidedef[sd];
+					if (!side) continue;
+					for (int part = Side.top; part <= Side.bottom; part++)
+						if (Aged(TexMan.GetName(side.GetTexture(part)), wall)) side.SetTexture(part, wallTex);
+				}
+		}
+	}
+	static bool Aged(string n, string base) { return n ~== base || n ~== base .. "O" || n ~== base .. "Q"; }
+
+	// The frame at f's spot at a later time that keeps the colour door d out of f, or null: one that holds a door
+	// (a clocked leaf, a colour door, an old door) other than what goes with the door swapped out of f (its old
+	// selves, a clocked door's other leaf).
+	AjarFrame OldBlocker(AjarDoor d, AjarFrame f)
+	{
+		let w = AjarThen.Find();
+		if (!w || !w.OldDoors() || !Placed(d) || !f) return null;
+		AjarDoor gone = f.door;
+		int t = w.TimeOf(f.pos.xy);
+		for (int u = AjarThen.T_NOW; u < t; u++)
+		{
+			AjarFrame g = FrameAt(f, u);
+			if (!g || !g.door) continue;
+			AjarDoor o = g.door;
+			if (gone && (o == gone || (o.IsOld() && o.oldOf == gone) || (gone.IsClocked() && o == gone.Twin()))) continue;
+			return g;
+		}
+		return null;
+	}
+
+	// UseFrame: the carried colour door does not go into f while a later time has a door in the same frame.
+	bool OldRefuses(AjarFrame f)
+	{
+		if (!carried || !OldBlocker(carried, f)) return false;
+		Say("A door hangs in this frame at a later time.\nThe " .. carried.Label() .. " door will not hang in it.");
+		return true;
 	}
 }

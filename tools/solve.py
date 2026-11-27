@@ -160,6 +160,17 @@ before then). As two times, and:
                 hangs nowhere, now and then apart; the ten-year door does not
                 count
 
+A door left hanging (the old door lab, tools/map_before.py; PLAN.md, "The old
+door lab"), with old=True:
+  old           a plain door (no clock, no pair) hung in a then or before
+                frame is an old door in the same frame at every later time
+                (its `befores` and `twins` ids nearer now): it fills that
+                frame, joins its region to the door's far side at that time
+                (home_then, home), and is never taken down or swapped out
+                there. A plain door is not hung (nor swapped in) where a
+                later frame at its spot is filled by anything but what goes
+                with the door swapped out
+
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
 one action each. Keys are never lost.
@@ -221,14 +232,31 @@ def _now(p, f, span=0):
     return f if f in t or not t else _twins(p, span).get(f, f)
 
 
+def _plain(p, c):
+    """A door with a far side of its own: no clock, no pair."""
+    return not p["doors"][c].get("clock") and "pair" not in p["doors"][c]
+
+
+def _later(p, f):
+    """The frames at f's spot at the later times, nearer now: a before frame's
+    then and now twins, a then frame's now twin (see `old`)."""
+    then = {b: a for a, b in p.get("befores", {}).items()}.get(f, f)
+    now = {b: a for a, b in p.get("twins", {}).items()}
+    return ([then] if then != f else []) + ([now[then]] if then in now else [])
+
+
 def _hung(p, where):
-    """{frame id: the door that fills it}: a clocked door fills two."""
+    """{frame id: the door that fills it}: a clocked door fills two; with
+    `old` a plain door also fills its frame at each later time."""
     hung = {}
     for c, loc in where.items():
         if loc[0] == "frame":
             hung[loc[1]] = c
             if p["doors"][c].get("clock"):
                 hung[_twins(p, _span(p, c))[loc[1]]] = c
+            elif p.get("old") and _plain(p, c):
+                for g in _later(p, loc[1]):
+                    hung.setdefault(g, c)
     return hung
 
 
@@ -382,6 +410,11 @@ def _moves(p, state, nailed=False):
         if region != here:
             continue
         c = hung.get(f)
+        if c is not None and p.get("old") and _plain(p, c) and where[c] != ("frame", f):
+            continue                                 # an old door: rusted to its frame
+        if (carried is not None and p.get("old") and _plain(p, carried)
+                and any(hung.get(g) not in (None, c) for g in _later(p, f))):
+            continue                                 # a later time has a door in this frame
         if c is not None and f == p.get("home_frame") and c == p.get("home_door"):
             continue                                 # the way out, built: it stays
         if c is not None and p.get("stays", {}).get(f) == c:

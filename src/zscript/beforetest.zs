@@ -10,17 +10,22 @@
 // string 1280, hoist 1920, drip 2560, company 3200.
 //   1 the doors; 2 the causes; 3 company; 4 views (tools/smoke_BEFORE_4.cfg
 //   shoots at about 50 + 70 n).
+// The old door lab (PLAN.md, "The old door lab"; then.zs, a door left hanging): bays
+// 7 the door left on the site x 3840 (frame 110/130/150, BLUE in 150 from the
+// start), 8 x 4480 (BLUE's far side 202/222/242, the east room).
+//   5 the rule.
 
 class BeforeTest : EventHandler
 {
 	const OFF = 4096;
 	const STRONG_X = 640; const STRING_X = 1280; const HOIST_X = 1920; const DRIP_X = 2560; const PEN_X = 3200;
+	const OLD_X = 3840; const WATER_X = 4480;
 	const WALKKEY = 0x1900;
 	int tic, cur, tt;
 	int checks, fails;
 	AjarHandler h;
 	AjarThenHandler th;
-	AjarDoor clocked, shadow, ten, tenShadow, red;
+	AjarDoor clocked, shadow, ten, tenShadow, red, blue;
 
 	bool Testing() { return CVar.GetCVar("ajar_autotest").GetInt() != 0 && level.mapname ~== "BEFORE"; }
 
@@ -72,10 +77,15 @@ class BeforeTest : EventHandler
 		for (int id = 201; id <= 241; id += 20) s = s .. String.Format(" %d %s", id, Open(id) ? "open" : ShutRed(id) ? "shut" : "?");
 		return s;
 	}
-	// only RED's far side at time t is open
+	// only RED's far side at time t is open (and, where old doors are on, its far sides at the later times, by the old
+	// RED left in the same frame then: the old door lab)
 	bool RedAt(int t)
 	{
-		for (int k = 0; k < 3; k++) if ((k == t) != Open(201 + 20 * k) || (k != t && !ShutRed(201 + 20 * k))) return false;
+		for (int k = 0; k < 3; k++)
+		{
+			bool on = k == t || (k < t && th.when.OldDoors());
+			if (on != Open(201 + 20 * k) || (!on && !ShutRed(201 + 20 * k))) return false;
+		}
 		return red.args[0] == 201 + 20 * t;
 	}
 	// out of RED's far side at time t, facing out of it
@@ -159,18 +169,20 @@ class BeforeTest : EventHandler
 				if (d.args[1] == AjarDoor.CLOCKED) { if (d.IsShadow()) shadow = d; else clocked = d; }
 				else if (d.args[1] == AjarDoor.TENYEAR) { if (d.IsShadow()) tenShadow = d; else ten = d; }
 				else if (d.args[1] == 1) red = d;
+				else if (d.args[1] == 2) blue = d;
 			}
 			mo.player.cheats |= CF_GODMODE;
 			if (mode != 3) mo.player.cheats |= CF_NOTARGET;
-			Info(String.Format("times %d; causes %d, cause sectors %d, targets %d; clocked %d shadow %d ten-year %d shadow %d red %d",
+			Info(String.Format("times %d; causes %d, cause sectors %d, targets %d; clocked %d shadow %d ten-year %d shadow %d red %d blue %d; old doors %d",
 				th.when.Times(), th.causes.Size(), th.secIdx.Size(), th.targets.Size(),
-				clocked != null, shadow != null, ten != null, tenShadow != null, red != null));
+				clocked != null, shadow != null, ten != null, tenShadow != null, red != null, blue != null, th.when.OldDoors()));
 		}
 		cur = 2;
 		if (mode == 1) Doors(mo);
 		else if (mode == 2) Causes(mo);
 		else if (mode == 3) Company(mo);
 		else if (mode == 4) Views(mo);
+		else if (mode == 5) Rule(mo);
 		Drive(mo);
 		if (mode != 4 && tic == cur + 2) Console.Printf("AJARTEST beforeDone=1 checks=%d failed=%d", checks, fails);
 	}
@@ -310,6 +322,8 @@ class BeforeTest : EventHandler
 		// here (PLAN.md, "The three times lab": the solver's strongroom NOW); the script puts it in hand.
 		if (At())
 		{
+			// (RED, left BEFORE in 145, is an old door THEN in 125: the script takes it down first, the old door lab)
+			if (th.when.OldDoors() && red.frame) { ScriptUnhang(red); PutBack(red); Info("RED taken out of 145 by the script: its old self THEN filled 125"); }
 			ScriptUnhang(clocked);
 			Info("the clocked door taken out of 121 and put in hand by the script, in the strongroom THEN");
 			Pose(mo, STRONG_X + 384, OFF + 470, 90);
@@ -663,5 +677,196 @@ class BeforeTest : EventHandler
 		if (At()) View(mo, "the yard BEFORE, from its west end", -150, 2 * OFF + 120, 5);
 		if (Seg(69)) {}
 		if (At()) Console.Printf("AJARTEST beforeViews=%d", viewN);
+	}
+
+	// === the old door lab: helpers =====================================================================
+	// the old door in frame id: of door d, so many years old, open onto its far side `far` at that time, in its look
+	bool OldOf(int id, AjarDoor d, int years, int far)
+	{
+		AjarFrame f = F(id);
+		AjarDoor o = f ? f.door : null;
+		if (!o || !o.IsOld() || o.oldOf != d || o.oldYears != years || o.args[0] != far || !Open(far) || !Open(id)) return false;
+		string spr = String.Format("%s%d", years > 10 ? "AJQ" : "AJO", d.Colour());
+		return o.sprite == Actor.GetSpriteIndex(spr) && !o.bInvisible && o.Label() == d.Label()
+			&& FarFace(far) == String.Format("AJTF%d%s", d.Colour(), years > 10 ? "Q" : "O");
+	}
+	// the flat of the recess of far side id: the colour's surround, aged with an old door open onto it
+	string FarFace(int id)
+	{
+		Line l = h.FindLine(id);
+		for (int k = 0; l && k < 2; k++)
+		{
+			Sector s = k ? l.backsector : l.frontsector;
+			string n = s ? TexMan.GetName(s.GetTexture(Sector.floor)) : "";
+			if (n.Left(4) ~== "AJTF") return n;
+		}
+		return "-";
+	}
+	int OldCount()
+	{
+		int n = 0;
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next())) if (d.IsOld()) n++;
+		return n;
+	}
+	string Olds()
+	{
+		string s = "old doors:";
+		let di = ThinkerIterator.Create("AjarDoor");
+		AjarDoor d;
+		while (d = AjarDoor(di.Next()))
+			if (d.IsOld()) s = s .. String.Format(" %s in %d (%d years, onto %d)", d.Label(), d.frame ? d.frame.args[0] : 0, d.oldYears, d.args[0]);
+		s = s .. String.Format("; red in %d, blue in %d; carried %s", red.frame ? red.frame.args[0] : 0, blue.frame ? blue.frame.args[0] : 0, Carried());
+		return s;
+	}
+	// a door put back leaning where the map put it, out of the hands (belt.zs's BeltPutBack)
+	void PutBack(AjarDoor d)
+	{
+		if (d.frame) ScriptUnhang(d);
+		d.carried = false;
+		d.SetOrigin(d.SpawnPoint, false);
+		d.angle = 90;
+		d.Show();
+		if (h.carried == d) h.carried = null;
+	}
+	// a door in the hands, by script (what was in them put back)
+	void InHand(AjarDoor d)
+	{
+		if (h.carried && h.carried != d) PutBack(h.carried);
+		if (d.frame) ScriptUnhang(d);
+		d.carried = true;
+		d.Hide();
+		h.carried = d;
+	}
+	bool InBox(Actor a, int t, double x1, double y1, double x2, double y2)
+	{
+		double y = a.pos.y - t * OFF;
+		return TimeOf(a) == t && a.pos.x > x1 && a.pos.x < x2 && y > y1 && y < y2;
+	}
+	bool InStrongroom(Actor a, int t) { return InBox(a, t, STRONG_X, 0, STRONG_X + 512, 512); }
+
+	// === MODE=5: the rule ===============================================================================
+	void Rule(Actor mo)
+	{
+		// BLUE hangs BEFORE from the first tic, so its old selves THEN and NOW do too
+		if (At()) Check("blueHangsBeforeFromTheStart", blue.frame == F(150) && OldOf(130, blue, 10, 222) && OldOf(110, blue, 50, 202) && Open(242) && OldCount() == 2, Olds());
+		// RED hung BEFORE in 141: an old RED THEN in 121 (ten years) and NOW in 101 (fifty), each onto RED's far side then
+		if (At()) { Pose(mo, 200, 140, 270); red.Used(mo); }
+		if (At()) { Pose(mo, 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("redHungBeforeSeenThenAndNow", red.frame == F(141) && OldOf(121, red, 10, 221) && OldOf(101, red, 50, 201) && Open(241) && !h.carried && OldCount() == 4, Olds() .. "; " .. Fars());
+		if (At()) Through(mo, 128, 452, 90);
+		if (Seg(24) && tt == 23) { Keys(); Check("throughOldRedNow", InCorridor(mo, 0), Where(mo)); }
+		if (At()) Through(mo, 128, OFF + 452, 90);
+		if (Seg(24) && tt == 23) { Keys(); Check("throughOldRedThen", InCorridor(mo, 1), Where(mo)); }
+		if (At()) Through(mo, 192, OFF - 120, 270);
+		if (Seg(30) && tt == 29)
+		{
+			Keys();
+			Check("backThroughOldRedThen", TimeOf(mo) == AjarThen.T_THEN && abs(mo.pos.x - 128) < 6 && mo.pos.y > OFF + 380 && mo.pos.y < OFF + 512 && Facing(mo, 270), Where(mo));
+		}
+		// rusted to its frame: USE with empty hands, NOW and THEN
+		if (At()) { h.said = ""; Pose(mo, 128, 470, 90); PressUse(mo); }
+		if (At()) Check("rustedNow", Said("Rusted to its frame.") && !h.carried && OldOf(101, red, 50, 201), h.said);
+		if (At()) { h.said = ""; Pose(mo, 128, OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("rustedThen", Said("Rusted to its frame.") && !h.carried && OldOf(121, red, 10, 221), h.said);
+		// BLUE taken down BEFORE: its old selves are gone at once
+		if (At()) { Pose(mo, OLD_X + 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("blueDownItsOldSelvesGone", h.carried == blue && !F(130).door && !F(110).door && !Open(202) && !Open(222) && !Open(242) && OldCount() == 2, Olds());
+		// ... and USE with a door in hand: rusted, nothing swapped
+		if (At()) { h.said = ""; Pose(mo, 128, 470, 90); PressUse(mo); }
+		if (At()) Check("rustedWithADoorInHand", Said("Rusted to its frame.") && h.carried == blue && OldOf(101, red, 50, 201), h.said);
+		if (At()) Check("thiefAndNailerLeaveIt", F(101).door.Stuck() && F(121).door.Stuck() && !red.Stuck());
+		// the swap BEFORE: BLUE for RED in 141, the old doors with it
+		if (At()) { Pose(mo, 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("swapMovesTheOldDoors", blue.frame == F(141) && h.carried == red && OldOf(121, blue, 10, 222) && OldOf(101, blue, 50, 202) && OldCount() == 2 && !Open(201) && !Open(221), Olds() .. "; " .. Fars());
+		if (At()) PressUse(mo);
+		if (At()) Check("swappedBack", red.frame == F(141) && h.carried == blue && OldOf(121, red, 10, 221) && OldOf(101, red, 50, 201) && OldCount() == 2, Olds());
+
+		// rule 4: no colour door into a frame while a later time has a door in it. A colour door: RED NOW in 102
+		if (At()) { ScriptHang(red, 102); h.carried = blue; }
+		if (At()) { h.said = ""; Pose(mo, 384, OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("refusedColourDoorLater", h.carried == blue && !F(122).door && Said("A door hangs in this frame at a later time.\nThe BLUE door will not hang in it.") && OldCount() == 0, h.said .. "; " .. Olds());
+		if (At()) { h.said = ""; Pose(mo, 384, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("refusedColourDoorTwoTimesLater", h.carried == blue && !F(142).door && Said("A door hangs in this frame at a later time."), h.said);
+		// a clocked leaf: the clocked door hung NOW in 101 has its leaf THEN in 121; BLUE into 141 BEFORE
+		if (At()) { ScriptHang(clocked, 101); h.carried = blue; h.said = ""; Pose(mo, 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("refusedClockedLeafLater", h.carried == blue && !F(141).door && shadow.frame == F(121) && Said("A door hangs in this frame at a later time."), h.said .. "; " .. DoorsSaid());
+		// an old door: RED hung THEN in 121 (by script), its old self NOW in 101 keeps BLUE out of 141 first
+		if (At()) { ScriptUnhang(clocked); PutBack(clocked); ScriptHang(red, 121); h.carried = blue; }
+		if (At()) { h.said = ""; Pose(mo, 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("refusedOldDoorLater", h.carried == blue && !F(141).door && h.OldBlocker(blue, F(141)) == F(101) && OldOf(101, red, 40, 201) && Said("A door hangs in this frame at a later time."), h.said .. "; " .. Olds());
+		// RED hung THEN in play in 123, which has no BEFORE: an old RED NOW in 103 only, forty years old
+		if (At()) { PutBack(blue); ScriptUnhang(red); }
+		if (At()) Check("redDownFrom121OldGone", h.carried == red && OldCount() == 0 && !F(101).door, Olds());
+		if (At()) { Pose(mo, 470, OFF + 256, 0); PressUse(mo); }
+		if (At()) Check("redHungThenSeenNowOnly", red.frame == F(123) && OldOf(103, red, 40, 201) && OldCount() == 1 && Open(221) && !Open(241), Olds() .. "; " .. Fars());
+		if (At()) Through(mo, 452, 256, 0);
+		if (Seg(24) && tt == 23) { Keys(); Check("throughOldRedNowIn103", InCorridor(mo, 0), Where(mo)); }
+		// the clocked door's own refusal covers an old door in its twin: THEN at 123, RED's old self NOW in 103
+		if (At()) { InHand(clocked); h.said = ""; Pose(mo, 470, OFF + 256, 0); PressUse(mo); }
+		if (At()) Check("clockedRefusedOldDoorInTwin", h.carried == clocked && red.frame == F(123) && OldOf(103, red, 40, 201) && Said("At the other time a door hangs in this frame.\nThe clocked door"), h.said);
+		// taken down at its own time: never there later, at once
+		if (At()) { PutBack(clocked); Pose(mo, 470, OFF + 256, 0); PressUse(mo); }
+		if (At()) Check("takenDownNeverThereLater", h.carried == red && !F(103).door && !F(123).door && OldCount() == 0 && !Open(201) && ShutRed(201)
+			&& FarFace(201) == "AJTF1" && FarFace(221) == "AJTF1", Olds() .. "; " .. Fars() .. "; " .. FarFace(201));
+
+		// the strongroom NOW in play: RED left BEFORE in its free frame 144 is an old door into it THEN (124) and NOW (104)
+		if (At()) { InHand(red); Pose(mo, STRONG_X + 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("redLeftIn144", red.frame == F(144) && OldOf(124, red, 10, 221) && OldOf(104, red, 50, 201) && !h.carried, Olds());
+		if (At()) Through(mo, 192, -120, 270);
+		if (Seg(30) && tt == 29) { Keys(); Check("strongroomNowInPlay", InStrongroom(mo, 0), Where(mo)); WalkTo(STRONG_X + 256, 256); }
+		if (Seg(60) && tt == 59) Check("megasphereNow", mo.health >= 200, String.Format("health %d", mo.health));
+		// ... and the clocked door carried into the strongroom THEN through RED's far side THEN, hung in 125, on to NOW
+		if (At()) { InHand(clocked); Through(mo, 192, OFF - 120, 270); }
+		if (Seg(30) && tt == 29) { Keys(); Check("clockedCarriedIntoStrongroomThen", InStrongroom(mo, 1) && h.carried == clocked, Where(mo)); }
+		if (At()) { Pose(mo, STRONG_X + 384, OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("clockedHungIn125", clocked.frame == F(125) && shadow.frame == F(105), DoorsSaid());
+		if (At()) Through(mo, STRONG_X + 384, OFF + 452, 90);
+		if (Seg(24) && tt == 23) { Keys(); Check("strongroomNowByTheClockedDoor", InStrongroom(mo, 0), Where(mo)); }
+		FollowOld(mo);
+	}
+
+	// A monster NOW follows the player through an old door (after the rest: it takes as long as it takes, as
+	// Follow's trials). BLUE back in 150 BEFORE, through old BLUE NOW in 110 from bay 7 into the dry room of bay 8
+	// (BLUE's far side 202), the bay's own imp behind.
+	Actor oImp;
+	int oDone, oStart, oSeen, oIn, oCrossed;
+	void FollowOld(Actor mo)
+	{
+		if (tic < cur) return;
+		if (oDone) { cur = tic + 100; if (oDone == 1) { oDone = 2; cur = tic - 2; } return; }
+		cur = tic + 100;
+		if (!oStart)
+		{
+			oStart = tic;
+			h.carried = null;
+			ScriptHang(blue, 150);
+			let it = ThinkerIterator.Create("DoomImp");
+			Actor a;
+			while (a = Actor(it.Next())) if (InBox(a, 0, OLD_X, 0, OLD_X + 512, 512)) oImp = a;
+			Check("theImpNow", oImp != null && OldOf(110, blue, 50, 202), Olds());
+			mo.player.cheats &= ~CF_NOTARGET;
+			Pose(mo, OLD_X + 128, 300, 90);
+			if (oImp) { oImp.bAmbush = false; oImp.target = mo; oImp.SetState(oImp.SeeState); }
+		}
+		int st = tic - oStart;
+		if (st == 20) Through(mo, OLD_X + 128, 494, 90);         // into 110, out of 202 in the dry room
+		if (st == 44) { Keys(); WalkTo(WATER_X + 400, 120); }
+		bool dry = oImp && InBox(oImp, 0, WATER_X + 288, 0, WATER_X + 512, 512);
+		if (oImp && InBox(oImp, 0, OLD_X, 0, OLD_X + 512, 512)) oSeen = 1;
+		if (dry && oSeen == 1) { oCrossed++; oSeen = 2; }
+		if (dry) oIn++; else oIn = 0;
+		if (oImp && st % 30 == 0) Info(String.Format("follow t+%d imp %s; player %s", st, AjarDoorTrace.Of(oImp), Where(mo)));
+		if ((oIn >= 70 && st > 60) || st >= 1050 || !oImp || oImp.health <= 0)
+		{
+			Check("impNowThroughOldBlue", oImp && oImp.health > 0 && oIn >= 70 && oCrossed == 1 && InBox(mo, 0, WATER_X + 288, 0, WATER_X + 512, 512),
+				String.Format("t+%d, in the dry room %d tics; %s", st, oIn, oImp ? AjarDoorTrace.Of(oImp) : "no imp"));
+			if (oImp) { oImp.ClearCounters(); oImp.Destroy(); }
+			walking = false;
+			Keys();
+			mo.player.cheats |= CF_NOTARGET;
+			oDone = 1;
+		}
 	}
 }

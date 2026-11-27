@@ -40,6 +40,10 @@ BEFORE (cause(when=BEFORE), its lever() and target() BEFORE too) moves every
 sector with its tag, THEN and NOW (and BEFORE: what shows it). check_ids()
 says whether a map's frames and far sides keep clear of each other and of the
 ids the engine reserves.
+
+A door left hanging (the old door lab, the same map; PLAN.md, "The old door
+lab"): Times(old=True) switches on the rule that a colour door hung at an
+earlier time is an old door in the same frame at every later time (then.zs).
 """
 import ajarmap
 from udmf import rect
@@ -154,18 +158,23 @@ class Copy:
 
 
 class Times:
-    def __init__(self, m, off=OFF, at=(0, 0), light=None, before=False):
+    def __init__(self, m, off=OFF, at=(0, 0), light=None, before=False, old=False):
         """`at`: a point of NOW (the AjarThen thing): a point is THEN if it
         lies more than half the offset from it, along the offset. `before`:
         a third copy, BEFORE, at twice the offset (args[2] of the AjarThen
-        thing 3: a point past one and a half offsets is BEFORE)."""
+        thing 3: a point past one and a half offsets is BEFORE). `old`: a
+        colour door left hanging is an old door at every later time (args[3]
+        1)."""
         self.m, self.off = m, off
         self.light = dict(LIGHT, **(light or {}))
         self.now, self.then = Copy(self, NOW), Copy(self, THEN)
         self.before = Copy(self, BEFORE) if before else None
         self.copies = (self.now, self.then) + ((self.before,) if before else ())
         self.ids = {}                   # the frames' and far sides' line ids: what each is (check_ids)
-        m.thing(at[0], at[1], THEN_T, args=off + ((3,) if before else ()))
+        args = off + ((3,) if before else ())
+        if old:
+            args = off + (3 if before else 0, 1)
+        m.thing(at[0], at[1], THEN_T, args=args)
 
     def used(self, line_id, what):
         """A frame's or far side's line id, kept for check_ids(); one used twice stops the build."""
