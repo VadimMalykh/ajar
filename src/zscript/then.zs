@@ -91,6 +91,8 @@
 // doors leave none, and their own refusals cover an old door in their twin. Its look (AjarDoor.Show): ten years old
 // THEN (dulled, AJO1..6), forty or fifty NOW (flaking, rust from the hinges, AJQ1..6; tools/gfx_olddoor.py), and
 // the surround of the far side it opens onto ages with it (AgeFar).
+// A long cause may follow a frame instead of a lever (AjarThenFrameCause, 20208): its setting is what hangs in that
+// frame at its time.
 
 class AjarThen : Actor
 {
@@ -137,11 +139,38 @@ class AjarThenCause : Actor
 	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
 	States { Spawn: TNT1 A -1; Stop; }
 
-	int Settings() { return clamp(args[0], 2, 4); }      // (4: MAP21's beam, off and three walls)
+	virtual int Settings() { return clamp(args[0], 2, 4); }      // (4: MAP21's beam, off and three walls)
 	override void Activate(Actor activator)
 	{
 		let th = AjarThenHandler.Get();
 		if (th) th.SetCause(self, (setting + 1) % Settings(), activator);
+	}
+}
+
+// A long cause that follows a frame (thing 20208; the old door lab, PLAN.md "The old door lab", 7 and 8): its
+// setting is not a lever's but what hangs in frame args[0] at that frame's time, kept so each tic (FollowFrames):
+// 0 while it is empty, 1 while a colour door (an old one too) hangs in it. With args[4] a cause's tid * 16 + a
+// colour (the belt's heap): 0 while that cause stands in its setting 0; else 1 while the frame is empty, 2 while the
+// door of that colour (or an old self of it) hangs there, and 0 with any other door in it (what went through went
+// where nothing was built for it). Otherwise as AjarThenCause: args[1] the sectors it moves, args[2] a basin and
+// args[3] its depth. It has no lever.
+class AjarThenFrameCause : AjarThenCause
+{
+	AjarFrame f;
+	override int Settings() { return args[4] ? 3 : 2; }
+	override void Activate(Actor activator) {}
+	int Want()
+	{
+		let h = AjarHandler(EventHandler.Find("AjarHandler"));
+		if (!f && h) f = h.FindFrame(args[0]);
+		AjarDoor d = f ? f.door : null;
+		bool colour = d && (AjarHandler.Placed(d) || d.IsOld());
+		if (!args[4]) return colour ? 1 : 0;
+		let th = AjarThenHandler.Get();
+		let gate = th ? th.FindCause(args[4] / 16) : null;
+		if (!gate || gate.setting == 0) return 0;
+		if (!d) return 1;
+		return colour && d.Colour() == args[4] % 16 ? 2 : 0;
 	}
 }
 
@@ -380,6 +409,7 @@ class AjarThenHandler : EventHandler
 		{
 			causes.Push(c);
 			c.setting = clamp(c.args[4], 0, c.Settings() - 1);
+			if (c is "AjarThenFrameCause") c.setting = AjarThenFrameCause(c).Want();     // what hangs in its frame from the start
 			if (c.args[1])
 			{
 				let si = level.CreateSectorTagIterator(c.args[1]);
@@ -449,6 +479,16 @@ class AjarThenHandler : EventHandler
 		}
 		ShowThen(c);
 		if (CVar.GetCVar("ajar_autotest").GetInt()) Console.Printf("AJARTEST info cause %d set to %d at t=%d", c.tid, n, level.maptime);
+	}
+
+	// A cause that follows a frame is set to what hangs there now (AjarThenFrameCause).
+	void FollowFrames()
+	{
+		for (int i = 0; i < causes.Size(); i++)
+		{
+			let fc = AjarThenFrameCause(causes[i]);
+			if (fc) SetCause(fc, fc.Want(), null);
+		}
 	}
 
 	// at once (the start; the tests' views)
@@ -790,6 +830,7 @@ class AjarThenHandler : EventHandler
 	{
 		if (!ready) Setup();
 		if (!when) return;
+		FollowFrames();
 		for (int i = 0; i < causes.Size(); i++) MoveCause(causes[i]);
 		ShowHidden();
 		Company();

@@ -44,14 +44,16 @@ colour door hung at an earlier time is an old door in the same frame at every
 later time) adds two bays and BLUE:
   7 the door left on the site (x 3840..4352): frame 110 (north wall); BLUE
     hangs BEFORE in 150 from the start, so THEN (130) and NOW (110) an old BLUE
-    hangs there, ten and fifty years old, onto BLUE's far side in bay 8. An imp
-    NOW (deaf), to follow the player through the old door.
+    hangs there, ten and fifty years old, onto BLUE's far side in bay 8. THEN
+    and NOW a closet off the north wall, open only while a colour door hangs
+    BEFORE in 150 (a cause that follows that frame); a berserk pack in it NOW.
+    An imp NOW (deaf), to follow the player through the old door.
   8 the water (x 4480..4992): NOW a tank (west, frame 111 in its north wall)
     and a dry room (east, BLUE's far side 202 in its north wall), each with a
     door from the corridor; THEN's valve on the tank's west wall fills the tank
     96 deep. BLUE left hanging THEN or BEFORE in 111's frame is an old door NOW
     between the two, and the water stands in both.
-The checks are src/zscript/beforetest.zs (MODE=1..6 tools/smoke.sh).
+The checks are src/zscript/beforetest.zs (MODE=1..7 tools/smoke.sh).
 """
 import ajarmap
 import ajarthen
@@ -73,9 +75,9 @@ YARD = dict(wall=LA, ftex="FLAT10", ctex="F_SKY1", ceil=256)       # BEFORE: the
 HALL_X, STRONG_X, STRING_X, HOIST_X, DRIP_X, PEN_X = 0, 640, 1280, 1920, 2560, 3200
 OLD_X, WATER_X = 3840, 4480                                        # the old door lab's bays
 STRING_TAG, HOIST_TAG, BASIN, GATE_NOW, GATE_THEN = 31, 32, 41, 61, 62
-TANK, DRY = 42, 43
+CLOSET_TAG, TANK, DRY = 33, 42, 43
 STRING, HOIST, DRIP = 11, 12, 13                                   # the causes' tids
-VALVE = 14                                                         # ... the old door lab's
+VALVE, CLOSET = 14, 17                                             # ... the old door lab's
 END = WATER_X + 576                                                # the corridor's east end
 LATER = (NOW, THEN)                                                # the two times with walls
 
@@ -265,12 +267,19 @@ def old_bay(c):
     if c.before:
         return
     c.room(box(X, 0, 0, 512, 512), **ROOM)
+    c.room(box(X, 352, 512, 416, 528), floor=0, ceil=128, wall=LA, ftex=FA, ctex=FA, id=CLOSET_TAG,
+           raw=heights(ceils=(0, 128), hold=True))                         # the closet's mouth: open while 150 holds a door
+    for y in (512, 528):
+        c.line((X + 352, y), (X + 416, y), upper=LA, dontpegtop=True)
+    c.room(box(X, 320, 528, 448, 656), **dict(ROOM, ceil=128))              # the closet
 
 
 t.both(old_bay)
 bay_door(X, 224)
 frame((X + 96, 512), (X + 160, 512), (0, 1), 110)                          # BLUE in it BEFORE (150) from the start
 ajarmap.door(m, BLUE, *t.before.P((X + 128, 400)), frame=150)
+t.frame_cause(X + 256, 200, CLOSET, 150, tag=CLOSET_TAG)
+t.now.thing(X + 384, 600, 2023)                                            # a berserk pack in the closet NOW
 t.now.thing(X + 256, 400, 3001, angle=270, skill=1, ambush=True)           # an imp NOW, deaf: it follows through old BLUE
 
 # --- 8: the water (the old door lab) --------------------------------------------------------------
@@ -333,7 +342,7 @@ assert not problems, problems
 # (the three times lab's was the strongroom THEN: NOW was out of reach with the two clocked doors alone, since the
 # clocked door could not be brought into the strongroom THEN). With a door left hanging (old=True) a colour door
 # left BEFORE in the strongroom's free frame 144 is an old door into it THEN (124) and NOW (104), each onto its
-# far side at that time. Bays 7 and 8 (BLUE, the water) move nothing the puzzle needs and
+# far side at that time. Bays 7 and 8 (BLUE, the closet, the water) move nothing the puzzle needs and
 # are left out: with BLUE as a fourth door the search ran past ten minutes and 3.7 GB (57375 states without).
 ROOMS = {101: "now", 102: "now", 103: "now", 104: "strongroom now", 105: "strongroom now", 106: "now",
          107: "now", 108: "now", 109: "now"}

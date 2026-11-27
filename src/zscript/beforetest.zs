@@ -11,10 +11,11 @@
 //   1 the doors; 2 the causes; 3 company; 4 views (tools/smoke_BEFORE_4.cfg
 //   shoots at about 50 + 70 n).
 // The old door lab (PLAN.md, "The old door lab"; then.zs, a door left hanging): bays
-// 7 the door left on the site x 3840 (frame 110/130/150, BLUE in 150 from the
-// start), 8 the water x 4480 (frame 111/131/151 in the tank, tag 42; BLUE's far
-// side 202/222/242 in the dry room, tag 43; the valve THEN, cause 14).
-//   5 the rule; 6 water through an old door.
+// 7 the door left on the site x 3840 (frame 110/130/150, BLUE in 150 from the start;
+// the closet, cause 17, follows 150), 8 the water x 4480 (frame 111/131/151 in the
+// tank, tag 42; BLUE's far side 202/222/242 in the dry room, tag 43; the valve THEN,
+// cause 14).
+//   5 the rule; 6 water through an old door; 7 a cause that follows a frame.
 
 class BeforeTest : EventHandler
 {
@@ -185,6 +186,7 @@ class BeforeTest : EventHandler
 		else if (mode == 4) Views(mo);
 		else if (mode == 5) Rule(mo);
 		else if (mode == 6) Water(mo);
+		else if (mode == 7) Closet(mo);
 		Drive(mo);
 		if (mode != 4 && tic == cur + 2) Console.Printf("AJARTEST beforeDone=1 checks=%d failed=%d", checks, fails);
 	}
@@ -905,5 +907,39 @@ class BeforeTest : EventHandler
 		if (Seg(70) && tt == 69)
 			Check("oldDoorGoneTheWaterStays", !F(111).door && h.carried == blue && abs(dry.w - 96) < 0.5 && abs(tank.w - 96) < 0.01,
 				String.Format("tank %.2f, dry room %.2f", tank.w, dry.w));
+	}
+
+	// === MODE=7: a cause that follows a frame: the closet ================================================
+	void Closet(Actor mo)
+	{
+		let cc = Cause(17);
+		double cx = OLD_X + 384, cy = 520;         // the closet's mouth
+		if (At()) Check("closetOpenAtStart", cc && cc.setting == 1 && CZ(cx, cy) == 128 && CZ(cx, OFF + cy) == 128 && blue.frame == F(150),
+			String.Format("setting %d; %.0f / %.0f", cc ? cc.setting : -1, CZ(cx, cy), CZ(cx, OFF + cy)));
+		if (At()) { Pose(mo, cx, 400, 90); WalkTo(cx, 600); }
+		if (Seg(60) && tt == 59) Check("intoTheClosetNow", mo.pos.y > 528 && mo.FindInventory("PowerStrength") != null, Where(mo));
+		// BLUE taken down BEFORE (by script: the player stands NOW in the closet's mouth): THEN it shuts; NOW it waits for him
+		if (At()) { Pose(mo, cx, cy, 90); ScriptUnhang(blue); PutBack(blue); }
+		if (Seg(100) && tt == 99)
+			Check("closetWaitsForThePlayer", cc.setting == 0 && CZ(cx, cy) == 128 && CZ(cx, OFF + cy) == 0 && mo.health > 0,
+				String.Format("%.0f / %.0f", CZ(cx, cy), CZ(cx, OFF + cy)));
+		if (At()) Pose(mo, cx, 400, 90);
+		if (Seg(100) && tt == 99) Check("closetShutAtBothTimes", CZ(cx, cy) == 0 && CZ(cx, OFF + cy) == 0, String.Format("%.0f / %.0f", CZ(cx, cy), CZ(cx, OFF + cy)));
+		if (At()) { Pose(mo, cx, 400, 90); WalkTo(cx, 600); }
+		if (Seg(40) && tt == 39) { walking = false; Keys(); Check("closetShutNow", mo.pos.y < 512, Where(mo)); }
+		// RED hung BEFORE in 150, in play: open again
+		if (At()) { InHand(red); Pose(mo, OLD_X + 128, 2 * OFF + 470, 90); PressUse(mo); }
+		if (Seg(100))
+		{
+			if (tt == 1) Check("redIn150OpensIt", red.frame == F(150) && cc.setting == 1);
+			if (tt == 99) Check("closetOpenAgain", CZ(cx, cy) == 128 && CZ(cx, OFF + cy) == 128, String.Format("%.0f / %.0f", CZ(cx, cy), CZ(cx, OFF + cy)));
+		}
+		// the ten-year door hung THEN in 130 has its leaf BEFORE in 150: no colour door, shut
+		if (At()) { PutBack(red); ScriptHang(ten, 130); h.carried = null; }
+		if (Seg(100))
+		{
+			if (tt == 1) Check("tenYearLeafIsNoColourDoor", tenShadow.frame == F(150) && cc.setting == 0);
+			if (tt == 99) Check("closetShutByTheTenYearLeaf", CZ(cx, cy) == 0 && CZ(cx, OFF + cy) == 0);
+		}
 	}
 }

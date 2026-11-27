@@ -44,6 +44,7 @@ ids the engine reserves.
 A door left hanging (the old door lab, the same map; PLAN.md, "The old door
 lab"): Times(old=True) switches on the rule that a colour door hung at an
 earlier time is an old door in the same frame at every later time (then.zs).
+frame_cause() is a long cause whose setting follows what hangs in a frame.
 """
 import ajarmap
 from udmf import rect
@@ -57,6 +58,7 @@ LIGHT = {NOW: 120, THEN: 216, BEFORE: 240}
 THEN_ID = 20        # a THEN frame's line id: its NOW twin's + THEN_ID
 OFF = (0, 4096)     # THEN is NOW shifted by this
 THEN_T, CAUSE_T, TARGET_T, EMITTER_T, BELT_T, MUSIC_T = 20180, 20181, 20182, 20183, 20184, 20185
+FRAME_CAUSE_T = 20208       # AjarThenFrameCause (then.zs): a long cause that follows a frame (the old door lab)
 HIDDEN = 1000       # a thing with tid HIDDEN + a cause's tid is there only in its setting 0 (in a pit the heap covers)
 LEVER = {NOW: "AJTHD3", THEN: "AJTHL2"}     # a cause's lever: dead NOW, live THEN (tools/gfx_then.py)
 LIVE = {NOW: "AJTHL3", THEN: "AJTHL2", BEFORE: "AJTHL1"}     # a lever that works at every time (a gate's)
@@ -290,6 +292,17 @@ class Times:
         self.then.line(a, b, special=130, args=(cause,), playeruse=True, repeatspecial=True, mid=tex[THEN],
                        exact=True, **peg)
         self.now.line(a, b, mid=tex[NOW], exact=True, **peg)
+
+    def frame_cause(self, x, y, tid, frame, *, tag=0, basin=0, depth=0, gate=0, colour=0, when=NOW):
+        """A long cause whose setting is what hangs in `frame` (a line id,
+        at its own time): 0 while it is empty, 1 while a colour door (or an
+        old one) hangs there; its sectors, basin and depth as cause(). With
+        `gate` (a cause's tid) and `colour`: 0 while that cause stands in its
+        setting 0, else 1 with the frame empty, 2 with that colour's door in
+        it, 0 with any other (a belt's heap: then.zs, AjarThenFrameCause).
+        The thing stands at x, y in the copy `when` (where makes no
+        difference)."""
+        self.copies[when].thing(x, y, FRAME_CAUSE_T, id=tid, args=(frame, tag, basin, depth, gate * 16 + colour))
 
     def target(self, x, y, cause, setting=None, z=28, when=THEN):
         """Something to shoot THEN, at x, y (12 clear of its wall), `z` up:
