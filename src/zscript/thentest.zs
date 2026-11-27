@@ -157,6 +157,7 @@ class ThenTest : EventHandler
 		else if (mode == 4) Beam(mo);
 		else if (mode == 5) Company(mo);
 		else if (mode == 6) Views(mo);
+		else if (mode == 7) ClockedFollow(mo);      // doorcaco.zs
 		Drive(mo);
 		if (mode != 6 && tic == cur + 2) Console.Printf("AJARTEST thenDone=1 checks=%d failed=%d", checks, fails);
 	}
@@ -526,9 +527,9 @@ class ThenTest : EventHandler
 			Check("stillAliveThen", Count(true) > 0);
 			Check("deadOneStays", FindCorpse(killedAt - (0, OFF), null) != null);
 		}
-		// hung again: the stand-ins go, the dead one's stays
+		// hung again: the stand-ins go (they fade out over AjarThenCorpse.FADE tics since 2026-11-27), the dead one's stays
 		if (At()) PressUse(mo);
-		if (Seg(3) && tt == 2)
+		if (Seg(40) && tt == 39)
 		{
 			int standIns = 0;
 			for (int i = 0; i < th.corpses.Size(); i++) if (th.corpses[i] && th.corpses[i].of) standIns++;

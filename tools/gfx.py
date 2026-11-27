@@ -893,6 +893,29 @@ def levers(out, name, wall, h=None):
     LEVERS.append(name)
 
 
+def cell_brick():
+    """The cell's brick (AJBRICK; MAP01's cell, the title's: tools/gfx_title1.py)."""
+    brick = Img(64, 64, (150, 140, 132))
+    brick.noise(9, 31)
+    for row in range(4):
+        brick.rect(0, row * 16, 64, row * 16 + 2, (92, 86, 82))
+        for x in ((0, 32) if row % 2 else (16, 48)):
+            brick.rect(x, row * 16, x + 2, row * 16 + 16, (92, 86, 82))
+    return brick
+
+
+def empty_frame():
+    """The empty frame (AJFRAME): a dark blank recess with two hinge plates waiting for a door."""
+    fr = Img(64, 96, (44, 42, 46))
+    fr.noise(5, 16)
+    fr.frame(0, 0, 64, 96, (24, 22, 26), 2)
+    for y in (14, 70):
+        fr.rect(2, y, 8, y + 12, (190, 170, 110))
+        fr.rect(3, y + 2, 5, y + 4, (60, 50, 30))
+        fr.rect(3, y + 8, 5, y + 10, (60, 50, 30))
+    return fr
+
+
 def make_all():
     """Returns {path inside pk3: png bytes}."""
     out = {}
@@ -1042,13 +1065,7 @@ def make_all():
             hang_picture(pic, tall, base)
             out[f"textures/AJP{tag}{c}.png"] = pic.png()
 
-    # the cell: brick
-    brick = Img(64, 64, (150, 140, 132))
-    brick.noise(9, 31)
-    for row in range(4):
-        brick.rect(0, row * 16, 64, row * 16 + 2, (92, 86, 82))
-        for x in ((0, 32) if row % 2 else (16, 48)):
-            brick.rect(x, row * 16, x + 2, row * 16 + 16, (92, 86, 82))
+    brick = cell_brick()                                    # the cell
     out["textures/AJBRICK.png"] = brick.png()
 
     # the vault: rows of small locked doors
@@ -1138,15 +1155,7 @@ def make_all():
     out["textures/AJTRIM.png"] = trim.png()
     out["flats/AJTRIMF.png"] = trim.png()
 
-    # empty frame: a dark blank recess with two hinge plates waiting for a door
-    fr = Img(64, 96, (44, 42, 46))
-    fr.noise(5, 16)
-    fr.frame(0, 0, 64, 96, (24, 22, 26), 2)
-    for y in (14, 70):
-        fr.rect(2, y, 8, y + 12, (190, 170, 110))
-        fr.rect(3, y + 2, 5, y + 4, (60, 50, 30))
-        fr.rect(3, y + 8, 5, y + 10, (60, 50, 30))
-    out["textures/AJFRAME.png"] = fr.png()
+    out["textures/AJFRAME.png"] = empty_frame().png()
 
     ex = Img(64, 160, (40, 44, 40))          # as tall as the exit room wall
     ex.frame(0, 0, 64, 160, (20, 22, 20), 3)
@@ -1411,6 +1420,8 @@ def make_all():
     gfx_power.make(out, map_station)
     import gfx_dayreturn                                         # MAP22's new bus, day sky and plates
     gfx_dayreturn.make(out)
+    import gfx_kennel                                            # the kennel lab's readout digits (map KENNEL)
+    gfx_kennel.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)

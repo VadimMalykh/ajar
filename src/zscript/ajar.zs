@@ -50,6 +50,8 @@
 //    never times.
 //  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
 //    (ajarmap.route_board; BoardTick).
+//  * USE works a door or a frame from its own side only: a real press that
+//    reaches it through an opening (any line portal) does nothing (reach.zs).
 
 class AjarFrame : Actor
 {
@@ -69,7 +71,7 @@ class AjarFrame : Actor
 	override void Activate(Actor activator)
 	{
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
-		if (h) h.UseFrame(self, activator);
+		if (h && !h.HandsDoNotReach(activator, null, self)) h.UseFrame(self, activator);     // not through an opening (reach.zs)
 	}
 }
 
@@ -224,6 +226,7 @@ class AjarDoor : Actor
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (!h) return false;
 		if (h.UseGoesOn(self, user)) return false;     // aimed past it at a switch: the press goes on to that (leaf.zs)
+		if (h.HandsDoNotReach(user, self, null)) return false;     // a real press through an opening: hands do not reach (reach.zs)
 		if (frame) h.UseFrame(frame, user);
 		else h.TakeLeaning(self, user);
 		return true;
@@ -1167,8 +1170,8 @@ class AjarHandler : EventHandler
 		// Monsters would walk into the scripted smoke tests. (In a real level
 		// mode 2 is a tour of it as it is played, so it keeps them.)
 		int autotest = CVar.GetCVar("ajar_autotest").GetInt();
-		// (MAP33's tests play its fights in every mode: map33.zs)
-		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2) && !(level.mapname ~== "MAP33"))
+		// (MAP33's tests play its fights in every mode: map33.zs; the kennel lab's tests clear what they do not use)
+		if (autotest && !(!(level.mapname ~== "TEST") && autotest >= 2) && !(level.mapname ~== "MAP33") && !(level.mapname ~== "KENNEL"))
 		{
 			let mi = ThinkerIterator.Create("Actor");
 			Actor a;
@@ -1235,7 +1238,7 @@ class AjarHandler : EventHandler
 	override void PlayerSpawned(PlayerEvent e)
 	{
 		let mo = players[e.PlayerNumber].mo;
-		if (!mo) return;
+		if (!mo || gamestate == GS_TITLELEVEL) return;      // the title's cell (title.zs) says nothing
 		// a level with no door to carry (MAP31) says what it has instead
 		if (ThinkerIterator.Create("AjarDoor").Next()) Say("USE a door to take it with you.\nUSE an empty frame to hang it there.\nA door always opens onto its own far side.");
 		else if (ThinkerIterator.Create("AjarZone").Next()) Say("Three halls, three fights.\nA door with a clock on it leads out of a fight: to before it began.");
@@ -1420,8 +1423,10 @@ class AjarHandler : EventHandler
 		if (level.mapname.Left(7) ~== "CLASSIC") return;     // and the joined maps lab (classic.zs)
 		if (level.mapname ~== "MAP21") return;     // and MAP21 (map21.zs, LongRunTest)
 		if (level.mapname ~== "MAP22") return;     // and MAP22 (map22.zs, DayReturnTest)
+		if (level.mapname ~== "KENNEL") return;    // and the kennel lab (kenneltest.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
+		else if (level.mapname ~== "LAB" && mode == 4) LabReachScript(mo, t);      // the reach survey (reachtest.zs)
 		else if (level.mapname ~== "LAB") LabScript(mo, t);
 		else if (level.mapname ~== "OPT") OpticsScript(mo, t, mode);
 		else if (level.mapname ~== "MIR") GlassScript(mo, t, mode);
@@ -3930,6 +3935,7 @@ class AjarHandler : EventHandler
 
 	void TestLevelScript(Actor mo, int t, int mode)
 	{
+		if (mode == 14) { CacoScript(mo, t); return; }      // doorcaco.zs
 		if (mode == 13) { RoundScript(mo, t); return; }
 		if (mode == 12) { HomeScript(mo, t); return; }
 		if (mode == 11) { StrayScript(mo, t); return; }

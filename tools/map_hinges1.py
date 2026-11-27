@@ -48,8 +48,19 @@ if FLOOR:
     HALL_LOOK.update(ftex=f"AJHG{FLOOR[0]}", rug=f"AJHR{FLOOR[-1]}")
 
 # --- the cell: one door, one frame ----------------------------------------
-m.sector(rect(0, -1500, 256, -1244), ceil=128, light=170, wall="AJBRICK")
-recess((96, -1244), (160, -1244), (0, 1), 0, 101, 201)                    # frame, empty
+# (the title's backdrop is this cell again, built by the same code: tools/map_title.py)
+CELL = rect(0, -1500, 256, -1244)
+RED_LEANS = dict(x=48, y=-1258, angle=270)                                # RED, leaning on the cell's wall
+CANDLES = ((20, -1480), (236, -1480))                                     # the cell's two candles
+START = dict(x=128, y=-1420, angle=90)                                    # where the player starts
+
+
+def cell(m):
+    m.sector(CELL, ceil=128, light=170, wall="AJBRICK")
+    ajarmap.recess(m, (96, -1244), (160, -1244), (0, 1), 0, 101, 201)     # frame, empty
+
+
+cell(m)
 
 # --- the hall (RED's far side), the pit, the ledge (YELLOW's far side) -----
 # Rooms are cut into grids so that a carpet runner under a row of ceiling
@@ -105,8 +116,8 @@ for a, b, c in (((192, 832), (256, 832), YELLOW), ((512, 832), (576, 832), GREEN
     m.line(a, b, mid=f"AJHT{HALL}{c}", exact=True)
 
 # --- things ----------------------------------------------------------------
-m.thing(128, -1420, 1, angle=90)                                          # player start
-ajarmap.door(m, RED, 48, -1258, angle=270)                               # leaning in the cell
+m.thing(START["x"], START["y"], 1, angle=START["angle"])                  # player start
+ajarmap.door(m, RED, RED_LEANS["x"], RED_LEANS["y"], angle=RED_LEANS["angle"])   # leaning in the cell
 ajarmap.door(m, YELLOW, 896, 600, frame=103)                              # hanging in the pit
 ajarmap.door(m, BLUE, 1266, 128, angle=180)                               # leaning on the ledge
 ajarmap.door(m, GREEN, 754, 700, angle=180)                               # leaning on the gallery
@@ -127,7 +138,7 @@ def things(kind, *spots, angle=0):
 
 
 # the cell: nothing but two candles
-things(CANDLE, (20, -1480), (236, -1480))
+things(CANDLE, *CANDLES)
 # the hall: two zombies with their backs to a pair of barrels, red torches by
 # the RED far side. No shotgun on this side of the pit: pistol only
 things(ZOMBIE, (540, 470), (600, 170), angle=180)
