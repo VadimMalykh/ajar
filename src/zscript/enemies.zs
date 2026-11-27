@@ -35,8 +35,21 @@ struct AjarSight play
 		if (!Crosses(src, who.pos.xy, img, margin, at)) return false;
 		Vector2 d = img - who.pos.xy;
 		ang = VectorAngle(d.x, d.y);
+		double dist = d.Length() * at - 1;
+		// Level, at half its height; a floating monster, which can come down
+		// or up to the opening, looks at the middle of it.
+		double pitch = 0;
+		if (who.bFloat)
+		{
+			Vector2 c = who.pos.xy + d * at;
+			Vector2 near = c - d.Unit() * 4;
+			Sector s = level.PointInSector(near);
+			double mid = (s.floorplane.ZAtPoint(near) + s.ceilingplane.ZAtPoint(near)) / 2;
+			pitch = VectorAngle(dist, who.pos.z + who.height / 2 - mid);
+			dist /= cos(pitch);
+		}
 		FLineTraceData data;
-		who.LineTrace(ang, d.Length() * at - 1, 0, TRF_THRUACTORS, who.height / 2, 0, 0, data);
+		who.LineTrace(ang, dist, pitch, TRF_THRUACTORS, who.height / 2, 0, 0, data);
 		return data.HitType == TRACE_HitNone;
 	}
 
@@ -1140,6 +1153,15 @@ class AjarSense : Inventory
 	// (their floors more than 24 apart: a baron on a gallery, the player on
 	// the floor below). Once through the door it is like any other.
 	bool dogged;
+	// Coming out of an opening (Crossed, GiveUp): the portal line it walks
+	// away from, and until when at the most.
+	Line outOf;
+	int outUntil;
+	Vector2 tickPos;    // where it was last tic (Crossed)
+	bool tickPosSet;
+	int stuckTics;      // in an opening and making no way (GiveUp)
+	double nearest;
+	int noDoorUntil;    // it gave a door up: no door before then
 
 	// An opening is 64 wide and as high as a door.
 	bool Fits() { return owner.radius <= 31 && owner.height <= 96; }
@@ -1165,8 +1187,10 @@ class AjarSense : Inventory
 		Super.DoEffect();
 		if (!owner || owner.health <= 0) return;
 		let p = players[consoleplayer].mo;
+		Crossed(p);
+		if (outOf) { Leave(p); return; }
 		if (p && p.health > 0 && (level.time + owner.SpawnTime) % 4 == 0) Look(p);
-		if (lure && owner.target == lure && via) Steer();
+		if (lure && owner.target == lure && via) Steer(p);
 		else Unmute();
 	}
 
@@ -1182,7 +1206,7 @@ class AjarSense : Inventory
 		lastPos = owner.pos;
 
 		bool below = dogged && abs(p.floorz - owner.floorz) > 24;     // seen, but not to be walked at
-		if (jumped || !Fits() || (owner.CheckSight(p) && !below)) via = null;
+		if (jumped || !Fits() || level.time < noDoorUntil || (owner.CheckSight(p) && !below)) via = null;
 		else
 		{
 			bool seen;
@@ -1213,7 +1237,7 @@ class AjarSense : Inventory
 		if (!lure) lure = Spawn("AjarLure", owner.pos);
 		bool idle = !owner.target;
 		owner.target = lure;
-		Steer();
+		Steer(p);
 		if (idle && owner.SeeState)
 		{
 			// wake it as if it had seen the player (it needs its target first)
@@ -1224,11 +1248,47 @@ class AjarSense : Inventory
 
 	// Every tic while it is making for a door: where its lure stands, and
 	// the last steps into the opening.
-	void Steer()
+	void Steer(Actor p)
 	{
-		// The lure is only something to walk at. Doom's monsters attack what
-		// they chase: bite it when they reach it, shoot it when they see it.
-		// That showed as a monster busy with a spot beside the door.
+		Mute();
+		// Far off, with a straight walk through the opening, the lure stands
+		// where you appear. Otherwise (a slant, the view lost, or close to the
+		// opening) it first stands square in front of the door, and goes
+		// beyond it once the monster is about in line. Doom's chase walks in
+		// eight directions and in whole steps, so it never lines up exactly:
+		// in front of the opening the monster is put on the middle line (slid
+		// there 2 units a tic, the last 16 at once), which a demon, 60 wide in
+		// a 64 opening, needs to within 2 units, and a cacodemon, 62 wide, to
+		// within 1.
+		Vector2 mid = (via.v1.p + via.v2.p) / 2;
+		Vector2 along = via.delta.Unit();
+		Vector2 n = (along.y, -along.x);
+		Vector2 off = owner.pos.xy - mid;
+		if (off dot n < 0) n = -n;
+		double side = off dot along;
+		double ahead = off dot n;
+		bool close = ahead < 128 && abs(side) < 24;
+		Vector2 to = viaImg;
+		if (!viaStraight || close)
+		{
+			// Someone standing just beyond the far opening (the player, as a
+			// rule) would stop it half way: it waits in front of the opening.
+			bool lined = abs(side) < 16 && ahead < 128 && RoomBeyond(via);
+			to = lined ? mid - n * 40 : mid + n * (owner.radius + 28);
+			if (close && abs(side) > 0.25 && !(abs(side) < 16 && owner.TryMove(owner.pos.xy - along * side, 1)))
+				owner.TryMove(owner.pos.xy - along * clamp(side, -2, 2), 1);
+		}
+		// At the height of the opening's floor: a floating monster comes down
+		// to it as it nears (Doom floats a monster towards its target's height).
+		Vector2 at = mid + n * 8;
+		lure.SetOrigin((to, level.PointInSector(at).floorplane.ZAtPoint(at)), false);
+		GiveUp(p, ahead);
+	}
+
+	// While it makes for a door or comes out of one it cannot attack (its
+	// lure would be bitten or shot; and it must not stop in an opening).
+	void Mute()
+	{
 		if (!muted)
 		{
 			muted = true;
@@ -1240,30 +1300,6 @@ class AjarSense : Inventory
 		if (owner.SeeState && ((owner.MeleeState && owner.InStateSequence(owner.CurState, owner.MeleeState))
 			|| (owner.MissileState && owner.InStateSequence(owner.CurState, owner.MissileState))))
 			owner.SetState(owner.SeeState);
-
-		// With a straight walk through the opening the lure stands where you
-		// appear. Otherwise (a slant, or the view is lost) it first stands
-		// square in front of the door, and goes beyond it once the monster is
-		// about in line. Doom's chase walks in eight directions and in whole
-		// steps, so it never lines up exactly: in front of the opening the
-		// monster is slid sideways onto the middle line, which a demon, 60
-		// wide in a 64 opening, needs to within 2 units.
-		Vector2 to = viaImg;
-		if (!viaStraight)
-		{
-			Vector2 mid = (via.v1.p + via.v2.p) / 2;
-			Vector2 along = via.delta.Unit();
-			Vector2 n = (along.y, -along.x);
-			Vector2 off = owner.pos.xy - mid;
-			if (off dot n < 0) n = -n;
-			double side = off dot along;
-			double ahead = off dot n;
-			bool lined = abs(side) < 16 && ahead < 128;
-			to = lined ? mid - n * 40 : mid + n * (owner.radius + 28);
-			if (ahead < 128 && abs(side) < 24 && abs(side) > 0.25)
-				owner.TryMove(owner.pos.xy - along * clamp(side, -2, 2), 1);
-		}
-		lure.SetOrigin((to, owner.pos.z), false);
 	}
 
 	void Unmute()
@@ -1272,6 +1308,118 @@ class AjarSense : Inventory
 		muted = false;
 		owner.meleerange = ownRange;
 		owner.reactiontime = 0;
+	}
+
+	// Is there room beyond the door `l` leads to for it to come out? A thing
+	// standing in front of the far opening (as a rule the player, waiting by
+	// the door) stops a monster with its middle across the line: the engine
+	// will not move it through, and it stood in the opening, filling it.
+	bool RoomBeyond(Line l)
+	{
+		Line d = l.getPortalDestination();
+		if (!d) return true;
+		Vector2 c = (d.v1.p + d.v2.p) / 2 + (d.delta.y, -d.delta.x).Unit() * (owner.radius + 8);
+		double z = level.PointInSector(c).floorplane.ZAtPoint(c);
+		let it = BlockThingsIterator.CreateFromPos(c.x, c.y, z, owner.height, owner.radius + 64, false);
+		while (it.Next())
+		{
+			Actor a = it.thing;
+			if (a == owner || !a.bSolid || a.health <= 0) continue;
+			double r = a.radius + owner.radius;
+			if (abs(a.pos.x - c.x) < r && abs(a.pos.y - c.y) < r) return false;
+		}
+		return true;
+	}
+
+	// In the opening and making no way for a second (something came to stand
+	// beyond the door after all, or it is caught on an edge): it gives that
+	// door up for three seconds and backs out of the opening.
+	void GiveUp(Actor p, double ahead)
+	{
+		if (ahead > owner.radius + 12 || ahead < nearest - 1)
+		{
+			nearest = ahead;
+			stuckTics = 0;
+			return;
+		}
+		if (++stuckTics < 35) return;
+		stuckTics = 0;
+		outOf = via;
+		outUntil = level.time + 70;
+		via = null;
+		noDoorUntil = level.time + 105;
+		owner.target = p && p.health > 0 ? p : null;
+	}
+
+	// The engine has just taken it through a door: from one side of a portal
+	// line to the other in a tic. It turns the monster's angle and speed as
+	// the door turns, but not the way its chase walks (movedir); through a
+	// door that turns it (the clocked door, whose two frames face the same
+	// way, turns it half round) its next step took it straight back, and back
+	// again. Now it walks straight out of the far opening into the room.
+	void Crossed(Actor p)
+	{
+		Vector2 was = tickPos;
+		bool known = tickPosSet;
+		tickPos = owner.pos.xy;
+		tickPosSet = true;
+		if (!known || (owner.pos.xy - was).Length() <= 96) return;
+		Line dst = PortalBetween(was, owner.pos.xy);
+		if (!dst) return;
+		if (lure && owner.target == lure) owner.target = p && p.health > 0 ? p : null;
+		via = null;
+		lastPos = owner.pos;
+		outOf = dst;
+		outUntil = level.time + 105;
+	}
+
+	// The portal line it went into near `was`, if it came out of its far side near `now`: that far line.
+	Line PortalBetween(Vector2 was, Vector2 now)
+	{
+		double reach = owner.radius + 32;
+		let it = BlockLinesIterator.CreateFromPos((was, owner.pos.z), owner.height, reach);
+		while (it.Next())
+		{
+			Line l = it.CurLine;
+			if (!l.isLinePortal()) continue;
+			Line d = l.getPortalDestination();
+			if (d && DistTo(l, was) < reach && DistTo(d, now) < reach) return d;
+		}
+		return null;
+	}
+
+	static double DistTo(Line l, Vector2 p)
+	{
+		Vector2 w = p - l.v1.p;
+		double u = clamp((w dot l.delta) / (l.delta dot l.delta), 0, 1);
+		return (w - l.delta * u).Length();
+	}
+
+	// Out of the opening at `outOf`, straight away from the line, without
+	// stopping to fight; then it is a Doom monster again. Someone in the way
+	// is fought at once.
+	void Leave(Actor p)
+	{
+		Vector2 mid = (outOf.v1.p + outOf.v2.p) / 2;
+		Vector2 along = outOf.delta.Unit();
+		Vector2 n = (along.y, -along.x);
+		Vector2 off = owner.pos.xy - mid;
+		if (off dot n < 0) n = -n;
+		if (off dot n > owner.radius + 24 || abs(off dot along) > outOf.delta.Length() / 2 + owner.radius + 16
+			|| level.time > outUntil)
+		{
+			outOf = null;
+			Unmute();
+			return;
+		}
+		Mute();
+		owner.movedir = int(round(VectorAngle(n.x, n.y) / 45)) & 7;
+		owner.movecount = max(owner.movecount, 2);
+		if (!owner.TryMove(owner.pos.xy + n * 2, 1) && owner.BlockingMobj && owner.BlockingMobj.player)
+		{
+			outOf = null;
+			Unmute();
+		}
 	}
 
 	override void OnDestroy()
