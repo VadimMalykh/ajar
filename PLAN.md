@@ -20229,3 +20229,45 @@ night room now, or who takes BLUE down before the clocked door is back on
 the bus, is left to the solver. The bolted door opened by USE from the east
 side is not tested (the line opens it first). The music by ear and the
 automap.
+
+## A door that does not open shows no lock plate; MAP22's kiosk has its soul sphere (mended 2026-11-27)
+
+Vadim, playing MAP22 (the hotel's lobby then, a door with the plate 1, key 1
+and key 2 in hand): "map22 - one more door claiming key1, but not opening
+with key1 (I also saw couple more in the Hotel). Door with key should
+either open, or don't claim the key." And later: "Also shootable secret is
+empty. Is this planned that way?"
+
+**The rule, for every level**: a door with a lock plate opens with the keys
+its plate names. A door that is only a face shows no plate.
+
+1. *The plates.*
+   - **Why**: `ajarmap.excerpt` leaves behind every door that was locked in
+     its own level, and shows it as a face: nailed up (MAP10, MAP22 now) or
+     whole (MAP22 then, `nailed=False`). The face was the locked door's own,
+     plates and all. In MAP02, 03 and 05 those plates are true; in MAP22 the
+     player holds keys 1 and 2 and the plates are not. The museum's door on
+     the square was the first of these (mended earlier today by hand); this
+     is the rest, at the root.
+   - **Now**: `ajarmap.roomdoor` writes down, for every door it makes, the
+     same door without plates (`ajarmap.PLAIN`: `AJHK<keys>` to `AJHDOR`,
+     `AJ2K<look><keys>` to `AJ2D<look>`, `<skin><keys>` to `<skin>`), and
+     `excerpt` shows a door that stays behind by that face, nailed up or
+     not. No new texture is drawn.
+   - **What changed in the maps** (texture counts of the two wads, against
+     main's): MAP22 loses `AJ2K11`, `AJ2K14`, `AJ2K123` (the hotel: rooms
+     106 and 105, and one more), `AJ3D1F1` (the theatre's office), two
+     `AJ3DXB23` (the star's door, at both times) and `AJ5D112` (the
+     station's lost property office); each is now the plain door of the
+     same look. MAP10 loses `AJ2K123` and `AJ3DXB23`, and its nailed-up
+     doors are the plain doors nailed up (`AJNB04` is no longer made). The
+     real locked doors keep their plates: MAP10's museum and dome
+     (`AJHK1`, `AJHK2`), MAP22's brass door in the shelter (`AJ22D12`).
+   - Every other map's wad is byte for byte as on main.
+
+2. *The kiosk* (MAP22 now, the secret opened by shooting its bell).
+   - **Why**: its soul sphere was put at (-288, -560), which is the
+     pavement in front of the kiosk, not the kiosk. It lay in the open and
+     the secret was empty.
+   - **Now**: at (-352, -784), inside, where MAP10 has its plasma rifle.
+     Not planned that way.
