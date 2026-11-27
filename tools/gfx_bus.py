@@ -21,12 +21,14 @@ AJ?USR  144x144  its back
 AJ?Nn    64x48   what is over door n (1..9): the route plate (0: a door with
                  no number: the plate is gone, its shape left in the paint)
 AJRnc    16x128  the route board's lamp for door n (0..9; 0 is the shelter):
-                 c is 0 (nothing runs), a door's colour 1..6, or 7 (a line
-                 that always runs, or a Stray door)
+                 c is 0 (nothing runs), a door's colour 1..6, 7 (a line
+                 that always runs, or a Stray door), 8 and 9 (a Pair's TEAL
+                 and ORANGE leaves) or C (the clocked door: an ivory dial
+                 with two hands). AjarHandler.Lamp picks them.
 """
 import random
 
-from gfx import Img, shade, digit, DOOR_COLOURS
+from gfx import Img, shade, digit, DOOR_COLOURS, PAIR_COLOURS
 
 RED = (190, 40, 32)
 AMBER = (222, 164, 44)
@@ -307,12 +309,16 @@ def make(out):
             out[f"textures/AJ{L}N{n}.png"] = top.png()
 
     for n in range(10):
-        for c in range(8):
+        for c in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, "C"):
             lamp = Img(16, 128, (30, 30, 36))
             lamp.frame(0, 0, 16, 128, (70, 66, 60), 1)
             digit(lamp, str(n), 5, 30, (232, 224, 200), 2)
-            col = (232, 224, 200) if c == 7 else DOOR_COLOURS[c] if c else (52, 52, 58)
+            col = ((236, 228, 204) if c == "C" else (232, 224, 200) if c == 7 else PAIR_COLOURS[c] if c in PAIR_COLOURS
+                   else DOOR_COLOURS[c] if c else (52, 52, 58))
             lamp.disc(8, 54, 5, col)
-            if c:
+            if c == "C":                                                     # the clocked door: a dial, its two hands
+                lamp.rect(8, 50, 9, 55, (30, 30, 46))
+                lamp.rect(8, 54, 11, 55, (30, 30, 46))
+            elif c:
                 lamp.disc(7, 53, 2, shade(col, 1.3))
             out[f"textures/AJR{n}{c}.png"] = lamp.png()

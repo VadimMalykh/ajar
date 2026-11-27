@@ -553,15 +553,17 @@ def route_board(m, a, lamps, *, step=(0, 16)):
     line id (the lamp shows the colour of the door that hangs there), a
     colour whose far side is that door of the bus (lit while that door
     hangs somewhere), or None for a line that always runs. The wall must be
-    128 high there (a porch). AjarHandler.BoardTick lights them."""
+    128 high there (a porch). AjarHandler.BoardTick lights them. A lamp
+    is one picture (exact): where a room's corner cuts its 16 of wall, each
+    piece shows its part (MAP22's lamp 6 was its left half twice)."""
     for i, (n, what) in enumerate(lamps):
         p = (a[0] + step[0] * i, a[1] + step[1] * i)
         q = (p[0] + step[0], p[1] + step[1])
         m.cut(p, q)
         if what is None:
-            m.line(p, q, mid=f"AJR{n}7")
+            m.line(p, q, mid=f"AJR{n}7", exact=True)
         else:
-            m.line(p, q, mid=f"AJR{n}0", id=600 + what if what >= 100 else 800 + what)
+            m.line(p, q, mid=f"AJR{n}0", id=600 + what if what >= 100 else 800 + what, exact=True)
 
 
 STRAY_ID = 270      # line ids 270..289: the places Stray doors may open onto
@@ -1008,7 +1010,7 @@ def boarded(face):
     return BOARDED.setdefault(face, "AJNB%02d" % len(BOARDED))
 
 
-def excerpt(m, src, at, dx, dy, *, things=True, small=100000, without=()):
+def excerpt(m, src, at, dx, dy, *, things=True, small=100000, without=(), nailed=True):
     """A piece of another level, as it stands there (Vadim, 2026-11-17: the
     places MAP10's bus goes to are the earlier levels, and should read so):
     everything of the Map `src` that can be walked to and back from the
@@ -1031,7 +1033,9 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000, without=()):
 
     Where the excerpt ends at a door that does not come along (locked,
     bolted), the wall shows that door nailed up (boarded()); where it ends
-    at anything else, the room's own wall.
+    at anything else, the room's own wall. With `nailed` False the door is
+    its own face, shut and whole (MAP22 THEN: the town at peace, where
+    nothing is nailed up yet).
 
     Returns the places where a recess was, [(m1, m2, out, floor), ...] in
     the new map, in the order `src` made them: the caller may make recesses
@@ -1178,7 +1182,7 @@ def excerpt(m, src, at, dx, dy, *, things=True, small=100000, without=()):
                 continue
             face = props(A, B).get("upper") or S[sj]["wall"]
             m.cut(move(A), move(B))
-            m.lineprops[frozenset((move(A), move(B)))] = dict(mid=boarded(face) if rooms & ground else face,
+            m.lineprops[frozenset((move(A), move(B)))] = dict(mid=boarded(face) if nailed and rooms & ground else face,
                                                               dontpegbottom=True, exact=True)
             shut |= {(b, a) for a, b in pieces}
     for i in sorted(keep):

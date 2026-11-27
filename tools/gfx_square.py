@@ -19,6 +19,7 @@ Walls (64 wide, laid by world position: ALIGNED):
                 and what is left of a timetable
 Not aligned:
   AJQMD1   128  the museum's door from the square: one lock (shift 48)
+  AJQMD0   128  the same with no lock and a card, CLOSED (MAP22, where it never opens)
   AJQSF, AJQKF, AJQMF, AJQDF  16  the edge of a canopy: the shelter's (BUS
                 STOP), the kiosk's (PRESS), the museum's (MUSEUM), the depot's
                 gate's (DEPOT)
@@ -249,15 +250,21 @@ def make(out):
     out["textures/AJQDF.png"] = fascia("DEPOT", (60, 60, 64), (226, 186, 40), 354).png()
 
     # the museum's door from the square: the generic locked door's leaf under 32 rows of the front
-    leaf = unpng(out["textures/AJHK1.png"])
-    face = Img(64, 128)
-    for y in range(32):
-        for x in range(64):
-            face.px[y * 64 + x] = list(front.px[(16 + y) * 64 + (x + 48) % 64])
-    for y in range(96):
-        face.px[(32 + y) * 64:(33 + y) * 64] = [list(p) for p in leaf.px[(leaf.h - 96 + y) * 64:(leaf.h - 95 + y) * 64]]
-    face.rect(0, 28, 64, 32, shade(BUFF, 0.7))                               # its lintel
-    out["textures/AJQMD1.png"] = face.png()
+    # (AJQMD0, MAP22: the plain door's leaf, no lock, and a card on it: nobody has a key to it there)
+    for name, door in (("AJQMD1", "AJHK1"), ("AJQMD0", "AJHDOR")):
+        leaf = unpng(out[f"textures/{door}.png"])
+        face = Img(64, 128)
+        for y in range(32):
+            for x in range(64):
+                face.px[y * 64 + x] = list(front.px[(16 + y) * 64 + (x + 48) % 64])
+        for y in range(96):
+            face.px[(32 + y) * 64:(33 + y) * 64] = [list(p) for p in leaf.px[(leaf.h - 96 + y) * 64:(leaf.h - 95 + y) * 64]]
+        face.rect(0, 28, 64, 32, shade(BUFF, 0.7))                           # its lintel
+        if name == "AJQMD0":
+            face.rect(12, 60, 52, 73, (236, 228, 204))
+            face.frame(12, 60, 52, 73, (120, 100, 70), 1)
+            text(face, "CLOSED", 15, 64, (70, 34, 24), 1)
+        out[f"textures/{name}.png"] = face.png()
 
     # --- flats ---------------------------------------------------------------
     rnd = random.Random(361)
