@@ -56,8 +56,10 @@ OPTIONS = dict(title="AjarPortIvory", label="AjarPortIvory", value="AjarPortBras
                slider="AjarPortLamp", sliderback="AjarPortSlate")
 DIM = ("10 12 18", 0.62)
 CURSOR_AT = (-18, -2)
-# The menus stand on the hall's plain wall at the left; the doors recede across the right (map_title2).
-MENU_X, LOGO_X, LOGO_Y = 20, 74, 4
+# The menus stand on the hall's plain wall at the left; the doorways step away across the right
+# (map_title2), the furthest, YELLOW's, starting just right of the middle: the widest menu line ends
+# some 15 short of it.
+MENU_X, LOGO_X, LOGO_Y = 14, 68, 4
 
 
 # --- the logo ----------------------------------------------------------------------------------------
@@ -107,9 +109,9 @@ def _sample(im, x, y):
 def logo():
     """AJAR: A and J on the wall, a door-high slit of warm light, A and R on the leaf swung towards you
     (its free edge nearer, so taller; its top and bottom edges converging on the hinge at the right), and
-    the light's wedge on the floor under the gap. Ivory capitals 44 px high on the 320 grid, a thin ink
-    edge and a soft dark ground round everything, so that it reads over the dark hall and over a bright
-    room in play alike."""
+    the light's wedge on the floor under the gap. Ivory capitals 44 px high on the 320 grid with a thin
+    hard ink edge, the slit edged alike and the leaf outlined, so that it reads over the dark hall and over
+    a bright room in play alike."""
     R = T.RES
     cap = 44
     aj, ar = _letters("AJ", cap), _letters("AR", cap)
@@ -187,17 +189,26 @@ def logo():
                 T._over(ink, X, Y, [round(v) for v in p])
             if s < 1.4 * R:                               # its edge, lit by the slit
                 light[Y][X] = max(light[Y][X], 0.75)
-    # the dark ground: round the capitals and the light, soft; and the leaf's face under A R
-    mask = [[max(ink.px[y * W + x][3] / 255, light[y][x]) for x in range(W)] for y in range(H)]
-    ground = _soften(mask, 3 * R)
+    # a thin hard dark edge round the capitals and the slit (not a soft ground: that blurs over a light
+    # room), the leaf's face under A R, and its edge
+    mask = [[max(ink.px[y * W + x][3] / 255, light[y][x] if y < foot else 0) for x in range(W)] for y in range(H)]
+    rim = _soften(mask, 1.5 * R, hard=True)
     for y in range(H):
         for x in range(W):
-            g = min(1.0, ground[y][x] * 1.6)
             if leaf[y][x]:
-                g = max(g, 0.82)
-            if g > 0:
                 c = (INK, shade(SLATE, 0.8), shade(SLATE, 1.7))[int(leaf[y][x])]
-                im.px[y * W + x] = list(c) + [round(255 * g * 0.88)]
+                im.px[y * W + x] = list(c) + [242]
+            elif rim[y][x] > 0:
+                im.px[y * W + x] = list(INK) + [round(255 * min(1, rim[y][x]))]
+    # and the leaf's own outline, hard, so that its slate reads on a light ground too
+    for y in range(H):
+        for x in range(W):
+            if leaf[y][x] and any(not (0 <= x + dx < W and 0 <= y + dy < H) or not leaf[y + dy][x + dx]
+                                  for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                for dy in range(-1, 1):
+                    for dx in range(-1, 1):
+                        if 0 <= x + dx < W and 0 <= y + dy < H:
+                            im.px[(y + dy) * W + x + dx] = list(INK) + [255]
     for y in range(H):
         for x in range(W):
             if light[y][x] > 0:
