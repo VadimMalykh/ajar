@@ -22881,3 +22881,59 @@ elsewhere; not run). Old doors of GREEN, YELLOW, VIOLET and PINK (drawn,
 not seen in a test). The views as art: the fifty-year doors' flakes are
 pale blots on a still-bright colour; whether that reads as "old" is for
 Vadim to judge (MODE=9's shots).
+
+## After the old door lab: the looks mended, and what is decided for 21 to 24 (2026-11-28)
+
+**The ten-year door's look** (Vadim, 2026-11-27, after playing the three times lab: "Just for that new door, can
+we make it same as normal time door but different color? I don't quite like that graphics"). It is now the
+clocked door's own drawing (tools/gfx_clockdoor.py, `leaf3(paint)`) in slate paint, `SLATE` (62, 72, 86), where
+the clocked door is ivory; brass, dial and hands the same. Its glow is a pale steel (ajar.zs, `glow[]` 0xA8B8D0).
+The long-case walnut clock (look 1 of the clocked door's board) is no door of the game again. Slate was Claude's
+pick from a sheet of five (slate, bottle green, oxblood, pale blue-grey, black enamel); Vadim has not named
+another, and one number changes it.
+
+**The old door's look, drawn again** (Claude on Fable, from the lab's MODE=9 shots: ten years read as a new door,
+and fifty as a bright door with pale spots on it). tools/gfx_olddoor.py: ten years is plainly duller and darker
+(0.42 to grey, 0.74 to 0.80 of the light), scuffed, with the first chips at the foot; forty and fifty years has
+most of the colour gone (0.62 to grey, about 0.55 of the light) and the paint off in a few ragged patches down to
+grey weathered wood with its grain (`peel`: a smooth random field cut at a level, weighted to the foot and the
+edges and away from the glyph; `bare`), rust from the hinges, a dark knob. The far side's surrounds the same way.
+The sprite and texture names are the lab's, so its tests hold as written.
+
+**The old door is the law in MAP21 to MAP23 too** (decided 2026-11-27, late). Vadim: "With this old door idea,
+should we change something in maps 21-23, because colour doors worked differently with time there? Won't it look
+inconsistent?" Claude: yes, it should be the rule there too (a monster left THEN is bones NOW already; a door is
+the same law), measured with the solver first. Vadim: "Yes, let's do that changes, but without much focus on it in
+21-23 (as part of puzzles, etc). Just that law should work already, and can be discovered by user, but focus of
+those maps are different."
+- MAP21, MAP22 and MAP23 get the rule switched on (`Times(old=True)`, the PUZZLE's `old`). No puzzle of theirs is
+  to need it or teach it: their ways through stay as they are.
+- The task: switch it on per map, prove each again (solvable by the same way, 0 stuck, nothing lost), and mend
+  only what the rule breaks or short-cuts (a frame moved or made one-time, never a new errand).
+- First, with no map changed: run the three solvers with `old` on and say what it would break.
+- The labs THEN and KENNEL stay as they are unless a test needs the rule.
+
+**MAP23: the way out built by the player, more puzzle** (Vadim, 2026-11-28, with a picture of the night room as
+it is, a ready way out: "could you make exit not ready how it is now. This should be build one way or another by
+player. Also can you add puzzles? Yes this thing that I need bones to go up is good one, but once you discover
+that - everything else is very easy. Also if we can go up by bones, should it be the same way in all other maps
+with old corpses?"; to the proposal below: "Agreed, let's do as proposed").
+- *The way out*: `ajarmap.way_home` with BLUE (the brass frame takes BLUE only), behind the brass door on the
+  crush's ledge as now. BLUE has to be carried up the big one's bones.
+- *Why that is a puzzle*: bones stand in only while the clocked door hangs nowhere, and then it is in the
+  player's hands (no door is ever put down). So BLUE goes up only over bones that are there for good: the big one
+  killed in the crush, which the level's ammunition does not pay for. The crush gets a press, worked by a lever
+  THEN in the keeper's passage.
+- *The same lesson, cheap, first*: BLUE leans behind the kennels' second shutter (1000 on the scales, three
+  demons in pen 1; the megasphere and plasma secret moves). Penned demons open it only while the player's hands
+  are full of the clocked door; shot dead in the pen through the hatch they open it for good.
+- So three grades: pen (free, undone at will, hands full), kill cheap (for good), kill dear (the press).
+  puzzle23's fix 3 already proved the shape (a specimen killed in place so that a door can hang).
+- The old door rule on, as above; proved again with puzzle23.
+
+**Bones are a step in every map with old corpses** (the same answer): the bones of a knight, a baron or anything
+bigger are a step 24 high, the law of kennel.zs, in MAP21, MAP22 and MAP24 as in MAP23, quietly, as the old door:
+switched on, each map scanned for a ledge a step would reach that it should not, and mended only there.
+
+**The order**: the old door lab and the two looks above (this merge); MAP24's first playable version; MAP23 (the
+built way out with BLUE, the press, the two laws); the two laws in MAP21 and MAP22.

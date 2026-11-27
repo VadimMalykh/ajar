@@ -120,8 +120,8 @@ STRAY_GREY = (120, 120, 130)
 CLOCKED = 10        # the clocked door (ajarthen, then.zs): ivory, a clock on its face; its sprites AJDT, AJNT
 IVORY = (232, 222, 196)
 TENYEAR = 11        # the ten-year door (the three times lab, then.zs): THEN to BEFORE; its sprites AJDY, AJNY. Its
-                    # leaf is the long-case clock of the clocked door's board (tools/gfx_clockdoor.py, look 1): walnut,
-                    # a dial with roman ticks over brass spandrels, the pendulum behind glass; the clocked door is look 3
+                    # leaf is the clocked door's own drawing (tools/gfx_clockdoor.py, leaf3) in slate paint instead of
+                    # ivory (Vadim, 2026-11-27: the same door, another colour)
 # The clocked door's look, leaf and trim (tools/gfx_clockdoor.py; PLAN.md, "Look: the clocked door and its
 # frame's trim"): 0 the art below and gfx_then.clock_trim's, 1 long-case clock, 2 station clock, 3 ivory done
 # properly, the game's (Vadim chose it on 2026-11-26). AJAR_CLOCKDOOR=n sets another for a build (0 the old art;
@@ -189,7 +189,7 @@ def door(colour):
         return clocked_door()
     if colour == TENYEAR:
         import gfx_clockdoor
-        return gfx_clockdoor.leaf(1)
+        return gfx_clockdoor.leaf3(gfx_clockdoor.SLATE)
     base = DOOR_COLOURS.get(colour) or PAIR_COLOURS[colour]
     im = Img(64, 96, base)
     im.frame(0, 0, 64, 96, shade(base, 0.45), 3)

@@ -331,6 +331,7 @@ def trim2():
 CREAM = (176, 158, 118)
 BRASS3 = (164, 122, 50)
 DIAL3 = (200, 190, 164)
+SLATE = (62, 72, 86)          # the ten-year door's paint: leaf3(SLATE)
 
 
 def cream(im, x1, y1, x2, y2, c, seed, top=1.08, bottom=0.9):
@@ -342,9 +343,11 @@ def cream(im, x1, y1, x2, y2, c, seed, top=1.08, bottom=0.9):
             im.set(x, y, shade(c, top + (bottom - top) * t + rnd.uniform(-0.02, 0.02)))
 
 
-def leaf3():
-    im = Img(64, 96, CREAM)
-    cream(im, 0, 0, 64, 96, CREAM, 301, 1.08, 0.9)
+def leaf3(paint=CREAM):
+    """`paint`: the leaf's enamel. Ivory is the clocked door; the ten-year door is the same door in slate
+    (SLATE; Vadim, 2026-11-27: the same drawing, another colour)."""
+    im = Img(64, 96, paint)
+    cream(im, 0, 0, 64, 96, paint, 301, 1.08, 0.9)
     # the heavy brass edge: four pixels, lit on the top and left
     for i, (hi, lo) in enumerate(((0.62, 0.45), (1.2, 0.62), (1.05, 0.78), (0.95, 0.7))):
         bevel(im, i, i, 64 - i, 96 - i, shade(BRASS3, hi), shade(BRASS3, lo))
@@ -352,12 +355,12 @@ def leaf3():
         im.rect(8, y1, 56, y2, shade(BRASS3, 0.55))                  # a brass frame round each panel
         bevel(im, 8, y1, 56, y2, shade(BRASS3, 1.15), shade(BRASS3, 0.6), 1)
         bevel(im, 9, y1 + 1, 55, y2 - 1, shade(BRASS3, 0.95), shade(BRASS3, 0.75), 1)
-        cream(im, 10, y1 + 2, 54, y2 - 2, shade(CREAM, 0.95), 302 + y1, 1.02, 0.92)
-        im.rect(10, y1 + 2, 54, y1 + 4, shade(CREAM, 0.66))          # the shadow line under the frame's top
-        im.rect(10, y1 + 2, 12, y2 - 2, shade(CREAM, 0.74))          # and its left side
-        im.rect(10, y1 + 2, 54, y1 + 3, shade(CREAM, 0.56))
+        cream(im, 10, y1 + 2, 54, y2 - 2, shade(paint, 0.95), 302 + y1, 1.02, 0.92)
+        im.rect(10, y1 + 2, 54, y1 + 4, shade(paint, 0.66))          # the shadow line under the frame's top
+        im.rect(10, y1 + 2, 12, y2 - 2, shade(paint, 0.74))          # and its left side
+        im.rect(10, y1 + 2, 54, y1 + 3, shade(paint, 0.56))
     cx, cy = 32, 31
-    im.disc(cx + 1, cy + 2, 23, shade(CREAM, 0.62))                  # the bezel's shadow
+    im.disc(cx + 1, cy + 2, 23, shade(paint, 0.62))                  # the bezel's shadow
     ring(im, cx, cy, 19.7, 22.9, BRASS3, 0.3)
     face(im, cx, cy, 19.7, DIAL3, 0.82, 303)
     for k in range(360):                                             # a thin minute track

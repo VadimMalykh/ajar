@@ -199,7 +199,7 @@ class AjarDoor : Actor
 		Stop;
 	}
 
-	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF, 0x30D0C0, 0xFF8A30, 0xFFF0D0, 0xE0A060 };
+	static const Color glow[] = { 0, 0xFF5040, 0x4070FF, 0x40E060, 0xFFC830, 0xB060FF, 0xFF70B0, 0xFFFFFF, 0x30D0C0, 0xFF8A30, 0xFFF0D0, 0xA8B8D0 };
 	static const string names[] = { "", "RED", "BLUE", "GREEN", "YELLOW", "VIOLET", "PINK", "STRAY", "TEAL", "ORANGE", "CLOCKED", "TEN-YEAR" };
 	const STRAY = 7;
 	const CLOCKED = 10;
