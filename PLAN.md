@@ -17408,7 +17408,7 @@ apply to a joined level.
 Entryway and Dead Simple were only the test; he does not care for The
 Catacombs).
 
-## The end of MAP30: back in MAP01's cell (Vadim's idea, 2026-11-26; to discuss, nothing designed)
+## The end of MAP30: back in MAP01's cell (Vadim's idea, 2026-11-26, added to 2026-11-27; to discuss, nothing designed)
 
 **Vadim** (2026-11-26): "I have some twist idea for the end. Let's just
 document for now, and discuss later. Somewhere in the end of map30 player
