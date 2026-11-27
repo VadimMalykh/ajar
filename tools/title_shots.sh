@@ -54,7 +54,7 @@ for n in "$@"; do
   gzdoom "$pk3" "$W/play_$n" "wait 140; warp 384 520; turn180; wait 20; menu_main; wait 15; screenshot; wait 5; quit" \
     -nomonsters +map MAP01
   rm -rf "$B/$n"; mkdir -p "$B/$n"
-  shots=($(ls "$W/cold_$n"/Screenshot_*.png | sort))
+  shots=($(ls "$W/cold_$n"/Screenshot_*.png | LC_ALL=C sort))     # 1234.png before 1234_01.png
   [ ${#shots[@]} = 5 ] || echo "look $n: ${#shots[@]} shots from the cold start, 5 expected"
   for k in 0 1 2 3 4; do
     v=(a b d e f); [ -n "${shots[$k]}" ] && cp "${shots[$k]}" "$B/$n/view_${v[$k]}.png"
