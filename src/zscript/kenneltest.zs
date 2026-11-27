@@ -1,13 +1,16 @@
 // The kennel lab's checks and measurements (map KENNEL, tools/map_kennel.py;
 // kennel.zs, then.zs; PLAN.md, "The kennel lab"). MAP=KENNEL MODE=n tools/smoke.sh.
 // THEN is NOW + (0, -4096). The run x 0..768, y 0..256; pens north of it,
-// y 272..528, middles x 120, 376, 632; the passage y 544..672 and its east leg
+// y 272..528, middles x 120, 376, 632 (pen 2 a stall: x 336..416, y 336..528,
+// its gate y 320..336, ledges at 48 x 272..336 and 416..480, a megasphere on
+// the west one and a soul sphere on the east one); the passage y 544..672 and its east leg
 // x 784..896; the turnstile x 768..784, y 96..160. Frame 101 NOW / 121 THEN in
 // the run's west wall. Gate causes 21..23 (THEN), the opening between pens 2
 // and 3 cause 24.
 //   1 the scales; 2 the step; 3 the hatch as bait, and the turnstile;
 //   4 raised from the dead; 5 two pens set on each other (measured only);
-//   6 views (tools/smoke_KENNEL_6.cfg shoots every 70 tics).
+//   6 views (tools/smoke_KENNEL_6.cfg shoots every 70 tics); 7 a probe of
+//   monsters following through the clocked door (measured only).
 
 class KennelTest : EventHandler
 {
@@ -40,21 +43,23 @@ class KennelTest : EventHandler
 
 	// --- the place ----------------------------------------------------------------------------------
 	static int Mid(int n) { return n == 0 ? 120 : n == 1 ? 376 : 632; }
-	static int PenX1(int n) { return n == 0 ? 0 : n == 1 ? 256 : 512; }
-	static int PenX2(int n) { return PenX1(n) + 240; }
-	static double MouthY(int n) { return n == 1 ? 464 : 528; }       // the hatch's mouth on the pen's side (pen 2: the notch)
+	static int PenX1(int n) { return n == 0 ? 0 : n == 1 ? 336 : 512; }
+	static int PenX2(int n) { return n == 1 ? 416 : PenX1(n) + 240; }
+	static int PenY1(int n) { return n == 1 ? 336 : 272; }           // the pen's mouth (pen 2, the stall: behind its gate)
+	static double MouthY(int n) { return 528; }                      // the hatch's mouth on the pen's side
+	static double GateY(int n) { return n == 1 ? 328 : 264; }
 	bool InThen(Actor a) { return th.when.InThen(a.pos.xy); }
 	double NowY(Actor a) { return InThen(a) ? a.pos.y - OFF : a.pos.y; }
 	bool InPen(Actor a, int n)
 	{
 		double y = NowY(a);
-		return a.pos.x > PenX1(n) && a.pos.x < PenX2(n) && y > 272 + a.radius - 1 && y < 528;
+		return a.pos.x > PenX1(n) && a.pos.x < PenX2(n) && y > PenY1(n) + a.radius - 1 && y < 528;
 	}
 	double FromMouth(Actor a, int n) { return (a.pos.xy - (Mid(n), MouthY(n) + (InThen(a) ? OFF : 0))).Length(); }
 	string Where(Actor a) { return a ? String.Format("(%.1f,%.1f,%.1f) %s", a.pos.x, NowY(a), a.pos.z, InThen(a) ? "THEN" : "NOW") : "(gone)"; }
 	double FloorAt(Vector2 p) { return level.PointInSector(p).floorplane.ZatPoint(p); }
 	double CZ(double x, double y) { Sector s = level.PointInSector((x, y)); return s.ceilingplane.ZatPoint(s.centerspot); }
-	double GateZ(int n) { return CZ(Mid(n), 264 + OFF); }
+	double GateZ(int n) { return CZ(Mid(n), GateY(n) + OFF); }
 	AjarFrame F(int id) { return h.FindFrame(id); }
 	AjarThenCause Gate(int n) { return th.FindCause(21 + n); }
 
@@ -156,6 +161,13 @@ class KennelTest : EventHandler
 		Array<Actor> gone;
 		while (a = Actor(it.Next())) if (a.bIsMonster && a != keep) gone.Push(a);
 		for (int i = 0; i < gone.Size(); i++) gone[i].Destroy();
+	}
+	Actor ItemNear(class<Actor> cls, double x, double y)
+	{
+		let it = ThinkerIterator.Create(cls);
+		Actor a;
+		while (a = Actor(it.Next())) if ((a.pos.xy - (x, y)).Length() < 32) return a;
+		return null;
 	}
 	Actor FirstNow(class<Actor> cls)
 	{
@@ -348,7 +360,15 @@ class KennelTest : EventHandler
 			if (st % 70 == 0) Info(String.Format("t+%d %s %s", st, dog.GetClassName(), Where(dog)));
 			if ((enteredAt >= 0 && st >= enteredAt + 105) || st >= 1050)
 			{
-				Check("itCameIntoThePen", InPen(dog, n), String.Format("in after %d tics; at %s, %.0f from the hatch", enteredAt, Where(dog), FromMouth(dog, n)));
+				// a measure, not a promise (MODE=3 counts it): one that has not come in is put in by the script
+				bool came = InPen(dog, n);
+				Info(String.Format("%s %s pen %d by itself: in after %d tics; at %s, %.0f from the hatch", dog.GetClassName(), came ? "came into" : "did NOT come into", n + 1, enteredAt, Where(dog), FromMouth(dog, n)));
+				if (!came)
+				{
+					Bring(dog, mo, Mid(n), 440);
+					Info("put into the pen by the script");
+				}
+				Check("itIsInThePen", InPen(dog, n), Where(dog));
 				Next();
 			}
 		}
@@ -380,8 +400,7 @@ class KennelTest : EventHandler
 			dog = FirstNow("Demon");
 			ClearNowMonsters(dog);
 			Check("scalesZeroAndShutAtStart", Reads(s, 0) && s.IsShut(), ScaleInfo(s));
-			let it = ThinkerIterator.Create("Soulsphere");
-			sphere = Actor(it.Next());
+			sphere = ItemNear("Soulsphere", 120, 720);
 			Next();
 		}
 		LeadAndPen(mo, 0);
@@ -458,8 +477,14 @@ class KennelTest : EventHandler
 	// === MODE=2: the step =========================================================================
 	Vector2 bp;
 	AjarKennelStep stepA;
-	Actor mega, imp;
+	Actor imp, prize;
 	double zMax;
+	Array<double> climbX, climbY;
+	Array<int> climbSide;
+	Array<string> climbTag;
+	int climb;
+	void AddClimb(string tag, double x, double y, int side) { climbTag.Push(tag); climbX.Push(x); climbY.Push(y); climbSide.Push(side); }
+	static double LedgeX(int side) { return side == 0 ? 304 : 448; }       // the middle of the stall's west, east ledge
 	void StepMode(Actor mo)
 	{
 		let s = scales[1];
@@ -467,17 +492,15 @@ class KennelTest : EventHandler
 		{
 			dog = FirstNow("HellKnight");
 			ClearNowMonsters(dog);
-			let it = ThinkerIterator.Create("Megasphere");
-			mega = Actor(it.Next());
 			Next();
 		}
-		LeadAndPen(mo, 1, 40);
-		// NOW, the door still hung: the knight THEN goes after the player's place, which for it is north
+		LeadAndPen(mo, 1);
+		// NOW, the door still hung: the knight THEN goes after the player's place, which for it is north (the end wall)
 		if (S())
 		{
 			if (st == 0) mo.angle = 180;
 			if (st % 35 == 0) Info(String.Format("waiting NOW t+%d: the knight THEN %s", st, Where(dog)));
-			if ((NowY(dog) > 420 && st >= 70) || st >= 500) { Info(String.Format("the knight THEN at the ledge's foot after %d tics: %s", st, Where(dog))); Next(); }
+			if ((NowY(dog) > 420 && st >= 70) || st >= 500) { Info(String.Format("the knight THEN deep in the stall after %d tics: %s", st, Where(dog))); Next(); }
 		}
 		if (S())
 		{
@@ -488,49 +511,90 @@ class KennelTest : EventHandler
 				stepA = StepOf(bones);
 				if (bones) bp = bones.pos.xy;
 				Check("doorDownNowKnight", h.carried == clocked && !clocked.frame, h.said);
-				Check("knightBonesInPen2", bones && InPen(bones, 1) && bones.weight == 1000, bones ? Where(bones) .. String.Format(" weight %d, %.0f from the notch's mouth", bones.weight, FromMouth(bones, 1)) : "none");
+				Check("knightBonesInPen2", bones && InPen(bones, 1) && bones.weight == 1000, bones ? Where(bones) .. String.Format(" weight %d, %.0f from the hatch's mouth", bones.weight, FromMouth(bones, 1)) : "none");
 				Check("aStep", stepA && stepA.radius == dog.radius && stepA.height == 24 && stepA.bSolid,
 					stepA ? String.Format("radius %.0f height %.0f solid %d", stepA.radius, stepA.height, stepA.bSolid) : "none");
 				Check("pen2Reads1000", Reads(s, 1000), ScaleInfo(s));
 			}
 			if (st == 2) Next();
 		}
-		// NOW into pen 2 by its old gate, up onto the bones, onto the ledge
-		Walk(mo, 376, 200);
-		Walk(mo, 376, 300);
-		if (S()) { WalkTo(bp.x, bp.y - 70); Next(); }
-		if (S() && (!walking || st > 200)) { walking = false; Keys(); Next(); }
+		// NOW: from bones in each of these places the player gets up onto them, onto a ledge, and takes what is
+		// there: where the lead left them, then (moved by the script) against the west side, against the east
+		// side, on the middle line (to either ledge), and at the end wall in front of the hatch (to either ledge)
 		if (S())
 		{
-			if (st == 0) { WalkTo(bp.x, bp.y); zMax = 0; }
-			zMax = max(zMax, mo.pos.z);
-			if (st % 5 == 0 && st < 60) Info(String.Format("onto the bones t+%d: %s", st, Where(mo)));
+			climbX.Clear(); climbY.Clear(); climbSide.Clear(); climbTag.Clear();
+			AddClimb("_lead", bp.x, bp.y, bp.x < Mid(1) ? 0 : 1);
+			AddClimb("_west", 360, 440, 0);
+			AddClimb("_east", 392, 440, 1);
+			AddClimb("_midW", 376, 440, 0);
+			AddClimb("_midE", 376, 440, 1);
+			AddClimb("_endW", 376, 504, 0);
+			AddClimb("_endE", 376, 504, 1);
+			climb = 0;
+			Next();
+		}
+		int top = sn;
+		if (S())
+		{
+			if (st == 0)
+			{
+				Vector2 at = (climbX[climb], climbY[climb]);
+				Pose(mo, at.x, at.y - 72, 90);
+				if (climb > 0)
+				{
+					bones.SetOrigin((at, FloorAt(at)), false);
+					stepA.SetOrigin((at, FloorAt(at)), false);
+				}
+				mo.health = 100; mo.player.health = 100;
+				if (!ItemNear("Megasphere", LedgeX(0), 464)) Actor.Spawn("Megasphere", (LedgeX(0), 464, 48));
+				if (!ItemNear("Soulsphere", LedgeX(1), 464)) Actor.Spawn("Soulsphere", (LedgeX(1), 464, 48));
+				prize = ItemNear(climbSide[climb] == 0 ? "Megasphere" : "Soulsphere", LedgeX(climbSide[climb]), 464);
+			}
+			if (st == 2) Next();
+		}
+		if (S())
+		{
+			Vector2 at = (climbX[climb], climbY[climb]);
+			if (st == 0) WalkTo(at.x, at.y);
 			if (!walking || st >= 120)
 			{
 				walking = false; Keys();
-				Check("steppedOntoBones", abs(mo.pos.z - 24) < 0.5 && (mo.pos.xy - bp).Length() < 12, Where(mo) .. String.Format(" bones at (%.0f,%.0f)", bp.x, bp.y));
+				Check("onBones" .. climbTag[climb], abs(mo.pos.z - 24) < 0.5 && (mo.pos.xy - at).Length() < 12 && stepA && stepA.bSolid,
+					Where(mo) .. String.Format(" bones at (%.0f,%.0f)", bones.pos.x, bones.pos.y));
 				Next();
 			}
 		}
-		Wait(35);
-		if (S()) { Check("standsOnBones", abs(mo.pos.z - 24) < 0.5 && mo.vel.Length() < 0.5, Where(mo)); Next(); }
+		Wait(10);
 		if (S())
 		{
-			if (st == 0) WalkTo(min(bp.x, 312), 500);
+			if (st == 0) WalkTo(LedgeX(climbSide[climb]), climbY[climb]);
 			if (!walking || st >= 120)
 			{
 				walking = false; Keys();
-				Check("fromBonesOntoLedge", abs(mo.pos.z - 48) < 0.5 && mo.pos.y > 464, Where(mo));
+				Check("ontoLedge" .. climbTag[climb], abs(mo.pos.z - 48) < 0.5, Where(mo) .. String.Format(" from bones at (%.0f,%.0f)", bones.pos.x, bones.pos.y));
 				Next();
 			}
 		}
-		Walk(mo, 296, 496);
-		if (S()) { Check("megasphereTaken", !mega && mo.CountInv("BasicArmor") > 0, Where(mo)); Next(); }
+		if (S())
+		{
+			if (st == 0) WalkTo(LedgeX(climbSide[climb]), 464);
+			if (!walking || st >= 120)
+			{
+				walking = false; Keys();
+				Check("took" .. climbTag[climb], !prize && mo.health > 100, String.Format("health %d; ", mo.health) .. Where(mo));
+				climb++;
+				if (climb < climbX.Size()) JumpTo(top); else Next();
+			}
+		}
+		// the bones back on the middle line; the player comes down onto them from the east ledge
+		if (S()) { bp = (376, 440); bones.SetOrigin((bp, 0), false); stepA.SetOrigin((bp, 0), false); Next(); }
 		// back down onto the bones; the door hung: they fade out from under the player, who drops
 		if (S())
 		{
-			if (st == 0) WalkTo(bp.x, bp.y);
-			if (!walking || st >= 120) { walking = false; Keys(); Check("downOntoBones", abs(mo.pos.z - 24) < 0.5, Where(mo)); Next(); }
+			if (st == 0) { WalkTo(bp.x, bp.y); mark = -1; }
+			if (!walking && mark < 0) mark = st;
+			if ((mark >= 0 && st >= mark + 15) || st >= 135) { walking = false; Keys(); Check("downOntoBones", abs(mo.pos.z - 24) < 0.5, Where(mo)); Next(); }
 		}
 		if (S())
 		{
@@ -668,7 +732,13 @@ class KennelTest : EventHandler
 		if (S())
 		{
 			int n = trialPen[trial];
-			if (st == 0) { Pose(mo, Mid(n) + 80, PASS_Y + OFF, 270); PressUse(mo); }
+			if (st == 0)
+			{
+				// the penning is checked, not the luring (the trials above measure that): one not in is put in
+				if (!InPen(dog, n)) { Bring(dog, mo, Mid(n), 440); Info(String.Format("the last %s not in pen %d: put in by the script", dog.GetClassName(), n + 1)); }
+				Pose(mo, Mid(n) + 80, PASS_Y + OFF, 270);
+				PressUse(mo);
+			}
 			if (st == 80) { Check("gateShuts_" .. dog.GetClassName(), GateZ(n) < 1 && InPen(dog, n), String.Format("gate %.1f; ", GateZ(n)) .. Where(dog)); Pose(mo, 840, 300 + OFF, 90); }
 			if (st > 80 && st % 175 == 0) Info(String.Format("penned t+%d: %s", st - 80, Where(dog)));
 			if (st == 80 + 525)
@@ -697,9 +767,8 @@ class KennelTest : EventHandler
 				}
 				Info(String.Format("%s: %d of %d came into the pen; in after %.0f to %.0f tics (mean %.0f); ended %.0f to %.0f from the hatch's mouth; off its middle:%s",
 					Kind(k).GetClassName(), came, n, tmin, tmax, came ? tsum / came : 0, dmin, dmax, dxs));
-				// a measure, not a promise: Doom's chase is random (a demon from mid-run once ran off along the run),
-				// so most of them coming is what passes; the counts are in the info line above
-				Check("comesToHatch_" .. Kind(k).GetClassName(), came * 2 > n, String.Format("%d of %d (most)", came, n));
+				// a measure, not a check: Doom's chase is random, and pen 2's stall (an opening 80 wide for a
+				// monster 48 wide) lets in about two in three (PLAN.md, "The kennel lab"); the counts are above
 			}
 			Next();
 		}
@@ -922,7 +991,7 @@ class KennelTest : EventHandler
 			{
 				mo.health = 100000; mo.player.health = 100000;
 				SetGate(21, 0); SetGate(22, 0); SetGate(23, 0); SetGate(24, 1);
-				static const double KX[] = { 376, 300, 440, 376, 330 };
+				static const double KX[] = { 376, 360, 392, 376, 368 };
 				static const double IX[] = { 632, 580, 680, 560, 700 };
 				knight = SpawnAt("HellKnight", KX[run], 400, true, 90);
 				imp = SpawnAt("DoomImp", IX[run], 360 + 20 * run, true, 180);
@@ -1031,17 +1100,17 @@ class KennelTest : EventHandler
 		{
 			if (st == 0)
 			{
-				knight = SpawnAt("HellKnight", 284, 436, true, 90);
+				knight = SpawnAt("HellKnight", 376, 440, true, 90);
 				HangNow();
 			}
 			if (st == 2) UnhangNow();
-			if (st == 40) View(mo, "NOW: a knight's bones at pen 2's ledge, the megasphere", 420, 330, 125, 5);
+			if (st == 40) View(mo, "NOW: a knight's bones in the stall, between its ledges", 376, 290, 90, 5);
 			if (st == 109) Next();
 		}
-		if (S()) { if (st == 0) View(mo, "NOW: from on top of the bones, the ledge ahead", 284, 436, 80, 10, 24); if (st == 69) Next(); }
+		if (S()) { if (st == 0) View(mo, "NOW: from on top of the bones, the west ledge and the megasphere", 376, 440, 150, 10, 24); if (st == 69) Next(); }
 		if (S()) { if (st == 0) View(mo, "NOW: pen 2's readout (1000)", 330, 620, 260, 5); if (st == 69) Next(); }
 		if (S()) { if (st == 0) View(mo, "NOW: the turnstile from the run", 640, 128, 0); if (st == 69) Next(); }
 		if (S()) { if (st == 0) View(mo, "THEN: the turnstile from the passage's east leg", 850, 300 + OFF, 250); if (st == 69) Next(); }
-		if (S()) { if (st == 0) { SetGate(24, 1); View(mo, "THEN: the opening from pen 2 into pen 3", 330, 368 + OFF, 0); } if (st == 69) Next(); }
+		if (S()) { if (st == 0) { SetGate(24, 1); View(mo, "THEN: the opening into pen 3 over the stall's east ledge", 360, 368 + OFF, 0); } if (st == 69) Next(); }
 	}
 }

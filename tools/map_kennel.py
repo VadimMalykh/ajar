@@ -18,12 +18,12 @@ lab", measured).
                start is here NOW (a shotgun, a chaingun, ammunition). NOW in
                its east half, deaf and facing east: 2 demons, an imp, a hell
                knight, a baron.
-  Three pens   north of the run, y 272..528: pen 1 x 0..240, pen 2 256..496,
-               pen 3 512..752 (middles 120, 376, 632). Each opens on the run by
-               a gate 128 wide (y 256..272). THEN the gate is a shutter (cause
-               21, 22, 23; found open) worked by its lever in the keeper's
-               passage, held up while anything stands under it. NOW the gates
-               are gone.
+  Three pens   north of the run: pen 1 x 0..240 and pen 3 512..752, y 272..528,
+               each opening on the run by a gate 128 wide (y 256..272); pen 2
+               a stall (below). Middles 120, 376, 632. THEN each gate is a
+               shutter (cause 21, 22, 23; found open) worked by its lever in
+               the keeper's passage, held up while anything stands under it.
+               NOW the gates are gone.
   The passage  the keeper's passage, 128 wide: y 544..672 from x 0 to 896, and
                its east leg x 784..896 from y 0 up to it. In each pen's back wall
                (y 528..544) a feeding hatch 64 wide, floor 24, ceiling 56: sight
@@ -37,15 +37,24 @@ lab", measured).
                shutter NOW (the passage's north wall, x 88..152) stands open on
                a closet with a soul sphere. Each pen has the readout, on the
                passage's south wall west of its hatch.
-  Pen 2, the step  a ledge at 48, 64 deep, along its back wall at both times,
-               with a megasphere on it NOW (west half). The hatch goes through
-               it: a notch 64 wide (x 344..408) from the ledge's face to the
-               passage, floor 24, ceiling 56, so the ledge is in two halves (a
-               ledge at 48 cannot run over an opening whose top is 56).
-               Big bones (Mass 1000 or more) NOW are a solid step 24 high.
+  Pen 2, the step  a stall as MAP23 will have it: 80 wide inside (x 336..416; a
+               knight or a baron is 48 across, a demon 60), 192 deep (y
+               336..528), its hatch in the end wall. Its gate (80 wide, y
+               320..336) is at its mouth, reached from the run by a lane of the
+               stall's width (y 256..320). Along both long sides, for the
+               whole depth and at both times, a ledge at 48, 64 deep (x
+               272..336 and 416..480): NOW a megasphere on the west one, a soul
+               sphere on the east one. Big bones (Mass 1000 or more) NOW are a
+               solid step 24 high; from bones anywhere in the stall one ledge
+               or the other is in reach (PLAN.md, "The kennel lab"). It
+               replaces the first pen 2 (a ledge along the back wall, the
+               hatch a notch through it), whose bones in front of the hatch
+               were a dead zone.
   Pens 2 and 3  THEN a shuttered opening between them (cause 24, found shut),
-               of the hatch's shape, in the wall x 496..512, y 336..400; its
-               lever on the passage's north wall. NOW open.
+               of the hatch's shape (floor 24, ceiling 56), x 480..512, y
+               336..400: from pen 3 over the stall's east ledge (sight and
+               shots pass above the ledge); its lever on the passage's north
+               wall. NOW open.
 The checks are src/zscript/kenneltest.zs (MODE=1..7 tools/smoke.sh).
 """
 import ajarmap
@@ -72,8 +81,9 @@ SCALES_T = 20193                                       # AjarKennelScales (kenne
 THRESHOLD = 400
 HATCH_FLOOR, HATCH_CEIL = 24, 56
 LEDGE, LEDGE_D = 48, 64
-NOTCH = (MID[1] - 32, MID[1] + 32)                     # pen 2's hatch through its ledge
 SIDE_Y = (336, 400)                                    # the opening between pens 2 and 3
+STALL = (336, 416)                                     # pen 2, the stall, inside
+STALL_Y = 528 - 192                                    # its mouth (its gate y 320..336, the lane y 256..320)
 
 
 def hatch_sector(c, x1, y1, x2, y2, ceil=HATCH_CEIL, **k):
@@ -93,31 +103,34 @@ def place(c):
     for n, (x1, x2) in enumerate(PENS):
         mid = MID[n]
         tag = dict(id=PEN_TAG[n]) if c.now else {}
-        if n == 1:                                     # the step: a ledge along the back wall, the hatch a notch through it
-            c.room((x1, 272, x2, 528 - LEDGE_D), **PEN, **tag)
-            for a, b in ((x1, NOTCH[0]), (NOTCH[1], x2)):
-                c.room((a, 528 - LEDGE_D, b, 528), **dict(PEN, floor=LEDGE, side="AJTRIM"), **tag)
-            hatch_sector(c, NOTCH[0], 528 - LEDGE_D, NOTCH[1], 544)
+        if n == 1:                                     # the stall: ledges along both long sides, the lane to its gate
+            sx1, sx2 = STALL
+            c.room((sx1, STALL_Y, sx2, 528), **PEN, **tag)
+            for a, b in ((sx1 - LEDGE_D, sx1), (sx2, sx2 + LEDGE_D)):
+                c.room((a, STALL_Y, b, 528), **dict(PEN, floor=LEDGE, side="AJTRIM"), **tag)
+            c.room((sx1, 256, sx2, STALL_Y - 16), **RUN)
+            gate = (sx1, STALL_Y - 16, sx2, STALL_Y)
         else:
             c.room((x1, 272, x2, 528), **PEN, **tag)
-            hatch_sector(c, mid - 32, 528, mid + 32, 544)
+            gate = (mid - 64, 256, mid + 64, 272)
+        hatch_sector(c, mid - 32, 528, mid + 32, 544)
         # the gate onto the run: THEN a shutter on its lever, NOW gone
+        gx1, gy1, gx2, gy2 = gate
         if c.then:
-            c.room((mid - 64, 256, mid + 64, 272), floor=0, ceil=128, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
+            c.room(gate, floor=0, ceil=128, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF",
                    light=c.light, id=GATE_TAG[n], raw=heights(ceils=(0, 128), hold=True))
-            for y in (256, 272):
-                c.line((mid - 64, y), (mid + 64, y), upper="AJSHUT", dontpegtop=True)
+            for y in (gy1, gy2):
+                c.line((gx1, y), (gx2, y), upper="AJSHUT", dontpegtop=True)
         else:
-            c.room((mid - 64, 256, mid + 64, 272), floor=0, ceil=128, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF",
-                   light=c.light)
+            c.room(gate, floor=0, ceil=128, wall="AJTRIM", ftex="AJTRIMF", ctex="AJTRIMF", light=c.light)
     # between pens 2 and 3: THEN a shutter of the hatch's shape, NOW open
     if c.then:
-        hatch_sector(c, 496, SIDE_Y[0], 512, SIDE_Y[1], ceil=HATCH_FLOOR, id=SIDE_TAG,
+        hatch_sector(c, STALL[1] + LEDGE_D, SIDE_Y[0], 512, SIDE_Y[1], ceil=HATCH_FLOOR, id=SIDE_TAG,
                      raw=heights(ceils=(HATCH_FLOOR, HATCH_CEIL), hold=True))
-        for x in (496, 512):
+        for x in (STALL[1] + LEDGE_D, 512):
             c.line((x, SIDE_Y[0]), (x, SIDE_Y[1]), upper="AJSHUT", dontpegtop=True)
     else:
-        hatch_sector(c, 496, SIDE_Y[0], 512, SIDE_Y[1])
+        hatch_sector(c, STALL[1] + LEDGE_D, SIDE_Y[0], 512, SIDE_Y[1])
     # NOW: pen 1's shutter in the passage's north wall, and the closet behind it
     if c.now:
         c.room((88, 672, 152, 688), floor=0, ceil=0, wall="AJSHUT", ftex="AJTRIMF", ctex="AJTRIMF", light=c.light,
@@ -144,7 +157,8 @@ for n, mid in enumerate(MID):
     shutter = (SHUTTER_TAG, 96) if n == 0 else (0, 0)
     t.now.thing(mid - 72, 546, SCALES_T, angle=90, height=40, args=(PEN_TAG[n], THRESHOLD) + shutter)
 t.now.thing(120, 720, 2013)                                              # the soul sphere, behind pen 1's shutter
-t.now.thing(296, 496, 83)                                                # the megasphere, on pen 2's ledge (west half)
+t.now.thing(STALL[0] - LEDGE_D // 2, 464, 83)                            # the megasphere, on the stall's west ledge
+t.now.thing(STALL[1] + LEDGE_D // 2, 464, 2013)                          # a soul sphere, on its east ledge
 # NOW, the run's east half, deaf and facing away
 for x, y, kind in ((480, 72, 3002), (480, 184, 3002), (560, 128, 3001), (640, 72, 69), (640, 184, 3003)):
     t.now.thing(x, y, kind, angle=0, ambush=True, skill=1)
