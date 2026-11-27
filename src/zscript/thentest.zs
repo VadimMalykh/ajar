@@ -157,6 +157,7 @@ class ThenTest : EventHandler
 		else if (mode == 4) Beam(mo);
 		else if (mode == 5) Company(mo);
 		else if (mode == 6) Views(mo);
+		else if (mode == 7) ClockedFollow(mo);      // doorcaco.zs
 		Drive(mo);
 		if (mode != 6 && tic == cur + 2) Console.Printf("AJARTEST thenDone=1 checks=%d failed=%d", checks, fails);
 	}
