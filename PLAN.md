@@ -16331,7 +16331,9 @@ Nobody tells it. Each line is something the player does or walks through.
 
 1. **The institute learnt to move doors** (space). Parts 1 and 2 are that,
    seen after the end: the departments were the research, the town was the
-   field trial.
+   field trial. (2026-11-27: it learnt of doors at all from one found
+   hanging on its own building site, which the player left there: MAP24,
+   "the ten-year door's story and the third loop".)
 2. **The clock department made a door keep its when**: the door to before.
    It is the player's tool in this part, and it is safe.
 3. **The big machine was built for the other direction: a door to after.**
@@ -22391,3 +22393,40 @@ BEFORE along the whole chain in one go, monsters in the partitions when they
 are built, a monster's corpse at a time where the floor has moved since,
 save and load, the solver with two clocked doors on a real level, and the
 views as art (BEFORE's piers are plain look 1 walls to the sky).
+
+## MAP24: the ten-year door's story and the third loop (decided 2026-11-27)
+
+**Vadim** (2026-11-27), on the open choices of "MAP24 "Left Hanging"": "I like
+your "ten-year" door's story and third loop idea, let's go!"
+
+**Decided.**
+- The ten-year door is the institute's first clocked door, on test in this
+  wing; its other end is the wing's own site.
+- The third loop (after the depot's and the cell's): the institute learnt of
+  doors at all from a door found hanging on its building site, which the
+  player left there. Line 1 of "The story, as it is played" ("The institute
+  learnt to move doors") now reads so.
+- The name "Left Hanging" and a quiet BEFORE stand (Vadim said nothing
+  against them).
+
+**What it does to the level** (Claude on Fable; Vadim has read a short
+telling).
+- The door at the start is the one left at the end. The old door rusted in
+  its frame NOW and on test THEN hangs BEFORE from the first tic, though
+  nobody has hung it yet. The player follows it back, takes it down on the
+  site and uses it through the level.
+- With no door left on the site the institute never found one: the test room
+  built round it, and the way out behind that room, are not there THEN or
+  NOW. It is a long cause whose lever is the door in that first frame BEFORE.
+- So the last act is to hang it back: the way out exists only while a door
+  hangs BEFORE in the first frame.
+
+**From the three times lab, for the old door lab.** The lab's strongroom NOW
+cannot be reached with the two clocked doors alone: the clocked door must
+hang inside the strongroom THEN, the only way in is from BEFORE with the
+ten-year door in the free frame, the clocked door does not hang BEFORE and no
+door is ever put down. This is the use of the door left hanging: a colour
+door left in the free frame BEFORE is an old door into the strongroom THEN,
+and the clocked door is carried in through it. The old door lab shows
+exactly this, and the lab's puzzle graph then has the strongroom NOW as its
+goal.
