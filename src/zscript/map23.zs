@@ -199,6 +199,7 @@ class AjarSleepingDogs : EventHandler
 //   3 measurements (nothing has to pass): knight into the stall, the big one into the crush (and its rockets at the
 //     hatch and behind the pier), a specimen left with its gate open and the player NOW, the guards led through
 //   4 views (tools/smoke_MAP23_4.cfg shoots every 70 tics; two a view)
+//   5 the look board's tour (tools/board23_shots.sh; a camera of its own, THEN and NOW from the same spot)
 class SleepingDogsTest : EventHandler
 {
 	const OFF = -8192;
@@ -455,15 +456,16 @@ class SleepingDogsTest : EventHandler
 			AjarKennelScales s;
 			while (s = AjarKennelScales(si.Next())) if (s.args[1] == 1000) sc2 = s;
 			if (mode != 3) mo.player.cheats |= CF_GODMODE;
-			if (mode == 4) mo.player.cheats |= CF_NOTARGET;
+			if (mode == 4 || mode == 5) mo.player.cheats |= CF_NOTARGET;
 			Info(String.Format("clocked %d shadow %d red %d; scales %d %d; monsters to kill %d", clocked != null, shadow != null, red != null, sc1 != null, sc2 != null, level.total_monsters));
 		}
-		if (mode == 1 || mode == 4) ClearOrdinary();
+		if (mode == 1 || mode == 4 || mode == 5) ClearOrdinary();
 		cur = 0;
 		if (mode == 1) Walk(mo);
 		else if (mode == 2) Rules(mo);
 		else if (mode == 3) Measure(mo);
 		else if (mode == 4) Views(mo);
+		else if (mode == 5) { Tour(mo); return; }
 		Drive(mo);
 		if (tic % 140 == 0 && mode != 4) Info(String.Format("t=%d step %d %s carried %s", tic, step, Where(mo), h.carried ? h.carried.Label() : "-"));
 	}
@@ -1198,4 +1200,87 @@ class SleepingDogsTest : EventHandler
 		V(mo, "NOW the night room", 1072, -1220, 90);
 		if (S()) { Info("views done"); Console.Printf("AJARTEST sleepingDogsViews=1"); Next(); }
 	}
+
+	// === MODE=5: the tour of the look board (tools/dogs23.py; tools/board23_shots.sh, whose header numbers the
+	// shots) ============================================================================================================
+	// A camera of its own (AjarTourCam23) at each view for 70 tics from tic 20 (tools/smoke_MAP23_5.cfg shoots every
+	// 35: two a shot, the later kept). The player stays at the start, not drawn, no target; NOW's ordinary company is
+	// cleared (ClearOrdinary), the specimens THEN and their bones NOW kept. A view is x, y (NOW's), angle, pitch,
+	// when: 0 THEN and then NOW from the same spot (THEN is y + OFF), 1 THEN only, 2 NOW only.
+	static const double PLACES5[] = {
+		600, -200, 110, 0, 0,      // yard: the front, the door, the shelter
+		120, 40, 15, 0, 0,         // yard: the glass, the gateway
+		300, 224, 180, 0, 0,       // yard: the shelter straight on
+		60, 640, 45, 0, 2,         // hall
+		700, 1180, 225, 0, 2,      // hall
+		-60, 1088, 180, 0, 0,      // runs: the kennels' run
+		1280, 1500, 270, 0, 0,     // runs: the stalls' run to its funnel
+		784, 520, 270, 0, 0,       // runs: the big run
+		40, 1376, 0, 0, 0,         // runs: the isolation run THEN, the antechamber NOW
+		-760, 1100, 270, 0, 0,     // pens: into pen 1
+		-420, 1180, 250, 0, 0,     // pens: the gates of pens 2 and 3
+		1280, 600, 270, 0, 0,      // pens: the stall
+		784, -900, 270, 0, 0,      // pens: the crush
+		700, 1376, 0, 0, 0,        // pens: the isolation pen THEN, the guard room's end NOW
+		-60, 608, 180, 0, 0,       // passages: the kennels' passage
+		-700, 600, 90, 0, 0,       // passages: pen 1's hatch, lever and readout
+		1500, 200, 180, 0, 0,      // passages: the stalls' passage
+		1040, -1400, 180, 0, 0,    // passages: the big run's passage
+		40, 1552, 0, 0, 1,         // passages: the isolation passage (THEN)
+		600, 224, 180, -14, 0,     // plates 1: LINE 6, THE INSTITUTE
+		320, 352, 90, -16, 0,      // plates 2: ANIMAL HOUSE
+		144, 352, 90, -20, 0,      // plates 2: the plan (yard)
+		496, 752, 270, -12, 2,     // plates 2: the plan (hall)
+		-608, 668, 270, -10, 0,    // plates 4: the rules (kennels' passage)
+		1376, 218, 270, -28, 0,    // plates 4: the rules (stalls' passage)
+		480, 1492, 90, -10, 1,     // plates 4: the rules (isolation passage)
+		736, -1364, 270, -12, 0,   // plates 4: the rules (big run's passage)
+		-928, 668, 270, -10, 0,    // plates 5: the weigh record
+		480, 32, 0, -24, 0,        // plates 6: DO NOT TAP ON THE GLASS
+		-1030, 1088, 0, -8, 0,     // plates 6: KEEPERS ONLY (kennels)
+		1530, 1376, 180, -8, 0,    // plates 6: KEEPERS ONLY (stalls)
+		208, 1610, 270, -8, 1,     // plates 6: KEEPERS ONLY (isolation)
+		-480, 1056, 90, -12, 0,    // plates 7: the kennels' name board
+		1248, 1024, 0, -12, 0,     // plates 7: the stalls' name board
+		480, 1440, 270, -12, 0,    // plates 7: the isolation run's name board
+		752, 288, 0, -12, 0,       // plates 7: the big run's name board
+		-488, 860, 270, 8, 0,      // things: a bowl at pen 2's hatch, from inside the pen
+		-760, 610, 180, 4, 0       // things: a bucket and a store in the kennels' passage
+	};
+	AjarTourCam23 tourCam;
+
+	void Tour(Actor mo)
+	{
+		if (tic == 2) mo.A_SetRenderStyle(1.0, STYLE_None);
+		if (tic == 18) Console.MidPrint(smallfont, "");       // the level's opening hint, off the first view
+		if (tic < 20 || (tic - 20) % 70) return;
+		int i = (tic - 20) / 70, k = 0;
+		for (int v = 0; v * 5 < PLACES5.Size(); v++)
+		{
+			int when = int(PLACES5[v * 5 + 4]);
+			int times = when == 0 ? 2 : 1;
+			for (int t = 0; t < times; t++)
+			{
+				k++;
+				if (k - 1 != i) continue;
+				bool early = when == 1 || (when == 0 && t == 0);
+				double x = PLACES5[v * 5], y = PLACES5[v * 5 + 1] + (early ? OFF : 0);
+				if (!tourCam) tourCam = AjarTourCam23(Actor.Spawn("AjarTourCam23", (x, y, 0)));
+				tourCam.SetOrigin((x, y, FZ(x, y) + 41), false);
+				tourCam.angle = PLACES5[v * 5 + 2];
+				tourCam.pitch = PLACES5[v * 5 + 3];
+				tourCam.ClearInterpolation();
+				mo.player.camera = tourCam;
+				Console.PrintfEx(PRINT_HIGH | PRINT_NONOTIFY, "AJARTEST view=%d place=%d %s (%d,%d) %d", i, v, early ? "THEN" : "NOW", x, y - (early ? OFF : 0), PLACES5[v * 5 + 2]);
+				return;
+			}
+		}
+		if (i == k) Console.PrintfEx(PRINT_HIGH | PRINT_NONOTIFY, "AJARTEST tour over: %d views", k);
+	}
+}
+
+class AjarTourCam23 : Actor        // the tour's eye (MODE=5): holds still where it is put
+{
+	Default { +NOBLOCKMAP +NOGRAVITY +NOINTERACTION +INVISIBLE +DONTSPLASH CameraHeight 0; Height 2; Radius 1; }
+	States { Spawn: TNT1 A -1; Stop; }
 }

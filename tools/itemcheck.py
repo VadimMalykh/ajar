@@ -20,7 +20,8 @@ SKIP = set(MONSTERS) | set(ajarmap.SCENERY_T) | {1, 2, 3, 4, 11, 14, 9001, 9024,
                                                  20132, 20133,   # the pass's desks and registers (pass.zs): plates, not pickups
                                                  20169,          # a fallen thing (ajarthird.fallen): a monster, not a pickup
                                                  20173, 20174, 20175,   # a common place, its comers (monsters) and ways (ajarthird.common)
-                                                 20195, 20196, 20197, 20198}   # MAP21's apparatus (apparatus.zs): sprites, not pickups
+                                                 20195, 20196, 20197, 20198,   # MAP21's apparatus (apparatus.zs): sprites, not pickups
+                                                 20199, 20202, 20203}   # MAP23's decor (dogs.zs, dogs23.py): sprites, not pickups
 
 
 def inside(poly, x, y):
