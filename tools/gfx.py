@@ -333,20 +333,25 @@ def furniture(out, wall):
 
     # the hotel's front doors, on a strip of lobby wall (128 by 336): boarded
     # up from outside, under a lit sign
-    def front(fd):
+    def front(fd, new=False):
+        """`new` (MAP22 THEN, AJ2X<n>N): no planks, daylight in the glass,
+        and the sign says VACANCIES."""
         fd.rect(2, 180, 126, 204, (26, 22, 22))
         fd.frame(2, 180, 126, 204, BRASS, 1)
-        text(fd, "NO VACANCY", 5, 187, (255, 74, 50))
+        if new:
+            text(fd, "VACANCIES", 11, 187, (120, 230, 120))
+        else:
+            text(fd, "NO VACANCY", 5, 187, (255, 74, 50))
         dark = (72, 50, 32)
         fd.rect(10, 212, 118, 336, dark)
         for x1 in (16, 66):
             fd.rect(x1, 218, x1 + 46, 336, (104, 74, 46))
-            fd.rect(x1 + 6, 226, x1 + 40, 300, (44, 56, 76))             # glass, dark outside
-            fd.rect(x1 + 9, 229, x1 + 14, 297, (86, 104, 128))
+            fd.rect(x1 + 6, 226, x1 + 40, 300, (150, 190, 214) if new else (44, 56, 76))   # glass: day, or dark outside
+            fd.rect(x1 + 9, 229, x1 + 14, 297, (214, 232, 240) if new else (86, 104, 128))
             fd.frame(x1 + 6, 226, x1 + 40, 300, dark, 2)
             fd.rect(x1 + 6, 308, x1 + 40, 330, (90, 62, 38))
         fd.rect(60, 262, 68, 274, BRASS)                                 # handles
-        for y0 in (238, 282):                                            # two planks across
+        for y0 in () if new else (238, 282):                             # two planks across
             for i in range(108):
                 y = y0 + i // 9
                 fd.rect(10 + i, y, 11 + i, y + 9, (160, 120, 78))

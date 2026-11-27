@@ -204,9 +204,10 @@ for c in t.copies:
     pieces(S, -512, (-576, -256), "y", Q("AJQMA"))
     pieces(S, -640, (-192,), "x", Q("AJQFA"))
     pieces(S, -640, (64,), "x", Q("AJQFB"))
-    # the museum's door: shut at both times (not built)
+    # the museum's door: shut at both times (not built). No lock plate on it: the player has keys 1 and 2 here,
+    # and a plate with a 1 says that key 1 opens it. A card instead: CLOSED.
     S.cut((-512, -400), (-512, -336))
-    S.line((-512, -400), (-512, -336), mid="AJQMD1" if ten.LOOK else "AJHK1", exact=True)
+    S.line((-512, -400), (-512, -336), mid="AJQMD0" if ten.LOOK else "AJHDOR", exact=True)
     # the shelter, its roof, the route board; THEN its timetable
     SHELTER = low(wall="AJQS", ctex="AJQSC")
     ajarmap.fitted(S, (224, -208, 512, -48), [
@@ -336,7 +337,7 @@ t.far((-32, 192 + DY), (32, 192 + DY), (0, -1), YELLOW, floor=D)
 THEATRE = {}
 for c in t.copies:
     S, ft, fs = AT_[c.when], len(m.things), len(m.sectors)
-    places = ajarmap.excerpt(m, map_hinges3.m, (-200, 1352), c.dx, TY + c.dy,
+    places = ajarmap.excerpt(m, map_hinges3.m, (-200, 1352), c.dx, TY + c.dy, nailed=c.now,
                              without=[(224 + c.dx, 912 + TY + c.dy, 672 + c.dx, 1008 + TY + c.dy),
                                       (224 + c.dx, 896 + TY + c.dy, 288 + c.dx, 912 + TY + c.dy)])
     THEATRE[c.when] = [to_now(c, p) for p in places]
@@ -370,9 +371,16 @@ t.far(_a, _b, _out, RED, floor=_floor)                                          
 # THE HOTEL (line 1) AND THE STATION (line 5): THEN only, as MAP10 lifts them out, at peace
 # =================================================================================================================
 ft, fs = len(m.things), len(m.sectors)
-hotel = [to_now(t.then, p) for p in ajarmap.excerpt(m, map_hinges2.m, (256, 96), HX + t.then.dx, t.then.dy)]
-station = [to_now(t.then, p) for p in ajarmap.excerpt(m, map_hinges5.m, (256, 64), SX + t.then.dx, t.then.dy)]
+# (nothing is nailed up THEN: a door that an excerpt leaves behind is its own face, shut; the hotel's front doors
+# are whole, with the day in their glass)
+hotel = [to_now(t.then, p) for p in ajarmap.excerpt(m, map_hinges2.m, (256, 96), HX + t.then.dx, t.then.dy,
+                                                    nailed=False)]
+station = [to_now(t.then, p) for p in ajarmap.excerpt(m, map_hinges5.m, (256, 64), SX + t.then.dx, t.then.dy,
+                                                      nailed=False)]
 peaceful(ft, fs)
+for p in m.lineprops.values():
+    if map_hinges2.LOOK and p.get("mid") == f"AJ2X{map_hinges2.LOOK}":
+        p["mid"] = f"AJ2X{map_hinges2.LOOK}N"
 m.things = [th for th in m.things if (th["x"], th["y"]) != (HX - 16 + t.then.dx, 272 + t.then.dy)]   # (MAP10's candle)
 ajarmap.doorway(St, 1, *MOUTHS[THEN, 1], (0, 1), 0, *hotel[0])
 ajarmap.doorway(St, 2, *MOUTHS[THEN, 5], (0, 1), 0, *station[0])

@@ -19805,3 +19805,58 @@ plates on the real machine (GLES) beyond the MODE=3 views; a player who
 goes now with YELLOW (the depot now, the cache) or hangs the clocked door in
 101 or 104 first; a saved game across the times; the automap (both copies
 side by side).
+
+## MAP22: nothing is nailed up then; the route board; the museum's door (mended 2026-11-27)
+
+Vadim, playing the first version, three things:
+
+1. "map22 - that doors, it's bad. They shouldn't be this way, everything
+   should be new and peasfull" (the station's concourse then: its doors
+   with three boards nailed across each).
+   - **Why**: `ajarmap.excerpt` shows a door that stays behind (locked or
+     bolted in its own level) nailed up, which is right for MAP10's night
+     and wrong forty years earlier.
+   - **Now**: `excerpt(..., nailed=False)` leaves such a door as its own
+     face, shut and whole. MAP22 passes it for the hotel and the station
+     (then only) and for the theatre's copy then; the theatre now keeps its
+     boards, as MAP10 has them. The hotel's front doors were boarded in
+     MAP02's own drawing (two planks, NO VACANCY, dark glass): then they are
+     `AJ2X<n>N`, no planks, daylight in the glass, VACANCIES in green.
+   - These doors do not open (nothing is built behind them), as before.
+   - **Not done here**: the look of then as a whole (the town when it was
+     new) is still the look board promised in "the first version, as
+     decided". This takes away only what was plainly a ruin.
+
+2. "Line 4 here is missing" (the route board in the shelter now: the panel
+   of line 4 showed the sky; and the panel of line 6 was its left half
+   twice).
+   - **Why 4**: the board's lamp shows the colour of the door in its
+     frame, and the clocked door is colour 10: `Lamp()` asked for the
+     texture `AJR410`, which was never drawn, and set it. A missing texture
+     on a one-sided wall is a hole.
+   - **Why 6**: the shelter's corner cuts that lamp's 16 of wall in two,
+     and each piece drew the picture from its own start.
+   - **Now**: lamps `AJRn8`, `AJRn9` (a Pair's leaves) and `AJRnC` (the
+     clocked door: an ivory dial with two hands) are drawn; `Lamp()` asks
+     for C for the clocked door, falls back to 7 (a line that runs) for a
+     colour with no lamp, and never sets a texture that is not there.
+     `ajarmap.route_board` lays each lamp as one picture (`exact`), which
+     mends lamp 6 here and the same cut in MAP10's board (its sixth lamp,
+     the shelter's 0).
+
+3. "These door marked as key1, but I cannot open it, even though I have
+   key1" (the museum's door on the square).
+   - **Why**: the museum is not built in MAP22 and its door is only a
+     face, but the face was MAP10's, with the lock plate of key 1; in MAP22
+     the player has a key 1.
+   - **Now**: `AJQMD0`, the same door with no lock plate and a card on it,
+     CLOSED, at both times.
+
+**Checked** (the worktree's build): `MAP=MAP22 MODE=1` 36 checks, all pass,
+`levelExited`; `MODE=2` 14, all pass; `MODE=3` the views (the station's
+concourse then: its doors whole); `MAP=MAP10 MODE=1` its 12 ambushers, no
+error. Of the package only MAP10.wad, MAP22.wad and ajar.zs differ from
+main's, and the new textures are added. The three new faces were looked at
+as pictures (`AJ2X1N`, `AJQMD0`, `AJR4C`). **Not seen in the game**: the
+route board with the clocked door hung, the museum's door and the hotel's
+front doors (no test view looks at them).

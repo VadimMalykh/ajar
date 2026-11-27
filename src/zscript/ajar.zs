@@ -802,8 +802,11 @@ class AjarHandler : EventHandler
 			Side sd = level.lines[i].sidedef[0];
 			string n = TexMan.GetName(sd.GetTexture(Side.mid));
 			if (n.Length() != 5 || n.Left(3) != "AJR") continue;
-			string want = String.Format("%s%d", n.Left(4), c);
-			if (want != n) sd.SetTexture(Side.mid, TexMan.CheckForTexture(want, TexMan.Type_Any));
+			// (the clocked door's lamp is AJRnC; a colour with no lamp drawn shows as a line that runs, 7)
+			string want = c == AjarDoor.CLOCKED ? n.Left(4) .. "C" : String.Format("%s%d", n.Left(4), c);
+			TextureID tex = TexMan.CheckForTexture(want, TexMan.Type_Any);
+			if (!tex.IsValid()) { want = n.Left(4) .. "7"; tex = TexMan.CheckForTexture(want, TexMan.Type_Any); }
+			if (want != n && tex.IsValid()) sd.SetTexture(Side.mid, tex);
 		}
 	}
 

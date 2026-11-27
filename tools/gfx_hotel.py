@@ -8,7 +8,7 @@ Three whole-hotel looks, numbered 1 to 3. For look n:
   AJ2C<n>  bedroom carpet                      AJ2B<n>  bathroom floor
   AJ2Q<n>  quilt   AJ2S<n>  sofa               AJ2E<n>  tub and basin sides
   AJ2D<n>, AJ2K<n><keys>  room doors           AJ2P<n><c>  lobby picture of door c
-  AJ2X<n>  front doors   AJ2Y<n>  key rack
+  AJ2X<n>  front doors   AJ2Y<n>  key rack     AJ2X<n>N  the front doors when new (MAP22 THEN)
 The back of the house is the same in all three: AJ2KW/AJ2KF kitchen,
 AJ2AW attic. Walls repeat every 32 across, as walls are cut at multiples of 32.
 """
@@ -237,6 +237,9 @@ def make(out, rd, front, keyrack):
         fd = tiled(lobby, 128, 336)
         front(fd)
         out[f"textures/AJ2X{n}.png"] = fd.png()
+        fd = tiled(lobby, 128, 336)
+        front(fd, new=True)
+        out[f"textures/AJ2X{n}N.png"] = fd.png()
         kr = tiled(lobby, 160, 336)
         keyrack(kr)
         out[f"textures/AJ2Y{n}.png"] = kr.png()
