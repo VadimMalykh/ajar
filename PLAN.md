@@ -20073,3 +20073,197 @@ new. "Used since" says what the levels of 19 to 22 and 33 took.
   (MAP33), water (MAP20), the left-handed copy (MAP20's secret), the
   pinwheel, the corridor of chosen length and the endless stair (MAP19),
   the bus again (MAP22).
+
+## The kennel lab (built 2026-11-27)
+
+`MAP=KENNEL ./run.sh` ("Ajar: the kennel lab"; tools/map_kennel.py, the readout's
+digits tools/gfx_kennel.py, src/zscript/kennel.zs, the rule's changes in
+src/zscript/then.zs, tests src/zscript/kenneltest.zs). The lab MAP23 "Sleeping
+Dogs" asks for: a monster led into THEN and penned there is a tool NOW, by its
+bones. Built by Claude on Opus from Fable's brief; nothing designed in full
+for MAP23 here.
+
+**What is built.** One place twice (`ajarthen.Times`, the then and now lab's
+looks: NOW dark, THEN lit), THEN at NOW + (0, -4096), **south** of NOW (see the
+choices). No monsters THEN at the start.
+- *The run*, 768 by 256: frame 101 NOW / 121 THEN in its west wall, the clocked
+  door leaning beside it NOW; the start NOW with a shotgun, a chaingun and
+  ammunition. NOW in its east half, deaf and facing away: 2 demons, an imp, a
+  hell knight, a baron (skill 1 up).
+- *Three pens* north of the run (240 by 256 each), each with a gate 128 wide
+  onto the run. THEN the gate is a shutter on its own lever (causes 21, 22, 23,
+  found open, held while anything stands under it); NOW the gates are gone.
+- *The keeper's passage* north of the pens, 128 wide, and its east leg down to
+  the run. In each pen's back wall a feeding hatch 64 wide, floor 24, ceiling 56
+  (AJTRIM). The gate levers are on the passage's south wall east of each hatch.
+- *The turnstile*: a gap 64 wide and 96 high in the run's east wall into the
+  passage's east leg, two block-monsters lines.
+- *Pen 1, the scales*: its readout NOW on the passage wall west of the hatch;
+  at 400 or more its shutter NOW (the passage's north wall) opens on a closet
+  with a soul sphere. Pens 2 and 3 have readouts too (no shutter).
+- *Pen 2, the step*: a ledge at 48, 64 deep, along the back wall at both
+  times, a megasphere on it NOW. The hatch is a notch through it (see the
+  choices).
+- *Pens 2 and 3*: THEN a shuttered opening between them (cause 24, found shut,
+  lever on the passage's north wall), of the hatch's shape; NOW open.
+
+**How it works.**
+- *Bones* are then.zs's old corpses (AjarThenCorpse), now with `who`, `weight`
+  (the monster's Mass) and `bodyRadius`. A stand-in fades in over 35 tics
+  (`FADE`) when the times come apart and fades out over 35 when they are joined
+  again or its monster dies THEN; a stand-in that is fading out when the times
+  come apart again fades back in where it lies instead of a new one. A
+  corpse is in `corpses` from the tic it is spawned to the tic it is destroyed,
+  so whatever weighs counts it all through its fade. The old line "AJARTEST
+  info old corpse ..." is kept.
+- *WorldThingRevived* (new in then.zs): a monster THEN raised by an arch-vile
+  (or Thing_Raise) is alive again: its for-good corpse NOW fades out if the
+  times are joined, or becomes its stand-in if they are apart.
+- *AjarKennelScales* (20193, kennel.zs): args (pen tag, threshold, shutter
+  tag, shutter height). Every tic, from the map's handler AjarKennel after
+  then.zs's handler has made or ended the tic's bones, it sums `weight` over
+  the corpses lying in the pen's sectors and shows it on four digit plates
+  (wall sprites AJKD; amber under the threshold, green at or over it, no
+  leading noughts). Its shutter's ceiling moves to open or shut over 64 tics
+  and waits, held, while anything (the player, anything solid or shootable)
+  stands under it.
+- *AjarKennelStep* (kennel.zs): for bones of Mass 1000 or more, AjarKennel
+  spawns an actor with the monster's radius, 24 high, +ACTLIKEBRIDGE. It is
+  spawned not solid and becomes solid once nothing solid (or the player)
+  overlaps it, so bones appearing under someone never trap or push them. It
+  goes when its bones are gone; whoever stands on it drops.
+- ajar.zs: KENNEL is left out of the autotest's monster clearing (MODE=1) and
+  of the generic autotest script, as MAP33 and the other labs are.
+
+**Tests** (`MAP=KENNEL MODE=n tools/smoke.sh`; modes 1 to 4 pass):
+1. the scales (30 checks): gates as set, the door hung in 101, the dog (a
+   demon) led THEN, the player round by the turnstile to pen 1's hatch, the
+   demon in the pen, gate shut by a real USE at its lever, back NOW and the
+   door taken down; the stand-in fades in (alpha 0, 0.49 at tic 18, 1 at 35),
+   counted 400 from its first tic, the readout green, the shutter open 63 tics
+   after the door came down; soul sphere taken; the door hung again: still
+   counted while fading (0.51 at 18), 0 when gone; the shutter waits (held)
+   while the player stands under it, shuts once he is clear; the demon killed
+   THEN through the hatch (6 hits), its corpse there for good: reads 400 with
+   the door hung and with it down, the shutter open again.
+2. the step (27): a knight led into pen 2 and penned; NOW its bones at the
+   ledge's foot weigh 1000 and are a step (radius 24, 24 high, solid); the
+   player walks onto them (z 24), from them onto the ledge (z 48), takes the
+   megasphere, back down onto them; the door hung, he stays on them while they
+   fade and drops to 0 when they are gone (no hurt; health 200), walks off
+   free. An imp's bones: no step, walked through. A knight's bones appearing
+   under the player: the step not solid, he is not trapped or lifted (z 0 for
+   20 tics), it is solid once he has walked off.
+3. the hatch and the turnstile (20 checks, plus the trials as info): 5 trials
+   each (demon to pen 1, knight and baron to pen 2) from 5 spots; each kind
+   penned by its lever stays in 525 tics; what passes the hatch; the player
+   through the turnstile both ways with and without the door; demon, knight,
+   baron and imp after the player at the turnstile for 700 tics (20 s) each.
+4. raised (13): an imp killed THEN, raised by Thing_Raise: the revived event
+   fires, its corpse is no longer for good, stands in while apart, goes when
+   joined, killed again it is for good again; an arch-vile NOW beside an old
+   imp's and an old baron's bones raises neither, and raises a real imp corpse
+   NOW (the control) after 124 tics.
+5. set on (report only): a knight in pen 2 and an imp in pen 3 THEN, the
+   opening between them open, gates shut, the player NOW; 5 runs of 1050 tics.
+6. 16 views (tools/smoke_KENNEL_6.cfg).
+7. a probe (report only): an imp, a knight and a demon after the player when he
+   goes into THEN by the clocked door, with where AjarSense puts their lure.
+
+**Measured.**
+- *Doom's Mass and radius* (gzdoom.pk3 4.12.2; bones keep them): zombieman,
+  shotgun guy, chaingunner, imp 100 (radius 20); lost soul 50 (16); demon and
+  spectre 400 (30); cacodemon 400 (31); pain elemental 400 (31); revenant 500
+  (20); arch-vile 500 (20); arachnotron 600 (64); hell knight (a baron by
+  class), baron, mancubus, cyberdemon, spider mastermind 1000 (24, 24, 48, 40,
+  128). So the threshold 400 is one demon or four imps; a step is a knight,
+  baron or anything bigger, and the big ones' steps are wide (a mancubus's 96
+  across, the spider's 256).
+- *The hatch as bait* (three full runs of MODE=3, 15 trials each; "in" is the
+  tics from the player at the hatch to the monster in the pen; distance from
+  the hatch's mouth 5 s later):
+  - demon: 5 of 5, in 27 to 201 tics (mean 121), 57 to 196 from the mouth;
+    then 4 of 5 (one from mid-run ran off east along the run), 27 to 175
+    (mean 118), 34 to 83; then 5 of 5, 27 to 141 (mean 99), 59 to 142.
+  - knight: 5 of 5, 77 to 185 (mean 132), 25 to 69; then 5 of 5, 131 to 491
+    (mean 327), 29 to 131; then 5 of 5, 134 to 443 (mean 205), 29 to 92.
+  - baron: 5 of 5, 107 to 395 (mean 214), 35 to 86; then 5 of 5, 131 to 164
+    (mean 151), 27 to 91; then 5 of 5, 65 to 212 (mean 134), 30 to 99.
+  So the hatch draws them, slowly and not to the spot: they end anywhere
+  along the back half of the pen, up to 95 off the hatch's middle. Penned
+  (gate shut, the player gone), every kind stayed in for 525 tics.
+- *Through the hatch* (the monster penned at it, the player at its mouth,
+  10 s, three runs): a demon's bite never landed (closest 65 to 67); a knight
+  threw 3 fireballs each time, no claw; a baron 1 fireball and 1 claw, then 3
+  and 0, then 4 and 0; an imp 5 and 1, then 4 and 1, then 1 and 1. So the hatch stops a demon but not a claw: an imp or a
+  baron at the wall reaches the player at the mouth. The player's shots pass
+  when the monster stands in line with the hatch (5 of 5 for each kind) and
+  hit the wall when it does not (0 of 5 at a knight and an imp off to one
+  side, in the first run).
+- *The turnstile*: the player passes both ways, with and without the door;
+  no monster passed in 20 s, three runs: furthest east 737 to 747 (the line
+  at 768).
+- *Set on* (MODE=5): no infighting in 5 runs: no damage either way, both kept
+  the player (NOW) as their target. Nothing sets them on by itself; it needs a
+  shot that hits the other, as the idea says (one's fire at the player through
+  the other's cell), which this lab did not try.
+- *Following through the clocked door* (MODE=7 and every lead in MODES 1, 2):
+  no monster came into THEN by itself, 0 of 3 in the probe and 0 of 2 in the
+  leads (the THEN lab's MODE=5 also has a line "one brought THEN by the
+  script"). Once the player is through, AjarSense targets its lure, but the
+  lure stands at the player's image through the door taken as a pair of
+  frames facing each other (`AjarSight.DoorImage`/`ImageThrough`): for the
+  clocked door, whose twin faces the same way, that puts it beyond the run's
+  west wall (x -142 to -430 with the player at x 133 to 398 THEN). The
+  monsters then wander (two walked east the length of the run first), and the
+  demon that reached the frame jammed in its recess, flipping NOW and THEN
+  every few tics. The tests here bring the led monster into THEN by script
+  (`Bring`) and say so in an info line. **MAP23 needs this mended first**
+  (enemies.zs; not done here).
+- Where a penned monster ends while the player is NOW depends on what it is
+  after: going after him straight it walks north (THEN is south), the knight
+  to the ledge's foot in 129 tics; the demon in MODE=1, just left by a player
+  who went through the clocked door, stayed by its gate (bones at 32,340,
+  still in the pen and weighed). A step's place is where the monster stood
+  when the door came down, nothing more precise.
+
+**Choices made here**:
+- THEN is south of NOW (the then and now lab has it north): Doom's chase goes
+  at the raw coordinates of its target, so a monster penned THEN, after a
+  player NOW, walks north, to its hatch and the ledge.
+- Pen 2's hatch cannot sit under a ledge at 48 (its top is 56), so the ledge
+  is two halves (88 and 88 wide) with the hatch a notch 64 wide between them
+  through to the passage, floor 24 like the hatch. The bones' step (24) is
+  then also the step into the notch.
+- The step is an actor (+ACTLIKEBRIDGE), not the heap sector the brief named
+  as a fallback: the player steps onto it and off it as onto a stair, it
+  holds him through the fade, and it can begin not solid.
+- The scales weigh from the map's event handler, every tic after then.zs's,
+  not in their own Tick: so bones are counted from the tic they appear.
+- `comesToHatch_<kind>` passes when most of the 5 come (the chase is
+  random); the exact counts are in the info lines.
+- The THEN lab's MODE=5 check `standInsGo` now looks 40 tics after the door is
+  hung, not 3, since stand-ins fade out over 35 (thentest.zs).
+- mapcheck: 38 sectors, 0 problems; no SLOT is reported because the hatches
+  and the notch are 32 high, no way for anyone (as meant). 20193 is in its
+  ON_WALL list (the scales stand at the wall).
+
+**The other maps**: THEN lab MODE=1 (45 checks) and MODE=5 (16) pass, MAP21
+MODE=1 (85) passes, MAP22 MODE=1 (41) passes, MAP22 MODE=2 (14) passes on a
+second run: the first failed at the walk to door 4 (the square's company in
+the way), the failure main's 89ba603 mended after this branch was cut ("the
+walk failed in two runs of three"). With the branch point's own code it passed
+once of once. The other 48 maps' wads are byte-identical to main's package;
+MAP22's differs only because main changed it after this branch was cut
+(map22-gate; this branch touches none of MAP22's sources), and so does its
+proof line (8 door actions here, 12 on main). The other 19 proofs are as on
+main.
+
+**Not tested / not played by hand**: nothing here has been played by a person.
+Leading by hand (the script brings the monster through the door); a monster
+under a closing pen-1 shutter (only the player is tested); bones of a mancubus
+or the spider as steps (their radius is wider than a pen's notch or a frame:
+only made where they already are); several bones on one step spot; save and
+load (the stand-ins' fade and the steps are not tested across a load); the
+readout seen from far off; whether a player finds the ledge from the bones
+without being told.

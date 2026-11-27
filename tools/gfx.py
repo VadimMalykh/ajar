@@ -1411,6 +1411,8 @@ def make_all():
     gfx_power.make(out, map_station)
     import gfx_dayreturn                                         # MAP22's new bus, day sky and plates
     gfx_dayreturn.make(out)
+    import gfx_kennel                                            # the kennel lab's readout digits (map KENNEL)
+    gfx_kennel.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)
