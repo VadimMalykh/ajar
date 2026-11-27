@@ -21571,6 +21571,18 @@ mapcheck 0 problems, thingcheck 0; itemcheck reports key 2 and the soul
 sphere out of reach (48 above the stall's floor): only the knight's bones
 reach them, as designed.
 
+**The other maps** (the full build re-proved every map, `solve.py` having
+changed): every proof line as in main's `build/proofs.json` but MAP22's,
+whose main has since taken map22-bigger (742209a; this branch has main at
+a8af54e, and its MAP22 wad is byte for byte main's package's); every other
+wad byte for byte as in main's package. KENNEL MODE=1 (30 checks), 2 (44),
+4 (13); THEN MODE=1 (45); MAP21 MODE=1 (85, `levelExited`); MAP22 MODE=1
+(58, `levelExited`) and MODE=2 (14): all pass. THEN MODE=5 failed once of
+two runs (`monsterFollowsToThen=0` and the four checks after it) and failed
+as well with main's then.zs and kennel.zs put back, and passed on main's
+older package (before caco-through-doors): it hangs on whether a monster
+follows by itself, not on this branch's changes.
+
 **MODE=3, measured** (specimens woken by script with no stale direction:
 `movedir` DI_NODIR, so they do not first walk east):
 - A knight in its run, the player at the stall's hatch: into the stall 10
