@@ -1,7 +1,9 @@
 // MAP22 "Day Return" (tools/map_dayreturn.py; PLAN.md, "MAP22 "Day Return""): the level's own script, and its
 // checks (DayReturnTest, below). THEN is NOW + (0, 12288). Frames NOW / THEN: 101/121 door 2 of the bus (RED
 // hangs in 121 at the start), 102/122 door 7, 104/124 door 4 (the clocked door's alone at both times), 123 door 6
-// THEN (brass, any colour door, no twin), 190 HOME in the night room THEN (BLUE's alone). Far sides NOW / THEN:
+// THEN (brass, any colour door, no twin), 190 HOME in the night room THEN (BLUE's alone), 105/125 the night room's
+// south wall (the clocked door's alone; 125 east of the gate THEN). The gate THEN: a bolted door (sector tag 2202,
+// its bolt side line 311) across the night room, opened by crossing the line north of frame 125. Far sides NOW / THEN:
 // RED 201/221 the theatre's foyer, BLUE 202/222 the night room, GREEN 203/223 door 3 (there is no GREEN),
 // YELLOW 204/224 the depot. Fixed doorways: 1 the hotel and 2 the station (THEN), 3 and 4 door 8 from the pit
 // under the stage door (NOW, THEN).
@@ -134,6 +136,11 @@ class DayReturnTest : EventHandler
 	AjarThenHandler th;
 	AjarDoor clocked, shadow, red, blue, yellow;
 	int viewN;
+	const GATE_X = 504;        // the middle of the gate's wall (map_dayreturn.py, GATE_X + 8), on the runner at y -432
+	const GATE_TAG = 2202;
+	bool GateOpen() { return CZ(GATE_X, OFF - 432) > FZ(GATE_X, OFF - 432) + 56; }
+	bool GateShut() { return CZ(GATE_X, OFF - 432) <= FZ(GATE_X, OFF - 432) + 1; }
+	bool InNightRoom(Actor mo) { double y = mo.pos.y - (InThen(mo) ? OFF : 0); return mo.pos.x > 304 && mo.pos.x < 624 && y > -560 && y < -304 && abs(mo.pos.z - 64) < 1; }
 
 	bool Testing() { return CVar.GetCVar("ajar_autotest").GetInt() != 0 && level.mapname ~== "MAP22"; }
 
@@ -359,8 +366,16 @@ class DayReturnTest : EventHandler
 			Check("noKeys", !h.Has(mo, 1) && !h.Has(mo, 2));
 			Check("peaceMusicThen", th.musicThen == 1 && th.ThenMusic() == "AJM_EMY4", th.ThenMusic());
 			Check("notTurned", !DR().turned && th.joinedAt < 0);
+			Check("gatesCompanyWaits", Left(62) > 0, String.Format("%d", Left(62)));
 			Next();
 		}
+		// the gate THEN, from its west side (posed: the way there needs both keys): bolted, USE does nothing
+		if (S()) { Check("gateShutAtStart", GateShut(), String.Format("ceiling %.0f", CZ(GATE_X, OFF - 432))); Next(); }
+		if (S()) Put(mo, 470, OFF - 432, 0);
+		if (S()) Use(mo, 0);
+		if (S()) Wait(40);
+		if (S()) { Check("gateBoltedFromTheWest", GateShut(), String.Format("ceiling %.0f", CZ(GATE_X, OFF - 432))); Next(); }
+		if (S()) Put(mo, -64, OFF - 592, 90);
 		// the shelter's brass door THEN: locked, no keys
 		if (S()) Go(mo, -64, OFF - 30);
 		if (S()) Go(mo, 320, OFF - 30);
@@ -452,10 +467,55 @@ class DayReturnTest : EventHandler
 		if (S()) Put(mo, -224, TY + 1024 + 48, 270);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("backFromTheatreNow", !InThen(mo) && mo.pos.y < 0 && h.carried == blue, Where(mo)); Next(); }
-		// BLUE through the clocked door, THEN; line 1: the hotel, key 1's baron
+		// BLUE swapped for the clocked door in 102: the night room NOW, whole; the hole shut
 		if (S()) Go(mo, 470, -24);
 		ToBack(mo, 0);
 		if (S()) Go(mo, 192, 200);
+		if (S()) Use(mo, 270);
+		if (S()) { Check("blueIn102", F(102).door == blue && blue.args[0] == 202 && !F(122).door && h.carried == clocked, String.Format("BLUE leads to %d; ", blue.args[0]) .. h.said); Next(); }
+		if (S()) Through(mo, 270);
+		if (S()) { Check("blueToNightRoomNow", !InThen(mo) && InNightRoom(mo), Where(mo)); Next(); }
+		if (S()) Go(mo, 416, -330);
+		if (S()) Go(mo, 416, -260);
+		if (S()) Push(mo, 90, 40);
+		if (S()) { Check("noWayDownTheHoleNow", !InThen(mo) && abs(mo.pos.z - 64) < 1 && mo.pos.y > -304 && mo.pos.y < -240, Where(mo)); Next(); }
+		// the clocked door in 105: the far side of the gate, THEN; the bolt drawn; the gate's company
+		if (S()) Go(mo, 416, -330);
+		if (S()) Go(mo, 552, -528);
+		if (S()) { h.said = ""; Next(); }
+		if (S()) Use(mo, 270);
+		if (S()) Wait(3);
+		if (S())
+		{
+			Check("clockedIn105", h.carried == null && F(105).door && F(125).door && (F(105).door == clocked || F(125).door == clocked), h.said);
+			Check("noSecondTurnAt105", DR().turned && !Said("forty years on") && th.ThenMusic() == "AJM_EMY5", h.said);
+			Check("gateShutBefore", GateShut() && Left(62) > 0, String.Format("ceiling %.0f, %d of its company to come", CZ(GATE_X, OFF - 432), Left(62)));
+			Next();
+		}
+		if (S()) Through(mo, 270);
+		if (S()) Wait(50);
+		if (S())
+		{
+			Check("throughClockedToTheGatesEastThen", InThen(mo) && InNightRoom(mo) && mo.pos.x > GATE_X + 8, Where(mo));
+			Check("boltDrawnOnArriving", GateOpen(), String.Format("ceiling %.0f", CZ(GATE_X, OFF - 432)));
+			Next();
+		}
+		if (S()) Wait(35 * 4);
+		if (S()) { Check("gatesCompanyCame", Left(62) == 0, String.Format("%d still to come", Left(62))); Next(); }
+		// the clocked door back to the bus: through it to NOW, down from 105, through BLUE, swapped for BLUE in 102
+		if (S()) Go(mo, 552, OFF - 500);
+		if (S()) Through(mo, 270);
+		if (S()) { Check("backToNightRoomNow", !InThen(mo) && InNightRoom(mo), Where(mo)); Next(); }
+		if (S()) Go(mo, 552, -528);
+		if (S()) Use(mo, 270);
+		if (S()) { Check("clockedDownFrom105", h.carried == clocked && !F(105).door && !F(125).door, h.said); Next(); }
+		if (S()) Go(mo, 340, -432);
+		if (S()) Through(mo, 180);
+		if (S()) { Check("throughBlueToTheLaneNow", !InThen(mo) && mo.pos.y > 144 && mo.pos.y < 448, Where(mo)); Next(); }
+		if (S()) Go(mo, 192, 200);
+		if (S()) Use(mo, 270);
+		if (S()) { Check("clockedBackIn102", h.carried == blue && (F(102).door == clocked || F(122).door == clocked) && F(102).door && F(122).door, h.said); Next(); }
+		// BLUE through the clocked door, THEN; line 1: the hotel, key 1's baron
 		if (S()) Through(mo, 270);
 		if (S()) { Check("blueCarriedToThen", InThen(mo) && h.carried == blue, Where(mo)); Next(); }
 		ToFront(mo, OFF);
@@ -477,7 +537,9 @@ class DayReturnTest : EventHandler
 		if (S()) Go(mo, 320, OFF - 296);
 		if (S()) Go(mo, 400, OFF - 330);
 		if (S()) { Check("upTheStair", abs(mo.pos.z - 64) < 1 && InThen(mo), Where(mo)); Next(); }
+		if (S()) Go(mo, 460, OFF - 432);
 		if (S()) Go(mo, 590, OFF - 432);
+		if (S()) { Check("throughTheGate", InThen(mo) && InNightRoom(mo) && mo.pos.x > GATE_X + 8, Where(mo)); Next(); }
 		if (S()) Use(mo, 0);
 		if (S()) { Check("blueIn190", F(190).door == blue && blue.args[0] == 222 && h.wayOutBuilt, String.Format("BLUE leads to %d; ", blue.args[0]) .. h.said); Next(); }
 		if (S()) Done();
@@ -582,7 +644,7 @@ class DayReturnTest : EventHandler
 		V(mo, "THEN door 6 (frame 123, brass) from the shelter", 320, OFF - 180, 90);
 		V(mo, "NOW door 6: brass, stone in it", 320, -180, 90);
 		V(mo, "THEN the shelter: the brass door, LINE 6, the timetable", 320, OFF - 40, 270, 4);
-		V(mo, "NOW the shelter: stone in the brass frame, the hole over it", 320, -40, 270, -10);
+		V(mo, "NOW the shelter: stone in the brass frame; no hole over it now", 320, -40, 270, -10);
 		V(mo, "THEN the bus's back: doors 7 and 8, the lane, the depot's gate", 620, OFF + 420, 200);
 		V(mo, "NOW the bus's back", 620, 420, 200);
 		V(mo, "THEN the bus's front", -620, OFF + 72, 0);
@@ -590,9 +652,16 @@ class DayReturnTest : EventHandler
 		V(mo, "THEN the fitters' corner: the clocked door under its plate", 40, OFF + 900, 15, -6);
 		V(mo, "NOW the depot: the old buses, the cache in the far corner", 300, 700, 135, -4);
 		V(mo, "NOW the cache", -448, 940, 90);
-		V(mo, "THEN the night room: BLUE's far side, HOME", 600, OFF - 432, 180);
+		V(mo, "THEN the night room's east part from HOME: the gate's bolt side, the bars", 600, OFF - 432, 180);
+		V(mo, "THEN the east part: HOME, frame 125, the gate's bolt side", 540, OFF - 340, 293);
+		V(mo, "THEN the gate from the west part: the bolted door, frame 125 through the south bars", 340, OFF - 432, 0);
+		V(mo, "THEN at the north bars, from the west part: HOME", 476, OFF - 330, 325);
+		V(mo, "THEN at the south bars, from the west part: frame 125", 470, OFF - 470, 312);
 		V(mo, "THEN the stair from the night room", 400, OFF - 360, 90, 8);
-		V(mo, "NOW the night room: BLUE's far side, stone where HOME is", 340, -432, 0);
+		V(mo, "NOW the night room from BLUE's far side: the wall's two stubs, stone where HOME is", 340, -432, 0);
+		V(mo, "NOW the east end: frame 105 by the south stub, stone where HOME is", 540, -340, 293);
+		V(mo, "NOW the night room from the east: the stubs, BLUE's far side", 610, -432, 180);
+		V(mo, "NOW the passage north of the night room: Doom's stone where the hole was", 416, -330, 90);
 		V(mo, "THEN the hotel's lobby, by day", -6144, OFF + 40, 90);
 		V(mo, "THEN the hotel's corridor", -6440, OFF + 224, 180);
 		V(mo, "THEN the station's concourse", 3350, OFF + 500, 90);
