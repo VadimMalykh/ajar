@@ -69,12 +69,14 @@ for f in $(ls "$raw"/Screenshot_*.png | sort); do
   [ $((i % 2)) = 1 ] && mv "$f" "$raw/$(printf 'view_%02d.png' $((i / 2)))"
   i=$((i + 1))
 done
-docker run --rm -u "$U" -e PYTHONDONTWRITEBYTECODE=1 -v "$ROOT":/w -w /w ajar-pil \
-  python3 tools/board23_sheets.py views "build/board23/raw_$n" "build/board23/look$n" "build/board23/sheet_look$n.jpg"
+# (build/board23 may be a link to a folder off this disk: it is mounted by itself, as /b)
+BR="$(readlink -f "$B")"
+docker run --rm -u "$U" -e PYTHONDONTWRITEBYTECODE=1 -v "$ROOT":/w:ro -v "$BR":/b -w /w ajar-pil \
+  python3 tools/board23_sheets.py views "/b/raw_$n" "/b/look$n" "/b/sheet_look$n.jpg"
 if [ "$n" != 0 ]; then
   rm -rf "$B/tex_$n"; mkdir -p "$B/tex_$n"
   (cd "$B/tex_$n" && unzip -q -j "$ROOT/$pk3" "textures/AJD$P*" "flats/AJD$P*" "sprites/AJV*" 2>/dev/null || true)
-  docker run --rm -u "$U" -e PYTHONDONTWRITEBYTECODE=1 -v "$ROOT":/w -w /w ajar-pil \
-    python3 tools/board23_sheets.py swatches "build/board23/tex_$n" "build/board23/tex_$n/sheet.jpg"
+  docker run --rm -u "$U" -e PYTHONDONTWRITEBYTECODE=1 -v "$ROOT":/w:ro -v "$BR":/b -w /w ajar-pil \
+    python3 tools/board23_sheets.py swatches "/b/tex_$n" "/b/tex_$n/sheet.jpg"
 fi
 echo "look $n: $(ls "$B/look$n" | wc -l) views"
