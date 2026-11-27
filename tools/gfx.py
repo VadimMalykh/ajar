@@ -1422,7 +1422,7 @@ def make_all():
     gfx_dayreturn.make(out)
     import gfx_kennel                                            # the kennel lab's readout digits (map KENNEL)
     gfx_kennel.make(out)
-    import map_sleepingdogs                                      # MAP23's look (AJAR_DOGS; unset or 0: nothing, and
+    import map_sleepingdogs                                      # MAP23's look (AJAR_DOGS; 0: nothing, and
     if getattr(map_sleepingdogs, "LOOKSPEC", None):              # its art modules are not imported)
         import gfx_dogs
         gfx_dogs.make(out, map_sleepingdogs)
