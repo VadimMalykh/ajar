@@ -510,14 +510,14 @@ class BeforeTest : EventHandler
 		if (Seg(5) && tt == 4)
 			Check("allApart", StandIns(impThen, 0) == 1 && StandIns(impBefore, 0) == 1 && StandIns(impBefore, 1) == 1 && StandIns(impThen, 1) == 0, Bones());
 		// killed BEFORE: its stand-ins THEN and NOW are its old corpses for good
-		if (At()) { h.carried = null; impBefore.DamageMobj(null, mo, 10000, 'None'); }
+		if (At()) { h.carried = null; impBefore.bDormant = false; impBefore.DamageMobj(null, mo, 10000, 'None'); }
 		if (Seg(5) && tt == 4)
 			Check("killedBeforeCorpsesThenAndNow", impBefore.health <= 0 && DeadOnes(impBefore, 1) == 1 && DeadOnes(impBefore, 0) == 1 && StandIns(impBefore) == 0, Bones());
 		if (At()) { ScriptHang(clocked, 101); ScriptHang(ten, 122); h.carried = null; }
 		if (Seg(40) && tt == 39)
 			Check("deadOnesStayJoined", DeadOnes(impBefore, 1) == 1 && DeadOnes(impBefore, 0) == 1 && StandIns(impThen) == 0, Bones());
 		// killed THEN (all joined): its old corpse NOW only
-		if (At()) impThen.DamageMobj(null, mo, 10000, 'None');
+		if (At()) { impThen.bDormant = false; impThen.DamageMobj(null, mo, 10000, 'None'); }
 		if (Seg(5) && tt == 4) Check("killedThenCorpseNowOnly", DeadOnes(impThen, 0) == 1 && DeadOnes(impThen) == 1, Bones());
 		if (At()) { ScriptUnhang(clocked); h.carried = null; ScriptUnhang(ten); h.carried = null; }
 		if (Seg(40) && tt == 39) Check("deadOnesStayApart", DeadOnes(impBefore) == 2 && DeadOnes(impThen) == 1 && StandIns(impThen) == 0 && StandIns(impBefore) == 0, Bones());
