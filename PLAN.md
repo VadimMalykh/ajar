@@ -22063,3 +22063,165 @@ four checks after it). Task `then5-follow`. Only `src/zscript/thentest.zs`
 - If MODE=5 fails again: look for the `put in the bay` line in its log
   first; with it, the door code is the suspect; without it and with nobody
   THEN, the three's places at the door (`AJARTEST info`, the sixth line).
+
+## MAP24 "Left Hanging": a door is a long cause, and a third time (2026-11-27, chosen; the labs first, nothing designed in full)
+
+**Vadim** (2026-11-27): "Let's build map24, what ideas would you put there?"
+Claude (Fable) put three: (1) "Left Hanging", a colour door left hanging then
+is an old door in the same frame now; (2) the outline's own 24, a third time
+(the wing as a building site in the 1950s) and two clocked doors; (3) "On
+Loan", the contract. **Vadim**: "Let's go with 1 and 2 (if we can combine), 3
+still for the future. Also what other ideas from our earlier discussions can
+be used here?"
+
+**Decided**: MAP24 is 1 and 2 together. "On Loan" stays reserved (25 or
+later). The name (the other: "Before the Walls"), the rules and the labs
+below are Claude's; Vadim has seen a short telling of 1 and 2, not this text.
+
+**One idea**: what is hung at an earlier time has hung there ever since.
+MAP21 made things long causes, MAP23 monsters; this level does it with the
+game's own object, and gives it two spans to hang over.
+
+**Why they combine.** The third time is where doors are left, the two later
+ones are where they are found. BEFORE, the wing is a building site: no walls
+yet, and the door frames stand in the open in their piers, since the frames
+went up first. A door hung there is walled into the building: THEN it hangs
+in the hall, ten years old; NOW in the ruin, fifty. So the earliest time is
+the way round every later wall, and the place where the player lays out the
+two later ones.
+
+### The rules
+
+**Three times.** NOW (the ruin, Post Box), THEN (the 1960s, Thaw, as in 21
+to 23) and BEFORE (the 1950s, ten years before THEN: the old building in
+Academy, the wing's ground a site under the sky). The same plan three times;
+a frame n NOW is n + 20 THEN and n + 40 BEFORE; a colour door's far side is
+built at all three and the door opens on the one at the time of its frame
+("Colour doors join places, never times").
+
+**Two clocked doors.** The clocked door of 21 to 23 joins a frame NOW to the
+same frame THEN, as ever. A second one, the ten-year door (its own clock
+face), joins THEN and BEFORE. Each refuses a frame at the time its clock does
+not reach. Both hung make a chain NOW, THEN, BEFORE; either is carried
+through the other, and a colour door through both. (One clocked door for
+three times was looked at and dropped: hung THEN it could not say which way
+it opens.)
+
+**A door left hanging** (what the concept of 21 to 30 kept as a question:
+"then one door has two near sides and its far side cannot say which it leads
+back to"). A colour door hung in a frame at an earlier time is an old door in
+the same frame at every later time, at once:
+- it works there as any hung door (walked, seen and shot through, by
+  monsters too) and opens on its far side at that time, which is free: the
+  door itself hangs earlier;
+- it cannot be taken down or swapped out there ("Rusted to its frame.");
+  that is what keeps a second copy of the door out of the player's hands;
+- the door taken down at its own time, it was never there later, at once;
+- a door does not go into a frame where a later time already has a door
+  hanging; the clocked doors leave nothing behind.
+
+**Everything that goes through a door has gone through it all that time.**
+With no new rule: water NOW runs through an old door as through any (the
+valve's pool stands in the old door's far room as well); the belt's crates
+THEN ride through a hung door, so the heap NOW lies at its far side and not
+at the belt's end; NOW's tenants walk through old doors, so a disposal or a
+way round can be set forty years ahead.
+
+**Long causes from BEFORE.** A fixture BEFORE is a state of the rooms THEN
+and NOW: the builders' string line moved (the partition was built along the
+other line), the hoist's platform left up (a landing at that height ever
+since). THEN's own causes go on acting on NOW.
+
+**Company.** A monster alive at an earlier time shows at each later time as
+its old corpse while no chain of hung clocked doors joins the two; killed
+there, the corpse is at every later time for good. BEFORE has no tenants of
+its own: what is there has followed the player.
+
+### The place (outline)
+
+The endurance wing, where doors were left hanging on test: THEN, bays of
+frames under notices (ON TEST. DO NOT REMOVE.) and counters; NOW the ruin and
+Doom's tenants; BEFORE the yard beside the old building, foundations, piers
+with frames in them, the hoist, the sky. The first sight, NOW: an old door
+rusted in its frame, which no key or lever moves. THEN it hangs there too,
+ten years old, under its notice. Only BEFORE, on the open site, it hangs new
+in a free-standing frame and comes off: the player's first colour door, got
+by following it back to where it began. The beats after it, each to be
+designed after the labs: a strongroom walled THEN and NOW that is open ground
+BEFORE; two free frames BEFORE, and which one holds the door decides the two
+later layouts; the valve THEN and an old door, the water's level NOW; the
+belt and the heap; the string line and the hoist; the way out.
+
+### Taken from the list of unused ideas (Vadim asked; "The ideas still unused", 2026-11-27)
+
+- *A door left hanging then and found hanging now*; *a third time (Academy)
+  and two clocked doors*: the level.
+- *The arrangement is the map* (the geometries the player builds): hanging
+  doors BEFORE is laying out THEN and NOW.
+- *Water through a hung door between the times*, and *conveyors that deliver
+  through a door*: the two flows above.
+- *A lift car sent up then as a bridge now*: the builders' hoist.
+- *The future as a warning*: the old door seen first, before the player has
+  ever taken it down.
+- *The Heavy door* of the first day's table ("cannot be unhinged"): the old
+  door is that door, by age.
+- *One door's errand needs another door's far side* (Vadim, MAP05) and
+  *set-up-and-swap one step deeper* (Vadim, 2026-11-15): with two colour
+  doors, one is left BEFORE where the other's far side lets the player
+  reach, and the third to remember is the old door that hangs since the
+  start.
+- *Squatters* and *the lodger*: a lodger lives in empty frames and a hung
+  door plugs a frame, so a frame left empty for forty years has one and a
+  frame with a door left hanging has not. A candidate for the second
+  version, not the first.
+- *A fixed doorway with a clock over it* ("Fixed ones for sights"): a window
+  THEN that shows the site.
+- Not here: "On Loan" and the supplies put down in the peace (reserved), the
+  jigsaw wall (the engine never asked), the Flip, One-way, Small and Tilted
+  doors, the timetable, the roundabout, the thief and the nailer (a thief
+  THEN that carries off what was left hanging is a hazard for a later
+  version), a Doom map's piece.
+
+### The labs, in order (each a task, built by a worker on Opus)
+
+**1. The three times lab** (`MAP=BEFORE`, tools/map_before.py; task
+`three-times-lab`). What it has to show, with tests as the then and now
+lab's:
+- `ajarthen.Times` with a third copy (`before=`, `only=`), ids as above;
+  every map with one or two times builds byte for byte as before.
+- then.zs for three times: which time a point is at; the ten-year door, its
+  look, its refusals, the chain, a door carried through a hung one; a colour
+  door's far side at three times.
+- A cause BEFORE (a lever there, a target shot from THEN through the
+  ten-year door) that moves sectors THEN and NOW: the string line (one of
+  two partitions) and the hoist (a landing); a cause THEN that moves NOW
+  beside it.
+- Company over three times, as the rule above; music by time for BEFORE.
+- `tools/solve.py`: three times, two clocked doors each with its span; the
+  lab's own puzzle graph proven in the build; every other level's proof
+  line unchanged.
+- The lab's place: a hall with bays, thrice. BEFORE it is one open yard with
+  the frames in piers; THEN and NOW have walls that BEFORE has not (a
+  strongroom with no door, entered by hanging the ten-year door in its free
+  frame BEFORE).
+
+**2. The old door lab** (after 1, on its map): the rule "a door left
+hanging" as above in the engine (the old door as a leaf hung by the engine in
+each later twin, as the clocked door's shadow is), its look at ten and at
+forty or fifty years, the refusals, monsters through it, water NOW through
+it, the belt's heap at the far side, and the solver's rule (an old door is a
+link and fills its frame at every later time).
+
+**3. MAP24**: "the first version, as decided" after the labs have measured;
+the puzzle proven by `tools/puzzle24.py`; then the first playable version.
+
+**Open, for Vadim** (Claude goes on with the first choice of each until told
+otherwise):
+1. The name: "Left Hanging".
+2. The ten-year door's story: it is the institute's first clocked door, on
+   test in this wing, and its other end is the wing's own site. A further
+   step, not taken: the institute learnt of doors at all from a door found
+   hanging on its site, which the player left there. It would be a third
+   loop (after the depot's and the cell's) and wants his word.
+3. BEFORE stays quiet unless the player brings company, or the leak reaches
+   it as it reached THEN in MAP22.
