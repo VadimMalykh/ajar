@@ -22066,11 +22066,24 @@ four checks after it). Task `then5-follow`. Only `src/zscript/thentest.zs`
 
 ## Look: MAP23, the animal house (2026-11-27; board of three looks, not chosen yet)
 
+> Vadim, 2026-11-27: "Let's go with map23 decoration"
+
+Board: https://claude.ai/artifact/5akzFqoGY1VMwJ47Nk1bSi (source
+`design/map23-board.html`; published 2026-11-27 from the session's
+scratchpad: the page, `0/` today's level (views 00-34), `1/`, `2/`, `3/` the
+looks (62 views each: all but the rules in three passages and two
+turnstiles), `tex/` eight swatches a look). **Nothing is chosen: the game
+keeps the plain level until Vadim picks**, and the looks are behind
+`AJAR_DOGS`.
+
 Decided by Claude (Fable): the design of the board, the three looks and
 what each group holds. Built by Claude on Opus in three parts: the
-mechanism, the shared slots, look 1 whole, the tour and the tools (this
-part); looks 2 and 3, to be painted, each by one worker in its own module.
-Not played by hand.
+mechanism, the shared slots, look 1 whole, the tour and the tools; looks 2
+and 3 each by one worker in its own module. Not played by hand.
+
+The three looks are three answers to what the institute took these animals
+for: specimens (1), exhibits (2), animals it kept and named (3). The name
+boards say it: numbers, species, names.
 
 **The switch.** `AJAR_DOGS` unset or `0`: the plain level, MAP23's TEXTMAP
 and every other map byte for byte as in main's package, and `dogs23` not
@@ -22148,8 +22161,31 @@ module falls back to look 1 with a printed note. Then
    specimen cards (SPECIMEN K 1, MASS 400, FED 0600 1800). NOW: tiles
    fallen to the brick, rust runs, black mould, cracked terrazzo, the
    plates chipped.
-2. **Menagerie**: to be painted.
-3. **The Kennels**: to be painted.
+2. **Menagerie** (`tools/gfx_dogs2.py`): red-brown English-bond brick on a
+   dark plinth with a cream band and coping; in the runs mock rock of pale
+   concrete to 96 and over it a painted sky with a far hill and clouds,
+   sand, a glazed roof light; the pens limewashed brick over straw on
+   setts; the passages plain brick with a dark green dado line, red quarry
+   tile; gates of dark green riveted plate with a band of drawn bars; the
+   yard gravel, the shelter green boarding with a cream fascia, a brick
+   arch drawn over the front door; the hall brick under cream render, an
+   octagon-and-dot tile floor. Lettering: dark green boards, cream letters;
+   the run's names on species boards (a silhouette, PINK DEMON, DAEMON
+   ROSEUS, the animals' names, DO NOT FEED). Things: an iron trough, a
+   green pail, a barrow of meat. NOW: ivy, the sky flaking to render, the
+   rock stained and cracked, boards bleached, sand gone to dirt and weeds.
+3. **The Kennels** (`tools/gfx_dogs3.py`): a black tarred dado to 48 under
+   whitewashed brick in the runs, passages and the yard; creosoted upright
+   boards over an iron kicking plate in the pens; blue paviours with a
+   gutter in the runs, straw in the pens, trowelled concrete in the
+   passages; plank gates, ledged and braced, with strap hinges; the yard
+   of granite setts, the shelter black weatherboard under slates, a
+   matchboarded stable door; the hall whitewash over tar with a peg rail,
+   a brick floor. Lettering: slates in oak frames, chalk; the run's names
+   chalked one to a line with a tick (ROSIE, BRUTUS, PINKY; DUKE, PRINCE;
+   BARON, COUNT, DOC; TINY). Things: an enamel bowl, an oak pail and a yard
+   brush, sacks and a bale. NOW: the whitewash green with algae and fallen
+   to the brick, the boards rotted at the foot, the straw black.
 
 **Where the pictures and things are** (NOW's coordinates; THEN the same,
 y - 8192): LINE 6 / THE INSTITUTE on the shelter's front (x 192); ANIMAL
@@ -22184,3 +22220,24 @@ two OUT OF REACH of the stall's ledge); MODE=1 `levelExited=1` with 45
 checks and 0 failed; MODE=2 30 checks, 0 failed; MODE=5 all 70 views shot.
 Not checked: the look played by hand; the `mix` build (its line is all
 look 1 until the choice).
+
+**Checked (looks 2 and 3, and look 1 again, 2026-11-27, after the tour's
+and the cards' mends).** Look 1's final package: MODE=1 `levelExited=1`,
+45 checks, 0 failed; MODE=2 30 checks, 0 failed. Looks 1, 2 and 3, quick
+builds: `dogs_compare` all the same against the plain build (670 plain
+lines, 746 in a look); MODE=5 70 views each, looked at on the sheets. MODE=1
+and 2 were not run in looks 2 and 3: they differ from look 1 in pixels
+only. Mended by Claude (Fable) after look 1's review: a knight's Mass on
+its card is 1000 (was 500); the tour clears the level's opening hint before
+its first view.
+
+**Known and left until the choice** (to be mended for the looks chosen):
+look 3's concrete floor shows its trowel arcs as rings, its run paviours
+are busy, and its thin straw NOW falls in 16-pixel squares (three mends the
+worker had made were lost when the disk dropped at 21:10); look 2's rock
+top wanders 2 pixels and may step at a corner, and its demon's silhouette
+reads as any four-legged animal; the guard room's name board NOW is nearly
+black (the room's light is 104); pen 1 NOW from the run is too dark to
+judge its walls. `tools/board23_shots.sh` takes `build/board23` as a link
+to a folder off the disk (the shots of looks 2 and 3 were written to the
+scratchpad, in memory, to spare /data).
