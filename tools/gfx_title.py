@@ -39,6 +39,7 @@ A look module, tools/gfx_title<n>.py, supplies (by part; tools/gfx_title1.py is 
   backdrop()      ("map", wad bytes, extra lines for the map's mapinfo block; tools/map_title.py) or
                   ("picture", an Img 320x200 at RES)
   MENU_X, LOGO_X, LOGO_Y, MENU_TOP   optional: where the menus stand over this backdrop (default: centred)
+  files()         optional: {pk3 path: bytes} that the backdrop wears of its own (textures/, flats/ of its map)
  page:
   page_ground(w, h)          the help page's ground (an Img w x h, at RES)
   page_sheet(im, box)        draws the notice's sheet on it; box = (x1, y1, x2, y2) at RES
@@ -741,6 +742,8 @@ def make():
     if kind == "map":
         wad, lines = rest
         out["maps/TITLEMAP.wad"] = wad
+        if hasattr(B, "files"):
+            out.update(B.files())
         mapinfo += ("\nDoomEdNums\n{\n\t20200 = AjarTitleCamera          // src/zscript/title.zs\n"
                     "\t20201 = AjarTitleSpot\n}\n")
         mapinfo += ('\n// The title (tools/map_title.py): the menu opens over it by itself (src/zscript/title.zs)\n'
