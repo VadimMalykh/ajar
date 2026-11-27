@@ -633,11 +633,11 @@ class BeforeTest : EventHandler
 		if (Seg(69)) {}
 		if (At()) { ScriptHang(ten, 126); h.carried = null; View(mo, "string THEN through 126 into BEFORE: the lever and targets", STRING_X + 256, OFF + 400, 90); }
 		if (Seg(69)) {}
-		if (At()) { Set(hc, 0); View(mo, "hoist NOW, platform down: no landing", HOIST_X + 40, 40, 50); }
+		if (At()) { Set(hc, 0); View(mo, "hoist NOW, platform down: no landing between gallery and ledge", HOIST_X + 256, 120, 90, -10); }
 		if (Seg(69)) {}
-		if (At()) { Set(hc, 1); View(mo, "hoist NOW, platform up: the landing", HOIST_X + 40, 40, 50); }
+		if (At()) { Set(hc, 1); View(mo, "hoist NOW, platform up: the landing", HOIST_X + 256, 120, 90, -10); }
 		if (Seg(69)) {}
-		if (At()) View(mo, "hoist THEN, platform up: the landing", HOIST_X + 40, OFF + 40, 50);
+		if (At()) View(mo, "hoist THEN, platform up: the landing", HOIST_X + 256, OFF + 120, 90, -10);
 		if (Seg(69)) {}
 		if (At()) View(mo, "hoist BEFORE, the platform up", HOIST_X + 60, 2 * OFF + 200, 40);
 		if (Seg(69)) {}
