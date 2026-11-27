@@ -20332,6 +20332,15 @@ its plate names. A door that is only a face shows no plate.
    - **Now**: at (-352, -784), inside, where MAP10 has its plasma rifle.
      Not planned that way.
 
+**Checked** (the worktree's full build, 11:31, and its tests after the
+disk came back): the build's proofs as on main (`MAP22: solvable in 12 door
+actions, 28633 states, 0 stuck`; MAP10 9 actions); `MAP=MAP22 MODE=1`: no
+check fails, `levelExited`; `MAP=MAP10 MODE=1`: its 12 ambushers, no
+error. The plain faces were looked at as pictures (`AJ2D1` beside
+`AJ2K11`). **Not seen in the game**: the doors themselves in the hotel,
+the theatre and the station (no test view looks at them), and the soul
+sphere through the kiosk's bars.
+
 ## The time door in the depot: the player leaves it there himself (Vadim's idea, 2026-11-27; to discuss, nothing designed)
 
 **Vadim** (2026-11-27): "Another idea for some future map - maybe at some
