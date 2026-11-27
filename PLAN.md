@@ -20346,3 +20346,138 @@ BLUE from 119 and from 127 as well; and in MAP11 (VIOLET hung in 101, 102, 103 o
 VIOLET's far side in its night room, (76 / 88 / 104, 2544) facing 165) they take VIOLET. So every way_home room
 (MAP05 on) has the same hole: the way out's door can be fetched into its own room through its far side, without
 the way it was meant to come by (in MAP18, the run). Hanging it in the brass frame after that was not tried.
+
+**Mended the same day, game-wide**: "Hands do not reach through an opening" (the next section; task `door-reach`,
+merged together with this one). A real press of USE no longer works a door or a frame through an opening, so
+BLUE comes into the night room in the player's hands, by the shutter, or not at all. On the package that holds
+both: `MAP=MAP18 MODE=3` 27 checks, none failed, `blueIsNotTakenFromItsFarSide` among them (the three presses
+that took BLUE now say "Your hands do not reach through a doorway."); MODE=1, 2, 4 to 8: 12, 12, 15, 24, 2, 27,
+2, none failed; MAP18's measure as above.
+
+
+## Hands do not reach through an opening (built 2026-11-27)
+
+**What was found.** The same day, in the task `map18-way-out` (commit 6b6a9df, the section "MAP18: the way out is
+the player's to build, with BLUE", its last paragraph, on that branch): MAP18 MODE=3 pressed USE as the player
+does (`cmd.buttons = BT_USE`, `CheckUse()`: the engine's use trace, not a script call) at BLUE's far side from
+the night room, empty-handed, BLUE hung in 128. Three of 45 presses took BLUE down from 128 into the player's
+hands in the night room: at the jamb on the leaf's side, aimed 15 toward it, 4 from the far side's portal, at
+its mouth and 16 into the room ((7604 / 7616 / 7632, 2752) facing 165). GZDoom's use trace follows line
+portals: it went through the far side's opening, came out at frame 128 and met BLUE's leaf there (the AjarDoor
+standing open at the jamb, `Used` → `UseFrame`). In MAP11 the same presses took VIOLET in its night room. So every
+way_home way out (MAP05 to MAP16, MAP18) could be built without carrying its door in, and a player could be left
+with a door in a far side's room that has no frame. The solver (tools/solve.py) and every level's design have
+always assumed that a door or a frame is worked only by a player standing where it is
+(`ajarmap.way_home()`: "Going through the door from wherever it hangs brings you here without it"); nothing in
+`AjarDoor.Used`, `AjarFrame.Activate` or `UseFrame` asked from where the press came.
+
+Decided by Claude (Fable) the same day; built by Claude on Opus in the task `door-reach`. The solver, the maps
+and their designs are not touched: the rule makes the game what they always took it to be.
+
+**The rule.** Hands do not reach through an opening. A real press of USE does nothing to a door, leaning or
+hung, and nothing to a frame, empty or filled, that it reaches through a line portal: a hung door's opening, a
+Pair's, a fixed doorway of the building, a one-sided doorway. The press goes on as an aimed-past press does
+(`Used` returns false), the frame is not worked, and the player is told, at most once every 3 seconds:
+"Your hands do not reach through a doorway. / Step through first." From the same side everything is as it was,
+also a press from in front of a hung door aimed at its leaf or its frame whose aim runs on, past them, into the
+door's own opening.
+
+**Where** (src/zscript/reach.zs, `HandsDoNotReach`): only at the engine's two ways in, `AjarDoor.Used` (after
+`UseGoesOn`, the switch rule of leaf.zs) and `AjarFrame.Activate` (a frame's mouth line is Thing_Activate on it;
+the Doom door lab's gates, doomlab.zs, call it from WorldLinePreActivated, and they come through the same check).
+No other real press reaches a door or a frame: every other caller of `UseFrame`, `TakeLeaning`, `Hang` and
+`Unhang` is the thief, a script or a test helper (belt.zs, map19.zs, map20.zs, classic.zs, soundlab.zs), and
+those are not touched; nor are the other `Used` overrides (keys, levers, winds, plates), which do no door work.
+
+**Only a real press**: the user is a player whose `player.cmd.buttons & BT_USE` is set and whose `usedown` is
+set. The engine's `PlayerPawn.CheckUse` (native in this GZDoom) runs the use trace only inside
+`if (cmd.buttons & BT_USE) { if (!usedown) { usedown = true; ... P_UseLines } }`, so while the trace calls
+`Used` or a mouth's Thing_Activate both are set; a script or test that calls `Used` or `Activate` has no key
+down (the tests' real presses set `cmd.buttons` for their one `CheckUse` and clear it after) and is answered as
+before. Shown both ways by the survey below: every press it refused came from the engine's trace, and its last
+two checks call `Used` and `Activate` by script through an opening, which work as before. What it cannot tell: a
+script that calls `Used` or `Activate` for the player during the tics the player holds USE down (both flags stay
+set while the key is held) would be judged as a press from where the player stands; no game code does that,
+only tests, and they do not hold the key.
+
+**How a press through an opening is told from a direct one**: in plain space, no portal followed. From where the
+player stands (the engine's use trace starts there: there are no sector portals in Ajar), along where they face,
+flat, `UseRange` (64) + 1 long, the press is direct when that line meets the target before it crosses any line
+(`isLinePortal()`): for a door, its box (radius 20, where the line enters it, 0 if the player stands in it); for
+a frame, one of its mouths (a line whose special is Thing_Activate on the frame's tid) or the frame's own line
+(the Doom lab's gates are used on it; the frame's own lines do not count as the portal crossed). Up to the first
+portal the engine's trace and this line are the same line, so a press the engine brought to the target without
+a portal is always direct here (the engine meets a thing inside its box), and a press it brought through a
+portal crossed that portal first and is told so, wherever the far side lies in plain space: also a far side
+right behind its own frame, which a bare distance test would miss. What it cannot tell: a target that stands on
+the aim in plain space before any portal, which the engine yet reached only through one (it would have to miss a
+corner of the box that this counts and come round to the same thing through a portal); there the player stands
+at the target anyway, and the press is let be. A one-sided wall before the target is not looked for: the engine
+stops there, so no such press ever reaches `Used`.
+
+**Its breadth, one switch**: `const REACH_ALL = 1;` in reach.zs, "all" (as built and tested: a leaning door is
+not picked up and nothing is hung in an empty frame through an opening either). `0` is "hung only": only a hung
+door or a filled frame is refused through an opening; taking a leaning door or hanging in an empty frame through
+one stays allowed. Vadim, asked the same day
+(no reach at all; hung doors only; MAP18 only, by a grille in its night room; leave it): "No reach at all".
+
+**The survey** (src/zscript/reachtest.zs; `MAP=LAB MODE=4 tools/smoke.sh`, tools/smoke_LAB_4.cfg, 8 checks, about
+20 s of play). The lab got a sealed annex (tools/map_lab.py; floor 512, nobody's way; the thief's reach test, a
+walk at floors within 24, never takes it): frames 118 and 119 facing each other 32 apart, so that with a Pair
+leaf in 118 and its twin in a hall frame, 119 is an empty frame just beyond an opening. 8720 real presses a pass
+(cmd.buttons = BT_USE, CheckUse, then let go; 40 a tic) over a grid of places and aims at eight arrangements;
+each logged ("AJARREACH before|after P<n> #<i> (x,y) angle: what it did"); after a press that did something the
+arrangement is set up again. An act is direct when what it moved is in the player's own room, through when it
+is beyond an opening (the frames and the doors of each room are listed: the hall, the gallery 128 up and the
+annex are far apart, so no aim can reach the other room's things but through an opening). Every press made twice:
+the rule off (`reachOff`, the code path of main), then on, and compared press for press.
+
+| arrangement | presses | direct acted before / after | through acted before / after |
+|---|---|---|---|
+| 1 RED hung in 112, from the hall before 112 (the leaf, the mouth, both jambs, across the opening) | 1248 | 668 / 668 | 0 / 0 |
+| 2 the same from the gallery at RED's far side (mouth y 704, portal y 720) | 1235 | 0 / 0 | 55 / 0 |
+| 3 TEAL's leaves in 114 and 116, from before 114 (the twin in 116 through the Pair) | 1235 | 707 / 707 | 31 / 0 |
+| 4 the same from before 116 (the twin in 114 through it) | 1235 | 750 / 750 | 32 / 0 |
+| 5 an ORANGE leaf leaning in the hall, from all round it | 847 | 623 / 623 | 0 / 0 |
+| 6 RED in 112 and an ORANGE leaf leaning in the gallery just before RED's far side, from before 112 and in its recess | 486 | 217 / 217 | 129 / 0 |
+| 7 RED in hand, 113 empty, from before it | 1199 | 505 / 505 | 0 / 0 |
+| 8 RED in hand, TEAL in 114 and 118, 119 empty, from before 114 (swaps in 114 direct; 59 swaps in 118 and 59 hangings in 119 through) | 1235 | 707 / 707 | 118 / 0 |
+
+Every direct act before is the same act after, press for press, and no press that did nothing before does
+anything after (changed 0 in all eight). Arrangement 2 has MAP18's three: at x 528 (16 from the jamb on the leaf's
+side), y 716, 704 and 688 (4 from the portal, at the mouth, 16 into the room), facing 75 (15 toward the jamb),
+each took RED down before; at the other jamb and facing 105, none. The checks: `theHoleWasThereBefore` (the
+through acts of 2, 3+4, 6 and 8 before, and MAP18's three), `theDoorIsNotTakenFromItsFarSide`,
+`theTwinIsNotTakenThroughThePair`, `aLeaningDoorIsNotTakenThroughADoorway`, `noDoorIsHungThroughADoorway`,
+`fromItsOwnSideEverythingWorks` (no press changed, every arrangement's direct acts there), `theHandsSaySo` (the
+words said after a refused press), `scriptsAreAnsweredAsBefore` (`Used` from the far side and `Activate` of 119
+from the hall, by script, work as before): 8 checks, none failed.
+
+**The regression** (the worker's runs of its own package were lost when /data dropped out at 11:37; run again by
+the Fable session after the restart, on one package that holds this rule, main at 2ae2b3f and `map18-way-out`,
+whose way out rests on the rule and which is merged with it). The count is the strict one, lines `AJARTEST
+name=1` passed and `=0` failed; in brackets the worker's run of main's package of 10:50. None failed anywhere,
+no script error, and only LAB 4 and MAP18 3 ever say the refusal.
+
+| run | passed (main) | |
+|---|---|---|
+| TEST 1, 2 | 4 (4), 0 (0) | 2 takes views only |
+| LAB 1, 2, 3 | 13 (13), 9 (9), 8 (8) | |
+| LAB 4 | 8 | new: the survey |
+| MAP01 1, MAP05 1, MAP08 1, MAP11 1, MAP14 1 | 10 (10), 28 (28), 39 (39), 21 (21), 33 (33) | each `levelExited` |
+| MAP18 1 to 8 | 12, 12, 27, 15, 24, 2, 27, 2 | 3 was 15 on main: the way out's 12 new, `blueIsNotTakenFromItsFarSide` among them, now passing |
+| CLOCK 1 to 7 | 12, 12, 27, 24, 13, 10, 7 | clock.zs is changed by `map18-way-out` |
+| THEN 1 to 6 | 4 (4), 5 (5), 6 (6), 8 (8), 5 (5), 1 (1) | |
+| CLASSIC 1, 2; WATER 1, 4 | 0 (0) each | their lines carry text after the figure: 30, 13, 11, 19 of those, as on main |
+| MAP21 1 | `longRunDone=1 checks=85 failed=0`, `levelExited` (the same) | strict 6 against 11: main's log ran on into MAP22's first five checks before its time was up |
+| MAP21 2, 3, 4, 8, 9 | 0 (0), 0 (0), 4 (4), 1 (1), 0 (0) | 2 and 9: 15 and 51 lines with text, as on main |
+| MAP22 1, 2 | 8 (8), 1 (1) | 1 has one line more, `nobodyThenInPeace=1  0 alive then` |
+
+Not run again: LAST 2, MAP33 2 and the door probe (the worker's runs of main for them were not finished when the
+disk went).
+
+**Not tested**: the "hung only" breadth (one line; the survey's arrangements 6 and 8 would then show their
+leaning and empty-frame acts through again); a press at the keyboard by a real player (the presses are the
+engine's own CheckUse, from set places); a one-sided doorway and a fixed doorway as the opening in the survey
+(the check is the same for every line portal; the levels' runs above pass through them); the Doom
+door lab, which does not switch on now (doomlab.zs, 2026-11-27).

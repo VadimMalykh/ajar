@@ -15,7 +15,7 @@
 //      while the pulse laps; a second pull; a run made without BLUE: nobody
 //      is shut in the night room, the shutter comes down behind him; BLUE
 //      hung elsewhere is a way in for empty hands; USE pressed (for real) at
-//      its far side from the night room must not take it down (it does: PLAN.md); the brass frame
+//      its far side from the night room does not take it down (reach.zs; it did: PLAN.md); the brass frame
 //      takes no other door
 //   4  each lane's laps, and the two longest joined: the lap's tics, the
 //      laps counted, the lamps, how long the shutter is up
