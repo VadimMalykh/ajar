@@ -22021,3 +22021,45 @@ follows by itself, not on this branch's changes.
   In MODE=3 the player, posed at the turnstile's mouth, was found 100 to
   600 east of it at the end of most trials (thrown by the arch-vile or
   pushed; not looked into).
+
+## The THEN lab's MODE=5 was a matter of luck: its test mended (2026-11-27)
+
+Reported by MAP23's session after `caco-through-doors` was merged:
+`MAP=THEN MODE=5` failed now and then at `monsterFollowsToThen` (and the
+four checks after it). Task `then5-follow`. Only `src/zscript/thentest.zs`
+(`Company`) is changed: the test, not the door code.
+
+**What was measured.**
+- The door fix was not at fault. On the code before it (5220a3b) 2 of 6
+  runs failed; after it (a8af54e and later) 3 of 6.
+- After the fix every failure was the pen's three fighting each other: an
+  imp's ball hits the demon as all three come at the player standing at the
+  gate, and then none is after him when he goes through the door.
+- With `bNoInfighting` on the three, 2 of 8 runs still failed: nobody had
+  come out of the pen's 64-wide gate in the 210 tics the player waits (the
+  imps stand in the pen throwing, the demon, 60 wide, does not line up), so
+  nobody saw him go through. All three then went at his place THEN
+  straight and stood at the pen's north wall. The door code is never asked
+  in that case.
+
+**The mend.**
+- Where the pen is woken, the three get `bNoInfighting`.
+- Before the player steps to the frame: if no living monster of the pen is
+  in the bay (y < 512), an imp is put there (PEN_X + 256, 440), and the log
+  says `none had come out of the pen: an imp put in the bay by the script`.
+  What the check is about is following through the door, not Doom's chase
+  finding the gate.
+
+**Checked (quick build, main with MAP23 merged in).**
+- `MAP=THEN MODE=5`: 22 runs, each `thenDone=1 checks=16 failed=0`.
+- In none of the 22 did the imp have to be put in the bay: at least one of
+  the three had come out every time. Why the 2-of-8 case did not come
+  again is not known (those eight ran while another session's tests were
+  running; not looked into). So that branch was run once by force, in a
+  build not committed (the condition made always true): the imp was put in
+  the bay, came THEN through the door by itself, 16 checks, 0 failed.
+- `MAP=THEN MODE=7 TIMEOUT=500`: `thenDone=1 checks=15 failed=0`, all 14
+  through with one crossing, as before.
+- If MODE=5 fails again: look for the `put in the bay` line in its log
+  first; with it, the door code is the suspect; without it and with nobody
+  THEN, the three's places at the door (`AJARTEST info`, the sixth line).
