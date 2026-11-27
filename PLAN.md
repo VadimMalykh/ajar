@@ -19965,3 +19965,111 @@ log has a line of cause 11), so the 24 never come in a test, and nothing
 says how hard the arena is now, whether the pillar and the stub are cover
 enough from the arch-vile, or how many of the 21 placed dead it raises. Not
 played by hand.
+
+## MAP23 "Sleeping Dogs": the animal house, chosen (2026-11-27; the lab first, nothing designed in full)
+
+**Vadim** (2026-11-27): "Let's make map23. Ideas? What would you build?"
+Claude (Fable) put three: the animal house (the outline's 23, "company in
+time"), "On Loan" (the contract) and "Change Here" (the first level across
+institute, town and a Doom piece). **Vadim**: "Let's go with idea 1. "On
+Loan" reserve for future maps. Also list all ideas we had discussed before
+(except ones for map30 and classic doom maps). Anything from them to use
+here?"
+
+**Decided**: MAP23 is the animal house. "On Loan" is kept for a later level
+(24 or 25). "Change Here" is Claude's candidate for the free 25; Vadim has
+said nothing of it. The name "Sleeping Dogs" (the other: "Bone Idle") and
+what follows are Claude's; Vadim has seen a short telling, not this text.
+
+**One idea**: a monster is a long cause that can be led. Where it is left
+then is where its bones lie now. MAP22 made then lived in; this level makes
+that the tool.
+
+**The rule, which then.zs has since the then and now lab** and no level has
+played with: killed then, an old corpse now on the spot, for good; alive
+then while no clocked door hangs, bones now where it stood when the door
+came down; the door hung again, the bones are gone (it is not dead yet). So
+killing is for good and costs ammunition, and penning is free and can be
+undone: one monster can serve two pens in turn.
+
+**What bones do now** (new; the lab below):
+- they weigh: a pen's floor now is a pair of scales, and what the scales
+  hold open stays open while the bones lie there (Doom's own Mass: an imp
+  100, a demon 400, a knight or a baron 1000);
+- a big one's bones are a step: 24 high, stood on, the way up to a ledge;
+- what was led away is not there: a room held now by something too dear to
+  fight is empty once that thing is then, where it waits.
+
+**How a monster is placed**: by Doom's own habit of walking straight at
+whoever it sees. Feeding hatches (it sees the player through one and comes
+to it), gates worked by levers from the keeper's passage, a turnstile only
+the player passes, glass that shows one way.
+
+**The place**: the institute's animal house, in the manner of the space
+dogs' kennels. Then: name plates, full bowls, the runs swept, nobody about.
+Now: Doom's stone and Doom's tenants. The start is line 6's stop (MAP22's
+brass door, LINE 6, THE INSTITUTE), so that the bus stays in the player's
+hands. The first sight, now, through glass: a great skeleton in the big run.
+Then, it gets up. At the end the player pens it there himself.
+
+**Taken from the list of unused ideas** (below): the Small door as a fixed
+feeding hatch; glass that shows one way; the bottle (lead it in, step out
+sideways, take the door) as the level's basic move; the future as a warning
+(the skeleton seen first); the Warden of the first day's roster (a monster
+that cannot pass a door: a mancubus, an arachnotron and the big one are
+wider than a frame, so their bones can only be made where they already
+are); two cells set on each other (one's fire at the player, through the
+other's cell, starts the fight between them: a specimen killed in its place
+for no ammunition); a circuit that runs one way round (the exercise run;
+"direction" is the one reader of the second round's table never used); and
+Vadim's wish of MAP05 for the puzzle itself (one errand needs another's far
+side: here, one pen's bones are the way to another pen). Not here: the
+jigsaw wall (it wants its own engine test), a Doom map's piece, the lift
+car as a bridge, Ajar's own company.
+
+**Open** (Claude goes on with the first choice of each until told
+otherwise):
+1. The big specimens are more than the level's ammunition pays for, so
+   that outliving is the cheap way and killing the dear one; the budget
+   rule (ammunition 1.6 times the monsters' health) holds for the rest.
+2. The name.
+
+### The ideas still unused (looked through 2026-11-27, before MAP23; MAP30's end and the classic levels left out, as Vadim asked)
+
+A list made from this file, as on 2026-11-23 before MAP19. Nothing here is
+new. "Used since" says what the levels of 19 to 22 and 33 took.
+
+- **Door types** (the first day's table): Flip (designed), One-way, Small
+  (a hatch), Heavy, Tilted.
+- **The first day's roster**: Wardens (cannot pass a door, block a frame
+  with their bodies), Squatters (live on a far side and come out when the
+  door is hung; the story has them at the size of a world).
+- **Geometries**: the bottle; the roundabout (a circuit one way round); the
+  train of rooms; sight lines for monsters (two groups made to see each
+  other); the arrangement is the map; round the pillar; the room that is
+  its own neighbour; the way up is down.
+- **Effects**: the jigsaw wall (the engine never asked); the inside-out
+  room; honeycomb and triangle rooms; the round room; things only a mirror
+  shows; the model room (weakest).
+- **Time, short**: the timetable (frames behind shutters that open by the
+  clock); skip forward.
+- **Time, long** (this part's): the future as a warning; the future as a
+  contract ("On Loan"); a lift car sent up then as a bridge now; a door
+  left hanging then and found hanging now; water through a hung door
+  between the times; a third time (Academy) and two clocked doors; supplies
+  the player puts down in the peace; shutters and other long causes in the
+  town; lodgers in the new bus after the turn; the pass desk.
+- **One-sided doorways**: one-way sight in a fight; a carried door hung at
+  one; shapes that cannot be (a corridor longer one way than the other).
+- **Vadim's**: set-up-and-swap one step deeper (2026-11-15); one door's
+  errand needs another door's far side (MAP05).
+- **Whole levels proposed and not taken**: "the exam" ("Full Circle", the
+  wings of 11 to 19 at once); "Change Here" (above).
+- **Small things left out of built levels**: MAP19's double as a decoy for
+  monsters; MAP20's raft and current, and its left-handed bath; conveyors
+  that deliver monsters or barrels through a door; Ajar's own company
+  (thief, nailer, lodger, repainter) in a level with two times.
+- **Used since 2026-11-23**: two places at once and the map in goes
+  (MAP33), water (MAP20), the left-handed copy (MAP20's secret), the
+  pinwheel, the corridor of chosen length and the endless stair (MAP19),
+  the bus again (MAP22).
