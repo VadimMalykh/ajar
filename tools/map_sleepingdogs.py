@@ -164,7 +164,13 @@ def run(c, box, pad_box, tag, ceil):
     teleporter's, flush with the floor) is cut into it; NOW plain."""
     base = dict(floor=0, ceil=ceil, wall=CO, ftex=FC, ctex=KC, light=c.light)
     if c.then:
-        fit(c, box, [(pad_box, dict(ftex=PAD, light=c.light + 24))], raw=moreids(tag), **base)
+        # one whole pad, laid from the box's own corner and as large as the box: the pads are not on the 64 grid
+        # (a flat is laid from the world's), and the big one's is 128 square
+        w = pad_box[2] - pad_box[0]
+        laid = dict(xpanningfloor=float(-pad_box[0] % w), ypanningfloor=float(pad_box[3] % w),
+                    xscalefloor=64.0 / w, yscalefloor=64.0 / w)
+        fit(c, box, [(pad_box, dict(ftex=PAD, light=c.light + 24, raw=dict(moreids(tag), **laid)))],
+            raw=moreids(tag), **base)
     else:
         c.room(box, **base)
 
