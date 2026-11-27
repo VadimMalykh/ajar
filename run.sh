@@ -10,6 +10,8 @@
 # SKILL=1..4 picks the difficulty (1 "Just visiting", 2 "Short stay",
 # 3 "Resident": the game as designed and the default, 4 "Night shift").
 # The game's output is kept in build/run.log.
+# MAP=TITLE ./run.sh starts at the title, as the game does when nothing is said (no +map): with a build made
+# with AJAR_TITLE=1, 2 or 3 (tools/gfx_title.py) that is Ajar's own title and menus, else Doom II's.
 # DEMO=3 ./run.sh plays MAP32's room 3 by itself, the way its fight is meant
 # to be fought (a bait under the press, a later self at the lever), with a
 # caption saying what each self does (src/zscript/fightdemo.zs; PLAN.md, "MAP32
@@ -33,6 +35,8 @@ fi
 # monsters and palette) must not be under Ajar.
 DEMOARGS=()
 [ "${DEMO:-}" = 3 ] && { DEMOARGS=(+set ajar_autotest 20); MAP=MAP32; }
+START=(+map "${MAP:-MAP01}")
+[ "${MAP:-}" = TITLE ] && START=()
 # build/ajar-classic.pk3 (Doom II's own maps joined, MAP=CLASSIC) is made by ./build.sh from your doom2.wad
 CLASSIC=(); [ -f build/ajar-classic.pk3 ] && CLASSIC=(build/ajar-classic.pk3)
-gzdoom -config "$PWD/ajar.ini" -noautoload -iwad doom2.wad -file build/ajar.pk3 "${CLASSIC[@]}" +skill "$((${SKILL:-3} - 1))" "${DEMOARGS[@]}" +map "${MAP:-MAP01}" "$@" 2>&1 | tee build/run.log
+gzdoom -config "$PWD/ajar.ini" -noautoload -iwad doom2.wad -file build/ajar.pk3 "${CLASSIC[@]}" +skill "$((${SKILL:-3} - 1))" "${DEMOARGS[@]}" "${START[@]}" "$@" 2>&1 | tee build/run.log
