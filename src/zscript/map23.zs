@@ -1252,6 +1252,7 @@ class SleepingDogsTest : EventHandler
 	void Tour(Actor mo)
 	{
 		if (tic == 2) mo.A_SetRenderStyle(1.0, STYLE_None);
+		if (tic == 18) Console.MidPrint(smallfont, "");       // the level's opening hint, off the first view
 		if (tic < 20 || (tic - 20) % 70) return;
 		int i = (tic - 20) / 70, k = 0;
 		for (int v = 0; v * 5 < PLACES5.Size(); v++)

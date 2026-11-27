@@ -118,7 +118,7 @@ RUNS = {
     "kennels": dict(ids=("K 1", "K 2", "K 3"), species="PINK DEMON", latin="DAEMON ROSEUS",
                     names=("ROSIE", "BRUTUS", "PINKY"), mass=(400, 400, 400), kind="demon"),
     "stalls": dict(ids=("S 1", "S 2"), species="HELL KNIGHT", latin="EQUES INFERNI", names=("DUKE", "PRINCE"),
-                   mass=(500, 500), kind="knight"),
+                   mass=(1000, 1000), kind="knight"),
     "isolation": dict(ids=("I 1", "I 2", "I 3"), species="BARON OF HELL", latin="BARO INFERNI",
                       names=("BARON", "COUNT", "DOC"), mass=(1000, 1000, 500), kind="baron"),
     "big": dict(ids=("B 1",), species="CYBERDEMON", latin="TYRANNUS MAXIMUS", names=("TINY",), mass=(1000,),
