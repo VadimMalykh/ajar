@@ -196,7 +196,7 @@ def main(args):
         print("To prove: " + ("all hold" if not bad else "DO NOT HOLD: " + "; ".join(bad)))
         print("An option for the line that does not hold (not built): 103 the clocked door's alone NOW")
         report(variant(clocked_only_now), "  with it", quiet=True)
-        report(variant(lambda q: (clocked_only_now(q), q["only"].update({123: (CLOCKED, TENYEAR)})),
+        report(variant(lambda q: (clocked_only_now(q), q["only"].update({123: (CLOCKED, TENYEAR)}))),
                "  with it, without GREEN left THEN in 123", quiet=True)
 
 

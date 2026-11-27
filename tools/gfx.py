@@ -1436,6 +1436,8 @@ def make_all():
     if getattr(map_sleepingdogs, "LOOKSPEC", None):              # its art modules are not imported)
         import gfx_dogs
         gfx_dogs.make(out, map_sleepingdogs)
+    import gfx_lefthanging                                       # MAP24's notice over its first frame
+    gfx_lefthanging.make(out)
     import ajarmap
     import map_hinges10                                          # the doors of other levels it shows nailed up
     boarded(out, ajarmap.BOARDED)
