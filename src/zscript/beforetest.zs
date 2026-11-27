@@ -80,7 +80,7 @@ class BeforeTest : EventHandler
 	}
 	// out of RED's far side at time t, facing out of it
 	bool InCorridor(Actor mo, int t) { double y = mo.pos.y - t * OFF; return TimeOf(mo) == t && y > -176 && y < -60 && abs(mo.pos.x - 192) < 6 && Facing(mo, 90); }
-	string Doors()
+	string DoorsSaid()
 	{
 		string s = "";
 		for (int i = 0; i < 5; i++)
@@ -187,80 +187,80 @@ class BeforeTest : EventHandler
 	{
 		if (At())
 		{
-			Check("threeTimes", th.when.Times() == 3 && TimeOf(mo) == AjarThen.NOW, Where(mo));
-			Check("allDoorsThere", clocked && shadow && ten && tenShadow && red && !ten.frame && TimeOf(ten) == AjarThen.THEN);
+			Check("threeTimes", th.when.Times() == 3 && TimeOf(mo) == AjarThen.T_NOW, Where(mo));
+			Check("allDoorsThere", clocked && shadow && ten && tenShadow && red && !ten.frame && TimeOf(ten) == AjarThen.T_THEN);
 			Check("nowMusicAtStart", th.musicThen == 0);
 			Check("redFarSidesShutAtStart", ShutRed(201) && ShutRed(221) && ShutRed(241), Fars());
 		}
 		// the clocked door NOW into 101 by a real USE, and through into THEN
 		if (At()) { Pose(mo, 100, 140, 270); clocked.Used(mo); }
 		if (At()) { Pose(mo, 128, 470, 90); PressUse(mo); }
-		if (At()) Check("clockedHungNow", clocked.frame == F(101) && shadow.frame == F(121) && clocked.args[0] == 121 && shadow.args[0] == 101, Doors());
+		if (At()) Check("clockedHungNow", clocked.frame == F(101) && shadow.frame == F(121) && clocked.args[0] == 121 && shadow.args[0] == 101, DoorsSaid());
 		if (At()) Through(mo, 128, 452, 90);
 		if (Seg(24) && tt == 23)
 		{
 			Keys();
-			Check("walkedIntoThen", TimeOf(mo) == AjarThen.THEN && mo.pos.y > OFF + 380 && mo.pos.y < OFF + 512 && Facing(mo, 270), Where(mo));
+			Check("walkedIntoThen", TimeOf(mo) == AjarThen.T_THEN && mo.pos.y > OFF + 380 && mo.pos.y < OFF + 512 && Facing(mo, 270), Where(mo));
 			Check("thenMusic", th.musicThen == 1);
 		}
 		// the ten-year door, leaning THEN: its own look, and its words
 		if (At()) { Pose(mo, 400, OFF + 150, 270); ten.Used(mo); }
 		if (At())
 			Check("tookTenYear", h.carried == ten && ten.bInvisible && Said("The ten-year door.") && ten.sprite == Actor.GetSpriteIndex('AJDY')
-				&& ten.Label() == "TEN-YEAR", Doors());
+				&& ten.Label() == "TEN-YEAR", DoorsSaid());
 		// carried through the clocked door into NOW: NOW is no time of its clock
 		if (At()) Through(mo, 128, OFF + 452, 90);
-		if (Seg(24) && tt == 23) { Keys(); Check("tenYearCarriedIntoNow", TimeOf(mo) == AjarThen.NOW && h.carried == ten, Where(mo)); }
+		if (Seg(24) && tt == 23) { Keys(); Check("tenYearCarriedIntoNow", TimeOf(mo) == AjarThen.T_NOW && h.carried == ten, Where(mo)); }
 		if (At()) { Pose(mo, 384, 470, 90); PressUse(mo); }
-		if (At()) Check("tenYearRefusesNow", h.carried == ten && !F(102).door && Said("ten-year door's clock does not reach this time"), Doors());
+		if (At()) Check("tenYearRefusesNow", h.carried == ten && !F(102).door && Said("ten-year door's clock does not reach this time"), DoorsSaid());
 		if (At()) Through(mo, 128, 452, 90);
-		if (Seg(24) && tt == 23) { Keys(); Check("tenYearBackIntoThen", TimeOf(mo) == AjarThen.THEN && h.carried == ten, Where(mo)); }
+		if (Seg(24) && tt == 23) { Keys(); Check("tenYearBackIntoThen", TimeOf(mo) == AjarThen.T_THEN && h.carried == ten, Where(mo)); }
 		// 123 has no BEFORE: no other time for the ten-year door
 		if (At()) { Pose(mo, 470, OFF + 256, 0); PressUse(mo); }
-		if (At()) Check("tenYearRefusesTwinless", h.carried == ten && !F(123).door && Said("This frame has no other time.\nThe ten-year door"), Doors());
+		if (At()) Check("tenYearRefusesTwinless", h.carried == ten && !F(123).door && Said("This frame has no other time.\nThe ten-year door"), DoorsSaid());
 		// into 122 THEN: its other leaf BEFORE in 142, linked both ways
 		if (At()) { Pose(mo, 384, OFF + 470, 90); PressUse(mo); }
 		if (At())
 		{
 			Check("tenYearHungThen", ten.frame == F(122) && tenShadow.frame == F(142) && ten.args[0] == 142 && tenShadow.args[0] == 122
-				&& !tenShadow.bInvisible && tenShadow.sprite == Actor.GetSpriteIndex('AJDY') && Said("ten years before"), Doors());
+				&& !tenShadow.bInvisible && tenShadow.sprite == Actor.GetSpriteIndex('AJDY') && Said("ten years before"), DoorsSaid());
 			Check("handsEmpty", h.carried == null);
 		}
-		if (Seg(2) && tt == 1) Check("chainLinked", th.Linked() && th.LinkedAt(AjarThen.THEN) && th.wasLinked && th.wasLinkedBefore);
+		if (Seg(2) && tt == 1) Check("chainLinked", th.Linked() && th.LinkedAt(AjarThen.T_THEN) && th.wasLinked && th.wasLinkedBefore);
 		if (At()) Through(mo, 384, OFF + 452, 90);
 		if (Seg(24) && tt == 23)
 		{
 			Keys();
-			Check("walkedIntoBefore", TimeOf(mo) == AjarThen.BEFORE && mo.pos.y > 2 * OFF + 380 && mo.pos.y < 2 * OFF + 512 && abs(mo.pos.x - 384) < 4
+			Check("walkedIntoBefore", TimeOf(mo) == AjarThen.T_BEFORE && mo.pos.y > 2 * OFF + 380 && mo.pos.y < 2 * OFF + 512 && abs(mo.pos.x - 384) < 4
 				&& Facing(mo, 270), Where(mo));
-			Check("beforeMusic", th.musicThen == AjarThen.BEFORE, String.Format("changes %d", th.musicChanges));
+			Check("beforeMusic", th.musicThen == AjarThen.T_BEFORE, String.Format("changes %d", th.musicChanges));
 		}
 		if (At()) Through(mo, 384, 2 * OFF + 452, 90);
-		if (Seg(24) && tt == 23) { Keys(); Check("backIntoThenFromBefore", TimeOf(mo) == AjarThen.THEN && Facing(mo, 270), Where(mo)); }
+		if (Seg(24) && tt == 23) { Keys(); Check("backIntoThenFromBefore", TimeOf(mo) == AjarThen.T_THEN && Facing(mo, 270), Where(mo)); }
 		// the clocked door taken THEN and carried through the ten-year door: BEFORE is no time of its clock
 		if (At()) { Pose(mo, 128, OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("tookClockedThen", h.carried == clocked && !F(101).door && !F(121).door && Said("Now and then, the frame is empty."), Doors());
+		if (At()) Check("tookClockedThen", h.carried == clocked && !F(101).door && !F(121).door && Said("Now and then, the frame is empty."), DoorsSaid());
 		if (At()) Through(mo, 384, OFF + 452, 90);
-		if (Seg(24) && tt == 23) { Keys(); Check("clockedCarriedIntoBefore", TimeOf(mo) == AjarThen.BEFORE && h.carried == clocked, Where(mo)); }
+		if (Seg(24) && tt == 23) { Keys(); Check("clockedCarriedIntoBefore", TimeOf(mo) == AjarThen.T_BEFORE && h.carried == clocked, Where(mo)); }
 		if (At()) { Pose(mo, 128, 2 * OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("clockedRefusesBefore", h.carried == clocked && !F(141).door && Said("clocked door's clock does not reach this time"), Doors());
+		if (At()) Check("clockedRefusesBefore", h.carried == clocked && !F(141).door && Said("clocked door's clock does not reach this time"), DoorsSaid());
 		if (At()) Through(mo, 384, 2 * OFF + 452, 90);
-		if (Seg(24) && tt == 23) { Keys(); Check("clockedBackIntoThen", TimeOf(mo) == AjarThen.THEN && h.carried == clocked, Where(mo)); }
+		if (Seg(24) && tt == 23) { Keys(); Check("clockedBackIntoThen", TimeOf(mo) == AjarThen.T_THEN && h.carried == clocked, Where(mo)); }
 		// hung THEN in 121: its other leaf NOW in 101
 		if (At()) { Pose(mo, 128, OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("clockedHungFromThen", clocked.frame == F(121) && shadow.frame == F(101), Doors());
+		if (At()) Check("clockedHungFromThen", clocked.frame == F(121) && shadow.frame == F(101), DoorsSaid());
 		// the chain: NOW to THEN to BEFORE on foot, and back
 		if (At()) Through(mo, 128, 452, 90);
 		if (Seg(24) && tt == 23) { Keys(); WalkTo(384, OFF + 440); }
 		if (Seg(70) && tt == 69) Through(mo, 384, OFF + 452, 90);
-		if (Seg(24) && tt == 23) { Keys(); Check("chainNowThenBefore", TimeOf(mo) == AjarThen.BEFORE, Where(mo)); }
+		if (Seg(24) && tt == 23) { Keys(); Check("chainNowThenBefore", TimeOf(mo) == AjarThen.T_BEFORE, Where(mo)); }
 		if (At()) Through(mo, 384, 2 * OFF + 452, 90);
 		if (Seg(24) && tt == 23) { Keys(); WalkTo(128, OFF + 440); }
 		if (Seg(70) && tt == 69) Through(mo, 128, OFF + 452, 90);
 		if (Seg(24) && tt == 23)
 		{
 			Keys();
-			Check("chainBeforeThenNow", TimeOf(mo) == AjarThen.NOW && mo.pos.y > 380 && mo.pos.y < 512, Where(mo));
+			Check("chainBeforeThenNow", TimeOf(mo) == AjarThen.T_NOW && mo.pos.y > 380 && mo.pos.y < 512, Where(mo));
 			Check("nowMusicAgain", th.musicThen == 0);
 		}
 
@@ -287,22 +287,22 @@ class BeforeTest : EventHandler
 		if (Seg(30) && tt == 29)
 		{
 			Keys();
-			Check("redBackToItsFrameBefore", TimeOf(mo) == AjarThen.BEFORE && abs(mo.pos.x - STRONG_X - 384) < 6 && mo.pos.y > 2 * OFF + 380 && Facing(mo, 270), Where(mo));
+			Check("redBackToItsFrameBefore", TimeOf(mo) == AjarThen.T_BEFORE && abs(mo.pos.x - STRONG_X - 384) < 6 && mo.pos.y > 2 * OFF + 380 && Facing(mo, 270), Where(mo));
 		}
 		// the ten-year door, taken BEFORE, refused where its twin THEN holds another door (141; 121 the clocked door)
 		if (At()) { Pose(mo, 384, 2 * OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("tookTenYearBefore", h.carried == ten && !F(122).door && !F(142).door && Said("Then and before, the frame is empty."), Doors());
+		if (At()) Check("tookTenYearBefore", h.carried == ten && !F(122).door && !F(142).door && Said("Then and before, the frame is empty."), DoorsSaid());
 		if (At()) { Pose(mo, 128, 2 * OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("tenYearRefusedTwinHolds", h.carried == ten && !F(141).door && F(121).door == clocked && Said("At the other time a door hangs in this frame.\nThe ten-year door"), Doors());
+		if (At()) Check("tenYearRefusedTwinHolds", h.carried == ten && !F(141).door && F(121).door == clocked && Said("At the other time a door hangs in this frame.\nThe ten-year door"), DoorsSaid());
 
 		// the strongroom: the ten-year door in its free frame BEFORE (144) opens into it THEN (124)
 		if (At()) { Pose(mo, 768, 2 * OFF + 470, 90); PressUse(mo); }
-		if (At()) Check("tenYearIn144", ten.frame == F(144) && tenShadow.frame == F(124), Doors());
+		if (At()) Check("tenYearIn144", ten.frame == F(144) && tenShadow.frame == F(124), DoorsSaid());
 		if (At()) Through(mo, 768, 2 * OFF + 452, 90);
 		if (Seg(24) && tt == 23)
 		{
 			Keys();
-			Check("intoStrongroomThen", TimeOf(mo) == AjarThen.THEN && mo.pos.x > STRONG_X && mo.pos.x < STRONG_X + 512 && mo.pos.y > OFF && mo.pos.y < OFF + 512, Where(mo));
+			Check("intoStrongroomThen", TimeOf(mo) == AjarThen.T_THEN && mo.pos.x > STRONG_X && mo.pos.x < STRONG_X + 512 && mo.pos.y > OFF && mo.pos.y < OFF + 512, Where(mo));
 			WalkTo(STRONG_X + 256, OFF + 256);
 		}
 		if (Seg(60) && tt == 59) Check("soulSphereThen", mo.health > 100, String.Format("health %d", mo.health));
@@ -315,17 +315,17 @@ class BeforeTest : EventHandler
 			Pose(mo, STRONG_X + 384, OFF + 470, 90);
 			PressUse(mo);
 		}
-		if (At()) Check("clockedIn125", clocked.frame == F(125) && shadow.frame == F(105), Doors());
+		if (At()) Check("clockedIn125", clocked.frame == F(125) && shadow.frame == F(105), DoorsSaid());
 		if (At()) Through(mo, STRONG_X + 384, OFF + 452, 90);
 		if (Seg(24) && tt == 23)
 		{
 			Keys();
-			Check("strongroomNowFromIt", TimeOf(mo) == AjarThen.NOW && mo.pos.x > STRONG_X && mo.pos.x < STRONG_X + 512 && mo.pos.y > 0 && mo.pos.y < 512, Where(mo));
-			Check("chainThroughStrongroom", th.Linked() && th.LinkedAt(AjarThen.THEN));
+			Check("strongroomNowFromIt", TimeOf(mo) == AjarThen.T_NOW && mo.pos.x > STRONG_X && mo.pos.x < STRONG_X + 512 && mo.pos.y > 0 && mo.pos.y < 512, Where(mo));
+			Check("chainThroughStrongroom", th.Linked() && th.LinkedAt(AjarThen.T_THEN));
 		}
 		if (At()) Through(mo, STRONG_X + 384, 452, 90);
 		if (Seg(24) && tt == 23) { Keys(); Through(mo, STRONG_X + 128, OFF + 452, 90); }
-		if (Seg(24) && tt == 23) { Keys(); Check("strongroomBackToBefore", TimeOf(mo) == AjarThen.BEFORE, Where(mo)); }
+		if (Seg(24) && tt == 23) { Keys(); Check("strongroomBackToBefore", TimeOf(mo) == AjarThen.T_BEFORE, Where(mo)); }
 	}
 
 	// === MODE=2: the causes ===========================================================================
@@ -397,7 +397,7 @@ class BeforeTest : EventHandler
 		if (At()) { Pose(mo, HOIST_X + 96, 448, 0); WalkTo(HOIST_X + 448, 448); }
 		if (Seg(90) && tt == 89) Check("onTheLedgeNow", mo.pos.x > HOIST_X + 320 && abs(mo.pos.z - 128) < 0.5 && mo.health >= 200, Where(mo) .. String.Format(" health %d", mo.health));
 		if (At()) { Pose(mo, HOIST_X + 96, OFF + 448, 0); WalkTo(HOIST_X + 448, OFF + 448); }
-		if (Seg(90) && tt == 89) Check("onTheLedgeThen", mo.pos.x > HOIST_X + 320 && abs(mo.pos.z - 128) < 0.5 && TimeOf(mo) == AjarThen.THEN, Where(mo));
+		if (Seg(90) && tt == 89) Check("onTheLedgeThen", mo.pos.x > HOIST_X + 320 && abs(mo.pos.z - 128) < 0.5 && TimeOf(mo) == AjarThen.T_THEN, Where(mo));
 		// down, by a shot from THEN through the ten-year door in 127
 		if (At()) ScriptHang(ten, 127);
 		if (At())
@@ -426,13 +426,13 @@ class BeforeTest : EventHandler
 			if (tt == 139)
 			{
 				Check("tankFullNow", fullAt >= 0 && abs(b.w - 96) < 0.01, String.Format("%d tics, w %.2f", fullAt, b.w));
-				Check("thenStaysDry", mo.waterlevel == 0 && TimeOf(mo) == AjarThen.THEN);
+				Check("thenStaysDry", mo.waterlevel == 0 && TimeOf(mo) == AjarThen.T_THEN);
 				// both spans at once: the causes BEFORE stand as they were set, THEN's moved NOW alone
 				Check("bothSpans", sc.setting == 1 && hc.setting == 1 && CZ(bx, OFF + 256) == 0 && FZ(lx, OFF + 448) == 128 && b.Wet());
 			}
 		}
 		if (At()) Pose(mo, DRIP_X + 256, 2 * OFF + 256, 0);
-		if (Seg(3) && tt == 2) Check("beforeHasNoTank", mo.waterlevel == 0 && TimeOf(mo) == AjarThen.BEFORE);
+		if (Seg(3) && tt == 2) Check("beforeHasNoTank", mo.waterlevel == 0 && TimeOf(mo) == AjarThen.T_BEFORE);
 	}
 
 	// === MODE=3: company =============================================================================
@@ -543,7 +543,7 @@ class BeforeTest : EventHandler
 			mo.player.cheats &= ~CF_NOTARGET;
 			ScriptHang(ten, 129);
 			h.carried = null;
-			Check("tenYearIn129", ten.frame == F(129) && tenShadow.frame == F(149), Doors());
+			Check("tenYearIn129", ten.frame == F(129) && tenShadow.frame == F(149), DoorsSaid());
 			fStart = tic + 3;
 		}
 		if (fTrial > 2 * n) { cur = tic + 100; if (fTrial == 2 * n + 1) { fTrial++; cur = tic - 2; } return; }

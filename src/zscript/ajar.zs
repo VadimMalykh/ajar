@@ -1206,7 +1206,7 @@ class AjarHandler : EventHandler
 			if (d.IsShadow()) { if (!d.frame) { d.carried = true; d.Hide(); } continue; }
 			Link(d.args[0], 0, d.BackTex());
 			Link(ThenFar(d), 0, d.BackTex());      // its far side's copy THEN, on a map with two times (then.zs)
-			Link(FarCopy(d, AjarThen.BEFORE), 0, d.BackTex());     // ... and BEFORE, on a map with three
+			Link(FarCopy(d, AjarThen.T_BEFORE), 0, d.BackTex());     // ... and BEFORE, on a map with three
 			f = null;
 			if (d.args[2]) f = FindFrame(d.args[2]);
 			if (f && d.args[3]) d.nailer = d;

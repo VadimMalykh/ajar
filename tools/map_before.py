@@ -77,11 +77,18 @@ PIERS = []          # BEFORE: what stands in the yard, (x1, y1, x2, y2) in NOW's
 
 def frame(a, b, out, n, **k):
     """A frame at every time (or `only`); BEFORE it stands in a pier: 16 of
-    jamb either side, 16 behind the stub."""
+    jamb either side, 16 behind the stub. BEFORE the recess is drawn before
+    the yard round it, so its mouth (the line pressed to hang a door) would
+    face into the recess: it is turned to face the yard (a use line only works
+    from its front)."""
+    first = len(m.polys)
     t.frame(a, b, out, n, **k)
     only = k.get("only")
     if only is None or BEFORE in (only if isinstance(only, tuple) else (only,)):
         pier(a, b, out)
+        a2, b2 = t.before.P(a), t.before.P(b)
+        recess = next(i for i in range(first, len(m.polys)) if a2 in m.polys[i] and b2 in m.polys[i])
+        m.line(a2, b2, back=recess)
 
 
 def pier(a, b, out):
