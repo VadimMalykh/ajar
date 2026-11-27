@@ -17694,6 +17694,66 @@ MAP01's look, so 3 needs Vadim's word.
     the step?
 13. Which of the changes to MAP01 above, and may the cell's floor change?
 
+### Vadim's second addition: the time door opens, and death in the cell leads the same way (2026-11-27; still nothing designed)
+
+**Vadim** (2026-11-27): "Also for map30 end, once user got to that room and
+take out door, we open time door and user get to the time room. Maybe we can
+also do the same if user will be killed in that brick box (but only there,
+not ourside, if user killed outside he looses the level). So user get to
+time room either if he take red door from the frame inside brick box, or he
+killed in brick box. Then user step from the time room and appears in the
+same box with red door, as discussed before."
+
+**What it settles.**
+- Question 7: the room between is the **time room**. It is temporal, not
+  only temporary.
+- Question 8, the way in: **the time door opens**. Not a cut.
+- **Two ways into the time room, and both are in the cell**: taking RED off
+  the cell's frame, or being killed in the cell. Killed anywhere else (the
+  old hall, the rest of MAP30) the player has lost the level, as in any
+  level.
+- The way out stands as it was: he steps out of the time room and is in the
+  cell, RED leaning, the frame empty; he hangs RED, sees MAP01's hall, steps
+  in, and the game is over.
+
+**Claude's reading** (to be corrected).
+- *Where the time door opens.* The cell has one frame and no other opening,
+  and RED has just come off that frame. So the time door opens **in that
+  same frame**, by itself, the moment RED is down: nobody hangs it. The
+  hammering stops; where the old hall was a second ago there is the time
+  room. The player still holds RED.
+- *Death in the cell.* The flood can follow him into the cell before he has
+  the door down. A blow that would kill him there does not: the picture
+  goes white (or dark) for a moment and he stands in the time room, as if he
+  had gone through the time door. For the engine: while he stands in the
+  cell he cannot fall below 1 health, and the blow that would have killed
+  him is the trigger. Outside the cell nothing is changed.
+- *Why this is good for the end.* The last room of the game cannot be
+  failed. A player who is too slow with the door, or who does not guess
+  that the door must come down, still reaches the end, and the loop then
+  reads as "he died there, and began again", Vadim's first thought of
+  2026-11-26 (way 3 above), kept without a second Doom guy.
+- *RED.* If he took it down, he walks into the time room with it and can
+  lean it in the cell himself (question 9, the second way). If he was
+  killed, RED still hangs in the old cell's frame; the cell he comes back
+  to is the cell of the beginning, where RED leans in any case. So the
+  cell he comes back to is always the new copy, never the old one.
+- *The time door at the two ends.* With "the time door in the depot"
+  (the section of that name at the end of this file) the game has the time
+  door doing the same thing twice: it is where it is because the player
+  left it there, and it opens for him at the very end without being hung.
+  It would be right if the time room is where that door is from.
+
+**Open, added to the list**:
+14. What is in the time room: bare (Claude's first choice for the room
+    between), or the machine of MAP21?
+15. Does the time door stay open behind him in the cell of the beginning?
+    MAP01's cell has one empty frame and no door in it, so it must be gone
+    when he looks round: shut and gone as he steps out (a Stray door
+    already does this).
+16. Killed in the cell: does he keep what he carried (weapons, RED)? At the
+    beginning he has the pistol only (question 10).
+
 ## Music: two variations on Paradox Engine, a toccata and a slow one (2026-11-26, no map plays them yet)
 
 **Vadim**: "Could you make 2 new variations of theme 5? One fast, but
@@ -20229,6 +20289,476 @@ night room now, or who takes BLUE down before the clocked door is back on
 the bus, is left to the solver. The bolted door opened by USE from the east
 side is not tested (the line opens it first). The music by ear and the
 automap.
+
+## A door that does not open shows no lock plate; MAP22's kiosk has its soul sphere (mended 2026-11-27)
+
+Vadim, playing MAP22 (the hotel's lobby then, a door with the plate 1, key 1
+and key 2 in hand): "map22 - one more door claiming key1, but not opening
+with key1 (I also saw couple more in the Hotel). Door with key should
+either open, or don't claim the key." And later: "Also shootable secret is
+empty. Is this planned that way?"
+
+**The rule, for every level**: a door with a lock plate opens with the keys
+its plate names. A door that is only a face shows no plate.
+
+1. *The plates.*
+   - **Why**: `ajarmap.excerpt` leaves behind every door that was locked in
+     its own level, and shows it as a face: nailed up (MAP10, MAP22 now) or
+     whole (MAP22 then, `nailed=False`). The face was the locked door's own,
+     plates and all. In MAP02, 03 and 05 those plates are true; in MAP22 the
+     player holds keys 1 and 2 and the plates are not. The museum's door on
+     the square was the first of these (mended earlier today by hand); this
+     is the rest, at the root.
+   - **Now**: `ajarmap.roomdoor` writes down, for every door it makes, the
+     same door without plates (`ajarmap.PLAIN`: `AJHK<keys>` to `AJHDOR`,
+     `AJ2K<look><keys>` to `AJ2D<look>`, `<skin><keys>` to `<skin>`), and
+     `excerpt` shows a door that stays behind by that face, nailed up or
+     not. No new texture is drawn.
+   - **What changed in the maps** (texture counts of the two wads, against
+     main's): MAP22 loses `AJ2K11`, `AJ2K14`, `AJ2K123` (the hotel: rooms
+     106 and 105, and one more), `AJ3D1F1` (the theatre's office), two
+     `AJ3DXB23` (the star's door, at both times) and `AJ5D112` (the
+     station's lost property office); each is now the plain door of the
+     same look. MAP10 loses `AJ2K123` and `AJ3DXB23`, and its nailed-up
+     doors are the plain doors nailed up (`AJNB04` is no longer made). The
+     real locked doors keep their plates: MAP10's museum and dome
+     (`AJHK1`, `AJHK2`), MAP22's brass door in the shelter (`AJ22D12`).
+   - Every other map's wad is byte for byte as on main.
+
+2. *The kiosk* (MAP22 now, the secret opened by shooting its bell).
+   - **Why**: its soul sphere was put at (-288, -560), which is the
+     pavement in front of the kiosk, not the kiosk. It lay in the open and
+     the secret was empty.
+   - **Now**: at (-352, -784), inside, where MAP10 has its plasma rifle.
+     Not planned that way.
+
+**Checked** (the worktree's full build, 11:31, and its tests after the
+disk came back): the build's proofs as on main (`MAP22: solvable in 12 door
+actions, 28633 states, 0 stuck`; MAP10 9 actions); `MAP=MAP22 MODE=1`: no
+check fails, `levelExited`; `MAP=MAP10 MODE=1`: its 12 ambushers, no
+error. The plain faces were looked at as pictures (`AJ2D1` beside
+`AJ2K11`). **Not seen in the game**: the doors themselves in the hotel,
+the theatre and the station (no test view looks at them), and the soul
+sphere through the kiosk's bars.
+
+## The time door in the depot: the player leaves it there himself (Vadim's idea, 2026-11-27; to discuss, nothing designed)
+
+**Vadim** (2026-11-27): "Another idea for some future map - maybe at some
+point I should find myself in that bus depo and left time door there (which
+I found in map22). It will close the loop - trying to save the world I left
+that door in depo, which I found in the past, misused it and this creates
+all the chaos. What do you think?"
+
+And, the same day, on MAP22 as built: "Also maybe we shouldn't have frame in
+the bus which is for time door only. This kind of contradicts with our
+story, that that was accident and I just used wrong door where I shouldn't?"
+
+**Claude's answer**: yes, to both.
+
+**The story as it now stands.** In MAP22 the player finds the time door
+leaning in the depot's fitters' corner, forty years ago, hangs it on the bus
+where no such door belongs, and what is now comes through: the turn, and
+every level after it. Nobody in the town made that door or meant it for the
+bus. In a later level the player, trying to undo this, comes to the same
+depot at the same time (the day before MAP22's morning, or earlier that
+morning) carrying the time door, and leaves it there. It is in the depot
+because he left it; he left it because he found it. The plan has had "the
+clocked door that nobody made" since the concept of levels 21 to 30; this
+says where it comes from.
+
+**What it asks of the later level** (ideas, none decided).
+- *He must leave it without being told to.* The game has the means: a way
+  too small for a door (a squeeze: empty hands only). The only way on from
+  the fitters' corner is one, so the door stays where MAP22 finds it. The
+  player who knows MAP22 sees which corner he is in before he puts it down.
+- *He should think it is the right thing.* The level's errand is to get the
+  time door out of now, where it is doing harm, to somewhere it cannot be
+  used: then, behind a wall, in a yard nobody goes to. That is the depot.
+- *Which level.* After the levels that fight at both times, before MAP30:
+  28 or 29. MAP30's end (the cell, RED) is the other loop; this one should
+  close first, so that MAP30's is the second time the player sees that he
+  is the cause.
+- *The same place exactly.* The depot of that level is MAP22's depot then,
+  from the same description (`tools/map_dayreturn.py`), with the door's
+  place at MAP22's coordinates (256, 966) and nothing leaning there yet.
+
+**What it asks of MAP22** (to be done with "MAP22 bigger", next).
+- No frame on the bus that is the time door's alone: door 4 becomes an
+  ordinary frame, and the time door hangs wherever a door hangs. That it
+  can is the accident.
+- The fitters' plate over the door, "LINE 4, FROM TOMORROW", and the same
+  line on the shelter's timetable say that the town meant to hang it. They
+  go. In the plate's place a tag as fitters would write it: FOUND IN THE
+  YARD. NOT OURS. (Claude's wording, to be overruled.) After the later
+  level that tag is true.
+- The frame in the night room behind the gate (105/125) stays the time
+  door's own: that room is the institute's line, not the town's bus, and
+  the institute has such frames (MAP21). To be overruled if it reads as the
+  same contradiction.
+
+**Open**: which level; whether the player can refuse (and what then);
+whether the door he leaves is seen leaning there from MAP22's side at once
+(a level with both mornings); what the tag says.
+
+## MAP18: the way out is the player's to build, with BLUE (built 2026-11-27)
+
+> Vadim, 2026-11-27, playing MAP18: "And BTW blue door and all that area - ablolutely optional, check my last play log. Is this planned?" (His log: he took GREEN, RED and the TEAL leaves, never BLUE or ORANGE.)
+
+> "Also exit way-out is build already, can we make player to build it?"
+
+Decided by Claude (Fable) the same day; built by Claude on Opus in the task `map18-way-out`.
+
+**What was decided.**
+1. *The night room is a way out the player builds, with BLUE.* It was `ajarmap.way_out(m, 7616, 2608, None,
+   floor=B)`: a ready way out, walking into either end ended the level. Now it is `ajarmap.way_home(m, 7616, 2608,
+   BLUE, only=True, floor=B)`: the same room in the same place (7616..7936 x 2608..2864), BLUE's far side in its west
+   end, the brass frame 190 in its east end, inlaid with blue, taking BLUE and no other door. The shutter stays where
+   it was, in the room's south wall (x 7744..7808, from the boiler room), and is the way BLUE is carried in.
+2. *Why BLUE.* It was the one door with no use: its far side in the court was the worst link of the track by far
+   (BLUE only: lever to shutter 7540 against 9078 on foot; RED only 2367, ORANGE 3202, GREEN 3496), and its workshop
+   upstairs, with the hall with no size and its ambush, a part of the building nothing asked for. BLUE's far side
+   leaves the court (its north wall is plain wall there); BLUE itself stays in the workshop with its ambush. Hung in
+   any frame, BLUE is now a way into the night room for empty hands (and back), never for itself: to build the way
+   out BLUE is carried from the workshop to the lever, the run made with it in hand through the shutter while the
+   pulse lives, and BLUE hung in the brass frame. The other doors are the track and the clock, as before. The plan's
+   "a door is never needed, only wanted" has this one exception now: the last door.
+3. *The shutter never shuts anyone in.* It is up while a lane's pulse lives, as before, or while the player stands
+   in the night room; otherwise down, never crushing. The lamps and the ticks stay the pulse's only. Whoever runs in
+   without BLUE, or comes in through BLUE hung somewhere, walks out by the shutter, and it comes down behind him.
+4. *The measure.* BLUE is no door of the track. Out of the far sides, the single-door ways, the "everything hung"
+   search and route A's MapSpot; out of the "no frame or far side nearer than NEAR to the shutter" rule (its far side
+   is behind the shutter by design). Every other rule and bound as it was.
+
+**What is built.**
+- `tools/map_clockdept.py`: the header says what BLUE is now (the doors are shortcuts and the makings of the
+  paradoxes, all but BLUE: BLUE is the way out), that the shutter is also up while the player is in the night room,
+  the workshop (BLUE) and the night room (BLUE's far side and the brass frame) in the list of areas. `NIGHT` (the
+  room's box) and `NIGHT_TAG = 1852`. `way_home(... BLUE, only=True, floor=B)` in place of `way_out`; the three
+  sectors of the room's floor (those inside `NIGHT`; not the recesses of the far side and the frame, which nobody
+  stands in) get the sector tag `NIGHT_TAG`, and the build asserts there are three and that none had a tag. The
+  shutter's sector is as it was: its corners (7744, 2608) and (7808, 2608) lie on way_home's south wall, and
+  `udmf.Map` splits every edge at every vertex on it, so the two sectors meet there as they did with way_out's
+  (whose south wall was already cut at those x); nothing else was needed. The AjarDelayShutter thing has a fourth
+  argument, `NIGHT_TAG`. BLUE's `far(...)` in the court's north wall is gone. `BLUE_NODE`: a node where BLUE leans,
+  for the measure. In `measure()`, BLUE is out of `fars`, `bit`, the hang moves and `ws`; route A's MapSpot 1860 has
+  four args now (ORANGE's two frames, RED's, GREEN's). The night room is not a Walk area: it is reached only through
+  the shutter (timed) or through BLUE hung (not on foot), so as before it stays out of "one piece on foot"; the
+  routes' last four spots, through the shutter to before the brass frame (7904, 2736), are fixed as before.
+- `src/zscript/clock.zs`: `AjarDelayShutter` args[3] (0: none, as before; the clock lab has no such thing and
+  behaves as before): the sector tag of the room the shutter shuts. Its sectors are gathered at the start; every tic
+  `SomeoneIn()` asks whether a player's sector is one of them or the shutter's own (`occupied`), and the shutter goes
+  up while the pulse lives or someone is in, down otherwise, at the same speed and never crushing. `upAt`, `downAt`,
+  the lamps and the ticks as before.
+- `src/zscript/map18.zs`: `TamHangWayA` (the track of way A, shared by MODE=1 and 3), `TamCarWaits`, `TamTakeBlue`
+  (BLUE taken at the lever: `blueInHandAtTheLever`), `TamInNight`, `TamBuildTheWayOut` (in the night room with BLUE:
+  `noWayOutYet`; 24 tics walked into the empty frame, nothing ends: `theEmptyFrameIsNoWayOut`; frame 190 used:
+  `wayOutBuilt` (`wayOutBuilt && !carried`, BLUE in 190); on east into it: `levelExited`). MODE=1 and 2 take BLUE
+  before the pull and end with `TamBuildTheWayOut`. MODE=3 has eleven more steps: a run of way A without BLUE
+  (`readyForARunWithoutBlue`, `inTheNightRoomWithoutBlue`), the pulse burns out with the player in the room
+  (`theRunWithoutBlueBurnsOut`); 40 tics on the shutter is still up (`nobodyIsShutIn`); out south by the shutter
+  (`outByTheShutter`), and it comes down (`theShutterComesDownBehind`); BLUE hung in 128 (the north corridor) and
+  walked into: the player lands in the night room by BLUE's far side, empty-handed, no way out built
+  (`blueHungIsAWayIn`), and the shutter goes up for him (`theShutterGoesUpForWhoeverIsIn`); GREEN offered to the
+  brass frame stays in hand (`theBrassFrameTakesBlueOnly`) and is carried out by the shutter
+  (`outByTheShutterWithGreen`), which comes down again (`theShutterComesDownBehindAgain`).
+  `tools/smoke_MAP18_3.cfg` runs 1950 tics (was 1050).
+- Other modes: nothing read BLUE's far side in the court. MODE=1 hung BLUE from route A's args[4] only when the
+  search put BLUE on the track (it never did: the best track was RED 119 alone); that is gone. MODE=6's view 15 (the
+  court) shows plain north wall now; its view 26 (the night room, looking east) shows the empty brass frame inlaid
+  with blue, and the shutter up on the right, since the viewer stands in the room.
+
+**Carrying on the run** (looked at in the code). The levers are plain use lines (`Thing_Activate`, special 130);
+the lift's buttons the same (`ajarmap.lift_button`); nothing in ajar.zs, clock.zs or lift.zs stops a use or a ride
+while a door is carried (lift.zs only leaves a carried door's height alone). Hung doors and the one-sided doorways
+are portals and take the player whatever he carries. The only thing that stops a carrier is a squeeze (line 500,
+`AjarHandler.Squeeze`): MAP18 has none (`way_home` makes one only with `grille`). In the tests BLUE is carried
+through RED's door into the car (MODE=1), the lift ridden (MODE=2) and GREEN carried out by the shutter (MODE=3).
+
+**The measure** (before: as main on 2026-11-27; after: this build):
+- one piece on foot: 52 areas, 364 nodes (one far side out, BLUE's node in), 28 frames; far sides 5, now 4 (BLUE's
+  in the night room is not counted); the nearest frame or far side 1125 from a lever, 1211 from the shutter (both as
+  before).
+- lever to shutter on foot 9078 (544 tics); ORANGE only 3202 (192), RED only 2367 (142), GREEN only 3496 (209); BLUE
+  only 7540 (451) before, gone now; all of them 2367 (142); the best track RED 119 (as before).
+- the long lane alone, nothing on the track: 1.31 of its time; both Pairs in lanes 1 and 2 on foot: 81 tics spare;
+  the long lane and the best single link: 272 tics spare (all as before).
+- new: the run is made with BLUE in hand: the start to BLUE 2080 on foot, BLUE to the lever 6965 (417 tics); BLUE
+  hung anywhere else is a way into the night room for empty hands, and 0 for the door itself.
+
+**Checked** (the worktree's build, the smoke tests one after another):
+- `MAP=MAP18 MODE=1`: 12 checks (was 8), all pass, `levelExited`; the way 163 tics, the pulse alive, 1 lap.
+- `MODE=2`: 12 (was 8), all pass, `levelExited`; the way 565 tics, 3 laps; the joined lap 157 tics (156.8).
+- `MODE=3`: 26 (was 15), all pass; the pulse burnt out with the player in the room 414 tics after the pull, the
+  shutter open 156 40 tics later; through BLUE in 128 the player came out at (7606, 2736, -256).
+- `MODE=4` 15, `MODE=5` 24, `MODE=6` 2 (35 views), `MODE=7` 27, `MODE=8` 2: all pass, as before.
+- `MAP=CLOCK MODE=1..7` (clock.zs changed): 12, 8, 27, 24, 13, 10, 7 checks, all pass.
+- `MAP=MAP11 MODE=1` (way_home elsewhere): 21, all pass, `levelExited`.
+- thingcheck and itemcheck on `map_clockdept`: 0 problems. mapcheck: 2, the same two as main's (SLOTs by the
+  six-sided hall's slanting walls, "approximate"); nothing in the basement.
+
+**Not seen in the game**: the night room with BLUE hung in the brass frame, and BLUE's far side in its west end (no
+view looks west there).
+
+**Found after the build: BLUE can be taken down from its own far side** (asked by the coordinating session, the
+same day; not mended, the door rules unchanged). The design rests on "BLUE hung anywhere is a way into the night
+room for empty hands, never for BLUE itself", and the solver has always assumed a frame is worked only from its own
+region. MODE=3 now presses USE as the player does (`cmd.buttons = BT_USE`, `CheckUse()`: the engine's use trace,
+not a script call) after `blueHungIsAWayIn`, with BLUE in 128 and the player in the night room, empty-handed,
+facing west at BLUE's far side (mouth x 7616, y 2704..2768; the portal 16 behind it at x 7600): 45 presses, from
+x 7604, 7616, 7632, 7648, 7664, y 2720, 2736, 2752, facing 165, 180, 195. Three of them take BLUE down from 128
+into the player's hands, in the night room: (7604, 2752), (7616, 2752) and (7632, 2752), all facing 165 (at the
+jamb on the leaf's side, aimed 15 to it); the last stands in the room proper, 16 in from the mouth. From 48 back,
+or at the middle or the other jamb, or facing 180 or 195, nothing. The check `blueIsNotTakenFromItsFarSide`
+fails: that is the finding. A probe (not committed) showed what is reached: with the hung leaf moved out of the
+way, no press takes BLUE, so the use trace goes through the far side's portal and finds the leaf (the AjarDoor
+standing open at its frame's jamb, `Used` → `UseFrame`), not the frame's mouth line. The same three presses take
+BLUE from 119 and from 127 as well; and in MAP11 (VIOLET hung in 101, 102, 103 or 104, the same presses at
+VIOLET's far side in its night room, (76 / 88 / 104, 2544) facing 165) they take VIOLET. So every way_home room
+(MAP05 on) has the same hole: the way out's door can be fetched into its own room through its far side, without
+the way it was meant to come by (in MAP18, the run). Hanging it in the brass frame after that was not tried.
+
+**Mended the same day, game-wide**: "Hands do not reach through an opening" (the next section; task `door-reach`,
+merged together with this one). A real press of USE no longer works a door or a frame through an opening, so
+BLUE comes into the night room in the player's hands, by the shutter, or not at all. On the package that holds
+both: `MAP=MAP18 MODE=3` 27 checks, none failed, `blueIsNotTakenFromItsFarSide` among them (the three presses
+that took BLUE now say "Your hands do not reach through a doorway."); MODE=1, 2, 4 to 8: 12, 12, 15, 24, 2, 27,
+2, none failed; MAP18's measure as above.
+
+
+## Hands do not reach through an opening (built 2026-11-27)
+
+**What was found.** The same day, in the task `map18-way-out` (commit 6b6a9df, the section "MAP18: the way out is
+the player's to build, with BLUE", its last paragraph, on that branch): MAP18 MODE=3 pressed USE as the player
+does (`cmd.buttons = BT_USE`, `CheckUse()`: the engine's use trace, not a script call) at BLUE's far side from
+the night room, empty-handed, BLUE hung in 128. Three of 45 presses took BLUE down from 128 into the player's
+hands in the night room: at the jamb on the leaf's side, aimed 15 toward it, 4 from the far side's portal, at
+its mouth and 16 into the room ((7604 / 7616 / 7632, 2752) facing 165). GZDoom's use trace follows line
+portals: it went through the far side's opening, came out at frame 128 and met BLUE's leaf there (the AjarDoor
+standing open at the jamb, `Used` → `UseFrame`). In MAP11 the same presses took VIOLET in its night room. So every
+way_home way out (MAP05 to MAP16, MAP18) could be built without carrying its door in, and a player could be left
+with a door in a far side's room that has no frame. The solver (tools/solve.py) and every level's design have
+always assumed that a door or a frame is worked only by a player standing where it is
+(`ajarmap.way_home()`: "Going through the door from wherever it hangs brings you here without it"); nothing in
+`AjarDoor.Used`, `AjarFrame.Activate` or `UseFrame` asked from where the press came.
+
+Decided by Claude (Fable) the same day; built by Claude on Opus in the task `door-reach`. The solver, the maps
+and their designs are not touched: the rule makes the game what they always took it to be.
+
+**The rule.** Hands do not reach through an opening. A real press of USE does nothing to a door, leaning or
+hung, and nothing to a frame, empty or filled, that it reaches through a line portal: a hung door's opening, a
+Pair's, a fixed doorway of the building, a one-sided doorway. The press goes on as an aimed-past press does
+(`Used` returns false), the frame is not worked, and the player is told, at most once every 3 seconds:
+"Your hands do not reach through a doorway. / Step through first." From the same side everything is as it was,
+also a press from in front of a hung door aimed at its leaf or its frame whose aim runs on, past them, into the
+door's own opening.
+
+**Where** (src/zscript/reach.zs, `HandsDoNotReach`): only at the engine's two ways in, `AjarDoor.Used` (after
+`UseGoesOn`, the switch rule of leaf.zs) and `AjarFrame.Activate` (a frame's mouth line is Thing_Activate on it;
+the Doom door lab's gates, doomlab.zs, call it from WorldLinePreActivated, and they come through the same check).
+No other real press reaches a door or a frame: every other caller of `UseFrame`, `TakeLeaning`, `Hang` and
+`Unhang` is the thief, a script or a test helper (belt.zs, map19.zs, map20.zs, classic.zs, soundlab.zs), and
+those are not touched; nor are the other `Used` overrides (keys, levers, winds, plates), which do no door work.
+
+**Only a real press**: the user is a player whose `player.cmd.buttons & BT_USE` is set and whose `usedown` is
+set. The engine's `PlayerPawn.CheckUse` (native in this GZDoom) runs the use trace only inside
+`if (cmd.buttons & BT_USE) { if (!usedown) { usedown = true; ... P_UseLines } }`, so while the trace calls
+`Used` or a mouth's Thing_Activate both are set; a script or test that calls `Used` or `Activate` has no key
+down (the tests' real presses set `cmd.buttons` for their one `CheckUse` and clear it after) and is answered as
+before. Shown both ways by the survey below: every press it refused came from the engine's trace, and its last
+two checks call `Used` and `Activate` by script through an opening, which work as before. What it cannot tell: a
+script that calls `Used` or `Activate` for the player during the tics the player holds USE down (both flags stay
+set while the key is held) would be judged as a press from where the player stands; no game code does that,
+only tests, and they do not hold the key.
+
+**How a press through an opening is told from a direct one**: in plain space, no portal followed. From where the
+player stands (the engine's use trace starts there: there are no sector portals in Ajar), along where they face,
+flat, `UseRange` (64) + 1 long, the press is direct when that line meets the target before it crosses any line
+(`isLinePortal()`): for a door, its box (radius 20, where the line enters it, 0 if the player stands in it); for
+a frame, one of its mouths (a line whose special is Thing_Activate on the frame's tid) or the frame's own line
+(the Doom lab's gates are used on it; the frame's own lines do not count as the portal crossed). Up to the first
+portal the engine's trace and this line are the same line, so a press the engine brought to the target without
+a portal is always direct here (the engine meets a thing inside its box), and a press it brought through a
+portal crossed that portal first and is told so, wherever the far side lies in plain space: also a far side
+right behind its own frame, which a bare distance test would miss. What it cannot tell: a target that stands on
+the aim in plain space before any portal, which the engine yet reached only through one (it would have to miss a
+corner of the box that this counts and come round to the same thing through a portal); there the player stands
+at the target anyway, and the press is let be. A one-sided wall before the target is not looked for: the engine
+stops there, so no such press ever reaches `Used`.
+
+**Its breadth, one switch**: `const REACH_ALL = 1;` in reach.zs, "all" (as built and tested: a leaning door is
+not picked up and nothing is hung in an empty frame through an opening either). `0` is "hung only": only a hung
+door or a filled frame is refused through an opening; taking a leaning door or hanging in an empty frame through
+one stays allowed. Vadim, asked the same day
+(no reach at all; hung doors only; MAP18 only, by a grille in its night room; leave it): "No reach at all".
+
+**The survey** (src/zscript/reachtest.zs; `MAP=LAB MODE=4 tools/smoke.sh`, tools/smoke_LAB_4.cfg, 8 checks, about
+20 s of play). The lab got a sealed annex (tools/map_lab.py; floor 512, nobody's way; the thief's reach test, a
+walk at floors within 24, never takes it): frames 118 and 119 facing each other 32 apart, so that with a Pair
+leaf in 118 and its twin in a hall frame, 119 is an empty frame just beyond an opening. 8720 real presses a pass
+(cmd.buttons = BT_USE, CheckUse, then let go; 40 a tic) over a grid of places and aims at eight arrangements;
+each logged ("AJARREACH before|after P<n> #<i> (x,y) angle: what it did"); after a press that did something the
+arrangement is set up again. An act is direct when what it moved is in the player's own room, through when it
+is beyond an opening (the frames and the doors of each room are listed: the hall, the gallery 128 up and the
+annex are far apart, so no aim can reach the other room's things but through an opening). Every press made twice:
+the rule off (`reachOff`, the code path of main), then on, and compared press for press.
+
+| arrangement | presses | direct acted before / after | through acted before / after |
+|---|---|---|---|
+| 1 RED hung in 112, from the hall before 112 (the leaf, the mouth, both jambs, across the opening) | 1248 | 668 / 668 | 0 / 0 |
+| 2 the same from the gallery at RED's far side (mouth y 704, portal y 720) | 1235 | 0 / 0 | 55 / 0 |
+| 3 TEAL's leaves in 114 and 116, from before 114 (the twin in 116 through the Pair) | 1235 | 707 / 707 | 31 / 0 |
+| 4 the same from before 116 (the twin in 114 through it) | 1235 | 750 / 750 | 32 / 0 |
+| 5 an ORANGE leaf leaning in the hall, from all round it | 847 | 623 / 623 | 0 / 0 |
+| 6 RED in 112 and an ORANGE leaf leaning in the gallery just before RED's far side, from before 112 and in its recess | 486 | 217 / 217 | 129 / 0 |
+| 7 RED in hand, 113 empty, from before it | 1199 | 505 / 505 | 0 / 0 |
+| 8 RED in hand, TEAL in 114 and 118, 119 empty, from before 114 (swaps in 114 direct; 59 swaps in 118 and 59 hangings in 119 through) | 1235 | 707 / 707 | 118 / 0 |
+
+Every direct act before is the same act after, press for press, and no press that did nothing before does
+anything after (changed 0 in all eight). Arrangement 2 has MAP18's three: at x 528 (16 from the jamb on the leaf's
+side), y 716, 704 and 688 (4 from the portal, at the mouth, 16 into the room), facing 75 (15 toward the jamb),
+each took RED down before; at the other jamb and facing 105, none. The checks: `theHoleWasThereBefore` (the
+through acts of 2, 3+4, 6 and 8 before, and MAP18's three), `theDoorIsNotTakenFromItsFarSide`,
+`theTwinIsNotTakenThroughThePair`, `aLeaningDoorIsNotTakenThroughADoorway`, `noDoorIsHungThroughADoorway`,
+`fromItsOwnSideEverythingWorks` (no press changed, every arrangement's direct acts there), `theHandsSaySo` (the
+words said after a refused press), `scriptsAreAnsweredAsBefore` (`Used` from the far side and `Activate` of 119
+from the hall, by script, work as before): 8 checks, none failed.
+
+**The regression** (the worker's runs of its own package were lost when /data dropped out at 11:37; run again by
+the Fable session after the restart, on one package that holds this rule, main at 2ae2b3f and `map18-way-out`,
+whose way out rests on the rule and which is merged with it). The count is the strict one, lines `AJARTEST
+name=1` passed and `=0` failed; in brackets the worker's run of main's package of 10:50. None failed anywhere,
+no script error, and only LAB 4 and MAP18 3 ever say the refusal.
+
+| run | passed (main) | |
+|---|---|---|
+| TEST 1, 2 | 4 (4), 0 (0) | 2 takes views only |
+| LAB 1, 2, 3 | 13 (13), 9 (9), 8 (8) | |
+| LAB 4 | 8 | new: the survey |
+| MAP01 1, MAP05 1, MAP08 1, MAP11 1, MAP14 1 | 10 (10), 28 (28), 39 (39), 21 (21), 33 (33) | each `levelExited` |
+| MAP18 1 to 8 | 12, 12, 27, 15, 24, 2, 27, 2 | 3 was 15 on main: the way out's 12 new, `blueIsNotTakenFromItsFarSide` among them, now passing |
+| CLOCK 1 to 7 | 12, 12, 27, 24, 13, 10, 7 | clock.zs is changed by `map18-way-out` |
+| THEN 1 to 6 | 4 (4), 5 (5), 6 (6), 8 (8), 5 (5), 1 (1) | |
+| CLASSIC 1, 2; WATER 1, 4 | 0 (0) each | their lines carry text after the figure: 30, 13, 11, 19 of those, as on main |
+| MAP21 1 | `longRunDone=1 checks=85 failed=0`, `levelExited` (the same) | strict 6 against 11: main's log ran on into MAP22's first five checks before its time was up |
+| MAP21 2, 3, 4, 8, 9 | 0 (0), 0 (0), 4 (4), 1 (1), 0 (0) | 2 and 9: 15 and 51 lines with text, as on main |
+| MAP22 1, 2 | 8 (8), 1 (1) | 1 has one line more, `nobodyThenInPeace=1  0 alive then` |
+
+Not run again: LAST 2, MAP33 2 and the door probe (the worker's runs of main for them were not finished when the
+disk went).
+
+**Not tested**: the "hung only" breadth (one line; the survey's arrangements 6 and 8 would then show their
+leaning and empty-frame acts through again); a press at the keyboard by a real player (the presses are the
+engine's own CheckUse, from set places); a one-sided doorway and a fixed doorway as the opening in the survey
+(the check is the same for every line portal; the levels' runs above pass through them); the Doom
+door lab, which does not switch on now (doomlab.zs, 2026-11-27).
+
+## The title and the menus: Ajar's own; look 1, "The Cell", chosen from three (2026-11-27)
+
+**Chosen: look 1, The Cell, every part** (Vadim, 2026-11-27, from the board: "Title: look 1 (The Cell), every
+part."). It is the game's: `tools/gfx_title.py` `DEFAULT = 1` is what a build with `AJAR_TITLE` unset takes;
+`AJAR_TITLE=0` still builds Doom II's title and menus, `AJAR_TITLE=2` or `3` the other looks. Where the text
+below says "unset or 0" of the switch, that was the state before the choice: now only `0` is off.
+
+**Vadim** (2026-11-27): "Let's work on game graphics. Main menu is still Doom II. Should we make it Ajar? And
+also some specific graphics (portals, way-out, etc)?" Asked what he meant: "In-game graphics is ok, I'm only
+speaking about menu really"; the game's own recurring art (door leaves, frames, the way out, the HUD) is "All
+good as it is". So: the title, the main menu, the cursor, the help page and the quit messages become Ajar's, and
+what the title shows is the game's own sights: the cell, portals, the way out.
+
+**The board**: https://claude.ai/artifact/RwzWADohG9iEEnPbRVLFgT (published 2026-11-27; the page is
+`design/title-board.html`; shots by `tools/title_shots.sh`, into `build/boardtitle/`). Three looks beside Doom
+II's, six screens each (title with the menu, title alone, Esc in play, the skill menu, the help page, a quit
+message), and a pick for each of five parts.
+
+**The switch.** `AJAR_TITLE` unset or 0 (the default): nothing of this goes into the package, the title and
+menus are Doom II's as before (the package differs from the old one only by `zscript/title.zs`, its include line
+and one guard line in ajar.zs, none of which does anything then). `AJAR_TITLE=1|2|3`: that look, whole.
+`AJAR_TITLE_MIX=logo:2,cursor:3` (or `MIX` in `tools/gfx_title.py`) takes single parts from another look. The
+parts: `backdrop` (the title's picture, and where the menus stand), `logo`, `lettering` (the menus' font, its
+colours, the pause sign), `cursor`, `page` (the help page, the options screens' colours, the dim). To make a
+choice the game's: set `LOOK`'s default and `MIX` in `tools/gfx_title.py`.
+
+**The same in every look** (`tools/gfx_title.py`, all generated, so that 0 emits nothing):
+- One skeleton of letters (strokes on a grid: capitals, digits, punctuation; lowercase as small capitals) and a
+  pen per look; a GZDoom font folder of its own (`fonts/<name>/`, `font.inf` Scale 2). Doom's BigFont and
+  SmallFont are not replaced: the HUD's numerals and message boxes stay Doom's. Side bearings come from each
+  glyph's ink (GZDoom has no pair kerning); a little looseness is left either side of a small T.
+- MENUDEF: the main menu (the logo; New Game, Load Game, Save Game, Options, House Rules, Quit), the skill menu
+  headed "How long are you staying?", the episode and class menus and the load/save captions in the look's
+  font; `menufontcolor_*`, sliders, dim and pause sign in the look's palette.
+- The menu opens by itself on the title and the logo belongs to the menu (so it also shows on Esc in play); Esc
+  shuts it and shows the bare title. Over the title the list menus are not dimmed.
+- The title is a map (`maps/TITLEMAP.wad`, `tools/map_title.py`, `src/zscript/title.zs`): a camera that holds,
+  sways, glides to a spot and back, or goes straight ahead for good; the title's pawn stands in a closet out of
+  view. A still picture (`titlepage`) is also provided for, and used by no look.
+- House Rules (and F1): "NOTICE TO GUESTS", the five rules: a door remembers where it leads, its colour and its
+  sign say where; USE a door to take it down and carry it, one at a time; USE an empty frame to hang it there;
+  whatever can come through a door will, it works both ways; the way out has no colour. Under them: "USE is
+  Doom's open key. USE on a hung door while you carry one swaps the two; a carried door is put down only in a
+  frame. Everything else is Doom's."
+- Quit messages: "Leaving? Shut the door behind you." / "Checking out so soon?" / "Leave it ajar and go?" / "The
+  doors will keep. Go?" / "Nothing follows you out. Leave?" / "You can always come back the way you came. Quit?",
+  each with "(Y to leave, N to stay)"; the quit sound is the door's "take".
+- The window is named "Ajar" (a GAMEINFO lump with STARTUPTITLE only; the IWAD is still the one given). The
+  title plays "Light Under the Door" (AJM_LGHT).
+- `MAP=TITLE ./run.sh` starts at the title; `./run.sh` starts MAP01 as before.
+
+**The three looks** (`tools/gfx_title<n>.py`, title maps in `tools/map_title.py`, `map_title2.py`,
+`map_title3.py`):
+1. **The Cell.** MAP01's cell built by MAP01's own code (`map_hinges1.cell()`), the real RED door leaning where
+   MAP01 leans it, the empty frame; the camera sways 3 units in 40 seconds. New Game starts in the picture the
+   title shows, and the planned end of the game comes back to it. MAP01 leans RED 16 from the frame, so the menu
+   cannot stand between them: it stands on the west wall at the left, RED in the middle, the frame on the
+   right. AJAR stencilled in worn ivory with RED's sign beside it; stencil capitals, the selected line RED's red
+   with an ivory edge; a small RED leaf, shut and ajar; the notice a paper sheet pinned on the cell's brick.
+2. **Portals.** A dark hall whose north wall steps back in three bays, a frame in each with a real door hung
+   and open (real line portals): BLUE onto MAP07's planetarium and its projector, RED onto MAP03's stage seen
+   from the dress circle, YELLOW onto MAP08's toy department. The camera stands about 200 from the doors and
+   glides some 40 nearer and back, a minute each way; RED's doorway is about half the picture's height. AJAR
+   with the door in it: AJ on the wall, a slit of warm light, AR on a leaf swung towards the viewer; thin
+   monoline capitals, the selected line lamp yellow; a small doorway, shut and open; the notice a cream card in
+   a brass holder on slate.
+3. **The Way Out.** The night room as the game builds it (`ajarmap.way_out(m, 0, 0, None)`), the camera going
+   down its middle line through the brass doorway into the same room, for good, 14 units a second (a room in
+   about 25 seconds). At each portal crossing the camera is handed on to a new one, so that no frame sweeps the
+   view down the room; it never stands exactly on the portal line (it would be shown the stub behind it). The
+   engine draws the room in the doorway four deep (`r_portal_recursions`), the fourth an undrawn rectangle; map
+   fog (`fade "06070C"`, `fogdensity 220`) lets it go dark after two clear rooms and a faint third. AJAR in
+   brass Art Deco capitals with a gold star in each A where the bar would be; brass capitals with an engraved
+   line, solid small capitals, the selected line gold; a star, small and large; the notice a cream card in a
+   brass frame on the starry wall.
+
+**Checked** (in the task's worktree, quick builds): with the switch off the package's files are those of the
+commit before, but for the three ZScript lines named above; for each look the six shots, no errors or warnings
+in GZDoom's log from this task, `MAP=MAP01 MODE=1` through to `levelExited=1`; for look 1, with real key presses:
+cold start, New Game, the skill menu, MAP01 begins, and F1 in play shows the notice; for look 3, shots a tic
+apart round three crossings (the frames before and after a crossing differ as two ordinary steps do) and no
+drift over three rooms.
+
+**Left as Doom's in every look**: the HUD's numerals; message boxes, the quit box among them (the engine draws
+their text uncoloured, in Doom's small red letters, with its yes/no list); the lists inside the options and
+load/save screens (Doom's fonts, recoloured); the mouse's back arrow at the top left in play.
+
+**Weak, by the workers' and my own reading of the shots**: look 1: the selected skill "Resident" stands in
+front of the RED door, red on red. Look 2: YELLOW's doorway is small and its leaf mostly hidden; low steps show
+at the doors' feet (they make the leaves hang at the right jamb); towards the far end of the glide RED's doorway
+runs off the right edge (`GLIDE` in `map_title2.py`, not rebuilt). Look 3: two clear rooms in the doorway, then
+dark; the east candelabrum passes under the menu once a room; "House Rules" touches the far doorway's jamb at
+the start of each room; the stars in the logo are small. In every look rule 3 of the notice wraps one word
+("there") onto a line of its own.
+
+**Not tested / not played by hand**: nobody has seen any of it move on a real screen: the sway, the glides,
+the cursors' two frames, the endless glide at 35 frames a second and more (the tests' renderer draws a frame
+every 7 to 12 tics). The mixes by part (`AJAR_TITLE_MIX`) are built for and not shot. The title's music has
+not been heard on the title. Load and Save were not opened in the tests.
+
+**To see one**: in a worktree, `AJAR_TITLE=3 AJAR_QUICK=1 AJAR_OUT=build/title3.pk3 ./build.sh`, then start
+GZDoom on that package with no `+map`. The board again: `tools/title_shots.sh` (all four), `tools/title_shots.sh
+2` (one), `NOBUILD=1` to shoot packages as they are.
+
+(2026-11-27, 11:37: `/data` went read-only while looks 2 and 3 were being built. The last edit to `title.zs`,
+the camera's hand-over, was lost with it and written again after the reboot; what is here is the rewritten one,
+built and tested.)
 
 ## MAP23 "Sleeping Dogs": the animal house, chosen (2026-11-27; the lab first, nothing designed in full)
 

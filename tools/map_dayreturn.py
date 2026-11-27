@@ -735,7 +735,7 @@ put("depot now", "depotN", DEMON, 2, 270)
 put("depot now", "depotN", CHAINGUNNER, 2, 270)
 items("depot now", (-480, 580, 2049), (480, 580, 2048), (-480, 900, 2046), (480, 900, 2012), (0, 940, 2049),
       (-200, 580, 2008), (200, 580, 2007))
-items("secrets", (-448, 1024, 2019), (-288, -560, 2013))       # the depot's cache, the kiosk
+items("secrets", (-448, 1024, 2019), (-352, -784, 2013))       # the depot's cache; the kiosk: inside it, where MAP10 has its plasma rifle
 
 # --- the budget, part by part: each part's ammunition does at least 1.6 times its monsters' health ("Resident").
 # The fights then are paid for by the square now, which is where the supplies are (PLAN.md)

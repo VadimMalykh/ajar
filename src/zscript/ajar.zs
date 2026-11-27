@@ -50,6 +50,8 @@
 //    never times.
 //  * Lines 700 + a frame's id and 801..806 are the lamps of a route board
 //    (ajarmap.route_board; BoardTick).
+//  * USE works a door or a frame from its own side only: a real press that
+//    reaches it through an opening (any line portal) does nothing (reach.zs).
 
 class AjarFrame : Actor
 {
@@ -69,7 +71,7 @@ class AjarFrame : Actor
 	override void Activate(Actor activator)
 	{
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
-		if (h) h.UseFrame(self, activator);
+		if (h && !h.HandsDoNotReach(activator, null, self)) h.UseFrame(self, activator);     // not through an opening (reach.zs)
 	}
 }
 
@@ -224,6 +226,7 @@ class AjarDoor : Actor
 		let h = AjarHandler(EventHandler.Find("AjarHandler"));
 		if (!h) return false;
 		if (h.UseGoesOn(self, user)) return false;     // aimed past it at a switch: the press goes on to that (leaf.zs)
+		if (h.HandsDoNotReach(user, self, null)) return false;     // a real press through an opening: hands do not reach (reach.zs)
 		if (frame) h.UseFrame(frame, user);
 		else h.TakeLeaning(self, user);
 		return true;
@@ -1234,7 +1237,7 @@ class AjarHandler : EventHandler
 	override void PlayerSpawned(PlayerEvent e)
 	{
 		let mo = players[e.PlayerNumber].mo;
-		if (!mo) return;
+		if (!mo || gamestate == GS_TITLELEVEL) return;      // the title's cell (title.zs) says nothing
 		// a level with no door to carry (MAP31) says what it has instead
 		if (ThinkerIterator.Create("AjarDoor").Next()) Say("USE a door to take it with you.\nUSE an empty frame to hang it there.\nA door always opens onto its own far side.");
 		else if (ThinkerIterator.Create("AjarZone").Next()) Say("Three halls, three fights.\nA door with a clock on it leads out of a fight: to before it began.");
@@ -1422,6 +1425,7 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "KENNEL") return;    // and the kennel lab (kenneltest.zs)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
+		else if (level.mapname ~== "LAB" && mode == 4) LabReachScript(mo, t);      // the reach survey (reachtest.zs)
 		else if (level.mapname ~== "LAB") LabScript(mo, t);
 		else if (level.mapname ~== "OPT") OpticsScript(mo, t, mode);
 		else if (level.mapname ~== "MIR") GlassScript(mo, t, mode);
