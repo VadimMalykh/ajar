@@ -526,10 +526,10 @@ class DayReturnTest : EventHandler
 		if (S()) Go(mo, 1856, OFF + 1500);
 		if (S()) Wait(10);
 		if (S()) { Check("downIntoTheDomeThen", InThen(mo) && abs(mo.pos.z + 96) < 1, Where(mo)); Next(); }
-		if (S()) Wait(35 * 3);
-		if (S()) { Check("theDomeThensCompanyCame", ObsThenLeft() == 0, String.Format("%d still to come", ObsThenLeft())); Next(); }
 		if (S()) Go(mo, 1720, OFF + 1500);
 		if (S()) Go(mo, 1700, OFF + 1736);
+		if (S()) Wait(35 * 3);              // (a cacodemon behind the pier comes when the player is round it)
+		if (S()) { Check("theDomeThensCompanyCame", ObsThenLeft() == 0, String.Format("%d still to come", ObsThenLeft())); Next(); }
 		if (S()) Go(mo, 1440, OFF + 1732);
 		if (S()) Go(mo, 1440, OFF + 1352);
 		if (S()) Go(mo, 1640, OFF + 1352);
@@ -883,7 +883,7 @@ class DayReturnTest : EventHandler
 		V(mo, "THEN the bus's front", -620, OFF + 72, 0);
 		V(mo, "THEN the depot from YELLOW's far side: the new buses", 0, OFF + 620, 90, -4);
 		V(mo, "THEN the fitters' corner: the clocked door under the fitters' tag", 40, OFF + 900, 15, -6);
-		V(mo, "THEN the fitters' tag close: FOUND IN THE YARD. NOT OURS.", 256, OFF + 860, 90, -8);
+		V(mo, "THEN the fitters' tag close: FOUND IN THE YARD. NOT OURS.", 100, OFF + 930, 20, -4);
 		V(mo, "NOW the depot: the old buses, the cache in the far corner", 300, 700, 135, -4);
 		V(mo, "NOW the cache", -448, 940, 90);
 		V(mo, "THEN the night room's east part from HOME: the gate's bolt side, the bars", 600, OFF - 432, 180);
