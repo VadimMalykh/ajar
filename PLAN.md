@@ -23538,3 +23538,55 @@ about other epic versions, I like them all actually. Not sure if we can use them
 | 44 | Paradox Engine, March | the title screen and menus | they still play Doom II's title music; an orchestra with no guitars is an overture, and the theme is then the first thing heard |
 | 46 | Paradox Engine, The Ride | the bus level of part III (the outline's level 25: the new bus, then the monsters come), or its biggest fight | a ride in triplets for the level that is a ride; it would count as one of part III's six or seven |
 | 42 | Paradox Engine, Hymn (if not MAP01's) | the text screens between the parts | it is Cathedral's chorale far off, so the reel and the end answer it |
+
+## MAP03: YELLOW in the booth is an old door (Vadim's idea, 2026-11-28; built)
+
+**Vadim** (2026-11-28): "As now we have old doors concept (colour doors that was hang in the past), I just got an
+idea. Maybe we can put one in some map from part I (map01 - map10)? So user see it, but have no idea what is it and
+how it got there until part III?" One map, one appearance ("so user remembers it, and realizes later (in part III)
+what was it"). And, with a picture of MAP03's booth: "here, in map03 - yellow door already hangs, and no need to
+move it anyway. Maybe just make it old door?"
+
+**Decided**: MAP03's YELLOW, which hangs in the lighting booth's frame 105 from the start, is an old door: forty
+years' look, its far side's surround in the gods aged with it, "Rusted to its frame." It is the only old door of
+parts I and II.
+
+**Why this door** (Claude on Fable):
+- Every player goes through it: key 3 lies in the booth, and the way in is YELLOW's far side in the gods.
+- Nothing in the level needed it moved: the solver with YELLOW fixed in 105 gives the same way through (8 door
+  actions, 0 stuck, nothing lost). What the player loses is a spare door and a spare frame.
+- It is a riddle as it stands: a door hanging in a room bolted from the inside. Who hung it, and how did they leave?
+- It is first met from its far side, so the aged surround in the gods is seen before the door.
+- No other map changes: MAP10's and MAP22's theatre are the foyer, the house and the rooms behind; the gods and the
+  booth are in neither.
+
+**Owed in part III** (not designed, nothing built): a level at the theatre THEN, with the gods and the booth, where
+the player hangs YELLOW in the booth's frame and leaves it, and sees that it is MAP03's door. "On Loan" (a thing
+found now that the player owes to then; MAP25 is free) is the natural place. Until that level exists the door in
+MAP03 is a question with no answer in the game.
+
+**The story's line 5** ("the doors of the hotel, the theatre and the station were hung where MAP01 to MAP10 found
+them by the player, then") no longer holds as written: under the old door law a door left hanging then is rusted
+now, and part I's doors come off. This YELLOW is the one door of part I for which it is true. The line is to be
+reworded with Vadim.
+
+**Built** (2026-11-28, on Opus). `ajarmap.door(..., old=40)` (needs `frame`) puts args[3] 4 on the door thing
+(`ajarmap.OLD_DOOR`, `AjarDoor.OLD_FROM_START`); args[1] stays the colour, so to every Python tool it is the
+colour door it was. At load (ajar.zs, WorldLoaded's door loop) such a door becomes an old door before it is hung:
+`oldColour` its colour, `oldYears` 40, `oldOf` null, args[1] `AjarDoor.OLD`, args[3] 0; then it is linked and hung in
+its frame as any placed door, and its far side's surround is aged (`AgeFar(..., "Q")`). No `AjarThen` is needed;
+then.zs is not changed (every `oldOf` test there compares with a door that is not null). MAP03 (tools/map_hinges3.py):
+YELLOW `old=40`, its PUZZLE `stays={105: YELLOW}`, the docstring. The solver: "MAP03: solvable in 8 door actions,
+13670 states, 0 stuck", the same way through, "can be lost for good: nothing" (60,620 states before). The test:
+`MAP=MAP03 MODE=3 tools/smoke.sh` (src/zscript/map03.zs, `StageDoorOld`; tools/smoke_MAP03_3.cfg), 12 checks, all
+pass: one time only; YELLOW in 105 old, forty years, no `oldOf`, the only old door; Stuck; open onto 204 both ways;
+the AJQ4 look; the surround of 204 all AJTR4Q / AJTF4Q; no other far side aged; USE at 105 empty-handed and with
+GREEN in hand, "Rusted to its frame." and nothing moves; walked from the gods through 204 into the booth and back;
+YELLOW still hangs. Its two views (tics about 180 and 320): inside the booth facing the door, the gods facing 204.
+Also run on this build: MAP03 MODE=1 (its walkthrough, through YELLOW into the booth), `MAP=BEFORE MODE=5` (the
+old door rule, 32 checks, 0 failed), MAP10 MODE=3; mapcheck, thingcheck, itemcheck on map_hinges3 as on main (the
+same 9 mapcheck notes, 0 and 0). Against main's package every entry is the same but maps/MAP03.wad, zscript.zs,
+zscript/ajar.zs and the new zscript/map03.zs (53 of 54 maps the same, MAP10 and MAP22 among them); every other
+level's proof lines are main's. **Not tested / not played by hand**: nobody has played MAP03 with it; a thief or a
+nailer at it (MAP03 has none; `Stuck()` is checked); a monster following through it; save and load (it is made
+from a map thing at load, and WorldLoaded does nothing on a saved game, so it should keep its fields).
