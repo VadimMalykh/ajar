@@ -176,6 +176,8 @@ skill nightshift
 // here, AjarTimeHandler puts it on when the reel begins (time.zs, REEL_MUSIC); the level itself keeps One Door Short.
 // And MAP01 Paradox Engine, Borrowed Rooms (39: "let's put #39 on map01"), so After Hours plays on no level now,
 // only as the earlier time's music in MAP21, MAP23 and MAP24 (then.zs, THEN_MUSIC), which is not changed.
+// And MAP10 Paradox Engine, Ground (41: "Also put 41 on map10"), in place of Distant Galaxy II, which plays
+// nowhere now. So maps 01 to 10 have the theme three times: MAP01, MAP07, MAP10.
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -285,7 +287,7 @@ map MAP10 "All Change"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_GAL2"
+	music = "AJM_ENA3"
 }
 
 // Act 2, level 1 (tools/map_institute1.py).

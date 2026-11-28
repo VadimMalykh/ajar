@@ -23525,7 +23525,10 @@ about other epic versions, I like them all actually. Not sure if we can use them
   map01". `src/mapinfo.txt`; it had After Hours. So part I has the theme twice (MAP01, MAP07). After Hours plays
   on no level now; it is still the earlier time's music in MAP21, MAP23 and MAP24 (`THEN_MUSIC`, then.zs), chosen
   when it was MAP01's piece. Whether that should become Borrowed Rooms is open (not changed here: then.zs is in
-  another task's hands today). 40 to 43 play on no map.
+  another task's hands today).
+- **41, Paradox Engine, Ground (AJM_ENA3): MAP10.** Vadim, after that: "Also put 41 on map10". It had Distant
+  Galaxy II (his choice of 2026-11-25), which plays on no map now. So part I has the theme three times: MAP01
+  (the first level), MAP07, MAP10 (the last). 40, 42 and 43 play on no map.
 
 **Where the other epic ones could go** (Claude's proposals, not decided):
 
