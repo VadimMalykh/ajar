@@ -205,6 +205,7 @@ class AjarDoor : Actor
 	const CLOCKED = 10;
 	const TENYEAR = 11;    // the ten-year door: a clocked door from THEN to BEFORE (then.zs)
 	const SHADOW = 3;      // args[3] of the clocked door's other leaf
+	const OLD_FROM_START = 4;      // args[3] of a colour door the map hangs as an old door, forty years (ajarmap.door(old=40)): made OLD at load
 	const OLD = 12;        // args[1] of an old door: a colour door left hanging at an earlier time (then.zs)
 
 	int Colour() { return IsOld() ? oldColour : clamp(args[1], 1, 11); }
@@ -1242,7 +1243,19 @@ class AjarHandler : EventHandler
 		{
 			// the clocked door's other leaf: hung with it (Hang), never by itself
 			if (d.IsShadow()) { if (!d.frame) { d.carried = true; d.Hide(); } continue; }
-			if (d.IsOld()) continue;          // an old door, made just now by a door hung from the start (then.zs)
+			// a colour door the map hangs as an old door from the start (MAP03's YELLOW, on a map with one time): an
+			// old door of no door hung here (oldOf null), its colour and forty years, hung in its frame below as any
+			// placed door, its far side's surround aged with it
+			bool oldFromStart = d.args[3] == AjarDoor.OLD_FROM_START && d.args[2] && d.args[1] >= 1 && d.args[1] <= 6;
+			if (oldFromStart)
+			{
+				d.oldColour = d.Colour();
+				d.oldYears = 40;
+				d.oldOf = null;
+				d.args[1] = AjarDoor.OLD;
+				d.args[3] = 0;
+			}
+			else if (d.IsOld()) continue;          // an old door, made just now by a door hung from the start (then.zs)
 			Link(d.args[0], 0, d.BackTex());
 			Link(ThenFar(d), 0, d.BackTex());      // its far side's copy THEN, on a map with two times (then.zs)
 			Link(FarCopy(d, AjarThen.T_BEFORE), 0, d.BackTex());     // ... and BEFORE, on a map with three
@@ -1251,6 +1264,7 @@ class AjarHandler : EventHandler
 			if (f && d.args[3]) d.nailer = d;
 			if (f) Hang(d, f);
 			else d.Show();
+			if (oldFromStart && f) AgeFar(d.args[0], d.oldColour, "Q");      // (then.zs)
 		}
 
 		UnseenInit();
@@ -1516,6 +1530,7 @@ class AjarHandler : EventHandler
 		else if (level.mapname ~== "MAP08") ClosingTimeScript(mo, t);
 		else if (level.mapname ~== "MAP09") PuttingThroughScript(mo, t);
 		else if (level.mapname ~== "MAP02") NoVacancyScript(mo, t);
+		else if (level.mapname ~== "MAP03" && mode == 3) StageDoorOld(mo, t);     // YELLOW, the old door in the booth (map03.zs)
 		else if (level.mapname ~== "MAP03") StageDoorScript(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 2) BorrowedRoomsTour(mo, t);
 		else if (level.mapname ~== "MAP01" && mode == 3) BorrowedRoomsShoot(mo, t);
