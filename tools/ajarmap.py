@@ -167,11 +167,20 @@ def watch(m, box, colour):
     m.thing((x1 + x2) / 2, (y1 + y2) / 2, WATCH_T, args=((x2 - x1) // 2, (y2 - y1) // 2, far_id(colour)))
 
 
-def door(m, colour, x, y, *, angle=0, frame=0, unseen=False):
+OLD_DOOR = 4        # door thing args[3]: an old door from the start, forty years (door(old=40))
+
+
+def door(m, colour, x, y, *, angle=0, frame=0, unseen=False, old=0):
     """A door thing. With `frame` it starts hung there (x, y only pick the sector);
     otherwise it leans at x, y facing `angle`. `unseen`: until it is first
-    taken it is drawn only in mirrors (and has no glow)."""
-    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame, 2 if unseen else 0))
+    taken it is drawn only in mirrors (and has no glow). `old=40` (with
+    `frame`): it is an old door from the start, a colour door hung there forty
+    years ago and rusted to its frame (AjarDoor.OLD, made at load: ajar.zs
+    WorldLoaded). It looks forty years old, so does its far side's surround,
+    and nobody takes it down or swaps it: in a PUZZLE graph it `stays` in
+    that frame. To every tool here it is the colour door it was (args[1])."""
+    assert old in (0, 40) and not (old and (unseen or not frame)), "an old door is forty years old and hangs from the start"
+    m.thing(x, y, DOOR_T, angle=angle, args=(far_id(colour), colour, frame, OLD_DOOR if old else 2 if unseen else 0))
 
 
 def pair(m, colour, *leaves):

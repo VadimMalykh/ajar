@@ -21,12 +21,17 @@ What is new, and why it is not a chain:
   bridge, and both are one-way, so each trip through GREEN is a choice.
 - A door first met from its far side. YELLOW hangs in the lighting booth,
   a shut room behind the gods. In the gods its far side stands open, and
-  through it is the booth and key 3.
+  through it is the booth and key 3. It is an old door (ajarmap.door(old=40)):
+  hung there forty years ago and rusted to its frame, its far side's surround
+  in the gods aged with it, and nobody takes it down. Who hung it in a room
+  bolted from the inside, and how they left, the level does not say (part
+  III will: PLAN.md, "MAP03: YELLOW in the booth is an old door").
 - A spare door. PINK hangs in the manager's office (key 1, from a dressing
   room). It opens onto the property store: guns, and what guards them. You
   do not need it, and a door once taken wants a frame for good.
-- Frames: foyer, stalls, under the stage, booth, office. RED must be picked
-  up with empty hands, so every other door you took has to hang somewhere.
+- Frames: foyer, stalls, under the stage, booth, office; the booth's is full
+  for good (YELLOW). RED must be picked up with empty hands, so every other
+  door you took has to hang somewhere.
 
 Keys 2 and 3 open the star's dressing room, backstage: RED, which opens
 onto the way out. The stage is too high to climb, so it goes out by the drop
@@ -246,7 +251,7 @@ m.thing(-200, 1352, 1, angle=0)                                           # play
 ajarmap.door(m, VIOLET, -866, 1228, angle=0)                              # leaning in the cloakroom
 ajarmap.door(m, BLUE, 1010, 1520, angle=180)                              # leaning in the bar
 ajarmap.door(m, GREEN, 1296, 654, angle=90)                               # leaning under the stage
-ajarmap.door(m, YELLOW, -700, 448, frame=105)                             # hanging in the booth
+ajarmap.door(m, YELLOW, -700, 448, frame=105, old=40)                     # hanging in the booth, rusted in
 ajarmap.door(m, PINK, -256, 1930, frame=106)                              # hanging in the office
 ajarmap.door(m, RED, 2034, 1232, angle=180)                               # leaning in the star's room
 ajarmap.key(m, 1, 1280, 1300)                                             # first dressing room
@@ -392,6 +397,7 @@ PUZZLE = dict(
     keys={"1": "stage", "2": "circle", "3": "booth", "a": "under", "b": "booth", "c": "circle"},
     auto="abc",
     frames={101: "front", 104: "front", 102: "under", 105: "booth", 106: "office"},
+    stays={105: YELLOW},                                  # YELLOW, an old door: rusted to its frame
     doors={
         VIOLET: dict(home="under", lean="front"),
         BLUE: dict(home="circle", lean="front"),
