@@ -23408,3 +23408,101 @@ corpse lies in the crush (its Doom gate keeps off, AjarStockGate.Kept, as before
   secret THEN, as decided.
 - Not tested: the look board's tour (MODE=5) has no view of the new places; the solver's other ways (BLUE THEN
   into the wings, now possible by the mend) are proved by the solver only; difficulty 1 and 2 not played.
+
+## Music: the theme through the game; five ambient ones for MAP01, five epic ones for the end (2026-11-28)
+
+**Vadim**: "Obviously Paradox Engine theme is becoming our main theme for the game. So I'd like it to appear in
+other parts too, not only heavily in part III as we're doing now. So I'd like it to appear in part I (maps 01-10)
+2-3 times, Part II (maps 11-20) 4-5 times, Part III 6-7 times. So the player should get familiar with the theme by
+the end of the game (but no annoyed by it, so we still should have some other ideas here and there). For map01
+let's try to build kind of ambient slow version (similar to what's playing in map01 now) inspired by Paradox
+Engine, create 5 versions, so I can choose from. Also the epic one, for the end of the game and end credits. Also 5
+versions, so I can choose from."
+
+### The rule, and where the theme is heard now
+
+The theme is Paradox Engine's riff and its two tunes (tools/music.py, `engine`, `ENGINE_OVER_RIFF`,
+`ENGINE_CHORUS`); a piece "has the theme" when it is made of them. The way through the game (the session's
+reading): part I hints at it (quiet, or in another dress), part II states it, part III lives in it, and the end is
+the epic one.
+
+| Part | Wanted | Maps with the theme | Count |
+|---|---|---|---|
+| I, 01 to 10 | 2 or 3 | MAP01 (when one of the five ambient ones is chosen; until then After Hours), **MAP07 Paradox Engine, Shuffle** | 1 now, 2 with MAP01 |
+| II, 11 to 20 | 4 or 5 | MAP12 Paradox Engine, **MAP15 Paradox Engine, Upside Down**, MAP18 Paradox Engine, **MAP20 Garmonic Engine, Slow** | 4 |
+| III, 21 to 30 | 6 or 7 | MAP22 (Night Shift now; Mysterium Engine, Stream and Band then), MAP23 Mysterium Engine, Choir, MAP24 Mysterium Engine, Piano | 3 of the four built |
+
+Changed for it on this day, in `src/mapinfo.txt` (bold above). These three are the session's choice, not Vadim's
+ear; only maps whose piece he had not chosen himself were touched:
+
+| Map | Now plays | Lab | Before | Why this one |
+|---|---|---|---|---|
+| MAP07 Small Hours | Paradox Engine, Shuffle (AJM_ENF2) | 27 | Off Its Hinges, by lot | a fighting map (154 monsters) keeps a fast piece; the riff in triplets under an organ is the theme in another dress, as part I should have it. Off Its Hinges stays on MAP05 |
+| MAP15 On Reflection | Paradox Engine, Upside Down (AJM_ENF5) | 30 | Off Its Hinges | the mirrors' level has the theme turned over; fast, as the level is (122) |
+| MAP20 High Water | Garmonic Engine, Slow (AJM_EGR5) | 38 | After Hours | the quiet end of part II stays quiet, with the tunes in it |
+
+Not touched: every map Vadim gave a piece by ear (MAP02, 03, 04, 08, 09, 10, 11, 12, 18, 19, 32, 33), MAP21 to
+MAP24, and `THEN_MUSIC` (then.zs: the earlier time of MAP21, MAP23 and MAP24 plays After Hours, MAP01's piece).
+
+**For the maps to come (25 to 30)**: three or four of the six take a piece on the theme, so that part III has six
+or seven; MAP30 and the end credits have the epic one he chooses. Pieces on the theme that no map plays yet:
+Paradox Engine, Piano (26), Machine (29), Music Box (31), Garmonic Engine, Upside Down (37); Mysterium Engine,
+Music Box (34) plays only in the lab BEFORE.
+
+**Open, for Vadim**: which of 39 to 43 MAP01 gets; whether the earlier time's music (After Hours now, because it
+is MAP01's) then becomes that piece too; a third map of part I, if two is too few (MAP05 and MAP06 have pieces he
+did not choose by ear: Off Its Hinges and Fire Door).
+
+### The ten new pieces (tools/music.py, the last ten of TRACKS; 39 to 48 in the sound lab)
+
+Designed by the session (Fable), written out by three workers (Opus). In all ten the tunes are the patterns as they
+stand, not a note or a length changed, a bar of the tune to a bar of the piece. What the earlier rounds taught and
+these keep to: a slow version with the tunes at half speed was not taken, nor one with no tune (Still), nor a slow
+heavy one with the riff on a guitar over a kit (Heavy); the ones with the tunes clearly there were.
+
+**For MAP01, ambient** ("similar to what's playing in map01 now", which is After Hours):
+
+| Lab | Lump | Piece | What it is |
+|---|---|---|---|
+| 39 | AJM_ENA1 | Paradox Engine, Borrowed Rooms. C, 60, 160 s | The nearest to After Hours: its own strings, drone, timpani, choir, harp and drums on its own chords (C minor, A flat, C minor, D flat), which the verse tune fits unchanged. The piano has the tune where After Hours has its few notes: the first half, then all, at the end the second half. One round is the chorus (A flat, B flat, C minor) with its tune on a horn far off |
+| 40 | AJM_ENA2 | Paradox Engine, One Note Stays. D, 54, 178 s | Made as Distant Galaxy IV and Garmonic Engine, Slow are: three held lines, one moving at a time by a step. The low line is the Engine's hammered D and never moves. The verse tune on a vibraphone from the first bar, the chorus tune on a voice, the walked verse on a clarinet. No drums |
+| 41 | AJM_ENA3 | Paradox Engine, Ground. A, 56, 171 s | The riff slowed into the bass: the notes that stand out of it, a bar each (A, B flat, C, B flat, D, C, B flat, A), under held strings, and over them the verse tune unchanged on a clarinet. The chorus on a horn; harp, timpani far off, a choir at the end |
+| 42 | AJM_ENA4 | Paradox Engine, Hymn. G, 48, 180 s | The chorus tune as a far-off hymn: a choir in three parts over a contrabass, the two lower parts climbing in thirds. Between its two verses the verse tune on a piano over G minor and A flat; a tubular bell on the key note. The second hymn ends once on G major |
+| 43 | AJM_ENA5 | Paradox Engine, Earlier Self. E, 60, 176 s | A canon: the tune on a piano and its copy two bars behind, an octave up, on a celesta; the second time the celesta leads. Over a held E and B, After Hours' timpani and drums; strings only in the choruses. Both tunes fit against themselves at two bars |
+
+**For the end of the game and the credits, epic**:
+
+| Lab | Lump | Piece | What it is |
+|---|---|---|---|
+| 44 | AJM_ENE1 | Paradox Engine, March. D then E, 108, 147 s | The orchestra alone, no guitars, no kit: the riff on cellos, timpani, a marching snare; trumpets with the verse tune, horns with the chorus; choir, bells; a break, then the last two choruses a tone higher with a piccolo on top; one bar of the hammer in unison and a held chord |
+| 45 | AJM_ENE2 | Paradox Engine, Twin Guitars. D then E, 138, 132 s | Paradox Engine itself at full power: its band, a choir, a church organ, and from the second chorus two lead guitars in thirds. A break of organ and choir leads a tone up for a verse and two choruses |
+| 46 | AJM_ENE3 | Paradox Engine, The Ride. E then F sharp, 12/8 at 120, 132 s | The Shuffle made big: cellos and a distorted guitar with the riff in triplets, trumpets, horns, strings, choir, bells; the last two choruses a tone higher; it ends on a major chord, the only one |
+| 47 | AJM_ENE4 | Mysterium Engine, Finale. B flat major, 100, 173 s | The theme in major, as the Mysterium Engine pieces have it, four times verse and chorus, each with more: a choir, a clarinet and a horn; harp and timpani; the band with the riff; everything, with a distorted guitar and bells; a coda that ends with the band gone, and round to the choir |
+| 48 | AJM_ENE5 | Paradox Engine, Cathedral. C minor then D minor, 60, 176 s | A church organ, a choir, brass, timpani, bells; no guitars, no kit. The chorus tune as a chorale three times (the organ alone; with the choir and brass; a tone higher with everything, ending once in major), the verse tune as a trumpet fanfare between |
+
+Hymn (42) and Cathedral (48) are the same chorale, far off and at full size; Borrowed Rooms (39) keeps most of
+what MAP01 has now.
+
+Also changed: `tools/smoke_SOUND_1.cfg` waits 2400 tics (1600), for 48 tracks.
+
+**Checked**, by the workers and read by the session: the 38 older pieces byte for byte as before; every statement
+of a tune read back from the voices is its pattern (notes, order, lengths; octaves and the key change apart), and
+every riff bar is `engine`'s; in One Note Stays no two lines start a note together but at the first bar and the
+two chorus starts; the ranges of every voice. Two voices a semitone apart: nearly all are the Engine's own rub
+(the flat 2nd against the key note; Paradox Engine has 124 such steps). Left in, to be judged by ear:
+- Earlier Self: the following voice has the chorus tune two bars behind the chords, so in bar 33 the piano's C
+  sits on the held B for a beat, and its F sharp sounds over E minor in bars 16 and 34.
+- Ground: the tune's fifth held over the D minor bar (an added ninth), bars 13 and 29.
+- Twin Guitars: the second lead's flat 6th leans on the fifth of the home chord for a quarter and falls to it, in
+  the third and seventh bar of each twin chorus.
+- Cathedral: in the fanfare the key note is held (pedal, strings), so the tune's flat 2nd grinds for a whole beat
+  five times (bars 15, 18, 19), where in Paradox Engine the hammered note comes and goes.
+- March, The Ride, Finale: the top voices go very high (piccolo to E7 and F sharp 7, clarinet to D7).
+
+Also checked: `./build.sh` in the worktree (48 pieces in the package; its mapinfo names AJM_ENF2, AJM_ENF5 and
+AJM_EGR5 for MAP07, MAP15 and MAP20); `MAP=SOUND tools/smoke.sh`: `soundlab=ok`, 183 checks, none failed, 48
+tracks, each started by `S_ChangeMusic`. (/data went read-only at 11:06 during the first build; the commit came
+back from the bundle in `~/data-rescue-2026-11-28/` after the reboot, and the build and test were run then.)
+
+**Not checked: how any of them sounds.** Nobody has heard them. No map plays any of the ten; the game has no end
+sequence or credits yet (MAP24 is the last map), so the epic one waits for those.
