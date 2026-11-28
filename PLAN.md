@@ -23071,6 +23071,11 @@ from 123, through to yard A, GREEN in 141; NOW the test room, the brass door.
   clocked door NOW (`only={103: (CLOCKED,)}`, 123 any door): `solvable in 12, 5398 states, 0 stuck`, and then
   without GREEN left in 123 there is no solution (2462 states). Without the clocked door at E at all (103 left
   without a twin) there is no solution (2022 states): not usable. Left for the session to choose.
+  **Decided** (Claude on Fable, 2026-11-28): the long way round stays, and 103 stays any door's. It is five door
+  actions longer than leaving GREEN in 123 and no short cut; a frame the clocked door alone may hang in would have
+  an old GREEN door in it on the way as designed, which reads wrong; and GREEN left in 144 and in 141 cannot be
+  got round at all, so the idea is still taught twice by force. `puzzle24.py all` now asks of this line only that
+  the way round be longer than the way as designed.
 
 **The place** (NOW's coordinates; THEN is NOW + (0, 8192), BEFORE NOW + (0, 16384): the map is about 2900 by
 1900, so the labs' 4096 was too little):
@@ -23163,7 +23168,7 @@ goes on to MAP24 with the test off.
 
 **Bends from the design and open choices.**
 - "To prove" without GREEN left in 123 does not hold, bars or not (above); the one measured fix is 103 the clocked
-  door's alone NOW.
+  door's alone NOW. Decided: not taken, the long way round (17 door actions) stays.
 - The way out is the night room behind the brass door, not an exit switch.
 - Plain dressing only: no instruments in the test room, no notices in the hall THEN; the one picture is the
   notice. The yards wear look 1's walls (tiles under a cream cornice), like the lab's.

@@ -181,13 +181,20 @@ def to_prove():
             print(f"    the strongroom THEN (the megasphere) reached: {'never' if gone else 'yes'}")
             if not gone:
                 bad.append(title)
+        elif "left THEN in 123" in title:
+            # decided 2026-11-28: the long way round stays (GREEN carried THEN through the clocked door hung in 123
+            # into the cistern NOW and swapped in for it in 103): it must only be longer than the way as designed
+            short = solve.solve(copy.deepcopy(PUZZLE24))[0]
+            print(f"    the way round: {n} door actions against {short}" if n is not None else "    no way round")
+            if n is not None and n <= short:
+                bad.append(title)
         elif n is not None:
             bad.append(title)
     return bad
 
 
 def clocked_only_now(q):
-    """An option, not built: with the bars, frame 103 takes only the clocked door NOW (ajarthen.clock_frame(when=
+    """An option, not built and not taken (decided 2026-11-28: the long way round stays): with the bars, frame 103 takes only the clocked door NOW (ajarthen.clock_frame(when=
     (NOW,)), its clock trim), 123 any door. With the bars alone GREEN still gets into 103 NOW: carried THEN through
     the clocked door hung in 123 into the cistern and swapped in there for it (17 door actions)."""
     q.setdefault("only", {}).update({103: (CLOCKED,), 123: tuple(sorted(q["doors"]))})
