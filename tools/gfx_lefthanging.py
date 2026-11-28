@@ -9,7 +9,7 @@ import gfx_institute as GI
 from gfx import text
 
 NOTICE = "AJLHN0"                                   # the texture's name (map_lefthanging hangs it)
-LOOK, PART, SHIFT = 2, "LA", 16                     # THEN's look, the test room's wall, where 512, 688..752 starts
+LOOK, PART, SHIFT = 2, "LA", 32                     # THEN's look, the test room's wall, where 288..352, 912 starts
 LINES = [("ON TEST.", "r"), ("-", "r"), ("DO NOT", "b"), ("REMOVE.", "b")]
 
 

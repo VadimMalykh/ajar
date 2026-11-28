@@ -299,12 +299,12 @@ class LeftHangingTest : EventHandler
 		if (At()) Check("clockedIn105", clocked.frame == F(105) && shadow.frame == F(125), DoorsSaid());
 		if (At()) Through(mo, 60, 256, 180);
 		if (Seg(24) && tt == 23) { Keys(); Check("intoTheLobbyThen", InHallOrLobby(mo, 1) && Facing(mo, 0), Where(mo)); }
-		if (At()) Check("theNoticeOverOldGreen", UpperAt(512, OFF + 688, 512, OFF + 752) ~== "AJLHN0" && OldOf(121, 10, 223), UpperAt(512, OFF + 688, 512, OFF + 752));
+		if (At()) Check("theNoticeOverOldGreen", UpperAt(288, OFF + 912, 352, OFF + 912) ~== "AJLHN0" && OldOf(121, 10, 223), UpperAt(288, OFF + 912, 352, OFF + 912));
 		// through the ten-year door on its rig into yard A
 		if (At()) Through(mo, 832, OFF + 516, 90);
 		if (Seg(24) && tt == 23) { Keys(); Check("intoYardA", InBox(mo, 2, -192, -384, 1024, 1216), Where(mo)); }
 		// 3: GREEN out of 141: the test room is gone, THEN and NOW
-		if (At()) Use(mo, 470, 2 * OFF + 720, 0);
+		if (At()) Use(mo, 320, 2 * OFF + 870, 90);
 		if (At()) Check("tookGreen", h.carried == green && OldCount() == 0 && Cause(MOUTH).setting == 0, DoorsSaid());
 		if (Seg(100) && tt == 99) Check("testRoomGone", CZ(320, 520) == 0 && CZ(320, OFF + 520) == 0 && Said("The test room was never built."), MouthInfo());
 		if (At()) Through(mo, 832, 2 * OFF + 516, 90);
@@ -338,7 +338,7 @@ class LeftHangingTest : EventHandler
 		if (Seg(24) && tt == 23) Keys();
 		if (At()) Through(mo, 1792, OFF + 708, 90);
 		if (Seg(24) && tt == 23) { Keys(); Check("intoYardBAgain", InBox(mo, 2, 1600, -704, 2624, 1216), Where(mo)); }
-		if (At()) Use(mo, 2400, 2 * OFF + 160, 0);
+		if (At()) Use(mo, 2054, 2 * OFF + 448, 0);
 		if (Seg(90) && tt == 89) Check("hoistUp", Cause(HOIST).setting == 1 && FZ(2240, 448) == 128 && FZ(2240, OFF + 448) == 128 && FZ(2240, 2 * OFF + 448) == 128,
 			String.Format("%.0f %.0f %.0f", FZ(2240, 448), FZ(2240, OFF + 448), FZ(2240, 2 * OFF + 448)));
 		if (At()) Check("ambushAtKey1", ToCome(1) == 0, String.Format("%d to come, %d tics after key 1", ToCome(1), tic - key1At));
@@ -379,7 +379,7 @@ class LeftHangingTest : EventHandler
 		// 12: through the ten-year door to yard A, GREEN back in 141: the test room is found
 		if (At()) Through(mo, 832, OFF + 516, 90);
 		if (Seg(24) && tt == 23) Keys();
-		if (At()) Use(mo, 470, 2 * OFF + 720, 0);
+		if (At()) Use(mo, 320, 2 * OFF + 870, 90);
 		if (At()) Check("greenBackIn141", green.frame == F(141) && OldOf(121, 10, 223) && OldOf(101, 50, 203) && Cause(MOUTH).setting == 1, DoorsSaid());
 		if (At()) Through(mo, 832, 2 * OFF + 516, 90);
 		if (Seg(24) && tt == 23) Keys();
@@ -392,18 +392,18 @@ class LeftHangingTest : EventHandler
 			Check("sumpDrainsThroughOldGreenIn101", sump.w < BOTTOM + 90, Water());
 		}
 		// the test room, the brass door (keys 1 and 2), the night room, out
-		if (At()) WalkTo(320, 860);
+		if (At()) WalkTo(320, 800);
 		if (Seg(90) && tt == 89) Check("intoTheTestRoom", InBox(mo, 0, 128, 528, 512, 912), Where(mo));
-		if (At()) Use(mo, 320, 880, 90);
-		if (Seg(40) && tt == 39) Check("brassDoorOpens", CZ(320, 920) > 64, String.Format("ceiling %.0f", CZ(320, 920)));
-		if (At()) WalkTo(320, 1072);
+		if (At()) Use(mo, 464, 870, 90);
+		if (Seg(40) && tt == 39) Check("brassDoorOpens", CZ(464, 920) > 64, String.Format("ceiling %.0f", CZ(464, 920)));
+		if (At()) WalkTo(464, 1120);
 		if (Seg(60) && tt == 59)
 		{
-			Check("inTheNightRoom", InBox(mo, 0, 160, 944, 480, 1200), Where(mo));
+			Check("inTheNightRoom", InBox(mo, 0, 304, 992, 624, 1248), Where(mo));
 			Info(String.Format("ordinary company cleared %d; %s", cleared, Water()));
 			Done();
 		}
-		if (At()) WalkTo(560, 1072);
+		if (At()) WalkTo(700, 1120);
 	}
 
 	// === MODE=2: the rules ===========================================================================================
@@ -415,18 +415,18 @@ class LeftHangingTest : EventHandler
 		if (At())
 		{
 			Check("oldGreenFromTheFirstTic", green.frame == F(141) && OldOf(121, 10, 223) && OldOf(101, 50, 203) && Open(243) && OldCount() == 2, DoorsSaid());
-			Check("causesAtTheStart", Cause(MOUTH).setting == 1 && Cause(HOIST).setting == 0 && Cause(VALVE).setting == 0 && FZ(2240, 448) == 0 && FZ(2240, OFF + 448) == 0 && FZ(2240, 2 * OFF + 448) == 0,
+			Check("causesAtTheStart", Cause(MOUTH).setting == 1 && Cause(HOIST).setting == 0 && Cause(VALVE).setting == 0 && FZ(2240, 448) == 16 && FZ(2240, OFF + 448) == 16 && FZ(2240, 2 * OFF + 448) == 16,
 				MouthInfo() .. String.Format("; landing %.0f %.0f %.0f", FZ(2240, 448), FZ(2240, OFF + 448), FZ(2240, 2 * OFF + 448)));
 		}
 		// rusted, NOW and THEN
-		if (At()) Use(mo, 470, 720, 0);
+		if (At()) Use(mo, 320, 870, 90);
 		if (At()) Check("rustedNow", Said("Rusted to its frame.") && !h.carried, h.said);
-		if (At()) Use(mo, 470, OFF + 720, 0);
+		if (At()) Use(mo, 320, OFF + 870, 90);
 		if (At()) Check("rustedThen", Said("Rusted to its frame.") && !h.carried, h.said);
 		// through old GREEN: NOW into the sump's bottom (101 at 0, 203 at -128), THEN into the store
-		if (At()) Through(mo, 452, 720, 0);
+		if (At()) Through(mo, 320, 852, 90);
 		if (Seg(24) && tt == 23) { Keys(); Check("throughOldGreenNowIntoTheSump", InSump(mo) && abs(mo.pos.z - BOTTOM) < 1 && Facing(mo, 270), Where(mo)); }
-		if (At()) Through(mo, 452, OFF + 720, 0);
+		if (At()) Through(mo, 320, OFF + 852, 90);
 		if (Seg(24) && tt == 23) { Keys(); Check("throughOldGreenThenIntoTheStore", InBox(mo, 1, 1024, 400, 1600, 1024) && abs(mo.pos.z) < 1, Where(mo)); }
 		if (At()) Through(mo, 1184, OFF + 964, 90);
 		if (Seg(24) && tt == 23) { Keys(); Check("backFromTheStore", InBox(mo, 1, 128, 528, 512, 912), Where(mo)); }
@@ -443,14 +443,14 @@ class LeftHangingTest : EventHandler
 		if (Seg(60) && tt == 59) Check("tenYearLeafIn141KeepsItShut", tenShadow.frame == F(141) && Cause(MOUTH).setting == 0 && CZ(320, 520) == 0, MouthInfo());
 		if (At()) { ScriptHang(ten, 122); h.carried = green; }
 		// GREEN hung back in 141 in play: open again, at both times
-		if (At()) Use(mo, 470, 2 * OFF + 720, 0);
+		if (At()) Use(mo, 320, 2 * OFF + 870, 90);
 		if (Seg(100))
 		{
 			if (tt == 0) Check("greenBackIn141", green.frame == F(141) && OldOf(121, 10, 223) && OldOf(101, 50, 203) && Cause(MOUTH).setting == 1, DoorsSaid());
 			if (tt == 99) Check("mouthOpenAgain", CZ(320, 520) == 128 && CZ(320, OFF + 520) == 128 && Said("It was found after all."), MouthInfo());
 		}
 		// the swaps: at 122 (GREEN for the ten-year door and back), at 123
-		if (At()) Use(mo, 470, 2 * OFF + 720, 0);
+		if (At()) Use(mo, 320, 2 * OFF + 870, 90);
 		if (At()) Use(mo, 832, OFF + 534, 90);
 		if (At()) Check("swapAt122", green.frame == F(122) && h.carried == ten && !tenShadow.frame && OldOf(102, 40, 203) && !F(142).door && OldCount() == 1, DoorsSaid());
 		if (At()) Use(mo, 832, OFF + 534, 90);
@@ -473,6 +473,26 @@ class LeftHangingTest : EventHandler
 		if (At()) Check("clockedRefusedOldGreenInItsTwin", h.carried == clocked && green.frame == F(123) && OldOf(103, 40, 203) && Said("At the other time a door hangs in this frame."), DoorsSaid());
 		if (At()) Use(mo, 1792, 726, 90);
 		if (At()) Check("rustedInTheCistern", h.carried == clocked && OldOf(103, 40, 203) && Said("Rusted to its frame."), DoorsSaid());
+		// the bars: the hall NOW does not lead into the cistern (walked at, and run at)
+		if (At()) { PutBack(clocked); Pose(mo, 1792, 300, 90); WalkTo(1792, 640); }
+		if (Seg(60) && tt == 59) { walking = false; Keys(); Check("barsHallNotIntoTheCistern", mo.pos.y < 384 && TimeOf(mo) == AjarThen.T_NOW, Where(mo)); }
+		if (At()) { Pose(mo, 1700, 200, 60); Keys(RUNKEY, BT_JUMP); }
+		if (Seg(50) && tt == 49) { Keys(); Check("barsRunAndJump", mo.pos.y < 384, Where(mo)); }
+		if (At()) Pose(mo, 1792, OFF + 300, 90);
+		if (At()) WalkTo(1792, OFF + 640);
+		if (Seg(70) && tt == 69) { walking = false; Keys(); Check("pumpBayOpenThen", InBox(mo, 1, 1664, 384, 1920, 768) && mo.pos.z < -100, Where(mo)); }
+		// the cistern entered and left through old GREEN in 103 (GREEN THEN in 123): from the sump's bottom, and back
+		if (At()) Through(mo, 1184, 964, 90);
+		if (Seg(24) && tt == 23) { Keys(); Check("intoTheCisternThroughOldGreen", InBox(mo, 0, 1664, 384, 1920, 768) && abs(mo.pos.z + 120) < 1 && Facing(mo, 270), Where(mo)); }
+		if (At()) Through(mo, 1792, 708, 90);
+		if (Seg(24) && tt == 23) { Keys(); Check("outOfTheCisternIntoTheSump", InSump(mo) && abs(mo.pos.z - BOTTOM) < 1, Where(mo)); }
+		// ... and through the clocked door hung THEN in 123 (its leaf NOW in 103)
+		if (At()) { ScriptUnhang(green); PutBack(green); ScriptHang(clocked, 123); h.carried = null; }
+		if (At()) Through(mo, 1792, OFF + 708, 90);
+		if (Seg(24) && tt == 23) { Keys(); Check("intoTheCisternByTheClockedDoor", InBox(mo, 0, 1664, 384, 1920, 768) && shadow.frame == F(103), Where(mo) .. "; " .. DoorsSaid()); }
+		if (At()) Through(mo, 1792, 708, 90);
+		if (Seg(24) && tt == 23) { Keys(); Check("outOfTheCisternByTheClockedDoor", InBox(mo, 1, 1664, 384, 1920, 768), Where(mo)); }
+		if (At()) { PutBack(clocked); ScriptHang(green, 123); h.carried = null; }
 		// the water: the valve open (by script); the cistern full; through old GREEN in 103 the sump fills
 		if (At()) { PutBack(clocked); Set(VALVE, 1); fullAt = -1; Pose(mo, 1184, 420, 90); }
 		if (Seg(1050))
@@ -513,15 +533,18 @@ class LeftHangingTest : EventHandler
 		if (Seg(70) && tt == 69) { Keys(); Check("offTheLandingIntoThePit", !Has(mo, 2) && mo.pos.z < BOTTOM + 1 && mo.pos.y < 870, Where(mo)); }
 		if (At()) { Pose(mo, 1056, 690, VectorAngle(1500 - 1056, 940 - 690)); Keys(RUNKEY); }
 		if (Seg(70) && tt == 69) { Keys(); Check("fromTheStairsFoot", !Has(mo, 2) && mo.pos.z < BOTTOM + 1, Where(mo)); }
+		if (At()) { Pose(mo, 1520, 420, 90); Keys(RUNKEY, BT_JUMP); }
+		if (Seg(70) && tt == 69) { Keys(); Check("runningJumpFromTheLanding", !Has(mo, 2) && mo.pos.z < BOTTOM + 1, Where(mo)); }
+		if (At()) { Pose(mo, 1056, 456, VectorAngle(1500 - 1056, 940 - 456)); Keys(RUNKEY, BT_JUMP); }
+		if (Seg(70) && tt == 69) { Keys(); Check("runningJumpFromTheStairsTop", !Has(mo, 2) && mo.pos.z < BOTTOM + 1, Where(mo)); }
+		if (At()) { Pose(mo, 1056, 690, VectorAngle(1500 - 1056, 940 - 690)); Keys(RUNKEY, BT_JUMP); }
+		if (Seg(70) && tt == 69) { Keys(); Check("runningJumpFromTheStairsFoot", !Has(mo, 2) && mo.pos.z < BOTTOM + 1, Where(mo)); }
 		if (At()) { Pose(mo, 1500, 820, 90); WalkTo(1500, 950); }
 		if (Seg(50) && tt == 49) { walking = false; Keys(); Check("notUpTheLedgeDry", !Has(mo, 2) && mo.pos.z < BOTTOM + 1 && mo.pos.y < 864, Where(mo)); }
 		// the hoist: down, the landing a drop; its lever BEFORE (dead THEN and NOW); up, the landing at all times
 		if (At()) { Pose(mo, 2112, 448, 0); WalkTo(2400, 448); }
-		if (Seg(80) && tt == 79) { walking = false; Keys(); Check("noLandingWhileDown", mo.pos.x < 2310 && mo.pos.z < 1, Where(mo)); }
-		if (At()) Use(mo, 2400, 160, 0);
-		if (At()) Use(mo, 2400, OFF + 160, 0);
-		if (Seg(10) && tt == 9) Check("hoistLeverDeadNowAndThen", Cause(HOIST).setting == 0);
-		if (At()) Use(mo, 2400, 2 * OFF + 160, 0);
+		if (Seg(80) && tt == 79) { walking = false; Keys(); Check("noLandingWhileDown", mo.pos.x < 2310 && mo.pos.z < 17, Where(mo)); }
+		if (At()) Use(mo, 2054, 2 * OFF + 448, 0);
 		if (Seg(90))
 		{
 			if (tt == 0) Check("hoistLeverBefore", Cause(HOIST).setting == 1);
@@ -555,15 +578,15 @@ class LeftHangingTest : EventHandler
 		let sump = Basin(SUMP);
 		if (Seg(15)) {}
 		if (At()) { mo.bInvisible = true; mo.player.cheats |= CF_NOTARGET; }
-		if (At()) View(mo, "the lobby NOW at the start: the test room's mouth, the clocked door leaning (left)", 320, 60, 100);
+		if (At()) View(mo, "the start NOW: through the test room's mouth, old GREEN in 101 under its lamp", 320, 96, 90);
 		if (Seg(69)) {}
-		if (At()) View(mo, "the test room NOW: old GREEN in 101, fifty years, the grate before it", 260, 720, 0);
+		if (At()) View(mo, "the test room NOW: old GREEN in 101, fifty years, the grate before it; the brass door right", 320, 640, 90);
 		if (Seg(69)) {}
-		if (At()) View(mo, "the test room NOW: the brass door (keys 1 and 2)", 320, 620, 90);
+		if (At()) View(mo, "the test room NOW: the brass door (keys 1 and 2)", 380, 720, 60);
 		if (Seg(69)) {}
-		if (At()) View(mo, "the lobby THEN", 320, OFF + 60, 100);
+		if (At()) View(mo, "the start THEN: through the mouth, old GREEN in 121", 320, OFF + 96, 90);
 		if (Seg(69)) {}
-		if (At()) View(mo, "the test room THEN: old GREEN in 121, ten years, under ON TEST. DO NOT REMOVE.", 360, OFF + 720, 0);
+		if (At()) View(mo, "the test room THEN: old GREEN in 121, ten years, under ON TEST. DO NOT REMOVE.", 320, OFF + 600, 90);
 		if (Seg(69)) {}
 		if (At()) View(mo, "the hall NOW from the lobby", 600, 200, 0);
 		if (Seg(69)) {}
@@ -571,29 +594,29 @@ class LeftHangingTest : EventHandler
 		if (Seg(69)) {}
 		if (At()) View(mo, "bay C THEN: the ten-year door on its rig in 122", 832, OFF + 320, 90);
 		if (Seg(69)) {}
-		if (At()) View(mo, "yard A BEFORE: GREEN new in 141, pier 142 (the ten-year door's other leaf)", 200, 2 * OFF + 420, 30);
+		if (At()) View(mo, "yard A BEFORE: GREEN new in 141, pier 142 (the ten-year door's other leaf)", 100, 2 * OFF + 500, 30);
 		if (Seg(69)) {}
-		if (At()) View(mo, "yard A BEFORE, east: the dig behind its railing, yard B beyond", 960, 2 * OFF + 0, 0);
+		if (At()) View(mo, "yard B BEFORE from 143: the hoist's gantry and deck (down), its lever on its post", 1792, 2 * OFF + 700, 330);
 		if (Seg(69)) {}
-		if (At()) View(mo, "yard B BEFORE: piers 143 and 144, the hoist's platform and lever", 1680, 2 * OFF + 200, 20);
+		if (At()) { Set(HOIST, 1); View(mo, "yard B BEFORE: the deck up (the lever pulled)", 1880, 2 * OFF + 300, 20); }
+		if (Seg(69)) {}
+		if (At()) View(mo, "the hoist bay NOW: the same deck, a landing", 2100, 250, 60, -5);
+		if (Seg(69)) {}
+		if (At()) View(mo, "the cistern NOW, dry, from the hall: the bars, frame 103", 1792, 300, 90, 8);
 		if (Seg(69)) {}
 		if (At()) View(mo, "the sump NOW, dry, from the landing: the stair, the ledge with key 2", 1150, 420, 55, 15);
 		if (Seg(69)) {}
 		if (At()) { ScriptHang(green, 123); h.carried = null; Set(VALVE, 1); if (sump) sump.w = BOTTOM + 96; View(mo, "the sump NOW full (old GREEN in 103, the valve open): from the landing", 1150, 420, 55, 15); }
 		if (Seg(69)) {}
-		if (At()) View(mo, "the cistern NOW full: old GREEN in 103 under water", 1792, 420, 90, 10);
+		if (At()) View(mo, "the cistern NOW full, from the hall: old GREEN in 103 under water, through the bars", 1792, 300, 90, 8);
 		if (Seg(69)) {}
 		if (At()) View(mo, "the pump bay THEN, dry: GREEN in 123", 1792, OFF + 420, 90, 10);
 		if (Seg(69)) {}
-		if (At()) { ScriptUnhang(green); PutBack(green); ScriptHang(clocked, 123); h.carried = null; View(mo, "the pump bay THEN: the clocked door in 123, the cistern full NOW", 1792, OFF + 600, 90); }
+		if (At()) { ScriptUnhang(green); PutBack(green); ScriptHang(clocked, 123); h.carried = null; View(mo, "the pump bay THEN: the clocked door in 123, the cistern full NOW (left for the second version)", 1792, OFF + 600, 90); }
 		if (Seg(69)) {}
 		if (At()) View(mo, "the store THEN (GREEN's far side 223)", 1300, OFF + 600, 90);
 		if (Seg(69)) {}
-		if (At()) { ScriptHang(green, 144); h.carried = null; if (sump) sump.w = BOTTOM - 32; View(mo, "the strongroom NOW: old GREEN in 104, key 1", 1792, -150, 270); }
-		if (Seg(69)) {}
-		if (At()) { ScriptUnhang(green); PutBack(green); ScriptHang(ten, 144); h.carried = null; View(mo, "(GREEN out) the strongroom THEN: the ten-year door's leaf in 124, the megasphere", 1792, OFF - 150, 270); }
-		if (Seg(69)) {}
-		if (At()) { Set(HOIST, 1); View(mo, "the hoist bay NOW, the landing up", 2080, 60, 60, -8); }
+		if (At()) { PutBack(clocked); ScriptHang(green, 144); h.carried = null; if (sump) sump.w = BOTTOM - 32; View(mo, "the strongroom NOW: old GREEN in 104, key 1", 1792, -150, 270); }
 		if (Seg(69)) {}
 		if (At()) View(mo, "the gallery THEN: the valve's lever", 2340, OFF + 600, 0);
 		if (Seg(69)) {}
@@ -601,7 +624,7 @@ class LeftHangingTest : EventHandler
 		if (Seg(69)) {}
 		if (At()) View(mo, "the cellar BEFORE (GREEN's far side 243)", 1300, 2 * OFF + 760, 90);
 		if (Seg(69)) {}
-		if (At()) View(mo, "the night room NOW", 200, 1072, 0);
+		if (At()) View(mo, "the night room NOW", 340, 1120, 0);
 		if (Seg(69)) {}
 		if (At()) Console.Printf("AJARTEST leftHangingViews=%d", viewN);
 	}

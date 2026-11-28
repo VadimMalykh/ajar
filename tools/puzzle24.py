@@ -15,7 +15,7 @@ BEFORE are the yards and the cellar; `exit` is the goal.
 
   hallN     the start: the lobby (frame 105, the clocked door leaning), the
             hall off it with bay C (frame 102), the wet bay E five steps down
-            (the cistern, frame 103: filled by the valve), the hoist's shaft
+            (barred NOW: its frame 103 seen, not reached), the hoist's shaft
             and the stair up to its top, the landing over the sump; the sump
             itself (a broken stair down to its bottom 128 under the hall),
             GREEN's far side NOW in the bottom's wall
@@ -29,6 +29,9 @@ BEFORE are the yards and the cellar; `exit` is the goal.
             swimming, while the sump stands full (96 deep: the valve open THEN
             and GREEN hung at the wet bay's spot, 103 NOW, 123 THEN or 143
             BEFORE, its old self in the cistern NOW); down is a drop
+  cisternN  the cistern NOW (frame 103; filled by the valve), behind bars
+            from the hall: entered and left only through the door in 103
+            (the clocked door hung THEN in 123, or old GREEN from the sump)
   hallT     the lobby THEN (frame 125), the hall (bay C with the test rig,
             frame 122), the dry pump bay (frame 123), the hoist's stair
   testT     the test room THEN (frame 121), under ON TEST. DO NOT REMOVE.;
@@ -52,7 +55,7 @@ import solve
 from ajarmap import GREEN, NAMES
 from ajarthen import THEN_ID, CLOCKED, TENYEAR
 
-NOW_FRAMES = {101: "testN", 102: "hallN", 103: "hallN", 104: "strongN", 105: "hallN"}
+NOW_FRAMES = {101: "testN", 102: "hallN", 103: "cisternN", 104: "strongN", 105: "hallN"}
 THEN_FRAMES = {121: "testT", 122: "hallT", 123: "hallT", 124: "strongT", 125: "hallT"}
 BEFORE_FRAMES = {141: "yardA", 142: "yardA", 143: "yardB", 144: "yardB"}
 A_FRAME = 141                                   # the first frame BEFORE: the test room follows it
@@ -184,8 +187,9 @@ def to_prove():
 
 
 def clocked_only_now(q):
-    """An option, not built: frame 103 takes only the clocked door NOW (ajarthen.clock_frame(when=(NOW,))), 123
-    any door; old GREEN still hangs there (the old door rule asks no frame)."""
+    """An option, not built: with the bars, frame 103 takes only the clocked door NOW (ajarthen.clock_frame(when=
+    (NOW,)), its clock trim), 123 any door. With the bars alone GREEN still gets into 103 NOW: carried THEN through
+    the clocked door hung in 123 into the cistern and swapped in there for it (17 door actions)."""
     q.setdefault("only", {}).update({103: (CLOCKED,), 123: tuple(sorted(q["doors"]))})
 
 
@@ -194,10 +198,11 @@ def main(args):
     if "all" in args:
         bad = to_prove()
         print("To prove: " + ("all hold" if not bad else "DO NOT HOLD: " + "; ".join(bad)))
-        print("An option for the line that does not hold (not built): 103 the clocked door's alone NOW")
-        report(variant(clocked_only_now), "  with it", quiet=True)
-        report(variant(lambda q: (clocked_only_now(q), q["only"].update({123: (CLOCKED, TENYEAR)}))),
-               "  with it, without GREEN left THEN in 123", quiet=True)
+        if bad:
+            print("An option (not built): the bars, and 103 the clocked door's alone NOW")
+            report(variant(clocked_only_now), "  with it", quiet=True)
+            report(variant(lambda q: (clocked_only_now(q), q["only"].update({123: (CLOCKED, TENYEAR)}))),
+                   "  with it, without GREEN left THEN in 123", quiet=True)
 
 
 if __name__ == "__main__":

@@ -170,9 +170,12 @@ def far(a, b, out, colour, *, floors, tags=None):
 LOBBY = (0, 0, 640, 512)
 MOUTH_BOX = (256, 512, 384, 528)            # the test room's mouth: 128 wide, the wall's 16 deep
 TEST = (128, 528, 512, 912)
-BRASS = (288, 352)                          # NOW: the brass door in the test room's north wall
+FIRST = (288, 352)                          # the first frame 101 / 121 in the test room's north wall, in line with
+                                            # the mouth and the start: the first sight of the level
+BRASS = (432, 496)                          # NOW: the brass door in the same wall, east of it
 GRATE_B = (16, 224, 48, 288)                # NOW: the outfall before 105
-GRATE_A = (464, 688, 512, 752)              # NOW: ... before 101
+GRATE_A = (288, 864, 352, 912)              # NOW: ... before 101
+LAMP_A = (256, 800, 384, 912)               # NOW: a working lamp over the first frame (a lit strip of ceiling)
 
 
 def lobby(c):
@@ -180,28 +183,29 @@ def lobby(c):
         return
     grate = [(GRATE_B, dict(ftex=GRATE, id=OUT_B))] if c.now else []
     fit(c, LOBBY, grate, floor=0, ceil=H, wall=LB, ftex=FL, ctex=KL)
-    c.room(MOUTH_BOX, floor=0, ceil=128, wall=LB, ftex=FL, ctex=FL, id=MOUTH_TAG,
+    c.room(MOUTH_BOX, floor=0, ceil=128, wall=LB, ftex=FL, ctex=FL, id=MOUTH_TAG, light=c.light + (40 if c.now else 0),
            raw=heights(ceils=(0, 128), hold=True))                  # (drawn open: GREEN hangs in 141 at the start)
     for y in (512, 528):
         c.line((MOUTH_BOX[0], y), (MOUTH_BOX[2], y), upper=LB, dontpegtop=True)
+    lamp = [(LAMP_A, dict(ctex="TLITE6_4", light=208))] if c.now else []
     grate = [(GRATE_A, dict(ftex=GRATE, id=OUT_A))] if c.now else []
-    fit(c, TEST, grate, floor=0, ceil=H, wall=LA, ftex=FA, ctex=KA, light=c.light + (24 if c.then else 8))
+    fit(c, TEST, lamp + grate, floor=0, ceil=H, wall=LA, ftex=FA, ctex=KA, light=c.light + (24 if c.then else 40))
 
 
 t.both(lobby)
 frame((0, 288), (0, 224), (-1, 0), 105, LB, times=LATER, tags={NOW: OUT_B})
-frame((512, 688), (512, 752), (1, 0), 101, LA, tags={NOW: OUT_A})
+frame((FIRST[0], 912), (FIRST[1], 912), (0, 1), 101, LA, tags={NOW: OUT_A})
 # THEN: the notice over the first frame (tools/gfx_lefthanging.py)
-assert (t.then.look, I1._shift((512, 688), (512, 752), (1, 0))) == (G.LOOK, G.SHIFT)
-t.then.line((512, 688), (512, 752), upper=G.NOTICE, exact=True, **OVER)
+assert (t.then.look, I1._shift((FIRST[0], 912), (FIRST[1], 912), (0, 1))) == (G.LOOK, G.SHIFT)
+t.then.line((FIRST[0], 912), (FIRST[1], 912), upper=G.NOTICE, exact=True, **OVER)
 t.frame_cause(320, 400, MOUTH, A_FRAME, tag=MOUTH_TAG)
 t.clocked(96, 128, 0)                                                   # leaning in the lobby NOW
 START = (320, 96)
-m.thing(*START, 1, angle=90)                                            # facing the test room: the old door in it
+m.thing(*START, 1, angle=90)                                            # facing the test room: the old door in it, lit
 # NOW: the brass door (keys 1 and 2) in the test room's north wall, and the night room behind it
 ajarmap.roomdoor(m, (BRASS[0], 912), (BRASS[1], 912), (0, 1), 0, keys="12", line_id=BRASS_LINE)
-m.sector(rect(BRASS[0], 928, BRASS[1], 944), floor=0, ceil=112, light=150, wall="AJXW2", ftex="AJXG2", ctex="AJXC2")
-ajarmap.way_out(m, BRASS[0] - 128, 944, None)
+m.sector(rect(BRASS[0], 928, BRASS[1], 992), floor=0, ceil=112, light=150, wall="AJXW2", ftex="AJXG2", ctex="AJXC2")
+ajarmap.way_out(m, BRASS[0] - 128, 992, None)                          # (a passage of 64: clear of the first frame's stub)
 
 # =================================================================================================================
 # 2. THE HALL, BAY C, THE WET BAY, THE STRONGROOM (NOW and THEN)
@@ -223,11 +227,12 @@ def hall(c):
     fit(c, BAY_C, grate, floor=0, ceil=H, wall=LA, ftex=FA, ctex=KA, light=c.light + 16)
     # the wet bay: five steps of 24 down, then its bottom; NOW the cistern (a basin)
     tag = dict(id=CISTERN) if c.now else {}
+    lit = dict(light=c.light + 64) if c.now else {}                     # NOW lit enough to be seen through the bars
     for k in range(1, 6):
         y1 = WET[1] + 32 * (k - 1)
         c.room((WET[0], y1, WET[2], y1 + 32), floor=-24 * k, ceil=160, wall=CO, ftex=FC, ctex=KC,
-               **(tag if k > 1 else {}))
-    c.room((WET[0], WET[1] + 160, WET[2], WET[3]), floor=WET_LOW, ceil=160, wall=CO, ftex=FC, ctex=KC, **tag)
+               **(tag if k > 1 else {}), **lit)
+    c.room((WET[0], WET[1] + 160, WET[2], WET[3]), floor=WET_LOW, ceil=160, wall=CO, ftex=FC, ctex=KC, **tag, **lit)
     grate = [(GRATE_D, dict(ftex=GRATE, id=OUT_D))] if c.now else []
     secret = dict(special=1024) if c.then else {}
     fit(c, STRONG, grate, floor=0, ceil=192, wall=AR, ftex=FR, ctex=KA, light=c.light - 8, **secret)
@@ -237,6 +242,9 @@ t.both(hall)
 frame((800, 576), (864, 576), (0, 1), 102, LA, tags={NOW: OUT_C})
 frame((1760, 768), (1824, 768), (0, 1), 103, CO, floors={NOW: WET_LOW, THEN: WET_LOW}, tags={NOW: CISTERN})
 frame((1760, -512), (1824, -512), (0, -1), 104, AR, tags={NOW: OUT_D})
+# NOW the wet bay's mouth is barred (a fallen grating): water, sight and shots pass, the player and monsters do not.
+# Frame 103 NOW is entered only through a door in it (the clocked door hung THEN in 123; old GREEN from the sump)
+t.now.line((WET[0], WET[1]), (WET[2], WET[1]), mid="MIDBARS3", midboth=True, blocking=True, wrapmidtex=True)
 # the ten-year door on test in 122 (its other leaf in 142)
 t.ten_year(832, 480, 90, frame=122 + 0, when=THEN)
 W.basin(m, CISTERN, 256 * 224 + 256 * 128, 0, floor=WET_LOW, at=(1792, 640))
@@ -262,14 +270,14 @@ def store(c):
     if c.then:
         c.room((1024, 400, 1600, 1024), floor=0, ceil=SUMP_CEIL, wall=AR, ftex=FR, ctex=KA, light=c.light - 32)
         return
-    c.room((1024, 384, 1600, LANDING_Y), floor=0, ceil=SUMP_CEIL, wall=AR, ftex=FR, ctex=KA, light=104)
+    c.room((1024, 384, 1600, LANDING_Y), floor=0, ceil=SUMP_CEIL, wall=AR, ftex=FR, ctex=KA, light=168)
     for k in range(8):                                                  # 16 a step, 32 deep
         y1 = LANDING_Y + 32 * k
         c.room((STAIR_X[0], y1, STAIR_X[1], y1 + 32), floor=-16 * (k + 1), ceil=SUMP_CEIL, wall=AR, ftex=FR, ctex=KA,
-               side="TANROCK2", light=104, id=SUMP)
+               side="TANROCK2", light=160, id=SUMP)
     fit(c, (1024, LANDING_Y, 1600, 1024), [((STAIR_X[0], LANDING_Y, STAIR_X[1], LANDING_Y + 256), None),
-                                          (LEDGE, dict(floor=BOTTOM + 112, side="TANROCK2", light=120))],
-        floor=BOTTOM, ceil=SUMP_CEIL, wall=AR, ftex="RROCK09", ctex=KA, light=96, id=SUMP)
+                                          (LEDGE, dict(floor=BOTTOM + 112, side="TANROCK2", ctex="TLITE6_4", light=224))],
+        floor=BOTTOM, ceil=SUMP_CEIL, wall=AR, ftex="RROCK09", ctex=KA, light=152, id=SUMP)    # (a lamp over the ledge)
 
 
 t.both(store)
@@ -284,15 +292,16 @@ BAY = (2048, 0, 2432, 384)
 STAIR_TOP = (2048, 384, 2176, 512)
 SHAFT = (2176, 384, 2304, 512)
 GALLERY = (2304, 384, 2560, 704)
-UP = 128
+UP, DOWN = 128, 16                          # the hoist's deck: up, or a step over the ground
+DECK = dict(ftex="FLAT23", side="SUPPORT3")  # the deck's plate and edge, at every time
 
 
 def hoist(c):
     # (the landing is drawn up: then.zs puts it at its setting at once, Snap; so itemcheck, which knows nothing of
     # causes, walks it)
-    landing = dict(floor=UP, id=HOIST_TAG, side=LA, raw=heights(floors=(0, UP)))
+    landing = dict(floor=UP, id=HOIST_TAG, raw=heights(floors=(DOWN, UP)), **DECK)
     if c.before:
-        c.room(SHAFT, **dict(dict(wall=LA, ftex="AJTRIMF", ctex="F_SKY1", ceil=H), **landing))     # the platform
+        c.room(SHAFT, **dict(dict(wall=LA, ctex="F_SKY1", ceil=H, light=240), **landing))     # the hoist's deck
         PIERS.append(SHAFT)
         return
     c.room((BAY[0], BAY[1], BAY[2], 128), floor=0, ceil=320, wall=LA, ftex=FA, ctex=KA)
@@ -301,7 +310,7 @@ def hoist(c):
         c.room((2080, 128 + 32 * k, 2176, 160 + 32 * k), floor=16 * (k + 1), ceil=320, wall=LA, ftex=FA, ctex=KA)
     c.room((2048, 128, 2080, 384), floor=0, ceil=320, wall=LA, ftex=FA, ctex=KA)
     c.room(STAIR_TOP, floor=UP, ceil=320, wall=LA, ftex=FA, ctex=KA)
-    c.room(SHAFT, floor=UP, ceil=320, wall=LA, ftex="AJTRIMF", ctex=KA, **{k: v for k, v in landing.items() if k != "floor"})
+    c.room(SHAFT, ceil=320, wall=LA, ctex=KA, **landing)                 # the same deck, a landing
     secret = dict(special=1024) if c.now else {}
     c.room((2304, 384, 2432, 512), floor=UP, ceil=320, wall=LA, ftex=FA, ctex=KA)
     c.room((2432, 384, 2560, 704), floor=UP, ceil=288, wall=LA, ftex=FA, ctex=KA, light=c.light - 8, **secret)
@@ -309,8 +318,12 @@ def hoist(c):
 
 
 t.both(hoist)
-PIERS.append((2432, 112, 2448, 208))                                    # BEFORE: where the bay's east wall will stand
-t.lever((2432, 128), (2432, 192), HOIST, when=BEFORE)
+# BEFORE the hoist's gantry: two posts at the deck's south corners and a beam between them over its edge; the
+# lever on a post of its own beside the deck's west side, facing frame 143's side of the yard
+POSTS = [(2160, 368, 2176, 384), (2304, 368, 2320, 384)]
+BEAM = (2176, 368, 2304, 384)
+LEVER_POST = (2096, 416, 2112, 480)            # (64 from the deck: room to walk between)
+PIERS.extend(POSTS + [BEAM, LEVER_POST])
 t.cause(2240, 300, HOIST, 2, tag=HOIST_TAG, when=BEFORE)
 t.lever((2560, 576), (2560, 640), VALVE)                                # THEN: the valve, on the gallery's east wall
 
@@ -353,10 +366,18 @@ b.room(DIG, floor=-160, ceil=H, wall="TANROCK2", ftex="RROCK09", ctex="F_SKY1", 
 for area in (YARD_A, YARD_B):
     for r in tiles(area, [p for p in PIERS if p[0] < area[2] and p[2] > area[0] and p[1] < area[3] and p[3] > area[1]]):
         b.room(r, **YARD)
+b.room(BEAM, floor=0, ceil=200, wall="SUPPORT3", ftex="FLAT10", ctex="FLAT23", light=240)
+b.cut((LEVER_POST[0], LEVER_POST[1]), (LEVER_POST[0], LEVER_POST[3]))
+b.line((LEVER_POST[0], LEVER_POST[1]), (LEVER_POST[0], LEVER_POST[3]), special=130, args=(HOIST,), playeruse=True,
+       repeatspecial=True, mid=ajarthen.LIVE[BEFORE], exact=True, dontpegbottom=True)
+for x1, y1, x2, y2 in POSTS + [LEVER_POST]:                            # the posts: plain steel
+    for e in (((x1, y1), (x2, y1)), ((x2, y1), (x2, y2)), ((x1, y2), (x2, y2))) + ((((x1, y1), (x1, y2)),)
+                                                                                 if x1 != LEVER_POST[0] else ()):
+        b.line(*e, mid="SUPPORT3")
 for x in (DIG[0], DIG[2]):                                              # the railings along the dig, both yards
     b.cut((x, DIG[1]), (x, DIG[3]))
     b.line((x, DIG[1]), (x, DIG[3]), **RAIL)
-door_at = t.before.P((552, 720))
+door_at = t.before.P((320, 950))
 ajarmap.door(m, GREEN, *door_at, frame=A_FRAME)                         # GREEN, hung BEFORE in 141 from the start
 
 # =================================================================================================================
@@ -370,9 +391,9 @@ assert not problems, problems
 # =================================================================================================================
 PART_OF = []            # (thing index, part) for every monster and pick-up: the budget by part
 TAKEN = {NOW: [], THEN: []}
-AVOID = {NOW: [START, (96, 128), (320, 470), (512, 720), (832, 560), (1792, 740), (1792, -490), (32, 256),
-               (1184, 1000), (1520, 944), (320, 900), (2240, 440), (1792, 400)],
-         THEN: [(512, 720), (832, 560), (1792, 740), (1792, -490), (32, 256), (2240, 440), (1792, 400), (320, 470)]}
+AVOID = {NOW: [START, (96, 128), (320, 470), (320, 870), (832, 560), (1792, 740), (1792, -490), (32, 256),
+               (1184, 1000), (1520, 944), (464, 880), (2240, 440), (1792, 400)],
+         THEN: [(320, 870), (832, 560), (1792, 740), (1792, -490), (32, 256), (2240, 440), (1792, 400), (320, 470)]}
 
 
 def halton(i, base):
@@ -456,7 +477,7 @@ ambush("lobby", LOBBY_IN, ajarthen.AMBUSH_CAUSE, CACO, 2, angle=90, after=3, arg
 items("lobby", (64, 64, 2046), (600, 64, 2049), (600, 480, 2046), (64, 480, 17), (320, 300, 2012))
 # --- the test room NOW: a few imps round the old door
 put("test room", TEST_IN, IMP, 3, 0)
-items("test room", (200, 600, 2049), (440, 860, 2048))
+items("test room", (200, 600, 2049), (180, 860, 2048))
 # --- the hall NOW: the first fight; the super shotgun in bay C; the ambush when key 1 is taken
 items("hall", (900, 448, 82), (760, 448, 2049), (1500, 64, 2048), (1300, 320, 2049), (1980, 64, 2046),
       (700, 300, 2012), (1980, 320, 2049), (1150, 64, 2048), (960, 200, 2012), (1800, 200, 17))
@@ -473,7 +494,7 @@ ambush("hall", HALL_IN, 1, CACO, 2, angle=180, after=2)
 ambush("hall", (2192, 16, 2416, 368), 1, CHAINGUNNER, 2, angle=180, after=1)
 # --- the wet bay NOW: what lives at the cistern's foot (it drowns when the valve is opened)
 put("wet bay", (1680, 560, 1904, 752), IMP, 2, 270)
-items("wet bay", (1700, 600, 2049), (1880, 600, 2048))
+items("wet bay", (1700, 340, 2049), (1880, 340, 2048))                          # (before the bars, in the hall)
 # --- the sump NOW: imps at its bottom; when key 2 is taken, cacodemons over the water
 put("sump", SUMP_IN, IMP, 4, 270)
 put("sump", SUMP_IN, DEMON, 2, 270)
