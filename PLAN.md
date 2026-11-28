@@ -22759,6 +22759,9 @@ before. BLUE joins the lab, and the corridor runs on east to three new bays:
   frame the rule refuses. The clocked doors leave no old doors, and their
   own refusal ("At the other time a door hangs in this frame.") already
   covers an old door in their twin.
+  (Mended 2026-11-28 for one case: the clocked door swaps in for a colour
+  door whose old self is all that fills its twin. See "The old door rule,
+  mended" below.)
 - *The look* (tools/gfx_olddoor.py, AjarDoor.Show): ten years (hung BEFORE,
   seen THEN) AJO1..AJO6, the paint dulled and greyed a little, scuffed at
   the foot and round the knob, the glyph yellowed, its glow 60 (a new door's
@@ -22800,7 +22803,9 @@ before. BLUE joins the lab, and the corridor runs on east to three new bays:
    refusals: a colour door later (one and two times on), a clocked leaf
    later, an old door later (the blocker is 101); RED hung THEN in 123 (no
    BEFORE) seen NOW only, forty years, walked through; the clocked door
-   refused THEN at 123 by its own rule (old RED in its twin 103); RED taken
+   refused THEN at 123 by its own rule (old RED in its twin 103) (since
+   2026-11-28 the swap goes through there, and the refusal is checked at an
+   empty frame instead: "The old door rule, mended"); RED taken
    down at its time: never there later, 201 shut again, its surround as
    new; the strongroom NOW in play (RED in 144, through 201, the
    megasphere), the clocked door carried into the strongroom THEN through
@@ -23180,3 +23185,226 @@ goes on to MAP24 with the test off.
 - The clocked door in 123 / 103 with the cistern full shows water in a dry room's frame (THEN, the pump bay dry,
   the frame full of the cistern's water standing up).
 - A look board for the site; the hall's and the test room's dressing.
+
+## MAP23: the way out built, BLUE, the press: as decided (2026-11-28, Claude on Fable; to be built)
+
+From "After the old door lab" (Vadim: the exit "should be build one way or another by player. Also can you add
+puzzles? ... once you discover that - everything else is very easy"; to the proposal: "Agreed, let's do as
+proposed"). The level's idea stays; one thing is added to it: **what is penned is there only while you hold the
+door; what is killed in its place is there for good.**
+
+**Why it is a puzzle.** Bones stand in for a living specimen only while the clocked door hangs nowhere, and then
+the door is in the player's hands, since no door is ever put down. So every way that bones make has been walked
+with full hands, and nothing else could be carried over it. Now something else has to be: BLUE. A way for BLUE is
+made only by bones that are there for good: the specimen dead THEN, where it was penned.
+
+**What changes.**
+1. *The way out is built.* Behind the brass door on the crush's ledge (keys 1 and 2, as now) the night room is
+   `ajarmap.way_home` with BLUE in place of `way_out`: BLUE's far side in one end, the brass frame in the other
+   (it takes BLUE only), nothing joined. BLUE has to be carried in: across the big run NOW, up the big one's bones
+   onto the ledge at 48, through the brass door, into the frame. BLUE hung anywhere else opens on the night room
+   too (its far side is there), which shows the room and gains nothing: the frame wants BLUE itself.
+2. *BLUE leans behind the kennels' second shutter* (the scales at 1000: all three demons in pen 1), in the room
+   that was the secret. With the three penned alive the shutter stands open only while the player's hands are
+   full of the clocked door, and BLUE wants empty hands. Shot dead in the pen through its hatch, THEN, they are
+   bones on the scales for good: the shutter stays open with the clocked door hung anywhere. This is the lesson
+   at its cheapest (three demons), and it comes first because BLUE is needed for the end.
+   The plasma rifle stays in that room with BLUE (no secret any more); the megasphere goes to the yard's closet
+   THEN (the secret that stays) and that closet's blue armour to BLUE's room.
+3. *The crush gets a press.* THEN, in the big run's keeper's passage, beside the lever of the crush's gate, a
+   second lever: the crush's roof comes down on what is penned in it, kills it within about five seconds and
+   goes up again. The big one's corpse lies in the crush for good (its Doom gate already keeps off while a dead
+   one lies there), so NOW its bones are a step in the crush whatever hangs where. The press does nothing to an
+   empty crush and cannot reach the player (he is behind the glass, in the passage). A notice by the lever in the
+   institute's manner (PRESS. SPECIMEN DISPOSAL ONLY. or the like). NOW the lever is dead and the roof where it
+   was.
+4. *Three grades of the same act*, in the order the level offers them: pen it (free, undone by hanging the
+   door, hands full): key 1 at 400, key 2 up the knight's bones, as now; kill it cheap (the demons, for good):
+   BLUE; kill it dear (the press, which the level's ammunition would not pay for): the way out.
+5. *The old door rule is on* (`Times(old=True)`, the PUZZLE's `old`): no part of the way needs it or teaches
+   it. Bones as steps are this level's law already.
+
+**The way through, as it becomes** (the wings in any order, as now, until BLUE):
+1. to 4. as now: see it; the kennels (a demon penned, the scales at 400, key 1); the stalls (a knight penned, up
+   its bones, key 2); the guards (led away, RED).
+5. *BLUE*: the kennels THEN again: all three demons into pen 1 (1000: the second shutter stands open NOW, with
+   full hands: BLUE in sight, not to be had); then shot in the pen. The clocked door hung, BLUE taken.
+6. *The big run's passage* (RED hung, the clocked door carried through and hung in 105, as now): the big one
+   baited into the crush, the gate shut, the press.
+7. *Out*: with BLUE across the big run, up the bones in the crush, the brass door, BLUE in the brass frame.
+
+**To prove** (tools/puzzle23.py, `old` on): solvable; 0 stuck; nothing lost; no way out without the demons dead
+in the pen (penned alive does not give BLUE); none without the big one dead in the crush (penned alive does not
+carry BLUE up); keys 1 and 2 as now by penning alone. The specimens dead for good are things the solver gets in
+the keeper's passages THEN and keeps, beside the bones it has only while the times are apart (`apart`).
+
+**To measure in the tests**: the press's time to kill; the bones of a pressed big one are a step that reaches
+the ledge from anywhere it can die in the crush; three demons dead in pen 1 read 1000 or more for good; a demon
+at the hatch does not reach the player through it (or what it costs him); the demons' Doom gate after the three
+are dead (another arrives in the run: harmless).
+
+**Not in this task**: the two laws in MAP21 and MAP22; the look (it keeps look 3, The Kennels, as chosen).
+
+## The old door rule, mended: the clocked door swaps in for a door whose old self fills its twin (2026-11-28)
+
+Found while building MAP23's way out (Claude on Opus, the worker of "MAP23: the way out built, BLUE, the press");
+the mend decided by the session on Fable (option A of three: mend the law, not the map).
+
+**What stranded.** Under the old door rule a colour door hung THEN leaves an old self in its NOW twin. The clocked
+door hangs in both twins at once, so it refused a frame whose twin held anything, the old self too. Then a swap
+that the rule otherwise allows strands the player: THEN he swaps a colour door into a frame for the clocked door
+(the times apart, the clocked door in his hands); its old self fills the NOW twin; the clocked door can never go
+back into that frame by a swap for the colour door, though everything else about the swap is in order. Measured:
+MAP23 with BLUE (BLUE swapped in THEN at 122, 123 or 124 for the clocked door): 2592 stuck states of the solver's;
+MAP21 with `old` on (GREEN swapped in at 125 for the clocked door): 120,512 stuck states.
+
+**The rule as it becomes.** The clocked door (either one) goes into a frame by a swap for a colour door when all
+that fills its twin frame is that colour door's own old self: the old self comes down with the door swapped out,
+as rule 4 already has it for colour doors. Nothing else changes: an old door is still rusted where it hangs (no
+swap at the old door's own frame); a twin filled by anything else still refuses; hanging into an empty frame whose
+twin holds an old door still refuses. The ten-year door's cases: the clocked door swapped in THEN for a colour door
+hung THEN, mended; the ten-year door swapped in BEFORE for a colour door hung BEFORE, and THEN for one hung THEN,
+mended the same way (the clocked doors share the refusal); the clocked door swapped in THEN for nothing where the
+twin NOW holds the old self of a door hung BEFORE, still refused.
+
+**Where.** src/zscript/then.zs, `ClockedRefuses`: the twin's door is skipped when it is old and the old self of the
+door in the frame (`oldOf == f.door`); the swap unhangs first (UseFrame: Unhang, which takes the old selves down,
+then Hang), so the clocked door's own hanging finds the twin empty. tools/solve.py: the same, only under `old`.
+The thief (enemies.zs) takes only colour doors and asks `OldBlocker`: nothing to mend.
+
+**The test.** src/zscript/beforetest.zs MODE=5: `clockedRefusedOldDoorInTwin` became
+`clockedSwapsInForOldSelfInTwin` (THEN at 123 the clocked door for RED, whose old self fills 103: the old self
+gone, the clocked door's two leaves hung, RED in hand), then RED put back THEN in 123 by script
+(`redThenIn123Again`), then the opposite: RED's old self moved by script to 101 and the clocked door used on the
+empty 121 THEN, refused ("At the other time a door hangs in this frame.") (`clockedRefusedEmptyFrameOldTwin`), and
+the old self put back (`oldRedBackIn103`). MODE=5 goes from 29 checks to 32.
+
+**Measured after** (tools/solve.py as mended):
+- MAP23 (PUZZLE23, BLUE): solvable in 11 door actions, 186,668 states, 0 stuck, nothing lost; without key X or key
+  P no solution (27,956 and 96,260 states).
+- BEFORE (the old door lab): 6 door actions, 74,487 states, 0 stuck: its proof lines the same as main's.
+- MAP24: 12 door actions, 6,222 states, 0 stuck: its proof lines the same as main's.
+- MAP22 with `old` on (a throwaway copy of its puzzle): 10 door actions, 588,072 states, 0 stuck, nothing lost.
+- MAP21 with `old` on (a throwaway copy): 16 door actions, 3,226,213 states, **192 stuck** (from 120,512): something
+  else strands there under the rule (e.g. THEN in boothT, the clocked door in hand, the doors in 104, 123 and 101).
+  Not looked into: MAP21 under the rule is not this task's.
+
+MAP24's MODE=2 checked the old refusal in the same case (`clockedRefusedOldGreenInItsTwin`: the clocked door at 123
+THEN with GREEN's old self in 103): it is turned round, `clockedSwapsInForOldGreenInItsTwin` (the swap goes through,
+GREEN in hand, no old door left), GREEN put back by script before its next check (rusted at 103 NOW); still 51
+checks, all pass.
+
+## MAP23: the way out built, BLUE, the press (built 2026-11-28)
+
+Built by a worker on Opus from "MAP23: the way out built, BLUE, the press: as decided", after the old door rule was
+mended for it ("The old door rule, mended", above). Files: `tools/puzzle23.py` (PUZZLE23 and its variants),
+`tools/map_sleepingdogs.py`, `src/zscript/map23.zs` (AjarCrushPress and the tests), `tools/dogs23.py` (the
+press's notice, the night room's place THEN dressed), `src/mapinfo.txt` (20209 AjarCrushPress), the smoke cfgs
+(MODE=1 20000 tics, MODE=2 4400, MODE=3 40000, MODE=4 82 shots). Nothing else changed for it but the mend
+(then.zs, solve.py, beforetest.zs, and MAP24's MODE=2 check of the old refusal: see that section).
+
+**The solver** (`puzzle23.py all`, `old` on): `MAP23: solvable in 11 door actions, 186668 states, 0 stuck`,
+nothing lost. The shortest way: the clocked door to 104, the guards THEN, down; to 103, the knight, down, key 2;
+to 102, the three demons penned and shot (d, D, X); RED from the guard room swapped in at 102 for the clocked door;
+through RED to the big run's passage, the clocked door in 105, the big one penned and pressed (c, P); back through
+RED, BLUE from its room; the big run, up the pressed bones (P), the brass door (keys 1, 2), BLUE in 109. What it
+proves, each by a variant: without X (the demons killed in the pen) no solution (27,956 states); without P (the
+press) none (96,260); keys 1 and 2 by penning alone, 3 door actions each, as before; without the knight or the
+guards none; without d, c or D solvable (X and P stand in for them: a dead specimen does what a penned one does);
+the old door rule off: solvable, 0 stuck; the brass frame taking any door, or standing on the ledge: solvable
+(it is BLUE's frame and the brass door's keys that make the end); BLUE never hung THEN (option B, not taken): 0
+stuck. The map proves PUZZLE23 (build.py; proofs.json).
+
+**The place** (NOW's coordinates; THEN is NOW + (0, -8192)):
+- *BLUE's room* (-920, 440)-(-824, 536), behind the second shutter (1000) off key 1's closet: BLUE leans at
+  (-884, 488) facing the shutter; the plasma rifle, a cell pack, the blue armour (from the yard's secret). No
+  secret any more. The yard's secret THEN keeps its place and gets the megasphere.
+- *The press*: THEN the crush's roof (sector tag CRUSH) is pressed by AjarCrushPress (20209, tid 25, at (784,
+  -1168) THEN). Its lever THEN on the passage's north wall at x 1000..1064 (y -1312), east of the gate's plate;
+  the gate's lever stays at 848..912. NOW both are dead levers on the NOW passage's north wall (y -1360). The
+  notice (look 3's rules kind, chalk on slate): PRESS / SPECIMEN / DISPOSAL / ONLY / BY ORDER on the passage's
+  east wall (x 1072), THEN y -1432..-1344, NOW -1448..-1368 (aged). The glass's line on the crush side carries
+  AJSHUT as its upper, the press's face when the roof is below the glass's top.
+- *The way out*: the brass door (keys 1 and 2, locked both sides) at x 912, y -1136..-1072, as before; a passage
+  east (928..1200) and a neck north (1136..1200, -1072..-1056) into the night room, `ajarmap.way_home(m, 1008,
+  -1056, BLUE, only=True, floor=48, frame=109)`: BLUE's far side (202) in its west end, the brass frame 109
+  (BLUE's inlay, BLUE's alone) in its east end. THEN on the same spot a sealed keepers' store (look 3's passage
+  dressing) with BLUE's far side THEN (222) in its west wall: hung THEN, BLUE opens there, a dead end
+  (`nightT`). `ajarthen.check_ids` passes (frames 101..105, 121..125, 109; far sides 201, 221, 202, 222).
+
+**The press** (map23.zs, AjarCrushPress). A pull (Thing_Activate) while it is up starts it; a pull while it moves
+does nothing. It comes down at 2 a tic; what lives in the crush is made +DONTGIB and held under the roof (Hexen's
+crush: 120 every fourth tic, the roof stopped on its head); once nothing alive holds it, on down to 40 over the
+floor, there 105 tics (three seconds), up at 2 a tic to 160. While the player stands in the crush it waits where
+it is. It says "The roof of the crush comes down." What it kills is an ordinary corpse: THEN the big one's
+corpse lies in the crush (its Doom gate keeps off, AjarStockGate.Kept, as before), NOW its bones for good, a step,
+1000 on any weighing.
+
+**The tests** (all against build/lab.pk3 of the full build):
+- MODE=1, the whole way (twice): `sleepingDogsDone=1 checks=63 failed=0`, `levelExited=1`, both runs. The guards,
+  key 2, the kennels: the clocked door in 102, the three demons lured to the hatch (3 of 3 came into pen 1 by
+  themselves, 44 and 70 tics after the first), the gate; the door down: 1200, S1 and the second shutter open with
+  full hands, key 1, BLUE refused ("You can only carry one door."); the door hung, the shutters shut; THEN the three
+  shot through the hatch (6 shots of 100, none by script), for good: 1200 with the door hung, both shutters open;
+  RED, swapped in at 102; through RED, the clocked door in 105, the big one lured into the crush (by itself), the
+  gate, the press (the kill 158 tics after the pull, the press up again once, the corpse whole, its bones for
+  good a step of 1000, the player unhurt); back NOW, the clocked door left in 105: the bones stay, no new big one;
+  back through RED, BLUE taken (both shutters open, the clocked door in 105, RED in 102); the yard, the big run, up
+  the pressed bones with BLUE, onto the ledge, the brass door, the passage, the night room, BLUE into 109: "The
+  BLUE door opens onto the room it hangs in.", the way out, `levelExited=1`.
+- MODE=2, the rules: `checks=47 failed=0` (was 29 before the way out). New: BLUE not to be had while they live
+  (posed in BLUE's room with the clocked door in hand); the second shutter shut while joined; all three dead: the
+  second shutter open for good with the door hung and empty hands; a big one penned alive in the crush: its bones
+  a step while apart, gone when the door hangs; the press from its lever: kills it (within 175 tics), says so, a
+  second pull while it moves does nothing, up once; no new big one; the corpse not gibbed; its bones stay with
+  the door hung, and are there once when it comes down; the press waits 70 tics with the player in the crush and
+  comes once he is out; the brass frame refuses RED and the clocked door; RED hung THEN in 122 is an old RED in 102
+  NOW, rusted there.
+- MODE=3, measured (`checks=0 failed=0`): *three demons shot dead in pen 1* (H): 6 shots of 100 through the
+  hatch, 3 bones for good, 1200 read green with the door hung, both shutters open. *The demons' Doom gate after
+  them*: another demon in the run 91 tics later; woken, with the player at the hatch for 525 tics it came no
+  nearer than 338 and did not hurt him; by the turnstile in the passage, within 104, no harm (the turnstile keeps
+  it in the run). *A demon alive in pen 1 at the hatch* (G, 3 trials of 350 tics, the gate shut, woken): it comes
+  to the hatch (within 63..65 of the player: its radius 30 and the hatch's 16 deep) and never hurts him: 0 in all.
+  *The press* (E, 6 trials, a fresh big one at six places in the crush, woken): killed 158..161 tics after the
+  pull (159 on average: 4.5 seconds), always at the crush's south end (it walks to the player's side: died at x
+  763..796, y -1248..-1226), the player unhurt; the press up again 200 tics after the kill; its bones a step of
+  1000 every time; NOW the player walked onto the bones (z 24) and from them onto the nearer ledge (z 48) 6 of 6
+  (3 west, 3 east). The old measures as before (knights 10 of 10 into the stall, 326 tics; the guards 24 of 30
+  followed).
+- MODE=4, views: `sleepingDogsViews=1`, 40 views (the old night room view replaced by 16 new ones: BLUE's room,
+  the closet's second shutter, the passage THEN with both levers and the notice, the notice close, the passage NOW
+  with the dead levers, the brass door's passage, the night room unbuilt from both ends, its place THEN, the press
+  coming down on the big one through the glass, the press down, the crush NOW from the funnel and from the east
+  ledge, the night room built from both ends). tools/smoke_MAP23_4.cfg 82 shots.
+- Regressions, each on the full build: BEFORE MODE=1 42/0, MODE=5 32/0 (29 before the mend); MAP24 MODE=1 44/0
+  (out), MODE=2 51/0 (after its check of the old refusal was turned round: see the mend); KENNEL MODE=1 30/0,
+  MODE=2 44/0; THEN MODE=1 45/0; MAP21 MODE=1 85/0 (out); MAP22 MODE=1 99/0 (out). Every other map's wad byte for
+  byte as in main's package; every other level's proof lines as in main's `build/proofs.json`.
+
+**What plays or reads badly** (MODE=4):
+- The pressed big one always dies at the crush's south end (it walks to the player's side of the glass), so its
+  bones are at the far end from the funnel; from the funnel NOW they hardly show in the dark crush. From the east
+  ledge they read as a pile.
+- The passage from the brass door to the night room is the night room's starry black: dark, it reads as the night
+  room already rather than a corridor of the house.
+- Under the press at 40 the cyberdemon's corpse sprite is cut by the roof and reads as red gore through the glass;
+  NOW it is ordinary bones (the press does not gib).
+- The press's lever has no plate of its own: the GATE CRUSH plate (arrow west) stands between the two levers and
+  the PRESS notice is on the east wall beside it.
+- View 35 ("the press's face over the glass") is aimed down the passage and does not show the face; view 24
+  stands too close to BLUE.
+
+**Bends.**
+- The press's lever is east of the gate's plate (x 1000..1064), not right beside the gate's lever (848..912): the
+  plate is between them.
+- The press: Hexen's crush of 120 every fourth tic (about 4.5 s for a cyberdemon), down to 40 over the floor,
+  three seconds down; it waits while the player stands in the crush (he cannot get in THEN in play: the gate and
+  the glass). It comes down on an empty crush too (nothing to kill).
+- The night room's way in is a passage east from the brass door and a neck up into the room's south wall (the
+  room is way_home's, 320 by 256, at (1008, -1056) on the ledge's floor 48); THEN its place is a sealed store with
+  BLUE's far side THEN.
+- The cell pack moved with the plasma rifle; the blue armour went to BLUE's room, the megasphere to the yard's
+  secret THEN, as decided.
+- Not tested: the look board's tour (MODE=5) has no view of the new places; the solver's other ways (BLUE THEN
+  into the wings, now possible by the mend) are proved by the solver only; difficulty 1 and 2 not played.

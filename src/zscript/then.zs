@@ -951,7 +951,9 @@ extend class AjarHandler
 				Say("This frame has no other time.\nThe " .. name .. " door will not hang in it.");
 				return true;
 			}
-			if (t.door)
+			// (all that fills the twin is the old self of the colour door swapped out of f: it comes down with that
+			// door, as rule 4 has it for colour doors. PLAN.md, "The old door rule, mended", 2026-11-28)
+			if (t.door && !(f.door && t.door.IsOld() && t.door.oldOf == f.door))
 			{
 				Say("At the other time a door hangs in this frame.\nThe " .. name .. " door cannot open onto it.");
 				return true;

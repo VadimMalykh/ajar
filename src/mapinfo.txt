@@ -71,6 +71,7 @@ DoomEdNums
 	20192 = AjarRumble                // ... the heap's rumble NOW while it moves
 	20193 = AjarKennelScales          // the kennel lab (kennel.zs): a pen's scales NOW, its readout and its shutter
 	20194 = AjarStockGate             // MAP23 (map23.zs): a run's Doom gate THEN, which stocks it with its kind
+	20209 = AjarCrushPress            // ... MAP23's press THEN: the crush's roof comes down on what is penned in it
 	20040 = AjarZone
 	20041 = AjarCue
 	20042 = AjarLocker

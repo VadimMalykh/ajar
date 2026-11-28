@@ -169,7 +169,10 @@ door lab"), with old=True:
                 (home_then, home), and is never taken down or swapped out
                 there. A plain door is not hung (nor swapped in) where a
                 later frame at its spot is filled by anything but what goes
-                with the door swapped out
+                with the door swapped out. A clocked door is swapped in for a
+                plain door whose old self is all that fills its twin (the
+                old self comes down with it: PLAN.md, "The old door rule,
+                mended", 2026-11-28)
 
 Regions are places you can walk around freely. Walking, picking up a key and
 stepping through a hung door are free; pick up / hang / unhinge / swap cost
@@ -428,8 +431,10 @@ def _moves(p, state, nailed=False):
             continue                                 # a frame that takes one door only, or two
         to = f
         if clock:
-            if f not in ctw or hung.get(ctw[f]) is not None:
-                continue                             # it fills the twin as well: that must be free
+            mine = (c,) if c is not None and p.get("old") and _plain(p, c) and where[c] == ("frame", f) else ()
+            if f not in ctw or hung.get(ctw[f]) not in (None,) + mine:
+                continue                             # it fills the twin as well: that must be free (but for the
+                                                     # old self of the door swapped out, with `old`: it comes down)
             more = only.get(ctw[f], only.get(f, carried))
             if carried not in (more if isinstance(more, tuple) else (more,)):
                 continue
