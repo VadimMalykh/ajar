@@ -22937,3 +22937,246 @@ switched on, each map scanned for a ledge a step would reach that it should not,
 
 **The order**: the old door lab and the two looks above (this merge); MAP24's first playable version; MAP23 (the
 built way out with BLUE, the press, the two laws); the two laws in MAP21 and MAP22.
+
+## MAP24 "Left Hanging": the first version, as decided (2026-11-28, Claude on Fable; after the two labs)
+
+**One idea**: what is hung at an earlier time has hung there ever since. One colour door, left hanging three
+times, each time for another reason: to be a way in (reach), to let water through (a flow), to have been found
+(a cause). The door at the start is the one left at the end.
+
+**What the labs changed in the outline** ("MAP24 "Left Hanging": a door is a long cause, and a third time").
+- *BLUE is out; GREEN does all three jobs.* The solver with a fourth door on three times ran past ten minutes and
+  3.7 GB (the old door lab). Three doors (the clocked door, the ten-year door, GREEN) keep the proof within
+  reach, and the level is the better for it: the one door of the story is the one the player keeps coming back
+  for. So also no forced swap of BLUE for the ten-year door; the swaps that are forced are GREEN's (below).
+- *The strongroom THEN is no stop on the way.* The lab showed it is reached only from BEFORE. Here it is a
+  secret.
+- *The water runs from the frame to the far side*, as the lab's tank and dry room: the cistern has the frame, and
+  GREEN's far side NOW is the room that floods.
+- *No squeeze.* With three doors the player's hands are empty whenever it would be met.
+- The site BEFORE is two yards with no way between them: this is what makes the ten-year door move.
+
+**Doors and keys.** The clocked door (C40: NOW and THEN; leans in the lobby NOW at the start), the ten-year door
+(C10: THEN and BEFORE; hangs on test in 122 / 142 at the start), GREEN (hangs BEFORE in 141 at the start, so its
+old selves hang THEN in 121 and NOW in 101 from the first tic). Keys 1 and 2. No Pair, no Stray, no company of
+Ajar's own (no thief, no nailer). The old door rule on (`Times(before=True, old=True)`).
+
+**Frames** (n NOW, n + 20 THEN, n + 40 BEFORE):
+
+| Spot | NOW | THEN | BEFORE | At the start |
+|---|---|---|---|---|
+| A, the first frame | 101, in the test room | 121, in the test room, under ON TEST. DO NOT REMOVE. | 141, standing free in yard A | GREEN in 141; old GREEN in 121 (ten years) and 101 (fifty) |
+| B, the lobby | 105 | 125 | none | empty (C40 goes here first) |
+| C, the hall's bay | 102 | 122, the test rig | 142, a pier in yard A | C10 in 122 / 142 |
+| D, the strongroom | 104, inside it | 124, inside it | 144, a pier in yard B, on the strongroom's ground | empty |
+| E, the wet bay | 103, in the cistern | 123 | 143, a pier in yard B | empty |
+
+Fourteen frames. 101 and 121 are inside the test room, which is walled up whenever they are empty, so nobody ever
+hangs a door in them: they only ever hold GREEN's old selves.
+
+**GREEN's far side** (one room at each time; a colour door opens on the one at its frame's time):
+- NOW: *the sump*. The store's floor has fallen in. A landing at the hall's level, a broken stair down to the
+  bottom 128 below, the far side's frame in the bottom's wall; across the pit, a ledge 112 over the bottom with
+  key 2 on it, reached from nowhere dry. A basin: joined by old GREEN to a full cistern it stands 96 deep, and
+  the ledge is 16 over the water.
+- THEN: *the store*, locked for the night (only GREEN leads there): the chaingun, shells.
+- BEFORE: *the old building's cellar* (only GREEN leads there): armour, a few stimpacks.
+
+**The places.**
+1. *The lobby* (the start, NOW; the same room THEN). Frame B. C40 leans NOW. A shotgun NOW. In its wall the test
+   room's mouth.
+2. *The test room* (THEN and NOW), built round the first frame: instruments pointed at frame A, the notice THEN.
+   In its back wall NOW the brass door, locked with keys 1 and 2, and behind it the way out (an exit switch).
+   Its mouth onto the lobby is open only while a colour door hangs BEFORE in 141 (a cause that follows the frame,
+   `frame_cause`, as the lab's closet; it waits for a player standing in the mouth). Without one the lobby's wall
+   is whole, THEN and NOW.
+3. *The hall* (THEN under notices, NOW a ruin), off the lobby. Bay C with the test rig. The wet bay E: five steps
+   down, 120 under the hall; THEN a dry pump bay with frame 123, NOW the cistern with frame 103. The strongroom's
+   blank wall. The hoist's shaft with its landing, and from the landing the gallery. NOW also the landing over
+   the sump.
+4. *The strongroom* (spot D): no way in at any time but its frame. NOW: key 1 and a plasma rifle. THEN: the
+   first secret (a megasphere), reached only by taking C10 down in yard B and hanging it in 144.
+5. *The gallery* (THEN and NOW), reached only from the hoist's landing, which is up THEN and NOW only if the hoist
+   was left up BEFORE (a cause BEFORE; its lever stands in yard B). THEN: the valve (a cause THEN: open, the
+   cistern NOW is full, 96 deep). NOW: the second secret (a rocket launcher).
+6. *The site* (BEFORE), under the sky, quiet. *Yard A*: the first frame 141 with GREEN in it, pier 142. *Yard B*:
+   piers 143 and 144, the hoist and its lever. Between the yards the old building and the dig: no way across, in
+   sight of each other. The old building's cellar is GREEN's far side BEFORE.
+
+**Water** (water.zs; the lab's measures). The cistern NOW is a basin filled by the valve (96 deep, under the
+hall's floor). The sump is a basin. Every other room NOW with a frame (the test room, the lobby, bay C, the
+strongroom) is an outfall, a grate in the floor before its frame, so that the sump's water runs out through an
+old GREEN hung there and no door ever stands dry before a wall of water. Nothing THEN or BEFORE holds water.
+
+**The way through** (12 door actions).
+1. *See it.* The lobby NOW: the test room's mouth open, the rusted GREEN door in 101, the brass door wanting two
+   keys. Take C40 (1), hang it in 105 (2). THEN: the same door ten years old under its notice; through it the
+   store (the chaingun). In the hall C10 on its rig: through it yard A. GREEN hangs new in the first frame; take
+   it (3). The test room is gone, THEN and NOW.
+2. *The far yard.* The hoist and the strongroom's ground are in yard B, and only frame 123 leads there. With
+   GREEN in hand: swap GREEN into 122 for C10 (4), hang C10 in 123 (5), fetch GREEN from 122 (6), through to
+   yard B.
+3. *Reach.* Hang GREEN in 144 (7). Pull the hoist's lever. THEN: the landing, the gallery, the valve. NOW: down
+   the sump's stair, through GREEN's far side and old GREEN in 104 into the strongroom: key 1.
+4. *A flow.* Back to yard B, take GREEN (8). At 123, swap GREEN in for C10 (9), hang C10 back in 122 (10). GREEN
+   left THEN in 123 is old GREEN NOW in 103, in the full cistern: the sump fills. NOW, from the landing, swim to
+   the ledge: key 2.
+5. *Hang it back.* Take GREEN from 123 (11), through C10 to yard A, hang it in 141 (12): it was found after all,
+   the test room is built. NOW: the brass door, out.
+Steps 3 and 4 in either order. Whatever GREEN is hung in on the way (122) is an old door NOW for that while:
+harmless, and the law shown once more.
+
+**Fights** (Doom's monsters; a first guess of 90 to 120 on skill 3). NOW: the lobby's and the hall's tenants at
+the start; an ambush when key 1 is taken (in the hall, on the way back); in the sump when key 2 is taken
+(cacodemons over the water); the last one in the lobby when GREEN goes back into 141. THEN: a few at the start;
+more come into the hall when the valve is opened. BEFORE: nothing. Weapons: shotgun (the lobby NOW), chaingun
+(the store THEN), super shotgun (the hall NOW), plasma rifle (the strongroom NOW), rocket launcher (the gallery
+NOW, a secret). Company: a monster killed THEN lies as bones NOW (then.zs, as MAP21 and MAP22); bones as steps
+(kennel.zs) stay off here until that law's own task.
+
+**To prove** (tools/puzzle24.py): solvable; 0 stuck; nothing lost; no way to the brass door without the hoist,
+the valve, GREEN left in 144 and GREEN left in 123; yard B only by C10 in 123; the megasphere only by C10 in 144.
+
+**Left for the second version**: the belt and its heap; the string line; the lodger; the site's own look (plain
+dressing first, a look board after Vadim has played); a second colour door, if the solver can be made to bear it.
+
+## MAP24 "Left Hanging": the first playable version (built 2026-11-28)
+
+Built by a worker on Opus from the section above, then a second pass on the session's notes (the same day). Files:
+`tools/map_lefthanging.py` (MAP24, registered after BEFORE), `tools/puzzle24.py`, `tools/gfx_lefthanging.py` (the
+notice), `src/zscript/map24.zs` (the level's handler, the tests), `tools/smoke_MAP24_1..3.cfg`; a few lines in
+`build.py`, `gfx.py`, `mapinfo.txt` (MAP24, and MAP23's `next` is now MAP24), `zscript.zs`, and `ajar.zs` (MAP24
+left to its own test, which ends with the level, as MAP23's). `solve.py`, `then.zs`, `water.zs` and `ajarthen.py`
+are as on main.
+
+**The solver.** `MAP24: solvable in 12 door actions, 6222 states, 0 stuck`, nothing lost (complete), under a
+second. The cistern NOW is a region of its own (`cisternN`): no walk from the hall (the bars), entered and left
+only through the door in 103 (old GREEN onto the sump, or the clocked door hung THEN in 123). The shortest way: the
+clocked door to 105; THEN through the ten-year door to yard A, GREEN taken (the test room gone); GREEN swapped into
+122, the ten-year door to 123, GREEN fetched; yard B, GREEN in 144; NOW through old GREEN in 104 from the hall: key
+1, and back; yard B again, the hoist up, GREEN taken; THEN the landing, the gallery, the valve; GREEN swapped into
+123 for the ten-year door; NOW the sump full, the swim to the ledge: key 2; the ten-year door back in 122, GREEN
+from 123, through to yard A, GREEN in 141; NOW the test room, the brass door.
+
+**To prove** (`python3 tools/puzzle24.py all`, each line a variant of the puzzle):
+- without the hoist: no solution (666 states); without the valve: none (1528); without GREEN left in 144: none
+  (2658); without GREEN at the wet bay's spot at any time (103, 123 or 143): none (2302);
+- yard B only by the ten-year door in 123 (143): without it no solution (155 states), yard B never reached;
+- the megasphere only by the ten-year door in 144: without it solvable (12, 5582 states, 64 stuck), the
+  strongroom THEN never reached;
+- **without GREEN left THEN in 123: still does not hold with the bars.** Solvable in 17 door actions (5774
+  states, 0 stuck): GREEN is carried THEN through the clocked door hung in 123 into the cistern NOW and swapped in
+  for it in 103; the sump fills through GREEN hung there as through its old self; later it is swapped back. The
+  bars took away the walk in, not the door in. What would make it hold (measured, not built): 103 takes only the
+  clocked door NOW (`only={103: (CLOCKED,)}`, 123 any door): `solvable in 12, 5398 states, 0 stuck`, and then
+  without GREEN left in 123 there is no solution (2462 states). Without the clocked door at E at all (103 left
+  without a twin) there is no solution (2022 states): not usable. Left for the session to choose.
+  **Decided** (Claude on Fable, 2026-11-28): the long way round stays, and 103 stays any door's. It is five door
+  actions longer than leaving GREEN in 123 and no short cut; a frame the clocked door alone may hang in would have
+  an old GREEN door in it on the way as designed, which reads wrong; and GREEN left in 144 and in 141 cannot be
+  got round at all, so the idea is still taught twice by force. `puzzle24.py all` now asks of this line only that
+  the way round be longer than the way as designed.
+
+**The place** (NOW's coordinates; THEN is NOW + (0, 8192), BEFORE NOW + (0, 16384): the map is about 2900 by
+1900, so the labs' 4096 was too little):
+- *The lobby* (0, 0)-(640, 512), the start at (320, 96) facing north, in line with the test room's mouth and the
+  first frame; the clocked door leaning at (96, 128); frame 105 / 125 in its west wall (y 224..288), a grate
+  before it NOW (the outfall); a shotgun. The test room's mouth in its north wall, x 256..384, 16 deep, 128 high,
+  lit (+40 NOW): a cause that follows 141 (`frame_cause`, tid 11, tag 2401, `heights(ceils=(0, 128),
+  hold=True)`), THEN and NOW.
+- *The test room* (128, 528)-(512, 912): frame 101 / 121 in its north wall (x 288..352, y 912), straight across
+  from the mouth, so that the first sight of the level is old GREEN under its lamp (a TLITE6_4 strip (256,
+  800)-(384, 912) NOW at light 208; the room +40 NOW, +24 THEN); a grate before it NOW. THEN the notice over it
+  (`AJLHN0`, a card 54 by 54 at 104..158 over the floor). NOW the brass door (keys 1 and 2) in the north wall at x
+  432..496, a passage to y 992, and the night room (304, 992)-(624, 1248) (`way_out`: the same way out as every
+  level).
+- *The hall* (640, 0)-(2048, 384), 256 high. Bay C (704, 384)-(960, 576) with frame 102 / 122 in its north wall
+  (x 800..864), a grate NOW; the ten-year door on its rig there THEN. The wet bay (1664, 384)-(1920, 768): five
+  steps of 24 down to -120; frame 103 / 123 in its north wall (x 1760..1824) at -120. NOW its mouth is barred
+  (MIDBARS3 on a blocking two-sided line at y 384, x 1664..1920: water, sight and shots pass, the player and
+  monsters do not) and the bay is lit +64, so that frame 103 and the water rising are seen from the hall; behind
+  the bars the cistern (basin 2410, held by the valve: 96 deep, its surface at -24). THEN the mouth is open and
+  the bay dry.
+- *The sump* (NOW) / *the store* (THEN) (1024, 384)-(1600, 1024). NOW the landing at 0 along its south side (y
+  384..448, light 168), the broken stair down its west side (x 1024..1088, eight steps of 16 to -128, light 160),
+  the bottom at -128 (light 152), GREEN's far side 203 in the north wall (x 1152..1216), the ledge (1440,
+  864)-(1600, 1024) at -16 under a lamp (TLITE6_4, light 224) with key 2: 352 from the stair, 416 from the
+  landing; the key is seen from the landing, dry and full. A basin (2411): full it stands at -32, the ledge 16
+  over it. THEN the store at 0, walled from the hall (16 of wall), GREEN's far side 223: the chaingun, shells.
+- *The strongroom* (1536, -512)-(2048, -16): 16 of wall from the hall, frame 104 / 124 in its south wall (x
+  1760..1824), a grate NOW. NOW key 1, the plasma rifle; THEN the megasphere (a secret sector).
+- *The hoist bay* (2048, 0)-(2432, 384), 320 high, off the hall's east end: the stair up (x 2080..2176) to its top
+  at 128, the shaft (2176, 384)-(2304, 512) with the landing (tag 2402, `heights(floors=(16, 128))`), the gallery
+  beyond at 128 (2304, 384)-(2560, 704). The landing is one deck at all three times: FLAT23 on top, SUPPORT3 on its
+  edges, 16 proud of the ground when down. THEN the valve's lever on the gallery's east wall (y 576..640); NOW the
+  rocket launcher (a secret sector) and two revenants.
+- *The site BEFORE*: yard A (-192, -384)-(1024, 1216), yard B (1600, -704)-(2624, 1216), under the sky (`AJ22SKY`,
+  FLAT10 ground, look 1's walls). Frame 141 in its pier (GREEN in it), pier 142; piers 143, 144 in yard B, and the
+  hoist: a gantry over the deck (two SUPPORT3 posts (2160, 368)-(2176, 384) and (2304, 368)-(2320, 384), a beam
+  between them at 200, FLAT23 under it) and the lever's post beside the deck on 143's side (2096, 416)-(2112, 480),
+  the lever on its west face (BEFORE only). Pulled, the deck rises from 16 to 128 in the yard under the gantry (and
+  is the landing THEN and NOW). Between the yards the dig (1024, -384)-(1600, 384), 160 deep, railed off (AJRAIL)
+  on both sides, and the old building (a solid block) with the cellar inside (1088, 704)-(1536, 1024) at -64:
+  GREEN's far side 243, green armour and stimpacks.
+
+**Water.** Basins NOW: the cistern (held), the sump, and an outfall (2412..2415) before 101, 105, 102 and 104.
+Measured (MODE=1 and 2): the sump fills through old GREEN in 103 to within 6 of full in about 420 tics and to
+within 0.5 in about 800 (surface -32.1); drains through old GREEN in 105 (MODE=2) in 98 tics, through old GREEN
+in 101 (MODE=1, GREEN back in 141) within 250. Taking GREEN out of 123 leaves the sump full (water.zs keeps no
+history). THEN nothing is wet. The player floats up when idle (`W.FLOAT`). Swimming onto the ledge: walk and jump
+keys from (1400, 944) under the surface: on the ledge in 105 tics.
+
+**What was to be settled.**
+- *Frames at different floor heights*: 101 at 0 onto 203 at -128, 104 at 0 onto 203, 123 at -120 to 143 at 0
+  and back: each walked through, the player arriving on the other floor (MODE=1, 2).
+- *The bars* (MODE=2): walked at and run at with jump held from the hall NOW, the player stays in the hall; THEN
+  the mouth is open (into the pump bay at -120); the cistern NOW entered from the sump's bottom through old GREEN
+  in 103 and left the same way, and entered and left through the clocked door hung THEN in 123. Neither is a stuck
+  state.
+- *water.zs and the clocked door in the full cistern 103 / 123* (not on the way: MODE=2 measures it): from the
+  dry pump bay THEN the frame shows the cistern's water standing in it, and a player who walks in arrives NOW at
+  -94, under water (waterlevel 3). Nothing flows THEN.
+- *Key 2 not reachable dry* (MODE=2): off the landing at a run, from the stair's top and from its foot at a run,
+  each with the jump key held, and along the bottom to the ledge's face: each ends at -128 with no key. MAP24 has
+  `nojump` like every map (the jump key only swims), so a running jump is a run; nothing was widened or lowered.
+- *The mouth with `hold`*: GREEN taken while the player stands NOW in the mouth: THEN it shuts at once, NOW it
+  waits (ceiling 128) until he steps out, then shuts; the ten-year door's leaf in 141 keeps it shut; GREEN back
+  in 141 opens it at both times (MODE=2).
+- *The red hint at the start* ("USE a door to take it with you ..."): `ajar.zs` says it on every level with a door
+  (`PlayerSpawned`), MAP21 to MAP23 included, so MAP24 keeps it.
+
+**The level's script** (`AjarLeftHanging`): "The test room was never built." when the mouth first shuts; "It was
+found after all." when a change first opens it again. The music NOW is AJM_EMY2 (Mysterium Engine, piano), which
+no other map plays; THEN AJM_AFTR, BEFORE AJM_EMY3 (then.zs).
+
+**Budget** (`python3 tools/map_lefthanging.py budget`; skill 3): lobby 20 monsters (with the last fight;
+ammunition x1.77), test room 3, hall 35 (x2.31), wet bay 2, sump 11 (x1.79), gallery 2, the hall THEN 19
+(x2.80); the level 92 (hp 14160, x2.90; health 340, armour 300). On skill 2 72, on 1 48. BEFORE has none.
+Ambushes: key 1 (imps, knights, revenants, cacodemons in the hall; chaingunners in the hoist bay), key 2
+(cacodemons and a pain elemental over the sump), the valve opened (imps, demons, chaingunners, a knight in the
+hall THEN), GREEN back in 141 (knights, imps, cacodemons in the lobby; revenants and a baron in the hall).
+
+**Checks** (headless, `build/lab.pk3`): MODE=1 the way through: `leftHangingDone=1 checks=44 failed=0`,
+`levelExited=1` (the walks, the frames walked through, the swim; the four ambushes seen to come); MODE=2 the
+rules: `checks=51 failed=0`; MODE=3 24 views (the start, the notice from further back, the cistern through the
+bars dry and full, the sump from the landing dry and full, yard B toward the gantry, the deck up). mapcheck 0
+problems, thingcheck 0, itemcheck 0. The full build: every other map's wad byte for byte as in main's package (53
+wads), every other proof line as in main's `build/proofs.json` (22). BEFORE MODE=1 (42) passes; in the first
+pass also BEFORE MODE=5 (29), MAP22 MODE=1 (99, out) and MAP21 MODE=1 (85, out). MAP23 MODE=1 failed once of two
+runs (`guardsAreBonesNow=0`, 2 bones: the guards' lead, its own luck; the second run 45 checks, 0 failed), and now
+goes on to MAP24 with the test off.
+
+**Bends from the design and open choices.**
+- "To prove" without GREEN left in 123 does not hold, bars or not (above); the one measured fix is 103 the clocked
+  door's alone NOW. Decided: not taken, the long way round (17 door actions) stays.
+- The way out is the night room behind the brass door, not an exit switch.
+- Plain dressing only: no instruments in the test room, no notices in the hall THEN; the one picture is the
+  notice. The yards wear look 1's walls (tiles under a cream cornice), like the lab's.
+- The ambushes over the hall NOW are not tied to where the player is: the key 1 wave comes into the hall while he
+  is still in the strongroom or the sump.
+- Bones as steps stay off (no AjarKennel in the level's handlers).
+
+**Not done, left for the second version.**
+- The clocked door in 123 / 103 with the cistern full shows water in a dry room's frame (THEN, the pump bay dry,
+  the frame full of the cistern's water standing up).
+- A look board for the site; the hall's and the test room's dressing.

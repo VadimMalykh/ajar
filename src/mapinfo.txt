@@ -433,11 +433,11 @@ map MAP22 "Day Return"
 
 // Act 3, level 3 (tools/map_sleepingdogs.py, src/zscript/map23.zs; kennel.zs): the animal house then and now. The
 // music follows the time: AjarThenHandler plays AJM_AFTR then (MAP21's), this level's own now: AJM_EMY1, a piece no
-// other map plays. Ajar's MAP23 hides Doom II's map of that name; its own next starts it again until there is a MAP24.
+// other map plays. Ajar's MAP23 hides Doom II's map of that name; its next is Ajar's MAP24.
 // The sky: a clear night NOW (MAP07's); THEN, in a look (tools/dogs23.py), MAP22's day by a sky transfer.
 map MAP23 "Sleeping Dogs"
 {
-	next = "MAP23"
+	next = "MAP24"
 	sky1 = "AJ7SKY", 0
 	nointermission
 	nojump
@@ -597,6 +597,21 @@ map BEFORE "Ajar: three times"
 	music = "AJM_DEAD"
 	sky1 = "AJ22SKY", 0
 	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "BeforeTest"
+}
+
+// Act 3, level 4 (tools/map_lefthanging.py, src/zscript/map24.zs; then.zs, water.zs): the endurance wing three
+// times, a door left hanging an old door later. The music follows the time: AjarThenHandler plays AJM_AFTR then and
+// AJM_EMY3 before; this level's own now: AJM_EMY2, a piece no other map plays. The sky is BEFORE's only (the yards):
+// MAP22's day. Ajar's MAP24 hides Doom II's map of that name; its own next starts it again until there is a MAP25.
+map MAP24 "Left Hanging"
+{
+	next = "MAP24"
+	sky1 = "AJ22SKY", 0
+	nointermission
+	nojump
+	nocrouch
+	music = "AJM_EMY2"
+	EventHandlers = "AjarWaterHandler", "AjarThenHandler", "AjarLeftHanging", "LeftHangingTest"
 }
 
 // The left-handed room lab (tools/map_lefthand.py, src/zscript/lefthand.zs): MAP=LEFT ./run.sh
