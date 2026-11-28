@@ -1,6 +1,7 @@
 """Act 3, level 3: "Sleeping Dogs" (MAP23). PLAN.md, "MAP23 "Sleeping Dogs": the
 first version, as decided" (with its part "Corrected by the solver") and "... the
-first playable version"; the lab: "The kennel lab".
+first playable version"; the lab: "The kennel lab"; the way out: "MAP23: the way out
+built, BLUE, the press" (as decided, and built 2026-11-28).
 
 The institute's animal house twice: NOW (night, the ruin, Doom's tenants; the runs
 open to the hall, their gates and turnstiles gone) and THEN, forty years before
@@ -21,13 +22,14 @@ Places (NOW's coordinates; x east, y north):
            THEN locked) into the hall, and frame 101 (the clocked door's alone).
            East: glass onto the big run (nothing passes, monsters do not see
            through), and the big run's gateway (open NOW, shut THEN). THEN
-           sealed; behind the shelter a secret.
+           sealed; behind the shelter a secret (a megasphere).
   hall     (0, 592, 768, 1216) NOW only: the hub.
   kennels  west of the hall: the run (-912, 960, -16, 1216), three pens along its
            south side (pen 1 the scales), the keeper's passage (-1040, 544, -16,
            672) south of the pens with a hatch into each and its leg up the west
            side to the turnstile; frame 102 in the passage's south wall; S1 in it
-           (key 1, the super shotgun) and the second shutter (a secret).
+           (key 1, the super shotgun) and the second shutter (1000): BLUE's room
+           (BLUE, the plasma rifle, the blue armour).
   stalls   east: the run (1152, 640, 1408, 1536), at its south end behind a
            funnel the stall (1240, 304, 1320, 496), the passage south of it (frame
            103) and its leg up the east side to the turnstile. NOW the ledge at
@@ -40,10 +42,16 @@ Places (NOW's coordinates; x east, y north):
   big run  (656, -896, 912, 560) east of the yard; at its south end behind a
            funnel the crush (720, -1296, 848, -1040). NOW the big one's bones in
            its middle; the ledge round the crush and in its east wall the brass
-           door (keys 1 and 2) to the night room. THEN the cyberdemon.
+           door (keys 1 and 2) to a passage and the night room (way_home: BLUE's
+           far side, the brass frame 109, BLUE's alone). THEN the cyberdemon; the
+           crush's roof a press (AjarCrushPress); the night room's place a sealed
+           store with BLUE's far side THEN.
   big run's keeper's passage (560, -1456, 1072, -1312 THEN; -1360 NOW): sealed at
            both times, RED's far side and frame 105; THEN the crush's hatch, the
-           pier, the lever behind it.
+           pier, the lever behind it, the crush's gate's lever and the press's
+           lever by the glass, the press's notice on the east wall (NOW the
+           levers dead, the notice aged).
+The old door rule is on (Times(old=True)).
 The checks: src/zscript/map23.zs (MODE=1..4 tools/smoke.sh).
 """
 import math

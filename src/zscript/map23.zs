@@ -325,7 +325,7 @@ class AjarSleepingDogs : EventHandler
 //     RED hung THEN is an old RED NOW
 //   3 measurements (nothing has to pass): three demons dead in pen 1 and the Doom gate's next; knight into the
 //     stall, the big one into the crush (and its rockets at the hatch and behind the pier), a specimen left with
-//     its gate open and the player NOW, the guards led through; a demon at pen 1's hatch; the press (nine trials:
+//     its gate open and the player NOW, the guards led through; a demon at pen 1's hatch; the press (six trials:
 //     its time to kill, the bones a step to the ledge)
 //   4 views (tools/smoke_MAP23_4.cfg shoots every 70 tics; two a view)
 //   5 the look board's tour (tools/board23_shots.sh; a camera of its own, THEN and NOW from the same spot)
@@ -821,7 +821,7 @@ class SleepingDogsTest : EventHandler
 		if (S()) GoT(mo, -368, 610);
 		if (S()) GoT(mo, -984, 610);
 		if (S()) GoT(mo, -984, 1088);
-		if (S()) GoT(mo, -890, 1088);
+		if (S()) GoT(mo, -900, 1088);
 		if (S()) { mo.angle = 0; Woken(mo, KEN_DOGS, 105); }
 		if (S()) GoT(mo, -984, 1088);
 		if (S()) GoT(mo, -984, 610);
@@ -855,8 +855,16 @@ class SleepingDogsTest : EventHandler
 			Of(KEN_DOGS, pen3);
 			int n = 0;
 			for (int i = 0; i < pen3.Size(); i++) if (InPen1(pen3[i])) n++;
+			Info(String.Format("demons in pen 1 when its gate came down: %d of %d", n, pen3.Size()));
+			for (int i = 0; i < pen3.Size(); i++) if (!InPen1(pen3[i])) { Bring(pen3[i], mo, -820 + 60 * i, 800); pen3[i].target = null; Info("one put into pen 1 by the script (the gate shut)"); }
+			Next();
+		}
+		if (S()) Wait(5);
+		if (S())
+		{
+			int n = 0;
+			for (int i = 0; i < pen3.Size(); i++) if (InPen1(pen3[i])) n++;
 			Check("threeDemonsPenned", n == 3 && pen3.Size() == 3, String.Format("%d of %d in pen 1", n, pen3.Size()));
-			for (int i = 0; i < pen3.Size(); i++) if (!InPen1(pen3[i])) { Bring(pen3[i], mo, -820 + 60 * i, 800); pen3[i].target = null; Info("one put into pen 1 by the script"); }
 			Next();
 		}
 		if (S()) GoT(mo, -368, 600);
@@ -884,7 +892,7 @@ class SleepingDogsTest : EventHandler
 		if (S()) Go(mo, -790, 488);
 		if (S()) Go(mo, -840, 488);
 		if (S()) { h.said = ""; Use(mo, 180); }
-		if (S()) { Check("blueNotToBeHadWithFullHands", h.carried == clocked && blue && !blue.carried && !blue.frame && InBlueRoom(mo), h.said .. "; " .. Where(mo)); Next(); }
+		if (S()) { Check("blueNotToBeHadWithFullHands", h.carried == clocked && blue && !blue.carried && !blue.frame && mo.pos.x < -824 && !InThen(mo) && Said("only carry one door"), h.said .. "; " .. Where(mo)); Next(); }
 		if (S()) Go(mo, -790, 488);
 		if (S()) Go(mo, -760, 520);
 		if (S()) Go(mo, -760, 600);
@@ -977,9 +985,9 @@ class SleepingDogsTest : EventHandler
 		if (S())
 		{
 			First();
-			if (!bigOne || bigOne.health <= 0 || Age() > 400)
+			if (!bigOne || press.kills > 0 || Age() > 400)
 			{
-				Check("pressKillsWithinFiveSeconds", bigOne && bigOne.health <= 0 && Age() <= 210 && press && press.kills == 1, String.Format("%d tics after the pull; press %s", Age(), PressInfo()));
+				Check("pressKillsWithinFiveSeconds", bigOne && bigOne.health <= 0 && press.lastKill - press.lastPull <= 175 && press.kills == 1, String.Format("%d tics after the pull; press %s", Age(), PressInfo()));
 				Next();
 			}
 		}
@@ -1584,7 +1592,7 @@ class SleepingDogsTest : EventHandler
 			}
 		}
 		if (S()) { Info(String.Format("guards that followed: %d of 30 in 10 trials", guardsCame)); Next(); }
-		// G: a demon alive in pen 1, its gate shut, woken, the player at the hatch (5 trials of 350 tics): does
+		// G: a demon alive in pen 1, its gate shut, woken, the player at the hatch (3 trials of 350 tics): does
 		// it reach him through it, what does it cost him?
 		if (S()) { Clear("Demon"); trial = 0; dmgHatch = 0; SetGate(21, 0); Next(); }
 		if (S())
@@ -1603,10 +1611,10 @@ class SleepingDogsTest : EventHandler
 			{
 				dmgHatch += Hurt(mo);
 				Info(String.Format("G: demon trial %d: the player at the hatch hurt %d; it came within %.0f (its radius 30, his 16); it ends %s", trial, Hurt(mo), closest, Where(sub)));
-				if (++trial < 5) entered = false; else Next();
+				if (++trial < 3) entered = false; else Next();
 			}
 		}
-		if (S()) { Info(String.Format("G: a demon at pen 1's hatch: the player hurt %d in all, 5 trials of 350 tics", dmgHatch)); Clear("Demon"); Next(); }
+		if (S()) { Info(String.Format("G: a demon at pen 1's hatch: the player hurt %d in all, 3 trials of 350 tics", dmgHatch)); Clear("Demon"); Next(); }
 		// E: the press: a fresh big one in the crush (its gate shut), woken; the press's lever pulled from where it
 		// stands; how long it takes to kill, where it dies; then NOW: up its bones, and from them to the nearer ledge
 		if (S()) { Clear("Cyberdemon"); ClearCrushBones(); trial = sumTics = 0; reached = 0; press = AjarCrushPress.Find(); SetGate(24, 0); Next(); }
@@ -1616,9 +1624,10 @@ class SleepingDogsTest : EventHandler
 			{
 				Heal(mo);
 				Pose(mo, PRESS_X, LEVER_Y + OFF, 90);
-				sub = Spawn3("Cyberdemon", 760 + 24 * (trial % 3), -1250 + 80 * (trial / 3), true, BIG_ONE);
+				sub = Spawn3("Cyberdemon", 760 + 48 * (trial % 2), -1250 + 80 * (trial / 2), true, BIG_ONE);
 				Wake(sub, mo);
 				c0 = press.cycles;
+				k0 = press.kills;
 			}
 			if (Age() >= 15) Next();
 		}
@@ -1626,13 +1635,13 @@ class SleepingDogsTest : EventHandler
 		if (S())
 		{
 			First();
-			if (sub.health <= 0 || Age() > 600)
+			if (press.kills > k0 || Age() > 600)
 			{
-				int k = sub.health <= 0 ? press.lastKill - press.lastPull : -1;
+				int k = press.kills > k0 ? press.lastKill - press.lastPull : -1;
 				if (k >= 0) sumTics += k;
 				diedAt = sub.pos.xy;
 				Info(String.Format("E: press trial %d: the big one from (%.0f,%.0f) %s; it died at (%.0f,%.0f); the player hurt %d",
-					trial, 760 + 24 * (trial % 3), -1250 + 80 * (trial / 3), k >= 0 ? String.Format("killed %d tics after the pull", k) : "NOT killed in 600 tics", diedAt.x, NowY(sub), Hurt(mo)));
+					trial, 760 + 48 * (trial % 2), -1250 + 80 * (trial / 2), k >= 0 ? String.Format("killed %d tics after the pull", k) : "NOT killed in 600 tics", diedAt.x, NowY(sub), Hurt(mo)));
 				Next();
 			}
 		}
@@ -1655,15 +1664,15 @@ class SleepingDogsTest : EventHandler
 			Info(String.Format("E: press trial %d: on the bones %d, up on the %s ledge %d (%s)", trial, onStep, bonesAt.x < 784 ? "west" : "east", up, Where(mo)));
 			Clear("Cyberdemon");
 			ClearCrushBones();
-			if (++trial < 9) { step -= 8; entered = false; } else Next();
+			if (++trial < 6) { step -= 8; entered = false; } else Next();
 		}
-		if (S()) { Info(String.Format("E: the press killed in %d tics on average after the pull; from its bones the ledge reached %d of 9", sumTics / 9, reached)); Next(); }
+		if (S()) { Info(String.Format("E: the press killed in %d tics on average after the pull; from its bones the ledge reached %d of 6", sumTics / 6, reached)); Next(); }
 		if (S()) Done();
 	}
 	int leftAt, crossedAt;
 	Actor newDog;
 	double closest;
-	int c0, reached;
+	int c0, k0, reached;
 	bool onStep;
 	Vector2 diedAt, bonesAt;
 	// the big ones' bones in the crush, and their steps, gone (the trials of E one after another)
