@@ -23180,3 +23180,62 @@ goes on to MAP24 with the test off.
 - The clocked door in 123 / 103 with the cistern full shows water in a dry room's frame (THEN, the pump bay dry,
   the frame full of the cistern's water standing up).
 - A look board for the site; the hall's and the test room's dressing.
+
+## MAP23: the way out built, BLUE, the press: as decided (2026-11-28, Claude on Fable; to be built)
+
+From "After the old door lab" (Vadim: the exit "should be build one way or another by player. Also can you add
+puzzles? ... once you discover that - everything else is very easy"; to the proposal: "Agreed, let's do as
+proposed"). The level's idea stays; one thing is added to it: **what is penned is there only while you hold the
+door; what is killed in its place is there for good.**
+
+**Why it is a puzzle.** Bones stand in for a living specimen only while the clocked door hangs nowhere, and then
+the door is in the player's hands, since no door is ever put down. So every way that bones make has been walked
+with full hands, and nothing else could be carried over it. Now something else has to be: BLUE. A way for BLUE is
+made only by bones that are there for good: the specimen dead THEN, where it was penned.
+
+**What changes.**
+1. *The way out is built.* Behind the brass door on the crush's ledge (keys 1 and 2, as now) the night room is
+   `ajarmap.way_home` with BLUE in place of `way_out`: BLUE's far side in one end, the brass frame in the other
+   (it takes BLUE only), nothing joined. BLUE has to be carried in: across the big run NOW, up the big one's bones
+   onto the ledge at 48, through the brass door, into the frame. BLUE hung anywhere else opens on the night room
+   too (its far side is there), which shows the room and gains nothing: the frame wants BLUE itself.
+2. *BLUE leans behind the kennels' second shutter* (the scales at 1000: all three demons in pen 1), in the room
+   that was the secret. With the three penned alive the shutter stands open only while the player's hands are
+   full of the clocked door, and BLUE wants empty hands. Shot dead in the pen through its hatch, THEN, they are
+   bones on the scales for good: the shutter stays open with the clocked door hung anywhere. This is the lesson
+   at its cheapest (three demons), and it comes first because BLUE is needed for the end.
+   The plasma rifle stays in that room with BLUE (no secret any more); the megasphere goes to the yard's closet
+   THEN (the secret that stays) and that closet's blue armour to BLUE's room.
+3. *The crush gets a press.* THEN, in the big run's keeper's passage, beside the lever of the crush's gate, a
+   second lever: the crush's roof comes down on what is penned in it, kills it within about five seconds and
+   goes up again. The big one's corpse lies in the crush for good (its Doom gate already keeps off while a dead
+   one lies there), so NOW its bones are a step in the crush whatever hangs where. The press does nothing to an
+   empty crush and cannot reach the player (he is behind the glass, in the passage). A notice by the lever in the
+   institute's manner (PRESS. SPECIMEN DISPOSAL ONLY. or the like). NOW the lever is dead and the roof where it
+   was.
+4. *Three grades of the same act*, in the order the level offers them: pen it (free, undone by hanging the
+   door, hands full): key 1 at 400, key 2 up the knight's bones, as now; kill it cheap (the demons, for good):
+   BLUE; kill it dear (the press, which the level's ammunition would not pay for): the way out.
+5. *The old door rule is on* (`Times(old=True)`, the PUZZLE's `old`): no part of the way needs it or teaches
+   it. Bones as steps are this level's law already.
+
+**The way through, as it becomes** (the wings in any order, as now, until BLUE):
+1. to 4. as now: see it; the kennels (a demon penned, the scales at 400, key 1); the stalls (a knight penned, up
+   its bones, key 2); the guards (led away, RED).
+5. *BLUE*: the kennels THEN again: all three demons into pen 1 (1000: the second shutter stands open NOW, with
+   full hands: BLUE in sight, not to be had); then shot in the pen. The clocked door hung, BLUE taken.
+6. *The big run's passage* (RED hung, the clocked door carried through and hung in 105, as now): the big one
+   baited into the crush, the gate shut, the press.
+7. *Out*: with BLUE across the big run, up the bones in the crush, the brass door, BLUE in the brass frame.
+
+**To prove** (tools/puzzle23.py, `old` on): solvable; 0 stuck; nothing lost; no way out without the demons dead
+in the pen (penned alive does not give BLUE); none without the big one dead in the crush (penned alive does not
+carry BLUE up); keys 1 and 2 as now by penning alone. The specimens dead for good are things the solver gets in
+the keeper's passages THEN and keeps, beside the bones it has only while the times are apart (`apart`).
+
+**To measure in the tests**: the press's time to kill; the bones of a pressed big one are a step that reaches
+the ledge from anywhere it can die in the crush; three demons dead in pen 1 read 1000 or more for good; a demon
+at the hatch does not reach the player through it (or what it costs him); the demons' Doom gate after the three
+are dead (another arrives in the run: harmless).
+
+**Not in this task**: the two laws in MAP21 and MAP22; the look (it keeps look 3, The Kennels, as chosen).
