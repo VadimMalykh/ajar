@@ -22759,6 +22759,9 @@ before. BLUE joins the lab, and the corridor runs on east to three new bays:
   frame the rule refuses. The clocked doors leave no old doors, and their
   own refusal ("At the other time a door hangs in this frame.") already
   covers an old door in their twin.
+  (Mended 2026-11-28 for one case: the clocked door swaps in for a colour
+  door whose old self is all that fills its twin. See "The old door rule,
+  mended" below.)
 - *The look* (tools/gfx_olddoor.py, AjarDoor.Show): ten years (hung BEFORE,
   seen THEN) AJO1..AJO6, the paint dulled and greyed a little, scuffed at
   the foot and round the knob, the glyph yellowed, its glow 60 (a new door's
@@ -22800,7 +22803,9 @@ before. BLUE joins the lab, and the corridor runs on east to three new bays:
    refusals: a colour door later (one and two times on), a clocked leaf
    later, an old door later (the blocker is 101); RED hung THEN in 123 (no
    BEFORE) seen NOW only, forty years, walked through; the clocked door
-   refused THEN at 123 by its own rule (old RED in its twin 103); RED taken
+   refused THEN at 123 by its own rule (old RED in its twin 103) (since
+   2026-11-28 the swap goes through there, and the refusal is checked at an
+   empty frame instead: "The old door rule, mended"); RED taken
    down at its time: never there later, 201 shut again, its surround as
    new; the strongroom NOW in play (RED in 144, through 201, the
    megasphere), the clocked door carried into the strongroom THEN through
@@ -23239,3 +23244,48 @@ at the hatch does not reach the player through it (or what it costs him); the de
 are dead (another arrives in the run: harmless).
 
 **Not in this task**: the two laws in MAP21 and MAP22; the look (it keeps look 3, The Kennels, as chosen).
+
+## The old door rule, mended: the clocked door swaps in for a door whose old self fills its twin (2026-11-28)
+
+Found while building MAP23's way out (Claude on Opus, the worker of "MAP23: the way out built, BLUE, the press");
+the mend decided by the session on Fable (option A of three: mend the law, not the map).
+
+**What stranded.** Under the old door rule a colour door hung THEN leaves an old self in its NOW twin. The clocked
+door hangs in both twins at once, so it refused a frame whose twin held anything, the old self too. Then a swap
+that the rule otherwise allows strands the player: THEN he swaps a colour door into a frame for the clocked door
+(the times apart, the clocked door in his hands); its old self fills the NOW twin; the clocked door can never go
+back into that frame by a swap for the colour door, though everything else about the swap is in order. Measured:
+MAP23 with BLUE (BLUE swapped in THEN at 122, 123 or 124 for the clocked door): 2592 stuck states of the solver's;
+MAP21 with `old` on (GREEN swapped in at 125 for the clocked door): 120,512 stuck states.
+
+**The rule as it becomes.** The clocked door (either one) goes into a frame by a swap for a colour door when all
+that fills its twin frame is that colour door's own old self: the old self comes down with the door swapped out,
+as rule 4 already has it for colour doors. Nothing else changes: an old door is still rusted where it hangs (no
+swap at the old door's own frame); a twin filled by anything else still refuses; hanging into an empty frame whose
+twin holds an old door still refuses. The ten-year door's cases: the clocked door swapped in THEN for a colour door
+hung THEN, mended; the ten-year door swapped in BEFORE for a colour door hung BEFORE, and THEN for one hung THEN,
+mended the same way (the clocked doors share the refusal); the clocked door swapped in THEN for nothing where the
+twin NOW holds the old self of a door hung BEFORE, still refused.
+
+**Where.** src/zscript/then.zs, `ClockedRefuses`: the twin's door is skipped when it is old and the old self of the
+door in the frame (`oldOf == f.door`); the swap unhangs first (UseFrame: Unhang, which takes the old selves down,
+then Hang), so the clocked door's own hanging finds the twin empty. tools/solve.py: the same, only under `old`.
+The thief (enemies.zs) takes only colour doors and asks `OldBlocker`: nothing to mend.
+
+**The test.** src/zscript/beforetest.zs MODE=5: `clockedRefusedOldDoorInTwin` became
+`clockedSwapsInForOldSelfInTwin` (THEN at 123 the clocked door for RED, whose old self fills 103: the old self
+gone, the clocked door's two leaves hung, RED in hand), then RED put back THEN in 123 by script
+(`redThenIn123Again`), then the opposite: RED's old self moved by script to 101 and the clocked door used on the
+empty 121 THEN, refused ("At the other time a door hangs in this frame.") (`clockedRefusedEmptyFrameOldTwin`), and
+the old self put back (`oldRedBackIn103`). MODE=5 goes from 29 checks to 32.
+
+**Measured after** (tools/solve.py as mended):
+- MAP23 (PUZZLE23, BLUE): solvable in 11 door actions, 186,668 states, 0 stuck, nothing lost; without key X or key
+  P no solution (27,956 and 96,260 states).
+- BEFORE (the old door lab): 6 door actions, 74,487 states, 0 stuck: its proof lines the same as main's.
+- MAP24: 12 door actions, 6,222 states, 0 stuck: its proof lines the same as main's.
+- MAP22 with `old` on (a throwaway copy of its puzzle): 10 door actions, 588,072 states, 0 stuck, nothing lost.
+- MAP21 with `old` on (a throwaway copy): 16 door actions, 3,226,213 states, **192 stuck** (from 120,512): something
+  else strands there under the rule (e.g. THEN in boothT, the clocked door in hand, the doors in 104, 123 and 101).
+  Not looked into: MAP21 under the rule is not this task's.
+

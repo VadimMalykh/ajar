@@ -30,6 +30,7 @@ class BeforeTest : EventHandler
 	AjarHandler h;
 	AjarThenHandler th;
 	AjarDoor clocked, shadow, ten, tenShadow, red, blue;
+	AjarDoor oldRed;           // (MODE=5) RED's old self, moved by script
 
 	bool Testing() { return CVar.GetCVar("ajar_autotest").GetInt() != 0 && level.mapname ~== "BEFORE"; }
 
@@ -811,9 +812,22 @@ class BeforeTest : EventHandler
 		if (At()) Check("redHungThenSeenNowOnly", red.frame == F(123) && OldOf(103, red, 40, 201) && OldCount() == 1 && Open(221) && !Open(241), Olds() .. "; " .. Fars());
 		if (At()) Through(mo, 452, 256, 0);
 		if (Seg(24) && tt == 23) { Keys(); Check("throughOldRedNowIn103", InCorridor(mo, 0), Where(mo)); }
-		// the clocked door's own refusal covers an old door in its twin: THEN at 123, RED's old self NOW in 103
+		// the clocked door swaps in THEN at 123 for RED, whose old self is all that fills its twin 103: the old self
+		// comes down with RED (PLAN.md, "The old door rule, mended", 2026-11-28; it was refused until then)
 		if (At()) { InHand(clocked); h.said = ""; Pose(mo, 470, OFF + 256, 0); PressUse(mo); }
-		if (At()) Check("clockedRefusedOldDoorInTwin", h.carried == clocked && red.frame == F(123) && OldOf(103, red, 40, 201) && Said("At the other time a door hangs in this frame.\nThe clocked door"), h.said);
+		if (At()) Check("clockedSwapsInForOldSelfInTwin", h.carried == red && clocked.frame == F(123) && shadow.frame == F(103) && OldCount() == 0
+			&& !Said("At the other time") && FarFace(201) == "AJTF1", h.said .. "; " .. Olds() .. "; " .. DoorsSaid());
+		// back as it was: the clocked door put back, RED hung THEN in 123 again (its old self NOW in 103)
+		if (At()) { ScriptUnhang(clocked); PutBack(clocked); ScriptHang(red, 123); }
+		if (At()) Check("redThenIn123Again", red.frame == F(123) && OldOf(103, red, 40, 201) && OldCount() == 1 && !h.carried, Olds());
+		// ... and still refused: the clocked door into an empty frame whose twin holds an old door. No play makes that
+		// (a door's old selves are made only where the frames are free); by script, RED's old self moved from 103 to 101,
+		// the clocked door taken to 121 THEN (empty)
+		if (At()) { oldRed = F(103).door; h.Unhang(F(103)); h.Hang(oldRed, F(101)); InHand(clocked); h.said = ""; Pose(mo, 128, OFF + 470, 90); PressUse(mo); }
+		if (At()) Check("clockedRefusedEmptyFrameOldTwin", h.carried == clocked && !F(121).door && F(101).door == oldRed && oldRed.IsOld()
+			&& Said("At the other time a door hangs in this frame.\nThe clocked door"), h.said .. "; " .. Olds());
+		if (At()) { h.Unhang(F(101)); h.Hang(oldRed, F(103)); }
+		if (At()) Check("oldRedBackIn103", OldOf(103, red, 40, 201) && !F(101).door && OldCount() == 1, Olds());
 		// taken down at its own time: never there later, at once
 		if (At()) { PutBack(clocked); Pose(mo, 470, OFF + 256, 0); PressUse(mo); }
 		if (At()) Check("takenDownNeverThereLater", h.carried == red && !F(103).door && !F(123).door && OldCount() == 0 && !Open(201) && ShutRed(201)
