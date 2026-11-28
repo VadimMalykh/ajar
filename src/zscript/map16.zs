@@ -533,10 +533,10 @@ extend class AjarHandler
 	//  3 the leaf at the foot again, the player in sight: the porter sets off
 	//    for it, and once it is at the hinges GREEN is swapped in for the leaf
 	//    (Vadim, playing: it carried RED off to the den). It leaves GREEN
-	//    hanging, carries nothing, and the den's frame stays empty.
-	//  4 the leaf at the foot again, the player away upstairs: a nailer nails it.
-	//  5 the player in sight again: the porter leaves the nailed leaf alone.
-	//  6 the nailer killed: the nails fall out.
+	//    hanging, carries nothing, and the den's frame stays empty. The leaf
+	//    is hung at the foot again.
+	//    (4 to 6 were the nailer's, out of the game 2026-11-28: the numbers
+	//    of the phases after them are kept.)
 	//  7 up through the leaf: the player alone on the plate does not open the
 	//    shutter, and the dial comes to rest at a tenth.
 	//  8 the player on the canteen floor, in the baron's sight, RED not hung:
@@ -695,33 +695,11 @@ extend class AjarHandler
 					if (foot.door) Unhang(foot);
 					Hang(leaf, foot);                           // the leaf at the foot again
 				}
-				Pose(mo, 384, -2400, 384, 90);                  // upstairs, out of its sight
-				nailer = Actor.Spawn("AjarNailer", (-640, -700, 0));
+				Pose(mo, -576, -740, 0, 270);
 				swapAt = 0;
-				NextStep(4, t);
+				NextStep(7, t);
 				return;
 			}
-		}
-		if (m16phase == 4 && (leaf.nailer || s > 700))
-		{
-			Check("nailerNailsTheLeafAtTheFoot", leaf.nailer == nailer && foot.door == leaf);
-			Pose(mo, -576, -500, 0, 90);
-			NextStep(5, t);
-			return;
-		}
-		if (m16phase == 5 && s == 300)
-		{
-			Check("porterLeavesTheNailedLeaf", foot.door == leaf && leaf.nailer && thief && !thief.loot);
-			nailer.DamageMobj(null, null, 1000, 'None');
-			NextStep(6, t);
-			return;
-		}
-		if (m16phase == 6 && s == 30)
-		{
-			Check("nailsFallWhenTheNailerDies", nailer.health <= 0 && !leaf.nailer && foot.door == leaf);
-			Pose(mo, -576, -740, 0, 270);
-			NextStep(7, t);
-			return;
 		}
 		if (m16phase == 7)
 		{

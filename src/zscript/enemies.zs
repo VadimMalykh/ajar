@@ -130,7 +130,7 @@ class AjarWorker : AjarEnemy
 	// in a straight line: no step on the way higher than it can climb and no
 	// drop it would not come back up (it cannot plan a way down into a pit,
 	// across one, or round by stairs), and nowhere too low for it (MAP16's
-	// staff stair, 54 high: a thief goes up it, a nailer does not).
+	// staff stair, 54 high: a thief goes up it, anything 56 high does not).
 	bool CanReach(Vector2 at)
 	{
 		if (!spot) spot = Spawn("AjarLure", pos);
@@ -647,175 +647,6 @@ class AjarThiefReturn : Actor
 	}
 }
 
-// Nailer: the thief's opposite. It walks to a hung door and nails it to its
-// frame. A nailed door still opens onto its far side, but nobody can take it
-// down or swap it, neither you nor a thief, until the nailer is dead; then
-// the nails fall out of every door it nailed. With no door left to nail it
-// comes for you with its fist.
-//
-// Look (user, 2026-11-16, design/map05-board.html): the shadow of a hell
-// knight at four fifths of its size, broad where the lodger is tall and the
-// thief is small. Doom's BOS2 sprites are drawn as one flat near-black shape
-// that the room shows through, with two nail heads for eyes (AjarNailerEyes).
-// The knight's throwing arm is the hammer blow.
-class AjarNailer : AjarWorker
-{
-	const PATIENCE = 120;
-	const SHADE = 0.7;         // how solid the shadow is
-	const EYE_Z = 47;          // the eyes' height above its feet
-	AjarDoor job;
-	int steps;
-	Actor eyes;
-
-	Default
-	{
-		Radius 18;
-		Height 56;
-		Health 80;
-		Speed 9;
-		Mass 200;
-		PainChance 60;
-		MeleeRange 52;
-		Scale 0.8;
-		SeeSound "skeleton/sight";
-		PainSound "skeleton/pain";
-		DeathSound "skeleton/death";
-	}
-	States
-	{
-	Spawn:
-		BOS2 A 8 A_NailerLook();
-		Loop;
-	Walk:
-		BOS2 AABBCCDD 3 A_NailerWalk();
-		Loop;
-	Work:
-		BOS2 E 9 A_NailerFace();
-		BOS2 G 8 A_StartSound("skeleton/melee", CHAN_WEAPON);
-		BOS2 E 9;
-		BOS2 G 8 A_StartSound("skeleton/melee", CHAN_WEAPON);
-		BOS2 G 0 A_NailerNail();
-		Goto Spawn;
-	Hunt:
-		BOS2 AABBCCDD 3 A_NailerHunt();
-		Loop;
-	Melee:
-		BOS2 EF 4 A_FaceTarget();
-		BOS2 G 7 A_CustomMeleeAttack(4 * random[AjarNailer](2, 5), "skeleton/melee", "skeleton/swing");
-		Goto Hunt;
-	Pain:
-		BOS2 H 4 A_Pain();
-		Goto Spawn;
-	Death:
-		BOS2 I 6 A_Scream();
-		BOS2 J 0 A_NailerDone();
-		BOS2 J 6 A_NoBlocking();
-		BOS2 KLMN 6;
-		BOS2 O -1;
-		Stop;
-	}
-
-	bool JobStillThere() { return job && job.frame && !job.nailer; }
-
-	// The eyes show only while it faces you, as the lodger's and the thief's do.
-	override void Tick()
-	{
-		Super.Tick();
-		if (!eyes) eyes = Spawn("AjarNailerEyes", pos);
-		let cam = players[consoleplayer].camera;
-		eyes.bInvisible = health <= 0 || !cam || abs(DeltaAngle(angle, AngleTo(cam))) > 50;
-		// its head drops as the blow comes down
-		bool down = frame == 6;
-		if (!eyes.bInvisible) eyes.SetOrigin((pos.xy + AngleToVector(angle, 6), pos.z + EYE_Z - (down ? 5 : 0)), true);
-	}
-
-	override void PostBeginPlay()
-	{
-		Super.PostBeginPlay();
-		A_SetRenderStyle(SHADE, STYLE_TranslucentStencil);   // the style has no name as a property
-		SetShade(0x0A090E);
-	}
-
-	// the nearest hung door without nails that it can walk to
-	AjarDoor FindJob()
-	{
-		let h = Handler();
-		if (!h) return null;
-		AjarDoor best;
-		double bestDist = 1e9;
-		let di = ThinkerIterator.Create("AjarDoor");
-		AjarDoor d;
-		while (d = AjarDoor(di.Next()))
-		{
-			if (!d.frame || d.nailer || d.IsOld()) continue;        // (an old door is rusted in: then.zs)
-			Line l = h.FindLine(d.frame.args[0]);
-			double dist = Distance2D(d.frame);
-			if (l && dist < bestDist && CanReach(Front(l, REACH))) { best = d; bestDist = dist; }
-		}
-		if (best) CanReach(Front(h.FindLine(best.frame.args[0]), REACH));   // leaves the marker there
-		return best;
-	}
-
-	void A_NailerLook()
-	{
-		job = FindJob();
-		if (job)
-		{
-			steps = 0;
-			A_StartSound(SeeSound, CHAN_VOICE);
-			SetStateLabel("Walk");
-		}
-		else if (SeesPlayer())
-		{
-			steps = 0;
-			target = players[consoleplayer].mo;
-			SetStateLabel("Hunt");
-		}
-	}
-
-	void A_NailerWalk()
-	{
-		if (!JobStillThere() || ++steps > PATIENCE) { job = null; target = null; SetStateLabel("Spawn"); return; }
-		if (Distance2D(spot) < 40) { SetStateLabel("Work"); return; }
-		StepToSpot();
-	}
-
-	void A_NailerFace()
-	{
-		if (job && job.frame) angle = AngleTo(job.frame);
-	}
-
-	void A_NailerNail()
-	{
-		let h = Handler();
-		if (h && JobStillThere() && Distance2D(spot) <= 64) h.Nail(job, self);
-		job = null;
-		target = null;
-	}
-
-	// after the player, but a door to nail comes first
-	void A_NailerHunt()
-	{
-		let p = players[consoleplayer].mo;
-		if (!p || p.health <= 0 || (++steps % 12 == 0 && FindJob())) { target = null; SetStateLabel("Spawn"); return; }
-		target = p;
-		A_Chase("Melee", null);
-	}
-
-	void A_NailerDone()
-	{
-		let h = Handler();
-		if (h) h.Unnail(self);
-	}
-
-	override void OnDestroy()
-	{
-		A_NailerDone();
-		if (eyes) eyes.Destroy();
-		Super.OnDestroy();
-	}
-}
-
 // Lodger: it lives in the empty frames and uses them as its own doors. While
 // it is inside it cannot be seen or hurt. It comes out of an empty frame that
 // has a view of you (the frame glows and knocks first), goes for you, and
@@ -1085,23 +916,6 @@ class AjarThiefPack : Actor
 	{
 	Spawn:
 		AJD1 A -1;
-		Stop;
-	}
-}
-
-// The nailer's eyes: two nail heads.
-class AjarNailerEyes : Actor
-{
-	Default
-	{
-		+NOINTERACTION
-		+NOBLOCKMAP
-		+BRIGHT
-	}
-	States
-	{
-	Spawn:
-		AJNE A -1;
 		Stop;
 	}
 }

@@ -32,8 +32,7 @@ Company. The porter, a thief that takes the TEAL leaf only and only while
 it sees the player, from any frame but its own, and always hangs it in the
 den's frame (its args[2]); killed, another comes out of the den 30 seconds
 later. Only it passes the staff stair into the den (its top step 54 high: the player and
-every Doom monster are 56 or more). The nailer comes to the foot when VIOLET
-is first taken and nails what hangs there.
+every Doom monster are 56 or more).
 
 The weighbridge (AjarWeighbridge, map16.zs) weighs what stands or lies on
 its plate: the player 100, live monsters and dead ones' bodies by their
@@ -88,7 +87,7 @@ DEN_Z = 40                                  # the den's floor: a step nobody cli
 H = 256                                     # every room's height but those named
 PALE, RUST, COLD, STEEL, DIM, PAPER = 0xDCE8DC, 0xE8C8B0, 0xA8C0D8, 0xC8D0E0, 0xB0B8C8, 0xF0E4C8
 HEAD, FOOT, DEN, LABS, CANTEEN = 110, 104, 105, 102, 101    # frames
-THIEF, NAILER, WEIGHBRIDGE_T, WEIGH_DIAL_T = 20003, 20004, 20070, 20071
+THIEF, WEIGHBRIDGE_T, WEIGH_DIAL_T = 20003, 20070, 20071
 DIAL_AT = (1166, -1912)                     # the weighbridge's dial: 2 off the lobby's east wall
 BARON = 3003
 ARACHNO = 68
@@ -423,9 +422,11 @@ things(2046, (-640, -330))
 things(2011, (-1200, -580), (-1100, -580))
 
 # --- ambushes ------------------------------------------------------------------------------------------
-# VIOLET, taken: the nailer comes to the foot (the first of the level's
-# ambushers: there on every difficulty), and company in the boiler room
-ajarmap.ambush(m, 10 + VIOLET, NAILER, (-640, -700), angle=90)
+# VIOLET, taken: company in the boiler room. (The nailer came to the foot
+# here, the first of the level's ambushers, until it went out of the game,
+# 2026-11-28: its turn in the thinning is kept, so that those after it are
+# there on the difficulties they were.)
+m.ambushers = 0
 ajarmap.ambush(m, 10 + VIOLET, REVENANT, (-700, -580), (-450, -600), angle=90)
 ajarmap.ambush(m, 10 + VIOLET, CACO, (-750, -400), (-400, -400), angle=90, after=3)
 # the leaf, taken: the reading room
@@ -461,7 +462,6 @@ PUZZLE = dict(
     # the porter: it sees the base from the den, the cubby through the hole
     # and the canteen's landing from the foot of the flights
     thief=dict(zone="base", sees=["den", "cubby", "canteen"], takes=(LEAF,), into=DEN, watched=True, respawn=True),
-    nailer=dict(zone="base"),
     # the baron on the gallery: it follows the player through hung doors, and
     # out of the head it is on the weighbridge
     lures=[dict(home="gallery", to="lobby", key="W", name="baron")],

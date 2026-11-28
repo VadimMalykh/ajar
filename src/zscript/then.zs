@@ -86,7 +86,7 @@
 // also at the first tic for a door that hangs from the start, and unmade by Unhang when the door comes down at t
 // (OldUnhang). It is a hung door to everything that asks (it is the frame's door, args[0] its far side at u: sight,
 // shots, monsters, water, belts), opens on the door's far side at u, and is rusted to its frame: USE at it says so
-// (UseFrame), and a thief or a nailer leaves it (Stuck). A colour door does not go into a frame while a frame at
+// (UseFrame), and a thief leaves it (Stuck). A colour door does not go into a frame while a frame at
 // its spot at a later time holds any door but those that go with the one swapped out (OldRefuses); the clocked
 // doors leave none, and their own refusals cover an old door in their twin. Its look (AjarDoor.Show): ten years old
 // THEN (dulled, AJO1..6), forty or fifty NOW (flaking, rust from the hinges, AJQ1..6; tools/gfx_olddoor.py), and

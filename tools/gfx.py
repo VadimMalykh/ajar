@@ -1274,15 +1274,6 @@ def make_all():
                 th.rect(28, 4, 34, 8, face)
         out[f"sprites/AJTH{fr_name}0.png"] = th.png(grab=(18, 52))
 
-    # nailer: the shadow of a hell knight, drawn by the engine from Doom's own
-    # sprites (AjarNailer in enemies.zs). Only its eyes are ours: two nail heads.
-    head = (232, 236, 244)
-    ne = Img(13, 5, (0, 0, 0, 0))
-    for cx in (2, 10):
-        ne.disc(cx, 2, 2, head)
-        ne.set(cx, 2, (120, 124, 134))
-    out["sprites/AJNEA0.png"] = ne.png(grab=(6, 3))
-
     # lodger: the shadow of a revenant, drawn by the engine from Doom's own
     # sprites (AjarLodger in enemies.zs). Only its eyes are ours: the two
     # brass hinge plates of an empty frame.
