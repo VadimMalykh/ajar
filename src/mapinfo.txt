@@ -171,6 +171,9 @@ skill nightshift
 // on by the session, not by his ear: MAP07 Paradox Engine, Shuffle (27; it had Off Its Hinges by lot), MAP15
 // Paradox Engine, Upside Down (30; Off Its Hinges, which MAP05 keeps), MAP20 Garmonic Engine, Slow (38; After
 // Hours). MAP01 keeps After Hours until he has chosen one of the five ambient ones written for it (39 to 43).
+// By his word, the same day, having heard the ten: Paradox Engine, Twin Guitars (45) is for the end titles and
+// credits (there are none yet); Paradox Engine, Cathedral (48) plays under MAP31's final movie, the reel: not
+// here, AjarTimeHandler puts it on when the reel begins (time.zs, REEL_MUSIC); the level itself keeps One Door Short.
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {

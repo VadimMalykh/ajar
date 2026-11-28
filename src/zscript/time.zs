@@ -1556,6 +1556,8 @@ class AjarTimeHandler : EventHandler
 	const REEL_FALL = 12;       // tics to a frame of the fall (7 frames)
 	const REEL_TAG = 3070;
 	const REEL_ROOM = 3071;     // the screening room's sectors (ajartime.REEL_ROOM)
+	const REEL_MUSIC = "AJM_ENE5";      // the reel's own piece (Paradox Engine, Cathedral; Vadim, 2026-11-28), from the lights going down
+	string reelMusic;           // what StartReel put on
 	const SCREENING = -1;       // their showFight: no fight's
 	Vector2 reelLo, reelHi;     // the screening room's corners (none: lo is north-east of hi)
 	Vector2 reelHall;           // the south-west corner of hall 1, of which it is a copy
@@ -1691,6 +1693,8 @@ class AjarTimeHandler : EventHandler
 	{
 		reel = 1;
 		reelTic = 0;
+		reelMusic = REEL_MUSIC;         // the level's piece stops; the reel's plays to THE END and the level's end
+		S_ChangeMusic(reelMusic);
 		mo.player.cheats |= CF_TOTALLYFROZEN;
 		mo.bInvisible = true;
 		mo.vel = (0, 0, 0);
@@ -3259,6 +3263,7 @@ class AjarTimeHandler : EventHandler
 			if (v == 10) Check("bigDeathsKept", kills.Size() == 3 && kills[0].big >= BIG && kills[0].stills.Size() > 10 && kills[0].what != "");
 			if (v == 10) Console.Printf("AJARTEST lastKills=%d clips=%d", lastKills.Size(), clips.Size());
 			if (v == 10) Check("theReelBegins", reel == 1 && clips.Size() == 3 + lastKills.Size() && mo.bInvisible && RoomLight(false) && ShowLight(1, true));
+			if (v == 10) Check("theReelsMusic", reelMusic == "AJM_ENE5");
 			if (v == 10) Check("aLastKillForEveryHall", lastKills.Size() == Fights() && lastKills[0].fight == 1 && lastKills[0].stills.Size() > 10 && clips[clips.Size() - 1].last);
 			if (v == 150)
 			{

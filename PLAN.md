@@ -23506,3 +23506,28 @@ back from the bundle in `~/data-rescue-2026-11-28/` after the reboot, and the bu
 
 **Not checked: how any of them sounds.** Nobody has heard them. No map plays any of the ten; the game has no end
 sequence or credits yet (MAP24 is the last map), so the epic one waits for those.
+
+## Music: Twin Guitars for the credits, Cathedral under MAP31's reel (2026-11-28)
+
+**Vadim**, having heard the ten in the sound lab: "Ok, I like all of them. I think #45 should definetely go to
+final titles/credits. I also like #48 very much, maybe we could put it into map31 ending (final movie)? Not sure
+about other epic versions, I like them all actually. Not sure if we can use them somewhere."
+
+- **45, Paradox Engine, Twin Guitars (AJM_ENE2): the end titles and credits.** Decided; nothing to put it on yet
+  (no end sequence, no credits). Whoever builds them takes this piece.
+- **48, Paradox Engine, Cathedral (AJM_ENE5): MAP31's final movie**, the reel watched from the screening room.
+  `AjarTimeHandler.StartReel` (time.zs) puts it on as the lights go down (`REEL_MUSIC`, `S_ChangeMusic`); it
+  plays through the clips and THE END until the level ends. The level's own piece, One Door Short, plays up to
+  then as before. The piece begins with four quiet bars (a bell and an organ pedal, 16 s) while the screen comes
+  down; the reel is not timed to the music. Test: `MAP=MAP31 MODE=3`, new check `theReelsMusic` beside
+  `theReelBegins`.
+- **Nobody has chosen among 39 to 43 for MAP01 yet** ("I like all of them").
+
+**Where the other epic ones could go** (Claude's proposals, not decided):
+
+| Lab | Piece | Proposal | Why |
+|---|---|---|---|
+| 47 | Mysterium Engine, Finale | MAP30, the last level | part III already plays this family (MAP22, MAP23, MAP24); the Finale is its end, and it grows over three minutes as a last level should |
+| 44 | Paradox Engine, March | the title screen and menus | they still play Doom II's title music; an orchestra with no guitars is an overture, and the theme is then the first thing heard |
+| 46 | Paradox Engine, The Ride | the bus level of part III (the outline's level 25: the new bus, then the monsters come), or its biggest fight | a ride in triplets for the level that is a ride; it would count as one of part III's six or seven |
+| 42 | Paradox Engine, Hymn (if not MAP01's) | the text screens between the parts | it is Cathedral's chorale far off, so the reel and the end answer it |
