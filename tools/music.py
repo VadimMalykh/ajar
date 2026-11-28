@@ -227,6 +227,27 @@ moved into the empty places, as before:
 - 37 Garmonic Engine, Upside Down (E flat, 132).
 - 38 Garmonic Engine, Slow (E flat, 54): ambient, the tunes over it from
   the first bar. (It was 41.)
+
+The theme through the game, 2026-11-28. Vadim: "Obviously Paradox Engine
+theme is becoming our main theme for the game", to be heard two or three
+times in maps 01 to 10, four or five times in 11 to 20, six or seven times
+in 21 to 30, "so the player should get familiar with the theme by the end
+of the game (but not annoyed by it)". Which map has which piece is in
+src/mapinfo.txt and PLAN.md ("Music: the theme through the game"). With it
+he asked for two sets of five to choose from, the last ten of TRACKS (39 to
+48 in the lab), designed by the session and written out by three workers:
+- for MAP01, "kind of ambient slow version (similar to what's playing in
+  map01 now) inspired by Paradox Engine": 39 Borrowed Rooms (After Hours'
+  own bed, the tunes on its piano and a horn), 40 One Note Stays (three
+  lines moving one at a time over a D that never moves), 41 Ground (the
+  riff's notes as a bass, a bar each), 42 Hymn (the chorus tune as a
+  far-off hymn in three parts), 43 Earlier Self (a canon at two bars);
+- "the epic one, for the end of the game and end credits": 44 March (the
+  orchestra alone), 45 Twin Guitars (the band, a choir, an organ, two leads
+  in thirds), 46 The Ride (12/8, orchestra and band), 47 Mysterium Engine,
+  Finale (in major, from a choir alone to everything), 48 Cathedral (organ,
+  choir, brass and bells; the chorus tune as a chorale three times).
+None of the ten plays on a map until he has chosen.
 """
 import random
 import re
@@ -2378,6 +2399,768 @@ def mysterium_engine_band():
     return p
 
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Five ambient ones on Paradox Engine for MAP01, 2026-11-28. Vadim: "For map01 let's try to build kind of ambient slow
+# version (similar to what's playing in map01 now) inspired by Paradox Engine, create 5 versions, so I can choose
+# from." MAP01 plays After Hours. In all five the Engine's tunes are played as they stand, a bar of the tune to a bar
+# of the piece, at most moved by octaves (a slow one with the tunes at half speed and one with no tune were not
+# kept). Quiet as After Hours is, with long reverbs; each one's last bar leads into its first.
+
+def ambient_pitch(name):
+    """'Bb3' -> 58 (C4 is 60), the names spell() reads."""
+    return NOTE[name[0]] + name.count("#") - name.count("b") + 12 * (int(name[-1]) + 1)
+
+
+def ambient_line(text, of):
+    """Patterns and form for a held line written a word to a bar: a note name is struck at the bar's start,
+    'A3@8' at that step, 'Bb3+A3@8' both; '-' holds what sounds; '_' is a silent bar."""
+    per_bar, silent = [], set()
+    for b, bar in enumerate(text.split()):
+        notes = {}
+        if bar == "_":
+            silent.add(b)
+        elif bar != "-":
+            for item in bar.split("+"):
+                name, _, step = item.partition("@")
+                notes[int(step or 0)] = ambient_pitch(name)
+        per_bar.append(notes)
+    patterns, form = write(per_bar, of)
+    return patterns, ["_" if b in silent else f for b, f in enumerate(form)]
+
+
+def engine_ambient_rooms():
+    """C, 60 a minute. Ambient, on Paradox Engine, for MAP01: After Hours' own bed with the Engine's tunes on it, the
+    nearest of the five to what plays there now. Strings and the drone go round After Hours' chords (C minor, A
+    flat, C minor, D flat, two bars each); in the chorus they hold the Engine's chords a bar each, A flat, B flat, C
+    minor. The piano has the verse tune where After Hours has its few notes: its first half, then all of it, then its
+    second half, so the piece ends on the tune's top C over D flat and goes round to bare C minor. A horn far off
+    has the chorus tune; After Hours' choir, harp, timpani and drums as there."""
+    p = Piece("Paradox Engine, Borrowed Rooms", 60)
+    hold = " ".join("-" * 16)
+    round_, chorus = "m T M-4 T m T M+1 T", "M-4 M-2 m T M-4 M-2 m T"
+    # 40 bars: After Hours' round three times (the piano in the second and third), the chorus, the round again
+    form = rep(round_, 3, chorus, 1, round_, 1)
+    p.voice("strings", SLOWSTR, 48, {
+        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -", "T": hold,
+    }, form, vel=70, gate=1.0, volume=92, pan=54, reverb=80)
+    p.voice("drone", CONTRABASS, 36, {                  # the strings' roots
+        "m": "1 - - - - - - - - - - - - - - -", "M": "1 - - - - - - - - - - - - - - -", "T": hold,
+    }, form, vel=84, gate=1.0, volume=104)
+    p.voice("timpani", TIMPANI, 36, {
+        "a": "1 . . . . . . . . . . . . . 1 1",
+        "b": "1 . . . . . . . . . . . 1 . 1 1",
+    }, rep("_", 8, "a _ a-4 _ a _ b+1 _", 2, "_ _ a _ _ _ b _", 1, "a _ a-4 _ a _ b+1 _", 1), vel=82, gate=0.9,
+            volume=96, pan=72, reverb=70)
+    p.voice("piano", PIANO, 60, ENGINE_OVER_RIFF,
+            rep("_", 8, "Q1 Q2 Q3 Q4", 1, "_", 4, "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1, "_", 12, "Q5 Q6 Q7 Q8", 1), vel=78,
+            gate=1.0, volume=96, pan=44, reverb=80)
+    p.voice("choir", CHOIR, 60, {
+        "a": "5 - - - - - - - - - - - - - - -", "b": "b3 - - - - - - - - - - - - - - -",
+        "c": "4 - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 16, "a T b T b T c T", 1, "_", 8, "a T b T b T c T", 1), vel=62, gate=1.0, volume=80, pan=74,
+            reverb=90)
+    p.voice("horn", HORN, 48, ENGINE_CHORUS, rep("_", 24, "S1 S2 S3 S4 S5 S6 S7 S8", 1, "_", 8), vel=70, gate=0.97,
+            volume=86, pan=84, reverb=90)
+    p.voice("harp", HARP, 60, {
+        "H": "1 . . . 5 . . . 1' . . . 5 . . .",
+    }, rep("_", 24, "H-4 H-2 H H H-4 H-2 H H", 1, "H H H-4 H-4 H H H+1 H+1", 1), vel=66, gate=1.0, volume=84,
+            pan=36, reverb=80)
+    p.drums({
+        "a": {KICK2: "x...............", RBELL: "........o......."},
+        "b": {RBELL: "........o......."},
+    }, rep("_", 8, "a b", 16), vel=84, volume=90)
+    return p
+
+
+def engine_ambient_held():
+    """D, 54 a minute. Ambient, on Paradox Engine, for MAP01, made as Garmonic Engine, Slow and Distant Galaxy IV
+    are: three held lines and a bass, no two lines moving at once, each move a step. The low line is the Engine's
+    hammered key note, D, and never moves (a warm pad, struck again every eight bars); over it slow strings and
+    bowed glass move a note at a time, D minor, G minor, D minor round the verse, B flat and C in the chorus while the
+    contrabass leaves the D. The verse tune on a vibraphone from the first bar; the chorus tune on a voice; the
+    walked verse tune on a clarinet; the second chorus with the vibraphone an octave over the voice; then two bars
+    of the verse tune and the lines alone, back to the start."""
+    p = Piece("Paradox Engine, One Note Stays", 54)
+    verse_middle, chorus_middle, later_middle = "F3 - - G3 - - - -", "F3 E3 F3 - - E3@4 F3 -", "- - - G3 - - - -"
+    verse_top, later_top = "A3 - Bb3 - A3 Bb3 C4 Bb3", "- - Bb3 - A3 Bb3 C4 Bb3"
+    chorus_top, last_top = "- C4@4 - Bb3 - C4 - Bb3+A3@8", "- - Bb3 - A3 Bb3 C4 Bb3+A3@8"     # home, for the next
+    verse_bass, chorus_bass = "D2 - - - D2 - - -", "Bb1 C2 D2 - Bb1 C2 D2 -"
+    # 40 bars: verse, chorus, verse, chorus, verse (going round)
+    low = " ".join(["D3 - - - - - - -"] * 5)
+    middle = " ".join((verse_middle, chorus_middle, later_middle, chorus_middle, later_middle))
+    top = " ".join((verse_top, chorus_top, later_top, chorus_top, last_top))
+    bass = " ".join((verse_bass, chorus_bass, verse_bass, chorus_bass, verse_bass))
+    p.voice("low line", WARMPAD, 50, *ambient_line(low, 50), vel=66, gate=1.0, volume=88, pan=88, reverb=80)
+    p.voice("middle line", SLOWSTR, 50, *ambient_line(middle, 50), vel=64, gate=1.0, volume=88, pan=36, reverb=80)
+    p.voice("top line", GLASS, 50, *ambient_line(top, 50), vel=66, gate=1.0, volume=88, pan=52, reverb=90)
+    p.voice("bass", CONTRABASS, 38, *ambient_line(bass, 38), vel=80, gate=1.0, volume=100)
+    tunes = ENGINE_OVER_RIFF | ENGINE_CHORUS
+    over, sung = rep("Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1), rep("S1 S2 S3 S4 S5 S6 S7 S8", 1)
+    p.voice("vibraphone", VIBES, 74, tunes, over + rep("_", 16) + [s + "-12" for s in sung] + over[:2] + rep("_", 6),
+            vel=76, gate=1.0, volume=94, pan=30, reverb=80)
+    p.voice("voice", VOICE, 50, tunes, rep("_", 8) + sung + rep("_", 8) + sung + rep("_", 8), vel=70, gate=1.0,
+            volume=90, pan=60, reverb=90)
+    p.voice("clarinet", CLARINET, 62, ENGINE_OVER_RIFF_2, rep("_", 16, "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1, "_", 16),
+            vel=74, gate=0.97, volume=92, pan=72, reverb=80)
+    return p
+
+
+def engine_ambient_ground():
+    """A, 56 a minute. Ambient, on Paradox Engine, for MAP01, in After Hours' manner: slow strings holding chords
+    over a contrabass, timpani far off. The bass is the Engine's riff slowed down to the notes that stand out of it,
+    a bar each (A, B flat, C, B flat, D, C, B flat, A), with A minor, B flat, D minor over it; the chorus is the
+    Engine's F, G, A minor. The strings are three lines, each holding its note while it stays, all three struck again
+    every eight bars. The ground alone; the verse tune on a clarinet; the chorus tune on a horn with a harp; the
+    walked verse tune; the chorus again with a choir holding a note a bar."""
+    p = Piece("Paradox Engine, Ground", 56)
+    ground = dict(low="A3 Bb3 A3 Bb3 A3 - Bb3 A3", middle="C4 D4 C4 D4 - C4 D4 C4", top="E4 F4 E4 F4 - E4 F4 E4",
+                  bass="A1 Bb1 C2 Bb1 D2 C2 Bb1 A1")
+    chorus = dict(low="A3 B3 A3 - A3 B3 A3 -", middle="C4 D4 C4 - C4 D4 C4 -", top="F4 G4 E4 - F4 G4 E4 -",
+                  bass="F1 G1 A1 - F1 G1 A1 -")
+    # 40 bars: ground (alone), ground (the verse tune), chorus, ground (walked), chorus (the choir)
+    sections = (ground, ground, chorus, ground, chorus)
+    for part, pan in (("low", 48), ("middle", 54), ("top", 60)):
+        p.voice(f"strings, {part}", SLOWSTR, 57, *ambient_line(" ".join(s[part] for s in sections), 57), vel=70,
+                gate=1.0, volume=90, pan=pan, reverb=80)
+    p.voice("contrabass", CONTRABASS, 33, *ambient_line(" ".join(s["bass"] for s in sections), 33), vel=84, gate=1.0,
+            volume=104)
+    p.voice("timpani", TIMPANI, 45, {
+        "a": "1 . . . . . . . . . . . . . 1 1",
+        "b": "1 . . . . . . . . . . . 1 . 1 1",
+    }, rep("_", 8, "a _ _ _ a _ _ b", 1, "_", 8, "a _ _ _ a _ _ b", 1, "_", 8), vel=82, gate=0.9, volume=96, pan=72,
+            reverb=70)
+    tunes = ENGINE_OVER_RIFF | {k.replace("Q", "W"): v for k, v in ENGINE_OVER_RIFF_2.items()} | ENGINE_CHORUS
+    p.voice("clarinet", CLARINET, 69, tunes, rep("_", 8, "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1, "_", 8,
+                                                 "W1 W2 W3 W4 W5 W6 W7 W8", 1, "_", 8), vel=74, gate=0.97, volume=90,
+            pan=68, reverb=80)
+    p.voice("horn", HORN, 57, tunes, rep("_", 16, "S1 S2 S3 S4 S5 S6 S7 S8", 1, "_", 8, "S1 S2 S3 S4 S5 S6 S7 S8", 1),
+            vel=70, gate=0.97, volume=86, pan=80, reverb=90)
+    p.voice("choir", CHOIR, 57, *ambient_line("_ " * 32 + "A4 B4 C5 - A4 B4 C5 -", 57), vel=62, gate=1.0, volume=80,
+            pan=74, reverb=90)
+    harp_chorus = "H-4 H-2 H H H-4 H-2 H H"
+    p.voice("harp", HARP, 57, {
+        "H": "1 . . . 5 . . . 1' . . . 5 . . .",
+        "Hc": "b3 . . . 5 . . . 1' . . . 5 . . .",            # A minor over the bass's C
+    }, rep("_", 16, harp_chorus, 1, "H H+1 Hc H+1 H+5 Hc H+1 H", 1, harp_chorus, 1), vel=66, gate=1.0, volume=84,
+            pan=36, reverb=80)
+    return p
+
+
+def engine_ambient_hymn():
+    """G, 48 a minute. Ambient, on Paradox Engine, for MAP01: the chorus tune as a far-off hymn, a choir in three
+    parts over the Engine's E flat, F, G minor, the two lower parts climbing in thirds under it; the verse tune as
+    After Hours' few piano notes between, over slow strings going between G minor and A flat. A tubular bell, soft,
+    on the key note. The strings and the bell alone; the hymn, the choir and the contrabass alone; the verse; the
+    hymn again with the strings doubling the lower parts and a harp, ending once on G major; half the verse; G minor
+    held, and round."""
+    p = Piece("Paradox Engine, Hymn", 48)
+    hold = " ".join("-" * 16)
+    # 36 bars: G minor held 4, hymn 8, verse 8, hymn 8 (strings, harp, bell), half the verse 4, G minor held 4
+    p.voice("strings", SLOWSTR, 55, {
+        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("m T T T", 1, "_", 8, "m T M+1 T m T M+1 m", 1, "_", 8, "m T M+1 T", 1, "m T T T", 1), vel=70, gate=1.0,
+            volume=92, pan=54, reverb=80)
+    p.voice("contrabass", CONTRABASS, 31, {
+        "D": "1 - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("D T T T", 1, "D+8 D+10 D+12 T", 2, "D T D+1 T D T D+1 D", 1, "D+8 D+10 D+12 T", 2, "D T D+1 T", 1,
+           "D T T T", 1), vel=84, gate=1.0, volume=104)
+    p.voice("choir, top", CHOIR, 55, ENGINE_CHORUS, rep("_", 4, "S1 S2 S3 S4 S5 S6 S7 S8", 1, "_", 8,
+                                                        "S1 S2 S3 S4 S5 S6 S7 S8", 1, "_", 8), vel=66, gate=1.0,
+            volume=82, pan=64, reverb=90)
+    hymn = dict(middle="Bb3 C4 D4 - Bb3 C4 D4 -", low="G3 A3 Bb3 - G3 A3 Bb3 -")
+    last = dict(middle=hymn["middle"], low="G3 A3 Bb3 - G3 A3 Bb3 B3")         # the hymn's last bar on G major
+    for part, pan in (("middle", 52), ("low", 76)):
+        sung = f"{'_ ' * 4}{hymn[part]} {'_ ' * 8}{last[part]}{' _' * 8}"
+        p.voice(f"choir, {part}", CHOIR, 55, *ambient_line(sung, 55), vel=62, gate=1.0, volume=80, pan=pan,
+                reverb=90)
+        p.voice(f"strings, {part}", SLOWSTR, 55, *ambient_line(f"{'_ ' * 20}{last[part]}{' _' * 8}", 55), vel=62,
+                gate=1.0, volume=84, pan=pan - 20, reverb=80)
+    bells = {1, 3, 13, 17, 21, 23, 25, 27, 29, 33, 35}
+    p.voice("bell", BELLS, 67, {"B": "1 - - - - - - - - - - - - - - -"},
+            ["B" if b in bells else "_" for b in range(1, 37)], vel=58, gate=1.0, volume=84, pan=82, reverb=90)
+    p.voice("piano", PIANO, 67, ENGINE_OVER_RIFF,
+            rep("_", 12, "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1, "_", 8, "Q1 Q2 Q3 Q4", 1, "_", 4), vel=78, gate=1.0,
+            volume=96, pan=44, reverb=80)
+    p.voice("harp", HARP, 55, {
+        "H": "1 . . . 5 . . . 1' . . . 5 . . .",
+    }, rep("_", 20, "H-4 H-2 H H H-4 H-2 H H", 1, "_", 8), vel=66, gate=1.0, volume=84, pan=36, reverb=80)
+    return p
+
+
+def engine_ambient_earlier_self():
+    """E, 60 a minute. Ambient, on Paradox Engine, for MAP01: a canon, the tune and its own copy two bars behind, an
+    octave higher (the game is about meeting your earlier self). The room: a contrabass on E, a warm pad holding the
+    bare fifth E and B all through, timpani far off every other bar, After Hours' drums. A piano has the verse tune,
+    then the chorus tune an octave down over the Engine's C, D, E minor on slow strings; a celesta follows it two
+    bars late, an octave higher. The second time the celesta leads and the piano follows. The room alone at either
+    end."""
+    p = Piece("Paradox Engine, Earlier Self", 60)
+    hold = " ".join("-" * 16)
+    # 44 bars: the room 4; the piano's verse 8, its chorus 8 (the celesta two bars behind); the celesta's verse and
+    # chorus with the piano two bars behind; the room 4
+    chorus_bass = "C2 D2 E2 - C2 D2 E2 -"
+    bass = " ".join(("E2 - - - E2 - - - E2 - - -", chorus_bass, "E2 - - - E2 - - - E2 -", chorus_bass, "E2 - - - E2 -"))
+    p.voice("contrabass", CONTRABASS, 40, *ambient_line(bass, 40), vel=82, gate=1.0, volume=102)
+    p.voice("pad", WARMPAD, 52, {"P": "1^ - - - - - - - - - - - - - - -", "T": hold}, rep("P T T T", 11), vel=64,
+            gate=1.0, volume=86, pan=64, reverb=85)
+    p.voice("timpani", TIMPANI, 40, {"a": "1 . . . . . . . . . . . . . 1 1"}, rep("a _", 22), vel=80, gate=0.9,
+            volume=94, pan=72, reverb=70)
+    p.voice("strings", SLOWSTR, 52, {
+        "m": "1m - - - - - - - - - - - - - - -", "M": "1M - - - - - - - - - - - - - - -", "T": hold,
+    }, rep("_", 12, "M-4 M-2 m T", 2, "_", 10, "M-4 M-2 m T", 2, "_", 6), vel=66, gate=1.0, volume=88, pan=54,
+            reverb=80)
+    tunes = ENGINE_OVER_RIFF | ENGINE_CHORUS
+    over, low = rep("Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1), [s + "-12" for s in rep("S1 S2 S3 S4 S5 S6 S7 S8", 1)]
+    p.voice("piano", PIANO, 64, tunes, rep("_", 4) + over + low + rep("_", 4) + over + low + rep("_", 4), vel=76,
+            gate=1.0, volume=96, pan=40, reverb=80)
+    p.voice("celesta", CELESTA, 76, tunes, rep("_", 6) + over + low + over + low + rep("_", 6), vel=66, gate=1.0,
+            volume=82, pan=88, reverb=85)
+    p.drums({
+        "a": {KICK2: "x...............", RBELL: "........o......."},
+        "b": {RBELL: "........o......."},
+    }, rep("_", 4, "a b", 18, "_", 4), vel=84, volume=90)
+    return p
+# The epic ones on Paradox Engine, 2026-11-28. Vadim: Paradox Engine is becoming the game's main theme, heard more
+# and more through the game; he asked for "the epic one, for the end of the game and end credits. Also 5 versions, so
+# I can choose from." Three of the five are here: a March (the orchestra alone), Twin Guitars (the band at full
+# power, two leads in thirds) and The Ride (the 12/8 version made big). In each the riff is engine()'s note for
+# note, and the tunes are ENGINE_OVER_RIFF and ENGINE_CHORUS (walked: the _2 ones; in twelve: the _12 ones) as they
+# stand; what makes them big is doubling in octaves, more voices in each chorus, and the last two choruses a tone
+# higher. Each ends on one held chord and goes round from a quiet beginning.
+
+EPIC_TRUMPET, EPIC_TROMBONE, EPIC_BRASS, EPIC_PICCOLO = 56, 57, 61, 72
+
+EPIC_RIFF = {                                   # engine()'s own riff and held fifths (its copy there is not touched)
+    "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1",
+    "X2": "1! 1 b2' 1 1 b3' 1 1 b5' 1 1 4' 1 b3' b2' 1",
+    "H": "1*! - - - - - - - 1* - - - 1* - 1* -",
+}
+EPIC_BASS = {                                   # engine()'s bass: under the riff, its turn, in the chorus
+    "p": "1 . 1 . 1 . 1 . 1 . 1 . 1 . 1 .",
+    "q": "1 . 1 . 1 . 1 . 1 . 1 . 1 . b3 b2",
+    "c": "1 . . 1 . . 1 . 1 . . 1 . . 1 1",
+}
+EPIC_RIFF_12 = {                                # engine_shuffle()'s riff and chorus chug
+    "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 4' b3'",
+    "X2": "1! 1 b2' 1 1 b3' 1 1 b5' 4' b3' b2'",
+    "C": "1*! - 1* 1* - 1* 1* - 1* 1* - 1*",
+}
+EPIC_BASS_12 = {                                # engine_shuffle()'s bass
+    "p": "1 - 1 1 - 1 1 - 1 1 - 1",
+    "q": "1 - 1 1 - 1 1 - b5 4 - b3",
+}
+EPIC_HAMMER = "1! 1 . 1 1 . 1 1 . 1 1 . 1 . 1 1"          # the riff's key note alone, as it is hammered
+# the tunes under one roof: Q the verse tune, R the same walked, S the chorus tune, T the same walked
+EPIC_TUNES = (ENGINE_OVER_RIFF | {"R" + k[1:]: v for k, v in ENGINE_OVER_RIFF_2.items()} | ENGINE_CHORUS
+              | {"T" + k[1:]: v for k, v in ENGINE_CHORUS_2.items()})
+EPIC_TUNES_12 = ENGINE_OVER_RIFF_12 | ENGINE_CHORUS_12
+EPIC_Q, EPIC_R, EPIC_S, EPIC_T = ([f"{c}{i}" for i in range(1, 9)] for c in "QRST")
+
+
+def epic_up(form, by):
+    """The same bars `by` semitones higher: a key change. A bar with a shift gets it raised, `_` stays silent."""
+    out = []
+    for tok in form.split() if isinstance(form, str) else form:
+        if tok == "_":
+            out.append(tok)
+            continue
+        m = BAR.fullmatch(tok)
+        shift = int(m[3] or 0) + by
+        out.append(f"{m[1]}{m[2]}{shift:+d}" if shift else m[1] + m[2])
+    return out
+
+
+def epic_held(tok, steps=16):
+    """One note (or chord) held the whole bar."""
+    return " ".join([tok] + ["-"] * (steps - 1))
+
+
+def epic_swell(p, names, first, last, start, end):
+    """The velocities of the named voices from bar `first` to bar `last` (counted from 1) moved by an amount going
+    evenly from `start` to `end` across those bars: a soft beginning, a break that grows."""
+    span = (last - first + 1) * p.steps - 1
+    for v in p.voices:
+        if v["name"] not in names:
+            continue
+        for n in v["notes"]:
+            at = n[0] - (first - 1) * p.steps
+            if 0 <= at <= span:
+                n[3] = max(1, min(127, round(n[3] + start + (end - start) * at / span)))
+
+
+def engine_epic_march():
+    """D, then E; 108 a minute. Paradox Engine as a march for the orchestra alone, no guitars and no drum kit: the
+    cellos play the riff note for note in short notes, the contrabasses engine()'s bass under them, timpani beat
+    it out. Trumpets have the verse tune (the second time walked, a flute an octave over them), horns the chorus
+    tune (from the second chorus trumpets an octave over them), the brass section holds engine()'s fifths over the
+    riff on the 4th and doubles the horns in the last two choruses; trombones and the cellos give the chorus its
+    roots, strings and later a choir hold its triads, tubular bells strike the key note every second bar. A
+    marching snare all through (a roll in every fourth bar), a bass drum on one and three, a crash at each chorus.
+    The last two choruses are a tone higher, the last one walked with a piccolo on top; then the hammer alone in
+    unison and one held chord with no third."""
+    p = Piece("Paradox Engine, March", 108)
+    riff = "X1 X1 X1 X2"
+    fourth = "X1+5 X1+5 X1+5 X2+5"
+    quiet = lambda bars: rep("_", bars)
+    end = {"Z": EPIC_HAMMER, "E": epic_held("1*")}                     # bar 65, the hammer; bar 66, the chord
+    hits = {"K": "1*! - . . 1*! - . . 1*! - . . 1*! - . ."}             # bar 48: the brass on every beat
+    roots = rep("c+8 c+10 c c", 2)                                     # the chorus in engine()'s bass rhythm
+    up = lambda form: epic_up(form, 2)
+    # 66 bars: 1-4 the riff, soft; 5-12 verse; 13-20 the riff on the 4th and at home; 21-28 chorus; 29-36 verse
+    # (walked); 37-44 chorus; 45-48 break; 49-56 chorus in E; 57-64 chorus in E, walked; 65 the hammer; 66 the chord
+    p.voice("cellos", CELLO, 38, EPIC_RIFF | EPIC_BASS | end,
+            rep(riff, 3, fourth, 1, riff, 1) + roots + rep(riff, 2) + roots + rep(riff, 1) + up(roots * 2)
+            + ["Z+2", "E+2"], vel=92, gate=0.5, volume=96, pan=44, reverb=40)
+    p.voice("contrabasses", CONTRABASS, 26, EPIC_BASS | {"Z": EPIC_HAMMER, "E": epic_held("1")},
+            rep("p p p q", 3, "p+5 p+5 p+5 q+5", 1, "p p p q", 1) + roots + rep("p p p q", 2) + roots + quiet(4)
+            + up(roots * 2) + ["Z+2", "E+2"], vel=100, gate=0.8, volume=108, pan=60, reverb=40)
+    p.voice("timpani", TIMPANI, 38, {
+        "t": "1! . . . . . . . 1 . . . 5, . 1 .",                     # under the riff
+        "r": "1! . . . . . . . 1 1 1 1 1 1 1 1",                      # in the chorus: a hit, then a roll
+        "K": "1! . . . 1! . . . 1! . . . 1! . . .",                   # with the brass in bar 48
+        "Z": EPIC_HAMMER, "E": "1! 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1",
+    }, rep("t", 12, "t+5", 4, "t", 4, "r+8 r+10 r r", 2, "t", 8, "r+8 r+10 r r", 2, "t t t K", 1)
+            + up(rep("r+8 r+10 r r", 4))
+            + ["Z+2", "E+2"], vel=94, gate=0.9, volume=100, pan=64, reverb=50)
+    p.voice("trumpets", EPIC_TRUMPET, 62, EPIC_TUNES | hits | end,
+            quiet(4) + EPIC_Q + quiet(16) + EPIC_R + EPIC_S + rep("_ _ _ K", 1) + up(EPIC_S + EPIC_T)
+            + ["Z+2", "E+2"], vel=100, gate=0.95, volume=106, pan=74, reverb=50)
+    p.voice("horns", HORN, 50, EPIC_TUNES | hits | end,
+            quiet(20) + EPIC_S + quiet(8) + EPIC_S + rep("_ _ _ K", 1) + up(EPIC_S + EPIC_T) + ["Z+2", "E+2"],
+            vel=100, gate=0.97, volume=108, pan=54, reverb=55)
+    p.voice("flute", FLUTE, 74, EPIC_TUNES | {"E": epic_held("1")},       # the walked verse tune over the trumpets
+            quiet(28) + EPIC_R + quiet(28) + ["_", "E+2"], vel=96, gate=0.95, volume=100, pan=80, reverb=60)
+    p.voice("piccolo", EPIC_PICCOLO, 74, EPIC_TUNES,                    # the walked chorus two octaves over the horns
+            quiet(56) + up(EPIC_T) + quiet(2), vel=92, gate=0.95, volume=94, pan=84, reverb=60)
+    p.voice("brass section", EPIC_BRASS, 50, EPIC_RIFF | EPIC_TUNES | hits | end,
+            quiet(12) + rep("H+5", 4, "H", 4) + quiet(24) + rep("_ _ _ K", 1) + up(EPIC_S + EPIC_T)
+            + ["Z+2", "E+2"], vel=92, gate=0.9, volume=96, pan=36, reverb=50)
+    long_roots = rep("L+8 L+10 L L", 2)
+    p.voice("trombones", EPIC_TROMBONE, 38, EPIC_BASS | {"L": epic_held("1")} | hits | end,
+            quiet(20) + long_roots + quiet(8) + long_roots + rep("_ _ _ K", 1) + up(roots * 2) + ["Z+2", "E+2"],
+            vel=92, gate=0.9, volume=92, pan=28, reverb=50)
+    triads = {"m": epic_held("1m"), "M": epic_held("1M"), "E": epic_held("1*")}
+    chords = rep("M+8 M+10 m m", 2)
+    p.voice("strings", STRINGS, 50, triads, quiet(20) + chords + quiet(8) + chords + quiet(4) + up(chords * 2)
+            + ["_", "E+2"], vel=76, gate=1.0, volume=86, pan=40, reverb=60)
+    close = rep("M-4 M-2 m m", 2)                                      # the same chords a close voicing higher
+    p.voice("choir", CHOIR, 62, triads, quiet(36) + close + quiet(4) + up(close * 2) + ["_", "E+2"], vel=74,
+            gate=1.0, volume=84, pan=90, reverb=70)
+    bells = rep("B _", 4)                                              # the chorus's first, third, fifth and 7th bar
+    p.voice("bells", BELLS, 62, {"B": "1 - - - - - - - . . . . . . . .", "E": epic_held("1")},
+            quiet(36) + bells + quiet(4) + up(bells * 2) + ["_", "E+2"], vel=88, gate=1.0, volume=88, pan=70,
+            reverb=70)
+    one_three = "x.......x......."
+    march = "X.x.x.xxX.x.x.xx"
+    roll = "X.x.x.xxooxxxxXX"
+    p.drums({
+        "s": {SNARE: march}, "sr": {SNARE: roll},                       # the snare alone
+        "m": {SNARE: march, KICK2: one_three}, "r": {SNARE: roll, KICK2: one_three},
+        "c": {SNARE: march, KICK2: one_three, CRASH: "x..............."},
+        "R": {SNARE: "ooooxxxxxxxxXXXX"},                               # bar 48: the snare rolls through
+        "Z": {SNARE: "Xx.xx.xx.xx.x.xx", KICK2: "x..x..x..x..x..x"},
+        "E": {CRASH: "x...............", KICK2: "x..............."},
+    }, rep("_", 2, "s sr", 1, "m m m r", 4, "c m m r m m m r", 1, "m m m r", 2, "c m m r m m m r", 1, "s s s R", 1,
+           "c m m r m m m r", 2, "Z E", 1), vel=90, volume=100)
+    epic_swell(p, ("cellos", "contrabasses", "timpani", "drums"), 1, 4, -28, -14)
+    return p
+
+
+def engine_epic_twin():
+    """D, then E; 138 a minute. Paradox Engine itself at full power: engine()'s guitar, bass and drums as they are,
+    and over them synth brass with the verse tune, a choir and a church organ holding the chords, and two
+    overdriven lead guitars, one on each side, in thirds on the chorus tune. The second verse an overdriven lead has
+    the walked verse tune with the strings an octave over it. After the second chorus a break with no drums and no
+    guitars: organ and choir hold D minor, then C, then B major, which turns into E: the third verse and the last
+    two choruses are a tone higher, the brass with the first lead, a bell every second bar, in the last chorus a
+    second choir singing the tune; the kick runs under the ride from the second chorus on. The riff three times in
+    unison and one chord held by everybody."""
+    p = Piece("Paradox Engine, Twin Guitars", 138)
+    riff = "X1 X1 X1 X2"
+    fourth = "X1+5 X1+5 X1+5 X2+5"
+    quiet = lambda bars: rep("_", bars)
+    up = lambda form: epic_up(form, 2)
+    fifths = rep("H+8 H+10 H H", 2)
+    unison = ["X1+2"] * 3
+    # 76 bars: 1-4 the riff alone; 5-12 verse; 13-20 the riff on the 4th and at home; 21-28 chorus; 29-36 verse
+    # (walked); 37-44 chorus, the twin leads; 45-48 break (D minor, C, B); 49-56 verse in E; 57-64 chorus in E;
+    # 65-72 chorus in E, the second choir; 73-75 the riff in unison; 76 the chord
+    p.voice("guitar", DISTORTION, 38, EPIC_RIFF | {"E": epic_held("1*")},
+            rep(riff, 3, fourth, 1, riff, 1) + fifths + rep(riff, 2) + fifths + quiet(4) + up(rep(riff, 2) + fifths * 2)
+            + unison + ["E+2"], vel=86, gate=0.8, volume=94, pan=50)
+    shuffle = rep("p p p q", 2)
+    roots = rep("c+8 c+10 c c", 2)
+    p.voice("bass", PICKBASS, 26, EPIC_BASS | EPIC_RIFF | {"E": epic_held("1")},
+            quiet(4) + shuffle + rep("p+5 p+5 p+5 q+5", 1, "p p p q", 1) + roots + shuffle + roots + quiet(4)
+            + up(shuffle + roots * 2) + unison + ["E+2"], vel=106, gate=0.8, volume=115)
+    p.voice("lead 1", OVERDRIVE, 62, EPIC_TUNES | {"E": epic_held("1*")},
+            quiet(20) + EPIC_S + EPIC_R + EPIC_S + quiet(12) + up(EPIC_S * 2) + quiet(3) + ["E+2"], vel=100,
+            gate=0.97, volume=104, pan=36, reverb=60)
+    second = {                                  # a third over the chorus tune, against the same key note
+        "H1": "b3' - - - - - - - 1' - - - b3' - - -",
+        "H2": "4' - - - - - - - 2' - - - 4' - - -",
+        "H3": "b6' - - - 5' - - - b3' - - - - - 2' -",
+        "H4": "b3' - - - - - - - - - - - . . . .",
+        "H5": "b6' - - - - - - - b3' - - - b6' - - -",
+        "H6": "b7' - - - - - - - 4' - - - b7' - - -",
+        "H7": "b7' - - - b6' - - - 5' - - - b6' - b7' -",
+        "H8": "5' - - - - - - - - - - - - - - -",
+    }
+    twin = [f"H{i}" for i in range(1, 9)]
+    p.voice("lead 2", OVERDRIVE, 62, second | {"E": epic_held("1*")},
+            quiet(36) + twin + quiet(12) + up(twin * 2) + quiet(3) + ["E+2"], vel=94, gate=0.97, volume=100,
+            pan=92, reverb=60)
+    p.voice("brass", SYNBRASS, 62, EPIC_TUNES | EPIC_RIFF | {"E": epic_held("1*")},     # the verse tune an octave up
+            quiet(4) + [q + "+12" for q in EPIC_Q] + quiet(8) + EPIC_S + quiet(20) + [q + "+14" for q in EPIC_Q]
+            + up(EPIC_S * 2) + ["X1-10"] * 3 + ["E+2"], vel=98, gate=0.97, volume=102, pan=72, reverb=50)
+    p.voice("strings", STRINGS, 62, EPIC_TUNES | {"E": epic_held("1*")},               # an octave over the lead
+            quiet(28) + [r + "+12" for r in EPIC_R] + quiet(12) + up(EPIC_Q) + quiet(19) + ["E+2"], vel=90,
+            gate=0.97, volume=92, pan=24, reverb=60)
+    triads = {"m": epic_held("1m"), "M": epic_held("1M"), "T": epic_held("-"), "E": epic_held("1*"),
+              "F": epic_held("1^")}
+    break_ = ["m", "T", "M-2", "M-3"]                                   # D minor two bars, C, B (it leads into E)
+    p.voice("organ", CHURCH, 50, triads,
+            quiet(20) + rep("M+8 M+10 m m", 2) + quiet(8) + rep("M+8 M+10 m m", 2) + break_ + quiet(8)
+            + up(rep("M+8 M+10 m m", 4)) + quiet(3) + ["E+2"], vel=76, gate=1.0, volume=84, pan=30, reverb=60)
+    close = rep("M-4 M-2 m m", 2)
+    p.voice("choir", CHOIR, 62, triads,
+            quiet(12) + rep("F+5", 4, "F", 4) + close + quiet(8) + close + break_ + quiet(8) + up(close * 2)
+            + quiet(3) + ["E+2"], vel=80, gate=1.0, volume=88, pan=96, reverb=70)
+    p.voice("choir, the tune", CHOIR, 50, EPIC_TUNES | {"E": epic_held("1*")},          # an octave under lead 1
+            quiet(64) + up(EPIC_S) + quiet(3) + ["E+2"], vel=88, gate=0.97, volume=92, pan=80, reverb=70)
+    bell = {"B": "1 - - - - - - - . . . . . . . .", "E": epic_held("1")}
+    p.voice("bells", BELLS, 62, bell, rep("B _", 2, "_", 52) + up(rep("B _", 8)) + quiet(3) + ["E+2"], vel=88,
+            gate=1.0, volume=86, pan=70, reverb=70)
+    gallop, run, back = "x.xxx.xxx.xxx.xx", "xxxxxxxxxxxxxxxx", "....x.......x..."
+    ride = "x.x.x.x.x.x.x.x."
+    p.drums({
+        "h": {HAT: "x.x.x.x.x.x.x.x."},
+        "a": {KICK: "x.xx..x.x.xx..x.", SNARE: back, OHAT: "x...x...x...x...", HAT: "..x...x...x...x."},
+        "f": {KICK: "x.xx..x.x.......", SNARE: "....x.....x.xx..", TOM2: "..............x.", TOM4: "...............x",
+              OHAT: "x...x...x......."},
+        "c": {CRASH: "x...............", KICK: "x..x..x.x..x..x.", SNARE: back, RIDE: ride},
+        "r": {KICK: "x..x..x.x..x..x.", SNARE: back, RIDE: ride},
+        "gc": {CRASH: "x...............", KICK: gallop, SNARE: back, RIDE: ride},          # the gallop under the ride
+        "g": {KICK: gallop, SNARE: back, RIDE: ride},
+        "gf": {KICK: "x.xxx.xxx.......", SNARE: "....x.....x.xx..", TOM2: "..............x.",
+               TOM4: "...............x", RIDE: "x.x.x.x.x......."},
+        "sc": {CRASH: "x...............", KICK: run, SNARE: back, RIDE: ride},             # running sixteenths
+        "s": {KICK: run, SNARE: back, RIDE: ride},
+        "sf": {KICK: "xxxxxxxxxx......", SNARE: "....x.....x.xx..", TOM2: "..............x.",
+               TOM4: "...............x", RIDE: "x.x.x.x.x......."},
+        "b": {SNARE: "oooxxxxxxxXX....", TOM1: "............x...", TOM2: ".............x..",
+              TOM3: "..............x.", TOM4: "...............x"},                          # bar 48
+        "e": {CRASH: "x...............", KICK: "x..............."},
+    }, rep("h", 4, "a a a f", 4, "c r r f", 2, "a a a f", 2, "gc g g gf", 2, "_ _ _ b", 1, "a a a f", 2,
+           "gc g g gf", 2, "sc s s sf", 2, "sc s sf e", 1), vel=98)
+    return p
+
+
+def engine_epic_ride():
+    """E, then F sharp; 12/8, 120 a minute. engine_shuffle() made big: orchestra and band riding in triplets. Cellos
+    play its riff in short notes from the first bar with timpani beating it out; the bass's shuffle and the drums
+    come in with the verse, a distorted guitar doubles the riff from the riff on the 4th and chugs the chords in the
+    chorus. Trumpets have the verse tune (the second time strings an octave over them), horns the chorus tune
+    (trumpets an octave over them from the second chorus), strings and later a choir hold the triads, a bell
+    strikes every second bar. A marching snare in triplets in the beginning and in the break, which grows; then two
+    choruses a tone higher, a piccolo two octaves over the horns and the choir with the tune in the last; the riff
+    in unison and one held chord, the only major home chord of the piece."""
+    p = Piece("Paradox Engine, The Ride", 120, steps=12, per_beat=3, sig=(12, 8))
+    riff = "X1 X1 X1 X2"
+    fourth = "X1+5 X1+5 X1+5 X2+5"
+    quiet = lambda bars: rep("_", bars)
+    up = lambda form: epic_up(form, 2)
+    major = {"E": epic_held("1M", 12)}
+    # 66 bars: 1-4 the riff, soft; 5-12 verse; 13-20 the riff on the 4th and at home; 21-28 chorus; 29-36 verse;
+    # 37-44 chorus; 45-48 break, growing; 49-56 chorus in F sharp; 57-64 chorus in F sharp; 65 the riff; 66 the chord
+    shuffled = rep("p+8 p+10 p p", 2)                                  # the chorus in the shuffle, on the roots
+    p.voice("cellos", CELLO, 40, EPIC_RIFF_12 | EPIC_BASS_12 | {"E": epic_held("1*", 12)},
+            rep(riff, 3, fourth, 1, riff, 1) + shuffled + rep(riff, 2) + shuffled + rep(riff, 1) + up(shuffled * 2)
+            + ["X1+2", "E+2"], vel=92, gate=0.5, volume=96, pan=40, reverb=40)
+    chug = rep("C+8 C+10 C C", 2)
+    p.voice("guitar", DISTORTION, 40, EPIC_RIFF_12 | {"E": epic_held("1*", 12)},
+            quiet(12) + rep(fourth, 1, riff, 1) + chug + rep(riff, 2) + chug + quiet(4) + up(chug * 2)
+            + ["X1+2", "E+2"], vel=86, gate=0.8, volume=92, pan=52)
+    p.voice("bass", PICKBASS, 28, EPIC_BASS_12 | EPIC_RIFF_12 | {"E": epic_held("1", 12)},
+            quiet(4) + rep("p p p q", 2, "p+5 p+5 p+5 q+5", 1, "p p p q", 1) + shuffled + rep("p p p q", 2)
+            + shuffled + quiet(4) + up(shuffled * 2) + ["X1+2", "E+2"], vel=106, gate=0.8, volume=112)
+    p.voice("timpani", TIMPANI, 40, {
+        "t": "1! . . . . . 1 . . 5, . 1",                             # under the riff
+        "r": "1! . . . . . 1 1 1 1 1 1",                              # in the chorus: a hit, then a roll
+        "u": "1! 1 . 1 1 . 1 1 . 1 . .",                              # bar 65: with the riff's key notes
+        "E": "1! 1 1 1 1 1 1 1 1 1 1 1",
+    }, rep("t", 12, "t+5", 4, "t", 4, "r+8 r+10 r r", 2, "t", 8, "r+8 r+10 r r", 2, "t", 4)
+            + up(rep("r+8 r+10 r r", 4))
+            + ["u+2", "E+2"], vel=94, gate=0.9, volume=100, pan=64, reverb=50)
+    p.voice("trumpets", EPIC_TRUMPET, 64, EPIC_TUNES_12 | EPIC_RIFF_12 | {"E": epic_held("1M", 12)},
+            quiet(4) + EPIC_Q + quiet(16) + EPIC_Q + EPIC_S + quiet(4) + up(EPIC_S * 2) + ["X1+2", "E+2"], vel=100,
+            gate=0.95, volume=106, pan=74, reverb=50)
+    p.voice("horns", HORN, 52, EPIC_TUNES_12 | EPIC_RIFF_12 | {"F": epic_held("1^", 12)} | major,
+            quiet(12) + rep("F+5", 4, "F", 4) + EPIC_S + quiet(8) + EPIC_S + quiet(4) + up(EPIC_S * 2)
+            + ["X1+2", "E+2"], vel=100, gate=0.97, volume=106, pan=54, reverb=55)
+    chords = rep("M+8 M+10 m m", 2)
+    p.voice("strings", STRINGS, 52, EPIC_TUNES_12 | {"m": epic_held("1m", 12), "M": epic_held("1M", 12)} | major,
+            quiet(20) + chords + [q + "+24" for q in EPIC_Q] + chords + quiet(4) + up(chords * 2) + ["_", "E+2"],
+            vel=86, gate=1.0, volume=90, pan=28, reverb=60)
+    close = rep("M-4 M-2 m m", 2)
+    p.voice("choir", CHOIR, 64, EPIC_TUNES_12 | {"m": epic_held("1m", 12), "M": epic_held("1M", 12)} | major,
+            quiet(36) + close + quiet(4) + up(close) + up([s + "-12" for s in EPIC_S]) + ["_", "E+2"], vel=82,
+            gate=1.0, volume=88, pan=92, reverb=70)
+    bells = rep("B _", 4)
+    p.voice("bells", BELLS, 64, {"B": "1 - - - - - . . . . . .", "E": epic_held("1", 12)},
+            quiet(36) + bells + quiet(4) + up(bells * 2) + ["_", "E+2"], vel=88, gate=1.0, volume=86, pan=70,
+            reverb=70)
+    p.voice("piccolo", EPIC_PICCOLO, 76, EPIC_TUNES_12 | {"E": epic_held("3", 12)},   # two octaves over the horns
+            quiet(56) + up(EPIC_S) + ["_", "E+2"], vel=92, gate=0.95, volume=96, pan=84, reverb=60)
+    march, roll = "X.xx.xX.xx.x", "X.xxxxxxxXXX"
+    p.drums({
+        "m": {SNARE: march}, "mr": {SNARE: roll},                       # the marching snare in triplets
+        "a": {KICK: "x....xx.....", SNARE: "...x.....x..", HAT: "X.xX.xX.xX.x"},
+        "f": {KICK: "x....x......", SNARE: "...x........", TOM2: "......x.x...", TOM4: ".........x.x",
+              HAT: "X.xX.x......"},
+        "c": {CRASH: "x...........", KICK: "x.....x.....", SNARE: "...x.....x..", RIDE: "x.xx.xx.xx.x"},
+        "r": {KICK: "x.....x.....", SNARE: "...x.....x..", RIDE: "x.xx.xx.xx.x"},
+        "u": {KICK: "xx.xx.xx.x..", SNARE: "..x..x..x.xx"},              # bar 65: the riff's rhythm
+        "e": {CRASH: "x...........", KICK: "x..........."},
+    }, rep("_", 2, "m mr", 1, "a a a f", 4, "c r r f", 2, "a a a f", 2, "c r r f", 2, "m m m mr", 1, "c r r f", 4,
+           "u e", 1), vel=96, volume=104)
+    epic_swell(p, ("cellos", "timpani", "drums"), 1, 4, -26, -12)
+    epic_swell(p, ("cellos", "timpani", "drums"), 45, 48, -30, 6)
+    return p
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Epic, on Paradox Engine, for the end of the game and the end credits, 2026-11-28. Vadim: "the epic one, for the end
+# of the game and end credits. Also 5 versions, so I can choose from." Paradox Engine is becoming the game's main
+# theme. Its two tunes are used as they stand (ENGINE_OVER_RIFF, ENGINE_CHORUS and the walked ones): not a note or a
+# length changed; they are made big by octave doublings and by more voices joining, and a statement is made louder
+# only by '!' on every note (finale_loud). The tunes' voices are the loudest, the holding voices under them.
+
+FIN_BRASS, FIN_TRUMPET = 61, 56                 # General MIDI: brass section, trumpet
+
+
+def finale_loud(tunes):
+    """The same bars with every note louder ('!'), each under its name with an 'L' after it."""
+    return {k + "L": " ".join(t if t in ("-", ".") else t + "!" for t in v.split()) for k, v in tunes.items()}
+
+
+def finale_bars(names, loud=False, by=0):
+    """A tune's bars ('S5 S6 S7 S8') as form tokens, the loud copy if `loud`, moved `by` semitones."""
+    return [n + ("L" if loud else "") + (f"{by:+d}" if by else "") for n in names.split()]
+
+
+def finale_grow(voice, first, last, low, high):
+    """A roll that grows: the notes of `voice` struck from step `first` to step `last` (counted from the piece's
+    start) get velocities rising evenly from `low` to `high` (falling, if `high` is the smaller)."""
+    for n in voice["notes"]:
+        if first <= n[0] <= last:
+            n[3] = round(low + (high - low) * (n[0] - first) / max(1, last - first))
+
+
+def finale_part(text, of):
+    """A part written a note a bar as spell() takes it ('Eb4 F4 G4 G4'), '_' a silent bar -> patterns and form by
+    write(). A note the same as the bar before's is held; after a silence the note is struck again."""
+    per_bar, run = [], []
+    for bar in text.split() + ["_"]:
+        if bar != "_":
+            run.append(bar)
+            continue
+        per_bar += spell(" ".join(run)) if run else []
+        per_bar.append(None)
+        run = []
+    per_bar.pop()
+    patterns, form = write([n or {} for n in per_bar], of)
+    return patterns, ["_" if n is None else f for n, f in zip(per_bar, form)]
+
+
+def mysterium_engine_finale():
+    """B flat, 100 a minute. The finale of the Mysterium Engine pieces: Paradox Engine's two tunes, not a note
+    changed, with the Engine's D heard as the third of B flat major; a contrabass walks down the scale a note a bar,
+    D to D, under verse and chorus alike, and a warm pad, slow strings and a choir hold the chords as three lines,
+    all through. Four times verse and chorus, each time with more, then a coda. 1: as Mysterium Engine, Choir, the
+    lines coming in one after the other, a clarinet with the verse tune, a horn with the chorus tune. 2: a harp
+    breaking the chords in eighths, soft timpani on the bass note, a soft marching snare in the chorus; the clarinet
+    again, then the horn louder with the brass section softly in unison with it. 3: the band of Mysterium Engine,
+    Band (its muted guitar with the riff, the hammer on the fourth chord's root and alone where E natural sounds;
+    its picked bass in eighths; its drums), a church organ holding each bar's triad; the brass section has the verse
+    tune an octave up, an overdriven lead the chorus tune. 4: everything: a distorted guitar holding each chord's
+    root and fifth, a bell on B flat every fourth bar; both tunes walked through, the verse on the brass section with
+    the clarinet an octave over it, the chorus on the lead and the brass section with the horn an octave under. Coda:
+    the chorus's last four bars twice, the second time without the band, a timpani roll growing to the end."""
+    p = Piece("Mysterium Engine, Finale", 100)
+    verse, chorus = MYSTERIUM_VERSE.split(), MYSTERIUM_CHORUS.split()
+    harmony = (verse + chorus) * 4 + chorus[4:] * 2                             # the coda: vi V IV I, twice
+    walk = [parse(t, 1)[1][0][2][0] for t in MYSTERIUM_BASS.split()]
+    walk = walk * 8 + walk[4:] * 2                                              # the coda: G F E flat D, twice
+    key = 46                                                                    # B flat 2: the bass from D3 to D2
+    # 72 bars: 1 verse, chorus (1-16); 2 verse, chorus (17-32); 3 verse, chorus (33-48); 4 verse, chorus (49-64);
+    # the coda, as 4 (65-68), then without the band (69-72)
+    p.voice("contrabass", CONTRABASS, key, *write([{0: key + w} for w in walk], key), vel=80, gate=1.0, volume=100)
+    for i, (name, program, pan, start) in enumerate((("low line", WARMPAD, 88, 0), ("middle line", SLOWSTR, 36, 2),
+                                                     ("top line", CHOIR, 58, 4))):
+        p.voice(name, program, 58, *write(mysterium_line(harmony, i, 58, start), 58, start=start), vel=64,
+                gate=1.0, volume=86, pan=pan, reverb=85)
+    tunes = (ENGINE_OVER_RIFF | {k.replace("Q", "W"): v for k, v in ENGINE_OVER_RIFF_2.items()}
+             | ENGINE_CHORUS | {k.replace("S", "T"): v for k, v in ENGINE_CHORUS_2.items()})
+    tunes |= finale_loud(tunes)
+    over, walked_over = "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", "W1 W2 W3 W4 W5 W6 W7 W8"
+    sung, walked, coda = "S1 S2 S3 S4 S5 S6 S7 S8", "T1 T2 T3 T4 T5 T6 T7 T8", "S5 S6 S7 S8"
+    # the clarinet: the verse tune in 1 and 2, in 4 walked and an octave over the brass (A5 to D7)
+    p.voice("clarinet", CLARINET, 74, tunes, finale_bars(over) + rep("_", 8) + finale_bars(over) + rep("_", 24)
+            + finale_bars(walked_over, True, 12) + rep("_", 16), vel=84, gate=0.97, volume=102, pan=70, reverb=70)
+    # the horn: the chorus tune in 1, louder in 2; in 4 walked an octave under the lead, and the coda
+    p.voice("horn", HORN, 62, tunes, rep("_", 8) + finale_bars(sung) + rep("_", 8) + finale_bars(sung, True)
+            + rep("_", 24) + finale_bars(walked, True, -12) + finale_bars(coda, True, -12) * 2, vel=86, gate=0.97,
+            volume=102, pan=46, reverb=70)
+    # the brass section: softly with the horn in 2; the verse tune an octave up in 3 and 4 (walked); the chorus walked
+    # in unison with the lead in 4; the coda
+    p.voice("brass section", FIN_BRASS, 62, tunes, rep("_", 24) + finale_bars(sung) + finale_bars(over, True, 12)
+            + rep("_", 8) + finale_bars(walked_over, True, 12) + finale_bars(walked, True)
+            + finale_bars(coda, True) * 2, vel=82, gate=0.97, volume=106, pan=64, reverb=60)
+    p.voice("lead", OVERDRIVE, 62, tunes, rep("_", 40) + finale_bars(sung) + rep("_", 8) + finale_bars(walked)
+            + finale_bars(coda) + rep("_", 4), vel=98, gate=0.97, volume=104, pan=56, reverb=60)
+    # the harp, 2 to the coda's first half: the bar's bass note and its chord up and back, in eighths
+    harp = {}
+    for b, chord in enumerate(harmony):
+        bass = key + walk[b]
+        triad = {x % 12 for x in MYSTERIUM_LINES[chord]}
+        up = [q for q in range(bass + 1, bass + 20) if (q - key) % 12 in triad][:4]
+        harp[f"n{b}"] = " ".join(f"{token(q, key)} -" for q in [bass] + up + up[2::-1])
+    p.voice("harp", HARP, key, harp, ["_" if not 16 <= b < 68 else f"n{b}" for b in range(p.bars)], vel=66,
+            gate=1.0, volume=88, pan=28, reverb=80)
+    # the timpani: the bar's bass note on the first beat, soft in 2, louder from 3; in the last two bars a roll on
+    # B flat growing to a last stroke on the third beat
+    drum = {f"n{b}": f"{token(key + w, key)} - - - . . . . . . . . . . . ." for b, w in enumerate(walk)}
+    drum |= {k + "L": v.replace(" ", "! ", 1) for k, v in drum.items()}
+    drum |= {"R": " ".join(["1"] * 16), "E": " ".join(["1"] * 8 + ["1!"] + ["-"] * 7)}
+    p.voice("timpani", TIMPANI, key, drum, rep("_", 16) + [f"n{b}" for b in range(16, 32)]
+            + [f"n{b}L" for b in range(32, 70)] + ["R", "E"], vel=70, gate=1.0, volume=96, pan=76, reverb=70)
+    finale_grow(p.voices[-1], 70 * 16, 71 * 16 + 8, 46, 116)
+    # the band, 3 to the coda's first half (Mysterium Engine, Band's riff and its rules): the hammer on the root of
+    # the fourth chord; alone in the chorus's bars where E natural sounds (II, and the tune's E over V)
+    bare = {first + i for first in (40, 56) for i in (1, 5)} | {65}
+    p.voice("muted guitar", MUTED, 50, {
+        "X1": "1! 1 b2' 1 1 b3' 1 1 b2' 1 1 4' 1 b3' 1 1",
+        "X4": "b2! b2 b2' b2 b2 b3' b2 b2 b2' b2 b2 4' b2 b3' b2 b2",
+        "H": "1! 1 . 1 1 . 1 1 . 1 1 . 1 . 1 1",
+    }, ["_" if not 32 <= b < 68 else "H" if b in bare else "X4" if chord == "IV" else "X1"
+        for b, chord in enumerate(harmony)], vel=82, gate=0.6, volume=88, pan=40)
+    p.voice("bass", PICKBASS, 34, {f"n{b}": " ".join([token(34 + w, 34), "-"] * 8) for b, w in enumerate(walk)},
+            ["_" if not 32 <= b < 68 else f"n{b}" for b in range(p.bars)], vel=98, gate=0.8, volume=104)
+    # the church organ, from 3 to the end: the bar's triad, near B flat 3
+    triads = {"I": "1M", "V": "5,M", "IV": "4,M", "vi": "6,m", "II": "2M"}
+    p.voice("organ", CHURCH, 58, {k: v + " -" * 15 for k, v in triads.items()}, rep("_", 32) + harmony[32:],
+            vel=72, gate=1.0, volume=82, pan=84, reverb=60)
+    # 4 and the coda's first half: a distorted guitar holding the chord's root and fifth, a whole bar
+    fifths = {"I": "1^", "V": "5,^", "IV": "4,^", "vi": "6,^", "II": "2^"}      # B flat 2, F2, E flat 2, G2, C3
+    p.voice("distorted guitar", DISTORTION, key, {k: v + " -" * 15 for k, v in fifths.items()},
+            rep("_", 48) + harmony[48:68] + rep("_", 4), vel=80, gate=0.95, volume=86, pan=50, reverb=40)
+    # the bell: B flat 4 on the first beat of every fourth bar in 4 and the coda's first half, and of the last bar
+    p.voice("bells", BELLS, 70, {"B": "1 - - - - - - - - - - - - - - -"},
+            ["B" if b in (48, 52, 56, 60, 64, 71) else "_" for b in range(p.bars)], vel=84, gate=1.0, volume=94,
+            pan=96, reverb=80)
+    kick, snare = "x.....x.x.....x.", "....x.......x..."
+    fill = {KICK: "x.....x.x.......", SNARE: "....x.....x.xx..", TOM2: "..............x.", TOM4: "...............x"}
+    p.drums({
+        "m": {SNARE: "o.ooo.o.o.ooo.o."},                                   # the soft marching snare
+        "n": {SNARE: "o.ooo.o.oooooooo"},
+        "a": {KICK: kick, SNARE: snare, HAT: "X.x.X.x.X.x.X.x."},           # Mysterium Engine, Band's
+        "e": {CRASH: "x...............", KICK: kick, SNARE: snare, HAT: "X.x.X.x.X.x.X.x."},
+        "f": fill | {HAT: "X.x.X.x.X......."},
+        "c": {CRASH: "x...............", KICK: kick, SNARE: snare, RIDE: "x.x.x.x.x.x.x.x."},
+        "r": {KICK: kick, SNARE: snare, RIDE: "x.x.x.x.x.x.x.x."},
+        "g": fill | {RIDE: "x.x.x.x.x......."},
+    }, rep("_", 24, "m m m n", 2) + rep("e a a f a a a f c r r g r r r g", 2, "c r r g", 1, "_", 4), vel=96,
+        volume=100)
+    return p
+
+
+def engine_epic_cathedral():
+    """C minor, then D minor, 60 a minute. Slow and vast: a church organ, a choir, brass, timpani and bells; no
+    guitars, no drum kit. Paradox Engine's chorus tune as a chorale in four parts, a chord a bar (the flat 6th, the
+    flat 7th, home minor, home minor, twice): the tune on top, alto and tenor climbing in thirds under it, the
+    organ's pedal with the contrabasses below. Three times, each bigger: the organ alone; the organ, the choir and
+    the brass section, the timpani and a bell every bar; a tone higher, in D minor, with trumpets and trembling
+    strings as well, ending once on D major. Between the first two the verse tune as a fanfare on trumpets, horns
+    an octave under them in its second half, over a held C minor, the key note hammered by contrabasses and cellos,
+    the timpani in the rhythm of the Engine's riff's accents. The organ's pedal holds through everything; where it
+    is alone its low octave sounds on the organ's tenor channel."""
+    p = Piece("Paradox Engine, Cathedral", 60)
+    # 44 bars: the opening 4 (1-4); chorale 1 (5-12); the fanfare (13-20); chorale 2 (21-28); the interlude (29-32,
+    # the last bar A major); chorale 3, a tone up (33-40, its last chord D major); the close (41-44: D major, then the
+    # pedal alone falling to C)
+    alto, alto3 = "Eb4 F4 G4 G4 " * 2, "F4 G4 A4 A4 " * 2
+    tenor, tenor3 = "C4 D4 Eb4 Eb4 " * 2, "D4 E4 F4 F4 D4 E4 F4 F#4"
+    bass, bass3 = "Ab1 Bb1 C2 C2 " * 2, "Bb1 C2 D2 D2 " * 2
+    sung, sung3 = "S1 S2 S3 S4 S5 S6 S7 S8", finale_bars("S1 S2 S3 S4 S5 S6 S7 S8", True, 2)
+    tunes = ENGINE_CHORUS | finale_loud(ENGINE_CHORUS) | held(e="3", d="2'")      # E4, D5 over C4
+    p.voice("organ, pedal", CHURCH, 36, *finale_part(
+        "C2 C2 C2 C2 " + bass + "C2 " * 8 + bass + "C2 C2 C2 A1 " + bass3 + "D2 D2 D2 C2", 36), vel=90, gate=1.0,
+        volume=104, pan=64, reverb=70)
+    p.voice("organ, tenor", CHURCH, 48, *finale_part(                           # and the pedal's low octave
+        "C1 C1 C1 C1 " + tenor + "C1 " * 8 + tenor + "C1 C1 C1 A3 " + tenor3 + " F#4 F#4 D1 C1", 48), vel=80,
+        gate=1.0, volume=88, pan=56, reverb=70)
+    p.voice("organ, alto", CHURCH, 60, *finale_part(
+        "_ _ _ _ " + alto + "_ " * 8 + alto + "_ _ _ C#4 " + alto3 + "A4 A4 _ _", 60), vel=80, gate=1.0, volume=88,
+        pan=72, reverb=70)
+    p.voice("organ, top", CHURCH, 60, tunes, rep("_", 4, sung, 1, "_", 8, sung, 1, "_", 3, "e", 1) + sung3
+            + rep("d T _ _", 1), vel=92, gate=1.0, volume=100, pan=64, reverb=70)
+    # the choir, chorales 2 and 3 and the close
+    p.voice("choir", CHOIR, 60, tunes, rep("_", 20, sung, 1, "_", 4) + sung3 + rep("d T _ _", 1), vel=84,
+            gate=1.0, volume=100, pan=58, reverb=90)
+    p.voice("choir, alto", CHOIR, 60, *finale_part("_ " * 20 + alto + "_ " * 4 + alto3 + "A4 A4 _ _", 60), vel=76,
+            gate=1.0, volume=90, pan=80, reverb=90)
+    p.voice("choir, tenor", CHOIR, 48, *finale_part("_ " * 20 + tenor + "_ " * 4 + tenor3 + " F#4 F#4 _ _", 48),
+            vel=76, gate=1.0, volume=90, pan=42, reverb=90)
+    # the brass: the section doubles the tune in chorales 2 and 3; trumpets have the fanfare and are in unison with
+    # the section in chorale 3 (an octave over it would go up to D7); horns an octave under the fanfare's second half
+    # and alone in the interlude
+    p.voice("brass section", FIN_BRASS, 60, tunes, rep("_", 20, sung, 1, "_", 4) + sung3 + rep("_", 4), vel=86,
+            gate=0.97, volume=104, pan=70, reverb=70)
+    over = ENGINE_OVER_RIFF | finale_loud(ENGINE_OVER_RIFF)
+    p.voice("trumpets", FIN_TRUMPET, 60, over | ENGINE_CHORUS, rep("_", 12, "Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8", 1, "_", 12)
+            + finale_bars(sung, by=2) + rep("_", 4), vel=96, gate=0.97, volume=106, pan=52, reverb=70)
+    p.voice("horns", HORN, 48, over, rep("_", 16) + finale_bars("Q5 Q6 Q7 Q8", True) + rep("_", 8, "Q1 Q2", 1, "_", 14),
+            vel=80, gate=0.97, volume=100, pan=40, reverb=80)
+    # the strings: C minor through the fanfare; A major in bar 32; each bar's triad in chorale 3; D major in the close
+    p.voice("tremolo strings", TREMOLO, 60, held(cm="1m", a="6,M", bb="b7,M", c="1M", dm="2m", dM="2M"),
+            rep("_", 12, "cm", 1, "T", 7, "_", 11, "a bb c dm T bb c dm dM T T _ _", 1), vel=74, gate=1.0, volume=88,
+            pan=30, reverb=80)
+    # the key note hammered in eighths through the fanfare; the chorale's bass with the pedal in chorales 2 and 3
+    hammer = {"h": "1 . 1 . 1 . 1 . 1 . 1 . 1 . 1 ."}
+    line, form = finale_part("_ " * 20 + bass + "_ " * 4 + bass3 + "D2 D2 _ _", 36)
+    p.voice("contrabasses", CONTRABASS, 36, line | hammer, form[:12] + ["h"] * 8 + form[20:], vel=88, gate=0.85,
+            volume=104, pan=64, reverb=60)
+    p.voice("cellos", CELLO, 48, hammer, rep("_", 12, "h", 8, "_", 24), vel=86, gate=0.85, volume=96, pan=48,
+            reverb=60)
+    # the timpani, C2 (B flat 1 to A2): a soft roll in bar 4; the riff's accents in the fanfare, rolling in bar 20's
+    # second half; strokes and rolls in the chorales (in 3 on each bar's root); a roll on A growing in bar 32; the
+    # last roll ends on a stroke on D at the close
+    p.voice("timpani", TIMPANI, 36, {
+        "R": " ".join(["1"] * 16),
+        "S": " ".join(["1!"] + ["1"] * 15),                                    # a roll from a stroke
+        "F": "1! . 1 . . 1 . . 1 . . 1 . 1 . .",
+        "G": "1! . 1 . . 1 . . 1 1 1 1 1 1 1 1",
+        "H": "1! - - - . . . . . . . . . . . .",
+    }, rep("_ _ _ R", 1, "_", 8, "F", 7, "G H _ _ R H _ _ R", 1, "_", 3)
+        + "R+9 H-2 H H+2 S+2 H-2 H H+2 S+2 H+2 _ _ _".split(), vel=84, gate=1.0, volume=104, pan=76, reverb=80)
+    timpani = p.voices[-1]
+    for bar, low, high in ((4, 36, 60), (24, 64, 104), (28, 96, 56), (32, 40, 110)):
+        finale_grow(timpani, (bar - 1) * 16, bar * 16 - 1, low, high)
+    for bar, high in ((36, 108), (40, 114)):                                   # after the bar's first stroke
+        finale_grow(timpani, (bar - 1) * 16 + 1, bar * 16 - 1, 66, high)
+    finale_grow(timpani, 19 * 16 + 8, 20 * 16 - 1, 70, 106)
+    # the bells: C5 in the opening and the interlude, every bar of chorale 2; D5 every bar of chorale 3; pealing down
+    # D major in bar 41; C5 in the last bar
+    p.voice("bells", BELLS, 72, {"c": "1 - - - - - - - - - - - - - - -", "d": "2 - - - - - - - - - - - - - - -",
+                                 "p": "2 - - - 6, - - - b5, - - - 2, - - -"},
+            rep("c _ c _", 1, "_", 16, "c", 8, "c _ c _", 1, "d", 8, "p _ _ c", 1), vel=86, gate=1.0, volume=96,
+            pan=96, reverb=90)
+    p.drums({
+        "k": {KICK2: "X...............", CRASH: "x..............."},
+        "b": {KICK2: "X..............."},
+    }, rep("_", 20, "k _ _ _ k _ _ _", 1, "_", 4, "k b b b k b b b", 1, "_", 4), vel=96, volume=104)
+    return p
 TRACKS = [
     ("AJM_HING", "the plain Doom rocker: bass and guitar in one riff, organ stabs", hinges),
     ("AJM_GARF", "fast, the Doom way, on Vadim's sketch garmonic: one note held by a muted guitar, the riff slipping under it", garmonic_fast),
@@ -2419,6 +3202,16 @@ TRACKS = [
     ("AJM_EMY1", "on Mysterium's harmony: slow, a bass walking down, a choir, strings and a pad holding the chords, the tunes on a clarinet and a horn", mysterium_engine_choir),
     ("AJM_EGR1", "on Garmonic's harmony: fast, turned over: the held note on top on a muted guitar, the hidden notes a heavy riff slipping below it", garmonic_engine_upside_down),
     ("AJM_EGR5", "on Garmonic's harmony: slow, ambient: three lines and a bass, no two lines moving at once, the tunes over them from the first bar", garmonic_engine_slow),
+    ("AJM_ENA1", "ambient, on Paradox Engine, for MAP01: After Hours' own strings, drone and choir; the verse tune on its piano, the chorus tune on a horn far off", engine_ambient_rooms),
+    ("AJM_ENA2", "ambient, on Paradox Engine, for MAP01: three held lines over a D that never moves, one note moving at a time; the tunes on vibes, a voice, a clarinet", engine_ambient_held),
+    ("AJM_ENA3", "ambient, on Paradox Engine, for MAP01: the riff's notes slowed to a bass a bar each under held strings; the tunes on a clarinet and a horn", engine_ambient_ground),
+    ("AJM_ENA4", "ambient, on Paradox Engine, for MAP01: the chorus tune as a far-off hymn on a choir in three parts, the verse tune on a few piano notes, a bell", engine_ambient_hymn),
+    ("AJM_ENA5", "ambient, on Paradox Engine, for MAP01: a canon, a piano and a celesta two bars apart over a held E and B, After Hours' drums", engine_ambient_earlier_self),
+    ("AJM_ENE1", "epic, on Paradox Engine, for the end: a march for the orchestra alone, the riff on cellos, trumpets and horns with the tunes, timpani and a marching snare, the last choruses a tone up", engine_epic_march),
+    ("AJM_ENE2", "epic, on Paradox Engine, for the end: the band at full power, two lead guitars in thirds, synth brass, a choir and a church organ, the last choruses a tone up", engine_epic_twin),
+    ("AJM_ENE3", "epic, on Paradox Engine, for the end: the 12/8 ride, orchestra and band in triplets, a marching snare, a tone up at the end and a last major chord", engine_epic_ride),
+    ("AJM_ENE4", "epic, on Paradox Engine, for the end: the Mysterium Engine's finale in B flat major, from a choir and two tunes to the whole band, organ, bells and timpani", mysterium_engine_finale),
+    ("AJM_ENE5", "epic, on Paradox Engine, for the end: slow and vast, the chorus tune as an organ chorale three times, each bigger, a brass fanfare between, choir, timpani, bells", engine_epic_cathedral),
 ]
 
 
