@@ -113,6 +113,128 @@ class AjarStockGate : Actor
 	}
 }
 
+// AjarCrushPress (20209, THEN, in the crush; PLAN.md, "MAP23: the way out built, BLUE, the press"): args[0] the tag
+// of the sector it presses (the crush). Its lever THEN (Thing_Activate on its tid) brings the crush's roof down: it
+// stops on whatever lives in the crush and crushes it (Hexen's way: CRUSH every fourth tic, the roof held on its
+// head), comes on down once nothing alive holds it, to BOTTOM over the floor, waits LOW_WAIT and goes up again. While
+// the player stands in the crush it waits where it is: it never comes down on him. What it kills is not ground to
+// gibs (+DONTGIB): an ordinary corpse, so its bones NOW are an ordinary big one's (a step, a weight: then.zs,
+// kennel.zs) and the big one's Doom gate keeps off (AjarStockGate.Kept). A pull while it moves does nothing.
+class AjarCrushPress : Actor
+{
+	const BOTTOM = 40;
+	const DOWN_SPEED = 2;
+	const UP_SPEED = 2;
+	const CRUSH = 120;
+	const LOW_WAIT = 105;      // three seconds down
+	const LONGEST = 700;       // it goes up after this long whatever it presses (nothing in the house outlasts it)
+	Sector sec;
+	double floorZ, topZ;
+	int phase;                 // 0 up, 1 coming down and pressing, 2 down, 3 going up
+	int phaseAt;
+	Array<Actor> pressed;
+	// (the tests)
+	int pulls, cycles, kills, lastPull, lastKill, downAt, upAt, heldTics;
+
+	Default { +NOBLOCKMAP +NOGRAVITY +INVISIBLE }
+	States { Spawn: TNT1 A -1; Stop; }
+
+	override void PostBeginPlay()
+	{
+		Super.PostBeginPlay();
+		let si = level.CreateSectorTagIterator(args[0]);
+		int k = si.Next();
+		if (k >= 0)
+		{
+			sec = level.sectors[k];
+			floorZ = sec.floorplane.ZAtPoint(sec.centerspot);
+			topZ = sec.ceilingplane.ZAtPoint(sec.centerspot);
+		}
+		lastPull = lastKill = downAt = upAt = -1;
+	}
+
+	static AjarCrushPress Find()
+	{
+		let it = ThinkerIterator.Create("AjarCrushPress");
+		return AjarCrushPress(it.Next());
+	}
+
+	double CeilZ() { return sec.ceilingplane.ZAtPoint(sec.centerspot); }
+	bool Up() { return phase == 0 && abs(CeilZ() - topZ) < 0.01; }
+	bool Within(Actor a) { return a && level.PointInSector(a.pos.xy) == sec; }
+	bool PlayerIn()
+	{
+		for (int i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].mo && Within(players[i].mo)) return true;
+		return false;
+	}
+
+	override void Activate(Actor activator)
+	{
+		pulls++;
+		if (!sec || phase != 0) return;
+		phase = 1;
+		phaseAt = lastPull = level.maptime;
+		pressed.Clear();
+		A_StartSound("plats/pt1_strt", CHAN_BODY);
+		let sd = AjarSleepingDogs.Get();
+		if (sd) sd.Say("The roof of the crush comes down.");
+	}
+
+	override void Tick()
+	{
+		Super.Tick();
+		if (!sec || phase == 0) return;
+		if (phase == 1)
+		{
+			// what lives in the crush: not to be ground to gibs, and counted when it dies
+			let it = ThinkerIterator.Create("Actor");
+			Actor a;
+			while (a = Actor(it.Next()))
+			{
+				if (!a.bIsMonster || !Within(a)) continue;
+				if (a.health > 0) { a.bDontGib = true; if (pressed.Find(a) == pressed.Size()) pressed.Push(a); }
+			}
+			for (int i = pressed.Size() - 1; i >= 0; i--)
+			{
+				if (pressed[i] && pressed[i].health > 0) continue;
+				if (pressed[i])
+				{
+					kills++;
+					lastKill = level.maptime;
+					if (CVar.GetCVar("ajar_autotest").GetInt())
+						Console.Printf("AJARTEST info the press killed a %s at (%.0f,%.0f), %d tics after the pull", pressed[i].GetClassName(), pressed[i].pos.x, pressed[i].pos.y, level.maptime - lastPull);
+				}
+				pressed.Delete(i);
+			}
+			if (PlayerIn()) { heldTics++; return; }        // never on the player
+			double want = floorZ + BOTTOM;
+			sec.MoveCeiling(DOWN_SPEED, sec.ceilingplane.PointToDist(sec.centerspot, want), CRUSH, -1, true);
+			if (CeilZ() <= want + 0.01 || level.maptime - phaseAt > LONGEST)
+			{
+				phase = 2;
+				phaseAt = downAt = level.maptime;
+				A_StartSound("plats/pt1_stop", CHAN_BODY);
+			}
+		}
+		else if (phase == 2)
+		{
+			if (level.maptime - phaseAt >= LOW_WAIT) { phase = 3; phaseAt = level.maptime; A_StartSound("plats/pt1_strt", CHAN_BODY); }
+		}
+		else
+		{
+			sec.MoveCeiling(UP_SPEED, sec.ceilingplane.PointToDist(sec.centerspot, topZ), -1, 1, false);
+			if (CeilZ() >= topZ - 0.01)
+			{
+				phase = 0;
+				upAt = level.maptime;
+				cycles++;
+				A_StartSound("plats/pt1_stop", CHAN_BODY);
+			}
+		}
+	}
+}
+
 // The level's own: the specimens count for no kill total; the big one wakes when the player is in its keeper's
 // passage THEN; the three lines, each once.
 class AjarSleepingDogs : EventHandler
@@ -191,13 +313,20 @@ class AjarSleepingDogs : EventHandler
 }
 
 // The checks: MAP=MAP23 MODE=n tools/smoke.sh.
-//   1 the way through (tools/puzzle23.py's shortest), to the way out: walked and by USE; ordinary company removed,
-//     the specimens and the guards real; a lure that does not work in its time is finished by the script (logged)
-//   2 the rules, posed: bones at the first tic; "Not dead yet."; three demons in pen 1 open both shutters; one killed
-//     there through the hatch holds the scales with the door hung; a Doom gate restocks; the big one killed outside
-//     the crush: another, its bones a step; killed in the crush: none
-//   3 measurements (nothing has to pass): knight into the stall, the big one into the crush (and its rockets at the
-//     hatch and behind the pier), a specimen left with its gate open and the player NOW, the guards led through
+//   1 the way through (tools/puzzle23.py's PUZZLE23), to the way out built: the guards, key 2, three demons penned
+//     (key 1, BLUE not to be had with full hands), shot dead in the pen through its hatch, RED, the big one penned
+//     and pressed, BLUE carried up its bones and hung in the brass frame, out; walked and by USE; ordinary company
+//     removed, the specimens and the guards real; a lure that does not work in its time is finished by the script
+//   2 the rules, posed: bones at the first tic; "Not dead yet."; three demons in pen 1 open both shutters (BLUE not
+//     to be had with the door in hand); one killed there through the hatch holds the scales with the door hung;
+//     all three dead: the second shutter open for good; a Doom gate restocks; the big one killed outside the
+//     crush: another, its bones a step; penned alive in the crush: its bones gone when the door hangs, unless
+//     pressed; the press kills, goes up, waits for the player; the brass frame refuses RED and the clocked door;
+//     RED hung THEN is an old RED NOW
+//   3 measurements (nothing has to pass): three demons dead in pen 1 and the Doom gate's next; knight into the
+//     stall, the big one into the crush (and its rockets at the hatch and behind the pier), a specimen left with
+//     its gate open and the player NOW, the guards led through; a demon at pen 1's hatch; the press (nine trials:
+//     its time to kill, the bones a step to the ledge)
 //   4 views (tools/smoke_MAP23_4.cfg shoots every 70 tics; two a view)
 //   5 the look board's tour (tools/board23_shots.sh; a camera of its own, THEN and NOW from the same spot)
 class SleepingDogsTest : EventHandler
@@ -217,7 +346,7 @@ class SleepingDogsTest : EventHandler
 	AjarThenHandler th;
 	AjarKennel kh;
 	AjarSleepingDogs sd;
-	AjarDoor clocked, shadow, red;
+	AjarDoor clocked, shadow, red, blue;
 	AjarKennelScales sc1, sc2;
 	int viewN;
 
@@ -450,6 +579,7 @@ class SleepingDogsTest : EventHandler
 				if (d.IsShadow()) shadow = d;
 				else if (d.IsClocked()) clocked = d;
 				else if (d.args[1] == 1) red = d;
+				else if (d.args[1] == 2) blue = d;
 			}
 			sc1 = AjarKennelScales.OfTag(81);
 			let si = ThinkerIterator.Create("AjarKennelScales");
@@ -457,7 +587,7 @@ class SleepingDogsTest : EventHandler
 			while (s = AjarKennelScales(si.Next())) if (s.args[1] == 1000) sc2 = s;
 			if (mode != 3) mo.player.cheats |= CF_GODMODE;
 			if (mode == 4 || mode == 5) mo.player.cheats |= CF_NOTARGET;
-			Info(String.Format("clocked %d shadow %d red %d; scales %d %d; monsters to kill %d", clocked != null, shadow != null, red != null, sc1 != null, sc2 != null, level.total_monsters));
+			Info(String.Format("clocked %d shadow %d red %d blue %d; scales %d %d; monsters to kill %d", clocked != null, shadow != null, red != null, blue != null, sc1 != null, sc2 != null, level.total_monsters));
 		}
 		if (mode == 1 || mode == 4 || mode == 5) ClearOrdinary();
 		cur = 0;
@@ -531,6 +661,7 @@ class SleepingDogsTest : EventHandler
 			Check("bonesAtTheStart", StandIns() == 6, String.Format("%d stand-ins", StandIns()));
 			Check("clockedLeansInTheShelter", clocked && !clocked.frame && !InThen(clocked) && clocked.pos.x < 192 && clocked.pos.y > 128 && clocked.pos.y < 320);
 			Check("redLeansInTheGuardRoom", red && !red.frame && red.pos.x > 784 && red.pos.y > 1280 && red.pos.y < 1472, red ? Where(red) : "none");
+			Check("blueLeansInItsRoom", blue && !blue.frame && InBlueRoom(blue) && F(109) && !F(109).door && !h.wayOutBuilt, blue ? Where(blue) : "none");
 			int counted = 0;
 			let it = ThinkerIterator.Create("Actor");
 			Actor a;
@@ -677,7 +808,7 @@ class SleepingDogsTest : EventHandler
 		if (S()) { Check("key2FromTheLedge", h.Has(mo, 2), Where(mo)); Next(); }
 		if (S()) Go(mo, 1280, 420);
 		if (S()) Go(mo, 1280, 600);
-		// --- the kennels: the clocked door in 102, left hung; a demon into pen 1
+		// --- the kennels: the clocked door in 102, left hung; all three demons into pen 1
 		if (S()) Go(mo, 1280, 1088);
 		if (S()) Go(mo, 700, 1088);
 		if (S()) Go(mo, 40, 632);
@@ -696,6 +827,24 @@ class SleepingDogsTest : EventHandler
 		if (S()) GoT(mo, -984, 610);
 		if (S()) GoT(mo, -760, 640);
 		if (S()) { mo.angle = 90; if (LureInto(mo, KEN_DOGS, 1, 1050, -760, 820)) { came1 += lured; Next(); } }
+		// ... and the other two: they come after him to the hatch too; those that do not by 350 tics are put in
+		if (S())
+		{
+			First();
+			mo.angle = 90;
+			Array<Actor> l;
+			Of(KEN_DOGS, l);
+			int n = 0;
+			for (int i = 0; i < l.Size(); i++) if (InPen1(l[i])) n++;
+			if (n == l.Size() || Age() >= 350)
+			{
+				demonsCame = n;
+				int put = 0;
+				for (int i = 0; i < l.Size(); i++) if (!InPen1(l[i])) { Bring(l[i], mo, -820 + 60 * put, 800 + 50 * (put % 2)); put++; }
+				Info(String.Format("demons: %d of %d in pen 1 by themselves %d tics after the first; %d put in by the script", n, l.Size(), Age(), put));
+				Next();
+			}
+		}
 		if (S()) Wait(35);
 		if (S()) GoT(mo, -680, 640);
 		if (S()) Use(mo, 90);
@@ -703,12 +852,11 @@ class SleepingDogsTest : EventHandler
 		if (S())
 		{
 			Check("pen1GateShut", Gate(-760, 952) < 1, String.Format("gate %.1f", Gate(-760, 952)));
-			Array<Actor> l;
-			Of(KEN_DOGS, l);
+			Of(KEN_DOGS, pen3);
 			int n = 0;
-			for (int i = 0; i < l.Size(); i++) if (InPen1(l[i])) n++;
-			Info(String.Format("demons in pen 1 when its gate came down: %d", n));
-			if (!n && l.Size()) { Bring(l[0], mo, -760, 820); l[0].target = null; Info("one put into pen 1 by the script"); }
+			for (int i = 0; i < pen3.Size(); i++) if (InPen1(pen3[i])) n++;
+			Check("threeDemonsPenned", n == 3 && pen3.Size() == 3, String.Format("%d of %d in pen 1", n, pen3.Size()));
+			for (int i = 0; i < pen3.Size(); i++) if (!InPen1(pen3[i])) { Bring(pen3[i], mo, -820 + 60 * i, 800); pen3[i].target = null; Info("one put into pen 1 by the script"); }
 			Next();
 		}
 		if (S()) GoT(mo, -368, 600);
@@ -716,6 +864,68 @@ class SleepingDogsTest : EventHandler
 		if (S()) { Check("backNowKennels", !InThen(mo) && mo.pos.y > 544 && mo.pos.y < 672, Where(mo)); Next(); }
 		if (S()) Wait(70);
 		if (S()) { Check("scalesEmptyWhileJoined", sc1.weight == 0, ScaleInfo(sc1)); Next(); }
+		// the clocked door down: the times apart, the three penned weigh 1200, both shutters open, the hands full
+		if (S()) Go(mo, -368, 584);
+		if (S()) Use(mo, 270);
+		if (S()) Wait(80);
+		if (S())
+		{
+			Check("clockedDownFrom102", h.carried == clocked && !F(102).door, h.said);
+			Check("threePennedWeigh1200", Reads(sc1, 1200), ScaleInfo(sc1));
+			Check("s1Open", sc1.IsOpen(), ScaleInfo(sc1));
+			Check("secondShutterOpenWithFullHands", sc2.IsOpen() && h.carried == clocked, ScaleInfo(sc2));
+			Check("lainForty", Said("forty years"), h.said);
+			Next();
+		}
+		if (S()) Go(mo, -760, 600);
+		if (S()) Go(mo, -760, 520);
+		if (S()) Go(mo, -760, 476);
+		if (S()) { Check("key1FromTheCloset", h.Has(mo, 1), Where(mo)); Next(); }
+		if (S()) Go(mo, -790, 488);
+		if (S()) Go(mo, -840, 488);
+		if (S()) { h.said = ""; Use(mo, 180); }
+		if (S()) { Check("blueNotToBeHadWithFullHands", h.carried == clocked && blue && !blue.carried && !blue.frame && InBlueRoom(mo), h.said .. "; " .. Where(mo)); Next(); }
+		if (S()) Go(mo, -790, 488);
+		if (S()) Go(mo, -760, 520);
+		if (S()) Go(mo, -760, 600);
+		if (S()) Go(mo, -368, 600);
+		if (S()) Go(mo, -368, 584);
+		if (S()) Use(mo, 270);
+		if (S()) Wait(100);
+		if (S()) { Check("joinedTheShuttersShut", F(102).door == clocked && sc1.weight == 0 && sc1.IsShut() && sc2.IsShut(), ScaleInfo(sc1) .. "; " .. ScaleInfo(sc2)); Next(); }
+		// THEN: the three shot dead in the pen through its hatch
+		if (S()) Through(mo, 270);
+		if (S()) GoT(mo, -368, 610);
+		if (S()) GoT(mo, -760, 640);
+		if (S())
+		{
+			int shots = 0, scripted = 0;
+			for (int i = 0; i < pen3.Size(); i++)
+			{
+				int k = ShootDead(mo, pen3[i], 40);
+				shots += k;
+				if (pen3[i] && pen3[i].health > 0) { Kill(pen3[i], mo); scripted++; }
+			}
+			Info(String.Format("the three shot through the hatch: %d shots of 100; %d killed by the script", shots, scripted));
+			Next();
+		}
+		if (S()) Wait(40);
+		if (S())
+		{
+			int n = 0;
+			for (int i = 0; i < pen3.Size(); i++) { let b = BonesOf(pen3[i], true); if (b && b.pos.x > -880 && b.pos.x < -640 && b.pos.y > 688 && b.pos.y < 944) n++; }
+			Check("threeDeadInPen1ForGood", n == 3, String.Format("%d bones for good in pen 1", n));
+			Next();
+		}
+		if (S()) GoT(mo, -368, 600);
+		if (S()) Through(mo, 270);
+		if (S()) Wait(80);
+		if (S())
+		{
+			Check("threeDeadHold1200WithTheDoorHung", clocked.frame == F(102) && Reads(sc1, 1200) && sc1.IsOpen() && sc2.IsOpen(), ScaleInfo(sc1) .. "; " .. ScaleInfo(sc2));
+			Info(String.Format("the kennels' Doom gate: %d brought; demons alive THEN %d", KenGateBrought(), CountAlive(KEN_DOGS)));
+			Next();
+		}
 		// --- RED, from the guard room (its guards are bones in the pen's place); the clocked door stays in 102
 		if (S()) Go(mo, 40, 632);
 		if (S()) Go(mo, 128, 1150);
@@ -732,26 +942,14 @@ class SleepingDogsTest : EventHandler
 		if (S()) Go(mo, 40, 632);
 		if (S()) Go(mo, -368, 620);
 		if (S()) Go(mo, -368, 584);
-		// RED for the clocked door in 102: the times apart, the demon's bones in pen 1, S1 open: key 1
+		// RED for the clocked door in 102: the times apart; the dead still weigh 1200, no more
 		if (S()) Use(mo, 270);
 		if (S()) { Check("redSwappedInto102", F(102).door == red && h.carried == clocked && !F(122).door, h.said); Next(); }
 		if (S()) Wait(80);
-		if (S())
-		{
-			Check("demonsBonesOnTheScales", sc1.weight >= 400 && Reads(sc1, sc1.weight), ScaleInfo(sc1));
-			Check("s1Open", sc1.IsOpen(), ScaleInfo(sc1));
-			Check("lainForty", Said("forty years"), h.said);
-			Info(String.Format("pen 1 weighs %d; the second shutter %s", sc1.weight, sc2 && sc2.IsOpen() ? "open" : "shut"));
-			Next();
-		}
-		if (S()) Go(mo, -760, 600);
-		if (S()) Go(mo, -760, 520);
-		if (S()) Go(mo, -760, 476);
-		if (S()) { Check("key1FromTheCloset", h.Has(mo, 1), Where(mo)); Next(); }
-		if (S()) Go(mo, -760, 600);
+		if (S()) { Check("deadWeighTheSameApart", Reads(sc1, 1200) && sc1.IsOpen() && sc2.IsOpen(), ScaleInfo(sc1)); Next(); }
 		if (S()) Go(mo, -368, 600);
 		if (S()) Go(mo, -368, 584);
-		// RED to the big run's passage; the clocked door in 105; the big one into the crush
+		// RED to the big run's passage; the clocked door in 105; the big one into the crush; the press
 		if (S()) Through(mo, 270);
 		if (S()) { Check("redToBigRunsPassage", !InThen(mo) && mo.pos.x > 560 && mo.pos.x < 1072 && mo.pos.y > -1456 && mo.pos.y < -1360, Where(mo)); Next(); }
 		if (S()) Go(mo, 600, -1408);
@@ -770,19 +968,56 @@ class SleepingDogsTest : EventHandler
 			Check("crushGateShut", Gate(784, -1032) < 1, String.Format("gate %.1f", Gate(784, -1032)));
 			Info(String.Format("the big one %s the crush when its gate came down: %s", InCrush(a) ? "was in" : "had backed out of", Where(a)));
 			if (!InCrush(a)) { Bring(a, mo, 784, -1170); a.target = null; Info("put into the crush by the script"); }
+			bigOne = a;
 			Next();
 		}
+		// the press: its lever beside the gate's
+		if (S()) GoT(mo, PRESS_X, LEVER_Y);
+		if (S()) { press = AjarCrushPress.Find(); Use(mo, 90); }
+		if (S())
+		{
+			First();
+			if (!bigOne || bigOne.health <= 0 || Age() > 400)
+			{
+				Check("pressKillsWithinFiveSeconds", bigOne && bigOne.health <= 0 && Age() <= 210 && press && press.kills == 1, String.Format("%d tics after the pull; press %s", Age(), PressInfo()));
+				Next();
+			}
+		}
+		if (S()) { First(); if (press.Up() || Age() > 500) { Check("pressGoesUpAgain", press.Up() && press.cycles == 1, PressInfo()); Next(); } }
+		if (S())
+		{
+			let b = CrushBones();
+			Check("pressedCorpseWhole", bigOne && !bigOne.bDestroyed && bigOne.health <= 0 && InCrush(bigOne) && bigOne.bDontGib, Where(bigOne));
+			Check("pressedBonesForGood", b && !b.of && StepOf(b) && b.weight == 1000, b ? String.Format("(%.0f,%.0f) weight %d step %d", b.pos.x, b.pos.y, b.weight, StepOf(b) != null) : "none");
+			Check("playerNotHurtByThePress", mo.health >= 100, String.Format("health %d", mo.health));
+			Next();
+		}
+		// back NOW, the clocked door left hung in 105 (the times joined): the pressed one's bones stay
 		if (S()) GoT(mo, 600, -1408);
 		if (S()) Through(mo, 180);
 		if (S()) { Check("backNowBigRunsPassage", !InThen(mo) && mo.pos.y > -1456 && mo.pos.y < -1360, Where(mo)); Next(); }
-		if (S()) Go(mo, 600, -1408);
-		if (S()) Use(mo, 180);
-		if (S()) Wait(3);
-		if (S()) { Check("clockedDownFrom105", h.carried == clocked && !F(105).door, h.said); Next(); }
-		// out by RED; the hall, the yard, the big run; up the big one's bones, the brass door, out
+		if (S()) Wait(200);
+		if (S())
+		{
+			let b = CrushBones();
+			Check("pressedBonesStayWithTheDoorHung", F(105).door == clocked && b && !b.of && StepOf(b), b ? String.Format("(%.0f,%.0f)", b.pos.x, b.pos.y) : "none");
+			Check("noneAfterThePress", !OneOf(BIG_ONE), Where(OneOf(BIG_ONE)));
+			Next();
+		}
+		// out by RED; BLUE from its room (the shutters open for good)
 		if (S()) Go(mo, 896, -1420);
 		if (S()) Through(mo, 270);
 		if (S()) { Check("redBackToKennels", !InThen(mo) && mo.pos.y > 544 && mo.pos.y < 672, Where(mo)); Next(); }
+		if (S()) Go(mo, -760, 600);
+		if (S()) Go(mo, -760, 520);
+		if (S()) Go(mo, -760, 488);
+		if (S()) Go(mo, -790, 488);
+		if (S()) Go(mo, -840, 488);
+		if (S()) Use(mo, 180);
+		if (S()) { Check("tookBlue", h.carried == blue && F(102).door == red && F(105).door == clocked && sc2.IsOpen(), h.said .. "; " .. ScaleInfo(sc2)); Next(); }
+		if (S()) Go(mo, -790, 488);
+		if (S()) Go(mo, -760, 520);
+		if (S()) Go(mo, -760, 600);
 		if (S()) Go(mo, -368, 620);
 		if (S()) Go(mo, 40, 632);
 		if (S()) Go(mo, 320, 640);
@@ -793,12 +1028,12 @@ class SleepingDogsTest : EventHandler
 		if (S()) Go(mo, 720, 440);
 		if (S()) Go(mo, 784, -800);
 		if (S()) Go(mo, 784, -1000);
-		if (S()) { big = CrushBones(); Check("bigOnesBonesInTheCrush", big != null, big ? String.Format("(%.0f,%.0f), step %d", big.pos.x, big.pos.y, StepOf(big) != null) : "none"); Next(); }
+		if (S()) { big = CrushBones(); Check("bigOnesBonesInTheCrush", big != null && !big.of, big ? String.Format("(%.0f,%.0f), step %d", big.pos.x, big.pos.y, StepOf(big) != null) : "none"); Next(); }
 		if (S()) { if (big) Go(mo, big.pos.x, big.pos.y); else Next(); }
-		if (S()) { Check("onTheBigOnesBones", abs(mo.pos.z - 24) < 1, Where(mo)); Next(); }
+		if (S()) { Check("onTheBigOnesBonesWithBlue", abs(mo.pos.z - 24) < 1 && h.carried == blue, Where(mo)); Next(); }
 		// to the nearer side (the arithmetic: one side is always in reach), round the end to the east ledge
 		if (S()) { if (big) Go(mo, big.pos.x < 784 ? 688 : 880, big.pos.y); else Next(); }
-		if (S()) { Check("upOnTheCrushsLedge", abs(mo.pos.z - 48) < 1, Where(mo)); Next(); }
+		if (S()) { Check("upOnTheCrushsLedgeWithBlue", abs(mo.pos.z - 48) < 1 && h.carried == blue, Where(mo)); Next(); }
 		if (S()) { if (big && big.pos.x < 784) Go(mo, 688, -1320); else Next(); }
 		if (S()) { if (big && big.pos.x < 784) Go(mo, 880, -1320); else Next(); }
 		if (S()) Go(mo, 880, -1104);
@@ -806,16 +1041,68 @@ class SleepingDogsTest : EventHandler
 		if (S()) Wait(40);
 		if (S()) { Check("brassDoorOpens", CZ(920, -1104) > 48 + 64, String.Format("ceiling %.0f", CZ(920, -1104))); Next(); }
 		if (S()) Go(mo, 1000, -1104);
-		if (S()) Go(mo, 1072, -1104);
+		if (S()) Go(mo, 1168, -1104);
+		if (S()) Go(mo, 1168, -1000);
+		if (S()) Go(mo, 1296, -928);
+		if (S()) { Check("inTheNightRoomWithBlue", InNightRoom(mo) && h.carried == blue && !h.wayOutBuilt, Where(mo)); Next(); }
+		if (S()) Use(mo, 0);
+		if (S()) { Check("blueInTheBrassFrame", F(109).door == blue && !h.carried && h.wayOutBuilt, h.said); Next(); }
 		if (S())
 		{
-			Info(String.Format("lures that worked by themselves: %d of 3 (knight, demon, big one); guards: %d of 3 followed, %d penned by themselves; ordinary company cleared %d",
-				came1, guardsCame, guardsPenned, cleared));
+			Info(String.Format("lures that worked by themselves: %d of 3 (knight, demon, big one); demons in the pen by themselves %d of 3; guards: %d of 3 followed, %d penned by themselves; ordinary company cleared %d",
+				came1, demonsCame, guardsCame, guardsPenned, cleared));
 			Done();
 		}
-		if (S()) Push(mo, 270, 200);
+		if (S()) Push(mo, 0, 200);
 	}
 	AjarThenCorpse knight, big;
+	Array<Actor> pen3;
+	int demonsCame;
+	Actor bigOne;
+	AjarCrushPress press;
+	const PRESS_X = 1032;      // THEN: where the player pulls the press's lever (facing 90)
+	bool InBlueRoom(Actor a) { return Inside(a, -920, 440, -824, 536, false); }
+	bool InNightRoom(Actor a) { return Inside(a, 1008, -1056, 1328, -800, false); }
+	string PressInfo() { return press ? String.Format("pulls %d cycles %d kills %d, roof %.0f, phase %d, held %d", press.pulls, press.cycles, press.kills, press.CeilZ() - press.floorZ, press.phase, press.heldTics) : "no press"; }
+	int KenGateBrought()
+	{
+		let it = ThinkerIterator.Create("AjarStockGate");
+		AjarStockGate g;
+		while (g = AjarStockGate(it.Next())) if (g.args[0] == 2321) return g.brought;
+		return -1;
+	}
+	// shot through whatever is between (a hatch): aimed at its middle, 100 a shot, up to `most`; the shots it took
+	int ShootDead(Actor mo, Actor d, int most)
+	{
+		int k = 0;
+		for (; k < most && d && d.health > 0; k++)
+		{
+			Vector2 v = d.pos.xy - mo.pos.xy;
+			mo.angle = VectorAngle(v.x, v.y);
+			double dz = d.pos.z + d.height / 2 - (mo.pos.z + PlayerPawn(mo).AttackZOffset + mo.height / 2);
+			mo.pitch = -atan2(dz, v.Length());
+			mo.LineAttack(mo.angle, 4096, mo.pitch, 100, 'Hitscan', "BulletPuff");
+		}
+		mo.pitch = 0;
+		return k;
+	}
+	// a door in the hands, by script (what was in them put back where the map put it)
+	void InHand(AjarDoor d)
+	{
+		if (h.carried && h.carried != d) PutBack(h.carried);
+		if (d.frame) h.carried = h.Unhang(d.frame);
+		d.carried = true;
+		d.Hide();
+		h.carried = d;
+	}
+	void PutBack(AjarDoor d)
+	{
+		if (d.frame) h.carried = h.Unhang(d.frame);
+		d.carried = false;
+		d.SetOrigin(d.SpawnPoint, false);
+		d.Show();
+		if (h.carried == d) h.carried = null;
+	}
 	AjarThenCorpse StallBones()
 	{
 		for (int i = 0; i < th.corpses.Size(); i++)
@@ -894,10 +1181,17 @@ class SleepingDogsTest : EventHandler
 			Check("lainForty", Said("It has lain there for forty years."), h.said);
 			Next();
 		}
+		// BLUE not to be had while they live: the shutter at 1000 lets the player in with the clocked door in his
+		// hands, and one door is carried at a time
+		if (S()) Put(mo, -840, 488, 180);
+		if (S()) { h.said = ""; Use(mo, 180); }
+		if (S()) { Check("blueNotToBeHadWhileTheyLive", h.carried == clocked && blue && !blue.carried && !blue.frame, h.said .. "; " .. Where(mo)); Next(); }
+		if (S()) Put(mo, 320, 800, 90);
 		// the door hung again: no bones; one killed in the pen through the hatch: its bones hold the scales
 		if (S()) { HangIn(102); Next(); }
 		if (S()) Wait(80);
 		if (S()) { Check("joinedThePenWeighsNothing", sc1.weight == 0, ScaleInfo(sc1)); Next(); }
+		if (S()) { First(); if (sc2.IsShut() || Age() > 200) { Check("secondShutterShutWhileJoined", sc2.IsShut(), ScaleInfo(sc2)); Next(); } }
 		if (S()) Put(mo, -760, 640 + OFF, 90);
 		if (S())
 		{
@@ -932,6 +1226,13 @@ class SleepingDogsTest : EventHandler
 				Check("alwaysAnother", Said("There is always another."), h.said);
 				Next();
 			}
+		}
+		// all three dead in the pen: 1200 for good, the second shutter open with the door hung and the hands empty
+		if (S()) Wait(80);
+		if (S())
+		{
+			Check("threeDeadOpenTheSecondShutterForGood", clocked.frame == F(102) && !h.carried && Reads(sc1, 1200) && sc2.IsOpen(), ScaleInfo(sc1) .. "; " .. ScaleInfo(sc2));
+			Next();
 		}
 		// the big one killed where it stands: another comes; its bones in the run stay a step
 		if (S()) { cyber = OneOf(BIG_ONE); Kill(cyber, mo); Next(); }
@@ -971,17 +1272,92 @@ class SleepingDogsTest : EventHandler
 			mo.angle = VectorAngle(v.x, v.y);
 			mo.LineAttack(mo.angle, 4096, 0, 100, 'Hitscan', "BulletPuff");
 			Check("glassStopsShots", cyber2.health == h0, String.Format("health %d of %d", cyber2.health, h0));
-			Kill(cyber2, mo);
+			SetGate(24, 0);
 			Next();
 		}
+		// penned alive in the crush: its bones NOW a step while the times are apart, gone when the door hangs (the
+		// door hung and taken down again: a stand-in is made where its monster is when the times part)
+		if (S()) Wait(40);
+		if (S()) { HangIn(102); Next(); }
+		if (S()) Wait(60);
+		if (S()) { TakeDown(); Next(); }
+		if (S()) Wait(40);
+		if (S())
+		{
+			let b = BonesOf(cyber2, false);
+			Check("crushBonesWhileApart", InCrush(cyber2) && b && StepOf(b) && b.pos.y < -1040 && !b.Leaving(), b ? String.Format("(%.0f,%.0f)", b.pos.x, b.pos.y) : "none");
+			Next();
+		}
+		if (S()) { HangIn(102); Next(); }
+		if (S()) Wait(60);
+		if (S())
+		{
+			let b = BonesOf(cyber2, false);
+			Check("crushBonesGoneWhenTheDoorHangs", !b || b.Leaving(), b ? String.Format("(%.0f,%.0f) leaving %d", b.pos.x, b.pos.y, b.Leaving()) : "none");
+			Next();
+		}
+		// ... unless pressed: the press, from its lever; a second pull while it moves does nothing
+		if (S()) { press = AjarCrushPress.Find(); Check("pressUpAtFirst", press && press.Up() && press.pulls == 0, PressInfo()); Put(mo, PRESS_X, LEVER_Y + OFF, 90); }
+		if (S()) { h.said = ""; Use(mo, 90); }
+		if (S()) Wait(10);
+		if (S()) Use(mo, 90);
+		if (S())
+		{
+			First();
+			if (press.kills > 0 || Age() > 400)
+			{
+				Check("pressKillsWhatIsPenned", cyber2.health <= 0 && press.kills == 1 && press.lastKill - press.lastPull <= 175, PressInfo() .. String.Format("; killed %d tics after the pull", press.lastKill - press.lastPull));
+				Check("pressSaysSo", Said("The roof of the crush comes down."), h.said);
+				Next();
+			}
+		}
+		if (S()) { First(); if (press.Up() || Age() > 500) { Check("pressGoesUpAgainOnce", press.Up() && press.cycles == 1 && press.pulls == 2, PressInfo()); Next(); } }
 		if (S()) Wait(300);
 		if (S())
 		{
 			let b = BonesOf(cyber2, true);
-			Check("noneAfterTheCrush", !OneOf(BIG_ONE), Where(OneOf(BIG_ONE)));
-			Check("crushBonesAStep", b && StepOf(b) && b.pos.y < -1040, b ? String.Format("(%.0f,%.0f)", b.pos.x, b.pos.y) : "none");
-			Done();
+			Check("noneAfterThePress", !OneOf(BIG_ONE), Where(OneOf(BIG_ONE)));
+			Check("pressedNotGibbed", !cyber2.bDestroyed && cyber2.bDontGib && InCrush(cyber2), Where(cyber2));
+			Check("pressedBonesStayWithTheDoorHung", clocked.frame == F(102) && b && StepOf(b) && b.pos.y < -1040 && b.weight == 1000, b ? String.Format("(%.0f,%.0f) weight %d", b.pos.x, b.pos.y, b.weight) : "none");
+			Next();
 		}
+		if (S()) { TakeDown(); Next(); }
+		if (S()) Wait(20);
+		if (S())
+		{
+			int n = 0;
+			for (int i = 0; i < th.corpses.Size(); i++) if (th.corpses[i] && !th.corpses[i].bDestroyed && th.corpses[i].who == cyber2 && !th.corpses[i].Leaving()) n++;
+			Check("pressedBonesOnceApart", n == 1 && BonesOf(cyber2, true), String.Format("%d", n));
+			Next();
+		}
+		// the press never comes down on the player: he stands in the crush, it waits; he steps out, it comes
+		if (S()) Put(mo, 784, -1120 + OFF, 270);
+		if (S()) { press.Activate(mo); Next(); }
+		if (S()) Wait(70);
+		if (S())
+		{
+			Check("pressWaitsForThePlayer", press.CeilZ() - press.floorZ > 159 && press.heldTics >= 60 && mo.health >= 100, PressInfo());
+			Pose(mo, PRESS_X, LEVER_Y + OFF, 90);
+			Next();
+		}
+		if (S()) { First(); if (press.Up() && press.cycles == 2 || Age() > 500) { Check("pressComesOnceHeIsOut", press.cycles == 2, PressInfo()); Next(); } }
+		// the brass frame takes BLUE alone: RED and the clocked door refused there
+		if (S()) { InHand(red); Put(mo, 1296, -928, 0); }
+		if (S()) { h.said = ""; Use(mo, 0); }
+		if (S()) { Check("brassFrameRefusesRed", h.carried == red && !F(109).door && !h.wayOutBuilt, h.said); Next(); }
+		if (S()) { InHand(clocked); h.said = ""; Use(mo, 0); }
+		if (S()) { Check("brassFrameRefusesTheClockedDoor", h.carried == clocked && !F(109).door && !h.wayOutBuilt, h.said); Next(); }
+		// the old door rule is on: RED hung THEN in 122 (102 empty) is an old RED NOW in 102, rusted there
+		if (S()) { InHand(red); h.carried = null; h.Hang(red, F(122)); Next(); }
+		if (S()) Wait(5);
+		if (S())
+		{
+			let o = F(102).door;
+			Check("redHungThenIsAnOldRedNow", F(122).door == red && o && o.IsOld() && o.oldOf == red, o ? String.Format("102: %s old %d", o.Label(), o.IsOld()) : "102 empty");
+			Put(mo, -368, 584, 270);
+		}
+		if (S()) { h.said = ""; Use(mo, 270); }
+		if (S()) { Check("oldRedRustedNow", !h.carried && F(102).door && F(102).door.IsOld(), h.said); Done(); }
 	}
 
 	// === MODE=3: measurements ==========================================================================
@@ -1011,6 +1387,62 @@ class SleepingDogsTest : EventHandler
 
 	void Measure(Actor mo)
 	{
+		// H (first, while the Doom gates stand): three demons penned in pen 1 and shot dead through its hatch with
+		// the door hung: what the scales read for good; the kennels' Doom gate brings another: can it get at the
+		// player, at the hatch and by the turnstile?
+		if (S())
+		{
+			ClearOrdinary();
+			Heal(mo);
+			HangIn(102);
+			Of(KEN_DOGS, pen3);
+			for (int i = 0; i < pen3.Size(); i++) { Bring(pen3[i], null, -820 + 60 * i, 760 + 70 * (i % 2)); pen3[i].target = null; }
+			SetGate(21, 0);
+			Pose(mo, -760, 655 + OFF, 90);
+			Next();
+		}
+		if (S()) Wait(20);
+		if (S())
+		{
+			int shots = 0, scripted = 0;
+			for (int i = 0; i < pen3.Size(); i++) { shots += ShootDead(mo, pen3[i], 40); if (pen3[i] && pen3[i].health > 0) { Kill(pen3[i], mo); scripted++; } }
+			Info(String.Format("H: %d demons in pen 1 shot through its hatch: %d shots of 100; %d killed by the script", pen3.Size(), shots, scripted));
+			Next();
+		}
+		if (S()) Wait(80);
+		if (S())
+		{
+			int n = 0;
+			for (int i = 0; i < pen3.Size(); i++) { let b = BonesOf(pen3[i], true); if (b && b.pos.x > -880 && b.pos.x < -640 && b.pos.y > 688 && b.pos.y < 944) n++; }
+			Info(String.Format("H: three dead in pen 1, the door hung, the hands empty: %d bones for good in the pen; S1 %s; the second shutter (1000): %s", n, ScaleInfo(sc1), sc2.IsOpen() ? "open" : "shut"));
+			Next();
+		}
+		if (S())
+		{
+			First();
+			newDog = OneOf(KEN_DOGS);
+			if (newDog || Age() > 600)
+			{
+				Info(String.Format("H: the kennels' Doom gate after the three: %s after %d tics", newDog ? "another demon at " .. Where(newDog) : "nothing", Age()));
+				if (newDog) Wake(newDog, mo);
+				closest = 1e9;
+				Next();
+			}
+		}
+		for (int spot = 0; spot < 2; spot++)
+		{
+			if (S())
+			{
+				if (First()) { Heal(mo); if (spot == 0) Pose(mo, -760, 655 + OFF, 90); else Pose(mo, -984, 1088 + OFF, 0); if (newDog) Wake(newDog, mo); closest = 1e9; }
+				if (newDog && newDog.health > 0) closest = min(closest, (newDog.pos.xy - mo.pos.xy).Length());
+				if (Age() >= 525)
+				{
+					Info(String.Format("H: the new demon, woken, the player %s for 525 tics: hurt %d; it came within %.0f; it is at %s", spot == 0 ? "at pen 1's hatch" : "by the run's turnstile, in the passage", Hurt(mo), closest, Where(newDog)));
+					Next();
+				}
+			}
+		}
+		if (S()) { if (newDog) newDog.Destroy(); TakeDown(); Next(); }
 		if (S()) { Setup3(mo); Next(); }
 		// A: a knight in the run, the player at the stall's hatch: does it come into the stall, how fast; then the
 		// player steps to the lever and pulls it: is it shut in?
@@ -1151,9 +1583,98 @@ class SleepingDogsTest : EventHandler
 				if (++trial < 10) entered = false; else Next();
 			}
 		}
-		if (S()) { Info(String.Format("guards that followed: %d of 30 in 10 trials", guardsCame)); Done(); }
+		if (S()) { Info(String.Format("guards that followed: %d of 30 in 10 trials", guardsCame)); Next(); }
+		// G: a demon alive in pen 1, its gate shut, woken, the player at the hatch (5 trials of 350 tics): does
+		// it reach him through it, what does it cost him?
+		if (S()) { Clear("Demon"); trial = 0; dmgHatch = 0; SetGate(21, 0); Next(); }
+		if (S())
+		{
+			if (First())
+			{
+				Clear("Demon");
+				Pose(mo, -760, 655 + OFF, 90);
+				Heal(mo);
+				sub = Spawn3("Demon", -840 + (trial * 41) % 160, 720 + (trial * 67) % 200, true, KEN_DOGS);
+				Wake(sub, mo);
+				closest = 1e9;
+			}
+			if (sub && sub.health > 0) closest = min(closest, (sub.pos.xy - mo.pos.xy).Length());
+			if (Age() >= 350)
+			{
+				dmgHatch += Hurt(mo);
+				Info(String.Format("G: demon trial %d: the player at the hatch hurt %d; it came within %.0f (its radius 30, his 16); it ends %s", trial, Hurt(mo), closest, Where(sub)));
+				if (++trial < 5) entered = false; else Next();
+			}
+		}
+		if (S()) { Info(String.Format("G: a demon at pen 1's hatch: the player hurt %d in all, 5 trials of 350 tics", dmgHatch)); Clear("Demon"); Next(); }
+		// E: the press: a fresh big one in the crush (its gate shut), woken; the press's lever pulled from where it
+		// stands; how long it takes to kill, where it dies; then NOW: up its bones, and from them to the nearer ledge
+		if (S()) { Clear("Cyberdemon"); ClearCrushBones(); trial = sumTics = 0; reached = 0; press = AjarCrushPress.Find(); SetGate(24, 0); Next(); }
+		if (S())
+		{
+			if (First())
+			{
+				Heal(mo);
+				Pose(mo, PRESS_X, LEVER_Y + OFF, 90);
+				sub = Spawn3("Cyberdemon", 760 + 24 * (trial % 3), -1250 + 80 * (trial / 3), true, BIG_ONE);
+				Wake(sub, mo);
+				c0 = press.cycles;
+			}
+			if (Age() >= 15) Next();
+		}
+		if (S()) Use(mo, 90);
+		if (S())
+		{
+			First();
+			if (sub.health <= 0 || Age() > 600)
+			{
+				int k = sub.health <= 0 ? press.lastKill - press.lastPull : -1;
+				if (k >= 0) sumTics += k;
+				diedAt = sub.pos.xy;
+				Info(String.Format("E: press trial %d: the big one from (%.0f,%.0f) %s; it died at (%.0f,%.0f); the player hurt %d",
+					trial, 760 + 24 * (trial % 3), -1250 + 80 * (trial / 3), k >= 0 ? String.Format("killed %d tics after the pull", k) : "NOT killed in 600 tics", diedAt.x, NowY(sub), Hurt(mo)));
+				Next();
+			}
+		}
+		if (S()) { First(); if (press.cycles > c0 || Age() > 600) { Info(String.Format("E: the press up again %d tics after the kill; %s", Age(), PressInfo())); Next(); } }
+		if (S())
+		{
+			let b = BonesOf(sub, true);
+			if (b) { bonesAt = b.pos.xy; Info(String.Format("E: its bones NOW at (%.0f,%.0f), radius %.0f, weight %d, a step %d", b.pos.x, b.pos.y, b.bodyRadius, b.weight, StepOf(b) != null)); }
+			else { bonesAt = (784, -1170); Info("E: NO bones for good"); }
+			Pose(mo, 784, -1000, 270);
+			Next();
+		}
+		if (S()) Go(mo, bonesAt.x, bonesAt.y);
+		if (S()) { onStep = abs(mo.pos.z - 24) < 1; Next(); }
+		if (S()) Go(mo, bonesAt.x < 784 ? 688 : 880, bonesAt.y);
+		if (S())
+		{
+			bool up = abs(mo.pos.z - 48) < 1;
+			if (onStep && up) reached++;
+			Info(String.Format("E: press trial %d: on the bones %d, up on the %s ledge %d (%s)", trial, onStep, bonesAt.x < 784 ? "west" : "east", up, Where(mo)));
+			Clear("Cyberdemon");
+			ClearCrushBones();
+			if (++trial < 9) { step -= 8; entered = false; } else Next();
+		}
+		if (S()) { Info(String.Format("E: the press killed in %d tics on average after the pull; from its bones the ledge reached %d of 9", sumTics / 9, reached)); Next(); }
+		if (S()) Done();
 	}
 	int leftAt, crossedAt;
+	Actor newDog;
+	double closest;
+	int c0, reached;
+	bool onStep;
+	Vector2 diedAt, bonesAt;
+	// the big ones' bones in the crush, and their steps, gone (the trials of E one after another)
+	void ClearCrushBones()
+	{
+		for (int i = th.corpses.Size() - 1; i >= 0; i--)
+		{
+			let c = th.corpses[i];
+			if (c && !c.bDestroyed && c.pos.x > 690 && c.pos.x < 880 && c.pos.y > -1300 && c.pos.y < -1030) { th.Forget(c); c.Destroy(); }
+		}
+	}
 	Array<Actor> g3;
 	int came3[3];
 	int g3trial;
@@ -1197,7 +1718,42 @@ class SleepingDogsTest : EventHandler
 		V(mo, "THEN the passage from frame 125: the glass, the lever, RED's far side", 600, -1408 + OFF, 20);
 		V(mo, "NOW the big run's passage: RED's far side, frame 105", 1040, -1400, 190);
 		V(mo, "THEN the secret behind the shelter", 40, 224 + OFF, 180);
-		V(mo, "NOW the night room", 1072, -1220, 90);
+		// the way out (PLAN.md, "MAP23: the way out built, BLUE, the press")
+		V(mo, "NOW BLUE's room behind the second shutter: BLUE, the plasma rifle, the blue armour", -830, 500, 200, 6);
+		V(mo, "NOW the closet: the second shutter (shut), BLUE's room behind it", -730, 488, 180);
+		V(mo, "THEN the big run's passage: the gate's lever, the press's lever, the press's notice", 880, -1404 + OFF, 30);
+		V(mo, "THEN the press's notice by its lever", 1000, -1390 + OFF, 0, -8);
+		V(mo, "NOW the big run's passage: the dead levers, the press's notice", 880, -1420, 30);
+		V(mo, "NOW the brass door's passage, east to the night room's neck", 936, -1104, 0);
+		V(mo, "NOW the night room unbuilt: the brass frame, BLUE's inlay, at its east end", 1040, -928, 0);
+		V(mo, "NOW the night room unbuilt: BLUE's far side at its west end", 1296, -928, 180);
+		V(mo, "THEN the night room's place: a sealed store, BLUE's far side", 1296, -928 + OFF, 180);
+		// the press: the big one put into the crush, its gate shut, the press's lever pulled, seen through the glass
+		if (S())
+		{
+			let a = OneOf(BIG_ONE);
+			if (a) { Bring(a, mo, 784, -1170); a.target = null; }
+			SetGate(24, 0);
+			press = AjarCrushPress.Find();
+			if (press) press.Activate(mo);
+			View(mo, "THEN the press coming down on the big one, through the glass", LEVER_X, LEVER_Y + OFF, 95, -4);
+			Next();
+		}
+		if (S()) Wait(139);
+		V(mo, "THEN the press down, the big one dead under it", LEVER_X, LEVER_Y + OFF, 95, -4);
+		V(mo, "THEN the crush from the passage's east end: the press's face over the glass", 1040, -1360 + OFF, 160, -6);
+		V(mo, "NOW the crush from the funnel: the pressed big one's bones by the ledges", 784, -900, 270, 10);
+		V(mo, "NOW the crush from the east ledge: the bones a step", 880, -1250, 120, 20);
+		if (S())
+		{
+			InHand(blue);
+			h.carried = null;
+			h.Hang(blue, F(109));
+			View(mo, "NOW the night room built: BLUE in the brass frame, from the west end", 1040, -928, 0);
+			Next();
+		}
+		if (S()) Wait(139);
+		V(mo, "NOW the night room built: from the east end", 1296, -928, 180);
 		if (S()) { Info("views done"); Console.Printf("AJARTEST sleepingDogsViews=1"); Next(); }
 	}
 

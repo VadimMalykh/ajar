@@ -12,9 +12,9 @@ hangs pictures on pieces cut out of walls (a line split, never a new sector), an
 other thing of the map. One bend: THEN's sky sectors get a tag and one line the sky transfer (MAP22's AJ22SKY by
 day; the map's own sky is AJ7SKY, a clear night, in every build). tools/dogs_compare.py checks it.
 
-Untouched in every look: frames and their trim, far sides, the door leaves, the clocked door, RED, the levers, the
-glass (and the crush's glass strip), the scales' readouts, S1 and S2, the brass door, the night room and the way
-out, and Doom's share: the stone where the hatches were NOW, the Doom gates' pads THEN, Doom's front door NOW (its
+Untouched in every look: frames and their trim, far sides, the door leaves, the clocked door, RED, BLUE, the levers
+(the press's too), the glass (and the crush's glass strip, the press's face over it), the scales' readouts, S1 and
+S2, the brass door, the night room NOW (way_home) and its passage, and Doom's share: the stone where the hatches were NOW, the Doom gates' pads THEN, Doom's front door NOW (its
 leaf and its tracks; the wall over it is the house's).
 
 Groups: yard (the yard at both times), hall (NOW), runs, pens, passages, plates (every picture), things (the decor
@@ -36,6 +36,7 @@ SKY_TAG = 2380                               # THEN's sky sectors (the day sky, 
 DECOR_T = dict(bowl=20199, bucket=20202, store=20203)       # dogs.zs: AjarDogsBowl, AjarDogsBucket, AjarDogsStore
 B36 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 NOTES = []                                   # where each picture and thing is (the build prints them)
+PRESS_NOTICE = ("PRESS", "SPECIMEN", "DISPOSAL", "ONLY", "BY ORDER")      # by the crush's press lever (MAP23's way out)
 
 
 def setting():
@@ -194,6 +195,8 @@ def apply(S, n):
         elif b in (S.KPASS, S.KLEG, S.SPASS[int(T)], S.SLEG[int(T)], S.BPASS[int(T)]) or (T and b == S.IPASS) or \
                 (not T and b in (S.CLOSET, S.SECRET2)):
             dress(i, "passages", "KW", ftex="KF", ctex="KK")
+        elif T and b == S.NIGHT_BOX:                                    # the night room's place THEN: a keepers' store
+            dress(i, "passages", "KW", ftex="KF", ctex="KK")
         elif b in TURNS:
             dress(i, "passages", "TS", ftex="TF", ctex="TF", way=True)
         else:
@@ -327,6 +330,11 @@ def hang(S, L, D):
             lines=("GATE", "PEN 1"), arrow=-1)
     pic((928, -1312), (992, -1312), (0, 1), True, "lever", W("passages", "KW", True), note="3, GATE CRUSH (lever)",
         lines=("GATE", "CRUSH"), arrow=-1)
+
+    # the press's notice, on the big run's passage's east wall by its lever (THEN; NOW where it was)
+    for a, b, then in (((1072, -1432), (1072, -1344), True), ((1072, -1448), (1072, -1368), False)):
+        pic(a, b, (1, 0), then, "rules", W("passages", "KW", then), note="3, PRESS (the press's notice)",
+            lines=PRESS_NOTICE)
 
     # 4. the keepers' rules, once in each passage; 5. the weigh record near pen 1's readout
     for a, b, out, whens in (((-704, 544), (-512, 544), (0, -1), BOTH), ((1280, 160), (1472, 160), (0, -1), BOTH),

@@ -219,6 +219,8 @@ def blue_not_then(p=PUZZLE23):
 # measured: blue_not_then() (0 stuck; nightT then never reached), old_off() (0 stuck), and, outside this file,
 # the clocked door allowed to swap in for a colour door whose old self fills its twin (solve.py and then.zs; 0
 # stuck, nothing lost; BEFORE and MAP24 the same states and actions).
+# DECIDED (2026-11-28, the session on Fable): the last, the law mended, not the map (PLAN.md, "The old door rule,
+# mended"). With it PUZZLE23 as it stands: 11 door actions, 186668 states, 0 stuck, nothing lost.
 
 
 def knight_killed(p=AS_DESIGNED):

@@ -52,7 +52,7 @@ import ajarmap
 import ajarthen
 import budget
 import puzzle23
-from ajarmap import RED
+from ajarmap import RED, BLUE, far_id
 from ajarthen import Times, Part, NOW, THEN, heights
 from udmf import Map, rect
 
@@ -61,7 +61,7 @@ import gfx_institute
 m.align |= gfx_institute.ALIGNED            # MAP11's walls are laid by where they are
 
 OFF = (0, -8192)                            # THEN is south of NOW
-t = Times(m, off=OFF, at=(320, 64))
+t = Times(m, off=OFF, at=(320, 64), old=True)        # a door left hanging: the old door rule (PLAN.md)
 
 CO, LA, AR, LB = Part("CO"), Part("LA"), Part("AR"), Part("LB")
 FL, FC, FA, FR = Part("FL"), Part("FC"), Part("FA"), Part("FR")
@@ -81,13 +81,16 @@ KEN_DOGS, STALL_DOGS, BIG_ONE, GUARDS = 2311, 2312, 2313, 2314      # the specim
 KEN_RUN, STALL_RUN, BIG_RUN, CRUSH = 2321, 2322, 2323, 2324         # THEN: the sectors a Doom gate watches; the crush
 PEN1_GATE, STALL_GATE, ISO_GATE, CRUSH_GATE = 21, 22, 23, 24        # THEN: the gates' causes (tid), lever by lever
 GATE_TAG = {PEN1_GATE: 61, STALL_GATE: 62, ISO_GATE: 63, CRUSH_GATE: 64}
-S1, S2 = 71, 72                             # NOW: pen 1's shutters (400: key 1; 1000: the secret)
+S1, S2 = 71, 72                             # NOW: pen 1's shutters (400: key 1; 1000: BLUE's room)
 PEN1 = 81                                   # NOW: pen 1's floor, the scales
 BRASS_TAG = 2330                            # NOW: the brass door's sector (its ambush when it first opens)
 LOCKED = 2340                               # THEN: "Locked for the night." (the house's front door)
 BRASS_LINE = 2390                           # its mouth on the crush's side (the tests)
 SCALES_T, GATE_T = 20193, 20194             # AjarKennelScales (kennel.zs), AjarStockGate (map23.zs)
+PRESS, PRESS_T = 25, 20209                  # THEN: the crush's press (its lever's tid), AjarCrushPress (map23.zs)
+HOME23 = puzzle23.HOME23                    # NOW: the night room's brass frame (BLUE's alone); BLUE's far sides 202, 222
 HATCH_FLOOR, HATCH_CEIL = 24, 56
+PRESS_FACE = "AJSHUT"                       # THEN: the press's face, where the crush's roof comes below its neighbours'
 LEDGE = 48
 
 
@@ -250,7 +253,8 @@ KPASS = (-1040, 544, -16, 672)
 KLEG = (-1040, 672, -928, 1216)
 KTURN = (-928, 1056, -912, 1120)
 S1_BOX, CLOSET = (-792, 528, -728, 544), (-808, 448, -712, 528)
-S2_BOX, SECRET2 = (-824, 456, -808, 520), (-920, 440, -824, 536)
+S2_BOX, SECRET2 = (-824, 456, -808, 520), (-920, 440, -824, 536)   # the second shutter; BLUE's room behind it
+BLUE_AT = (-884, 488)                                                   # BLUE leans there, facing the shutter
 KPAD = (-144, 1056, -80, 1120)
 
 
@@ -279,7 +283,7 @@ def kennels(c):
         c.room(S2_BOX, floor=0, ceil=0, wall="AJSHUT", ftex=TRIMF, ctex=TRIMF, id=S2)
         for x in (-824, -808):
             c.line((x, S2_BOX[1]), (x, S2_BOX[3]), upper="AJSHUT", dontpegtop=True)
-        c.room(SECRET2, floor=0, ceil=112, wall=LA, ftex=FA, ctex=KA, light=160, special=1024)
+        c.room(SECRET2, floor=0, ceil=112, wall=LA, ftex=FA, ctex=KA, light=160)          # BLUE's room (no secret)
 
 
 t.both(kennels)
@@ -367,6 +371,7 @@ t.cause(904, 1552, ISO_GATE, 2, tag=GATE_TAG[ISO_GATE], start=1)
 for x, y, kind in ((600, 1328, BARON), (600, 1424, BARON), (760, 1376, VILE)):     # NOW, facing the doorway
     t.now.thing(x, y, kind, angle=180, id=GUARDS, ambush=True, skill=1)
 ajarmap.door(m, RED, 984, 1376, angle=180)                              # RED, on the guard room's far side
+ajarmap.door(m, BLUE, *BLUE_AT, angle=0)                                # BLUE, in the room behind the second shutter
 
 # =================================================================================================================
 # 6. THE BIG RUN, THE CRUSH, ITS PASSAGE
@@ -400,6 +405,8 @@ def big(c):
         c.room(CGLASS, floor=24, ceil=120, wall=TRIM, ftex=TRIMF, ctex=TRIMF, light=c.light)
         for y in (CGLASS[1], CGLASS[3]):
             c.line((CGLASS[0], y), (CGLASS[2], y), **CRUSH_GLASS)
+        # the press: the crush's roof comes down (AjarCrushPress); its face over the glass and the gate, seen as it does
+        c.line((CGLASS[0], CGLASS[3]), (CGLASS[2], CGLASS[3]), upper=PRESS_FACE)
         c.room(BPASS[THEN], floor=0, ceil=128, wall=LA, ftex=FA, ctex=KA)
     else:
         c.room(CRUSH_BOX, floor=0, ceil=160, wall=AR, ftex=FR, ctex=KA)
@@ -416,16 +423,38 @@ t.line((560, -1376), (560, -1440), upper=LA, dontpegtop=True)
 t.far((928, -1456), (864, -1456), (0, -1), RED)
 t.line((928, -1456), (864, -1456), upper=LA, dontpegtop=True)
 lever_then((848, -1312), (912, -1312), CRUSH_GATE)                      # the crush's gate, beside its glass
+# the press (PLAN.md, "MAP23: the way out built, BLUE, the press"): its lever THEN beside the gate's (east of the
+# gate's plate), the crush's roof its press (AjarCrushPress, map23.zs); NOW both levers dead where they were
+PRESS_LEVER = ((1000, -1312), (1064, -1312))
+lever_then(*PRESS_LEVER, PRESS)
+t.then.thing(784, -1168, PRESS_T, id=PRESS, args=(CRUSH,))
+for a, b in (((848, -1360), (912, -1360)), ((1000, -1360), (1064, -1360))):
+    t.now.cut(a, b)
+    t.now.line(a, b, mid=ajarthen.LEVER[NOW], exact=True, dontpegbottom=True)
 t.cause(1000, -1400, CRUSH_GATE, 2, tag=GATE_TAG[CRUSH_GATE], start=1)
 t.then.thing(784, 480, GATE_T, angle=270, args=(BIG_RUN, CYBER, BIG_ONE, CRUSH))
 t.then.thing(*BIG_AT, CYBER, angle=270, id=BIG_ONE, ambush=True, skill=1)    # deaf: it wakes by scent (the passage)
-# NOW: the brass door in the crush's east wall, on the ledge (keys 1 and 2), and the night room, the way out
+# NOW: the brass door in the crush's east wall, on the ledge (keys 1 and 2, from either side), a passage east, and
+# the night room north of it: ajarmap.way_home with BLUE (PLAN.md, "MAP23: the way out built, BLUE, the press").
+# BLUE's far side in its west end, the brass frame HOME23 (BLUE's alone) in its east end; the way in by a neck in
+# its south wall. THEN on the same spot the night room's place, sealed: BLUE's far side THEN (a colour door joins
+# places, never times), nothing else.
+NIGHT = (1008, -1056)                                                   # the night room's south-west corner
+NIGHT_PASS = (928, BRASS_Y[0], 1200, BRASS_Y[1])                        # from the brass door east
+NIGHT_NECK = (1136, BRASS_Y[1], 1200, NIGHT[1])                         # into the room's south wall
 first = len(m.sectors)
 ajarmap.roomdoor(m, (912, BRASS_Y[0]), (912, BRASS_Y[1]), (1, 0), LEDGE, keys="12", line_id=BRASS_LINE)
 m.sectors[first]["id"] = BRASS_TAG
-m.sector(rect(928, BRASS_Y[0], 944, BRASS_Y[1]), floor=LEDGE, ceil=LEDGE + 112, light=150, wall="AJXW2", ftex="AJXG2",
-         ctex="AJXC2")
-ajarmap.way_out(m, 944, BRASS_Y[0] - 128, None, floor=LEDGE, turned=True)
+for box in (NIGHT_PASS, NIGHT_NECK):
+    m.sector(rect(*box), floor=LEDGE, ceil=LEDGE + 112, light=150, wall="AJXW2", ftex="AJXG2", ctex="AJXC2")
+ajarmap.way_home(m, *NIGHT, BLUE, only=True, floor=LEDGE, frame=HOME23)
+t.used(far_id(BLUE), "far side 2 (the night room)")
+t.used(HOME23, "the brass frame")
+NIGHT_BOX = (NIGHT[0], NIGHT[1], NIGHT[0] + 320, NIGHT[1] + 256)
+t.then.room(NIGHT_BOX, floor=LEDGE, ceil=LEDGE + 128, wall=LA, ftex=FA, ctex=KA, light=168)     # a keepers' store, sealed
+t.used(far_id(BLUE) + ajarthen.THEN_ID, "far side 2 THEN (the night room's place)")
+ajarmap.recess(m, t.then.P((NIGHT[0], NIGHT[1] + 96)), t.then.P((NIGHT[0], NIGHT[1] + 160)), (-1, 0), LEDGE,
+               far_id(BLUE) + ajarthen.THEN_ID, far_id(BLUE), far_colour=BLUE)
 
 # =================================================================================================================
 # COMPANY, SUPPLIES, THE BUDGET (NOW's tenants; the specimens apart)
@@ -505,9 +534,10 @@ put("hall", (32, 720, 736, 1184), SERGEANT, 5, 270)
 put("hall", (32, 720, 736, 1184), ZOMBIE, 4, 270)
 put("hall", (32, 720, 736, 1184), CHAINGUNNER, 3, 270)
 # --- the kennels NOW: demons and spectres in the run, imps in the passage; S1's closet: key 1 and the super
-# shotgun; behind the second shutter the secret (a megasphere and the plasma rifle)
-items("kennels", (-760, 480, ajarmap.KEY_T["1"]), (-736, 500, 82), (-780, 500, 2049), (-872, 500, 83), (-872, 470, 2004),
-      (-860, 496, 17), (-600, 620, 2049), (-200, 620, 2049), (-860, 1180, 2048), (-100, 1180, 2012), (-984, 1000, 2049),
+# shotgun; behind the second shutter BLUE's room (the plasma rifle, a cell pack, the blue armour that was the
+# yard's secret's; its megasphere went to that secret)
+items("kennels", (-760, 480, ajarmap.KEY_T["1"]), (-736, 500, 82), (-780, 500, 2049), (-848, 456, 2004), (-848, 520, 2019),
+      (-900, 456, 17), (-600, 620, 2049), (-200, 620, 2049), (-860, 1180, 2048), (-100, 1180, 2012), (-984, 1000, 2049),
       (-40, 1000, 2046), (-500, 1180, 2008))
 put("kennels", (-880, 980, -48, 1200), DEMON, 5, 0)
 put("kennels", (-880, 980, -48, 1200), SPECTRE, 4, 0)
@@ -545,7 +575,7 @@ ambush("big run", (672, -880, 896, -300), 62, KNIGHT, 2, angle=270, after=1, arg
 ambush("big run", (672, -880, 896, -300), 62, IMP, 3, angle=270, after=1, arg=BRASS_TAG)
 ambush("big run", (672, -880, 896, 200), 62, CACO, 2, angle=270, after=2, arg=BRASS_TAG)
 ambush("big run", (672, -880, 896, -300), 62, REVENANT, 1, angle=270, after=3, arg=BRASS_TAG)
-items("secrets", (-64, 224, 2019), (-96, 200, 2049))                    # THEN behind the shelter (THEN's coordinates below)
+items("secrets", (-64, 224, 83), (-96, 200, 2049))                      # THEN behind the shelter (THEN's coordinates below)
 for i, _ in PART_OF[-2:]:
     m.things[i]["y"] += OFF[1]
 
@@ -568,7 +598,10 @@ MONSTERS = {lv: sum(budget.reckon([m.things[i] for i in ALL], [SKILLS[i] for i i
             for lv in (1, 2, 3, 4)}
 assert 90 <= MONSTERS[3] <= 120, MONSTERS
 
-PUZZLE = puzzle23.FIRST                                 # the map as built so far (the first playable version); PUZZLE23 once the trap is settled
+PUZZLE = puzzle23.PUZZLE23
+
+problems = ajarthen.check_ids(m)                                        # frames 101..105, 121..125, 109; far sides 201, 221, 202, 222
+assert not problems, problems
 
 # THE LOOK (PLAN.md, "Look: MAP23, the animal house"): AJAR_DOGS unset (or mix) the picks (tools/dogs23.py, MIX:
 # The Kennels since 2026-11-27), 1, 2, 3 a look for every group; 0 the plain level, and the look's files are not
