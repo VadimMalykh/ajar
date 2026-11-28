@@ -415,8 +415,8 @@ class AjarHandler : EventHandler
 		return false;
 	}
 
-	// The least time any open Stray door has left, or -1; `held`: a nailer
-	// has nailed it open, and it stays until the nails fall out.
+	// The least time any open Stray door has left, or -1; `held`: it is
+	// nailed open (AjarDoor.nailer), and it stays while it is.
 	int, bool StrayTime()
 	{
 		int best = -1;
@@ -537,7 +537,6 @@ class AjarHandler : EventHandler
 		case 68: return "Arachnotron";
 		case 71: return "PainElemental";
 		case 64: return "Archvile";
-		case 20004: return "AjarNailer";       // MAP16: it comes to the foot of the stair
 		case 16: return "Cyberdemon";
 		case 7: return "SpiderMastermind";      // MAP33: a post of the turbine hall (third.zs)
 		}
@@ -1029,29 +1028,6 @@ class AjarHandler : EventHandler
 		Say("Something knocks from inside an empty frame.\nA door hung there would shut it in.");
 	}
 
-	// A nailer fixes a hung door to its frame; when it dies its nails fall out.
-	void Nail(AjarDoor d, Actor by)
-	{
-		d.nailer = by;
-		d.Show();
-		Say("The " .. d.Label() .. " door is nailed to its frame!");
-	}
-
-	void Unnail(Actor by)
-	{
-		let di = ThinkerIterator.Create("AjarDoor");
-		AjarDoor d;
-		int n = 0;
-		while (d = AjarDoor(di.Next()))
-		{
-			if (d.nailer != by) continue;
-			d.nailer = null;
-			if (!d.carried) d.Show();
-			n++;
-		}
-		if (n) Say("The nails fall out.");
-	}
-
 	// What hanging the carried door in f has to say.
 	void SayHung(AjarDoor d, AjarDoor old)
 	{
@@ -1105,9 +1081,9 @@ class AjarHandler : EventHandler
 		if (f.door && f.door.nailer)
 		{
 			bool secret = f.args[0] == SECRET_HOME;
+			// (a door is only ever nailed by itself: a fixed doorway, the closed way out)
 			if (f.door.nailer == f.door && secret && secretOutBuilt) Say("This is a secret way out now.");
-			else if (f.door.nailer == f.door) Say(wayOutBuilt && f.args[1] && !secret ? "This is the way out now." : "This doorway is part of the building.\nIt is not yours to take.");
-			else Say("The " .. f.door.Label() .. " door is nailed to its frame.\nSomeone with a hammer did that.");
+			else Say(wayOutBuilt && f.args[1] && !secret ? "This is the way out now." : "This doorway is part of the building.\nIt is not yours to take.");
 			return;
 		}
 		if (ClockedRefuses(f)) return;        // a frame with no other time; one that is the clocked door's at either time (then.zs)
@@ -1211,7 +1187,7 @@ class AjarHandler : EventHandler
 		int only = CVar.GetCVar("ajar_only").GetInt();
 		if (only)
 		{
-			static const string kinds[] = { "", "AjarThief", "AjarNailer", "AjarLodger" };
+			static const string kinds[] = { "", "AjarThief", "", "AjarLodger" };      // (2 was the nailer, out of the game 2026-11-28)
 			let ei = ThinkerIterator.Create("AjarEnemy");
 			Actor a;
 			while (a = Actor(ei.Next()))
@@ -1495,7 +1471,6 @@ class AjarHandler : EventHandler
 		if (level.mapname ~== "BEFORE") return;    // and the three times lab (beforetest.zs)
 		if (level.mapname ~== "MAP24") return;     // and MAP24 (map24.zs, LeftHangingTest)
 		if (level.mapname ~== "LAB" && mode == 2) LabThiefScript(mo, t);
-		else if (level.mapname ~== "LAB" && mode == 3) LabNailerScript(mo, t);
 		else if (level.mapname ~== "LAB" && mode == 4) LabReachScript(mo, t);      // the reach survey (reachtest.zs)
 		else if (level.mapname ~== "LAB") LabScript(mo, t);
 		else if (level.mapname ~== "OPT") OpticsScript(mo, t, mode);
@@ -1849,7 +1824,7 @@ class AjarHandler : EventHandler
 	}
 
 	// MAP05: a solution of the same length as the one tools/build.py prints.
-	// No Stray door is used; the nailer is gone with the other monsters.
+	// No Stray door is used.
 	void LostPropertyScript(Actor mo, int t)
 	{
 		string have = carried ? carried.Label() : "-";
@@ -3708,26 +3683,6 @@ class AjarHandler : EventHandler
 		}
 	}
 
-	// MODE=6: the nailer nails the hung RED door; the player cannot take it
-	// until the nailer is dead.
-	Actor nailer;
-
-	void NailerScript(Actor mo, int t)
-	{
-		AjarDoor red = DoorOf(1);
-		if (t == 40) { Pose(mo, 96, 256, 0, 0); nailer = Actor.Spawn("AjarNailer", (400, 300, 0)); }
-		if (t > 40 && t % 35 == 0 && nailer)
-			Console.Printf("AJARTEST nailer pos=(%d,%d) nailed=%d health=%d", nailer.pos.x, nailer.pos.y, red.nailer != null, mo.health);
-		if (t == 300) Check("nailerNailsDoor", red.nailer == nailer);
-		if (t == 300) Pose(mo, 160, 360, 0, 90);      // look at the nailed door for the screenshot
-		if (t == 305) FindFrame(101).Activate(mo);
-		if (t == 306) Check("nailedDoorCannotBeTaken", !carried && red.frame && red.frame.args[0] == 101);
-		if (t == 310) nailer.DamageMobj(null, null, 1000, 'None');
-		if (t == 330) Check("nailsFallOutWhenItDies", !red.nailer);
-		if (t == 331) FindFrame(101).Activate(mo);
-		if (t == 332) Check("doorCanBeTakenAgain", carried == red);
-	}
-
 	// MODE=7: the lodger. It starts inside, comes out of an empty hall frame,
 	// goes back in; with every hall frame plugged it stays in; with one freed
 	// it comes out again.
@@ -3916,7 +3871,7 @@ class AjarHandler : EventHandler
 		if (t == 605) Pose(mo, 400, 560, 128, 200);                    // shot: the gallery, looking back at 116
 	}
 
-	// The lab, MODE=2 and 3: company with a Pair (before MAP16). What must
+	// The lab, MODE=2: company with a Pair (before MAP16). What must
 	// hold whatever anyone does: both leaves hung, each leads to the other's
 	// frame and both frames are open; otherwise neither leads anywhere and a
 	// leaf that hangs is a wall.
@@ -3980,30 +3935,6 @@ class AjarHandler : EventHandler
 		if (t == 1130) { Check("thiefWalksThroughPair", throughPair); Check("pairHeldTogetherToTheEnd", !pairBroken); }
 	}
 
-	// MODE=3: a nailer nails a hung leaf. It cannot be taken; its twin can,
-	// and the nailed leaf is then a shut door that stays nailed; the twin
-	// hung elsewhere, the nailed leaf leads there.
-	void LabNailerScript(Actor mo, int t)
-	{
-		AjarDoor a = LabLeaf(8, 0), b = LabLeaf(8, 1);
-		AjarFrame w = FindFrame(111), e = FindFrame(112), c = FindFrame(113);
-		if (!PairOk(a, b) && !pairBroken) { pairBroken = true; Console.Printf("AJARTEST pair broken at t=%d", t); }
-		if (t == 20) { Pose(mo, 120, 128, 0, 180); a.Used(mo); w.Activate(mo); }
-		if (t == 25) { b.Used(mo); Pose(mo, 700, 128, 0, 0); e.Activate(mo); Check("linked", a.args[0] == 112 && b.args[0] == 111); }
-		if (t == 40) { Pose(mo, 384, 300, 0, 0); nailer = Actor.Spawn("AjarNailer", (600, 128, 0)); }
-		if (t > 40 && t % 35 == 0 && nailer)
-			Console.Printf("AJARTEST nailer pos=(%d,%d) a=%d b=%d", nailer.pos.x, nailer.pos.y, a.nailer != null, b.nailer != null);
-		if (t > 40 && !killTic && b.nailer == nailer) { killTic = t; Check("nailerNailsLeaf", true); }
-		if (killTic && t == killTic + 2) { Pose(mo, 700, 128, 0, 0); e.Activate(mo); Check("nailedLeafCannotBeTaken", !carried && b.frame == e); }
-		if (killTic && t == killTic + 4) { Pose(mo, 120, 128, 0, 180); w.Activate(mo); Check("itsTwinCanBe", carried == a && b.Shut() && b.nailer == nailer); }
-		if (killTic && t == killTic + 6) { Pose(mo, 640, 80, 0, 270); c.Activate(mo); Check("nailedLeafLeadsToTheNewFrame", a.args[0] == 112 && b.args[0] == 113 && !(FindLine(112).flags & Line.ML_BLOCKING)); }
-		if (killTic && t == killTic + 10) Pose(mo, 500, 128, 0, 0);          // shot: the nailed leaf, open onto 113
-		if (killTic && t == killTic + 80) nailer.DamageMobj(null, null, 1000, 'None');
-		if (killTic && t == killTic + 100) { Check("nailsFallOut", !b.nailer && !a.nailer); Pose(mo, 700, 128, 0, 0); e.Activate(mo); }
-		if (killTic && t == killTic + 102) { Check("leafTakenAgain", carried == b && a.Shut()); Check("pairHeldTogether", !pairBroken); }
-		if (t == 600 && !killTic) Check("nailerNailsLeaf", false);
-	}
-
 	void TestLevelScript(Actor mo, int t, int mode)
 	{
 		if (mode == 14) { CacoScript(mo, t); return; }      // doorcaco.zs
@@ -4014,7 +3945,6 @@ class AjarHandler : EventHandler
 		if (mode == 9) { SelfShotScript(PlayerPawn(mo), t); return; }
 		if (mode == 8) { ShootScript(mo, t); return; }
 		if (mode == 7) { LodgerScript(mo, t); return; }
-		if (mode == 6) { NailerScript(mo, t); return; }
 		if (mode == 5) { ThiefScript(mo, t); return; }
 		if (mode == 4) { FollowScript(mo, t); return; }
 		if (mode == 3) { ThingsScript(mo, t); return; }

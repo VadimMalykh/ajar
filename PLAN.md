@@ -23590,3 +23590,56 @@ zscript/ajar.zs and the new zscript/map03.zs (53 of 54 maps the same, MAP10 and 
 level's proof lines are main's. **Not tested / not played by hand**: nobody has played MAP03 with it; a thief or a
 nailer at it (MAP03 has none; `Stuck()` is checked); a monster following through it; save and load (it is made
 from a map thing at load, and WorldLoaded does nothing on a saved game, so it should keep its fields).
+
+## The nailer is out of the game (Vadim, 2026-11-28; built)
+
+**Vadim** (2026-11-28): "Also we maybe could just remove moster that neils doors, I don't see any useful case of
+him so far."
+
+**Decided**: the nailer (AjarNailer, thing 20004; its look was the hell knight's shadow, chosen 2026-11-16) is
+removed: from MAP05's engine shed, from MAP16's ambush on VIOLET, from the test box and the Pair lab, and from the
+engine.
+
+**Why** (Claude on Fable):
+- No puzzle used it. The solver never kept its nails ("while the nailer lives, taking down or swapping a door in
+  its zone is luck, never something a win may depend on"), and MAP16's own text says "The nailer is never needed".
+  Both levels are proved again without it and solve by the same way through: MAP05 in 10 door actions (270,076
+  states, where there were 450,927), MAP16 in 10 (4,788, where 9,529), 0 stuck, nothing lost.
+- Its answer is a shot, not a thought: a door puzzle turned into a kill.
+- MAP03's YELLOW is an old door since today. A door that does not come off should have one reason in parts I and
+  II, and one the player cannot shoot: rust. Planks two levels later would send the player back to MAP03's riddle
+  looking for something to kill.
+
+**What stays**: a door can still be nailed, with no monster to it: a fixed doorway, the doors of a closed way out
+while the player is on the line, MAP22's excerpts. The planks, NAILED on the HUD and `AjarDoor.nailer` are theirs.
+`tools/solve.py` keeps its `nailer` option, unused (changing the solver runs every proof again).
+
+**In its place**: MAP05 a demon where it stood in the shed; MAP16 nothing (the revenants and the cacodemons of
+VIOLET's ambush stay).
+
+**Built** (2026-11-28, branch no-nailer). Deleted: `AjarNailer` and `AjarNailerEyes` (src/zscript/enemies.zs),
+`20004 = AjarNailer` (src/mapinfo.txt), `case 20004` in `AmbushClass`, the handler's `Nail()` and `Unnail()` (only
+the monster called them: "The nails fall out." went with them) and UseFrame's "Someone with a hammer did that."
+(a door is now only ever nailed by itself), the test box's MODE=6 (`NailerScript`) and the Pair lab's MODE=3
+(`LabNailerScript`) with tools/smoke_TEST_6.cfg and tools/smoke_LAB_3.cfg, MAP16 MODE=3's phases 4 to 6 (the
+nailer nails the leaf at the foot, the porter leaves the nailed leaf, the nails fall: three checks; phase 3 now
+ends with the player at the foot and goes on to 7, the numbers after it kept), the eyes' sprite AJNEA0 and its
+drawing in tools/gfx.py (the body was Doom's BOS2, the sounds Doom's skeleton/*: nothing else of its own), its
+entries in tools/thingcheck.py, itemcheck.py, mapcheck.py and budget.py, the test box's thing (`ajar_only` keeps
+its numbers: 2 now keeps none of Ajar's own). Kept, being the state's: `AjarDoor.nailer`, `Stuck()`, the plank
+sprites and `nailedSpr`, NAILED on the HUD and StrayTime's `held`, `if (d.nailer)` in StrayTick, the fixed doorway,
+the closed way out, SayHung's way-out lines, the thief's and porter's `Stuck()` refusals. MAP05: a demon at
+(1376, 2080), angle 270, `skill=1` (on every difficulty as the nailer was, so the demons placed after it are
+thinned as before). MAP16: the ambush on VIOLET loses its first thing; `m.ambushers = 0` keeps its turn, so every
+ambusher after it is on the difficulties it was (on the easiest VIOLET still brings a revenant and a cacodemon).
+Proofs: "MAP05: solvable in 10 door actions, 270076 states, 0 stuck" and "MAP16: solvable in 10 door actions, 4788
+states, 0 stuck", the same ways through, "can be lost for good: nothing"; every other level's proof is main's.
+Monsters (tools/budget.py, skill 3 / skill 1): MAP05 141 / 75 before and after (a pink demon for the nailer, hp
+15550 to 15620); MAP16 146 / 76 before, 145 / 75 after. Against main's package: only MAP05, MAP16, TEST,
+mapinfo.txt and the changed zscript files differ, and AJNEA0 is gone; MAP10 and MAP22 (which lift MAP05) are the
+same; no map has a thing 20004. Tests, all passing: MAP05 MODE=1 28 checks, MODE=3 8; MAP16 MODE=1 50, MODE=3 42
+(TIMEOUT=260: the porter's, the weighbridge's and the barons' phases, 1 to 3 and 7 to 15); the test box MODE=1 4,
+MODE=5 (the thief) 7; LAB MODE=2 (the Pair lab's thief) 9; no ZScript error or warning. thingcheck and itemcheck
+0 problems on map_hinges5, map_institute6, map_test; mapcheck's notes as on main. **Not tested / not played by
+hand**: nobody has played MAP05's shed with the demon or MAP16 without the nailer; BEFORE (its check renamed
+`thiefLeavesIt`, nothing else changed) was not run; `MAP=LAB MODE=3` now runs the lab's plain script.

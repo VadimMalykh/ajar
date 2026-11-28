@@ -52,7 +52,7 @@ for i in range(len(polys)):
                 print(f"OVERLAP sectors {i} {boxes[i]} and {j} {boxes[j]}")
                 bad += 1
 
-MONSTERS = {3004, 9, 3001, 3002, 58, 65, 69, 3003, 66, 3006, 3005, 67, 68, 71, 64, 16, 20003, 20004, 20005}
+MONSTERS = {3004, 9, 3001, 3002, 58, 65, 69, 3003, 66, 3006, 3005, 67, 68, 71, 64, 16, 20003, 20005}
 # things that are not solid and stand against a wall on purpose: the wind and
 # begin-anew plates, the press's switch, the lamps, the figures in a glass
 # case, MAP16's weighbridge dial, MAP33's plates that wind (third.zs), MAP21's stream from a pipe (map21.zs),

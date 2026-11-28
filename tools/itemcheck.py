@@ -16,7 +16,7 @@ import ajarmap
 from udmf import MONSTERS
 
 SKIP = set(MONSTERS) | set(ajarmap.SCENERY_T) | {1, 2, 3, 4, 11, 14, 9001, 9024, 9025, ajarmap.AMBUSH_T, ajarmap.LINE_T,
-                                                 ajarmap.LIFT_T, 20003, 20004, 20005,
+                                                 ajarmap.LIFT_T, 20003, 20005,
                                                  20132, 20133,   # the pass's desks and registers (pass.zs): plates, not pickups
                                                  20169,          # a fallen thing (ajarthird.fallen): a monster, not a pickup
                                                  20173, 20174, 20175,   # a common place, its comers (monsters) and ways (ajarthird.common)

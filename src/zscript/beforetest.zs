@@ -785,7 +785,7 @@ class BeforeTest : EventHandler
 		// ... and USE with a door in hand: rusted, nothing swapped
 		if (At()) { h.said = ""; Pose(mo, 128, 470, 90); PressUse(mo); }
 		if (At()) Check("rustedWithADoorInHand", Said("Rusted to its frame.") && h.carried == blue && OldOf(101, red, 50, 201), h.said);
-		if (At()) Check("thiefAndNailerLeaveIt", F(101).door.Stuck() && F(121).door.Stuck() && !red.Stuck());
+		if (At()) Check("thiefLeavesIt", F(101).door.Stuck() && F(121).door.Stuck() && !red.Stuck());
 		// the swap BEFORE: BLUE for RED in 141, the old doors with it
 		if (At()) { Pose(mo, 128, 2 * OFF + 470, 90); PressUse(mo); }
 		if (At()) Check("swapMovesTheOldDoors", blue.frame == F(141) && h.carried == red && OldOf(121, blue, 10, 222) && OldOf(101, blue, 50, 202) && OldCount() == 2 && !Open(201) && !Open(221), Olds() .. "; " .. Fars());

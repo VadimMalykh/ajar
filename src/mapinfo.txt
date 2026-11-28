@@ -9,7 +9,6 @@ DoomEdNums
 	20001 = AjarFrame
 	20002 = AjarDoor
 	20003 = AjarThief
-	20004 = AjarNailer
 	20005 = AjarLodger
 	20006 = AjarLine
 	20030 = AjarAmbush

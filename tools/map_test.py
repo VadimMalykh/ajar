@@ -66,10 +66,9 @@ m.thing(96, 110, 2049)
 # A thief in the hall. It goes for the RED door as soon as it sees you,
 # then keeps moving doors between the hall frames until it is killed.
 m.thing(560, 150, 20003, angle=180)
-# A nailer in the hall and a lodger (it starts inside the frames, so where it
-# is placed does not matter). "+set ajar_only N" keeps just one of Ajar's
-# own monsters: 1 thief, 2 nailer, 3 lodger.
-m.thing(300, 100, 20004, angle=90)
+# A lodger (it starts inside the frames, so where it is placed does not
+# matter). "+set ajar_only N" keeps just one of Ajar's own monsters: 1 thief,
+# 3 lodger (2 was the nailer, out of the game 2026-11-28).
 m.thing(600, 60, 20005)
 
 if __name__ == "__main__":

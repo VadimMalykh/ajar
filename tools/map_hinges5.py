@@ -18,9 +18,6 @@ What is new:
   office, one in the loft. Each opens once, for five seconds, onto one of
   six places: the night room, the gallery, the lamp room, the parcels
   office, the engine shed, the kiosk.
-- The nailer, in the engine shed. YELLOW hangs there, and is nailed there
-  as soon as it sees you. The gate from the yard to the concourse is bolted
-  on the yard side; once it is open the nailer comes out to work.
 - A turnstile is a squeeze: platform 2 is two steps from the concourse, for
   anyone with empty hands. BLUE leans just beyond it.
 
@@ -297,7 +294,7 @@ windows(GOODS and GOODS.replace("G", "GA"), 0, (1792, 1920, 2048), "y")
 windows(GOODS and GOODS.replace("G", "GA"), 1680, (64, 448, 576, 704, 832, 1856))
 windows(GOODS and GOODS.replace("G", "GA"), 2192, (64, 192, 640, 768, 896))
 ajarmap.bolted(m, (224, 1600), (288, 1600), (0, 1), 0, GATE, thick=80, line_id=305)
-# the engine shed: an engine, the nailer, and a frame with YELLOW in it
+# the engine shed: an engine, and a frame with YELLOW in it
 ajarmap.fitted(m, (1024, 1680, 1728, 2192), [
     ((1216, 1872, 1536, 2000), dict(ENGINE, floor=96)),
     ((1536, 1904, 1600, 1968), dict(ENGINE, floor=56)),
@@ -347,7 +344,7 @@ ajarmap.key(m, 2, -128, 300)                                              # sout
 ajarmap.key(m, 3, 1000, 200)                                              # behind the counter
 ajarmap.key(m, 4, 800, 1470)                                              # the parcels office
 
-ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, LODGER, NAILER = 3004, 9, 3001, 3002, 58, 20005, 20004
+ZOMBIE, SERGEANT, IMP, DEMON, SPECTRE, LODGER = 3004, 9, 3001, 3002, 58, 20005
 CHAINGUNNER, KNIGHT, BARON, REVENANT, SOUL, CACO, MANCUBUS, ARACHNO = 65, 69, 3003, 66, 3006, 3005, 67, 68
 SHOTGUN, SUPER, CHAINGUN, LAUNCHER, PLASMA, SHELLS, SHELLBOX, CLIP, AMMOBOX, ROCKETS, ROCKETBOX, CELLS = (
     2001, 82, 2002, 2003, 2004, 2008, 2049, 2007, 2048, 2010, 2046, 17)
@@ -501,8 +498,10 @@ things(IMP, (1900, 1800), (1800, 2040), angle=180)
 things(KNIGHT, (1900, 1940), angle=180)
 things(STIM, (2020, 1700))
 things(MEDIKIT, (2020, 2160))
-# the engine shed: the nailer and its mates
-things(NAILER, (1376, 2080), angle=270)
+# the engine shed. A demon stands where the nailer did until it went out of
+# the game (2026-11-28): there on every difficulty, as the nailer was, so
+# that the demons after it are thinned as they were.
+things(DEMON, (1376, 2080), angle=270, skill=1)
 # The mancubus has the far end of the lane north of the engine, and all the
 # teeth in the shed are between it and the yard
 things(SPECTRE, (1100, 1780), (1260, 1800), (1100, 2100), (1650, 2100), angle=180)
@@ -564,5 +563,4 @@ PUZZLE = dict(
         VIOLET: dict(home="night", lean="master"),
     },
     pool=["hall", "yard"],                 # the lamp room and the kiosk; the shed
-    nailer=dict(zone=["yard", ("hall", "a")]),
 )
