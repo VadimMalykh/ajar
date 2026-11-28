@@ -568,7 +568,7 @@ MONSTERS = {lv: sum(budget.reckon([m.things[i] for i in ALL], [SKILLS[i] for i i
             for lv in (1, 2, 3, 4)}
 assert 90 <= MONSTERS[3] <= 120, MONSTERS
 
-PUZZLE = puzzle23.PUZZLE23
+PUZZLE = puzzle23.FIRST                                 # the map as built so far (the first playable version); PUZZLE23 once the trap is settled
 
 # THE LOOK (PLAN.md, "Look: MAP23, the animal house"): AJAR_DOGS unset (or mix) the picks (tools/dogs23.py, MIX:
 # The Kennels since 2026-11-27), 1, 2, 3 a look for every group; 0 the plain level, and the look's files are not
