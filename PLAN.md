@@ -23521,7 +23521,11 @@ about other epic versions, I like them all actually. Not sure if we can use them
   then as before. The piece begins with four quiet bars (a bell and an organ pedal, 16 s) while the screen comes
   down; the reel is not timed to the music. Test: `MAP=MAP31 MODE=3`, new check `theReelsMusic` beside
   `theReelBegins`.
-- **Nobody has chosen among 39 to 43 for MAP01 yet** ("I like all of them").
+- **39, Paradox Engine, Borrowed Rooms (AJM_ENA1): MAP01.** Vadim, a little later: "Also let's put #39 on
+  map01". `src/mapinfo.txt`; it had After Hours. So part I has the theme twice (MAP01, MAP07). After Hours plays
+  on no level now; it is still the earlier time's music in MAP21, MAP23 and MAP24 (`THEN_MUSIC`, then.zs), chosen
+  when it was MAP01's piece. Whether that should become Borrowed Rooms is open (not changed here: then.zs is in
+  another task's hands today). 40 to 43 play on no map.
 
 **Where the other epic ones could go** (Claude's proposals, not decided):
 
