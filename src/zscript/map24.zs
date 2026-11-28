@@ -467,10 +467,13 @@ class LeftHangingTest : EventHandler
 		if (At()) { ScriptHang(ten, 123); ScriptHang(clocked, 102); h.carried = green; }
 		if (At()) Use(mo, 832, 2 * OFF + 534, 90);
 		if (At()) Check("refusedALaterDoorIn122", h.carried == green && !F(142).door && shadow.frame == F(122) && Said("A door hangs in this frame at a later time."), DoorsSaid());
-		// the clocked door refused at 123 THEN while old GREEN hangs in its twin 103 (GREEN THEN in 123), rusted at 103 NOW
+		// the clocked door at 123 THEN while old GREEN, GREEN's own old self, is all that fills its twin 103 (GREEN THEN
+		// in 123): the swap goes through, the old self comes down with GREEN (PLAN.md, "The old door rule, mended",
+		// 2026-11-28; it was refused until then); GREEN put back by script; rusted at 103 NOW
 		if (At()) { PutBack(clocked); ScriptHang(ten, 122); ScriptHang(green, 123); InHand(clocked); }
 		if (At()) Use(mo, 1792, OFF + 726, 90);
-		if (At()) Check("clockedRefusedOldGreenInItsTwin", h.carried == clocked && green.frame == F(123) && OldOf(103, 40, 203) && Said("At the other time a door hangs in this frame."), DoorsSaid());
+		if (At()) Check("clockedSwapsInForOldGreenInItsTwin", h.carried == green && clocked.frame == F(123) && shadow.frame == F(103) && OldCount() == 0 && !Said("At the other time a door hangs in this frame."), DoorsSaid());
+		if (At()) { ScriptUnhang(clocked); PutBack(clocked); ScriptHang(green, 123); InHand(clocked); }
 		if (At()) Use(mo, 1792, 726, 90);
 		if (At()) Check("rustedInTheCistern", h.carried == clocked && OldOf(103, 40, 203) && Said("Rusted to its frame."), DoorsSaid());
 		// the bars: the hall NOW does not lead into the cistern (walked at, and run at)
