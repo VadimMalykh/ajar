@@ -166,6 +166,11 @@ skill nightshift
 // Then MAP08 Salt, Mustard, Vinegar, Pepper (track 17) and MAP09 What's the Time, Mr Wolf? (18).
 // And MAP10 Distant Galaxy II (21), so MAP10 no longer has the quiet one.
 // And MAP12 Paradox Engine (5), as MAP18 has, in place of the one drawn by lot.
+// Paradox Engine is the game's theme (Vadim, 2026-11-28): heard two or three times in maps 01 to 10, four or five
+// times in 11 to 20, six or seven times in 21 to 30 (PLAN.md, "Music: the theme through the game"). For that, put
+// on by the session, not by his ear: MAP07 Paradox Engine, Shuffle (27; it had Off Its Hinges by lot), MAP15
+// Paradox Engine, Upside Down (30; Off Its Hinges, which MAP05 keeps), MAP20 Garmonic Engine, Slow (38; After
+// Hours). MAP01 keeps After Hours until he has chosen one of the five ambient ones written for it (39 to 43).
 // Act 1, level 1 (tools/map_hinges1.py)
 map MAP01 "Borrowed Rooms"
 {
@@ -239,7 +244,7 @@ map MAP07 "Small Hours"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_HING"
+	music = "AJM_ENF2"
 }
 
 // Act 1, level 8 (tools/map_hinges8.py)
@@ -327,7 +332,7 @@ map MAP15 "On Reflection"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_HING"
+	music = "AJM_ENF5"
 }
 
 // The first secret level (tools/map_secret1.py), from MAP10's secret way out.
@@ -401,7 +406,7 @@ map MAP20 "High Water"
 	nointermission
 	nojump
 	nocrouch
-	music = "AJM_AFTR"
+	music = "AJM_EGR5"
 	EventHandlers = "AjarWaterHandler", "HighWaterTest"
 }
 
