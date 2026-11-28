@@ -553,10 +553,11 @@ put("kennels", (-1020, 560, -40, 656), IMP, 5, 0)
 ambush("kennels", (-1020, 560, -40, 656), 1, IMP, 4, angle=270, after=1)
 ambush("kennels", (-880, 980, -48, 1200), 1, SERGEANT, 2, angle=270, after=1)
 ambush("kennels", (-880, 980, -48, 1200), 1, KNIGHT, 1, angle=270, after=2)
-# --- the stalls NOW: imps, revenants, a knight; the rocket launcher; on the ledge key 2 and a soul sphere
+# --- the stalls NOW: imps, revenants, a knight; the rocket launcher; on the ledge key 2, a soul sphere and rockets
 items("stalls", (1280, 272, ajarmap.KEY_T["2"]), (1352, 272, 2013), (1280, 900, 2003), (1250, 920, 2046),
       (1320, 920, 2046), (1180, 1500, 2049), (1380, 1500, 2048), (1480, 600, 2046), (1480, 1200, 2049),
-      (1180, 700, 2012), (1380, 700, 2010), (1380, 760, 2010), (1112, 192, 2046), (1500, 192, 2049))
+      (1180, 700, 2012), (1380, 700, 2010), (1380, 760, 2010), (1112, 192, 2046), (1500, 192, 2049),
+      (1208, 272, 2046), (1380, 1100, 2046), (1180, 1100, 2049), (1280, 1300, 2049), (1280, 1100, 2012))
 put("stalls", (1168, 700, 1392, 1520), IMP, 7, 270)
 put("stalls", (1168, 700, 1392, 1520), REVENANT, 4, 270)
 put("stalls", (1168, 1200, 1392, 1520), KNIGHT, 1, 270)
@@ -564,6 +565,27 @@ put("stalls", (1440, 300, 1520, 1500), CHAINGUNNER, 1, 270)
 ambush("stalls", (1168, 700, 1392, 1520), 2, IMP, 3, angle=270, after=1)
 ambush("stalls", (1168, 700, 1392, 1520), 2, REVENANT, 2, angle=270, after=2)
 ambush("stalls", (1440, 300, 1520, 1500), 2, CHAINGUNNER, 2, angle=180, after=1)
+# ... and the rest of it (Vadim, 2026-11-28: "when I take key 2, ambush could be bigger": from the ledge the seven
+# above all came far up the run and fell in the stall's mouth). An imp at the far end of either side ledge at once,
+# level with the player; more imps in the run; cacodemons in the funnel, that come over the ledge; two knights last, down the
+# stall. In this order for the thinning (ajarmap.ambush: 1, 3, 1, 2 and again): the four imps on every
+# difficulty, the cacodemons from 2, the knights on 3. Eight, so the ambushers after them are thinned as before.
+_first = len(m.things)
+ajarmap.ambush(m, 2, IMP, (1208, 456), angle=270)
+mark("stalls", _first)
+ambush("stalls", (1168, 700, 1392, 1100), 2, KNIGHT, 1, angle=270, after=3)
+_first = len(m.things)
+ajarmap.ambush(m, 2, IMP, (1352, 456), angle=270)
+mark("stalls", _first)
+_first = len(m.things)
+ajarmap.ambush(m, 2, CACO, (1232, 608), angle=270, after=2)             # in the funnel (the run has no room for it)
+mark("stalls", _first)
+ambush("stalls", (1168, 700, 1392, 1520), 2, IMP, 1, angle=270, after=1)
+ambush("stalls", (1168, 700, 1392, 1100), 2, KNIGHT, 1, angle=270, after=3)
+ambush("stalls", (1168, 700, 1392, 1520), 2, IMP, 1, angle=270, after=1)
+_first = len(m.things)
+ajarmap.ambush(m, 2, CACO, (1328, 608), angle=270, after=2)
+mark("stalls", _first)
 # --- the guards' wing NOW: when RED is taken, in the antechamber and the hall
 items("guards", (128, 1440, 2049), (64, 1300, 17), (200, 1300, 2012), (640, 1176, 2046))
 ambush("guards", (16, 1296, 240, 1456), 10 + RED, IMP, 4, angle=0, after=1)
